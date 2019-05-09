@@ -1,0 +1,21 @@
+*.pyc
+__pycache__
+
+# testing
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+.DS_Store
+.idea/
+
+# data
+*.csv
+*.npy
+data/*.zip*
+*.nc
+*.grib
+*.idx
