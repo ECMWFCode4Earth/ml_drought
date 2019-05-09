@@ -57,14 +57,29 @@ with an environment, install Anaconda from the link above, and (from this direct
 ```bash
 conda env create -f environment.{mac, ubuntu.cpu}.yml
 ```
-This will create an environment named `esowc-drought` with all the necessary packages to run the code. To 
+This will create an environment named `esowc-drought` with all the necessary packages to run the code. To
 activate this environment, run
 
 ```bash
 conda activate esowc-drought
 ```
 
-[Docker](https://www.docker.com/) can also be used to run this code. To do this, first build the docker image:
+[Docker](https://www.docker.com/) can also be used to run this code. To do this, first
+run the docker app (either [docker desktop](https://www.docker.com/products/docker-desktop))
+or configure the `docker-machine`:
+
+```bash
+# on macOS
+brew install docker-machine docker
+
+docker-machine create --driver virtualbox default
+docker-machine env default
+```
+See [here](https://stackoverflow.com/a/33596140/9940782) for help or [here](https://stackoverflow.com/a/49719638/9940782)
+for MacOS.
+
+
+Then build the docker image:
 
 ```bash
 docker build -t ml_drought .
