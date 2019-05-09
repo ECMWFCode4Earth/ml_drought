@@ -19,6 +19,13 @@ Using [ECMWF/Copernicus open datasets](https://cds.climate.copernicus.eu/#!/home
 
 __Team:__ [@tommylees112](https://github.com/tommylees112), [@gabrieltseng](https://github.com/gabrieltseng)
 
+<!-- TODO List -->
+## To do
+- [x] Write an initial README.md
+- [ ] Choose datasets that initially interested in
+- [ ] Figure out how best to interact with Copernicus (API, web portal, other)
+
+
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
 
