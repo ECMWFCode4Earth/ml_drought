@@ -2,7 +2,7 @@
 
 ## ESoWC 2019 - Machine learning to better predict and understand drought.
 
-Using [ECMWF/Copernicus open datasets](https://cds.climate.copernicus.eu/#!/home) to evaluate machine learning techniques for the **prediction of droughts**.
+Using [ECMWF/Copernicus open datasets](https://cds.climate.copernicus.eu/#!/home) to evaluate machine learning techniques for the **prediction of droughts**. This was a project proposal submitted to the ECMWF Summer of Weather Code [Challenge #12](https://github.com/esowc/challenges_2019/issues/14).
 
 <!-- PROJECT SHIELDS -->
 
