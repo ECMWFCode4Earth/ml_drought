@@ -1,4 +1,4 @@
-# ml_drought
+# ml_drought [![Build Status](https://travis-ci.com/esowc/ml_drought.svg?branch=master)](https://travis-ci.com/esowc/ml_drought)
 
 ## ESoWC 2019 - Machine learning to better predict and understand drought.
 
