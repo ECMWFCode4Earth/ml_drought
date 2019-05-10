@@ -32,13 +32,13 @@ class CDSExporter(BaseExporter):
             else:
                 date_str = str(years[0])
         elif 'date' in selection_request:
-            date_str = selection_request['date']
+            date_str = selection_request['date'].replace('/', '_')
 
         # force all data exports to be in netcdf format
         # TODO: This is not possible for some exports. We should select
         # our preferences and force those choices
         selection_request['format'] = 'netcdf'
-        output_filename = f'{dataset.replace("-", "_")}_{date_str}.nc'
+        output_filename = f'{dataset}_{date_str}.nc'
         return output_filename
 
     def export(self, dataset: str, selection_request: Dict) -> Path:
