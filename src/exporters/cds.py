@@ -4,7 +4,7 @@ import warnings
 
 from typing import Dict
 
-from .base import BaseExporter
+from .base import BaseExporter, Region
 
 
 class CDSExporter(BaseExporter):
@@ -46,6 +46,24 @@ class CDSExporter(BaseExporter):
         if granularity == 'hourly':
             selection_dict['day'] = days
         return selection_dict
+
+    @staticmethod
+    def create_area(region: Region) -> str:
+        """Create an area string for the CDS API from a Region object
+
+        Parameters
+        ----------
+        region: Region
+            A Region to be exported from the CDS warehouse
+
+        Returns
+        ----------
+        area: str
+            A string representing the region which can be passed to the CDS API
+        """
+        x = [region.latmax, region.lonmin, region.latmin, region.lonmax]
+
+        return "/".join(["{:.3f}".format(x) for x in x])
 
     @staticmethod
     def make_filename(dataset: str, selection_request: Dict) -> str:

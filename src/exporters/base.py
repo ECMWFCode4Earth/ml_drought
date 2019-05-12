@@ -1,4 +1,8 @@
 from pathlib import Path
+from collections import namedtuple
+
+
+Region = namedtuple('Region', ['name', 'lonmin', 'lonmax', 'latmin', 'latmax'])
 
 
 class BaseExporter:
@@ -16,3 +20,12 @@ class BaseExporter:
         self.raw_folder = self.data_folder / 'raw'
         if not self.raw_folder.exists():
             self.raw_folder.mkdir()
+
+    @staticmethod
+    def get_kenya() -> Region:
+        """This pipeline is focused on drought prediction in Kenya.
+        This function allows Kenya's bounding box to be easily accessed
+        by all exporters.
+        """
+        return Region(name='kenya', lonmin=33.501, lonmax=42.283,
+                      latmin=-5.202, latmax=6.002)

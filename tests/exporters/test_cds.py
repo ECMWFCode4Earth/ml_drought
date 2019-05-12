@@ -32,3 +32,11 @@ class TestCDSExporter:
 
         selection_dict_hourly = CDSExporter.get_era5_times(granularity='hourly')
         assert 'day' in selection_dict_hourly, 'Day values not in hourly selection dict!'
+
+    def test_area(self):
+
+        region = CDSExporter.get_kenya()
+        kenya_str = CDSExporter.create_area(region)
+
+        expected_str = '6.002/33.501/-5.202/42.283'
+        assert kenya_str == expected_str, f'Got {kenya_str}, expected {expected_str}!'
