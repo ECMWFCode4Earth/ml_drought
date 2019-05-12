@@ -52,6 +52,8 @@ Our goals are as follows:
 
 We will be documenting the progress of our pipeline as go.
 
+We have a **set of notebooks and scripts** that are very rough but represent the current state of our work [at this repo here](https://github.com/tommylees112/esowc_notes).
+
 For updates follow [@tommylees112](https://twitter.com/tommylees112) on twitter or look out for our blog posts!
 
 - [Blog 1: Great News!](https://tommylees112.github.io/posts/2019/1/esowc_kick_off)
