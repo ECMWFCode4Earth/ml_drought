@@ -1,3 +1,3 @@
-from .cds import CDSExporter
+from .cds import ERA5Exporter
 
-__all__ = ['CDSExporter', ]
+__all__ = ['ERA5Exporter', ]
