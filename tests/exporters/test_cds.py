@@ -24,3 +24,11 @@ class TestCDSExporter:
         filename = CDSExporter.make_filename(dataset, selection_request)
         expected = f'megadodo-publications_{sanitized_date}.nc'
         assert filename == expected, f'Got {filename}, expected {expected}!'
+
+    def test_selection_dict_granularity(self):
+
+        selection_dict_monthly = CDSExporter.get_era5_times(granularity='monthly')
+        assert 'day' not in selection_dict_monthly, 'Got day values in monthly the selection dict!'
+
+        selection_dict_hourly = CDSExporter.get_era5_times(granularity='hourly')
+        assert 'day' in selection_dict_hourly, 'Day values not in hourly selection dict!'

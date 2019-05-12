@@ -18,6 +18,36 @@ class CDSExporter(BaseExporter):
         self.client = cdsapi.Client()
 
     @staticmethod
+    def get_era5_times(granularity: str = 'hourly') -> Dict:
+        """Returns the era5 selection request arguments
+        for the hourly or monthly data
+
+        Parameters
+        ----------
+        granularity: str, {'monthly', 'hourly'}, default: 'hourly'
+            The granularity of data being pulled
+
+        Returns
+        ----------
+        selection_dict: dict
+            A dictionary with all the time-related arguments of the
+            selection dict filled out
+        """
+        years = [str(year) for year in range(1979, 2019 + 1)]
+        months = ['{:02d}'.format(month) for month in range(1, 12 + 1)]
+        days = ['{:02d}'.format(day) for day in range(1, 31 + 1)]
+        times = ['{:02d}:00'.format(hour) for hour in range(24)]
+
+        selection_dict = {
+            'year': years,
+            'month': months,
+            'time': times,
+        }
+        if granularity == 'hourly':
+            selection_dict['day'] = days
+        return selection_dict
+
+    @staticmethod
     def make_filename(dataset: str, selection_request: Dict) -> str:
         """Makes the appropriate filename for a CDS export
         """
@@ -34,10 +64,6 @@ class CDSExporter(BaseExporter):
         elif 'date' in selection_request:
             date_str = selection_request['date'].replace('/', '_')
 
-        # force all data exports to be in netcdf format
-        # TODO: This is not possible for some exports. We should select
-        # our preferences and force those choices
-        selection_request['format'] = 'netcdf'
         output_filename = f'{dataset}_{date_str}.nc'
         return output_filename
 
@@ -59,6 +85,11 @@ class CDSExporter(BaseExporter):
 
         output_filename = self.make_filename(dataset, selection_request)
         output_file = self.raw_folder / output_filename
+
+        # force all data exports to be in netcdf format
+        # TODO: This is not possible for some exports. We should select
+        # our preferences and force those choices
+        selection_request['format'] = 'netcdf'
 
         if not output_file.exists():
             self.client.retrieve(dataset, selection_request, str(output_file))
