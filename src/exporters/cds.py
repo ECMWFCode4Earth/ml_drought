@@ -171,7 +171,6 @@ class ERA5Exporter(CDSExporter):
         else:
             return 'single-levels'
 
-
     @staticmethod
     def print_api_request(selection_request: Dict) -> None:
         """TODO: should this be implemented as a nice `__repr__` method?"""
