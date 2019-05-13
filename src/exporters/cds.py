@@ -9,6 +9,8 @@ from typing import Dict, Optional
 
 from .base import BaseExporter, Region
 
+from pathos.multiprocessing import ProcessingPool as Pool
+
 http = urllib3.PoolManager(
     cert_reqs='CERT_REQUIRED',
     ca_certs=certifi.where()
@@ -120,6 +122,53 @@ class CDSExporter(BaseExporter):
         return output_file
 
 
+    @staticmethod
+    def _export_monthly_values(year):
+        """ export each month separately
+        Parameters:
+        ----------
+
+        Returns:
+        --------
+
+        """
+        # create the client for each year responsible for each month
+        client = cdsapi.Client()
+
+        months = selection_request['month']
+
+        filepaths = []
+        for month in months:
+            assert (isinstance(year,str) and isinstance(month,str)), f"For the objects to be JSON serialisable they need to be strings. Currently: year: {type(year)} month: {type(month)}"
+            processed_selection_request['month'] = [month]
+            processed_selection_request['year'] = [year]
+
+
+            filepaths.append(self._export(processed_selection_request))
+
+        pass
+
+
+    def _export_parallel():
+        """split the api call into years and run each in parallel
+
+        Functionality:
+        -------------
+        - Create multiple client instances
+            `self.client = cdsapi.Client()`
+        - Have each one download a year of data
+        """
+        years = selection_request['year']
+
+        pool = Pool()
+        pool.map(_export_monthly_values, years)
+        for year in years:
+            # export_annual_values()
+            # _export_monthly_values()
+            pass
+        pass
+
+
 class ERA5Exporter(CDSExporter):
     """Exports ERA5 data from the Climate Data Store
 
@@ -172,20 +221,30 @@ class ERA5Exporter(CDSExporter):
             return 'single-levels'
 
     @staticmethod
-    def print_api_request(selection_request: Dict) -> None:
+    def print_api_request(selection_request: Dict,
+                          dataset: str,) -> None:
         """TODO: should this be implemented as a nice `__repr__` method?"""
+        print("------------------------")
+        print("Dataset:")
+        print(f"'{dataset}'")
         print("------------------------")
         print("Selection Request:")
         pprint(selection_request)
         print("------------------------")
+
         return
+
+    def create_selection():
+        pass
+
 
     def export(self,
                variable: str,
                dataset: Optional[str] = None,
                granularity: str = 'hourly',
                show_api_request: bool = False,
-               selection_request: Optional[Dict] = None) -> Path:
+               selection_request: Optional[Dict] = None,
+               dummy_run=False) -> Path:
 
         # setup the default selection request
         processed_selection_request = {
@@ -208,9 +267,15 @@ class ERA5Exporter(CDSExporter):
         # override with arguments passed by the user
         if selection_request is not None:
             for key, val in selection_request.items():
+                # TODO: we should catch and deal with these errors
+                assert all([isinstance(val,str) for val in val]), f"For the dictionary to be JSON serialisable the values must be strings. First value of your list of '{key}': {type(val[0])}\n'{key}': {val}"
                 processed_selection_request[key] = val
 
         if show_api_request:
-            self.print_api_request(processed_selection_request)
+            self.print_api_request(processed_selection_request, dataset)
 
-        return self._export(dataset, processed_selection_request)
+        if dummy_run:
+            # only printing the api request
+            return
+        else:
+            return self._export(dataset, processed_selection_request)
