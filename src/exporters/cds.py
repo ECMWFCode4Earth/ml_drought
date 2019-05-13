@@ -95,7 +95,17 @@ class CDSExporter(BaseExporter):
         output_filename = f'{dataset}_{variables}_{date_str}.nc'
         return output_filename
 
-    def _export(self, dataset: str, selection_request: Dict) -> Path:
+    @staticmethod
+    def _print_api_request(selection_request: Dict) -> None:
+        print("------------------------")
+        print("Selection Request:")
+        pprint(selection_request)
+        print("------------------------")
+        return
+
+    def _export(self, dataset: str,
+                selection_request: Dict,
+                show_api_request: bool = False) -> Path:
         """Export CDS data
 
         Parameters
@@ -113,6 +123,9 @@ class CDSExporter(BaseExporter):
 
         output_filename = self.make_filename(dataset, selection_request)
         output_file = self.raw_folder / output_filename
+
+        if show_api_request:
+            self._print_api_request(selection_request)
 
         if not output_file.exists():
             self.client.retrieve(dataset, selection_request, str(output_file))
@@ -156,7 +169,7 @@ class ERA5Exporter(CDSExporter):
         return selection_dict
 
     @staticmethod
-    def get_datastore(variable: str) -> str:
+    def get_dataset(variable: str, granularity: str = 'hourly') -> str:
         pressure_level_variables = {
             'divergence', 'fraction_of_cloud_cover', 'geopotential',
             'ozone_mass_mixing_ratio', 'potential_vorticity', 'relative_humidity',
@@ -167,18 +180,15 @@ class ERA5Exporter(CDSExporter):
         }
 
         if variable in pressure_level_variables:
-            return 'pressure-levels'
+            dataset_type = 'pressure-levels'
         else:
-            return 'single-levels'
+            dataset_type = 'single-levels'
 
-    @staticmethod
-    def print_api_request(selection_request: Dict) -> None:
-        """TODO: should this be implemented as a nice `__repr__` method?"""
-        print("------------------------")
-        print("Selection Request:")
-        pprint(selection_request)
-        print("------------------------")
-        return
+        dataset = f'reanalysis-era5-{dataset_type}'
+        if granularity == 'monthly':
+            dataset = f'{dataset}-monthly-means'
+
+        return dataset
 
     def export(self,
                variable: str,
@@ -201,16 +211,12 @@ class ERA5Exporter(CDSExporter):
         processed_selection_request['area'] = self.create_area(kenya_region)
 
         if dataset is None:
-            dataset = f'reanalysis-era5-{self.get_datastore(variable)}'
-            if granularity == 'monthly':
-                dataset = f'{dataset}-monthly-means'
+            dataset = self.get_dataset(variable, granularity)
 
         # override with arguments passed by the user
         if selection_request is not None:
             for key, val in selection_request.items():
                 processed_selection_request[key] = val
 
-        if show_api_request:
-            self.print_api_request(processed_selection_request)
-
-        return self._export(dataset, processed_selection_request)
+        return self._export(dataset, processed_selection_request,
+                            show_api_request)
