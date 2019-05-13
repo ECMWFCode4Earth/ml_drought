@@ -190,13 +190,11 @@ class ERA5Exporter(CDSExporter):
 
         return dataset
 
-    def export(self,
-               variable: str,
-               dataset: Optional[str] = None,
-               granularity: str = 'hourly',
-               show_api_request: bool = False,
-               selection_request: Optional[Dict] = None) -> Path:
-
+    @staticmethod
+    def create_selection_request(selection_request: Optional[Dict] = None,
+                                 dataset: Optional[str] = None,
+                                 granularity: str = 'hourly',) -> Dict:
+        """Create the selection request to be sent to the API """
         # setup the default selection request
         processed_selection_request = {
             'product_type': 'reanalysis',
@@ -210,13 +208,99 @@ class ERA5Exporter(CDSExporter):
         kenya_region = self.get_kenya()
         processed_selection_request['area'] = self.create_area(kenya_region)
 
+        # create the dataset string
         if dataset is None:
-            dataset = self.get_dataset(variable, granularity)
+            dataset = f'reanalysis-era5-{self.get_datastore(variable)}'
+            if granularity == 'monthly':
+                dataset = f'{dataset}-monthly-means'
+
+        return processed_selection_request
+
+    @staticmethod
+    def update_selection_request(selection_request: Dict,
+                                 processed_selection_request: Dict,) -> Dict:
+        """ override selection request dictionary with
+        arguments passed by the user.
+
+        Arguments:
+        ---------
+        selection_request : dict
+            the user defined selection_request dictionary
+
+        processed_selection_request : dict
+            the default selection_request dictionary
+
+        Returns:
+        -------
+        : dict
+            the selection_request dictionary with defaults for the params
+            not defined by the user, and user-defined params for those the
+            user has specified.
+        """
+        for key, val in selection_request.items():
+            # TODO: we should catch and deal with these errors
+            assert all([isinstance(val,str) for val in val]), f"For the dictionary to be JSON serialisable the values must be strings. First value of your list of '{key}': {type(val[0])}\n'{key}': {val}"
+            processed_selection_request[key] = val
+
+        return processed_selection_request
+
+
+
+    def export(self,
+               variable: str,
+               dataset: Optional[str] = None,
+               granularity: str = 'hourly',
+               show_api_request: bool = True,
+               selection_request: Optional[Dict] = None,
+               dummy_run = False) -> Path:
+        """ Export functionality to prepare the API request and to send it to
+        the cdsapi.client() object.
+
+        Arguments:
+        ---------
+        variable : str,
+
+        dataset : Optional[str] = None
+
+
+        granularity : str = 'hourly'
+            What temporal resolution does the user want
+            Options: ['hourly','monthly']
+
+        show_api_request : bool = True
+            print the output of the api request
+
+        selection_request : Optional[Dict] = None
+            The user defined options to be merged with the default selections
+
+        dummy_run = False
+            If true just run the function without actually downloading the data
+
+        Process:
+        -------
+        1) Generate the default selection request
+        2) Update with user defined options
+        3) Print the output to the user
+        4) run the `_export()` function
+
+        Returns:
+        -------
+        : pathlib.Path
+            path to the downloaded data
+        """
+
+        # create the default template for the selection request
+        processed_selection_request = create_selection_request(selection_request, dataset, granularity)
 
         # override with arguments passed by the user
         if selection_request is not None:
-            for key, val in selection_request.items():
-                processed_selection_request[key] = val
+            processed_selection_request = update_selection_request(selection_request, processed_selection_request)
 
-        return self._export(dataset, processed_selection_request,
-                            show_api_request)
+        # print the output of the
+        if show_api_request:
+            self.print_api_request(processed_selection_request, dataset)
+
+        if dummy_run: # only printing the api request
+            return
+        else:
+            return self._export(dataset, processed_selection_request)
