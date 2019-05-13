@@ -6,7 +6,11 @@ from src.exporters import ERA5Exporter  # noqa
 
 
 def export_precip_2018():
-    data_path = Path('../data')
+    # if the working directory is alread ml_drought don't need ../data
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
     exporter = ERA5Exporter(data_path)
 
     selection_request = {
