@@ -3,6 +3,7 @@ from pathlib import Path
 import certifi
 import urllib3
 import warnings
+from pprint import pprint
 
 from typing import Dict, Optional
 
@@ -170,10 +171,21 @@ class ERA5Exporter(CDSExporter):
         else:
             return 'single-levels'
 
+
+    @staticmethod
+    def print_api_request(selection_request: Dict) -> None:
+        """TODO: should this be implemented as a nice `__repr__` method?"""
+        print("------------------------")
+        print("Selection Request:")
+        pprint(selection_request)
+        print("------------------------")
+        return
+
     def export(self,
                variable: str,
                dataset: Optional[str] = None,
                granularity: str = 'hourly',
+               show_api_request: bool = False,
                selection_request: Optional[Dict] = None) -> Path:
 
         # setup the default selection request
@@ -198,5 +210,8 @@ class ERA5Exporter(CDSExporter):
         if selection_request is not None:
             for key, val in selection_request.items():
                 processed_selection_request[key] = val
+
+        if show_api_request:
+            self.print_api_request(processed_selection_request)
 
         return self._export(dataset, processed_selection_request)
