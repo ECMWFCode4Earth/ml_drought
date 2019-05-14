@@ -27,4 +27,4 @@ script:
 notifications:
   slack:
     rooms:
-	  - drought-research:6LfQgoVyKQgyamPA8yICbwaJ#ecmwf_summer_of_code
+      - drought-research:6LfQgoVyKQgyamPA8yICbwaJ#ecmwf_summer_of_code
