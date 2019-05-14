@@ -3,9 +3,10 @@ from pathlib import Path
 import certifi
 import urllib3
 import warnings
+import itertools
 from pprint import pprint
 
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 from .base import BaseExporter, Region
 
@@ -75,38 +76,56 @@ class CDSExporter(BaseExporter):
         return "/".join(["{:.3f}".format(x) for x in x])
 
     @staticmethod
-    def make_filename(dataset: str, selection_request: Dict) -> str:
-        """Makes the appropriate filename for a CDS export
-        """
-        date_str = ''
-        if 'year' in selection_request:
-            years = selection_request['year']
-            if len(years) > 1:
-                warnings.warn('More than 1 year of data being exported! '
+    def _filename_from_selection_request(time_array: List, time: str) -> str:
+        if len(time_array) > 1:
+            if time in {'month', 'year'}:
+                warnings.warn(f'More than 1 {time} of data being exported! '
                               'Export times may be significant.')
-                years.sort()
-                date_str = f'{years[0]}_{years[-1]}'
-            else:
-                date_str = str(years[0])
-        elif 'date' in selection_request:
-            date_str = selection_request['date'].replace('/', '_')
+            time_array.sort()
+            time_array_str = f'{time_array[0]}_{time_array[-1]}'
+        else:
+            time_array_str = str(time_array[0])
+        return time_array_str
+
+    def make_filename(self, dataset: str, selection_request: Dict) -> Path:
+        """Makes the appropriate filename for a CDS export.
+        If necessary, intermediate folders are also made.
+
+        The format in which data is saved is
+        {dataset}/{variable}/{year}/{month}/file
+        """
+        dataset_folder = self.raw_folder / dataset
+        if not dataset_folder.exists():
+            dataset_folder.mkdir()
 
         variables = '_'.join(selection_request['variable'])
-        output_filename = f'{dataset}_{variables}_{date_str}.nc'
+        variables_folder = dataset_folder / variables
+        if not variables_folder.exists():
+            variables_folder.mkdir()
+
+        years = self._filename_from_selection_request(selection_request['year'], 'year')
+        years_folder = variables_folder / years
+        if not years_folder.exists():
+            years_folder.mkdir()
+
+        months = self._filename_from_selection_request(selection_request['month'], 'month')
+        months_folder = years_folder / months
+        if not months_folder.exists():
+            months_folder.mkdir()
+
+        days = self._filename_from_selection_request(selection_request['day'], 'day')
+
+        output_filename = months_folder / f'{days}.nc'
         return output_filename
 
     @staticmethod
     def _print_api_request(dataset: str,
                            selection_request: Dict) -> None:
-        print("------------------------")
-        print("Dataset:")
-        print(f"'{dataset}'")
-        print("------------------------")
-        print("Selection Request:")
+        print('------------------------')
+        print(f'Dataset: {dataset}')
+        print('Selection Request:')
         pprint(selection_request)
-        print("------------------------")
-
-        return
+        print('------------------------')
 
     def _export(self, dataset: str,
                 selection_request: Dict,
@@ -237,7 +256,8 @@ class ERA5Exporter(CDSExporter):
                dataset: Optional[str] = None,
                granularity: str = 'hourly',
                show_api_request: bool = True,
-               selection_request: Optional[Dict] = None) -> Path:
+               selection_request: Optional[Dict] = None,
+               break_up: bool = False) -> List[Path]:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
 
@@ -256,11 +276,13 @@ class ERA5Exporter(CDSExporter):
             Selection request arguments to be merged with the defaults. If both a key is
             defined in both the selection_request and the defaults, the value in the
             selection_request takes precedence.
-
+        break_up: bool, default = False
+            The best way to download the data is by making many small calls to the CDS
+            API. If true, the calls will be broken up into months
         Returns:
         -------
-        output_file: pathlib.Path
-            path to the downloaded data
+        output_files: List of pathlib.Paths
+            paths to the downloaded data
         """
 
         # create the default template for the selection request
@@ -270,6 +292,18 @@ class ERA5Exporter(CDSExporter):
         if dataset is None:
             dataset = self.get_dataset(variable, granularity)
 
-        return self._export(dataset,
-                            processed_selection_request,
-                            show_api_request)
+        if break_up:
+            output_paths = []
+            for year, month in itertools.product(processed_selection_request['year'],
+                                                 processed_selection_request['month']):
+                updated_request = processed_selection_request.copy()
+                updated_request['year'] = [year]
+                updated_request['month'] = [month]
+
+                output_paths.append(self._export(dataset, updated_request, show_api_request))
+
+            return output_paths
+
+        return [self._export(dataset,
+                             processed_selection_request,
+                             show_api_request)]

@@ -1,4 +1,5 @@
 from cdsapi import Client # noqa
+from pathlib import Path
 from unittest.mock import patch, Mock
 
 from src.exporters.cds import CDSExporter, ERA5Exporter
@@ -6,29 +7,49 @@ from src.exporters.cds import CDSExporter, ERA5Exporter
 
 class TestCDSExporter:
 
-    def test_filename_year(self):
+    @patch('cdsapi.Client')
+    def test_filename_multiple(self, cdsapi_mock, tmp_path):
+        cdsapi_mock.return_value = Mock()
+        exporter = CDSExporter(tmp_path)
 
         dataset = 'megadodo-publications'
         selection_request = {
             'variable': ['towel'],
-            'year': [1979, 1978, 1980]
+            'year': [1979, 1978, 1980],
+            'month': [10, 11, 12],
+            'day': [17, 18, 19]
         }
 
-        filename = CDSExporter.make_filename(dataset, selection_request)
-        expected = 'megadodo-publications_towel_1978_1980.nc'
+        filename = exporter.make_filename(dataset, selection_request)
+        # first, we check the filename is right
+        constructed_filepath = Path('raw/megadodo-publications/towel/1978_1980/10_12/17_19.nc')
+        expected = tmp_path / constructed_filepath
         assert filename == expected, f'Got {filename}, expected {expected}!'
 
-    def test_filename_date(self):
+        # then, we check all the files were correctly made
+        assert expected.parents[0].exists(), 'Folders not correctly made!'
+
+    @patch('cdsapi.Client')
+    def test_filename_single(self, cdsapi_mock, tmp_path):
+        cdsapi_mock.return_value = Mock()
+        exporter = CDSExporter(tmp_path)
+
         dataset = 'megadodo-publications'
         selection_request = {
             'variable': ['towel'],
-            'date': '1978-12-01/1980-12-31'
+            'year': [1979],
+            'month': [10],
+            'day': [17, 18, 19]
         }
 
-        sanitized_date = selection_request["date"].replace('/', '_')
-        filename = CDSExporter.make_filename(dataset, selection_request)
-        expected = f'megadodo-publications_towel_{sanitized_date}.nc'
+        filename = exporter.make_filename(dataset, selection_request)
+        # first, we check the filename is right
+        constructed_filepath = Path('raw/megadodo-publications/towel/1979/10/17_19.nc')
+        expected = tmp_path / constructed_filepath
         assert filename == expected, f'Got {filename}, expected {expected}!'
+
+        # then, we check all the files were correctly made
+        assert expected.parents[0].exists(), 'Folders not correctly made!'
 
     def test_selection_dict_granularity(self):
 
@@ -73,9 +94,9 @@ class TestCDSExporter:
             assert default_val == val, f'For {key}, expected {val}, got {default_val}'
 
     @patch('cdsapi.Client')
-    def test_user_defined_selection_requests(self, cdsapi_mock):
+    def test_user_defined_selection_requests(self, cdsapi_mock, tmp_path):
         cdsapi_mock.return_value = Mock()
-        exporter = ERA5Exporter()
+        exporter = ERA5Exporter(tmp_path)
 
         user_defined_arguments = {
             'year': [2019],
@@ -97,3 +118,35 @@ class TestCDSExporter:
         for key, val in expected_selection_request.items():
             default_val = default_selection_request[key]
             assert default_val == val, f'For {key}, expected {val}, got {default_val}'
+
+    @patch('cdsapi.Client')
+    def test_break_up(self, cdsapi_mock, tmp_path):
+        cdsapi_mock.return_value = Mock()
+        exporter = ERA5Exporter(tmp_path)
+
+        user_defined_arguments = {
+            'year': [2019, 2018],
+            'day': [1, 2],
+            'month': [4, 5],
+            'time': [0]
+        }
+
+        output_paths = exporter.export('precipitation',
+                                       dataset='era5',
+                                       granularity='hourly',
+                                       selection_request=user_defined_arguments,
+                                       break_up=True)
+
+        raw_folder = tmp_path / 'raw'
+        expected_paths = [
+            raw_folder / 'era5/precipitation/2018/04/01_02.nc',
+            raw_folder / 'era5/precipitation/2018/05/01_02.nc',
+            raw_folder / 'era5/precipitation/2019/04/01_02.nc',
+            raw_folder / 'era5/precipitation/2019/05/01_02.nc',
+        ]
+
+        assert len(output_paths) == len(expected_paths), f'Expected {len(expected_paths)} ' \
+            f'files, got {len(output_paths)}'
+
+        for file in expected_paths:
+            assert file in output_paths, f'{file} not in the output paths!'
