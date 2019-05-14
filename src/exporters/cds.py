@@ -195,6 +195,19 @@ class ERA5Exporter(CDSExporter):
 
         return dataset
 
+    @staticmethod
+    def _correct_input(value, key):
+        if type(value) is str:
+            return value
+        else:
+            if key == 'year':
+                return str(value)
+            elif key in {'month', 'day'}:
+                return '{:02d}'.format(value)
+            elif key == 'time':
+                return '{:02d}:00'.format(value)
+        return str(value)
+
     def create_selection_request(self,
                                  variable: str,
                                  selection_request: Optional[Dict] = None,
@@ -215,7 +228,7 @@ class ERA5Exporter(CDSExporter):
         # update with user arguments
         if selection_request is not None:
             for key, val in selection_request.items():
-                processed_selection_request[key] = [str(x) for x in val]
+                processed_selection_request[key] = [self._correct_input(x, key) for x in val]
 
         return processed_selection_request
 
