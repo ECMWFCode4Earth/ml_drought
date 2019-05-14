@@ -96,7 +96,10 @@ class CDSExporter(BaseExporter):
         return output_filename
 
     @staticmethod
-    def _print_api_request(selection_request: Dict) -> None:
+    def _print_api_request(selection_request: Dict,
+                           dataset: str) -> None:
+        print("------------------------")
+        print(dataset)
         print("------------------------")
         print("Selection Request:")
         pprint(selection_request)
@@ -125,7 +128,7 @@ class CDSExporter(BaseExporter):
         output_file = self.raw_folder / output_filename
 
         if show_api_request:
-            self._print_api_request(selection_request)
+            self._print_api_request(selection_request, dataset)
 
         if not output_file.exists():
             self.client.retrieve(dataset, selection_request, str(output_file))
@@ -190,8 +193,10 @@ class ERA5Exporter(CDSExporter):
 
         return dataset
 
-    @staticmethod
-    def create_selection_request(selection_request: Optional[Dict] = None,
+    # @staticmethod
+    def create_selection_request(self,
+                                 variable: str,
+                                 selection_request: Optional[Dict] = None,
                                  dataset: Optional[str] = None,
                                  granularity: str = 'hourly',) -> Dict:
         """Create the selection request to be sent to the API """
@@ -210,7 +215,7 @@ class ERA5Exporter(CDSExporter):
 
         # create the dataset string
         if dataset is None:
-            dataset = f'reanalysis-era5-{self.get_datastore(variable)}'
+            dataset = f'reanalysis-era5-{self.get_dataset(variable)}'
             if granularity == 'monthly':
                 dataset = f'{dataset}-monthly-means'
 
@@ -290,15 +295,21 @@ class ERA5Exporter(CDSExporter):
         """
 
         # create the default template for the selection request
-        processed_selection_request = create_selection_request(selection_request, dataset, granularity)
+        processed_selection_request = self.create_selection_request(
+            self, variable, selection_request, dataset, granularity
+        )
 
         # override with arguments passed by the user
         if selection_request is not None:
-            processed_selection_request = update_selection_request(selection_request, processed_selection_request)
+            processed_selection_request = self.update_selection_request(selection_request, processed_selection_request)
+
+        # get the dataset / datastore
+        # TODO: do we keep this as an argument to the function?
+        dataset = self.get_dataset(variable, granularity)
 
         # print the output of the
         if show_api_request:
-            self.print_api_request(processed_selection_request, dataset)
+            self._print_api_request(processed_selection_request, dataset)
 
         if dummy_run: # only printing the api request
             return

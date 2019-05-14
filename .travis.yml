@@ -23,3 +23,8 @@ install:
 script:
   - mypy src
   - pytest
+
+notifications:
+  slack:
+    rooms:
+	  - drought-research:6LfQgoVyKQgyamPA8yICbwaJ#ecmwf_summer_of_code
