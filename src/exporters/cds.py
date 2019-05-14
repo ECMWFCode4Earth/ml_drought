@@ -302,7 +302,7 @@ class ERA5Exporter(CDSExporter):
         # override with arguments passed by the user
         if selection_request is not None:
             processed_selection_request = self.update_selection_request(selection_request, processed_selection_request)
-
+            
         # get the dataset / datastore
         # TODO: do we keep this as an argument to the function?
         dataset = self.get_dataset(variable, granularity)
