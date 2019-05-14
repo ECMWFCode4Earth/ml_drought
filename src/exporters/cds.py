@@ -97,13 +97,16 @@ class CDSExporter(BaseExporter):
 
     @staticmethod
     def _print_api_request(selection_request: Dict,
-                           dataset: str) -> None:
+                          dataset: str,) -> None:
+        """TODO: should this be implemented as a nice `__repr__` method?"""
         print("------------------------")
-        print(dataset)
+        print("Dataset:")
+        print(f"'{dataset}'")
         print("------------------------")
         print("Selection Request:")
         pprint(selection_request)
         print("------------------------")
+
         return
 
     def _export(self, dataset: str,
@@ -302,7 +305,7 @@ class ERA5Exporter(CDSExporter):
         # override with arguments passed by the user
         if selection_request is not None:
             processed_selection_request = self.update_selection_request(selection_request, processed_selection_request)
-            
+
         # get the dataset / datastore
         # TODO: do we keep this as an argument to the function?
         dataset = self.get_dataset(variable, granularity)
