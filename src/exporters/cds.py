@@ -97,7 +97,8 @@ class CDSExporter(BaseExporter):
 
     @staticmethod
     def _print_api_request(selection_request: Dict,
-                          dataset: str,) -> None:
+                          dataset: str,
+                          output_file: Path) -> None:
         """TODO: should this be implemented as a nice `__repr__` method?"""
         print("------------------------")
         print("Dataset:")
@@ -106,12 +107,16 @@ class CDSExporter(BaseExporter):
         print("Selection Request:")
         pprint(selection_request)
         print("------------------------")
+        print("Filename:")
+        print(output_file)
+        print("------------------------")
 
         return
 
     def _export(self, dataset: str,
                 selection_request: Dict,
-                show_api_request: bool = False) -> Path:
+                show_api_request: bool = False,
+                dummy_run: bool = False) -> Path:
         """Export CDS data
 
         Parameters
@@ -131,10 +136,16 @@ class CDSExporter(BaseExporter):
         output_file = self.raw_folder / output_filename
 
         if show_api_request:
-            self._print_api_request(selection_request, dataset)
+            self._print_api_request(selection_request, dataset, output_file)
 
-        if not output_file.exists():
-            self.client.retrieve(dataset, selection_request, str(output_file))
+        if dummy_run:
+            return # only print the api_request
+        else:
+            # check if output file exists, otherwise request from api
+            if not output_file.exists():
+                self.client.retrieve(dataset, selection_request, str(output_file))
+            else:
+                print("File already exists!")
 
         return output_file
 
@@ -260,7 +271,7 @@ class ERA5Exporter(CDSExporter):
                granularity: str = 'hourly',
                show_api_request: bool = True,
                selection_request: Optional[Dict] = None,
-               dummy_run = False) -> Path:
+               dummy_run: bool = False) -> Path:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
 
@@ -310,14 +321,7 @@ class ERA5Exporter(CDSExporter):
         # TODO: do we keep this as an argument to the function?
         dataset = self.get_dataset(variable, granularity)
 
-        # print the output of the
-        if show_api_request:
-            self._print_api_request(processed_selection_request, dataset)
-
-        if dummy_run: # only printing the api request
-            return
-        else:
-            return self._export(dataset, processed_selection_request)
+        return self._export(dataset, processed_selection_request, dummy_run)
 
         @staticmethod
         def _export_monthly_values(year):
