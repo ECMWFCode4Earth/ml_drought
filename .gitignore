@@ -19,3 +19,5 @@ data/*.zip*
 *.nc
 *.grib
 *.idx
+
+.ipynb_checkpoints
