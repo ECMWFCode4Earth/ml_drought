@@ -9,8 +9,6 @@ from typing import Dict, Optional
 
 from .base import BaseExporter, Region
 
-from pathos.multiprocessing import ProcessingPool as Pool
-
 http = urllib3.PoolManager(
     cert_reqs='CERT_REQUIRED',
     ca_certs=certifi.where()
@@ -97,7 +95,23 @@ class CDSExporter(BaseExporter):
         output_filename = f'{dataset}_{variables}_{date_str}.nc'
         return output_filename
 
-    def _export(self, dataset: str, selection_request: Dict) -> Path:
+    @staticmethod
+    def _print_api_request(selection_request: Dict,
+                          dataset: str,) -> None:
+        """TODO: should this be implemented as a nice `__repr__` method?"""
+        print("------------------------")
+        print("Dataset:")
+        print(f"'{dataset}'")
+        print("------------------------")
+        print("Selection Request:")
+        pprint(selection_request)
+        print("------------------------")
+
+        return
+
+    def _export(self, dataset: str,
+                selection_request: Dict,
+                show_api_request: bool = False) -> Path:
         """Export CDS data
 
         Parameters
@@ -116,57 +130,13 @@ class CDSExporter(BaseExporter):
         output_filename = self.make_filename(dataset, selection_request)
         output_file = self.raw_folder / output_filename
 
+        if show_api_request:
+            self._print_api_request(selection_request, dataset)
+
         if not output_file.exists():
             self.client.retrieve(dataset, selection_request, str(output_file))
 
         return output_file
-
-
-    @staticmethod
-    def _export_monthly_values(year):
-        """ export each month separately
-        Parameters:
-        ----------
-
-        Returns:
-        --------
-
-        """
-        # create the client for each year responsible for each month
-        client = cdsapi.Client()
-
-        months = selection_request['month']
-
-        filepaths = []
-        for month in months:
-            assert (isinstance(year,str) and isinstance(month,str)), f"For the objects to be JSON serialisable they need to be strings. Currently: year: {type(year)} month: {type(month)}"
-            processed_selection_request['month'] = [month]
-            processed_selection_request['year'] = [year]
-
-
-            filepaths.append(self._export(processed_selection_request))
-
-        pass
-
-
-    def _export_parallel():
-        """split the api call into years and run each in parallel
-
-        Functionality:
-        -------------
-        - Create multiple client instances
-            `self.client = cdsapi.Client()`
-        - Have each one download a year of data
-        """
-        years = selection_request['year']
-
-        pool = Pool()
-        pool.map(_export_monthly_values, years)
-        for year in years:
-            # export_annual_values()
-            # _export_monthly_values()
-            pass
-        pass
 
 
 class ERA5Exporter(CDSExporter):
@@ -205,7 +175,7 @@ class ERA5Exporter(CDSExporter):
         return selection_dict
 
     @staticmethod
-    def get_datastore(variable: str) -> str:
+    def get_dataset(variable: str, granularity: str = 'hourly') -> str:
         pressure_level_variables = {
             'divergence', 'fraction_of_cloud_cover', 'geopotential',
             'ozone_mass_mixing_ratio', 'potential_vorticity', 'relative_humidity',
@@ -216,26 +186,20 @@ class ERA5Exporter(CDSExporter):
         }
 
         if variable in pressure_level_variables:
-            return 'pressure-levels'
+            dataset_type = 'pressure-levels'
         else:
-            return 'single-levels'
+            dataset_type = 'single-levels'
 
-    @staticmethod
-    def print_api_request(selection_request: Dict,
-                          dataset: str,) -> None:
-        """TODO: should this be implemented as a nice `__repr__` method?"""
-        print("------------------------")
-        print("Dataset:")
-        print(f"'{dataset}'")
-        print("------------------------")
-        print("Selection Request:")
-        pprint(selection_request)
-        print("------------------------")
+        dataset = f'reanalysis-era5-{dataset_type}'
+        if granularity == 'monthly':
+            dataset = f'{dataset}-monthly-means'
 
-        return
+        return dataset
 
-    @staticmethod
-    def create_selection_request(selection_request: Optional[Dict] = None,
+    # @staticmethod
+    def create_selection_request(self,
+                                 variable: str,
+                                 selection_request: Optional[Dict] = None,
                                  dataset: Optional[str] = None,
                                  granularity: str = 'hourly',) -> Dict:
         """Create the selection request to be sent to the API """
@@ -254,7 +218,7 @@ class ERA5Exporter(CDSExporter):
 
         # create the dataset string
         if dataset is None:
-            dataset = f'reanalysis-era5-{self.get_datastore(variable)}'
+            dataset = f'reanalysis-era5-{self.get_dataset(variable)}'
             if granularity == 'monthly':
                 dataset = f'{dataset}-monthly-means'
 
@@ -334,17 +298,69 @@ class ERA5Exporter(CDSExporter):
         """
 
         # create the default template for the selection request
-        processed_selection_request = create_selection_request(selection_request, dataset, granularity)
+        processed_selection_request = self.create_selection_request(
+            self, variable, selection_request, dataset, granularity
+        )
 
         # override with arguments passed by the user
         if selection_request is not None:
-            processed_selection_request = update_selection_request(selection_request, processed_selection_request)
+            processed_selection_request = self.update_selection_request(selection_request, processed_selection_request)
+
+        # get the dataset / datastore
+        # TODO: do we keep this as an argument to the function?
+        dataset = self.get_dataset(variable, granularity)
 
         # print the output of the
         if show_api_request:
-            self.print_api_request(processed_selection_request, dataset)
+            self._print_api_request(processed_selection_request, dataset)
 
         if dummy_run: # only printing the api request
             return
         else:
             return self._export(dataset, processed_selection_request)
+
+        @staticmethod
+        def _export_monthly_values(year):
+            """ export each month separately
+            Parameters:
+            ----------
+
+            Returns:
+            --------
+
+            """
+            # create the client for each year responsible for each month
+            client = cdsapi.Client()
+
+            months = selection_request['month']
+
+            filepaths = []
+            for month in months:
+                assert (isinstance(year,str) and isinstance(month,str)), f"For the objects to be JSON serialisable they need to be strings. Currently: year: {type(year)} month: {type(month)}"
+                processed_selection_request['month'] = [month]
+                processed_selection_request['year'] = [year]
+
+
+                filepaths.append(self._export(processed_selection_request))
+
+            pass
+
+
+        def _export_parallel():
+            """split the api call into years and run each in parallel
+
+            Functionality:
+            -------------
+            - Create multiple client instances
+                `self.client = cdsapi.Client()`
+            - Have each one download a year of data
+            """
+            years = selection_request['year']
+
+            pool = Pool()
+            pool.map(_export_monthly_values, years)
+            for year in years:
+                # export_annual_values()
+                # _export_monthly_values()
+                pass
+            pass
