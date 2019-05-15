@@ -88,7 +88,7 @@ brew install docker-machine docker
 docker-machine create --driver virtualbox default
 docker-machine env default
 ```
-See [here](https://stackoverflow.com/a/33596140/9940782) for help or [here](https://stackoverflow.com/a/49719638/9940782)
+See [here](https://stackoverflow.com/a/33596140/9940782) for help on all machines or [here](https://stackoverflow.com/a/49719638/9940782)
 for MacOS.
 
 
