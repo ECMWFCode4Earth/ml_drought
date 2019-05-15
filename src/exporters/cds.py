@@ -198,7 +198,7 @@ class ERA5Exporter(CDSExporter):
         return str(value)
 
     @staticmethod
-    def _check_iterable(self, value, key):
+    def _check_iterable(value, key):
         try:
             iter(value)
         except TypeError as te:
