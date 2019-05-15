@@ -184,8 +184,9 @@ class ERA5Exporter(CDSExporter):
 
             # check the string is correctly formatted
             if key == 'time':
-                assert (re.match(r"\d{2}:\d{2}", value)), \
-                    f'Expected time string {value} to be in hour:minute format, e.g. 01:00'
+                assert (re.match(r"\d{2}:0{2}", value)), \
+                    f'Expected time string {value} to be in hour:minute format, \
+                    e.g. 01:00. Minutes MUST be `00`'
             return value
         else:
             if key == 'year':
