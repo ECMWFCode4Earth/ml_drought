@@ -202,7 +202,7 @@ class ERA5Exporter(CDSExporter):
         try:
             iter(value)
         except TypeError as te:
-            print(f"{key}: {te}. Converting to list")
+            warnings.warn(f"{key}: {te}. Converting to list")
             value = [value]
         return value
 
@@ -227,11 +227,6 @@ class ERA5Exporter(CDSExporter):
         if selection_request is not None:
             for key, val in selection_request.items():
                 val = self._check_iterable(val, key)
-                # try:
-                #     iter(val)
-                # except TypeError as te:
-                #     print(f"{key}: {te}. Converting to list")
-                #     val = [val]
                 processed_selection_request[key] = [self._correct_input(x, key) for x in val]
         return processed_selection_request
 
