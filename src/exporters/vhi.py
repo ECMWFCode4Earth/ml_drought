@@ -36,7 +36,7 @@ from .base import (BaseExporter,)  # Region)
 
 # ------------------------------------------------------------------------------
 # Parallel functions
-# TODO: do these functions generalise? If so they can go into a 
+# TODO: do these functions generalise? If so they can go into a utils.py
 # ------------------------------------------------------------------------------
 
 
