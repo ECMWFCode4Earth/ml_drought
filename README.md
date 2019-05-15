@@ -1,5 +1,7 @@
 # ml_drought [![Build Status](https://travis-ci.com/esowc/ml_drought.svg?branch=master)](https://travis-ci.com/esowc/ml_drought)
 
+Check out our companion repo with exploratory notebooks [here](https://github.com/tommylees112/esowc_notes)!
+
 ## ESoWC 2019 - Machine learning to better predict and understand drought.
 
 Using [ECMWF/Copernicus open datasets](https://cds.climate.copernicus.eu/#!/home) to evaluate machine learning techniques for the **prediction of droughts**. This was a project proposal submitted to the ECMWF Summer of Weather Code [Challenge #12](https://github.com/esowc/challenges_2019/issues/14).
@@ -22,8 +24,10 @@ __Team:__ [@tommylees112](https://github.com/tommylees112), [@gabrieltseng](http
 <!-- TODO List -->
 ## To do
 - [x] Write an initial README.md
-- [ ] Choose datasets that initially interested in
-- [ ] Figure out how best to interact with Copernicus (API, web portal, other)
+- [x] Choose datasets that initially interested in
+- [x] Figure out how best to interact with Copernicus (API, web portal, other)
+- [ ] Build initial export functionality from CDS API
+- [ ] Explore baseline / simplest models
 
 
 <!-- TABLE OF CONTENTS -->
