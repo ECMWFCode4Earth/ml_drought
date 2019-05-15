@@ -198,8 +198,13 @@ class ERA5Exporter(CDSExporter):
         return str(value)
 
     @staticmethod
-    def _check_iterable(value, key):
-        pass
+    def _check_iterable(self, value, key):
+        try:
+            iter(value)
+        except TypeError as te:
+            print(f"{key}: {te}. Converting to list")
+            value = [value]
+        return value
 
     def create_selection_request(self,
                                  variable: str,
@@ -221,11 +226,12 @@ class ERA5Exporter(CDSExporter):
         # update with user arguments
         if selection_request is not None:
             for key, val in selection_request.items():
-                try:
-                    iter(val)
-                except TypeError as te:
-                    print(f"{te}: {key} values were not iterable. Converting to list")
-                    val = [val]
+                val = self._check_iterable(val, key)
+                # try:
+                #     iter(val)
+                # except TypeError as te:
+                #     print(f"{key}: {te}. Converting to list")
+                #     val = [val]
                 processed_selection_request[key] = [self._correct_input(x, key) for x in val]
         return processed_selection_request
 
@@ -264,7 +270,8 @@ class ERA5Exporter(CDSExporter):
         """
 
         # create the default template for the selection request
-        processed_selection_request = self.create_selection_request(variable, selection_request,
+        processed_selection_request = self.create_selection_request(variable,
+                                                                    selection_request,
                                                                     granularity)
 
         if dataset is None:
