@@ -150,3 +150,34 @@ class TestCDSExporter:
 
         for file in expected_paths:
             assert file in output_paths, f'{file} not in the output paths!'
+
+    def test_correct_inputs(self):
+
+        user_defined_arguments = {
+            'year': 2019,
+            'day': 1,
+            'month': 5,
+            'time': '00:00'
+        }
+
+        expected_iterable = {
+            'year': [2019],
+            'day': [1],
+            'month': [5],
+            'time': ['00:00']
+        }
+
+        expected_input = {
+            'year': ['2019'],
+            'day': ['01'],
+            'month': ['05'],
+            'time': ['00:00']
+        }
+
+        for key, val in user_defined_arguments.items():
+            corrected_iter = ERA5Exporter._check_iterable(val, key)
+            assert corrected_iter == expected_iterable[key], \
+                f'When checking iterable, expected {expected_iterable[key]}, got {corrected_iter}'
+            corrected_input = [ERA5Exporter._correct_input(x, key) for x in corrected_iter]
+            assert corrected_input == expected_input[key], \
+                f'When checking iterable, expected {expected_input[key]}, got {corrected_input}'

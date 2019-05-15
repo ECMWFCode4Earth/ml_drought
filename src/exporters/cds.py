@@ -4,6 +4,7 @@ import certifi
 import urllib3
 import warnings
 import itertools
+import re
 from pprint import pprint
 
 from typing import Dict, Optional, List
@@ -187,6 +188,11 @@ class ERA5Exporter(CDSExporter):
     @staticmethod
     def _correct_input(value, key):
         if type(value) is str:
+
+            # check the string is correctly formatted
+            if key == 'time':
+                assert (re.match(r"\d{2}:\d{2}", value)), \
+                    f'Expected time string {value} to be in hour:minute format, e.g. 01:00'
             return value
         else:
             if key == 'year':
@@ -199,6 +205,8 @@ class ERA5Exporter(CDSExporter):
 
     @staticmethod
     def _check_iterable(value, key):
+        if (key == 'time') and (type(value) is str):
+            return [value]
         try:
             iter(value)
         except TypeError as te:
