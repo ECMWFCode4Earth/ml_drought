@@ -197,6 +197,11 @@ class ERA5Exporter(CDSExporter):
                 return '{:02d}:00'.format(value)
         return str(value)
 
+    @staticmethod
+    def _check_iterable(value,key):
+        pass
+
+
     def create_selection_request(self,
                                  variable: str,
                                  selection_request: Optional[Dict] = None,
@@ -217,6 +222,11 @@ class ERA5Exporter(CDSExporter):
         # update with user arguments
         if selection_request is not None:
             for key, val in selection_request.items():
+                try:
+                    iter(val)
+                except TypeError as te:
+                    print(f"{key} values were not iterable. Converting to list")
+                    val = [val]
                 processed_selection_request[key] = [self._correct_input(x, key) for x in val]
 
         return processed_selection_request
