@@ -49,9 +49,8 @@ class CDSExporter(BaseExporter):
     @staticmethod
     def _filename_from_selection_request(time_array: List, time: str) -> str:
         if len(time_array) > 1:
-            if time in {'month', 'year'}:
-                warnings.warn(f'More than 1 {time} of data being exported! '
-                              'Export times may be significant.')
+            warnings.warn(f'More than 1 {time} of data being exported! '
+                          'Export times may be significant.')
             time_array.sort()
             time_array_str = f'{time_array[0]}_{time_array[-1]}'
         else:
@@ -80,13 +79,7 @@ class CDSExporter(BaseExporter):
             years_folder.mkdir()
 
         months = self._filename_from_selection_request(selection_request['month'], 'month')
-        months_folder = years_folder / months
-        if not months_folder.exists():
-            months_folder.mkdir()
-
-        days = self._filename_from_selection_request(selection_request['day'], 'day')
-
-        output_filename = months_folder / f'{days}.nc'
+        output_filename = years_folder / f'{months}.nc'
         return output_filename
 
     @staticmethod
@@ -234,6 +227,10 @@ class ERA5Exporter(CDSExporter):
         # update with user arguments
         if selection_request is not None:
             for key, val in selection_request.items():
+                if key in {'day', 'hour'}:
+                    warnings.warn(f'Overriding default {key} values. '
+                                  f'The ERA5Exporter assumes all days '
+                                  f'and times (the default) are being downloaded')
                 val = self._check_iterable(val, key)
                 processed_selection_request[key] = [self._correct_input(x, key) for x in val]
         return processed_selection_request

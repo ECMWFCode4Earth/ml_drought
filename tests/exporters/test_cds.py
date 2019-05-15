@@ -16,13 +16,12 @@ class TestCDSExporter:
         selection_request = {
             'variable': ['towel'],
             'year': [1979, 1978, 1980],
-            'month': [10, 11, 12],
-            'day': [17, 18, 19]
+            'month': [10, 11, 12]
         }
 
         filename = exporter.make_filename(dataset, selection_request)
         # first, we check the filename is right
-        constructed_filepath = Path('raw/megadodo-publications/towel/1978_1980/10_12/17_19.nc')
+        constructed_filepath = Path('raw/megadodo-publications/towel/1978_1980/10_12.nc')
         expected = tmp_path / constructed_filepath
         assert filename == expected, f'Got {filename}, expected {expected}!'
 
@@ -38,13 +37,12 @@ class TestCDSExporter:
         selection_request = {
             'variable': ['towel'],
             'year': [1979],
-            'month': [10],
-            'day': [17, 18, 19]
+            'month': [10]
         }
 
         filename = exporter.make_filename(dataset, selection_request)
         # first, we check the filename is right
-        constructed_filepath = Path('raw/megadodo-publications/towel/1979/10/17_19.nc')
+        constructed_filepath = Path('raw/megadodo-publications/towel/1979/10.nc')
         expected = tmp_path / constructed_filepath
         assert filename == expected, f'Got {filename}, expected {expected}!'
 
@@ -139,10 +137,10 @@ class TestCDSExporter:
 
         raw_folder = tmp_path / 'raw'
         expected_paths = [
-            raw_folder / 'era5/precipitation/2018/04/01_02.nc',
-            raw_folder / 'era5/precipitation/2018/05/01_02.nc',
-            raw_folder / 'era5/precipitation/2019/04/01_02.nc',
-            raw_folder / 'era5/precipitation/2019/05/01_02.nc',
+            raw_folder / 'era5/precipitation/2018/04.nc',
+            raw_folder / 'era5/precipitation/2018/05.nc',
+            raw_folder / 'era5/precipitation/2019/04.nc',
+            raw_folder / 'era5/precipitation/2019/05.nc',
         ]
 
         assert len(output_paths) == len(expected_paths), f'Expected {len(expected_paths)} ' \
