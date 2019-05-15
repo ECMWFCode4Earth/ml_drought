@@ -66,9 +66,9 @@ class TestCDSExporter:
         assert kenya_str == expected_str, f'Got {kenya_str}, expected {expected_str}!'
 
     @patch('cdsapi.Client')
-    def test_default_selection_request(self, cdsapi_mock):
+    def test_default_selection_request(self, cdsapi_mock, tmp_path):
         cdsapi_mock.return_value = Mock()
-        exporter = ERA5Exporter()
+        exporter = ERA5Exporter(tmp_path)
         default_selection_request = exporter.create_selection_request('precipitation')
         expected_selection_request = {
             'product_type': 'reanalysis',
