@@ -198,9 +198,8 @@ class ERA5Exporter(CDSExporter):
         return str(value)
 
     @staticmethod
-    def _check_iterable(value,key):
+    def _check_iterable(value, key):
         pass
-
 
     def create_selection_request(self,
                                  variable: str,
@@ -225,10 +224,9 @@ class ERA5Exporter(CDSExporter):
                 try:
                     iter(val)
                 except TypeError as te:
-                    print(f"{key} values were not iterable. Converting to list")
+                    print(f"{te}: {key} values were not iterable. Converting to list")
                     val = [val]
                 processed_selection_request[key] = [self._correct_input(x, key) for x in val]
-
         return processed_selection_request
 
     def export(self,
