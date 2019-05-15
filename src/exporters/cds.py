@@ -242,7 +242,7 @@ class ERA5Exporter(CDSExporter):
                granularity: str = 'hourly',
                show_api_request: bool = True,
                selection_request: Optional[Dict] = None,
-               break_up: bool = False) -> List[Path]:
+               break_up: bool = True) -> List[Path]:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
 
@@ -261,7 +261,7 @@ class ERA5Exporter(CDSExporter):
             Selection request arguments to be merged with the defaults. If both a key is
             defined in both the selection_request and the defaults, the value in the
             selection_request takes precedence.
-        break_up: bool, default = False
+        break_up: bool, default = True
             The best way to download the data is by making many small calls to the CDS
             API. If true, the calls will be broken up into months
         Returns:
