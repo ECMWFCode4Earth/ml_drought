@@ -18,12 +18,13 @@ CDS functions:
 """
 
 from pathlib import Path
-from typing import List, Tuple, Generator
+from typing import List, Tuple, Generator, Dict
 from ftplib import FTP
 from pprint import pprint
 from functools import partial
 import re
 import pickle
+import numpy as np
 
 # unnecessary extra dependency?
 from pathos.multiprocessing import ProcessingPool as Pool
@@ -96,15 +97,19 @@ def download_file_from_ftp(ftp_instance: FTP,
     return
 
 
-def batch_ftp_request(raw_folder: Path, filenames: List) -> None:
-    # assert False, "How to expose the 'dataset' argument to the export() function?"
+def batch_ftp_request(args: Dict, filenames: List) -> None:
+    # unpack multiple arguments
+    raw_folder = args['raw_folder']
+    years = args['years']
+
+    legit_filenames = [f for f in filenames if str(years) in f]
     # create one FTP connection for each batch
     with FTP('ftp.star.nesdis.noaa.gov') as ftp:
         ftp.login()
         ftp.cwd('/pub/corp/scsb/wguo/data/Blended_VH_4km/VH/')
 
         # download each filename using this FTP object
-        for raw_filename in filenames:
+        for raw_filename in legit_filenames:
             output_filename = (
                 make_filename(raw_folder, raw_filename, dataset='vhi')
             )
@@ -157,7 +162,10 @@ class VHIExporter(BaseExporter):
 
         return
 
-    def run_parallel(self, vhi_files: List) -> List:
+    def run_parallel(self,
+                     vhi_files: List,
+                     years: List[int] = [yr for yr in np.arange(1981, 2020)]
+                     ) -> List:
         pool = Pool(processes=100)
 
         # split the filenames into batches of 100
@@ -165,7 +173,8 @@ class VHIExporter(BaseExporter):
 
         # run in parallel for multiple file downloads
         # passing mutliple args using partial https://stackoverflow.com/a/5442981/9940782
-        outputs = pool.map(partial(batch_ftp_request, self.raw_folder), batches)
+        args = dict(raw_folder=self.raw_folder, years=years)
+        outputs = pool.map(partial(batch_ftp_request, args), batches)
 
         # write the output (TODO: turn into logging behaviour)
         print("\n\n*************************")
@@ -177,6 +186,21 @@ class VHIExporter(BaseExporter):
         self.save_errors(outputs)
 
         return batches
+
+    def check_failures(self) -> List:
+        """ Read the outputted list of errors to the user """
+        pickled_error_fname = "vhi_export_errors.pkl"
+        assert (self.raw_folder / pickled_error_fname).exists(), f"the file:\
+         {(self.raw_folder / 'vhi_export_errors.pkl')} \
+         does not exist! Required to check the files that failed"
+
+        with open(pickled_error_fname, 'rb') as f:
+            errors = pickle.load(f)
+        print("*************************")
+        print("Errors:")
+        pprint(errors)
+
+        return errors
 
     def export(self) -> List:
         """Export VHI data from the ftp server
@@ -190,5 +214,7 @@ class VHIExporter(BaseExporter):
         vhi_files = self.get_ftp_filenames()
 
         batches = self.run_parallel(vhi_files)
+
+        # check failures
 
         return batches
