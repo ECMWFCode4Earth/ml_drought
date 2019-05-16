@@ -1,0 +1,10 @@
+{
+   "data":"data",
+   "export":{
+      "era5":[
+         {
+            "variable":"precipitation"
+         }
+      ]
+   }
+}

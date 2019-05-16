@@ -15,3 +15,4 @@ RUN conda env create -f ./environment.ubuntu.cpu.yml
 COPY src ./src
 COPY tests ./tests
 COPY *.ini ./
+COPY pipeline_config ./pipeline_config
