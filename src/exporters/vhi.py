@@ -135,7 +135,7 @@ class VHIExporter(BaseExporter):
             ftp.cwd('/pub/corp/scsb/wguo/data/Blended_VH_4km/VH/')
 
             # append the filenames to a list
-            listing = []
+            listing: List = []
             ftp.retrlines("LIST", listing.append)
             # extract the filename
             filepaths = [f.split(' ')[-1] for f in listing]
@@ -145,7 +145,7 @@ class VHIExporter(BaseExporter):
         return vhi_files
 
     # @staticmethod
-    def chunks(self, l: int, n: int) -> Generator:
+    def chunks(self, l: List, n: int) -> Generator:
         # return a generator object which chunks list into sublists of size n
         # https://chrisalbon.com/python/data_wrangling/break_list_into_chunks_of_equal_size/
         # For item i in a range that is a length of l,

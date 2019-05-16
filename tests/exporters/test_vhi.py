@@ -66,28 +66,3 @@ def test_dir_structure_created(tmp_path):
     assert raw_folder.exists(), f"`raw` directory should exist"
     assert (raw_folder / "vhi" / "1981").exists(), f"`raw/vhi/1981` directory should exist"
     return
-
-# def make_filename(raw_folder: Path, raw_filename: str, dataset: str = 'vhi',) -> Path:
-
-#
-#
-# @patch('cdsapi.Client')
-# def test_filename_multiple(self, cdsapi_mock, tmp_path):
-#     cdsapi_mock.return_value = Mock()
-#     exporter = CDSExporter(tmp_path)
-#
-#     dataset = 'megadodo-publications'
-#     selection_request = {
-#         'variable': ['towel'],
-#         'year': [1979, 1978, 1980],
-#         'month': [10, 11, 12]
-#     }
-#
-#     filename = exporter.make_filename(dataset, selection_request)
-#     # first, we check the filename is right
-#     constructed_filepath = Path('raw/megadodo-publications/towel/1978_1980/10_12.nc')
-#     expected = tmp_path / constructed_filepath
-#     assert filename == expected, f'Got {filename}, expected {expected}!'
-#
-#     # then, we check all the files were correctly made
-#     assert expected.parents[0].exists(), 'Folders not correctly made!'
