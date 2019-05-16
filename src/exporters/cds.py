@@ -109,8 +109,7 @@ class CDSExporter(BaseExporter):
             The location of the exported data
         """
 
-        output_filename = self.make_filename(dataset, selection_request)
-        output_file = self.raw_folder / output_filename
+        output_file = self.make_filename(dataset, selection_request)
 
         if show_api_request:
             self._print_api_request(dataset, selection_request)
