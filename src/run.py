@@ -62,6 +62,14 @@ class Run:
         }
 
         for dataset, variables in export_args.items():
+
+            # check the format is as we expected
+            assert dataset in dataset2exporter, \
+                f'{dataset} is not supported! Supported datasets are {dataset2exporter.keys()}'
+
+            assert type(variables) is list, \
+                f'Expected {dataset} values to be a list. Got {type(variables)} instead'
+
             exporter = dataset2exporter[dataset](self.data)
 
             for variable in variables:
