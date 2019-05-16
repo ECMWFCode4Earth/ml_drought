@@ -178,7 +178,7 @@ class VHIExporter(BaseExporter):
 
         return batches
 
-    def export(self) -> Path:
+    def export(self) -> List:
         """Export VHI data from the ftp server
 
         by default write output to raw/vhi/{YEAR}/{filename}
