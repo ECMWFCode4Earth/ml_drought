@@ -161,7 +161,7 @@ class VHIExporter(BaseExporter):
         pool = Pool(processes=100)
 
         # split the filenames into batches of 100
-        batches = [batch for batch in self.chunks(vhi_files, 100)][:1]
+        batches = [batch for batch in self.chunks(vhi_files, 100)]
 
         # run in parallel for multiple file downloads
         # passing mutliple args using partial https://stackoverflow.com/a/5442981/9940782
