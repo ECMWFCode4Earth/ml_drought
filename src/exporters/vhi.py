@@ -1,43 +1,18 @@
-"""
-functionality:
-1) download VHI data in parallel
-2)
-
-CDS functions:
-- create_area()
-- _filename_from_selection_request()
-- make_filename()
-- _print_api_request()
-- _export()
-- get_era5_times()
-- get_dataset()
-- _correct_input()
-- _check_iterable()
-- create_selection_request()
-- export()
-"""
-
 from pathlib import Path
 from typing import List, Tuple, Generator, Dict
-from ftplib import FTP
+import ftplib
 from pprint import pprint
 from functools import partial
 import re
 import pickle
-import numpy as np
+import warnings
 
-# unnecessary extra dependency?
 from pathos.multiprocessing import ProcessingPool as Pool
 
 from .base import (BaseExporter,)  # Region)
 
-# TODO: separate into general ftp exporter class?
-# class FTPExporter():
-#     """"""
-
 # ------------------------------------------------------------------------------
 # Parallel functions
-# TODO: do these functions generalise? If so they can go into a utils.py
 # ------------------------------------------------------------------------------
 
 
@@ -77,7 +52,7 @@ def make_filename(raw_folder: Path, raw_filename: str, dataset: str = 'vhi',) ->
     return filename
 
 
-def download_file_from_ftp(ftp_instance: FTP,
+def download_file_from_ftp(ftp_instance: ftplib.FTP,
                            filename: str,
                            output_filename: Path) -> None:
     # check if already exists
@@ -94,28 +69,22 @@ def download_file_from_ftp(ftp_instance: FTP,
     else:
         print(f"Error Downloading file: {output_filename}")
 
-    return
-
 
 def batch_ftp_request(args: Dict, filenames: List) -> None:
     # unpack multiple arguments
     raw_folder = args['raw_folder']
-    years = args['years']
 
-    legit_filenames = [f for f in filenames if str(years) in f]
     # create one FTP connection for each batch
-    with FTP('ftp.star.nesdis.noaa.gov') as ftp:
+    with ftplib.FTP('ftp.star.nesdis.noaa.gov') as ftp:
         ftp.login()
         ftp.cwd('/pub/corp/scsb/wguo/data/Blended_VH_4km/VH/')
 
         # download each filename using this FTP object
-        for raw_filename in legit_filenames:
+        for raw_filename in filenames:
             output_filename = (
                 make_filename(raw_folder, raw_filename, dataset='vhi')
             )
             download_file_from_ftp(ftp, raw_filename, output_filename)
-
-    return
 
 
 class VHIExporter(BaseExporter):
@@ -124,13 +93,10 @@ class VHIExporter(BaseExporter):
     ftp.star.nesdis.noaa.gov
     """
 
-    def __init__(self, data_folder: Path = Path('data')) -> None:
-        super().__init__(data_folder)
-
     @staticmethod
-    def get_ftp_filenames() -> List:
+    def get_ftp_filenames(years: List) -> List:
         """  get the filenames containing VHI """
-        with FTP('ftp.star.nesdis.noaa.gov') as ftp:
+        with ftplib.FTP('ftp.star.nesdis.noaa.gov') as ftp:
             ftp.login()
             ftp.cwd('/pub/corp/scsb/wguo/data/Blended_VH_4km/VH/')
 
@@ -141,13 +107,20 @@ class VHIExporter(BaseExporter):
             filepaths = [f.split(' ')[-1] for f in listing]
             # extract only the filenames of interest
             vhi_files = [f for f in filepaths if ".VH.nc" in f]
-
+            # extract only the years of interest
+            years = [str(yr) for yr in years]
+            vhi_files = [
+                f for f in vhi_files if any(
+                    [f"P{yr}" in f for yr in years]
+                )
+            ]
         return vhi_files
 
-    # @staticmethod
-    def chunks(self, l: List, n: int) -> Generator:
-        # return a generator object which chunks list into sublists of size n
-        # https://chrisalbon.com/python/data_wrangling/break_list_into_chunks_of_equal_size/
+    @staticmethod
+    def chunks(l: List, n: int) -> Generator:
+        """ return a generator object which chunks list into sublists of size n
+        https://chrisalbon.com/python/data_wrangling/break_list_into_chunks_of_equal_size/
+        """
         # For item i in a range that is a length of l,
         for i in range(0, len(l), n):
             # Create an index range for l of n items:
@@ -160,11 +133,8 @@ class VHIExporter(BaseExporter):
         with open(self.raw_folder / 'vhi_export_errors.pkl', 'wb') as f:
             pickle.dump([error[-1] for error in outputs if error is not None], f)
 
-        return
-
     def run_parallel(self,
                      vhi_files: List,
-                     years: List[int] = [yr for yr in np.arange(1981, 2020)]
                      ) -> List:
         pool = Pool(processes=100)
 
@@ -172,8 +142,7 @@ class VHIExporter(BaseExporter):
         batches = [batch for batch in self.chunks(vhi_files, 100)]
 
         # run in parallel for multiple file downloads
-        # passing mutliple args using partial https://stackoverflow.com/a/5442981/9940782
-        args = dict(raw_folder=self.raw_folder, years=years)
+        args = dict(raw_folder=self.raw_folder)
         outputs = pool.map(partial(batch_ftp_request, args), batches)
 
         # write the output (TODO: turn into logging behaviour)
@@ -182,6 +151,8 @@ class VHIExporter(BaseExporter):
         print("*************************")
         print("Errors:")
         pprint([error for error in outputs if error is not None])
+        print("Errors saved in data/raw/vhi_export_errors.pkl. Extract using \
+            VHIExporter.check_failures()")
         # save errors
         self.save_errors(outputs)
 
@@ -196,25 +167,38 @@ class VHIExporter(BaseExporter):
 
         with open(pickled_error_fname, 'rb') as f:
             errors = pickle.load(f)
-        print("*************************")
-        print("Errors:")
-        pprint(errors)
 
         return errors
 
-    def export(self) -> List:
-        """Export VHI data from the ftp server
+    @staticmethod
+    def get_default_years():
+        """ returns the default arguments for no. years """
+        years = [yr for yr in range(1981, 2020)]
 
-        by default write output to raw/vhi/{YEAR}/{filename}
-        self.data_folder
-        self.raw_folder
+        return years
+
+    def export(self, years: List = [yr for yr in range(1981, 2020)]) -> List:
+        """Export VHI data from the ftp server.
+        By default write output to raw/vhi/{YEAR}/{filename}
+
+        Arguments:
+        ---------
+        years : List
+            list of years that you want to download. Default `range(1981,2020)`
+
+        Returns:
+        -------
+        batches : List
+            list of lists containing batches of filenames downloaded
         """
-        # assert False, "1) Write Tests 2) Check functionality 3) static typing\
-        # of functions 4) decide if want to preprocess immediately"
-        vhi_files = self.get_ftp_filenames()
+        assert min(years) >= 1981, f"Minimum year cannot be less than 1981.\
+            Currently: {min(years)}"
+        if max(years) > 2020:
+            warnings.warn(f"Non-breaking change: max(years) is:{ max(years)}. But no \
+            files later than 2019")
+        # get the filenames to be downloaded
+        vhi_files = self.get_ftp_filenames(years)
 
         batches = self.run_parallel(vhi_files)
-
-        # check failures
 
         return batches
