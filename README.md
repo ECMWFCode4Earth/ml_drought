@@ -21,20 +21,12 @@ Using [ECMWF/Copernicus open datasets](https://cds.climate.copernicus.eu/#!/home
 
 __Team:__ [@tommylees112](https://github.com/tommylees112), [@gabrieltseng](https://github.com/gabrieltseng)
 
-<!-- TODO List -->
-## To do
-- [x] Write an initial README.md
-- [x] Choose datasets that initially interested in
-- [x] Figure out how best to interact with Copernicus (API, web portal, other)
-- [ ] Build initial export functionality from CDS API
-- [ ] Explore baseline / simplest models
-
-
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
 
 * [About the Project](#about-the-project)
 * [Work in Progress](#work-in-progress)
+* [Pipeline](#pipeline)
 * [Setup](#setup)
 * [Acknowledgements](#acknowledgements)
 
@@ -61,6 +53,16 @@ We have a **set of notebooks and scripts** that are very rough but represent the
 For updates follow [@tommylees112](https://twitter.com/tommylees112) on twitter or look out for our blog posts!
 
 - [Blog 1: Great News!](https://tommylees112.github.io/posts/2019/1/esowc_kick_off)
+
+## Pipeline <a name="pipeline"></a>
+The main entrypoint into the pipeline is [run.py](run.py). The configuration of the pipeline can be defined using a
+[configuration file](pipeline_config) - the desired configuration file can be passed as a command line argument:
+
+```bash
+python run.py --config <PATH_TO_CONFIG>
+```
+
+If no configuration file is passed, the pipeline's [default configuration](pipeline_config/default.json) is used.
 
 ## Setup <a name="setup"></a>
 
@@ -106,7 +108,8 @@ docker run -it \
 ml_drought /bin/bash
 ```
 
-This pipeline can be tested by running `pytest`.
+This pipeline can be tested by running `pytest`. We use [mypy](https://github.com/python/mypy) for type checking.
+This can be run by running `mypy src` (this runs mypy on the `src` directory).
 
 ## Acknowledgements <a name="acknowledgements"></a>
 Huge thanks to @ECMWF for making this project possible!
