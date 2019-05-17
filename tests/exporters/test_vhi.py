@@ -33,6 +33,8 @@ class TestVHIExporter:
         return
 
     def test_filenames_found(self):
+        # session = Mock()
+        # session.get_file = Mock(return_value=['VHP.G04.C07.NC.P1981035.VH.nc'])
         vhi = VHIExporter()
         fnames = vhi.get_ftp_filenames()
 
@@ -52,7 +54,6 @@ class TestVHIExporter:
         assert (min(years) == 1981) and (max(years) >= 2019), f"Year numbers \
         should be between 1981 and greater than / equal to 2019"
         return
-
 
 def test_dir_structure_created(tmp_path):
     VHIExporter(tmp_path)
