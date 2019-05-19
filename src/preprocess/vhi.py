@@ -26,7 +26,7 @@ class VHIPreprocesser(BasePreProcessor):
     """ Preprocesses the VHI data """
 
     def get_vhi_filepaths(self) -> List[Path]:
-        return [f for f in self.raw_folder.glob('*/*.nc')]
+        return [f for f in (self.raw_folder / "vhi") .glob('*/*.nc')]
 
     def preprocess_VHI_data(self,
                             netcdf_filepath: str,
