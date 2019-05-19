@@ -5,8 +5,7 @@
          {
             "variable":"total_precipitation"
         },
-      ],
-      "vhi":[
+      ],"vhi":[
           {
               "years":["1981"]
           }
