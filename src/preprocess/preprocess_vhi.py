@@ -2,7 +2,7 @@ import time
 import xarray as xr
 import pandas as pd
 import numpy as np
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from xarray import Dataset, DataArray
 from pandas._libs.tslibs.timestamps import Timestamp
@@ -15,7 +15,7 @@ from pandas._libs.tslibs.timestamps import Timestamp
 def extract_timestamp(ds: Dataset,
                       netcdf_filepath: str,
                       use_filepath: bool = True,
-                      time_begin: bool = True):
+                      time_begin: bool = True) -> Timestamp:
     """from the `attrs` or filename create a datetime object for acquisition time.
 
     NOTE: the acquisition date is SOMEWHERE in this time range (satuday-friday)
@@ -51,7 +51,7 @@ def extract_timestamp(ds: Dataset,
 # ------------------------------------------------------------------------------
 
 
-def create_lat_lon_vectors(ds: Dataset):
+def create_lat_lon_vectors(ds: Dataset) -> Tuple[float]:
     """ read the `ds.attrs` and create new latitude, longitude vectors """
     assert ds.WIDTH.size == 10000, f"We are hardcoding the lat/lon \
         values so we need to ensure that all dims are the same. \

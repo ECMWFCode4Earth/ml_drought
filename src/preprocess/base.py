@@ -5,7 +5,7 @@ Region = namedtuple('Region', ['name', 'lonmin', 'lonmax', 'latmin', 'latmax'])
 
 
 class BasePreProcessor:
-    """Base for all pre processor classes
+    """Base for all pre-processor classes
 
     Attributes:
     ----------
@@ -15,8 +15,10 @@ class BasePreProcessor:
     def __init__(self, data_folder: Path = Path('data')) -> None:
         self.data_folder = data_folder
         self.raw_folder = self.data_folder / 'raw'
-        if not self.raw_folder.exists():
-            self.raw_folder.mkdir()
+        self.interim_folder = self.data_folder / 'interim'
+
+        if not self.interim_folder.exists():
+            self.interim_folder.mkdir()
 
     @staticmethod
     def get_kenya() -> Region:
