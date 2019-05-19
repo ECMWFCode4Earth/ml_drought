@@ -21,3 +21,6 @@ data/*.zip*
 *.idx
 
 .ipynb_checkpoints
+
+*.out
+data/raw/*
