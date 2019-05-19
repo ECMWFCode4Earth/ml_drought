@@ -76,12 +76,16 @@ class VHIPreprocesser(BasePreProcessor):
         https://stackoverflow.com/a/24683990/9940782
         """
         print(f"Starting work on {netcdf_filepath}")
+        vhi_interim_folder = self.interim_folder/"vhi"
+        if not vhi_interim_folder.exists():
+            vhi_interim_folder.mkdir()
+
         if isinstance(netcdf_filepath, pathlib.PosixPath):
             netcdf_filepath = netcdf_filepath.as_posix()
 
         try:
             return self.preprocess_VHI_data(
-                netcdf_filepath, self.interim_folder.as_posix()
+                netcdf_filepath, vhi_interim_folder.as_posix()
             )
         except Exception as e:
             print(f"### FAILED: {netcdf_filepath}")
