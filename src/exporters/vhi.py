@@ -9,7 +9,7 @@ import warnings
 
 from pathos.multiprocessing import ProcessingPool as Pool
 
-from .base import (BaseExporter,)  # Region)
+from .base import BaseExporter
 
 # ------------------------------------------------------------------------------
 # Parallel functions
@@ -177,7 +177,7 @@ class VHIExporter(BaseExporter):
 
         return years
 
-    def export(self, years: Optional[List]) -> List:
+    def export(self, years: Optional[List] = None) -> List:
         """Export VHI data from the ftp server.
         By default write output to raw/vhi/{YEAR}/{filename}
 
