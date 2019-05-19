@@ -2,7 +2,7 @@ import time
 import xarray as xr
 import pandas as pd
 import numpy as np
-from typing import Optional, List, Tuple, Any
+from typing import Optional, Tuple, Any
 
 from xarray import Dataset, DataArray
 from pandas._libs.tslibs.timestamps import Timestamp
