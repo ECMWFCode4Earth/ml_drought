@@ -2,7 +2,7 @@ import time
 import xarray as xr
 import pandas as pd
 import numpy as np
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Any
 
 from xarray import Dataset, DataArray
 from pandas._libs.tslibs.timestamps import Timestamp
@@ -51,7 +51,7 @@ def extract_timestamp(ds: Dataset,
 # ------------------------------------------------------------------------------
 
 
-def create_lat_lon_vectors(ds: Dataset) -> Tuple[float]:
+def create_lat_lon_vectors(ds: Dataset) -> Tuple[Any, Any]:
     """ read the `ds.attrs` and create new latitude, longitude vectors """
     assert ds.WIDTH.size == 10000, f"We are hardcoding the lat/lon \
         values so we need to ensure that all dims are the same. \
@@ -88,8 +88,8 @@ def create_lat_lon_vectors(ds: Dataset) -> Tuple[float]:
 
 def create_new_dataarray(ds: Dataset,
                          variable: str,
-                         longitudes: List[float],
-                         latitudes: List[float],
+                         longitudes: np.ndarray,
+                         latitudes: np.ndarray,
                          timestamp: Timestamp) -> DataArray:
     """ Create a new dataarray for the `variable` from `ds` with geocoding and timestamp """
     # Assert statements - to a test function?
@@ -123,8 +123,8 @@ def create_new_dataarray(ds: Dataset,
 
 
 def create_new_dataset(ds: Dataset,
-                       longitudes: List[float],
-                       latitudes: List[float],
+                       longitudes: np.ndarray,
+                       latitudes: np.ndarray,
                        timestamp: Timestamp,
                        all_vars: bool = False) -> Dataset:
     """ Create a new dataset from ALL the variables in `ds` with the dims"""

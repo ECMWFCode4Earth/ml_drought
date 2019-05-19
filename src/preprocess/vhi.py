@@ -25,9 +25,6 @@ from .preprocess_utils import select_bounding_box_xarray
 class VHIPreprocesser(BasePreProcessor):
     """ Preprocesses the VHI data """
 
-    def __init__():
-        pass
-
     def get_vhi_filepaths(self) -> List[Path]:
         return [f for f in self.raw_folder.glob('*/*.nc')]
 
@@ -83,7 +80,9 @@ class VHIPreprocesser(BasePreProcessor):
             netcdf_filepath = netcdf_filepath.as_posix()
 
         try:
-            return self.preprocess_VHI_data(netcdf_filepath, self.interim_folder)
+            return self.preprocess_VHI_data(
+                netcdf_filepath, self.interim_folder.as_posix()
+            )
         except Exception as e:
             print(f"### FAILED: {netcdf_filepath}")
             return e, netcdf_filepath
