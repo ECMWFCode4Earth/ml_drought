@@ -3,8 +3,9 @@
    "export":{
       "era5":[
          {
-            "variable":"precipitation"
-         }
-      ]
+            "variable":"total_precipitation"
+        },
+      ],
+      "vhi":[]
    }
 }

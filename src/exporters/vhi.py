@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Tuple, Generator, Dict
+from typing import List, Tuple, Generator, Dict, Optional
 import ftplib
 from pprint import pprint
 from functools import partial
@@ -177,7 +177,7 @@ class VHIExporter(BaseExporter):
 
         return years
 
-    def export(self, years: List = [yr for yr in range(1981, 2020)]) -> List:
+    def export(self, years: Optional[List]) -> List:
         """Export VHI data from the ftp server.
         By default write output to raw/vhi/{YEAR}/{filename}
 
@@ -191,6 +191,9 @@ class VHIExporter(BaseExporter):
         batches : List
             list of lists containing batches of filenames downloaded
         """
+        if years is None:
+            years = self.get_default_years()
+
         assert min(years) >= 1981, f"Minimum year cannot be less than 1981.\
             Currently: {min(years)}"
         if max(years) > 2020:
