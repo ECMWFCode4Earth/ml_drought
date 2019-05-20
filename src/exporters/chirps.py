@@ -78,6 +78,9 @@ class CHIRPSExporter(BaseExporter):
         return years
 
     def export(self, years: List[int] = None):
+        """Export functionality for the CHIRPS precipitation product
+
+        """
         if years is None:
             years = self.get_default_years()
 
