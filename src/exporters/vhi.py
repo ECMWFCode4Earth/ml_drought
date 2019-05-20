@@ -177,7 +177,7 @@ class VHIExporter(BaseExporter):
 
         return years
 
-    def export(self, years: Optional[List]) -> List:
+    def export(self, years: Optional[List], repeats: int = 5) -> List:
         """Export VHI data from the ftp server.
         By default write output to raw/vhi/{YEAR}/{filename}
 
@@ -202,6 +202,9 @@ class VHIExporter(BaseExporter):
         # get the filenames to be downloaded
         vhi_files = self.get_ftp_filenames(years)
 
-        batches = self.run_parallel(vhi_files)
+        # run the download `repeat` times to capture all files
+        for _ in range(repeat):
+            batches = self.run_parallel(vhi_files)
+            print(f"**{_} of {repeat} VHI Downloads completed **")
 
         return batches
