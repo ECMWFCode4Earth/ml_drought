@@ -178,7 +178,7 @@ class VHIExporter(BaseExporter):
         return years
 
     @staticmethod
-    def check_52_files(dir: Path, year: int):
+    def check_52_files(dir: Path, year: str) -> bool:
         files = [f for f in dir.glob('*.nc')]
         if len(files) != 52:
             print(f"Not all files downloaded for {year}")
@@ -186,7 +186,7 @@ class VHIExporter(BaseExporter):
         else:
             return False
 
-    def get_filepaths_for_year(self, year: int) -> List[str]:
+    def get_filepaths_for_year(self, year: str) -> List[str]:
         filepaths = []
         # for every file on the FTP server
         for f in self.vhi_files:
@@ -194,7 +194,7 @@ class VHIExporter(BaseExporter):
                 filepaths.append(f)
         return filepaths
 
-    def get_missing_filepaths(self):
+    def get_missing_filepaths(self) -> List[str]:
         # get the missing filepaths if the number of files != 52
         year_paths = [f for f in (self.raw_folder / 'vhi').glob('*')]
         years = [y.as_posix().split('/')[-1] for y in year_paths]
@@ -202,9 +202,6 @@ class VHIExporter(BaseExporter):
         missing_filepaths = []
         for year, dir in zip(years, year_paths):
             if self.check_52_files(dir, year):
-                assert False, f"Need to implement this functionality. Need to get the \
-                    files from the original vhi_files for that year that hasn't \
-                    been completed"
                 missing_filepaths.extend(
                     self.get_filepaths_for_year(year)
                 )
@@ -240,12 +237,21 @@ class VHIExporter(BaseExporter):
             warnings.warn(f"Non-breaking change: max(years) is:{ max(years)}. But no \
             files later than 2019")
 
-        # run the download `repeat` times to capture all files
+        # get the filenames to be downloaded
+        self.vhi_files = self.get_ftp_filenames(years)
+
+        # run the download steps in parallel
+        batches = self.run_parallel(self.vhi_files)
+
         for _ in range(repeats):
-            # get the filenames to be downloaded
-            self.vhi_files = self.get_ftp_filenames(years)
-            # run the download steps in parallel
-            batches = self.run_parallel(self.vhi_files)
+            missing_filepaths = self.get_missing_filepaths()
+            batches = self.run_parallel(missing_filepaths)
             print(f"**{_} of {repeats} VHI Downloads completed **")
+
+        # run the download `repeat` times to capture all files
+        # for _ in range(repeats):
+        #     # run the download steps in parallel
+        #     batches = self.run_parallel(self.vhi_files)
+        #     print(f"**{_} of {repeats} VHI Downloads completed **")
 
         return batches
