@@ -177,21 +177,32 @@ class VHIExporter(BaseExporter):
 
         return years
 
+    @staticmethod
     def check_52_files(dir: Path, year: int):
         files = [f for f in dir.glob('*.nc')]
         if len(files) != 52:
             print(f"Not all files downloaded for {year}")
-            return year
+            return True
         else:
             return False
 
-    def get_missing_filepaths():
-        
+    def get_missing_filepaths(self):
+        # get the missing filepaths if the number of files != 52
+        year_paths = [f for f in (self.raw_folder / 'vhi').glob('*')]
+        years = [y.as_posix().split('/')[-1] for y in year_paths]
 
-    def rerun_missing_files():
-        vhi_files = get_missing_filepaths()
+        missing_filepaths = []
+        for year, dir in zip(years, year_paths):
+            if self.check_52_files(dir, year):
+                missing_filepaths.append(dir)
+
+        return missing_filepaths
+
+    def rerun_missing_files(self):
+        vhi_files = self.get_missing_filepaths()
 
         batches = self.run_parallel(vhi_files)
+        return batches
 
     def export(self, years: Optional[List], repeats: int = 5) -> List:
         """Export VHI data from the ftp server.
@@ -219,8 +230,8 @@ class VHIExporter(BaseExporter):
         vhi_files = self.get_ftp_filenames(years)
 
         # run the download `repeat` times to capture all files
-        for _ in range(repeat):
+        for _ in range(repeats):
             batches = self.run_parallel(vhi_files)
-            print(f"**{_} of {repeat} VHI Downloads completed **")
+            print(f"**{_} of {repeats} VHI Downloads completed **")
 
         return batches
