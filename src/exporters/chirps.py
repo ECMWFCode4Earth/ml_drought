@@ -38,7 +38,7 @@ class CHIRPSExporter(BaseExporter):
         the_page = response.read()
 
         # use BeautifulSoup to parse the html source
-        page = str(BeautifulSoup(the_page))
+        page = str(BeautifulSoup(the_page, features="lxml"))
 
         # split the page to get the filenames as a list
         firstsplit = page.split('\r\n')  # split the newlines
@@ -55,7 +55,12 @@ class CHIRPSExporter(BaseExporter):
         return chirpsfiles
 
     def wget_file(self, filepath: str) -> None:
-        os.system(f"wget -np -nH --cut-dirs 7 {filepath} -P {self.chirps_folder.as_posix()}")
+        if self.chirps_folder/filepath.exists():
+            print(f"{filepath} already exists!")
+            pass
+        else:
+            os.system(f"wget -np -nH --cut-dirs 7 {filepath} \
+                -P {self.chirps_folder.as_posix()}")
 
     def download_chirps_files(self, chirps_files: List[str]) -> None:
         """ download the chirps files using wget """
