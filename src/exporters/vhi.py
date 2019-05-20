@@ -171,7 +171,7 @@ class VHIExporter(BaseExporter):
         return errors
 
     @staticmethod
-    def get_default_years():
+    def get_default_years() -> List[int]:
         """ returns the default arguments for no. years """
         years = [yr for yr in range(1981, 2020)]
 
