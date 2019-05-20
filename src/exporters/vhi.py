@@ -177,6 +177,22 @@ class VHIExporter(BaseExporter):
 
         return years
 
+    def check_52_files(dir: Path, year: int):
+        files = [f for f in dir.glob('*.nc')]
+        if len(files) != 52:
+            print(f"Not all files downloaded for {year}")
+            return year
+        else:
+            return False
+
+    def get_missing_filepaths():
+        
+
+    def rerun_missing_files():
+        vhi_files = get_missing_filepaths()
+
+        batches = self.run_parallel(vhi_files)
+
     def export(self, years: Optional[List], repeats: int = 5) -> List:
         """Export VHI data from the ftp server.
         By default write output to raw/vhi/{YEAR}/{filename}
