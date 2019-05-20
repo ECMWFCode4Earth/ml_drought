@@ -27,7 +27,7 @@ __Team:__ [@tommylees112](https://github.com/tommylees112), [@gabrieltseng](http
 - [x] Choose datasets that initially interested in
 - [x] Figure out how best to interact with Copernicus (API, web portal, other)
 - [x] Build initial export functionality from CDS API
-- [ ] Build initial export functionality from [NOAA VHI](https://www.star.nesdis.noaa.gov/smcd/emb/vci/VH/vh_ftp.php)
+- [x] Build initial export functionality from [NOAA VHI](https://www.star.nesdis.noaa.gov/smcd/emb/vci/VH/vh_ftp.php)
 - [ ] Explore baseline / simplest models
 
 <!-- TABLE OF CONTENTS -->
