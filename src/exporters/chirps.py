@@ -55,7 +55,7 @@ class CHIRPSExporter(BaseExporter):
         return chirpsfiles
 
     def wget_file(self, filepath: str) -> None:
-        if self.chirps_folder/filepath.exists():
+        if (self.chirps_folder / filepath).exists():
             print(f"{filepath} already exists!")
             pass
         else:
