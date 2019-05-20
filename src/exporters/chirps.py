@@ -1,7 +1,12 @@
-from typing import List, Optional
+from typing import List
 from bs4 import BeautifulSoup
 import urllib.request
 import os
+import warnings
+import multiprocessing
+from pathlib import Path
+from .base import BaseExporter
+
 
 class CHIRPSExporter(BaseExporter):
     """Exports precip from the Climate Hazards group site
@@ -9,12 +14,15 @@ class CHIRPSExporter(BaseExporter):
     ftp://ftp.chg.ucsb.edu/pub/org/chg/products/CHIRPS-2.0/global_pentad/netcdf/
     """
 
-    self.chirps_folder = self.raw_folder / "chirps"
-    if not self.chirps_folder.exists():
-        self.chirps_folder.mkdir()
+    def __init__(self, data_folder: Path = Path('data')) -> None:
+        super().__init__(data_folder)
+
+        self.chirps_folder = self.raw_folder / "chirps"
+        if not self.chirps_folder.exists():
+            self.chirps_folder.mkdir()
 
     @staticmethod
-    def get_chirps_filenames(years: List[int]) -> List:
+    def get_chirps_filenames(years: List[str]) -> List:
         """
         ftp://ftp.chg.ucsb.edu/pub/org/chg/products/
             CHIRPS-2.0/global_pentad/netcdf/
@@ -33,15 +41,12 @@ class CHIRPSExporter(BaseExporter):
         page = str(BeautifulSoup(the_page))
 
         # split the page to get the filenames as a list
-        firstsplit=page.split('\r\n')  # split the newlines
+        firstsplit = page.split('\r\n')  # split the newlines
         secondsplit = [x.split(' ') for x in firstsplit]  # split the spaces
         flatlist = [item for sublist in secondsplit for item in sublist]  # flatten
         chirpsfiles = [x for x in flatlist if 'chirps' in x]
 
-        # select the years of interest
-        chirpsfiles = [x for x in chirpsfiles if str()]
         # extract only the years of interest
-        years = [str(yr) for yr in years]
         chirpsfiles = [
             f for f in chirpsfiles if any(
                 [f".{yr}." in f for yr in years]
@@ -49,12 +54,10 @@ class CHIRPSExporter(BaseExporter):
         ]
         return chirpsfiles
 
-    @staticmethod
-    def wget_file(filepath: str) -> None:
+    def wget_file(self, filepath: str) -> None:
         os.system(f"wget -np -nH --cut-dirs 7 {filepath} -P {self.chirps_folder.as_posix()}")
 
-
-    def download_chirps_files(chirps_files: List[str]) -> None:
+    def download_chirps_files(self, chirps_files: List[str]) -> None:
         """ download the chirps files using wget """
         # build the base url
         base_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg'
@@ -64,8 +67,8 @@ class CHIRPSExporter(BaseExporter):
 
         filepaths = [base_url + f for f in chirps_files]
 
-        pool = multiprocessing.pool(processes=100)
-        pool.map(wget_file, filepaths)
+        pool = multiprocessing.Pool(processes=100)
+        pool.map(self.wget_file, filepaths)
 
     @staticmethod
     def get_default_years() -> List[int]:
@@ -85,9 +88,9 @@ class CHIRPSExporter(BaseExporter):
             files later than 2019")
 
         # get the filenames to be downloaded
-        chirps_files = self.get_chirps_filenames(years)
+        chirps_files = self.get_chirps_filenames([str(y) for y in years])
 
         # download files in parallel
-        download_chirps_files(chirps_files)
+        self.download_chirps_files(chirps_files)
 
         return
