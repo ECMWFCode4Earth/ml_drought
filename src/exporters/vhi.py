@@ -239,11 +239,12 @@ class VHIExporter(BaseExporter):
         if max(years) > 2020:
             warnings.warn(f"Non-breaking change: max(years) is:{ max(years)}. But no \
             files later than 2019")
-        # get the filenames to be downloaded
-        self.vhi_files = self.get_ftp_filenames(years)
 
         # run the download `repeat` times to capture all files
         for _ in range(repeats):
+            # get the filenames to be downloaded
+            self.vhi_files = self.get_ftp_filenames(years)
+            # run the download steps in parallel
             batches = self.run_parallel(self.vhi_files)
             print(f"**{_} of {repeats} VHI Downloads completed **")
 
