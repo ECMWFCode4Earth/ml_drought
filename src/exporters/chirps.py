@@ -11,7 +11,10 @@ from .base import BaseExporter
 class CHIRPSExporter(BaseExporter):
     """Exports precip from the Climate Hazards group site
 
+    # 0.5degree
     ftp://ftp.chg.ucsb.edu/pub/org/chg/products/CHIRPS-2.0/global_pentad/netcdf/
+    # 0.25degree
+    ftp://ftp.chg.ucsb.edu/pub/org/chg/products/CHIRPS-2.0/africa_pentad/tifs/
     """
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
@@ -57,7 +60,7 @@ class CHIRPSExporter(BaseExporter):
     def wget_file(self, filepath: str) -> None:
         if (self.chirps_folder / filepath).exists():
             print(f"{filepath} already exists!")
-            pass
+            return
         else:
             os.system(f"wget -np -nH --cut-dirs 7 {filepath} \
                 -P {self.chirps_folder.as_posix()}")
@@ -66,7 +69,9 @@ class CHIRPSExporter(BaseExporter):
         """ download the chirps files using wget """
         # build the base url
         base_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg'
-        base_url += '/products/CHIRPS-2.0/global_pentad/netcdf/'
+        # base_url += '/products/CHIRPS-2.0/global_pentad/netcdf/'
+        base_url += '/products/CHIRPS-2.0/africa_pentad/tifs/'
+
         if base_url[-1] != '/':
             base_url += '/'
 
@@ -97,6 +102,13 @@ class CHIRPSExporter(BaseExporter):
 
         # get the filenames to be downloaded
         chirps_files = self.get_chirps_filenames([str(y) for y in years])
+
+        # check if they already exist
+        existing_files = [
+            f.as_posix().split('/')[-1]
+            for f in self.chirps_folder.glob('*.nc')
+        ]
+        chirps_files = [f for f in chirps_files if f not in existing_files]
 
         # download files in parallel
         self.download_chirps_files(chirps_files)
