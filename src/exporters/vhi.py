@@ -180,8 +180,8 @@ class VHIExporter(BaseExporter):
     @staticmethod
     def check_52_files(dir: Path, year: str) -> bool:
         files = [f for f in dir.glob('*.nc')]
-        if len(files) != 52:
-            print(f"Not all files downloaded for {year}. Expected: {52} Got: {len(files)}")
+        if (len(files) != 52) or (len(files) != 104):
+            print(f"Not all files downloaded for {year}. Expected: [52 or 104] Got: {len(files)}")
             return True
         else:
             return False
