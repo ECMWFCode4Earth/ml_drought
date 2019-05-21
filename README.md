@@ -62,7 +62,7 @@ The main entrypoint into the pipeline is [run.py](run.py). The configuration of 
 python run.py --config <PATH_TO_CONFIG>
 ```
 
-If no configuration file is passed, the pipeline's [default configuration](pipeline_config/default.json) is used.
+If no configuration file is passed, the pipeline's [default minimal configuration](pipeline_config/minimal.json) is used.
 
 ## Setup <a name="setup"></a>
 
