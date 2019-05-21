@@ -23,8 +23,8 @@ class CHIRPSPreprocesser(BasePreProcessor):
             self.out_dir.mkdir()
 
         self.chirps_interim = self.interim_folder / "chirps"
-        if not self.out_dir.exists():
-            self.out_dir.mkdir()
+        if not self.chirps_interim.exists():
+            self.chirps_interim.mkdir()
 
         if subset is not None:
             self.subset = True
@@ -89,9 +89,9 @@ class CHIRPSPreprocesser(BasePreProcessor):
         )
         print(f"Saving to {self.chirps_interim}/{filename}")
         # TODO: change to pathlib.Path objects
-        kenya_ds.to_netcdf(f"{self.chirps_interim}/{filename}")
+        kenya_ds.to_netcdf(self.chirps_interim / filename)
 
-        print(f"** Done for CHIRPS {netcdf_filepath.split('/')[-1]} **")
+        print(f"** Done for CHIRPS {netcdf_filepath.name} **")
 
     def preprocess(self, subset: Optional[str] = 'kenya') -> None:
         """ Preprocess all of the CHIRPS .nc files to produce
@@ -109,7 +109,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
             self.preprocess_CHIRPS_data, nc_files
         )
 
-        # merge all of the timesteps 
+        # merge all of the timesteps
 
         # print the outcome of the script to the user
         self.print_output(outputs)
