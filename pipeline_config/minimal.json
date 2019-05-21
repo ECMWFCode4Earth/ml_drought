@@ -1,0 +1,17 @@
+{
+   "export":{
+      "vhi": [
+            {"years": [
+                        2017,
+                        2018
+                    ]
+                }
+            ],
+      "era5": [
+         {
+            "variable":"precipitation",
+            "selection_request": {"year":  [2017, 2018]}
+         }
+      ]
+   }
+}

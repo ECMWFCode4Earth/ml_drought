@@ -26,7 +26,7 @@ class DictWithDefaults:
                 except KeyError:
                     assert False, f'{key} is not defined ' \
                         f'in the user config or the default config. Try using ' \
-                        f'the default config in pipeline_config/default.json'
+                        f'the default config in pipeline_config/(minimal, full).json'
 
     def __getitem__(self, key: str):
 
