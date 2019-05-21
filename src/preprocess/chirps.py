@@ -108,7 +108,8 @@ class CHIRPSPreprocesser(BasePreProcessor):
         ds = xr.open_mfdataset(
             [f for f in self.chirps_interim.glob('*.nc')]
         )
-        outfile = self.out_dir / f"chirps_{min_year}{max_year}{self.subset_name}"
+        print(f"Merging timesteps {} {}")
+        outfile = self.out_dir / f"chirps_{min_year}{max_year}_{self.subset_name}.nc"
         ds.to_netcdf(outfile)
         print(f"\n**** {outfile} Created! ****\n")
 
