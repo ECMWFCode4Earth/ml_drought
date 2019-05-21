@@ -6,6 +6,7 @@ from pathlib import Path
 import xarray as xr
 import multiprocessing
 from typing import List, Optional
+import re
 
 from .base import (BasePreProcessor,)
 from .preprocess_utils import select_bounding_box_xarray
@@ -93,6 +94,24 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         print(f"** Done for CHIRPS {netcdf_filepath.name} **")
 
+    @staticmethod
+    def get_year_from_filename(filename) -> int:
+        years = re.compile(r'\d{4}')
+        year = int(years.findall(filename)[0])
+
+        assert (1981 <= year <= 2020), f"year should be between 1981-2020 (CHIRPS does not extend to before 1981) {year}"
+
+        return year
+
+
+    def merge_all_timesteps(self, min_year: int, max_year: int) -> None:
+        ds = xr.open_mfdataset(
+            [f for f in self.chirps_interim.glob('*.nc')]
+        )
+        outfile = self.out_dir / f"chirps_{min_year}{max_year}{self.region_name}"
+        ds.to_netcdf(outfile)
+        print(f"{outfile} Created!")
+
     def preprocess(self, subset: Optional[str] = 'kenya') -> None:
         """ Preprocess all of the CHIRPS .nc files to produce
         one subset file.
@@ -110,8 +129,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
         )
 
         # merge all of the timesteps
-
-        # print the outcome of the script to the user
-        self.print_output(outputs)
-        # save the list of errors to file
-        self.save_errors(outputs)
+        years = [self.get_year_from_filename(f.name) for f in nc_files]
+        min_year = min(years)
+        max_year = max(years)
+        self.merge_all_timesteps(min_year, max_year)
