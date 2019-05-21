@@ -110,7 +110,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
         )
         outfile = self.out_dir / f"chirps_{min_year}{max_year}{self.subset_name}"
         ds.to_netcdf(outfile)
-        print(f"{outfile} Created!")
+        print(f"\n**** {outfile} Created! ****\n")
 
     def preprocess(self, subset: Optional[str] = 'kenya') -> None:
         """ Preprocess all of the CHIRPS .nc files to produce
