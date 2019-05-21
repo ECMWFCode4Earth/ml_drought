@@ -109,6 +109,8 @@ class CHIRPSPreprocesser(BasePreProcessor):
             self.preprocess_CHIRPS_data, nc_files
         )
 
+        # merge all of the timesteps 
+
         # print the outcome of the script to the user
         self.print_output(outputs)
         # save the list of errors to file
