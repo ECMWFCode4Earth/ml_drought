@@ -99,16 +99,18 @@ class CHIRPSPreprocesser(BasePreProcessor):
         years = re.compile(r'\d{4}')
         year = int(years.findall(filename)[0])
 
-        assert (1981 <= year <= 2020), f"year should be between 1981-2020 (CHIRPS does not extend to before 1981) {year}"
+        assert (1981 <= year <= 2020), f"year should be between \
+            1981-2020 (CHIRPS does not extend to before 1981).\
+            Currently: {year}"
 
         return year
-
 
     def merge_all_timesteps(self, min_year: int, max_year: int) -> None:
         ds = xr.open_mfdataset(
             [f for f in self.chirps_interim.glob('*.nc')]
         )
-        print(f"Merging timesteps {} {}")
+        print(f"Merging timesteps from {min_year} to {max_year}")
+
         outfile = self.out_dir / f"chirps_{min_year}{max_year}_{self.subset_name}.nc"
         ds.to_netcdf(outfile)
         print(f"\n**** {outfile} Created! ****\n")
@@ -124,10 +126,13 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         print(f"Reading data from {self.raw_folder}. \
             Writing to {self.interim_folder}")
+
+        # preprocess chirps files (subset region) in parallel
         pool = multiprocessing.Pool(processes=100)
         outputs = pool.map(
             self.preprocess_CHIRPS_data, nc_files
         )
+        print("\nOutputs (errors):\n\t", outputs)
 
         # merge all of the timesteps
         years = [self.get_year_from_filename(f.name) for f in nc_files]
