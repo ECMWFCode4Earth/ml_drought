@@ -33,7 +33,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
     def get_chirps_filepaths(self) -> List[Path]:
         return [f for f in (self.raw_folder / "chirps") .glob('*.nc')]
 
-
+    @staticmethod
     def create_filename(netcdf_filepath: str,
                         subset: bool = False,
                         subset_name: Optional[str] = None):
@@ -50,13 +50,13 @@ class CHIRPSPreprocesser(BasePreProcessor):
         if subset:
             assert subset_name is not None, "If you have set subset=True \
                 then you need to assign a subset name"
-            new_filename = f"{filename_stem}_{subset}.nc"
+            new_filename = f"{filename_stem}_{subset_name}.nc"
         else:
             new_filename = f"{filename_stem}.nc"
         return new_filename
 
     def preprocess_CHIRPS_data(self,
-                            netcdf_filepath: str,
+                            netcdf_filepath: Path,
                             output_dir: str,
                             subset: str = 'kenya') -> None:
         """Run the Preprocessing steps for the CHIRPS data
@@ -78,8 +78,10 @@ class CHIRPSPreprocesser(BasePreProcessor):
             kenya_ds = select_bounding_box_xarray(new_ds, kenya_region)
 
         # 6. create the filepath and save to that location
+        assert netcdf_filepath.name[-3:] == '.nc', f"filepath name should be a .nc file. Currently: {netcdf_filepath.name}"
+        
         filename = create_filename(
-            netcdf_filepath,
+            netcdf_filepath.name,
             subset=True,
             subset_name=subset
         )
@@ -102,7 +104,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
             Writing to {self.interim_folder}")
         pool = multiprocessing.Pool(processes=100)
         outputs = pool.map(
-            partial(self.add_coordinates, subset=subset), nc_files
+            partial(self.preprocess_CHIRPS_data, subset=subset), nc_files
         )
 
         # print the outcome of the script to the user
