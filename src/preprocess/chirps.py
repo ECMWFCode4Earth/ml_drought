@@ -69,7 +69,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
         * create new dataset with these dimensions
         * Save the output file to new folder
         """
-        print(f"** Starting work on {netcdf_filepath.split('/')[-1]} **")
+        print(f"** Starting work on {netcdf_filepath.as_posix().split('/')[-1]} **")
         # 1. read in the dataset
         ds = xr.open_dataset(netcdf_filepath)
 
