@@ -3,14 +3,9 @@
 - merge into one time (~500MB)
 """
 from pathlib import Path
-import pathlib
 import xarray as xr
 import multiprocessing
 from typing import List, Optional
-import pickle
-from functools import partial
-
-from xarray import Dataset
 
 from .base import (BasePreProcessor,)
 from .preprocess_utils import select_bounding_box_xarray
@@ -19,7 +14,8 @@ from .preprocess_utils import select_bounding_box_xarray
 class CHIRPSPreprocesser(BasePreProcessor):
     """ Preprocesses the CHIRPS data """
 
-    def __init__(self, data_folder: Path = Path('data')) -> None:
+    def __init__(self, data_folder: Path = Path('data'),
+                 subset: str = 'kenya') -> None:
         super().__init__(data_folder)
 
         self.out_dir = self.interim_folder / "chirps_preprocessed"
@@ -29,6 +25,13 @@ class CHIRPSPreprocesser(BasePreProcessor):
         self.chirps_interim = self.interim_folder / "chirps"
         if not self.out_dir.exists():
             self.out_dir.mkdir()
+
+        if subset is not None:
+            self.subset = True
+            self.subset_name = subset
+        else:
+            self.subset = False
+            self.subset_name = None
 
     def get_chirps_filepaths(self) -> List[Path]:
         return [f for f in (self.raw_folder / "chirps") .glob('*.nc')]
@@ -56,9 +59,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
         return new_filename
 
     def preprocess_CHIRPS_data(self,
-                            netcdf_filepath: Path,
-                            output_dir: str,
-                            subset: str = 'kenya') -> None:
+                               netcdf_filepath: Path) -> None:
         """Run the Preprocessing steps for the CHIRPS data
 
         Process:
@@ -73,21 +74,22 @@ class CHIRPSPreprocesser(BasePreProcessor):
         ds = xr.open_dataset(netcdf_filepath)
 
         # 2. chop out EastAfrica
-        if subset == 'kenya':
+        if self.subset_name == 'kenya':
             kenya_region = self.get_kenya()
-            kenya_ds = select_bounding_box_xarray(new_ds, kenya_region)
+            kenya_ds = select_bounding_box_xarray(ds, kenya_region)
 
         # 6. create the filepath and save to that location
-        assert netcdf_filepath.name[-3:] == '.nc', f"filepath name should be a .nc file. Currently: {netcdf_filepath.name}"
+        assert netcdf_filepath.name[-3:] == '.nc', f"filepath name \
+            should be a .nc file. Currently: {netcdf_filepath.name}"
 
-        filename = create_filename(
+        filename = self.create_filename(
             netcdf_filepath.name,
-            subset=True,
-            subset_name=subset
+            subset=self.subset,
+            subset_name=self.subset_name
         )
-        print(f"Saving to {output_dir}/{filename}")
+        print(f"Saving to {self.chirps_interim}/{filename}")
         # TODO: change to pathlib.Path objects
-        kenya_ds.to_netcdf(f"{output_dir}/{filename}")
+        kenya_ds.to_netcdf(f"{self.chirps_interim}/{filename}")
 
         print(f"** Done for CHIRPS {netcdf_filepath.split('/')[-1]} **")
 
@@ -104,7 +106,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
             Writing to {self.interim_folder}")
         pool = multiprocessing.Pool(processes=100)
         outputs = pool.map(
-            partial(self.preprocess_CHIRPS_data, subset=subset), nc_files
+            self.preprocess_CHIRPS_data, nc_files
         )
 
         # print the outcome of the script to the user
