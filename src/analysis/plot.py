@@ -57,7 +57,10 @@ class Plotter:
         data_array = self.raw_data[variable]
 
         data_array = data_array.values[~np.isnan(data_array.values)]
-        units = self.raw_data[variable].units
+        try:
+            units = self.raw_data[variable].units
+        except AttributeError:
+            units = ''
 
         if ax is None:
             fig, ax = plt.subplots(figsize=(12, 8))
@@ -75,7 +78,7 @@ class Plotter:
         ax.set_xlabel(units)
 
         if save:
-            filename = f'{datetime.now().date()}_{variable}_histogram'
+            filename = f'{datetime.now().date()}_{variable}_histogram.png'
             print(f'Saving to {self.analysis_folder / filename}')
             plt.savefig(self.analysis_folder / filename, bbox_inches='tight', dpi=300)
 
