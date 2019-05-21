@@ -1,5 +1,15 @@
-import xarray
+import matplotlib.pyplot as plt
+from datetime import datetime
+import numpy as np
+import seaborn as sns
 from pathlib import Path
+from collections import namedtuple
+import xarray
+
+from typing import Union, Optional
+
+
+Summary = namedtuple('Summary', ['min', 'max', 'mean', 'median'])
 
 
 class Plotter:
@@ -21,19 +31,54 @@ class Plotter:
             self.analysis_folder.mkdir()
 
     @staticmethod
-    def _cleanup(data: xarray.DataArray,
-                 dropna: bool = True) -> xarray.DataArray:
-        """Clean up the data so it is suitable for plotting
+    def calculate_summary(data_array: xarray.DataArray,
+                          as_string: bool = True) -> Union[str, Summary]:
+        summary = Summary(
+            min=data_array.min(),
+            max=data_array.max(),
+            mean=data_array.mean(),
+            median=np.median(data_array)
+        )
+        if as_string:
+            strings = [': '.join([key, f'{val:.2f}']) for key, val in summary._asdict().items()]
 
-        Attributes:
-        ----------
-        data: xarray.DataArray
-            A DataArray containing the data to plot
-        dropna: bool, default = True
-            Whether to drop nan values
+            return ', '.join(strings)
+        return summary
+
+    def plot_histogram(self, variable: str,
+                       save: bool = True,
+                       add_summary: bool = True,
+                       title: Optional[str] = None,
+                       ax: Optional[plt.axes] = None,
+                       return_axes: bool = False) -> Optional[plt.axes]:
+        """Plot a histogram
         """
-        if dropna:
-            for dim in data.dims:
-                data = data.dropna(dim=dim)
+        assert variable in self.raw_data, f'{variable} not a variable in the dataset'
+        data_array = self.raw_data[variable]
 
-        return data
+        data_array = data_array.values[~np.isnan(data_array.values)]
+        units = self.raw_data[variable].units
+
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(12, 8))
+
+        # plot the histogram
+        sns.distplot(data_array, ax=ax)
+
+        if title is None:
+            title = f'Density Plot of {variable}'
+            if add_summary:
+                summary = self.calculate_summary(data_array, as_string=True)
+                title = f'{title}\n{summary}'
+
+        ax.set_title(title)
+        ax.set_xlabel(units)
+
+        if save:
+            filename = f'{datetime.now().date()}_{variable}_histogram'
+            print(f'Saving to {self.analysis_folder / filename}')
+            plt.savefig(self.analysis_folder / filename, bbox_inches='tight', dpi=300)
+
+        if return_axes:
+            return ax
+        return None
