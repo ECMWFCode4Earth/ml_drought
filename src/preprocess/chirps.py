@@ -1,6 +1,4 @@
 """
-- Add lat lon coordinates
-- add time coordinates
 - subset Kenya
 - merge into one time (~500MB)
 """
@@ -15,14 +13,82 @@ from functools import partial
 from xarray import Dataset
 
 from .base import (BasePreProcessor,)
-from .preprocess_vhi import (
-    extract_timestamp,
-    create_lat_lon_vectors,
-    create_new_dataset,
-    create_filename,
-)
 from .preprocess_utils import select_bounding_box_xarray
 
 
 class CHIRPSPreprocesser(BasePreProcessor):
     """ Preprocesses the CHIRPS data """
+
+    def __init__(self, data_folder: Path = Path('data')) -> None:
+        super().__init__(data_folder)
+
+        self.out_dir = self.interim_folder / "chirps_preprocessed"
+        if not self.out_dir.exists():
+            self.out_dir.mkdir()
+
+        self.vhi_interim = self.interim_folder / "chirps"
+        if not self.out_dir.exists():
+            self.out_dir.mkdir()
+
+    def get_chirps_filepaths(self) -> List[Path]:
+        return [f for f in (self.raw_folder / "chirps") .glob('*.nc')]
+
+
+    def create_filename():
+        pass
+
+    def preprocess_VHI_data(self,
+                            netcdf_filepath: str,
+                            output_dir: str,
+                            subset: str = 'kenya') -> None:
+        """Run the Preprocessing steps for the NOAA VHI data
+
+        Process:
+        -------
+        * assign time stamp
+        * assign lat lon
+        * create new dataset with these dimensions
+        * Save the output file to new folder
+        """
+        print(f"** Starting work on {netcdf_filepath.split('/')[-1]} **")
+        # 1. read in the dataset
+        ds = xr.open_dataset(netcdf_filepath)
+
+        # 2. chop out EastAfrica
+        if subset == 'kenya':
+            kenya_region = self.get_kenya()
+            kenya_ds = select_bounding_box_xarray(new_ds, kenya_region)
+
+        # 6. create the filepath and save to that location
+        filename = create_filename(
+            timestamp,
+            netcdf_filepath,
+            subset=True,
+            subset_name=subset
+        )
+        print(f"Saving to {output_dir}/{filename}")
+        # TODO: change to pathlib.Path objects
+        kenya_ds.to_netcdf(f"{output_dir}/{filename}")
+
+        print(f"** Done for CHIRPS {netcdf_filepath.split('/')[-1]} **")
+
+    def preprocess(self, subset: Optional[str] = 'kenya') -> None:
+        """ Preprocess all of the NOAA VHI .nc files to produce
+        one subset file with consistent lat/lon and timestamps.
+
+        Run in parallel
+        """
+        # get the filepaths for all of the downloaded data
+        nc_files = self.get_chirps_filepaths()
+
+        print(f"Reading data from {self.raw_folder}. \
+            Writing to {self.interim_folder}")
+        pool = multiprocessing.Pool(processes=100)
+        outputs = pool.map(
+            partial(self.add_coordinates, subset=subset), nc_files
+        )
+
+        # print the outcome of the script to the user
+        self.print_output(outputs)
+        # save the list of errors to file
+        self.save_errors(outputs)
