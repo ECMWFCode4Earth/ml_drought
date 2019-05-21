@@ -26,7 +26,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
         if not self.out_dir.exists():
             self.out_dir.mkdir()
 
-        self.vhi_interim = self.interim_folder / "chirps"
+        self.chirps_interim = self.interim_folder / "chirps"
         if not self.out_dir.exists():
             self.out_dir.mkdir()
 
@@ -34,14 +34,32 @@ class CHIRPSPreprocesser(BasePreProcessor):
         return [f for f in (self.raw_folder / "chirps") .glob('*.nc')]
 
 
-    def create_filename():
-        pass
+    def create_filename(netcdf_filepath: str,
+                        subset: bool = False,
+                        subset_name: Optional[str] = None):
+        """
+        chirps-v2.0.2009.pentads.nc
+            =>
+        chirps-v2.0.2009.pentads_kenya.nc
+        """
+        if netcdf_filepath[-3:] == '.nc':
+            filename_stem = netcdf_filepath[:-3]
+        else:
+            filename_stem = netcdf_filepath
 
-    def preprocess_VHI_data(self,
+        if subset:
+            assert subset_name is not None, "If you have set subset=True \
+                then you need to assign a subset name"
+            new_filename = f"{filename_stem}_{subset}.nc"
+        else:
+            new_filename = f"{filename_stem}.nc"
+        return new_filename
+
+    def preprocess_CHIRPS_data(self,
                             netcdf_filepath: str,
                             output_dir: str,
                             subset: str = 'kenya') -> None:
-        """Run the Preprocessing steps for the NOAA VHI data
+        """Run the Preprocessing steps for the CHIRPS data
 
         Process:
         -------
@@ -61,7 +79,6 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         # 6. create the filepath and save to that location
         filename = create_filename(
-            timestamp,
             netcdf_filepath,
             subset=True,
             subset_name=subset
@@ -73,8 +90,8 @@ class CHIRPSPreprocesser(BasePreProcessor):
         print(f"** Done for CHIRPS {netcdf_filepath.split('/')[-1]} **")
 
     def preprocess(self, subset: Optional[str] = 'kenya') -> None:
-        """ Preprocess all of the NOAA VHI .nc files to produce
-        one subset file with consistent lat/lon and timestamps.
+        """ Preprocess all of the CHIRPS .nc files to produce
+        one subset file.
 
         Run in parallel
         """
