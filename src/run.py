@@ -2,7 +2,7 @@ from pathlib import Path
 
 from typing import Dict
 
-from src.exporters import ERA5Exporter
+from src.exporters import ERA5Exporter, VHIExporter
 
 
 class DictWithDefaults:
@@ -58,7 +58,8 @@ class Run:
         """
 
         dataset2exporter = {
-            'era5': ERA5Exporter
+            'era5': ERA5Exporter,
+            'vhi': VHIExporter,
         }
 
         for dataset, variables in export_args.items():
@@ -73,7 +74,7 @@ class Run:
             exporter = dataset2exporter[dataset](self.data)
 
             for variable in variables:
-                _ = exporter.export(**variable)
+                _ = exporter.export(**variable)  # type: ignore
 
     def run(self, config: DictWithDefaults) -> None:
 
