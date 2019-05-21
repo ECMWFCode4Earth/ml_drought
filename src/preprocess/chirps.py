@@ -79,7 +79,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         # 6. create the filepath and save to that location
         assert netcdf_filepath.name[-3:] == '.nc', f"filepath name should be a .nc file. Currently: {netcdf_filepath.name}"
-        
+
         filename = create_filename(
             netcdf_filepath.name,
             subset=True,
