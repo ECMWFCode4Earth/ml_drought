@@ -71,9 +71,9 @@ class Plotter:
 
         if title is None:
             title = f'Density Plot of {variable}'
-            if add_summary:
-                summary = self.calculate_summary(data_array, as_string=True)
-                title = f'{title}\n{summary}'
+        if add_summary:
+            summary = self.calculate_summary(data_array, as_string=True)
+            title = f'{title}\n{summary}'
 
         ax.set_title(title)
         ax.set_xlabel(units)
