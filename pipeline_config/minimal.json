@@ -7,10 +7,10 @@
                     ]
                 }
             ],
-      "era5": [
+      "era5POS": [
          {
-            "variable":"precipitation",
-            "selection_request": {"year":  [2017, 2018]}
+            "variable":"precipitation_amount_1hour_Accumulation",
+            "years": [2017, 2018]
          }
       ]
    }
