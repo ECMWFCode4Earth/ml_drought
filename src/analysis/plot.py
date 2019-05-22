@@ -50,7 +50,8 @@ class Plotter:
                        add_summary: bool = True,
                        title: Optional[str] = None,
                        ax: Optional[plt.axes] = None,
-                       return_axes: bool = False) -> Optional[plt.axes]:
+                       return_axes: bool = False,
+                       **kwargs) -> Optional[plt.axes]:
         """Plot a histogram
         """
         assert variable in self.raw_data, f'{variable} not a variable in the dataset'
@@ -66,7 +67,7 @@ class Plotter:
             fig, ax = plt.subplots(figsize=(12, 8))
 
         # plot the histogram
-        sns.distplot(data_array, ax=ax)
+        sns.distplot(data_array, ax=ax, **kwargs)
 
         if title is None:
             title = f'Density Plot of {variable}'
