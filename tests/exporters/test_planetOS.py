@@ -36,6 +36,34 @@ class TestERA5ExporterPOS:
             f'Expected exporter to retrieve {list(range(2008, 2019))} years, got {years} instead'
 
     @mock_s3
+    def test_available_variables(self, tmp_path):
+
+        # setup our fake bucket
+        era5_bucket = 'era5-pds'
+        conn = boto3.client('s3')
+        conn.create_bucket(Bucket=era5_bucket, ACL='public-read')
+
+        expected_variables = {'a', 'b', 'c', 'd', 'e'}
+
+        for variable in expected_variables:
+            key = f'2008/01/data/{variable}.nc'
+            conn.put_object(
+                Bucket=era5_bucket,
+                Key=key,
+                Body=''
+            )
+
+        exporter = ERA5ExporterPOS(tmp_path)
+        returned_variables = exporter.get_variables(2008, 1)
+
+        assert len(returned_variables) == len(expected_variables), \
+            f'Expected {len(expected_variables)} to be returned, got {len(returned_variables)}'
+
+        for variable in expected_variables:
+            assert variable in returned_variables, \
+                f'Expected to get variable {variable} but did not'
+
+    @mock_s3
     def test_export(self, tmp_path):
         # setup our fake bucket
         era5_bucket = 'era5-pds'

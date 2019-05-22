@@ -25,6 +25,20 @@ class ERA5ExporterPOS(BaseExporter):
         self.era5_bucket = 'era5-pds'
         self.client = boto3.client('s3', config=Config(signature_version=botocore.UNSIGNED))
 
+    def get_variables(self, year: int, month: int) -> List[str]:
+        target_prefix = f'{year}/{month:02d}/data'
+
+        files = self.client.list_objects_v2(
+            Bucket=self.era5_bucket,
+            Prefix=target_prefix
+        )
+        variables = []
+        for file in files['Contents']:
+            key = file['Key'].split('/')[-1].replace('.nc', '')
+            variables.append(key)
+
+        return variables
+
     def _get_available_years(self) -> List[int]:
         """Currently, data is only available from 2008, with a
         view to extend this to 1979.
@@ -53,6 +67,22 @@ class ERA5ExporterPOS(BaseExporter):
                variable: str,
                years: Optional[List[int]] = None,
                months: Optional[List[int]] = None) -> List[Path]:
+        """Export data from Planet OS's S3 bucket
+
+        Arguments
+        ----------
+        variable: str
+            The variable to download
+        years: list of ints or None, default = None
+            The years of data to download
+        months: list of ints, or None, default = None
+            The months of data to download
+
+        Returns
+        ----------
+        output_files: list of pathlib.Paths
+            The locations of the saved files
+        """
 
         if years is None:
             years = self._get_available_years()
@@ -74,7 +104,10 @@ class ERA5ExporterPOS(BaseExporter):
                 output_files.append(target_output)
             except botocore.exceptions.ClientError as e:
                 if e.response['Error']['Code'] == "404":
-                    warnings.warn('Key does not exist!')
+                    possible_variables = self.get_variables(year, month)
+                    possible_variables_str = '\n'.join(possible_variables)
+                    warnings.warn(f'Key does not exist! '
+                                  f'Possible variables are: {possible_variables_str}')
                 else:
                     raise e
         return output_files
