@@ -74,7 +74,7 @@ class Run:
             exporter = dataset2exporter[dataset](self.data)
 
             for variable in variables:
-                _ = exporter.export(**variable)
+                _ = exporter.export(**variable)  # type: ignore
 
     def run(self, config: DictWithDefaults) -> None:
 
