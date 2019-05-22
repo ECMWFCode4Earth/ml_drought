@@ -34,7 +34,9 @@ class TestPlotter:
         dataset = xarray.Dataset({'VHI': [1, 2, 3, 4]})
         plotter = Plotter(dataset, tmp_path)
 
-        hist_ax = plotter.plot_histogram('VHI', add_summary=False, return_axes=True)
+        hist_ax = plotter.plot_histogram(
+            'VHI', add_summary=False, return_axes=True, save=True
+        )
 
         today = datetime.now().date()
 
