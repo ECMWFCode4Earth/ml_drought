@@ -40,12 +40,12 @@ class VHIPreprocessor(BasePreProcessor):
             self.vhi_interim.mkdir()
 
     def get_vhi_filepaths(self) -> List[Path]:
-        return [f for f in (self.raw_folder / "vhi") .glob('*/*.nc')]
+        return [f for f in (self.raw_folder / "vhi").glob('*/*.nc')]
 
     def preprocess_VHI_data(self,
                             netcdf_filepath: str,
                             output_dir: str,
-                            subset: str = 'kenya') -> None:
+                            subset: str = 'kenya') -> Path:
         """Run the Preprocessing steps for the NOAA VHI data
 
         Process:
@@ -86,22 +86,23 @@ class VHIPreprocessor(BasePreProcessor):
 
         print(f"** Done for VHI {netcdf_filepath.split('/')[-1]} **")
 
-    def add_coordinates(self, netcdf_filepath: str, subset: str = 'kenya'):
+        return Path(f"{output_dir}/{filename}")
+
+    def add_coordinates(self, netcdf_filepath: str, subset: str = 'kenya') -> Path:
         """ function to be run in parallel & safely catch errors
 
         https://stackoverflow.com/a/24683990/9940782
         """
         print(f"Starting work on {netcdf_filepath}")
-        vhi_interim_folder = self.interim_folder / "vhi"
-        if not vhi_interim_folder.exists():
-            vhi_interim_folder.mkdir()
+        if not self.vhi_interim.exists():
+            self.vhi_interim.mkdir()
 
         if isinstance(netcdf_filepath, pathlib.PosixPath):
             netcdf_filepath = netcdf_filepath.as_posix()
 
         try:
             return self.preprocess_VHI_data(
-                netcdf_filepath, vhi_interim_folder.as_posix(),
+                netcdf_filepath, self.vhi_interim.as_posix(),
             )
         except Exception as e:
             print(f"### FAILED: {netcdf_filepath}")
@@ -112,10 +113,10 @@ class VHIPreprocessor(BasePreProcessor):
         print("\n\n*************************\n\n")
         print("Script Run")
         print("*************************")
-        print("Errors:")
-        print("\nError: ", [error for error in outputs if error is not None])
+        print("Paths:")
+        print("\nPaths: ", [o for o in outputs if o is not None])
         print("\n__Failed File List:",
-              [error[-1] for error in outputs if error is not None])
+              [o[-1] for o in outputs if not isinstance(o, Path)])
 
     def save_errors(self, outputs: List) -> Path:
         # write output of failed files to python.txt
@@ -161,8 +162,10 @@ class VHIPreprocessor(BasePreProcessor):
         outputs = pool.map(
             partial(self.add_coordinates, subset=subset), nc_files
         )
+        errors = [o for o in outputs if not isinstance(o, Path)]
 
+        # TODO check how these errors are being saved (now all paths returned)
         # print the outcome of the script to the user
         self.print_output(outputs)
         # save the list of errors to file
-        self.save_errors(outputs)
+        self.save_errors(errors)
