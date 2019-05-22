@@ -45,8 +45,7 @@ class VHIPreprocessor(BasePreProcessor):
     def preprocess_VHI_data(self,
                             netcdf_filepath: str,
                             output_dir: str,
-                            subset: str = 'kenya',
-                            ) -> Union[Path, Tuple[Exception, str]]:
+                            subset: str = 'kenya',) -> Path:
         """Run the Preprocessing steps for the NOAA VHI data
 
         Process:
@@ -89,7 +88,10 @@ class VHIPreprocessor(BasePreProcessor):
 
         return Path(f"{output_dir}/{filename}")
 
-    def add_coordinates(self, netcdf_filepath: str, subset: str = 'kenya') -> Path:
+    def add_coordinates(self,
+                        netcdf_filepath: str,
+                        subset: str = 'kenya'
+                        ) -> Union[Path, Tuple[Exception, str]]:
         """ function to be run in parallel & safely catch errors
 
         https://stackoverflow.com/a/24683990/9940782
@@ -107,7 +109,7 @@ class VHIPreprocessor(BasePreProcessor):
             )
         except Exception as e:
             print(f"### FAILED: {netcdf_filepath}")
-            return e, netcdf_filepath
+            return (e, netcdf_filepath)
 
     @staticmethod
     def print_output(outputs: List) -> None:
