@@ -24,3 +24,5 @@ data/*.zip*
 
 *.out
 data/raw/*
+data/analysis/*
+data/interim/*
