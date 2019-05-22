@@ -13,6 +13,8 @@ from .base import BaseExporter
 
 class ERA5ExporterPOS(BaseExporter):
     """Download ERA5 data from Planet OS's S3 bucket
+
+    https://github.com/planet-os/notebooks/blob/master/aws/era5-pds.md
     """
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
