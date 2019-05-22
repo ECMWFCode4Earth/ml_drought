@@ -15,7 +15,7 @@ from functools import partial
 
 from xarray import Dataset
 
-from .base import (BasePreProcessor,)
+from .base import (BasePreProcessor, get_kenya)
 from .preprocess_vhi import (
     extract_timestamp,
     create_lat_lon_vectors,
@@ -42,8 +42,8 @@ class VHIPreprocessor(BasePreProcessor):
     def get_vhi_filepaths(self) -> List[Path]:
         return [f for f in (self.raw_folder / "vhi").glob('*/*.nc')]
 
-    def preprocess_VHI_data(self,
-                            netcdf_filepath: str,
+    @staticmethod
+    def preprocess_VHI_data(netcdf_filepath: str,
                             output_dir: str,
                             subset: str = 'kenya',) -> Path:
         """Run the Preprocessing steps for the NOAA VHI data
@@ -70,7 +70,7 @@ class VHIPreprocessor(BasePreProcessor):
 
         # 5. chop out EastAfrica - TODO: have a dictionary of legitimate args
         if subset == 'kenya':
-            kenya_region = self.get_kenya()
+            kenya_region = get_kenya()
             kenya_ds = select_bounding_box_xarray(new_ds, kenya_region)
 
         # 6. create the filepath and save to that location
@@ -90,7 +90,6 @@ class VHIPreprocessor(BasePreProcessor):
 
     def add_coordinates(self,
                         netcdf_filepath: str,
-                        subset: str = 'kenya'
                         ) -> Union[Path, Tuple[Exception, str]]:
         """ function to be run in parallel & safely catch errors
 
@@ -109,7 +108,7 @@ class VHIPreprocessor(BasePreProcessor):
             )
         except Exception as e:
             print(f"### FAILED: {netcdf_filepath}")
-            return (e, netcdf_filepath)
+            return e, netcdf_filepath
 
     @staticmethod
     def print_output(outputs: List) -> None:
