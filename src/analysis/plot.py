@@ -46,11 +46,11 @@ class Plotter:
         return summary
 
     def plot_histogram(self, variable: str,
-                       save: bool = True,
+                       save: bool = False,
                        add_summary: bool = True,
                        title: Optional[str] = None,
                        ax: Optional[plt.axes] = None,
-                       return_axes: bool = False,
+                       return_axes: bool = True,
                        **kwargs) -> Optional[plt.axes]:
         """Plot a histogram
         """
