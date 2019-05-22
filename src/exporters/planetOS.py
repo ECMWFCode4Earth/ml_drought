@@ -99,11 +99,16 @@ class ERA5ExporterPOS(BaseExporter):
             target_folder = self.era5_folder / f'{year}/{month:02d}'
             target_folder.mkdir(parents=True, exist_ok=True)
             target_output = target_folder / f'{variable}.nc'
+
+            if target_output.exists():
+                continue
+
             try:
                 self.client.download_file(self.era5_bucket,
                                           target_key,
                                           str(target_output))
                 output_files.append(target_output)
+                print(f'Exported {target_key} to {target_folder}')
             except botocore.exceptions.ClientError as e:
                 if e.response['Error']['Code'] == "404":
                     possible_variables = self.get_variables(year, month)
