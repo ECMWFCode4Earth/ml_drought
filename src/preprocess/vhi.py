@@ -36,8 +36,8 @@ class VHIPreprocesser(BasePreProcessor):
             self.out_dir.mkdir()
 
         self.vhi_interim = self.interim_folder / "vhi"
-        if not self.out_dir.exists():
-            self.out_dir.mkdir()
+        if not self.vhi_interim.exists():
+            self.vhi_interim.mkdir()
 
     def get_vhi_filepaths(self) -> List[Path]:
         return [f for f in (self.raw_folder / "vhi") .glob('*/*.nc')]
