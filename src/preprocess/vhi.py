@@ -25,7 +25,7 @@ from .preprocess_vhi import (
 from .preprocess_utils import select_bounding_box_xarray
 
 
-class VHIPreprocesser(BasePreProcessor):
+class VHIPreprocessor(BasePreProcessor):
     """ Preprocesses the VHI data """
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
