@@ -9,7 +9,7 @@ from pathlib import Path
 import pathlib
 import xarray as xr
 import multiprocessing
-from typing import List, Optional
+from typing import List, Optional, Tuple, Union
 import pickle
 from functools import partial
 
@@ -45,7 +45,8 @@ class VHIPreprocessor(BasePreProcessor):
     def preprocess_VHI_data(self,
                             netcdf_filepath: str,
                             output_dir: str,
-                            subset: str = 'kenya') -> Path:
+                            subset: str = 'kenya',
+                            ) -> Union[Path, Tuple[Exception, str]]:
         """Run the Preprocessing steps for the NOAA VHI data
 
         Process:

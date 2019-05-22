@@ -22,7 +22,6 @@ def extract_timestamp(ds: Dataset,
 
     USE THE FILENAME
     """
-    year = ds.attrs['YEAR']
 
     if use_filepath:  # use the weeknumber in filename
         # https://stackoverflow.com/a/22789330/9940782
@@ -34,6 +33,7 @@ def extract_timestamp(ds: Dataset,
         )
 
     else:
+        year = ds.attrs['YEAR']
         if time_begin:
             day_num = ds.attrs['DATE_BEGIN']
         else:  # time_end

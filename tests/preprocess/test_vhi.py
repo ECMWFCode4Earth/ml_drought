@@ -41,7 +41,7 @@ def test_vhi_raw_filenames(tmp_path):
     assert recovered_names == fnames, f"Recovered filenames should be the same as those created "
 
 
-def test_(tmp_path):
+def test_preprocessor_output(tmp_path):
     v = VHIPreprocessor(tmp_path)
 
     # get filename
@@ -64,5 +64,19 @@ def test_(tmp_path):
     )
     raw_ds.to_netcdf(netcdf_filepath)
 
-    # v.preprocess_VHI_data(netcdf_filepath.as_posix(), v.vhi_interim.as_posix())
-    v.add_coordinates(netcdf_filepath, subset='kenya')
+    # run the preprocessing steps
+    out = v.preprocess_VHI_data(
+        netcdf_filepath.as_posix(), v.vhi_interim.as_posix(),
+    )
+
+    assert "kenya_VH.nc" in out.name, f"Expected to find kenya_VH.nc \
+        in output path name but found: {out.name}"
+
+    # check the structure of the output file
+    out_ds = xr.open_dataset(out)
+    out_dims = [dim for dim in out_ds.dims.keys()]
+    out_vars = [var for var in out_ds.variables.keys() if var not in out_dims]
+
+    assert 'VHI' in out_vars, f"Expected to find VHI in out_vars"
+    assert all(np.isin(['latitude', 'longitude', 'time'], out_dims)), f"Expected\
+        to find ['latitude','longitude', 'time'] in {out_dims}"
