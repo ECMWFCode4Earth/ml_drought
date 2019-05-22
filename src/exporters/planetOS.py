@@ -101,6 +101,7 @@ class ERA5ExporterPOS(BaseExporter):
             target_output = target_folder / f'{variable}.nc'
 
             if target_output.exists():
+                print(f'{target_output} already exists! Skipping')
                 continue
 
             try:
