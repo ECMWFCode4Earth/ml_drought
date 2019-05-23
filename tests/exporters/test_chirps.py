@@ -26,3 +26,15 @@ class TestCHIRPSExporter:
         assert captured.out == expected_stdout, \
             f'Expected stdout to be {expected_stdout}, got {captured.out}'
         mock_system.assert_not_called(), 'os.system was called! Should have been skipped'
+
+    def test_get_url(self, tmp_path):
+        exporter = CHIRPSExporter(tmp_path)
+
+        africa_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg/products/CHIRPS-2.0/africa_pentad/tifs/'
+        global_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg/products/CHIRPS-2.0/global_pentad/netcdf/'
+
+        assert exporter.get_url('africa') == africa_url, \
+            f'Expected Africa URL to be {africa_url}, got {exporter.get_url("africa")}'
+
+        assert exporter.get_url('global') == global_url, \
+            f'Expected Africa URL to be {global_url}, got {exporter.get_url("global")}'
