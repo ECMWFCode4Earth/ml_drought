@@ -32,7 +32,7 @@ class CHIRPSExporter(BaseExporter):
 
         return self.base_url + url
 
-    def get_chirps_filenames(self, years: Optional[List[int]],
+    def get_chirps_filenames(self, years: Optional[List[int]] = None,
                              region: str = 'africa') -> List[str]:
         """
         ftp://ftp.chg.ucsb.edu/pub/org/chg/products/
