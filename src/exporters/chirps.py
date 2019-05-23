@@ -26,7 +26,7 @@ class CHIRPSExporter(BaseExporter):
             self.chirps_folder.mkdir()
 
     @staticmethod
-    def get_chirps_filenames(years: List[str]) -> List[str]:
+    def get_chirps_filenames(years: Optional[List[int]]) -> List[str]:
         """
         ftp://ftp.chg.ucsb.edu/pub/org/chg/products/
             CHIRPS-2.0/global_pentad/netcdf/
@@ -51,11 +51,12 @@ class CHIRPSExporter(BaseExporter):
         chirpsfiles = [x for x in flatlist if 'chirps' in x]
 
         # extract only the years of interest
-        chirpsfiles = [
-            f for f in chirpsfiles if any(
-                [f".{yr}." in f for yr in years]
-            )
-        ]
+        if years is not None:
+            chirpsfiles = [
+                f for f in chirpsfiles if any(
+                    [f'.{yr}.' in f for yr in years]
+                )
+            ]
         return chirpsfiles
 
     def wget_file(self, filepath: str) -> None:
@@ -86,13 +87,6 @@ class CHIRPSExporter(BaseExporter):
             for file in filepaths:
                 self.wget_file(file)
 
-    @staticmethod
-    def get_default_years() -> List[int]:
-        """ returns the default arguments for no. years """
-        # TODO: This is hardcoded. Can we get the years from the ftp server
-        # instead?
-        return list(range(1981, 2020))
-
     def export(self, years: Optional[List[int]] = None,
                parallel: bool = False) -> None:
         """Export functionality for the CHIRPS precipitation product
@@ -104,8 +98,6 @@ class CHIRPSExporter(BaseExporter):
         parallel: bool, default = False
             Whether to parallelize the downloading of data
         """
-        if years is None:
-            years = self.get_default_years()
 
         assert min(years) >= 1981, f"Minimum year cannot be less than 1981. " \
             f"Currently: {min(years)}"
@@ -114,7 +106,7 @@ class CHIRPSExporter(BaseExporter):
                           f"But no files later than 2019")
 
         # get the filenames to be downloaded
-        chirps_files = self.get_chirps_filenames([str(y) for y in years])
+        chirps_files = self.get_chirps_filenames(years)
 
         # check if they already exist
         existing_files = [
