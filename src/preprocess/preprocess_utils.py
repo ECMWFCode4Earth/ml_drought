@@ -3,7 +3,7 @@ import xarray as xr
 from .base import Region
 
 
-def select_bounding_box_xarray(ds: xr.Dataset, region: Region) -> xr.Dataset:
+def select_bounding_box(ds: xr.Dataset, region: Region) -> xr.Dataset:
     """ using the Region namedtuple defined in engineering.regions.py select
     the subset of the dataset that you have defined that region for.
 
@@ -34,7 +34,7 @@ def select_bounding_box_xarray(ds: xr.Dataset, region: Region) -> xr.Dataset:
     if 'latitude' in dims and 'longitude' in dims:
         ds_slice = ds.sel(latitude=slice(latmin, latmax), longitude=slice(lonmin, lonmax))
     elif 'lat' in dims and 'lon' in dims:
-        ds_slice = ds.sel(latitude=slice(latmin, latmax), longitude=slice(lonmin, lonmax))
+        ds_slice = ds.sel(lat=slice(latmin, latmax), lon=slice(lonmin, lonmax))
     else:
         raise ValueError(f'Your `xr.ds` does not have lon / longitude in the \
             dimensions. Currently: {[dim for dim in ds.dims.keys()]}')

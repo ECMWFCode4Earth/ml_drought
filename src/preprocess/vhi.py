@@ -22,7 +22,7 @@ from .preprocess_vhi import (
     create_new_dataset,
     create_filename,
 )
-from .preprocess_utils import select_bounding_box_xarray
+from .preprocess_utils import select_bounding_box
 
 
 class VHIPreprocessor(BasePreProcessor):
@@ -71,7 +71,7 @@ class VHIPreprocessor(BasePreProcessor):
         # 5. chop out EastAfrica - TODO: have a dictionary of legitimate args
         if subset == 'kenya':
             kenya_region = get_kenya()
-            kenya_ds = select_bounding_box_xarray(new_ds, kenya_region)
+            kenya_ds = select_bounding_box(new_ds, kenya_region)
 
         # 6. create the filepath and save to that location
         filename = create_filename(
