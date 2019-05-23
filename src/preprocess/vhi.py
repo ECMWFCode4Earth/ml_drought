@@ -22,7 +22,7 @@ from .preprocess_vhi import (
     create_new_dataset,
     create_filename,
 )
-from .preprocess_utils import select_bounding_box
+from .utils import select_bounding_box
 
 
 class VHIPreprocessor(BasePreProcessor):
