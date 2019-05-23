@@ -106,11 +106,12 @@ class CHIRPSExporter(BaseExporter):
             Whether to parallelize the downloading of data
         """
 
-        assert min(years) >= 1981, f"Minimum year cannot be less than 1981. " \
-            f"Currently: {min(years)}"
-        if max(years) > 2020:
-            warnings.warn(f"Non-breaking change: max(years) is: {max(years)}. "
-                          f"But no files later than 2019")
+        if years is not None:
+            assert min(years) >= 1981, f"Minimum year cannot be less than 1981. " \
+                f"Currently: {min(years)}"
+            if max(years) > 2020:
+                warnings.warn(f"Non-breaking change: max(years) is: {max(years)}. "
+                              f"But no files later than 2019")
 
         # get the filenames to be downloaded
         chirps_files = self.get_chirps_filenames(years, region)
