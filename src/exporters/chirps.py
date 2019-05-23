@@ -99,6 +99,9 @@ class CHIRPSExporter(BaseExporter):
         ----------
         years: Optional list of ints, default = None
             The years of data to download. If None, all data will be downloaded
+        region: str {'africa', 'global'}, default = 'africa'
+            The dataset region to download. If global, a netcdf file is downloaded.
+            If africa, a tif file is downloaded
         parallel: bool, default = False
             Whether to parallelize the downloading of data
         """
