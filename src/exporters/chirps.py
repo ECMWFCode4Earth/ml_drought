@@ -25,7 +25,7 @@ class CHIRPSExporter(BaseExporter):
             self.chirps_folder.mkdir()
 
     @staticmethod
-    def get_chirps_filenames(years: List[str]) -> List:
+    def get_chirps_filenames(years: List[str]) -> List[str]:
         """
         ftp://ftp.chg.ucsb.edu/pub/org/chg/products/
             CHIRPS-2.0/global_pentad/netcdf/
@@ -87,7 +87,7 @@ class CHIRPSExporter(BaseExporter):
 
         return years
 
-    def export(self, years: List[int] = None):
+    def export(self, years: List[int] = None) -> None:
         """Export functionality for the CHIRPS precipitation product
 
         """
@@ -97,7 +97,7 @@ class CHIRPSExporter(BaseExporter):
         assert min(years) >= 1981, f"Minimum year cannot be less than 1981.\
             Currently: {min(years)}"
         if max(years) > 2020:
-            warnings.warn(f"Non-breaking change: max(years) is:{ max(years)}. But no \
+            warnings.warn(f"Non-breaking change: max(years) is: {max(years)}. But no \
             files later than 2019")
 
         # get the filenames to be downloaded
@@ -112,5 +112,3 @@ class CHIRPSExporter(BaseExporter):
 
         # download files in parallel
         self.download_chirps_files(chirps_files)
-
-        return
