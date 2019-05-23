@@ -39,7 +39,6 @@ def select_bounding_box_xarray(ds: Dataset, region: Region) -> Dataset:
     else:
         raise ValueError(f'Your `xr.ds` does not have lon / longitude in the \
             dimensions. Currently: {[dim for dim in ds.dims.keys()]}')
-        return
 
     assert ds_slice[variables[0]].values.size != 0, f"Your slice has \
         returned NO values. Sometimes this means that the latmin, \
