@@ -1,4 +1,3 @@
-from typing import List
 from bs4 import BeautifulSoup
 import urllib.request
 import os
@@ -6,6 +5,8 @@ import warnings
 import multiprocessing
 from pathlib import Path
 from .base import BaseExporter
+
+from typing import List, Optional
 
 
 class CHIRPSExporter(BaseExporter):
@@ -59,13 +60,14 @@ class CHIRPSExporter(BaseExporter):
 
     def wget_file(self, filepath: str) -> None:
         if (self.chirps_folder / filepath).exists():
-            print(f"{filepath} already exists!")
-            return
+            print(f'{filepath} already exists! Skipping')
         else:
             os.system(f"wget -np -nH --cut-dirs 7 {filepath} \
                 -P {self.chirps_folder.as_posix()}")
 
-    def download_chirps_files(self, chirps_files: List[str]) -> None:
+    def download_chirps_files(self,
+                              chirps_files: List[str],
+                              parallel: bool = False) -> None:
         """ download the chirps files using wget """
         # build the base url
         base_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg'
@@ -77,28 +79,39 @@ class CHIRPSExporter(BaseExporter):
 
         filepaths = [base_url + f for f in chirps_files]
 
-        pool = multiprocessing.Pool(processes=100)
-        pool.map(self.wget_file, filepaths)
+        if parallel:
+            pool = multiprocessing.Pool(processes=100)
+            pool.map(self.wget_file, filepaths)
+        else:
+            for file in filepaths:
+                self.wget_file(file)
 
     @staticmethod
     def get_default_years() -> List[int]:
         """ returns the default arguments for no. years """
-        years = [yr for yr in range(1981, 2020)]
+        # TODO: This is hardcoded. Can we get the years from the ftp server
+        # instead?
+        return list(range(1981, 2020))
 
-        return years
-
-    def export(self, years: List[int] = None) -> None:
+    def export(self, years: Optional[List[int]] = None,
+               parallel: bool = False) -> None:
         """Export functionality for the CHIRPS precipitation product
 
+        Arguments
+        ----------
+        years: Optional list of ints, default = None
+            The years of data to download. If None, all data will be downloaded
+        parallel: bool, default = False
+            Whether to parallelize the downloading of data
         """
         if years is None:
             years = self.get_default_years()
 
-        assert min(years) >= 1981, f"Minimum year cannot be less than 1981.\
-            Currently: {min(years)}"
+        assert min(years) >= 1981, f"Minimum year cannot be less than 1981. " \
+            f"Currently: {min(years)}"
         if max(years) > 2020:
-            warnings.warn(f"Non-breaking change: max(years) is: {max(years)}. But no \
-            files later than 2019")
+            warnings.warn(f"Non-breaking change: max(years) is: {max(years)}. "
+                          f"But no files later than 2019")
 
         # get the filenames to be downloaded
         chirps_files = self.get_chirps_filenames([str(y) for y in years])
@@ -111,4 +124,4 @@ class CHIRPSExporter(BaseExporter):
         chirps_files = [f for f in chirps_files if f not in existing_files]
 
         # download files in parallel
-        self.download_chirps_files(chirps_files)
+        self.download_chirps_files(chirps_files, parallel)
