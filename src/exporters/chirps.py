@@ -25,16 +25,16 @@ class CHIRPSExporter(BaseExporter):
         if not self.chirps_folder.exists():
             self.chirps_folder.mkdir()
 
-    @staticmethod
-    def get_chirps_filenames(years: Optional[List[int]]) -> List[str]:
+        self.base_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg'
+
+    def get_chirps_filenames(self, years: Optional[List[int]]) -> List[str]:
         """
         ftp://ftp.chg.ucsb.edu/pub/org/chg/products/
             CHIRPS-2.0/global_pentad/netcdf/
 
         https://github.com/datamission/WFP/blob/master/Datasets/CHIRPS/get_chirps.py
         """
-        base_url = 'ftp://ftp.chg.ucsb.edu'
-        url = base_url + '/pub/org/chg/products/CHIRPS-2.0/global_pentad/netcdf/'
+        url = self.base_url + '/products/CHIRPS-2.0/global_pentad/netcdf/'
 
         # use urllib.request to read the page source
         req = urllib.request.Request(url)
@@ -71,14 +71,13 @@ class CHIRPSExporter(BaseExporter):
                               parallel: bool = False) -> None:
         """ download the chirps files using wget """
         # build the base url
-        base_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg'
         # base_url += '/products/CHIRPS-2.0/global_pentad/netcdf/'
-        base_url += '/products/CHIRPS-2.0/africa_pentad/tifs/'
+        url = self.base_url + '/products/CHIRPS-2.0/africa_pentad/tifs/'
 
-        if base_url[-1] != '/':
-            base_url += '/'
+        if url[-1] != '/':
+            url += '/'
 
-        filepaths = [base_url + f for f in chirps_files]
+        filepaths = [url + f for f in chirps_files]
 
         if parallel:
             pool = multiprocessing.Pool(processes=100)
