@@ -1,10 +1,9 @@
 import xarray as xr
 
 from .base import Region
-from xarray import Dataset
 
 
-def select_bounding_box_xarray(ds: Dataset, region: Region) -> Dataset:
+def select_bounding_box_xarray(ds: xr.Dataset, region: Region) -> xr.Dataset:
     """ using the Region namedtuple defined in engineering.regions.py select
     the subset of the dataset that you have defined that region for.
 
