@@ -1,15 +1,8 @@
-from pathlib import Path
-from unittest.mock import patch
-import pytest
+from src.exporters import CHIRPSExporter
 
-from src.exporters.chirps import (
-    CHIRPSExporter,
-)
-
-project_dir = Path(__file__).resolve().parents[2]
 
 class TestCHIRPSExporter:
 
-    def test_(tmp_path):
+    def test_(self, tmp_path):
         CHIRPSExporter(tmp_path)
-    pass
+        assert (tmp_path / 'raw/chirps').exists(), 'Expected a raw/chirps folder to be created!'
