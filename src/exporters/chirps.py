@@ -84,7 +84,8 @@ class CHIRPSExporter(BaseExporter):
         filepaths = [url + f for f in chirps_files]
 
         if parallel:
-            pool = multiprocessing.Pool(processes=100)
+            processes = min(100, len(chirps_files))
+            pool = multiprocessing.Pool(processes=processes)
             pool.map(self.wget_file, filepaths)
         else:
             for file in filepaths:
