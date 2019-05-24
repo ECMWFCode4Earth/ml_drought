@@ -250,19 +250,12 @@ def create_lat_lon_vectors(ds: Dataset) -> Tuple[Any, Any]:
         values so we need to ensure that all dims are the same. \
         HEIGHT != 3616, == {ds.HEIGHT.size}"
 
-    # lonmax = ds.attrs['END_LONGITUDE_RANGE']
-    # lonmin = ds.attrs['START_LONGITUDE_RANGE']
-    # latmin = ds.attrs['END_LATITUDE_RANGE']
-    # latmax = ds.attrs['START_LATITUDE_RANGE']
     # NOTE: hardcoded for the VHI data (some files don't have the attrs)
-    lonmax = 180
-    lonmin = -180.0
-    latmin = -55.152
-    latmax = 75.024
+    lonmin, lonmax = -180.0, 180.0
+    latmin, latmax = -55.152, 75.024
 
     # extract the size of the lat/lon coords
-    lat_len = ds.HEIGHT.shape[0]
-    lon_len = ds.WIDTH.shape[0]
+    lat_len, lon_len = ds.HEIGHT.shape[0], ds.WIDTH.shape[0]
 
     # create the vector
     longitudes = np.linspace(lonmin, lonmax, lon_len)

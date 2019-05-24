@@ -2,8 +2,9 @@ import xarray as xr
 import numpy as np
 import pandas as pd
 
+from src.preprocess import VHIPreprocessor
+
 from src.preprocess.vhi import (
-    VHIPreprocessor,
     create_filename,
     extract_timestamp,
     create_lat_lon_vectors,
