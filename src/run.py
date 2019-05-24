@@ -102,7 +102,8 @@ class Run:
 
             preprocessor = dataset2preprocessor[dataset](self.data)
 
-            preprocessor.preprocess(subset_kenya=True)
+            for variable in variables:
+                preprocessor.preprocess(**variable)
 
     def run(self, config: DictWithDefaults) -> None:
 
