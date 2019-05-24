@@ -9,14 +9,13 @@ from src.exporters.vhi import (
     make_filename,
 )
 
-# get the root project directory
-project_dir = Path(__file__).resolve().parents[2]
-
 
 class TestVHIExporter:
 
     def test_api_locally(self):
         if "tommylees" in Path('.').absolute().as_posix():
+            if False:
+                assert True, f"Switch to run this function (takes time)"
             fnames = VHIExporter.get_ftp_filenames(years=list(range(2000, 2020)))
 
             weeks = [int(_parse_time_from_filename(f)[-1]) for f in fnames]
@@ -41,10 +40,10 @@ class TestVHIExporter:
             assert True, "This class is only run locally to avoid externally \
                 calling ftp servers (on travis for example)"
 
-    def test_filename_illegitimate(self):
+    def test_filename_illegitimate(self, tmp_path):
         with pytest.raises(Exception) as e:
             make_filename(
-                raw_folder=project_dir / "data",
+                raw_folder=tmp_path / "data",
                 raw_filename='this/should/fail.nc',
                 dataset='vhi',
             )

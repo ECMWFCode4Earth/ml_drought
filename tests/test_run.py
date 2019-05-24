@@ -9,7 +9,9 @@ class TestDictWithDefaults:
     # actual default dict in pipeline_config/default.json
     # is updated
 
-    default_dict = {"data": "data", "export": {"era5": [{"variable": "precipitation"}]}}
+    default_dict = {"data": "data",
+                    "export": {"era5": [{"variable": "precipitation"}]},
+                    "preprocess": ["vhi"]}
 
     def test_missing_key(self):
 

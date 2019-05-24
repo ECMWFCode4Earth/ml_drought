@@ -9,7 +9,7 @@ from pprint import pprint
 
 from typing import Dict, Optional, List
 
-from .base import BaseExporter, Region
+from .base import BaseExporter, Region, get_kenya
 
 http = urllib3.PoolManager(
     cert_reqs='CERT_REQUIRED',
@@ -221,7 +221,7 @@ class ERA5Exporter(CDSExporter):
             processed_selection_request[key] = val
 
         # by default, we investigate Kenya
-        kenya_region = self.get_kenya()
+        kenya_region = get_kenya()
         processed_selection_request['area'] = self.create_area(kenya_region)
 
         # update with user arguments
