@@ -11,6 +11,12 @@ class BasePreProcessor:
     are responsible for taking the raw data exports and normalizing them
     so that they can be ingested by the feature engineering class.
 
+    This involves:
+    - subsetting the ROI (default is Kenya)
+    - regridding to a consistent spatial grid (pixel size / resolution)
+    - resampling to a consistent time step (hourly, daily, monthly)
+    - assigning coordinates to `.nc` files (latitude, longitude, time)
+
     Attributes:
     ----------
     data_folder: Path, default: Path('data')
