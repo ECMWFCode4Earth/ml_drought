@@ -9,7 +9,7 @@ from src import Run, DictWithDefaults
 def main(input_args):
 
     base_dir = Path(os.path.dirname(os.path.abspath(__file__)))
-    default_config_file = base_dir / 'pipeline_config/default.json'
+    default_config_file = base_dir / 'pipeline_config/minimal.json'
 
     with open(default_config_file, 'r') as f:
         default_config = json.load(f)

@@ -1,4 +1,3 @@
-from cdsapi import Client # noqa
 from pathlib import Path
 from unittest.mock import patch, Mock
 

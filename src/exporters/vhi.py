@@ -9,7 +9,7 @@ import warnings
 
 from pathos.multiprocessing import ProcessingPool as Pool
 
-from .base import (BaseExporter,)  # Region)
+from .base import BaseExporter
 
 # ------------------------------------------------------------------------------
 # Parallel functions
@@ -94,7 +94,7 @@ class VHIExporter(BaseExporter):
     """
 
     @staticmethod
-    def get_ftp_filenames(years: List) -> List:
+    def get_ftp_filenames(years: Optional[List]) -> List:
         """  get the filenames containing VHI """
         with ftplib.FTP('ftp.star.nesdis.noaa.gov') as ftp:
             ftp.login()
@@ -108,12 +108,13 @@ class VHIExporter(BaseExporter):
             # extract only the filenames of interest
             vhi_files = [f for f in filepaths if ".VH.nc" in f]
             # extract only the years of interest
-            years = [str(yr) for yr in years]
-            vhi_files = [
-                f for f in vhi_files if any(
-                    [f"P{yr}" in f for yr in years]
-                )
-            ]
+            if years is not None:
+                years = [str(yr) for yr in years]
+                vhi_files = [
+                    f for f in vhi_files if any(
+                        [f'P{yr}' in f for yr in years]
+                    )
+                ]
         return vhi_files
 
     @staticmethod
@@ -171,13 +172,6 @@ class VHIExporter(BaseExporter):
         return errors
 
     @staticmethod
-    def get_default_years():
-        """ returns the default arguments for no. years """
-        years = [yr for yr in range(1981, 2020)]
-
-        return years
-
-    @staticmethod
     def check_52_files(dir: Path, year: str) -> bool:
         files = [f for f in dir.glob('*.nc')]
         if (len(files) != 52) or (len(files) != 104):
@@ -214,28 +208,27 @@ class VHIExporter(BaseExporter):
         batches = self.run_parallel(vhi_files)
         return batches
 
-    def export(self, years: Optional[List], repeats: int = 5) -> List:
+    def export(self, years: Optional[List] = None, repeats: int = 5) -> List:
         """Export VHI data from the ftp server.
         By default write output to raw/vhi/{YEAR}/{filename}
 
         Arguments:
         ---------
-        years : List
-            list of years that you want to download. Default `range(1981,2020)`
+        years : Optional[List] = None
+            list of years that you want to download. If None, all years will
+            be downloaded
 
         Returns:
         -------
         batches : List
             list of lists containing batches of filenames downloaded
         """
-        if years is None:
-            years = self.get_default_years()
-
-        assert min(years) >= 1981, f"Minimum year cannot be less than 1981.\
-            Currently: {min(years)}"
-        if max(years) > 2020:
-            warnings.warn(f"Non-breaking change: max(years) is:{ max(years)}. But no \
-            files later than 2019")
+        if years is not None:
+            assert min(years) >= 1981, f"Minimum year cannot be less than 1981.\
+                Currently: {min(years)}"
+            if max(years) > 2020:
+                warnings.warn(f"Non-breaking change: max(years) is:{ max(years)}. But no \
+                files later than 2019")
 
         # get the filenames to be downloaded
         self.vhi_files = self.get_ftp_filenames(years)
@@ -247,11 +240,5 @@ class VHIExporter(BaseExporter):
             missing_filepaths = self.get_missing_filepaths()
             batches = self.run_parallel(missing_filepaths)
             print(f"**{_} of {repeats} VHI Downloads completed **")
-
-        # run the download `repeat` times to capture all files
-        # for _ in range(repeats):
-        #     # run the download steps in parallel
-        #     batches = self.run_parallel(self.vhi_files)
-        #     print(f"**{_} of {repeats} VHI Downloads completed **")
 
         return batches

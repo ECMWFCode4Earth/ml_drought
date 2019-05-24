@@ -22,7 +22,7 @@ class TestDictWithDefaults:
 
         error_message = 'data is not defined ' \
                         'in the user config or the default config. Try using ' \
-                        'the default config in pipeline_config/default.json'
+                        'the default config in pipeline_config/(minimal, full).json'
         assert error_message in str(exception_info), \
             f'Got unexpected error message: {exception_info}'
 
