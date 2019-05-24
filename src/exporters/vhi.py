@@ -162,9 +162,9 @@ class VHIExporter(BaseExporter):
     def check_failures(self) -> List:
         """ Read the outputted list of errors to the user """
         pickled_error_fname = "vhi_export_errors.pkl"
-        assert (self.raw_folder / pickled_error_fname).exists(), f"the file:\
-         {(self.raw_folder / 'vhi_export_errors.pkl')} \
-         does not exist! Required to check the files that failed"
+        assert (self.raw_folder / pickled_error_fname).exists(), \
+            f'the file: {(self.raw_folder / "vhi_export_errors.pkl")} does not exist! ' \
+            f'Required to check the files that failed'
 
         with open(pickled_error_fname, 'rb') as f:
             errors = pickle.load(f)
@@ -172,23 +172,24 @@ class VHIExporter(BaseExporter):
         return errors
 
     @staticmethod
-    def check_52_files(dir: Path, year: str) -> bool:
-        files = [f for f in dir.glob('*.nc')]
+    def check_52_files(directory: Path, year: str) -> bool:
+        files = [f for f in directory.glob('*.nc')]
         if (len(files) != 52) or (len(files) != 104):
-            print(f"Not all files downloaded for {year}. Expected: [52 or 104] Got: {len(files)}")
+            print(f'Not all files downloaded for {year}. Expected: [52 or 104] Got: {len(files)}')
             return True
         else:
             return False
 
-    def get_filepaths_for_year(self, year: str) -> List[str]:
+    def get_filepaths_for_year(self, year: str,
+                               vhi_files: List[str]) -> List[str]:
         filepaths = []
         # for every file on the FTP server
-        for f in self.vhi_files:
+        for f in vhi_files:
             if _parse_time_from_filename(f)[0] == year:
                 filepaths.append(f)
         return filepaths
 
-    def get_missing_filepaths(self) -> List[str]:
+    def get_missing_filepaths(self, vhi_files: List[str]) -> List[str]:
         # get the missing filepaths if the number of files != 52
         year_paths = [f for f in (self.raw_folder / 'vhi').glob('*')]
         years = [y.as_posix().split('/')[-1] for y in year_paths]
@@ -197,7 +198,7 @@ class VHIExporter(BaseExporter):
         for year, dir in zip(years, year_paths):
             if self.check_52_files(dir, year):
                 missing_filepaths.extend(
-                    self.get_filepaths_for_year(year)
+                    self.get_filepaths_for_year(year, vhi_files)
                 )
 
         return missing_filepaths
@@ -224,21 +225,21 @@ class VHIExporter(BaseExporter):
             list of lists containing batches of filenames downloaded
         """
         if years is not None:
-            assert min(years) >= 1981, f"Minimum year cannot be less than 1981.\
-                Currently: {min(years)}"
+            assert min(years) >= 1981, f'Minimum year cannot be less than 1981. ' \
+                f'Currently: {min(years)}'
             if max(years) > 2020:
-                warnings.warn(f"Non-breaking change: max(years) is:{ max(years)}. But no \
-                files later than 2019")
+                warnings.warn(f'Non-breaking change: max(years) is:{ max(years)}. '
+                              f'But no files later than 2019')
 
         # get the filenames to be downloaded
-        self.vhi_files = self.get_ftp_filenames(years)
+        vhi_files = self.get_ftp_filenames(years)
 
         # run the download steps in parallel
-        batches = self.run_parallel(self.vhi_files)
+        batches = self.run_parallel(vhi_files)
 
         for _ in range(repeats):
-            missing_filepaths = self.get_missing_filepaths()
+            missing_filepaths = self.get_missing_filepaths(vhi_files)
             batches = self.run_parallel(missing_filepaths)
-            print(f"**{_} of {repeats} VHI Downloads completed **")
+            print(f'**{_} of {repeats} VHI Downloads completed **')
 
         return batches
