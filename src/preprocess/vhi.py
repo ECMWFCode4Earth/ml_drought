@@ -45,7 +45,7 @@ class VHIPreprocessor(BasePreProcessor):
     @staticmethod
     def preprocess_vhi_data(netcdf_filepath: str,
                             output_dir: str,
-                            subset: str = 'kenya',) -> Path:
+                            subset_kenya: bool = True) -> Path:
         """Run the Preprocessing steps for the NOAA VHI data
 
         Process:
@@ -69,24 +69,24 @@ class VHIPreprocessor(BasePreProcessor):
         new_ds = create_new_dataset(ds, longitudes, latitudes, timestamp)
 
         # 5. chop out EastAfrica - TODO: have a dictionary of legitimate args
-        if subset == 'kenya':
+        if subset_kenya:
             kenya_region = get_kenya()
-            kenya_ds = select_bounding_box(new_ds, kenya_region)
+            new_ds = select_bounding_box(new_ds, kenya_region)
 
         # 6. create the filepath and save to that location
         filename = create_filename(
             timestamp,
             netcdf_filepath,
-            subset=True,
-            subset_name=subset
+            subset=subset_kenya,
+            subset_name='kenya' if subset_kenya else None
         )
-        print(f"Saving to {output_dir}/{filename}")
+        print(f'Saving to {output_dir}/{filename}')
         # TODO: change to pathlib.Path objects
-        kenya_ds.to_netcdf(f"{output_dir}/{filename}")
+        new_ds.to_netcdf(f'{output_dir}/{filename}')
 
-        print(f"** Done for VHI {netcdf_filepath.split('/')[-1]} **")
+        print(f'** Done for VHI {netcdf_filepath.split("/")[-1]} **')
 
-        return Path(f"{output_dir}/{filename}")
+        return Path(f'{output_dir}/{filename}')
 
     def add_coordinates(self,
                         netcdf_filepath: str,
@@ -149,11 +149,16 @@ class VHIPreprocessor(BasePreProcessor):
 
         return ds
 
-    def preprocess(self, subset: Optional[str] = 'kenya') -> None:
+    def preprocess(self, subset_kenya: bool = True) -> None:
         """ Preprocess all of the NOAA VHI .nc files to produce
         one subset file with consistent lat/lon and timestamps.
 
         Run in parallel
+
+        Arguments
+        ----------
+        subset_kenya: bool = True
+            Whether to subset Kenya when preprocessing
         """
         # get the filepaths for all of the downloaded data
         nc_files = self.get_vhi_filepaths()
@@ -162,7 +167,7 @@ class VHIPreprocessor(BasePreProcessor):
             Writing to {self.interim_folder}")
         pool = multiprocessing.Pool(processes=100)
         outputs = pool.map(
-            partial(self.add_coordinates, subset=subset), nc_files
+            partial(self.add_coordinates, subset_kenya=subset_kenya), nc_files
         )
         errors = [o for o in outputs if not isinstance(o, Path)]
 
