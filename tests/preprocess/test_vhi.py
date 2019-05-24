@@ -4,9 +4,6 @@ import pandas as pd
 
 from src.preprocess.vhi import (
     VHIPreprocessor,
-)
-
-from src.preprocess.preprocess_vhi import (
     create_filename,
     extract_timestamp,
     create_lat_lon_vectors,
