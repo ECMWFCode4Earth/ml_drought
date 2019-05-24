@@ -14,7 +14,7 @@ class TestVHIExporter:
 
     def test_api_locally(self):
         if "tommylees" in Path('.').absolute().as_posix():
-            if True:
+            if False:
                 assert True, f"Switch to run this function (takes time)"
             fnames = VHIExporter.get_ftp_filenames(years=list(range(2000, 2020)))
 

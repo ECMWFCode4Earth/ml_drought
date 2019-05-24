@@ -13,5 +13,8 @@
             "selection_request": {"year":  [2017, 2018]}
          }
       ]
-   }
+  },
+  "preprocess":{
+      "vhi": [{"subset_kenya": "True"}]
+  }
 }

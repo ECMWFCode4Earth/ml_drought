@@ -76,8 +76,6 @@ class TestVHIPreprocessor:
         )
         expected = "STAR_VHP.G04.C07.NC_1981_8_31_kenya_VH.nc"
 
-        assert "kenya_VH.nc" in out.name, f"Expected to find kenya_VH.nc \
-            in output path name but found: {out.name}"
         assert out.name == expected, f"Expected: {expected} Got: {out.name}"
 
         # check the structure of the output file
