@@ -38,13 +38,15 @@ class TestVHIPreprocessor:
 
         # touch placeholder files
         [(demo_raw_folder / fname).touch() for fname in fnames]
+        # add a file which shouldn't be added by get_vhi_filepaths
+        (demo_raw_folder / 'info.md').touch()
 
         # get the filepaths using the VHIPreprocessor function
         recovered_names = [f.name for f in v.get_vhi_filepaths()]
         recovered_names.sort()
 
         assert recovered_names == fnames, \
-            f'Recovered filenames should be the same as those created'
+            f'Expected all .nc files to be retrieved.'
 
     @staticmethod
     def test_preprocessor_output(tmp_path):
@@ -56,17 +58,17 @@ class TestVHIPreprocessor:
         netcdf_filepath = demo_raw_folder / 'VHP.G04.C07.NC.P1981035.VH.nc'
 
         # build dummy .nc object
-        HEIGHT = list(range(0, 3616))
-        WIDTH = list(range(0, 10000))
-        VCI = TCI = VHI = np.random.randint(100, size=(3616, 10000))
+        height = list(range(0, 3616))
+        width = list(range(0, 10000))
+        vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
 
         raw_ds = xr.Dataset(
-            {'VCI': (['HEIGHT', 'WIDTH'], VCI),
-             'TCI': (['HEIGHT', 'WIDTH'], TCI),
-             'VHI': (['HEIGHT', 'WIDTH'], VHI)},
+            {'VCI': (['HEIGHT', 'WIDTH'], vci),
+             'TCI': (['HEIGHT', 'WIDTH'], tci),
+             'VHI': (['HEIGHT', 'WIDTH'], vhi)},
             coords={
-                'HEIGHT': (HEIGHT),
-                'WIDTH': (WIDTH), }
+                'HEIGHT': height,
+                'WIDTH': width}
         )
         raw_ds.to_netcdf(netcdf_filepath)
 
@@ -76,18 +78,17 @@ class TestVHIPreprocessor:
         )
         expected = "STAR_VHP.G04.C07.NC_1981_8_31_kenya_VH.nc"
 
-        assert "kenya_VH.nc" in out.name, f"Expected to find kenya_VH.nc \
-            in output path name but found: {out.name}"
         assert out.name == expected, f"Expected: {expected} Got: {out.name}"
 
         # check the structure of the output file
         out_ds = xr.open_dataset(out)
-        out_dims = [dim for dim in out_ds.dims.keys()]
+        out_dims = list(out_ds.dims.keys())
         out_vars = [var for var in out_ds.variables.keys() if var not in out_dims]
 
-        assert 'VHI' in out_vars, f"Expected to find VHI in out_vars"
-        assert all(np.isin(['latitude', 'longitude', 'time'], out_dims)), f"Expected\
-            to find ['latitude','longitude', 'time'] in {out_dims}"
+        assert 'VHI' in out_vars, f'Expected to find VHI in out_vars'
+        assert all(np.isin(['latitude', 'longitude', 'time'], out_dims)) \
+            and (len(out_dims) == 3), \
+            f'Expected {out_dims} to be ["latitude","longitude", "time"]'
 
     @staticmethod
     def test_make_filename():
@@ -104,7 +105,7 @@ class TestVHIPreprocessor:
         )
 
         expected = 'STAR_VHP.G04.C07.NC_1981_8_31_kenya_VH.nc'
-        assert out_fname == expected, f"\nExpected: {expected} \nGot: {out_fname}"
+        assert out_fname == expected, f'Expected: {expected}, got: {out_fname}'
 
     @staticmethod
     def test_create_new_dataset():
@@ -112,17 +113,17 @@ class TestVHIPreprocessor:
         netcdf_filepath = 'VHP.G04.C07.NC.P1981035.VH.nc'
 
         # build dummy .nc object
-        HEIGHT = list(range(0, 3616))
-        WIDTH = list(range(0, 10000))
-        VCI = TCI = VHI = np.random.randint(100, size=(3616, 10000))
+        height = list(range(0, 3616))
+        width = list(range(0, 10000))
+        vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
 
         ds = xr.Dataset(
-            {'VCI': (['HEIGHT', 'WIDTH'], VCI),
-             'TCI': (['HEIGHT', 'WIDTH'], TCI),
-             'VHI': (['HEIGHT', 'WIDTH'], VHI)},
+            {'VCI': (['HEIGHT', 'WIDTH'], vci),
+             'TCI': (['HEIGHT', 'WIDTH'], tci),
+             'VHI': (['HEIGHT', 'WIDTH'], vhi)},
             coords={
-                'HEIGHT': (HEIGHT),
-                'WIDTH': (WIDTH), }
+                'HEIGHT': height,
+                'WIDTH': width}
         )
         timestamp = extract_timestamp(ds, netcdf_filepath, use_filepath=True)
         expected_timestamp = pd.Timestamp('1981-08-31 00:00:00')
@@ -145,5 +146,14 @@ class TestVHIPreprocessor:
                                     timestamp,
                                     all_vars=False)
 
-        assert isinstance(out_ds, xr.Dataset), f"Expected out_ds to be of \
-            type: xr.Dataset, now: {type(out_ds)}"
+        assert isinstance(out_ds, xr.Dataset), \
+            f'Expected out_ds to be of type: xr.Dataset, now: {type(out_ds)}'
+
+        # test a time dimension was added
+        out_dims = list(out_ds.dims.keys())
+        assert 'time' in out_dims, f'Expected "time" to be in dataset coords, got {out_dims}'
+
+        # test the other variables were removed
+        out_variables = [var for var in out_ds.variables.keys() if var not in out_dims]
+        assert out_variables == ['VHI'], \
+            f'Excpected dataset variables to only have VHI, got {out_variables}'
