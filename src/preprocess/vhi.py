@@ -32,16 +32,16 @@ class VHIPreprocessor(BasePreProcessor):
     def __init__(self, data_folder: Path = Path('data')) -> None:
         super().__init__(data_folder)
 
-        self.out_dir = self.interim_folder / "vhi_preprocessed"
+        self.out_dir = self.interim_folder / 'vhi_preprocessed'
         if not self.out_dir.exists():
             self.out_dir.mkdir()
 
-        self.vhi_interim = self.interim_folder / "vhi"
+        self.vhi_interim = self.interim_folder / 'vhi'
         if not self.vhi_interim.exists():
             self.vhi_interim.mkdir()
 
     def get_vhi_filepaths(self) -> List[Path]:
-        return [f for f in (self.raw_folder / "vhi").glob('*/*.nc')]
+        return [f for f in (self.raw_folder / 'vhi').glob('*/*.nc')]
 
     @staticmethod
     def preprocess_vhi_data(netcdf_filepath: str,
@@ -56,7 +56,7 @@ class VHIPreprocessor(BasePreProcessor):
         * create new dataset with these dimensions
         * Save the output file to new folder
         """
-        print(f"** Starting work on {netcdf_filepath.split('/')[-1]} **")
+        print(f'** Starting work on {netcdf_filepath.split("/")[-1]} **')
         # 1. read in the dataset
         ds = xr.open_dataset(netcdf_filepath)
 
