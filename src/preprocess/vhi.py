@@ -91,6 +91,7 @@ class VHIPreprocessor(BasePreProcessor):
 
     def add_coordinates(self,
                         netcdf_filepath: str,
+                        subset_kenya: bool = True,
                         ) -> Union[Path, Tuple[Exception, str]]:
         """ function to be run in parallel & safely catch errors
 
@@ -105,7 +106,7 @@ class VHIPreprocessor(BasePreProcessor):
 
         try:
             return self.preprocess_vhi_data(
-                netcdf_filepath, self.vhi_interim.as_posix(),
+                netcdf_filepath, self.vhi_interim.as_posix(), subset_kenya,
             )
         except Exception as e:
             print(f"### FAILED: {netcdf_filepath}")

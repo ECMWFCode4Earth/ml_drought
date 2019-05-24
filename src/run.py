@@ -85,6 +85,7 @@ class Run:
 
         Arguments
         --------
+        preprocess_args:
         """
         dataset2preprocessor = {
             'vhi': VHIPreprocessor,
@@ -99,7 +100,7 @@ class Run:
             assert type(variables) is list, \
                 f'Expected {dataset} values to be a list. Got {type(variables)} instead'
 
-            preprocessor = dataset2preprocessor[VHIPreprocessor](self.data)
+            preprocessor = dataset2preprocessor[dataset](self.data)
 
             preprocessor.preprocess(subset_kenya=True)
 
