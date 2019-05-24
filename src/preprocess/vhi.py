@@ -43,7 +43,7 @@ class VHIPreprocessor(BasePreProcessor):
         return [f for f in (self.raw_folder / "vhi").glob('*/*.nc')]
 
     @staticmethod
-    def preprocess_VHI_data(netcdf_filepath: str,
+    def preprocess_vhi_data(netcdf_filepath: str,
                             output_dir: str,
                             subset: str = 'kenya',) -> Path:
         """Run the Preprocessing steps for the NOAA VHI data
@@ -103,7 +103,7 @@ class VHIPreprocessor(BasePreProcessor):
             netcdf_filepath = netcdf_filepath.as_posix()
 
         try:
-            return self.preprocess_VHI_data(
+            return self.preprocess_vhi_data(
                 netcdf_filepath, self.vhi_interim.as_posix(),
             )
         except Exception as e:
