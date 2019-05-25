@@ -3,6 +3,8 @@ from pathlib import Path
 from typing import Dict
 
 from src.exporters import ERA5Exporter, VHIExporter, ERA5ExporterPOS
+from src.preprocess import VHIPreprocessor
+
 
 
 class DictWithDefaults:
@@ -15,7 +17,7 @@ class DictWithDefaults:
     def _check_keys(self) -> None:
 
         # To be updated as the pipeline grows
-        expected_keys = {'data', 'export'}
+        expected_keys = {'data', 'export', 'preprocess'}
 
         for key in expected_keys:
             try:
@@ -76,6 +78,34 @@ class Run:
 
             for variable in variables:
                 _ = exporter.export(**variable)  # type: ignore
+
+    def process(self, preprocess_args: Dict) -> None:
+        """preprocess the data
+
+        subset; assign coordinates (latitude/longitude/time); regrid;
+        resample timesteps;
+
+        Arguments
+        --------
+        preprocess_args:
+        """
+        dataset2preprocessor = {
+            'vhi': VHIPreprocessor,
+        }
+
+        for dataset, variables in preprocess_args.items():
+
+            # check the format is as we expected
+            assert dataset in dataset2preprocessor, \
+                f'{dataset} is not supported! Supported datasets are {dataset2preprocessor.keys()}'
+
+            assert type(variables) is list, \
+                f'Expected {dataset} values to be a list. Got {type(variables)} instead'
+
+            preprocessor = dataset2preprocessor[dataset](self.data)
+
+            for variable in variables:
+                preprocessor.preprocess(**variable)
 
     def run(self, config: DictWithDefaults) -> None:
 

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import sys
 sys.path.append('..')
-from src.exporters import ERA5Exporter  # noqa
+from src.exporters import ERA5Exporter, VHIExporter  # noqa
 
 
 def export_precip_2018():
@@ -24,5 +24,17 @@ def export_precip_2018():
                     selection_request=selection_request)
 
 
+def export_vhi_2018():
+    # if the working directory is alread ml_drought don't need ../data
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+    exporter = VHIExporter(data_path)
+
+    exporter.export(years=[2018])
+
+
 if __name__ == '__main__':
-    export_precip_2018()
+    # export_precip_2018()
+    export_vhi_2018()
