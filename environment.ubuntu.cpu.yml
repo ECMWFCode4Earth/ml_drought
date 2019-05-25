@@ -40,6 +40,7 @@ dependencies:
   - gmp=6.1.2
   - hdf4=4.2.13
   - hdf5=1.10.4
+  - icu=58.2
   - idna=2.8
   - itsdangerous=1.1.0
   - jinja2=2.10.1
@@ -57,10 +58,14 @@ dependencies:
   - libffi=3.2.1
   - libgcc-ng=8.2.0
   - libgfortran-ng=7.3.0
+  - libiconv=1.15
   - liblapack=3.8.0
   - libnetcdf=4.6.2
   - libssh2=1.8.2
   - libstdcxx-ng=8.2.0
+  - libxml2=2.9.9
+  - libxslt=1.1.32
+  - lxml=4.3.3
   - markupsafe=1.1.1
   - mccabe=0.6.1
   - mock=3.0.5
