@@ -172,10 +172,10 @@ class VHIExporter(BaseExporter):
         return errors
 
     @staticmethod
-
     def get_default_years() -> List[int]:
         """ returns the default arguments for no. years """
         years = [yr for yr in range(1981, 2020)]
+        return years
 
     def check_52_files(directory: Path, year: str) -> bool:
         files = [f for f in directory.glob('*.nc')]
