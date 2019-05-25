@@ -12,6 +12,7 @@ dependencies:
   - backports=1.0
   - backports.tempfile=1.0
   - backports.weakref=1.0.post1
+  - beautifulsoup4=4.7.1
   - boto=2.49.0
   - boto3=1.9.153
   - botocore=1.12.153
@@ -103,6 +104,7 @@ dependencies:
   - s3transfer=0.2.0
   - setuptools=41.0.1
   - six=1.12.0
+  - soupsieve=1.9.1
   - sqlite=3.28.0
   - tk=8.6.8
   - typed-ast=1.3.5
