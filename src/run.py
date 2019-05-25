@@ -6,7 +6,6 @@ from src.exporters import ERA5Exporter, VHIExporter, ERA5ExporterPOS
 from src.preprocess import VHIPreprocessor
 
 
-
 class DictWithDefaults:
 
     def __init__(self, user_config: Dict, default_config: Dict) -> None:
