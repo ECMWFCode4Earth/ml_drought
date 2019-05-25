@@ -2,7 +2,7 @@ from pathlib import Path
 
 from typing import Dict
 
-from src.exporters import ERA5Exporter, VHIExporter
+from src.exporters import ERA5Exporter, VHIExporter, ERA5ExporterPOS
 from src.preprocess import VHIPreprocessor
 
 
@@ -61,6 +61,7 @@ class Run:
         dataset2exporter = {
             'era5': ERA5Exporter,
             'vhi': VHIExporter,
+            'era5POS': ERA5ExporterPOS,
         }
 
         for dataset, variables in export_args.items():
