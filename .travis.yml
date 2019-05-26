@@ -4,6 +4,8 @@ services:
 
 before_install:
   - docker build -t ml_drought .
+  # https://stackoverflow.com/a/56116249/9940782
+  - docker run ml_drought /bin/bash -c "conda upgrade -n base -c defaults --override-channels conda"
   - docker run ml_drought /bin/bash -c "source activate esowc-drought; pytest; mypy src"
   # https://github.com/travis-ci/travis-ci/issues/7940
   - sudo rm -f /etc/boto.cfg
