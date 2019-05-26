@@ -177,6 +177,7 @@ class VHIExporter(BaseExporter):
         years = [yr for yr in range(1981, 2020)]
         return years
 
+    @staticmethod
     def check_52_files(directory: Path, year: str) -> bool:
         files = [f for f in directory.glob('*.nc')]
         if (len(files) != 52) or (len(files) != 104):
