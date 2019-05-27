@@ -92,7 +92,7 @@ class CHIRPSExporter(BaseExporter):
                 self.wget_file(file)
 
     def export(self, years: Optional[List[int]] = None,
-               region: str = 'africa',
+               region: str = 'global',
                parallel: bool = False) -> None:
         """Export functionality for the CHIRPS precipitation product
 
@@ -100,7 +100,7 @@ class CHIRPSExporter(BaseExporter):
         ----------
         years: Optional list of ints, default = None
             The years of data to download. If None, all data will be downloaded
-        region: str {'africa', 'global'}, default = 'africa'
+        region: str {'africa', 'global'}, default = 'global'
             The dataset region to download. If global, a netcdf file is downloaded.
             If africa, a tif file is downloaded
         parallel: bool, default = False
@@ -113,6 +113,11 @@ class CHIRPSExporter(BaseExporter):
             if max(years) > 2020:
                 warnings.warn(f"Non-breaking change: max(years) is: {max(years)}. "
                               f"But no files later than 2019")
+
+        # write the region download to a unique file location
+        self.chirps_folder = self.chirps_folder / region
+        if not self.chirps_folder.exists():
+            self.chirps_folder.mkdir()
 
         # get the filenames to be downloaded
         chirps_files = self.get_chirps_filenames(years, region)
