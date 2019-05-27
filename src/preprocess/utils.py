@@ -1,6 +1,56 @@
 import xarray as xr
+import xesmf as xe
 
 from .base import Region
+
+
+def regrid(ds: xr.Dataset, reference_ds: xr.Dataset, method="nearest_s2d"):
+    """ Use xEMSF package to regrid ds to the same grid as reference_ds
+
+    Arguments:
+    ----------
+    ds: xr.Dataset
+        The dataset to be regridded
+    reference_ds: xr.Dataset
+        The reference dataset, onto which `ds` will be regridded
+    method: str, {'bilinear', 'conservative', 'nearest_s2d', 'nearest_d2s', 'patch'}
+        The method applied for the regridding
+    """
+
+    assert ('latitude' in reference_ds.dims) & ('longitude' in reference_ds.dims), \
+        f'Need (latitude,longitude) in reference_ds dims Currently: {reference_ds.dims}'
+    assert ('latitude' in ds.dims) & ('longitude' in ds.dims), \
+        f'Need (latitude,longitude) in ds dims Currently: {ds.dims}'
+
+    regridding_methods = ['bilinear', 'conservative', 'nearest_s2d', 'nearest_d2s', 'patch']
+    assert method in regridding_methods, \
+        f'{method} not an acceptable regridding method. Must be one of {regridding_methods}'
+
+    # create the grid you want to convert TO (from reference_ds)
+    ds_out = xr.Dataset(
+        {'latitude': (['latitude'], reference_ds.latitude),
+         'longitude': (['longitude'], reference_ds.longitude)}
+    )
+
+    regridder = xe.Regridder(ds, ds_out, method, reuse_weights=True)
+
+    vars = list(ds.var().variables)
+    if len(vars) == 1:
+        ds = regridder(ds)
+    else:
+        output_dict = {}
+        # LOOP over each variable and append to dict
+        for var in vars:
+            print(f"- regridding var {var} -")
+            da = ds[var]
+            da = regridder(da)
+            output_dict[var] = da
+        # REBUILD
+        ds = xr.Dataset(output_dict)
+    print(f'Regridded from {(regridder.Ny_in, regridder.Nx_in)} '
+          f'to {(regridder.Ny_out, regridder.Nx_out)}')
+
+    return ds
 
 
 def select_bounding_box(ds: xr.Dataset,
@@ -31,7 +81,7 @@ def select_bounding_box(ds: xr.Dataset,
     assert isinstance(ds, xr.Dataset) or isinstance(ds, xr.DataArray), f"ds. " \
         f"Must be an xarray object! currently: {type(ds)}"
 
-    dims = [dim for dim in ds.dims.keys()]
+    dims = list(ds.dims.keys())
     variables = [var for var in ds.variables if var not in dims]
 
     latmin, latmax, lonmin, lonmax = region.latmin, region.latmax, region.lonmin, region.lonmax
