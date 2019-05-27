@@ -8,7 +8,7 @@ import multiprocessing
 from typing import List, Optional
 import re
 
-from .base import (BasePreProcessor,)
+from .base import BasePreProcessor, get_kenya
 from .preprocess_utils import select_bounding_box_xarray
 
 
@@ -76,7 +76,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         # 2. chop out EastAfrica
         if self.subset_name == 'kenya':
-            kenya_region = self.get_kenya()
+            kenya_region = get_kenya()
             kenya_ds = select_bounding_box_xarray(ds, kenya_region)
 
         # 6. create the filepath and save to that location
