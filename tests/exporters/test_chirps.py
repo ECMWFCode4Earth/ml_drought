@@ -18,10 +18,12 @@ class TestCHIRPSExporter:
         # checks we don't redownload files
 
         exporter = CHIRPSExporter(tmp_path)
+        exporter.region_folder = exporter.chirps_folder / 'global'
+        exporter.region_folder.mkdir()
 
         # setup the already downloaded file
         test_filename = 'testy_test.nc'
-        (tmp_path / f'raw/chirps/{test_filename}').touch()
+        (tmp_path / f'raw/chirps/global/{test_filename}').touch()
 
         exporter.wget_file(test_filename)
         captured = capsys.readouterr()
