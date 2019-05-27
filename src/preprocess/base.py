@@ -30,8 +30,8 @@ class BasePreProcessor:
         if not self.interim_folder.exists():
             self.interim_folder.mkdir()
 
-    @staticmethod
-    def regrid(ds: xr.Dataset,
+    def regrid(self,
+               ds: xr.Dataset,
                reference_ds: xr.Dataset,
                method: str = "nearest_s2d") -> xr.Dataset:
         """ Use xEMSF package to regrid ds to the same grid as reference_ds
@@ -61,7 +61,15 @@ class BasePreProcessor:
              'lon': (['lon'], reference_ds.lon)}
         )
 
-        regridder = xe.Regridder(ds, ds_out, method, reuse_weights=True)
+        shape_in = len(ds.lat), len(ds.lon)
+        shape_out = len(reference_ds.lat), len(reference_ds.lon)
+
+        filename = f'{method}_{shape_in[0]}x{shape_in[1]}_{shape_out[0]}x{shape_out[1]}.nc'
+        savedir = self.interim_folder / filename
+
+        regridder = xe.Regridder(ds, ds_out, method,
+                                 filename=str(savedir),
+                                 reuse_weights=True)
 
         variables = list(ds.var().variables)
         output_dict = {}

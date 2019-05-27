@@ -35,3 +35,16 @@ class TestRegridding:
         expected_message_contains = 'not an acceptable regridding method. Must be one of'
         assert expected_message_contains in str(e), \
             f'Expected {e} to contain {expected_message_contains}'
+
+    def test_regridder_save(self, tmp_path):
+        size_reference = (100, 100)
+        size_target = (1000, 1000)
+
+        reference_ds, _, _ = _make_dataset(size_reference)
+        target_ds, _, _ = _make_dataset(size_target)
+
+        processor = BasePreProcessor(tmp_path)
+        processor.regrid(target_ds, reference_ds)
+        assert (processor.interim_folder / 'nearest_s2d_1000x1000_100x100.nc').exists(), \
+            f'Regridder not saved in the right place! Expected it to be saved ' \
+            f'at {processor.interim_folder / "nearest_s2d_1000x1000_100x100.nc"}'
