@@ -1,10 +1,12 @@
 import xarray as xr
 import xesmf as xe
 
-from .base import Region
+from ..utils import Region
 
 
-def regrid(ds: xr.Dataset, reference_ds: xr.Dataset, method="nearest_s2d"):
+def regrid(ds: xr.Dataset,
+           reference_ds: xr.Dataset,
+           method: str = "nearest_s2d") -> xr.Dataset:
     """ Use xEMSF package to regrid ds to the same grid as reference_ds
 
     Arguments:

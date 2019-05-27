@@ -1,9 +1,10 @@
 from pathlib import Path
 
+from .utils import regrid
 from ..utils import Region, get_kenya
 
 
-__all__ = ['BasePreProcessor', 'Region', 'get_kenya']
+__all__ = ['BasePreProcessor', 'Region', 'get_kenya', 'regrid']
 
 
 class BasePreProcessor:
