@@ -1,5 +1,6 @@
 import xarray as xr
 import numpy as np
+import pytest
 
 from src.utils import Region
 from src.preprocess.utils import select_bounding_box, regrid
@@ -74,3 +75,16 @@ class TestRegridding:
         assert regridded_ds.VHI.values.shape == size_reference, \
             f'Expected regridded Dataset to have shape {size_reference}, ' \
             f'got {regridded_ds.VHI.values.shape}'
+
+    def test_incorrect_method(self):
+        size_reference = (100, 100)
+        size_target = (1000, 1000)
+
+        reference_ds, _, _ = _make_dataset(size_reference)
+        target_ds, _, _ = _make_dataset(size_target)
+
+        with pytest.raises(AssertionError) as e:
+            regrid(target_ds, reference_ds, method='woops!')
+        expected_message_contains = 'not an acceptable regridding method. Must be one of'
+        assert expected_message_contains in str(e), \
+            f'Expected {e} to contain {expected_message_contains}'
