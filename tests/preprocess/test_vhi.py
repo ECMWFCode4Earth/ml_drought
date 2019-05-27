@@ -156,4 +156,4 @@ class TestVHIPreprocessor:
         # test the other variables were removed
         out_variables = [var for var in out_ds.variables.keys() if var not in out_dims]
         assert out_variables == ['VHI'], \
-            f'Excpected dataset variables to only have VHI, got {out_variables}'
+            f'Expected dataset variables to only have VHI, got {out_variables}'
