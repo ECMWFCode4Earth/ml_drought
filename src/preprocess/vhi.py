@@ -43,8 +43,8 @@ class VHIPreprocessor(BasePreProcessor):
     def get_vhi_filepaths(self) -> List[Path]:
         return [f for f in (self.raw_folder / 'vhi').glob('*/*.nc')]
 
-    @staticmethod
-    def preprocess_vhi_data(netcdf_filepath: str,
+    def preprocess_vhi_data(self,
+                            netcdf_filepath: str,
                             output_dir: str,
                             subset_kenya: bool = True) -> Path:
         """Run the Preprocessing steps for the NOAA VHI data

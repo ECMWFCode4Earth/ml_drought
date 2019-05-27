@@ -69,7 +69,7 @@ class BasePreProcessor:
 
         regridder = xe.Regridder(ds, ds_out, method,
                                  filename=str(savedir),
-                                 reuse_weights=True)
+                                 reuse_weights=False)
 
         variables = list(ds.var().variables)
         output_dict = {}
@@ -80,5 +80,7 @@ class BasePreProcessor:
 
         print(f'Regridded from {(regridder.Ny_in, regridder.Nx_in)} '
               f'to {(regridder.Ny_out, regridder.Nx_out)}')
+
+        regridder.clean_weight_file()
 
         return ds

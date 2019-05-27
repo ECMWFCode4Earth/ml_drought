@@ -45,6 +45,5 @@ class TestRegridding:
 
         processor = BasePreProcessor(tmp_path)
         processor.regrid(target_ds, reference_ds)
-        assert (processor.interim_folder / 'nearest_s2d_1000x1000_100x100.nc').exists(), \
-            f'Regridder not saved in the right place! Expected it to be saved ' \
-            f'at {processor.interim_folder / "nearest_s2d_1000x1000_100x100.nc"}'
+        assert (processor.interim_folder / 'nearest_s2d_1000x1000_100x100.nc').exists() is False, \
+            f'Regridder weight file not deleted!'
