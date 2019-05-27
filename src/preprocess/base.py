@@ -1,10 +1,11 @@
 from pathlib import Path
+import xarray as xr
+import xesmf as xe
 
-from .utils import regrid
 from ..utils import Region, get_kenya
 
 
-__all__ = ['BasePreProcessor', 'Region', 'get_kenya', 'regrid']
+__all__ = ['BasePreProcessor', 'Region', 'get_kenya']
 
 
 class BasePreProcessor:
@@ -28,3 +29,48 @@ class BasePreProcessor:
 
         if not self.interim_folder.exists():
             self.interim_folder.mkdir()
+
+    @staticmethod
+    def regrid(ds: xr.Dataset,
+               reference_ds: xr.Dataset,
+               method: str = "nearest_s2d") -> xr.Dataset:
+        """ Use xEMSF package to regrid ds to the same grid as reference_ds
+
+        Arguments:
+        ----------
+        ds: xr.Dataset
+            The dataset to be regridded
+        reference_ds: xr.Dataset
+            The reference dataset, onto which `ds` will be regridded
+        method: str, {'bilinear', 'conservative', 'nearest_s2d', 'nearest_d2s', 'patch'}
+            The method applied for the regridding
+        """
+
+        assert ('lat' in reference_ds.dims) & ('lon' in reference_ds.dims), \
+            f'Need (lat,lon) in reference_ds dims Currently: {reference_ds.dims}'
+        assert ('lat' in ds.dims) & ('lon' in ds.dims), \
+            f'Need (lat,lon) in ds dims Currently: {ds.dims}'
+
+        regridding_methods = ['bilinear', 'conservative', 'nearest_s2d', 'nearest_d2s', 'patch']
+        assert method in regridding_methods, \
+            f'{method} not an acceptable regridding method. Must be one of {regridding_methods}'
+
+        # create the grid you want to convert TO (from reference_ds)
+        ds_out = xr.Dataset(
+            {'lat': (['lat'], reference_ds.lat),
+             'lon': (['lon'], reference_ds.lon)}
+        )
+
+        regridder = xe.Regridder(ds, ds_out, method, reuse_weights=True)
+
+        variables = list(ds.var().variables)
+        output_dict = {}
+        for var in variables:
+            print(f'- regridding var {var} -')
+            output_dict[var] = regridder(ds[var])
+        ds = xr.Dataset(output_dict)
+
+        print(f'Regridded from {(regridder.Ny_in, regridder.Nx_in)} '
+              f'to {(regridder.Ny_out, regridder.Nx_out)}')
+
+        return ds
