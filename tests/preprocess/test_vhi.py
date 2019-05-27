@@ -86,9 +86,9 @@ class TestVHIPreprocessor:
         out_vars = [var for var in out_ds.variables.keys() if var not in out_dims]
 
         assert 'VHI' in out_vars, f'Expected to find VHI in out_vars'
-        assert all(np.isin(['latitude', 'longitude', 'time'], out_dims)) \
+        assert all(np.isin(['lat', 'lon', 'time'], out_dims)) \
             and (len(out_dims) == 3), \
-            f'Expected {out_dims} to be ["latitude","longitude", "time"]'
+            f'Expected {out_dims} to be ["lat","lon", "time"]'
 
     @staticmethod
     def test_make_filename():

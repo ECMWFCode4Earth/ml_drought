@@ -292,9 +292,9 @@ def create_new_dataarray(ds: Dataset,
 
     da = xr.DataArray(
         [ds[variable].values],
-        dims=['time', 'latitude', 'longitude'],
-        coords={'longitude': longitudes,
-                'latitude': latitudes,
+        dims=['time', 'lat', 'lon'],
+        coords={'lon': longitudes,
+                'lat': latitudes,
                 'time': [timestamp]}
     )
     da.name = variable
