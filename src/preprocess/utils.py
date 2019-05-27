@@ -17,10 +17,10 @@ def regrid(ds: xr.Dataset, reference_ds: xr.Dataset, method="nearest_s2d"):
         The method applied for the regridding
     """
 
-    assert ('latitude' in reference_ds.dims) & ('longitude' in reference_ds.dims), \
-        f'Need (latitude,longitude) in reference_ds dims Currently: {reference_ds.dims}'
-    assert ('latitude' in ds.dims) & ('longitude' in ds.dims), \
-        f'Need (latitude,longitude) in ds dims Currently: {ds.dims}'
+    assert ('lat' in reference_ds.dims) & ('lon' in reference_ds.dims), \
+        f'Need (lat,lon) in reference_ds dims Currently: {reference_ds.dims}'
+    assert ('lat' in ds.dims) & ('lon' in ds.dims), \
+        f'Need (lat,lon) in ds dims Currently: {ds.dims}'
 
     regridding_methods = ['bilinear', 'conservative', 'nearest_s2d', 'nearest_d2s', 'patch']
     assert method in regridding_methods, \
@@ -28,25 +28,19 @@ def regrid(ds: xr.Dataset, reference_ds: xr.Dataset, method="nearest_s2d"):
 
     # create the grid you want to convert TO (from reference_ds)
     ds_out = xr.Dataset(
-        {'latitude': (['latitude'], reference_ds.latitude),
-         'longitude': (['longitude'], reference_ds.longitude)}
+        {'lat': (['lat'], reference_ds.lat),
+         'lon': (['lon'], reference_ds.lon)}
     )
 
     regridder = xe.Regridder(ds, ds_out, method, reuse_weights=True)
 
-    vars = list(ds.var().variables)
-    if len(vars) == 1:
-        ds = regridder(ds)
-    else:
-        output_dict = {}
-        # LOOP over each variable and append to dict
-        for var in vars:
-            print(f"- regridding var {var} -")
-            da = ds[var]
-            da = regridder(da)
-            output_dict[var] = da
-        # REBUILD
-        ds = xr.Dataset(output_dict)
+    variables = list(ds.var().variables)
+    output_dict = {}
+    for var in variables:
+        print(f'- regridding var {var} -')
+        output_dict[var] = regridder(ds[var])
+    ds = xr.Dataset(output_dict)
+
     print(f'Regridded from {(regridder.Ny_in, regridder.Nx_in)} '
           f'to {(regridder.Ny_out, regridder.Nx_out)}')
 
