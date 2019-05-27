@@ -1,4 +1,3 @@
-from typing import List
 from bs4 import BeautifulSoup
 import urllib.request
 import os
@@ -7,10 +6,11 @@ import multiprocessing
 from pathlib import Path
 from .base import BaseExporter
 
+from typing import List, Optional
+
 
 class CHIRPSExporter(BaseExporter):
     """Exports precip from the Climate Hazards group site
-
     # 0.5degree
     ftp://ftp.chg.ucsb.edu/pub/org/chg/products/CHIRPS-2.0/global_pentad/netcdf/
     # 0.25degree
@@ -24,16 +24,21 @@ class CHIRPSExporter(BaseExporter):
         if not self.chirps_folder.exists():
             self.chirps_folder.mkdir()
 
-    @staticmethod
-    def get_chirps_filenames(years: List[str]) -> List:
+        self.base_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg'
+
+    def get_url(self, region: str = 'africa') -> str:
+        url = f'/products/CHIRPS-2.0/{region}_pentad/{"tifs" if region == "africa" else "netcdf"}/'
+
+        return self.base_url + url
+
+    def get_chirps_filenames(self, years: Optional[List[int]] = None,
+                             region: str = 'africa') -> List[str]:
         """
         ftp://ftp.chg.ucsb.edu/pub/org/chg/products/
             CHIRPS-2.0/global_pentad/netcdf/
-
         https://github.com/datamission/WFP/blob/master/Datasets/CHIRPS/get_chirps.py
         """
-        base_url = 'ftp://ftp.chg.ucsb.edu'
-        url = base_url + '/pub/org/chg/products/CHIRPS-2.0/global_pentad/netcdf/'
+        url = self.get_url(region)
 
         # use urllib.request to read the page source
         req = urllib.request.Request(url)
@@ -50,58 +55,64 @@ class CHIRPSExporter(BaseExporter):
         chirpsfiles = [x for x in flatlist if 'chirps' in x]
 
         # extract only the years of interest
-        chirpsfiles = [
-            f for f in chirpsfiles if any(
-                [f".{yr}." in f for yr in years]
-            )
-        ]
+        if years is not None:
+            chirpsfiles = [
+                f for f in chirpsfiles if any(
+                    [f'.{yr}.' in f for yr in years]
+                )
+            ]
         return chirpsfiles
 
     def wget_file(self, filepath: str) -> None:
         if (self.chirps_folder / filepath).exists():
-            print(f"{filepath} already exists!")
-            return
+            print(f'{filepath} already exists! Skipping')
         else:
             os.system(f"wget -np -nH --cut-dirs 7 {filepath} \
                 -P {self.chirps_folder.as_posix()}")
 
-    def download_chirps_files(self, chirps_files: List[str]) -> None:
+    def download_chirps_files(self,
+                              chirps_files: List[str],
+                              region: str = 'africa',
+                              parallel: bool = False) -> None:
         """ download the chirps files using wget """
         # build the base url
-        base_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg'
-        # base_url += '/products/CHIRPS-2.0/global_pentad/netcdf/'
-        base_url += '/products/CHIRPS-2.0/africa_pentad/tifs/'
 
-        if base_url[-1] != '/':
-            base_url += '/'
+        url = self.get_url(region)
 
-        filepaths = [base_url + f for f in chirps_files]
+        filepaths = [url + f for f in chirps_files]
 
-        pool = multiprocessing.Pool(processes=100)
-        pool.map(self.wget_file, filepaths)
+        if parallel:
+            processes = min(100, len(chirps_files))
+            pool = multiprocessing.Pool(processes=processes)
+            pool.map(self.wget_file, filepaths)
+        else:
+            for file in filepaths:
+                self.wget_file(file)
 
-    @staticmethod
-    def get_default_years() -> List[int]:
-        """ returns the default arguments for no. years """
-        years = [yr for yr in range(1981, 2020)]
-
-        return years
-
-    def export(self, years: List[int] = None):
+    def export(self, years: Optional[List[int]] = None,
+               region: str = 'africa',
+               parallel: bool = False) -> None:
         """Export functionality for the CHIRPS precipitation product
-
+        Arguments
+        ----------
+        years: Optional list of ints, default = None
+            The years of data to download. If None, all data will be downloaded
+        region: str {'africa', 'global'}, default = 'africa'
+            The dataset region to download. If global, a netcdf file is downloaded.
+            If africa, a tif file is downloaded
+        parallel: bool, default = False
+            Whether to parallelize the downloading of data
         """
-        if years is None:
-            years = self.get_default_years()
 
-        assert min(years) >= 1981, f"Minimum year cannot be less than 1981.\
-            Currently: {min(years)}"
-        if max(years) > 2020:
-            warnings.warn(f"Non-breaking change: max(years) is:{ max(years)}. But no \
-            files later than 2019")
+        if years is not None:
+            assert min(years) >= 1981, f"Minimum year cannot be less than 1981. " \
+                f"Currently: {min(years)}"
+            if max(years) > 2020:
+                warnings.warn(f"Non-breaking change: max(years) is: {max(years)}. "
+                              f"But no files later than 2019")
 
         # get the filenames to be downloaded
-        chirps_files = self.get_chirps_filenames([str(y) for y in years])
+        chirps_files = self.get_chirps_filenames(years, region)
 
         # check if they already exist
         existing_files = [
@@ -111,6 +122,4 @@ class CHIRPSExporter(BaseExporter):
         chirps_files = [f for f in chirps_files if f not in existing_files]
 
         # download files in parallel
-        self.download_chirps_files(chirps_files)
-
-        return
+        self.download_chirps_files(chirps_files, region, parallel)

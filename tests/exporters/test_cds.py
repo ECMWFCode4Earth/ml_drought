@@ -1,8 +1,8 @@
-from cdsapi import Client # noqa
 from pathlib import Path
 from unittest.mock import patch, Mock
 
 from src.exporters.cds import CDSExporter, ERA5Exporter
+from src.exporters.base import get_kenya
 
 
 class TestCDSExporter:
@@ -59,7 +59,7 @@ class TestCDSExporter:
 
     def test_area(self):
 
-        region = CDSExporter.get_kenya()
+        region = get_kenya()
         kenya_str = CDSExporter.create_area(region)
 
         expected_str = '6.002/33.501/-5.202/42.283'
