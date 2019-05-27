@@ -25,6 +25,8 @@ class CHIRPSExporter(BaseExporter):
         if not self.chirps_folder.exists():
             self.chirps_folder.mkdir()
 
+        self.region_folder: Optional[Path] = None
+
         self.base_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg'
 
     def get_url(self, region: str = 'africa') -> str:
@@ -66,11 +68,13 @@ class CHIRPSExporter(BaseExporter):
         return chirpsfiles
 
     def wget_file(self, filepath: str) -> None:
-        if (self.chirps_folder / filepath).exists():
+        assert self.region_folder is not None, \
+            f'A region folder must be defined and made'
+        if (self.region_folder / filepath).exists():
             print(f'{filepath} already exists! Skipping')
         else:
             os.system(f"wget -np -nH --cut-dirs 7 {filepath} \
-                -P {self.chirps_folder.as_posix()}")
+                -P {self.region_folder.as_posix()}")
 
     def download_chirps_files(self,
                               chirps_files: List[str],
@@ -92,7 +96,7 @@ class CHIRPSExporter(BaseExporter):
                 self.wget_file(file)
 
     def export(self, years: Optional[List[int]] = None,
-               region: str = 'africa',
+               region: str = 'global',
                parallel: bool = False) -> None:
         """Export functionality for the CHIRPS precipitation product
 
@@ -100,7 +104,7 @@ class CHIRPSExporter(BaseExporter):
         ----------
         years: Optional list of ints, default = None
             The years of data to download. If None, all data will be downloaded
-        region: str {'africa', 'global'}, default = 'africa'
+        region: str {'africa', 'global'}, default = 'global'
             The dataset region to download. If global, a netcdf file is downloaded.
             If africa, a tif file is downloaded
         parallel: bool, default = False
@@ -114,13 +118,18 @@ class CHIRPSExporter(BaseExporter):
                 warnings.warn(f"Non-breaking change: max(years) is: {max(years)}. "
                               f"But no files later than 2019")
 
+        # write the region download to a unique file location
+        self.region_folder = self.chirps_folder / region
+        if not self.region_folder.exists():
+            self.region_folder.mkdir()
+
         # get the filenames to be downloaded
         chirps_files = self.get_chirps_filenames(years, region)
 
         # check if they already exist
         existing_files = [
             f.as_posix().split('/')[-1]
-            for f in self.chirps_folder.glob('*.nc')
+            for f in self.region_folder.glob('*.nc')
         ]
         chirps_files = [f for f in chirps_files if f not in existing_files]
 
