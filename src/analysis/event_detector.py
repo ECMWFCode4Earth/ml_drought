@@ -218,20 +218,39 @@ class EventDetector():
         _, _, exceed = self.calculate_threshold_exceedences(
             variable, time_period, hilo, method=method
         )
-        self.exceedences = exceed
+        self.exceedences = self.reapply_mask_to_boolean_xarray(
+            'precip', exceed
+        )
         print(f"** exceedences calculated **")
 
-    @staticmethod
-    def reapply_mask_to_boolean_xarray(self, variable: str) -> xr.Dataset:
+    def reapply_mask_to_boolean_xarray(self,
+                                       variable_of_mask: str,
+                                       da: xr.DataArray) -> xr.DataArray:
         """Because boolean comparisons in xarray return False for nan values
-        we need to reapply the mask from the original `ds` to mask out the sea
+        we need to reapply the mask from the original `da` to mask out the sea
         or invalid values (for example).
 
-        NOTE:
-        """
-        mask = get_ds_mask(self.ds, variable)
+        Arguments:
+        ---------
+        variable_of_mask: str
+            the variable that you want to use in `self.ds` as the mask.
+            The `np.nan` values in `self.ds[variable]` will be marked as `True`
 
-        return mask
+        da: xr.DataArray
+            the boolean DataArray (for example `self.exceedences`) to reapply
+            the mask to
+
+        NOTE:
+            1. Uses the input dataset for the mask - TODO: does this make
+             sense?
+        """
+        assert da.dtype == np.dtype('bool'), f"This function \
+        currrently works on boolean xr.Dataset objects only"
+
+        mask = get_ds_mask(self.ds, variable_of_mask)
+        da = da.where(~mask).astype(bool)
+
+        return da
 
     def calculate_runs(self) -> xr.Dataset:
         """use xclim to calculate the number of consecutive exceedences.
