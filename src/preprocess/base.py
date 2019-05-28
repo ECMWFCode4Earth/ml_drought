@@ -64,6 +64,8 @@ class BasePreProcessor:
         shape_in = len(ds.lat), len(ds.lon)
         shape_out = len(reference_ds.lat), len(reference_ds.lon)
 
+        # The weight file should be deleted by regridder.clean_weight_files(), but in case
+        # something goes wrong and its not, lets use a descriptive filename
         filename = f'{method}_{shape_in[0]}x{shape_in[1]}_{shape_out[0]}x{shape_out[1]}.nc'
         savedir = self.interim_folder / filename
 
