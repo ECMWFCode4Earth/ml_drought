@@ -1,5 +1,6 @@
 import xarray as xr
 import numpy as np
+import pandas as pd
 
 from src.utils import Region
 from src.preprocess.utils import select_bounding_box
@@ -19,9 +20,10 @@ def _make_dataset(size, lonmin=-180.0, lonmax=180.0,
               'lon': longitudes}
 
     if add_times:
-        size = (2, size[0], size[1])
+        times = pd.date_range('2000-01-01', '2001-12-31', name='time')
+        size = (len(times), size[0], size[1])
         dims.insert(0, 'time')
-        coords['time'] = [0, 1]
+        coords['time'] = times
     vhi = np.random.randint(100, size=size)
 
     ds = xr.Dataset({'VHI': (dims, vhi)}, coords=coords)
@@ -56,7 +58,7 @@ class TestSelectBoundingBox:
                              latmin=latmin, latmax=latmax)
         subset = select_bounding_box(ds, half_region)
 
-        assert subset.VHI.values.shape == (2, 100, 50), \
-            f'Expected output subset to have size (2, 50, 100), got {subset.VHI.values.shape}'
+        assert subset.VHI.values.shape[1:] == (100, 50), \
+            f'Expected output subset to have size (50, 100), got {subset.VHI.values.shape}'
         assert max(subset.lon.values) < 0, \
             f'Got a longitude greater than 0, {max(subset.lon.values)}'

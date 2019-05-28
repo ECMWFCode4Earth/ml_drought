@@ -47,7 +47,9 @@ class VHIPreprocessor(BasePreProcessor):
                             netcdf_filepath: str,
                             output_dir: str,
                             subset_kenya: bool = True,
-                            regrid: Optional[Dataset] = None) -> Path:
+                            regrid: Optional[Dataset] = None,
+                            resample_time: Optional[str] = 'M',
+                            upsampling: bool = False) -> Path:
         """Run the Preprocessing steps for the NOAA VHI data
 
         Process:
@@ -78,6 +80,9 @@ class VHIPreprocessor(BasePreProcessor):
         if regrid is not None:
             new_ds = self.regrid(new_ds, regrid)
 
+        if resample_time is not None:
+            new_ds = self.resample_time(new_ds, resample_time, upsampling)
+
         # 6. create the filepath and save to that location
         filename = self.create_filename(
             timestamp,
@@ -95,8 +100,9 @@ class VHIPreprocessor(BasePreProcessor):
     def _process(self,
                  netcdf_filepath: str,
                  subset_kenya: bool = True,
-                 regrid: Optional[Dataset] = None
-                 ) -> Union[Path, Tuple[Exception, str]]:
+                 regrid: Optional[Dataset] = None,
+                 resample_time: Optional[str] = 'M',
+                 upsampling: bool = False) -> Union[Path, Tuple[Exception, str]]:
         """ function to be run in parallel & safely catch errors
 
         https://stackoverflow.com/a/24683990/9940782
@@ -110,7 +116,8 @@ class VHIPreprocessor(BasePreProcessor):
 
         try:
             return self.preprocess_vhi_data(
-                netcdf_filepath, self.vhi_interim.as_posix(), subset_kenya, regrid
+                netcdf_filepath, self.vhi_interim.as_posix(), subset_kenya, regrid,
+                resample_time, upsampling
             )
         except Exception as e:
             print(f"### FAILED: {netcdf_filepath}")
@@ -119,6 +126,8 @@ class VHIPreprocessor(BasePreProcessor):
     def preprocess(self,
                    subset_kenya: bool = True,
                    regrid: Optional[Dataset] = None,
+                   resample_time: Optional[str] = 'M',
+                   upsampling: bool = False,
                    parallel: bool = True) -> None:
         """ Preprocess all of the NOAA VHI .nc files to produce
         one subset file with consistent lat/lon and timestamps.
@@ -132,6 +141,11 @@ class VHIPreprocessor(BasePreProcessor):
         regrid: Optional[Dataset] = None
             If a dataset is passed, the VHI files will be regridded to have the same
             grid as that dataset. If None, no regridding happens
+        resample_time: str = 'M'
+            If not None, defines the time length to which the data will be resampled
+        upsampling: bool = False
+            If true, tells the class the time-sampling will be upsampling. In this case,
+            nearest instead of mean is used for the resampling
         parallel: bool = True
             If true, run the preprocessing in parallel
         """
@@ -144,7 +158,9 @@ class VHIPreprocessor(BasePreProcessor):
             pool = multiprocessing.Pool(processes=100)
             outputs = pool.map(partial(self._process,
                                        subset_kenya=subset_kenya,
-                                       regrid=regrid), nc_files)
+                                       regrid=regrid,
+                                       resample_time=resample_time,
+                                       upsampling=upsampling), nc_files)
             errors = [o for o in outputs if not isinstance(o, Path)]
 
             # TODO check how these errors are being saved (now all paths returned)
@@ -154,7 +170,8 @@ class VHIPreprocessor(BasePreProcessor):
             self.save_errors(errors)
         else:
             for file in nc_files:
-                self._process(str(file), subset_kenya=subset_kenya, regrid=regrid)
+                self._process(str(file), subset_kenya=subset_kenya, regrid=regrid,
+                              resample_time=resample_time, upsampling=upsampling)
 
     @staticmethod
     def print_output(outputs: List) -> None:

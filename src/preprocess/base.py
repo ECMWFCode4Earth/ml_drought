@@ -86,3 +86,17 @@ class BasePreProcessor:
         regridder.clean_weight_file()
 
         return ds
+
+    @staticmethod
+    def resample_time(ds: xr.Dataset,
+                      resample_length: str = 'M',
+                      upsampling: bool = False) -> xr.Dataset:
+
+        # TODO: would be nice to programmatically get upsampling / not
+
+        resampler = ds.resample(time=resample_length)
+
+        if not upsampling:
+            return resampler.mean()
+        else:
+            return resampler.nearest()
