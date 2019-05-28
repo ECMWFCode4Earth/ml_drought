@@ -115,11 +115,10 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         Run in parallel
         """
+        print(f'Reading data from {self.raw_folder}. Writing to {self.interim_folder}')
+
         # get the filepaths for all of the downloaded data
         nc_files = self.get_chirps_filepaths()
-
-        print(f"Reading data from {self.raw_folder}. \
-            Writing to {self.interim_folder}")
 
         # preprocess chirps files (subset region) in parallel
         if parallel:
