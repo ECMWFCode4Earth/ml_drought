@@ -46,7 +46,8 @@ class VHIPreprocessor(BasePreProcessor):
     def preprocess_vhi_data(self,
                             netcdf_filepath: str,
                             output_dir: str,
-                            subset_kenya: bool = True) -> Path:
+                            subset_kenya: bool = True,
+                            regrid: Optional[Dataset] = None) -> Path:
         """Run the Preprocessing steps for the NOAA VHI data
 
         Process:
@@ -74,6 +75,9 @@ class VHIPreprocessor(BasePreProcessor):
             kenya_region = get_kenya()
             new_ds = select_bounding_box(new_ds, kenya_region)
 
+        if regrid is not None:
+            new_ds = self.regrid(new_ds, regrid)
+
         # 6. create the filepath and save to that location
         filename = self.create_filename(
             timestamp,
@@ -89,10 +93,11 @@ class VHIPreprocessor(BasePreProcessor):
 
         return Path(f'{output_dir}/{filename}')
 
-    def add_coordinates(self,
-                        netcdf_filepath: str,
-                        subset_kenya: bool = True,
-                        ) -> Union[Path, Tuple[Exception, str]]:
+    def _process(self,
+                 netcdf_filepath: str,
+                 subset_kenya: bool = True,
+                 regrid: Optional[Dataset] = None
+                 ) -> Union[Path, Tuple[Exception, str]]:
         """ function to be run in parallel & safely catch errors
 
         https://stackoverflow.com/a/24683990/9940782
@@ -106,7 +111,7 @@ class VHIPreprocessor(BasePreProcessor):
 
         try:
             return self.preprocess_vhi_data(
-                netcdf_filepath, self.vhi_interim.as_posix(), subset_kenya,
+                netcdf_filepath, self.vhi_interim.as_posix(), subset_kenya, regrid
             )
         except Exception as e:
             print(f"### FAILED: {netcdf_filepath}")
@@ -151,7 +156,9 @@ class VHIPreprocessor(BasePreProcessor):
 
         return ds
 
-    def preprocess(self, subset_kenya: bool = True) -> None:
+    def preprocess(self,
+                   subset_kenya: bool = True,
+                   regrid: Optional[Dataset] = None) -> None:
         """ Preprocess all of the NOAA VHI .nc files to produce
         one subset file with consistent lat/lon and timestamps.
 
@@ -161,6 +168,9 @@ class VHIPreprocessor(BasePreProcessor):
         ----------
         subset_kenya: bool = True
             Whether to subset Kenya when preprocessing
+        regrid: Optional[Dataset] = None
+            If a dataset is passed, the VHI files will be regridded to have the same
+            grid as that dataset. If None, no regridding happens
         """
         # get the filepaths for all of the downloaded data
         nc_files = self.get_vhi_filepaths()
@@ -168,7 +178,9 @@ class VHIPreprocessor(BasePreProcessor):
         print(f"Reading data from {self.raw_folder}. \
             Writing to {self.interim_folder}")
         pool = multiprocessing.Pool(processes=100)
-        outputs = pool.map(partial(self.add_coordinates, subset_kenya=subset_kenya), nc_files)
+        outputs = pool.map(partial(self._process,
+                                   subset_kenya=subset_kenya,
+                                   regrid=regrid), nc_files)
         errors = [o for o in outputs if not isinstance(o, Path)]
 
         # TODO check how these errors are being saved (now all paths returned)

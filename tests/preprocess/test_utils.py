@@ -5,14 +5,10 @@ from src.utils import Region
 from src.preprocess.utils import select_bounding_box
 
 
-def _make_dataset(size):
-    # build dummy .nc object
-    height, width = size
-    lonmin, lonmax = -180.0, 180.0
-    latmin, latmax = -55.152, 75.024
+def _make_dataset(size, lonmin=-180.0, lonmax=180.0,
+                  latmin=-55.152, latmax=75.024):
 
-    # extract the size of the lat/lon coords
-    lat_len, lon_len = height, width
+    lat_len, lon_len = size
     # create the vector
     longitudes = np.linspace(lonmin, lonmax, lon_len)
     latitudes = np.linspace(latmin, latmax, lat_len)
