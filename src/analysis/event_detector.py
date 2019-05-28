@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 from xclim.run_length import rle, windowed_run_events, longest_run
 from typing import Tuple, Optional
+import warnings
 
 from ...scripts.eng_utils import get_ds_mask
 
@@ -32,7 +33,9 @@ class EventDetector():
                             clim: xr.Dataset,
                             method: str,
                             time_period: str,
-                            hilo: str = None) -> xr.DataArray:
+                            variable: str,
+                            hilo: Optional[str] = None,
+                            value: Optional[int] = None,) -> xr.DataArray:
         """Calculate the threshold based on the `method` argument
         method: str
             ["q90","q10","std","abs",]
@@ -69,18 +72,19 @@ class EventDetector():
 
         return thresh
 
-    @staticmethod
-    def get_thresh_clim_dataarrays(ds: xr.Dataset,
+    def get_thresh_clim_dataarrays(self,
+                                   ds: xr.Dataset,
                                    time_period: str,
+                                   variable: str,
                                    hilo: str = None,
                                    method: str = 'std') -> Tuple[xr.Dataset, xr.Dataset]:
         """Get the climatology and threshold xarray objects """
         # compute climatology (`mean` over `time_period`)
         clim = ds.groupby(f'time.{time_period}').mean(dim='time')
         # compute the threshold value based on `method`
-        thresh = calculate_threshold(
+        thresh = self.calculate_threshold(
             ds, clim, method=method, time_period=time_period,
-            hilo=hilo,
+            hilo=hilo, variable=variable
         )
         return clim, thresh
 
@@ -153,7 +157,8 @@ class EventDetector():
 
         # calculate climatology and threshold
         clim, thresh = self.get_thresh_clim_dataarrays(
-            ds, time_period, hilo=hilo, method=method
+            ds, time_period, hilo=hilo, method=method,
+            variable=variable
         )
 
         # assign objects to object here because the copying
@@ -238,7 +243,7 @@ class EventDetector():
             Expected exceedences to be an array of boolean type.\
              Got {self.exceedences.dtype}"
 
-        runs = rle(exceedences).load()
+        runs = rle(self.exceedences).load()
         return runs
 
     def calculate_longest_run(self,
