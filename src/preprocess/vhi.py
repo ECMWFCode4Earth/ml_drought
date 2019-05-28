@@ -170,6 +170,8 @@ class VHIPreprocessor(BasePreProcessor):
         regrid: Optional[Dataset] = None
             If a dataset is passed, the VHI files will be regridded to have the same
             grid as that dataset. If None, no regridding happens
+        parallel: bool = True
+            If true, run the preprocessing in parallel
         """
         # get the filepaths for all of the downloaded data
         nc_files = self.get_vhi_filepaths()
@@ -190,7 +192,7 @@ class VHIPreprocessor(BasePreProcessor):
             self.save_errors(errors)
         else:
             for file in nc_files:
-                self._process(file, subset_kenya=subset_kenya, regrid=regrid)
+                self._process(str(file), subset_kenya=subset_kenya, regrid=regrid)
 
     @staticmethod
     def create_filename(t: Timestamp,
