@@ -219,11 +219,12 @@ class EventDetector():
             variable, time_period, hilo, method=method
         )
         self.exceedences = self.reapply_mask_to_boolean_xarray(
-            exceed
+            variable, exceed
         )
         print(f"** exceedences calculated **")
 
     def reapply_mask_to_boolean_xarray(self,
+                                       variable_of_mask: str,
                                        da: xr.DataArray) -> xr.DataArray:
         """Because boolean comparisons in xarray return False for nan values
         we need to reapply the mask from the original `da` to mask out the sea
@@ -246,7 +247,7 @@ class EventDetector():
         assert da.dtype == np.dtype('bool'), f"This function \
         currrently works on boolean xr.Dataset objects only"
 
-        mask = get_ds_mask(self.ds)
+        mask = get_ds_mask(self.ds[variable_of_mask])
         da = da.where(~mask).astype(bool)
 
         return da
