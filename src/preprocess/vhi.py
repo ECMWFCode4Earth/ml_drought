@@ -116,44 +116,6 @@ class VHIPreprocessor(BasePreProcessor):
             print(f"### FAILED: {netcdf_filepath}")
             return e, netcdf_filepath
 
-    @staticmethod
-    def print_output(outputs: List) -> None:
-        print("\n\n*************************\n\n")
-        print("Script Run")
-        print("*************************")
-        print("Paths:")
-        print("\nPaths: ", [o for o in outputs if o is not None])
-        print("\n__Failed File List:",
-              [o[-1] for o in outputs if not isinstance(o, Path)])
-
-    def save_errors(self, outputs: List) -> Path:
-        # write output of failed files to python.txt
-        with open(self.interim_folder / 'vhi_preprocess_errors.pkl', 'wb') as f:
-            pickle.dump([error[-1] for error in outputs if error is not None], f)
-
-        return self.interim_folder / 'vhi_preprocess_errors.pkl'
-
-    def merge_to_one_file(self, region: Optional[str] = None) -> Dataset:
-        # TODO how do we figure out the misisng timestamps?
-        # 1) find the anomalous gaps in the timesteps (> 7 days)
-        # 2) find the years where there are less than 52 timesteps
-        nc_files = [f for f in self.vhi_interim.glob('*')]
-        nc_files.sort()
-        ds = xr.open_mfdataset(nc_files)
-
-        if region is not None:
-            outpath = self.out_dir / f"vhi_preprocess.nc"
-        else:
-            outpath = self.out_dir / f"vhi_preprocess_{region}.nc"
-
-        # save the merged filepath
-        ds.to_netcdf(outpath)
-        print(f"Timesteps merged and saved: {outpath}")
-
-        # turn from a dask mfDataset to a Dataset (how is this done?)
-
-        return ds
-
     def preprocess(self,
                    subset_kenya: bool = True,
                    regrid: Optional[Dataset] = None,
@@ -193,6 +155,44 @@ class VHIPreprocessor(BasePreProcessor):
         else:
             for file in nc_files:
                 self._process(str(file), subset_kenya=subset_kenya, regrid=regrid)
+
+    @staticmethod
+    def print_output(outputs: List) -> None:
+        print("\n\n*************************\n\n")
+        print("Script Run")
+        print("*************************")
+        print("Paths:")
+        print("\nPaths: ", [o for o in outputs if o is not None])
+        print("\n__Failed File List:",
+              [o[-1] for o in outputs if not isinstance(o, Path)])
+
+    def save_errors(self, outputs: List) -> Path:
+        # write output of failed files to python.txt
+        with open(self.interim_folder / 'vhi_preprocess_errors.pkl', 'wb') as f:
+            pickle.dump([error[-1] for error in outputs if error is not None], f)
+
+        return self.interim_folder / 'vhi_preprocess_errors.pkl'
+
+    def merge_to_one_file(self, region: Optional[str] = None) -> Dataset:
+        # TODO how do we figure out the misisng timestamps?
+        # 1) find the anomalous gaps in the timesteps (> 7 days)
+        # 2) find the years where there are less than 52 timesteps
+        nc_files = [f for f in self.vhi_interim.glob('*')]
+        nc_files.sort()
+        ds = xr.open_mfdataset(nc_files)
+
+        if region is not None:
+            outpath = self.out_dir / f"vhi_preprocess.nc"
+        else:
+            outpath = self.out_dir / f"vhi_preprocess_{region}.nc"
+
+        # save the merged filepath
+        ds.to_netcdf(outpath)
+        print(f"Timesteps merged and saved: {outpath}")
+
+        # turn from a dask mfDataset to a Dataset (how is this done?)
+
+        return ds
 
     @staticmethod
     def create_filename(t: Timestamp,
