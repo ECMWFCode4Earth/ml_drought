@@ -18,8 +18,10 @@ class TestRegridding:
         processor = BasePreProcessor(tmp_path)
         regridded_ds = processor.regrid(target_ds, reference_ds)
 
-        assert regridded_ds.VHI.values.shape == size_reference, \
-            f'Expected regridded Dataset to have shape {size_reference}, ' \
+        # add the time dimension
+        expected_output = (2, 100, 100)
+        assert regridded_ds.VHI.values.shape == expected_output, \
+            f'Expected regridded Dataset to have shape {expected_output}, ' \
             f'got {regridded_ds.VHI.values.shape}'
 
     def test_incorrect_method(self, tmp_path):
