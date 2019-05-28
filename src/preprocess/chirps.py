@@ -15,8 +15,7 @@ from .utils import select_bounding_box
 class CHIRPSPreprocesser(BasePreProcessor):
     """ Preprocesses the CHIRPS data """
 
-    def __init__(self, data_folder: Path = Path('data'),
-                 subset: str = 'kenya') -> None:
+    def __init__(self, data_folder: Path = Path('data')) -> None:
         super().__init__(data_folder)
 
         self.out_dir = self.interim_folder / "chirps_preprocessed"
@@ -27,19 +26,11 @@ class CHIRPSPreprocesser(BasePreProcessor):
         if not self.chirps_interim.exists():
             self.chirps_interim.mkdir()
 
-        if subset is not None:
-            self.subset = True
-            self.subset_name = subset
-        else:
-            self.subset = False
-            self.subset_name = None
-
     def get_chirps_filepaths(self) -> List[Path]:
-        return [f for f in (self.raw_folder / "chirps") .glob('*.nc')]
+        return list(self.raw_folder / "chirps") .glob('*.nc')
 
     @staticmethod
     def create_filename(netcdf_filepath: str,
-                        subset: bool = False,
                         subset_name: Optional[str] = None):
         """
         chirps-v2.0.2009.pentads.nc
@@ -51,16 +42,14 @@ class CHIRPSPreprocesser(BasePreProcessor):
         else:
             filename_stem = netcdf_filepath
 
-        if subset:
-            assert subset_name is not None, "If you have set subset=True \
-                then you need to assign a subset name"
+        if subset_name is not None:
             new_filename = f"{filename_stem}_{subset_name}.nc"
         else:
             new_filename = f"{filename_stem}.nc"
         return new_filename
 
-    def preprocess_CHIRPS_data(self,
-                               netcdf_filepath: Path) -> None:
+    def _preprocess(self, netcdf_filepath: Path,
+                    subset_kenya: bool = True) -> None:
         """Run the Preprocessing steps for the CHIRPS data
 
         Process:
@@ -75,9 +64,9 @@ class CHIRPSPreprocesser(BasePreProcessor):
         ds = xr.open_dataset(netcdf_filepath)
 
         # 2. chop out EastAfrica
-        if self.subset_name == 'kenya':
+        if subset_kenya:
             kenya_region = get_kenya()
-            kenya_ds = select_bounding_box(ds, kenya_region)
+            ds = select_bounding_box(ds, kenya_region)
 
         # 6. create the filepath and save to that location
         assert netcdf_filepath.name[-3:] == '.nc', f"filepath name \
@@ -85,23 +74,21 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         filename = self.create_filename(
             netcdf_filepath.name,
-            subset=self.subset,
-            subset_name=self.subset_name
+            subset_name='kenya' if subset_kenya else None
         )
         print(f"Saving to {self.chirps_interim}/{filename}")
-        # TODO: change to pathlib.Path objects
-        kenya_ds.to_netcdf(self.chirps_interim / filename)
+        ds.to_netcdf(self.chirps_interim / filename)
 
         print(f"** Done for CHIRPS {netcdf_filepath.name} **")
 
     @staticmethod
-    def get_year_from_filename(filename) -> int:
+    def get_year_from_filename(filename: str) -> int:
         years = re.compile(r'\d{4}')
         year = int(years.findall(filename)[0])
 
-        assert (1981 <= year <= 2020), f"year should be between \
-            1981-2020 (CHIRPS does not extend to before 1981).\
-            Currently: {year}"
+        assert (1981 <= year <= 2020), \
+            f"year should be between 1981-2020 (CHIRPS does not extend to before 1981). " \
+            f"Currently: {year}"
 
         return year
 
@@ -115,7 +102,8 @@ class CHIRPSPreprocesser(BasePreProcessor):
         ds.to_netcdf(outfile)
         print(f"\n**** {outfile} Created! ****\n")
 
-    def preprocess(self, subset: Optional[str] = 'kenya') -> None:
+    def preprocess(self, subset: Optional[str] = 'kenya',
+                   regrid: Optional[xr.Dataset] = None) -> None:
         """ Preprocess all of the CHIRPS .nc files to produce
         one subset file.
 
@@ -130,7 +118,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
         # preprocess chirps files (subset region) in parallel
         pool = multiprocessing.Pool(processes=100)
         outputs = pool.map(
-            self.preprocess_CHIRPS_data, nc_files
+            self._preprocess, nc_files
         )
         print("\nOutputs (errors):\n\t", outputs)
 
