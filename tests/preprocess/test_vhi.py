@@ -86,14 +86,12 @@ class TestVHIPreprocessor:
     @staticmethod
     def test_make_filename():
         netcdf_filepath = 'VHP.G04.C07.NC.P1981035.VH.nc'
-        subset = True
         subset_name = 'kenya'
         t = pd.to_datetime('1981-08-31')
 
         out_fname = VHIPreprocessor.create_filename(
             t,
             netcdf_filepath,
-            subset,
             subset_name,
         )
 

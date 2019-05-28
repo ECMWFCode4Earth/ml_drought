@@ -82,7 +82,6 @@ class VHIPreprocessor(BasePreProcessor):
         filename = self.create_filename(
             timestamp,
             netcdf_filepath,
-            subset=subset_kenya,
             subset_name='kenya' if subset_kenya else None
         )
         print(f'Saving to {output_dir}/{filename}')
@@ -192,7 +191,6 @@ class VHIPreprocessor(BasePreProcessor):
     @staticmethod
     def create_filename(t: Timestamp,
                         netcdf_filepath: str,
-                        subset: bool = False,
                         subset_name: Optional[str] = None):
         """ create a sensible output filename (HARDCODED for this problem)
         Arguments:
@@ -206,9 +204,7 @@ class VHIPreprocessor(BasePreProcessor):
         VHP.G04.C07.NJ.P1996027.VH.nc
         """
         substr = netcdf_filepath.split('/')[-1].split('.P')[0]
-        if subset:
-            assert subset_name is not None, "If you have set subset=True then you \
-                need to assign a subset name"
+        if subset_name is not None:
             new_filename = f"STAR_{substr}_{t.year}_{t.month}_{t.day}_{subset_name}_VH.nc"
         else:
             new_filename = f"STAR_{substr}_{t.year}_{t.month}_{t.day}_VH.nc"
