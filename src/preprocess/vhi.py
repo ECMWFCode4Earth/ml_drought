@@ -133,8 +133,7 @@ class VHIPreprocessor(BasePreProcessor):
 
         return self.interim_folder / 'vhi_preprocess_errors.pkl'
 
-    def merge_to_one_file(self,
-                          region: Optional[str] = None) -> Dataset:
+    def merge_to_one_file(self, region: Optional[str] = None) -> Dataset:
         # TODO how do we figure out the misisng timestamps?
         # 1) find the anomalous gaps in the timesteps (> 7 days)
         # 2) find the years where there are less than 52 timesteps
@@ -248,12 +247,12 @@ class VHIPreprocessor(BasePreProcessor):
     @staticmethod
     def create_lat_lon_vectors(ds: Dataset) -> Tuple[Any, Any]:
         """ read the `ds.attrs` and create new latitude, longitude vectors """
-        assert ds.WIDTH.size == 10000, f"We are hardcoding the lat/lon \
-            values so we need to ensure that all dims are the same. \
-            WIDTH != 10000, == {ds.WIDTH.size}"
-        assert ds.HEIGHT.size == 3616, f"We are hardcoding the lat/lon \
-            values so we need to ensure that all dims are the same. \
-            HEIGHT != 3616, == {ds.HEIGHT.size}"
+        assert ds.WIDTH.size == 10000, \
+            f'We are hardcoding the lat/lon values so we need to ensure that all dims ' \
+            f'are the same. WIDTH != 10000, == {ds.WIDTH.size}'
+        assert ds.HEIGHT.size == 3616, \
+            f'We are hardcoding the lat/lon values so we need to ensure that all dims ' \
+            f'are the same. HEIGHT != 3616, == {ds.HEIGHT.size}'
 
         # NOTE: hardcoded for the VHI data (some files don't have the attrs)
         lonmin, lonmax = -180.0, 180.0
@@ -276,23 +275,21 @@ class VHIPreprocessor(BasePreProcessor):
                              timestamp: Timestamp) -> DataArray:
         """ Create a new dataarray for the `variable` from `ds` with geocoding and timestamp """
         # Assert statements - to a test function?
-        assert variable in [v for v in ds.variables.keys()], f"variable: \
-            {variable} need to be a variable in the ds! \
-            Currently {[v for v in ds.variables.keys()]}"
-        dims = [dim for dim in ds.dims]
-        assert(
-            (ds[dims[0]].size == longitudes.size) or (ds[dims[1]].size == longitudes.size)
-        ), f"Size of dimensions {dims} should be equal either to \
-            the size of longitudes. \n Currently longitude: \
-            {longitudes.size}. {ds[dims[0]]}: {ds[dims[0]].size} \
-            / {ds[dims[1]]}: {ds[dims[1]].size}"
-        assert (
-            (ds[dims[0]].size == latitudes.size) or (ds[dims[1]].size == latitudes.size)
-        ), f"Size of dimensions {dims} should be equal either to the size of \
-            latitudes. \n Currently latitude: {latitudes.size}. {ds[dims[0]]}: \
-            {ds[dims[0]].size} / {ds[dims[1]]}: {ds[dims[1]].size}"
-        assert np.array(timestamp).size == 1, f"The function only currently \
-            works with SINGLE TIMESTEPS."
+        dims = list(ds.dims)
+        variables = list(ds.variables.keys())
+
+        assert variable in variables, \
+            f'variable: {variable} need to be a variable in the ds! Currently {variables}'
+        assert (ds[dims[0]].size == longitudes.size) or (ds[dims[1]].size == longitudes.size), \
+            f'Size of dimensions {dims} should be equal either to the size of longitudes.' \
+            f' \n Currently longitude: {longitudes.size}. {ds[dims[0]]}: {ds[dims[0]].size},' \
+            f' {ds[dims[1]]}: {ds[dims[1]].size}'
+        assert (ds[dims[0]].size == latitudes.size) or (ds[dims[1]].size == latitudes.size), \
+            f'Size of dimensions {dims} should be equal either to the size of latitudes' \
+            f'. \n Currently latitude: {latitudes.size}. {ds[dims[0]]}: {ds[dims[0]].size},' \
+            f' {ds[dims[1]]}: {ds[dims[1]].size}'
+        assert np.array(timestamp).size == 1, \
+            'The function only currently works with SINGLE TIMESTEPS.'
 
         da = xr.DataArray(
             [ds[variable].values],
@@ -320,15 +317,8 @@ class VHIPreprocessor(BasePreProcessor):
         else:
             variables = ['VHI']
         for variable in variables:
-            da_list.append(
-                self.create_new_dataarray(
-                    ds,
-                    variable,
-                    longitudes,
-                    latitudes,
-                    timestamp
-                )
-            )
+            da_list.append(self.create_new_dataarray(ds, variable, longitudes,
+                                                     latitudes, timestamp))
         # merge all of the variables into one dataset
         new_ds = xr.merge(da_list)
         new_ds.attrs = ds.attrs
