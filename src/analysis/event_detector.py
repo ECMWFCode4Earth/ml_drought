@@ -82,11 +82,13 @@ class EventDetector():
         """Get the climatology and threshold xarray objects """
         # compute climatology (`mean` over `time_period`)
         clim = ds.groupby(f'time.{time_period}').mean(dim='time')
+        print(f"Calculated climatology (mean for each {time_period}) - `clim`")
         # compute the threshold value based on `method`
         thresh = self.calculate_threshold(
             ds, clim, method=method, time_period=time_period,
             hilo=hilo, variable=variable
         )
+        print("Calculated threshold - `thresh`")
         return clim, thresh
 
     @staticmethod
@@ -211,10 +213,13 @@ class EventDetector():
              Valid values: {'q90', 'q10', 'std', 'abs',}
 
         """
+        print(f"Detecting {variable} exceedences ({hilo}) of threshold:\
+         {method}. The threshold is unique for each {time_period}")
         _, _, exceed = self.calculate_threshold_exceedences(
             variable, time_period, hilo, method=method
         )
         self.exceedences = exceed
+        print(f"** exceedences calculated **")
 
     @staticmethod
     def reapply_mask_to_boolean_xarray(self, variable: str) -> xr.Dataset:
