@@ -41,7 +41,7 @@ class VHIPreprocessor(BasePreProcessor):
             self.vhi_interim.mkdir()
 
     def get_vhi_filepaths(self) -> List[Path]:
-        return [f for f in (self.raw_folder / 'vhi').glob('*/*.nc')]
+        return list((self.raw_folder / 'vhi').glob('*/*.nc'))
 
     def preprocess_vhi_data(self,
                             netcdf_filepath: str,

@@ -27,11 +27,11 @@ class CHIRPSPreprocesser(BasePreProcessor):
             self.chirps_interim.mkdir()
 
     def get_chirps_filepaths(self) -> List[Path]:
-        return list(self.raw_folder / "chirps") .glob('*.nc')
+        return list((self.raw_folder / "chirps") .glob('**/*.nc'))
 
     @staticmethod
     def create_filename(netcdf_filepath: str,
-                        subset_name: Optional[str] = None):
+                        subset_name: Optional[str] = None) -> str:
         """
         chirps-v2.0.2009.pentads.nc
             =>
@@ -49,7 +49,8 @@ class CHIRPSPreprocesser(BasePreProcessor):
         return new_filename
 
     def _preprocess(self, netcdf_filepath: Path,
-                    subset_kenya: bool = True) -> None:
+                    subset_kenya: bool = True,
+                    regrid: Optional[xr.Dataset] = None) -> None:
         """Run the Preprocessing steps for the CHIRPS data
 
         Process:
@@ -61,16 +62,19 @@ class CHIRPSPreprocesser(BasePreProcessor):
         """
         print(f"** Starting work on {netcdf_filepath.as_posix().split('/')[-1]} **")
         # 1. read in the dataset
-        ds = xr.open_dataset(netcdf_filepath)
+        ds = xr.open_dataset(netcdf_filepath).rename({'longitude': 'lon', 'latitude': 'lat'})
 
         # 2. chop out EastAfrica
         if subset_kenya:
             kenya_region = get_kenya()
             ds = select_bounding_box(ds, kenya_region)
 
+        if regrid is not None:
+            self.regrid(ds, regrid)
+
         # 6. create the filepath and save to that location
-        assert netcdf_filepath.name[-3:] == '.nc', f"filepath name \
-            should be a .nc file. Currently: {netcdf_filepath.name}"
+        assert netcdf_filepath.name[-3:] == '.nc', \
+            f'filepath name should be a .nc file. Currently: {netcdf_filepath.name}'
 
         filename = self.create_filename(
             netcdf_filepath.name,
@@ -92,18 +96,20 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         return year
 
-    def merge_all_timesteps(self, min_year: int, max_year: int) -> None:
+    def merge_all_timesteps(self, min_year: int, max_year: int,
+                            subset_kenya: bool = True) -> None:
         ds = xr.open_mfdataset(
             [f for f in self.chirps_interim.glob('*.nc')]
         )
         print(f"Merging timesteps from {min_year} to {max_year}")
 
-        outfile = self.out_dir / f"chirps_{min_year}{max_year}_{self.subset_name}.nc"
-        ds.to_netcdf(outfile)
-        print(f"\n**** {outfile} Created! ****\n")
+        out = self.out_dir / f'chirps_{min_year}{max_year}{"_kenya" if subset_kenya else ""}.nc'
+        ds.to_netcdf(out)
+        print(f"\n**** {out} Created! ****\n")
 
-    def preprocess(self, subset: Optional[str] = 'kenya',
-                   regrid: Optional[xr.Dataset] = None) -> None:
+    def preprocess(self, subset_kenya: bool = True,
+                   regrid: Optional[xr.Dataset] = None,
+                   parallel: bool = False) -> None:
         """ Preprocess all of the CHIRPS .nc files to produce
         one subset file.
 
@@ -116,14 +122,19 @@ class CHIRPSPreprocesser(BasePreProcessor):
             Writing to {self.interim_folder}")
 
         # preprocess chirps files (subset region) in parallel
-        pool = multiprocessing.Pool(processes=100)
-        outputs = pool.map(
-            self._preprocess, nc_files
-        )
-        print("\nOutputs (errors):\n\t", outputs)
+        if parallel:
+            pool = multiprocessing.Pool(processes=100)
+            outputs = pool.map(
+                self._preprocess, nc_files
+            )
+            print("\nOutputs (errors):\n\t", outputs)
+        else:
+            for file in nc_files:
+                self._preprocess(file, subset_kenya, regrid)
 
         # merge all of the timesteps
-        years = [self.get_year_from_filename(f.name) for f in nc_files]
-        min_year = min(years)
-        max_year = max(years)
-        self.merge_all_timesteps(min_year, max_year)
+        if len(nc_files) > 1:
+            years = [self.get_year_from_filename(f.name) for f in nc_files]
+            min_year = min(years)
+            max_year = max(years)
+            self.merge_all_timesteps(min_year, max_year, subset_kenya)
