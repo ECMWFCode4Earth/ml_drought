@@ -1,11 +1,12 @@
 import xarray as xr
 import numpy as np
 from pathlib import Path
-from xclim.run_length import rle, windowed_run_events, longest_run
+from xclim.run_length import rle, longest_run  # , windowed_run_events
 from typing import Tuple, Optional
 import warnings
 
-from ...scripts.eng_utils import get_ds_mask
+from scripts.eng_utils import get_ds_mask
+
 
 class EventDetector():
     def __init__(self,
@@ -58,7 +59,7 @@ class EventDetector():
             assert False, "Not yet implemented the absolute value threshold"
             values = np.ones(ds[variable].shape) * value
             thresh = xr.Dataset(
-                {variable: (['time','latitude','longitude'], values)},
+                {variable: (['time', 'latitude', 'longitude'], values)},
                 coords={
                     'latitude': ds.latitude,
                     'longitude': ds.longitude,
@@ -127,15 +128,14 @@ class EventDetector():
         #  to time_period values defined in `timevals` and stack into new array
         new_clim_vals = np.stack([lookup_dict[timevals[i]] for i in range(len(timevals))])
 
-        assert new_clim_vals.shape == ds[variable].shape,f"\
+        assert new_clim_vals.shape == ds[variable].shape, f"\
             Shapes for new_clim_vals and ds must match! \
              new_clim_vals.shape: {new_clim_vals.shape} \
              ds.shape: {ds[variable].shape}"
 
-
         # copy that forward in time
         new_clim = xr.Dataset(
-            {variable: (['time','latitude','longitude'], new_clim_vals)},
+            {variable: (['time', 'latitude', 'longitude'], new_clim_vals)},
             coords={
                 'latitude': clim.latitude,
                 'longitude': clim.longitude,
@@ -149,7 +149,7 @@ class EventDetector():
                                         variable: str,
                                         time_period: str,
                                         hilo: str,
-                                        method: str = 'std') -> Tuple[xr.Dataset, xr.Dataset, xr.Dataset]:
+                                        method: str = 'std') -> Tuple[xr.Dataset]:
         """Flag the pixel-times that exceed a threshold defined via
         the `method` argument.
         """
