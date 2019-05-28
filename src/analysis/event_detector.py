@@ -272,6 +272,6 @@ class EventDetector():
 
     def calculate_longest_run(self,
                               resample_str: Optional[str] = None) -> xr.Dataset:
-        """ """
+        """ TODO: fix this argument to work with other resample_str """
         longest_run(self.exceedences, dim='time').load()
         return
