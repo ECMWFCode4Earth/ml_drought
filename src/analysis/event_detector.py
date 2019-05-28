@@ -2,7 +2,7 @@ import xarray as xr
 import numpy as np
 from pathlib import Path
 from xclim.run_length import rle, longest_run  # , windowed_run_events
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Any
 import warnings
 
 from scripts.eng_utils import get_ds_mask
@@ -151,7 +151,7 @@ class EventDetector():
                                         variable: str,
                                         time_period: str,
                                         hilo: str,
-                                        method: str = 'std') -> Tuple[xr.Dataset]:
+                                        method: str = 'std') -> Tuple[Any, Any, Any]:
         """Flag the pixel-times that exceed a threshold defined via
         the `method` argument.
         """
