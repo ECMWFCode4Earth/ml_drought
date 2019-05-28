@@ -36,10 +36,10 @@ class TestCHIRPSExporter:
     def test_get_url(self, tmp_path):
         exporter = CHIRPSExporter(tmp_path)
 
-        assert exporter.get_url('africa') == self.africa_url, \
+        assert exporter.get_url('africa', 'pentad') == self.africa_url, \
             f'Expected Africa URL to be {self.africa_url}, got {exporter.get_url("africa")}'
 
-        assert exporter.get_url('global') == self.global_url, \
+        assert exporter.get_url('global', 'pentad') == self.global_url, \
             f'Expected Africa URL to be {self.global_url}, got {exporter.get_url("global")}'
 
     @patch('urllib.request.Request', autospec=True)
@@ -82,7 +82,7 @@ class TestCHIRPSExporter:
         monkeypatch.setattr(urllib.request, 'urlopen', mockreturn)
 
         exporter = CHIRPSExporter(tmp_path)
-        filenames = exporter.get_chirps_filenames(region='africa')
+        filenames = exporter.get_chirps_filenames(region='africa', period='pentad')
 
         assert filenames == expected_filenames
 

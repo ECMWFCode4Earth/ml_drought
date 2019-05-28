@@ -29,20 +29,22 @@ class CHIRPSExporter(BaseExporter):
 
         self.base_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg'
 
-    def get_url(self, region: str = 'africa') -> str:
-        url = f'/products/CHIRPS-2.0/{region}_pentad/{"tifs" if region == "africa" else "netcdf"}/'
+    def get_url(self, region: str = 'africa', period: str = 'monthly') -> str:
+        filetype = 'tifs' if region == 'africa' else 'netcdf'
+        url = f'/products/CHIRPS-2.0/{region}_{period}/{filetype}/'
 
         return self.base_url + url
 
     def get_chirps_filenames(self, years: Optional[List[int]] = None,
-                             region: str = 'africa') -> List[str]:
+                             region: str = 'africa',
+                             period: str = 'monthly') -> List[str]:
         """
         ftp://ftp.chg.ucsb.edu/pub/org/chg/products/
             CHIRPS-2.0/global_pentad/netcdf/
 
         https://github.com/datamission/WFP/blob/master/Datasets/CHIRPS/get_chirps.py
         """
-        url = self.get_url(region)
+        url = self.get_url(region, period)
 
         # use urllib.request to read the page source
         req = urllib.request.Request(url)
@@ -79,11 +81,12 @@ class CHIRPSExporter(BaseExporter):
     def download_chirps_files(self,
                               chirps_files: List[str],
                               region: str = 'africa',
+                              period: str = 'monthly',
                               parallel: bool = False) -> None:
         """ download the chirps files using wget """
         # build the base url
 
-        url = self.get_url(region)
+        url = self.get_url(region, period)
 
         filepaths = [url + f for f in chirps_files]
 
@@ -97,6 +100,7 @@ class CHIRPSExporter(BaseExporter):
 
     def export(self, years: Optional[List[int]] = None,
                region: str = 'global',
+               period: str = 'monthly',
                parallel: bool = False) -> None:
         """Export functionality for the CHIRPS precipitation product
 
@@ -107,6 +111,8 @@ class CHIRPSExporter(BaseExporter):
         region: str {'africa', 'global'}, default = 'global'
             The dataset region to download. If global, a netcdf file is downloaded.
             If africa, a tif file is downloaded
+        period: str {'monthly', 'weekly', 'pentad'...}
+            The period of the data being downloaded
         parallel: bool, default = False
             Whether to parallelize the downloading of data
         """
@@ -124,7 +130,7 @@ class CHIRPSExporter(BaseExporter):
             self.region_folder.mkdir()
 
         # get the filenames to be downloaded
-        chirps_files = self.get_chirps_filenames(years, region)
+        chirps_files = self.get_chirps_filenames(years, region, period)
 
         # check if they already exist
         existing_files = [
@@ -134,4 +140,4 @@ class CHIRPSExporter(BaseExporter):
         chirps_files = [f for f in chirps_files if f not in existing_files]
 
         # download files in parallel
-        self.download_chirps_files(chirps_files, region, parallel)
+        self.download_chirps_files(chirps_files, region, period, parallel)
