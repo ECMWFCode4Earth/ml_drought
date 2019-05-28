@@ -70,7 +70,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
             ds = select_bounding_box(ds, kenya_region)
 
         if regrid is not None:
-            self.regrid(ds, regrid)
+            ds = self.regrid(ds, regrid)
 
         # 6. create the filepath and save to that location
         assert netcdf_filepath.name[-3:] == '.nc', \

@@ -156,7 +156,8 @@ class VHIPreprocessor(BasePreProcessor):
 
     def preprocess(self,
                    subset_kenya: bool = True,
-                   regrid: Optional[Dataset] = None) -> None:
+                   regrid: Optional[Dataset] = None,
+                   parallel: bool = True) -> None:
         """ Preprocess all of the NOAA VHI .nc files to produce
         one subset file with consistent lat/lon and timestamps.
 
@@ -175,17 +176,21 @@ class VHIPreprocessor(BasePreProcessor):
 
         print(f"Reading data from {self.raw_folder}. \
             Writing to {self.interim_folder}")
-        pool = multiprocessing.Pool(processes=100)
-        outputs = pool.map(partial(self._process,
-                                   subset_kenya=subset_kenya,
-                                   regrid=regrid), nc_files)
-        errors = [o for o in outputs if not isinstance(o, Path)]
+        if parallel:
+            pool = multiprocessing.Pool(processes=100)
+            outputs = pool.map(partial(self._process,
+                                       subset_kenya=subset_kenya,
+                                       regrid=regrid), nc_files)
+            errors = [o for o in outputs if not isinstance(o, Path)]
 
-        # TODO check how these errors are being saved (now all paths returned)
-        # print the outcome of the script to the user
-        self.print_output(outputs)
-        # save the list of errors to file
-        self.save_errors(errors)
+            # TODO check how these errors are being saved (now all paths returned)
+            # print the outcome of the script to the user
+            self.print_output(outputs)
+            # save the list of errors to file
+            self.save_errors(errors)
+        else:
+            for file in nc_files:
+                self._process(file, subset_kenya=subset_kenya, regrid=regrid)
 
     @staticmethod
     def create_filename(t: Timestamp,

@@ -4,6 +4,8 @@ import numpy as np
 from src.preprocess import CHIRPSPreprocesser
 from src.utils import get_kenya
 
+from .test_utils import _make_dataset
+
 
 class TestCHIRPSPreprocessor:
 
@@ -68,8 +70,14 @@ class TestCHIRPSPreprocessor:
         dataset = self._make_chirps_dataset(size=(100, 100))
         dataset.to_netcdf(path=data_path)
 
+        kenya = get_kenya()
+        regrid_dataset, _, _ = _make_dataset(size=(1000, 1000),
+                                             latmin=kenya.latmin, latmax=kenya.latmax,
+                                             lonmin=kenya.lonmin, lonmax=kenya.lonmax)
+
         processor = CHIRPSPreprocesser(tmp_path)
-        processor.preprocess(subset_kenya=True, parallel=False)
+        processor.preprocess(subset_kenya=True, regrid=regrid_dataset,
+                             parallel=False)
 
         expected_out_path = tmp_path / 'interim/chirps/testy_test_kenya.nc'
         assert expected_out_path.exists(), \
@@ -83,7 +91,6 @@ class TestCHIRPSPreprocessor:
             assert dim in list(out_data.dims), \
                 f'Expected {dim} to be in the processed dataset dims'
 
-        kenya = get_kenya()
         lons = out_data.lon.values
         assert (lons.min() >= kenya.lonmin) and (lons.max() <= kenya.lonmax), \
             'Longitudes not correctly subset'
@@ -91,3 +98,5 @@ class TestCHIRPSPreprocessor:
         lats = out_data.lat.values
         assert (lats.min() >= kenya.latmin) and (lats.max() <= kenya.latmax), \
             'Latitudes not correctly subset'
+
+        assert out_data.VHI.values.shape[1:] == (1000, 1000)
