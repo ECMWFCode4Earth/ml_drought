@@ -5,6 +5,7 @@
 from pathlib import Path
 import xarray as xr
 import multiprocessing
+from shutil import rmtree
 from typing import List, Optional
 
 from .base import BasePreProcessor, get_kenya
@@ -104,7 +105,8 @@ class CHIRPSPreprocesser(BasePreProcessor):
                    regrid: Optional[Path] = None,
                    resample_time: Optional[str] = None,
                    upsampling: bool = False,
-                   parallel: bool = False) -> None:
+                   parallel: bool = False,
+                   cleanup: bool = True) -> None:
         """ Preprocess all of the CHIRPS .nc files to produce
         one subset file.
 
@@ -132,3 +134,6 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         # merge all of the timesteps
         self.merge_all_timesteps(subset_kenya, resample_time, upsampling)
+
+        if cleanup:
+            rmtree(self.chirps_interim)

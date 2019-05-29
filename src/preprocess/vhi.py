@@ -14,6 +14,7 @@ import pickle
 import pandas as pd
 from pandas._libs.tslibs.timestamps import Timestamp
 import time
+from shutil import rmtree
 from functools import partial
 
 from xarray import Dataset, DataArray
@@ -125,7 +126,8 @@ class VHIPreprocessor(BasePreProcessor):
                    regrid: Optional[Path] = None,
                    parallel: bool = True,
                    resample_time: Optional[str] = 'M',
-                   upsampling: bool = False) -> None:
+                   upsampling: bool = False,
+                   cleanup: bool = True) -> None:
         """ Preprocess all of the NOAA VHI .nc files to produce
         one subset file with consistent lat/lon and timestamps.
 
@@ -145,6 +147,8 @@ class VHIPreprocessor(BasePreProcessor):
             nearest instead of mean is used for the resampling
         parallel: bool = True
             If true, run the preprocessing in parallel
+        cleanup: bool = True
+            If true, delete interim files created by the class
         """
         # get the filepaths for all of the downloaded data
         nc_files = self.get_vhi_filepaths()
@@ -172,6 +176,8 @@ class VHIPreprocessor(BasePreProcessor):
 
         self.merge_to_one_file(subset_kenya, resample_time=resample_time,
                                upsampling=upsampling)
+        if cleanup:
+            rmtree(self.vhi_interim)
 
     @staticmethod
     def print_output(outputs: List) -> None:

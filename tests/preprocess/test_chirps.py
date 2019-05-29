@@ -103,3 +103,6 @@ class TestCHIRPSPreprocessor:
             'Latitudes not correctly subset'
 
         assert out_data.VHI.values.shape[1:] == (20, 20)
+
+        assert not processor.chirps_interim.exists(), \
+            f'Interim chirps folder should have been deleted'
