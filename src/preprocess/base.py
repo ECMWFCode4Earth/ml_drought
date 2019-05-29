@@ -17,6 +17,7 @@ class BasePreProcessor:
     - regridding to a consistent spatial grid (pixel size / resolution)
     - resampling to a consistent time step (hourly, daily, monthly)
     - assigning coordinates to `.nc` files (latitude, longitude, time)
+
     Attributes:
     ----------
     data_folder: Path, default: Path('data')
@@ -106,7 +107,9 @@ class BasePreProcessor:
                       upsampling: bool = False) -> xr.Dataset:
 
         # TODO: would be nice to programmatically get upsampling / not
-
+        # prevents pathological erros re: `index must be monotonic for resampling`
+        ds = ds.sortby('time')
+        
         resampler = ds.resample(time=resample_length)
 
         if not upsampling:
