@@ -67,11 +67,11 @@ class TestCHIRPSPreprocessor:
 
         (tmp_path / 'raw/chirps/global').mkdir(parents=True)
         data_path = tmp_path / 'raw/chirps/global/testy_test.nc'
-        dataset = self._make_chirps_dataset(size=(100, 100))
+        dataset = self._make_chirps_dataset(size=(10, 10))
         dataset.to_netcdf(path=data_path)
 
         kenya = get_kenya()
-        regrid_dataset, _, _ = _make_dataset(size=(1000, 1000),
+        regrid_dataset, _, _ = _make_dataset(size=(20, 20),
                                              latmin=kenya.latmin, latmax=kenya.latmax,
                                              lonmin=kenya.lonmin, lonmax=kenya.lonmax)
 

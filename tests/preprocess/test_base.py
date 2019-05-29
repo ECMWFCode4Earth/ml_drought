@@ -19,8 +19,8 @@ class TestRegridding:
 
     def test_regridding(self, tmp_path):
 
-        size_reference = (100, 100)
-        size_target = (1000, 1000)
+        size_reference = (10, 10)
+        size_target = (20, 20)
 
         reference_ds, _, _ = _make_dataset(size_reference)
         target_ds, _, _ = _make_dataset(size_target)
@@ -49,7 +49,7 @@ class TestRegridding:
 
     def test_regridder_save(self, tmp_path):
         size_reference = (10, 10)
-        size_target = (100, 100)
+        size_target = (20, 20)
 
         reference_ds, _, _ = _make_dataset(size_reference)
         target_ds, _, _ = _make_dataset(size_target)

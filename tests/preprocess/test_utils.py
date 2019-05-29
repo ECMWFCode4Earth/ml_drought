@@ -44,9 +44,8 @@ class TestSelectBoundingBox:
         subset = select_bounding_box(ds, global_region, inverse_lon=True)
 
         # add the time dimension
-        expected_size = (2, 100, 100)
-        assert subset.VHI.values.shape == expected_size, \
-            f'Expected output subset to have size {expected_size}, got {subset.VHI.values.shape}'
+        assert subset.VHI.values.shape[1:] == size, \
+            f'Expected output subset to have size {size}, got {subset.VHI.values.shape[1:]}'
 
     def test_selection(self):
 
