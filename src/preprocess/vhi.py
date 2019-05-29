@@ -49,11 +49,11 @@ class VHIPreprocessor(BasePreProcessor):
             target_folder = self.vhi_interim
         return list(target_folder.glob('**/*.nc'))
 
-    def preprocess_vhi_data(self,
-                            netcdf_filepath: str,
-                            output_dir: str,
-                            subset_kenya: bool = True,
-                            regrid: Optional[Dataset] = None) -> Path:
+    def _preprocess(self,
+                    netcdf_filepath: str,
+                    output_dir: str,
+                    subset_kenya: bool = True,
+                    regrid: Optional[Dataset] = None) -> Path:
         """Run the Preprocessing steps for the NOAA VHI data
 
         Process:
@@ -98,10 +98,11 @@ class VHIPreprocessor(BasePreProcessor):
 
         return Path(f'{output_dir}/{filename}')
 
-    def _process(self,
-                 netcdf_filepath: str,
-                 subset_kenya: bool = True,
-                 regrid: Optional[Dataset] = None) -> Union[Path, Tuple[Exception, str]]:
+    def _preprocess_wrapper(self,
+                            netcdf_filepath: str,
+                            subset_kenya: bool = True,
+                            regrid: Optional[Dataset] = None
+                            ) -> Union[Path, Tuple[Exception, str]]:
         """ function to be run in parallel & safely catch errors
 
         https://stackoverflow.com/a/24683990/9940782
@@ -114,7 +115,7 @@ class VHIPreprocessor(BasePreProcessor):
             netcdf_filepath = netcdf_filepath.as_posix()
 
         try:
-            return self.preprocess_vhi_data(
+            return self._preprocess(
                 netcdf_filepath, self.vhi_interim.as_posix(), subset_kenya, regrid
             )
         except Exception as e:
@@ -160,7 +161,7 @@ class VHIPreprocessor(BasePreProcessor):
             Writing to {self.interim_folder}")
         if parallel:
             pool = multiprocessing.Pool(processes=100)
-            outputs = pool.map(partial(self._process,
+            outputs = pool.map(partial(self._preprocess_wrapper,
                                        subset_kenya=subset_kenya,
                                        regrid=regrid), nc_files)
             errors = [o for o in outputs if not isinstance(o, Path)]
@@ -172,7 +173,7 @@ class VHIPreprocessor(BasePreProcessor):
             self.save_errors(errors)
         else:
             for file in nc_files:
-                self._process(str(file), subset_kenya=subset_kenya, regrid=regrid)
+                self._preprocess_wrapper(str(file), subset_kenya=subset_kenya, regrid=regrid)
 
         self.merge_to_one_file(subset_kenya, resample_time=resample_time,
                                upsampling=upsampling)

@@ -3,6 +3,7 @@
 - merge into one time (~500MB)
 """
 from pathlib import Path
+from functools import partial
 import xarray as xr
 import multiprocessing
 from shutil import rmtree
@@ -110,7 +111,22 @@ class CHIRPSPreprocesser(BasePreProcessor):
         """ Preprocess all of the CHIRPS .nc files to produce
         one subset file.
 
-        Run in parallel
+        Arguments
+        ----------
+        subset_kenya: bool = True
+            Whether to subset Kenya when preprocessing
+        regrid: Optional[Path] = None
+            If a Path is passed, the CHIRPS files will be regridded to have the same
+            grid as the dataset at that Path. If None, no regridding happens
+        resample_time: str = 'M'
+            If not None, defines the time length to which the data will be resampled
+        upsampling: bool = False
+            If true, tells the class the time-sampling will be upsampling. In this case,
+            nearest instead of mean is used for the resampling
+        parallel: bool = True
+            If true, run the preprocessing in parallel
+        cleanup: bool = True
+            If true, delete interim files created by the class
         """
         print(f'Reading data from {self.raw_folder}. Writing to {self.interim_folder}')
 
@@ -120,13 +136,10 @@ class CHIRPSPreprocesser(BasePreProcessor):
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
 
-        # preprocess chirps files (subset region) in parallel
         if parallel:
-            # TODO: pass the arguments using iterators
             pool = multiprocessing.Pool(processes=100)
-            outputs = pool.map(
-                self._preprocess, nc_files
-            )
+            outputs = pool.map(partial(self._preprocess, subset_kenya=subset_kenya,
+                                       regrid=regrid), nc_files)
             print("\nOutputs (errors):\n\t", outputs)
         else:
             for file in nc_files:

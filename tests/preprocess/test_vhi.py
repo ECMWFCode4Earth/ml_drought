@@ -66,7 +66,7 @@ class TestVHIPreprocessor:
         raw_ds.to_netcdf(netcdf_filepath)
 
         # run the preprocessing steps
-        out = v.preprocess_vhi_data(
+        out = v._preprocess(
             netcdf_filepath.as_posix(), v.vhi_interim.as_posix(),
         )
         expected = "STAR_VHP.G04.C07.NC_1981_8_31_kenya_VH.nc"
