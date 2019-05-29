@@ -125,7 +125,7 @@ class VHIPreprocessor(BasePreProcessor):
 
     def preprocess(self,
                    subset_kenya: bool = True,
-                   regrid: Optional[Dataset] = None,
+                   regrid: Optional[Path] = None,
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
                    parallel: bool = True) -> None:
@@ -138,9 +138,9 @@ class VHIPreprocessor(BasePreProcessor):
         ----------
         subset_kenya: bool = True
             Whether to subset Kenya when preprocessing
-        regrid: Optional[Dataset] = None
-            If a dataset is passed, the VHI files will be regridded to have the same
-            grid as that dataset. If None, no regridding happens
+        regrid: Optional[Path] = None
+            If a Path is passed, the VHI files will be regridded to have the same
+            grid as the dataset at that Path. If None, no regridding happens
         resample_time: str = 'M'
             If not None, defines the time length to which the data will be resampled
         upsampling: bool = False
@@ -151,6 +151,9 @@ class VHIPreprocessor(BasePreProcessor):
         """
         # get the filepaths for all of the downloaded data
         nc_files = self.get_vhi_filepaths()
+
+        if regrid is not None:
+            regrid = self.load_reference_grid(regrid)
 
         print(f"Reading data from {self.raw_folder}. \
             Writing to {self.interim_folder}")

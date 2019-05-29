@@ -58,3 +58,12 @@ class TestRegridding:
         processor.regrid(target_ds, reference_ds)
         assert (processor.interim_folder / 'nearest_s2d_100x100_10x10.nc').exists() is False, \
             f'Regridder weight file not deleted!'
+
+    def test_load_regridder(self, tmp_path):
+
+        test_dataset, _, _ = _make_dataset(size=(10, 10))
+        test_dataset.to_netcdf(tmp_path / 'regridder.nc')
+
+        output = BasePreProcessor.load_reference_grid(tmp_path / 'regridder.nc')
+
+        assert set(output.variables) == {'lat', 'lon'}, f'Got extra variables: {output.variables}'

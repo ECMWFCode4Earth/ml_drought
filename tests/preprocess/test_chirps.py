@@ -67,7 +67,7 @@ class TestCHIRPSPreprocessor:
 
         (tmp_path / 'raw/chirps/global').mkdir(parents=True)
         data_path = tmp_path / 'raw/chirps/global/testy_test.nc'
-        dataset = self._make_chirps_dataset(size=(10, 10))
+        dataset = self._make_chirps_dataset(size=(100, 100))
         dataset.to_netcdf(path=data_path)
 
         kenya = get_kenya()
@@ -75,8 +75,11 @@ class TestCHIRPSPreprocessor:
                                              latmin=kenya.latmin, latmax=kenya.latmax,
                                              lonmin=kenya.lonmin, lonmax=kenya.lonmax)
 
+        regrid_path = tmp_path / 'regridder.nc'
+        regrid_dataset.to_netcdf(regrid_path)
+
         processor = CHIRPSPreprocesser(tmp_path)
-        processor.preprocess(subset_kenya=True, regrid=regrid_dataset,
+        processor.preprocess(subset_kenya=True, regrid=regrid_path,
                              parallel=False)
 
         expected_out_path = tmp_path / 'interim/chirps/testy_test_kenya.nc'
@@ -99,4 +102,4 @@ class TestCHIRPSPreprocessor:
         assert (lats.min() >= kenya.latmin) and (lats.max() <= kenya.latmax), \
             'Latitudes not correctly subset'
 
-        assert out_data.VHI.values.shape[1:] == (1000, 1000)
+        assert out_data.VHI.values.shape[1:] == (20, 20)

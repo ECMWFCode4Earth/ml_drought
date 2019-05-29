@@ -113,7 +113,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
         print(f"\n**** {out} Created! ****\n")
 
     def preprocess(self, subset_kenya: bool = True,
-                   regrid: Optional[xr.Dataset] = None,
+                   regrid: Optional[Path] = None,
                    resample_time: Optional[str] = None,
                    upsampling: bool = False,
                    parallel: bool = False) -> None:
@@ -126,6 +126,9 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         # get the filepaths for all of the downloaded data
         nc_files = self.get_chirps_filepaths()
+
+        if regrid is not None:
+            regrid = self.load_reference_grid(regrid)
 
         # preprocess chirps files (subset region) in parallel
         if parallel:

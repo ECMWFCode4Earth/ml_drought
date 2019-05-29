@@ -88,6 +88,19 @@ class BasePreProcessor:
         return ds
 
     @staticmethod
+    def load_reference_grid(path_to_grid: Path) -> xr.Dataset:
+        """Since the regridder only needs to the lat and lon values,
+        there is no need to pass around an enormous grid for the regridding.
+
+        In fact, only the latitude and longitude values are necessary!
+        """
+        full_dataset = xr.open_dataset(path_to_grid)
+
+        assert {'lat', 'lon'} <= set(full_dataset.dims), \
+            'Dimensions named lat and lon must be in the reference grid'
+        return full_dataset[['lat', 'lon']]
+
+    @staticmethod
     def resample_time(ds: xr.Dataset,
                       resample_length: str = 'M',
                       upsampling: bool = False) -> xr.Dataset:
