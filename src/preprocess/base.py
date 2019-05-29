@@ -107,9 +107,8 @@ class BasePreProcessor:
                       upsampling: bool = False) -> xr.Dataset:
 
         # TODO: would be nice to programmatically get upsampling / not
-        # prevents pathological erros re: `index must be monotonic for resampling`
         ds = ds.sortby('time')
-        
+
         resampler = ds.resample(time=resample_length)
 
         if not upsampling:
