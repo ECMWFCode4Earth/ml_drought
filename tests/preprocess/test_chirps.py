@@ -37,8 +37,8 @@ class TestCHIRPSPreprocessor:
         assert (tmp_path / v.interim_folder / 'chirps_preprocessed').exists(), \
             'Should have created a directory tmp_path/interim/chirps_preprocessed'
 
-        assert (tmp_path / v.interim_folder / 'chirps').exists(), \
-            'Should have created a directory tmp_path/interim/chirps'
+        assert (tmp_path / v.interim_folder / 'chirps_interim').exists(), \
+            'Should have created a directory tmp_path/interim/chirps_interim'
 
     @staticmethod
     def test_get_filenames(tmp_path):
@@ -82,7 +82,7 @@ class TestCHIRPSPreprocessor:
         processor.preprocess(subset_kenya=True, regrid=regrid_path,
                              parallel=False)
 
-        expected_out_path = tmp_path / 'interim/chirps/testy_test_kenya.nc'
+        expected_out_path = tmp_path / 'interim/chirps_preprocessed/chirps_kenya.nc'
         assert expected_out_path.exists(), \
             f'Expected processed file to be saved to {expected_out_path}'
 

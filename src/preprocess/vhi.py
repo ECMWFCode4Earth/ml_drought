@@ -36,20 +36,23 @@ class VHIPreprocessor(BasePreProcessor):
         if not self.out_dir.exists():
             self.out_dir.mkdir()
 
-        self.vhi_interim = self.interim_folder / 'vhi'
+        self.vhi_interim = self.interim_folder / 'vhi_interim'
         if not self.vhi_interim.exists():
+            print('making')
             self.vhi_interim.mkdir()
 
-    def get_vhi_filepaths(self) -> List[Path]:
-        return list((self.raw_folder / 'vhi').glob('*/*.nc'))
+    def get_vhi_filepaths(self, folder: str = 'raw') -> List[Path]:
+        if folder == 'raw':
+            target_folder = self.raw_folder / 'vhi'
+        else:
+            target_folder = self.vhi_interim
+        return list(target_folder.glob('**/*.nc'))
 
     def preprocess_vhi_data(self,
                             netcdf_filepath: str,
                             output_dir: str,
                             subset_kenya: bool = True,
-                            regrid: Optional[Dataset] = None,
-                            resample_time: Optional[str] = 'M',
-                            upsampling: bool = False) -> Path:
+                            regrid: Optional[Dataset] = None) -> Path:
         """Run the Preprocessing steps for the NOAA VHI data
 
         Process:
@@ -80,9 +83,6 @@ class VHIPreprocessor(BasePreProcessor):
         if regrid is not None:
             new_ds = self.regrid(new_ds, regrid)
 
-        if resample_time is not None:
-            new_ds = self.resample_time(new_ds, resample_time, upsampling)
-
         # 6. create the filepath and save to that location
         filename = self.create_filename(
             timestamp,
@@ -100,9 +100,7 @@ class VHIPreprocessor(BasePreProcessor):
     def _process(self,
                  netcdf_filepath: str,
                  subset_kenya: bool = True,
-                 regrid: Optional[Dataset] = None,
-                 resample_time: Optional[str] = 'M',
-                 upsampling: bool = False) -> Union[Path, Tuple[Exception, str]]:
+                 regrid: Optional[Dataset] = None) -> Union[Path, Tuple[Exception, str]]:
         """ function to be run in parallel & safely catch errors
 
         https://stackoverflow.com/a/24683990/9940782
@@ -116,8 +114,7 @@ class VHIPreprocessor(BasePreProcessor):
 
         try:
             return self.preprocess_vhi_data(
-                netcdf_filepath, self.vhi_interim.as_posix(), subset_kenya, regrid,
-                resample_time, upsampling
+                netcdf_filepath, self.vhi_interim.as_posix(), subset_kenya, regrid
             )
         except Exception as e:
             print(f"### FAILED: {netcdf_filepath}")
@@ -126,9 +123,9 @@ class VHIPreprocessor(BasePreProcessor):
     def preprocess(self,
                    subset_kenya: bool = True,
                    regrid: Optional[Path] = None,
+                   parallel: bool = True,
                    resample_time: Optional[str] = 'M',
-                   upsampling: bool = False,
-                   parallel: bool = True) -> None:
+                   upsampling: bool = False) -> None:
         """ Preprocess all of the NOAA VHI .nc files to produce
         one subset file with consistent lat/lon and timestamps.
 
@@ -161,9 +158,7 @@ class VHIPreprocessor(BasePreProcessor):
             pool = multiprocessing.Pool(processes=100)
             outputs = pool.map(partial(self._process,
                                        subset_kenya=subset_kenya,
-                                       regrid=regrid,
-                                       resample_time=resample_time,
-                                       upsampling=upsampling), nc_files)
+                                       regrid=regrid), nc_files)
             errors = [o for o in outputs if not isinstance(o, Path)]
 
             # TODO check how these errors are being saved (now all paths returned)
@@ -173,8 +168,10 @@ class VHIPreprocessor(BasePreProcessor):
             self.save_errors(errors)
         else:
             for file in nc_files:
-                self._process(str(file), subset_kenya=subset_kenya, regrid=regrid,
-                              resample_time=resample_time, upsampling=upsampling)
+                self._process(str(file), subset_kenya=subset_kenya, regrid=regrid)
+
+        self.merge_to_one_file(subset_kenya, resample_time=resample_time,
+                               upsampling=upsampling)
 
     @staticmethod
     def print_output(outputs: List) -> None:
@@ -193,31 +190,29 @@ class VHIPreprocessor(BasePreProcessor):
 
         return self.interim_folder / 'vhi_preprocess_errors.pkl'
 
-    def merge_to_one_file(self, region: Optional[str] = None) -> Dataset:
+    def merge_to_one_file(self, subset_kenya: bool = True,
+                          resample_time: Optional[str] = 'M',
+                          upsampling: bool = False) -> None:
         # TODO how do we figure out the misisng timestamps?
         # 1) find the anomalous gaps in the timesteps (> 7 days)
         # 2) find the years where there are less than 52 timesteps
-        nc_files = [f for f in self.vhi_interim.glob('*')]
+        nc_files = self.get_vhi_filepaths('interim')
         nc_files.sort()
         ds = xr.open_mfdataset(nc_files)
 
-        if region is not None:
-            outpath = self.out_dir / f"vhi_preprocess.nc"
-        else:
-            outpath = self.out_dir / f"vhi_preprocess_{region}.nc"
+        if resample_time is not None:
+            ds = self.resample_time(ds, resample_time, upsampling)
+
+        outpath = self.out_dir / f'vhi_{"_kenya" if subset_kenya else ""}.nc'
 
         # save the merged filepath
         ds.to_netcdf(outpath)
-        print(f"Timesteps merged and saved: {outpath}")
-
-        # turn from a dask mfDataset to a Dataset (how is this done?)
-
-        return ds
+        print(f'Timesteps merged and saved: {outpath}')
 
     @staticmethod
     def create_filename(t: Timestamp,
                         netcdf_filepath: str,
-                        subset_name: Optional[str] = None):
+                        subset_name: Optional[str] = None) -> str:
         """ create a sensible output filename (HARDCODED for this problem)
         Arguments:
         ---------

@@ -14,8 +14,8 @@ class TestVHIPreprocessor:
         assert (tmp_path / v.interim_folder / "vhi_preprocessed").exists(), f"\
             Should have created a directory tmp_path/interim/vhi_preprocessed"
 
-        assert (tmp_path / v.interim_folder / "vhi").exists(), f"\
-            Should have created a directory tmp_path/interim/vhi"
+        assert (tmp_path / v.interim_folder / "vhi_interim").exists(), f"\
+            Should have created a directory tmp_path/interim/vhi_interim"
 
     @staticmethod
     def test_vhi_raw_filenames(tmp_path):
