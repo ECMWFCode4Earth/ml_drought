@@ -24,7 +24,7 @@ def process_vhi_2018():
         data_path = Path('data')
     else:
         data_path = Path('../data')
-    regrid_path = data_path / 'interim/chirps/chirps-v2.0.monthly_kenya.nc'
+    regrid_path = data_path / 'interim/chirps_preprocessed/chirps_kenya.nc'
     assert regrid_path.exists(), f'{regrid_path} not available'
 
     processor = VHIPreprocessor(data_path)
@@ -34,4 +34,5 @@ def process_vhi_2018():
 
 
 if __name__ == '__main__':
+    process_precip_2018()
     process_vhi_2018()

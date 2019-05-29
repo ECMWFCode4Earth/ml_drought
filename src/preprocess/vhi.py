@@ -210,7 +210,7 @@ class VHIPreprocessor(BasePreProcessor):
         if resample_time is not None:
             ds = self.resample_time(ds, resample_time, upsampling)
 
-        outpath = self.out_dir / f'vhi_{"_kenya" if subset_kenya else ""}.nc'
+        outpath = self.out_dir / f'vhi{"_kenya" if subset_kenya else ""}.nc'
 
         # save the merged filepath
         ds.to_netcdf(outpath)
