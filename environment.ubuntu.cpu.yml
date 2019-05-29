@@ -83,6 +83,8 @@ dependencies:
   - pandas=0.24.2
   - pathos=0.2.3
   - pip=19.1
+  - pip:
+    - xclim
   - pluggy=0.11.0
   - pox=0.2.5
   - ppft=1.6.4.9
@@ -121,6 +123,5 @@ dependencies:
   - xarray=0.12.1
   - xmltodict=0.12.0
   - xz=5.2.4
-  - xclim=0.9
   - yaml=0.1.7
   - zlib=1.2.11
