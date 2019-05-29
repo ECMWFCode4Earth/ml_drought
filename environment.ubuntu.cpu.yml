@@ -84,8 +84,8 @@ dependencies:
   - pathos=0.2.3
   - pip=19.1
   - pip:
-    # - xclim
-    - git+https://github.com/Ouranosinc/xclim.git@8438b0e5001c4014d0a318b974863e2b4dc4cc41#egg=xclim
+    - xclim
+    # - git+https://github.com/Ouranosinc/xclim.git@8438b0e5001c4014d0a318b974863e2b4dc4cc41#egg=xclim
   - pluggy=0.11.0
   - pox=0.2.5
   - ppft=1.6.4.9
