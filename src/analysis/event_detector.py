@@ -223,6 +223,7 @@ class EventDetector():
         """
         print(f"Detecting {variable} exceedences ({hilo}) of threshold:\
          {method}. The threshold is unique for each {time_period}")
+        self.variable = variable
         _, _, exceed = self.calculate_threshold_exceedences(
             variable, time_period, hilo, method=method
         )
@@ -269,13 +270,18 @@ class EventDetector():
             [True, True, False, True, False, True, True, True] =>
             [1, 2, 0, 1, 0, 1, 2, 3]
 
-
+            TODO: want to make this general enough to work with subset data too
         """
         assert self.exceedences.dtype == np.dtype('bool'), f"\
             Expected exceedences to be an array of boolean type.\
              Got {self.exceedences.dtype}"
 
         runs = rle(self.exceedences).load()
+
+        # apply the same mask as TIME=0 (e.g. for the sea-land mask)
+        mask = get_ds_mask(self.ds[self.variable])
+        runs = runs.where(~mask)
+
         return runs
 
     def calculate_longest_run(self,
