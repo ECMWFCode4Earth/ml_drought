@@ -66,6 +66,8 @@ class VHIPreprocessor(BasePreProcessor):
         print(f'** Starting work on {netcdf_filepath.split("/")[-1]} **')
         # 1. read in the dataset
         ds = xr.open_dataset(netcdf_filepath)
+        # FLIP the `HEIGHT` array
+        ds = ds.sortby('HEIGHT', ascending=False)
 
         # 2. extract the timestamp for that file (from the filepath)
         timestamp = self.extract_timestamp(ds, netcdf_filepath, use_filepath=True)
