@@ -59,10 +59,10 @@ class EventDetector():
             assert False, "Not yet implemented the absolute value threshold"
             values = np.ones(ds[variable].shape) * value
             thresh = xr.Dataset(
-                {variable: (['time', 'latitude', 'longitude'], values)},
+                {variable: (['time', 'lat', 'lon'], values)},
                 coords={
-                    'latitude': ds.latitude,
-                    'longitude': ds.longitude,
+                    'lat': ds.lat,
+                    'lon': ds.lon,
                     'time': ds.time,
                 }
             )
@@ -112,7 +112,7 @@ class EventDetector():
              time_period = {'dayofyear', 'season', 'month'}
 
         Notes:
-            1. assumes that `latitude` and `longitude` are the
+            1. assumes that `lat` and `lon` are the
             coord names in ds
 
         """
@@ -137,10 +137,10 @@ class EventDetector():
 
         # copy that forward in time
         new_clim = xr.Dataset(
-            {variable: (['time', 'latitude', 'longitude'], new_clim_vals)},
+            {variable: (['time', 'lat', 'lon'], new_clim_vals)},
             coords={
-                'latitude': clim.latitude,
-                'longitude': clim.longitude,
+                'lat': clim.lat,
+                'lon': clim.lon,
                 'time': ds.time,
             }
         )
