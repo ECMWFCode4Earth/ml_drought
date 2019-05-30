@@ -1,6 +1,6 @@
 import xarray as xr
 
-from .base import Region
+from ..utils import Region
 
 
 def select_bounding_box(ds: xr.Dataset,
@@ -31,7 +31,7 @@ def select_bounding_box(ds: xr.Dataset,
     assert isinstance(ds, xr.Dataset) or isinstance(ds, xr.DataArray), f"ds. " \
         f"Must be an xarray object! currently: {type(ds)}"
 
-    dims = [dim for dim in ds.dims.keys()]
+    dims = list(ds.dims.keys())
     variables = [var for var in ds.variables if var not in dims]
 
     latmin, latmax, lonmin, lonmax = region.latmin, region.latmax, region.lonmin, region.lonmax

@@ -11,7 +11,6 @@ from typing import List, Optional
 
 class CHIRPSExporter(BaseExporter):
     """Exports precip from the Climate Hazards group site
-
     # 0.5degree
     ftp://ftp.chg.ucsb.edu/pub/org/chg/products/CHIRPS-2.0/global_pentad/netcdf/
     # 0.25degree
@@ -41,7 +40,6 @@ class CHIRPSExporter(BaseExporter):
         """
         ftp://ftp.chg.ucsb.edu/pub/org/chg/products/
             CHIRPS-2.0/global_pentad/netcdf/
-
         https://github.com/datamission/WFP/blob/master/Datasets/CHIRPS/get_chirps.py
         """
         url = self.get_url(region, period)
@@ -103,7 +101,6 @@ class CHIRPSExporter(BaseExporter):
                period: str = 'monthly',
                parallel: bool = False) -> None:
         """Export functionality for the CHIRPS precipitation product
-
         Arguments
         ----------
         years: Optional list of ints, default = None

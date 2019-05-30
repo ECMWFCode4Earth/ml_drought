@@ -4,13 +4,6 @@ import pandas as pd
 
 from src.preprocess import VHIPreprocessor
 
-from src.preprocess.vhi import (
-    create_filename,
-    extract_timestamp,
-    create_lat_lon_vectors,
-    create_new_dataset
-)
-
 
 class TestVHIPreprocessor:
 
@@ -21,8 +14,8 @@ class TestVHIPreprocessor:
         assert (tmp_path / v.interim_folder / "vhi_preprocessed").exists(), f"\
             Should have created a directory tmp_path/interim/vhi_preprocessed"
 
-        assert (tmp_path / v.interim_folder / "vhi").exists(), f"\
-            Should have created a directory tmp_path/interim/vhi"
+        assert (tmp_path / v.interim_folder / "vhi_interim").exists(), f"\
+            Should have created a directory tmp_path/interim/vhi_interim"
 
     @staticmethod
     def test_vhi_raw_filenames(tmp_path):
@@ -73,7 +66,7 @@ class TestVHIPreprocessor:
         raw_ds.to_netcdf(netcdf_filepath)
 
         # run the preprocessing steps
-        out = v.preprocess_vhi_data(
+        out = v._preprocess(
             netcdf_filepath.as_posix(), v.vhi_interim.as_posix(),
         )
         expected = "STAR_VHP.G04.C07.NC_1981_8_31_kenya_VH.nc"
@@ -86,21 +79,19 @@ class TestVHIPreprocessor:
         out_vars = [var for var in out_ds.variables.keys() if var not in out_dims]
 
         assert 'VHI' in out_vars, f'Expected to find VHI in out_vars'
-        assert all(np.isin(['latitude', 'longitude', 'time'], out_dims)) \
+        assert all(np.isin(['lat', 'lon', 'time'], out_dims)) \
             and (len(out_dims) == 3), \
-            f'Expected {out_dims} to be ["latitude","longitude", "time"]'
+            f'Expected {out_dims} to be ["lat","lon", "time"]'
 
     @staticmethod
     def test_make_filename():
         netcdf_filepath = 'VHP.G04.C07.NC.P1981035.VH.nc'
-        subset = True
         subset_name = 'kenya'
         t = pd.to_datetime('1981-08-31')
 
-        out_fname = create_filename(
+        out_fname = VHIPreprocessor.create_filename(
             t,
             netcdf_filepath,
-            subset,
             subset_name,
         )
 
@@ -108,7 +99,7 @@ class TestVHIPreprocessor:
         assert out_fname == expected, f'Expected: {expected}, got: {out_fname}'
 
     @staticmethod
-    def test_create_new_dataset():
+    def test_create_new_dataset(tmp_path):
 
         netcdf_filepath = 'VHP.G04.C07.NC.P1981035.VH.nc'
 
@@ -125,13 +116,15 @@ class TestVHIPreprocessor:
                 'HEIGHT': height,
                 'WIDTH': width}
         )
-        timestamp = extract_timestamp(ds, netcdf_filepath, use_filepath=True)
+
+        processor = VHIPreprocessor(tmp_path)
+        timestamp = processor.extract_timestamp(ds, netcdf_filepath, use_filepath=True)
         expected_timestamp = pd.Timestamp('1981-08-31 00:00:00')
 
         assert timestamp == expected_timestamp, f"Timestamp. \
             Expected: {expected_timestamp} Got: {timestamp}"
 
-        longitudes, latitudes = create_lat_lon_vectors(ds)
+        longitudes, latitudes = processor.create_lat_lon_vectors(ds)
         exp_long = np.linspace(-180, 180, 10000)
         assert all(longitudes == exp_long), f"Longitudes \
             not what expected: np.linspace(-180,180,10000)"
@@ -140,11 +133,11 @@ class TestVHIPreprocessor:
         assert all(latitudes == exp_lat), f"latitudes \
             not what expected: np.linspace(-55.152,75.024,3616)"
 
-        out_ds = create_new_dataset(ds,
-                                    longitudes,
-                                    latitudes,
-                                    timestamp,
-                                    all_vars=False)
+        out_ds = processor.create_new_dataset(ds,
+                                              longitudes,
+                                              latitudes,
+                                              timestamp,
+                                              all_vars=False)
 
         assert isinstance(out_ds, xr.Dataset), \
             f'Expected out_ds to be of type: xr.Dataset, now: {type(out_ds)}'
@@ -156,4 +149,4 @@ class TestVHIPreprocessor:
         # test the other variables were removed
         out_variables = [var for var in out_ds.variables.keys() if var not in out_dims]
         assert out_variables == ['VHI'], \
-            f'Excpected dataset variables to only have VHI, got {out_variables}'
+            f'Expected dataset variables to only have VHI, got {out_variables}'
