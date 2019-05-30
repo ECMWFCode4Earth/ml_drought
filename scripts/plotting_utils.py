@@ -401,13 +401,14 @@ def plot_masked_spatial_and_hist(dataMask, DataArrays, colors, titles, scale=1.5
     return fig
 
 
-def plot_xarray_on_map(da,borders=True,coastlines=True,ax=None,**kwargs):
+def plot_xarray_on_map(da, borders=True, coastlines=True, ax=None, **kwargs):
     """ Plot the LOCATION of an xarray object """
     # get the center points for the maps
     mid_lat = np.mean(da.lat.values)
     mid_lon = np.mean(da.lon.values)
+    
     # create the base layer
-    if ax == None:
+    if ax is None:
         fig = plt.figure(figsize=(12, 8))
         ax = fig.add_subplot(1, 1, 1, projection=cartopy.crs.Orthographic(mid_lon, mid_lat))
     # ax = plt.axes(projection=cartopy.crs.Orthographic(mid_lon, mid_lat))
