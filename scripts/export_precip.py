@@ -24,7 +24,7 @@ def export_precip_2018():
                     selection_request=selection_request)
 
 
-def export_vhi_2018():
+def export_vhi():
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
@@ -32,10 +32,10 @@ def export_vhi_2018():
         data_path = Path('../data')
     exporter = VHIExporter(data_path)
 
-    exporter.export(years=[2018])
+    exporter.export()
 
 
-def export_chirps_2018():
+def export_chirps():
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
@@ -47,5 +47,5 @@ def export_chirps_2018():
 
 
 if __name__ == '__main__':
-    # export_precip_2018()
-    export_chirps_2018()
+    export_vhi()
+    export_chirps()
