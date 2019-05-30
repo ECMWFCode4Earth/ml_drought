@@ -23,7 +23,11 @@ class EventDetector():
         self.ds = self.read_data(path_to_data)
 
     def read_data(self, path_to_data: Path) -> xr.Dataset:
-        ds = xr.open_dataset(path_to_data)
+        try:
+            ds = xr.open_dataset(path_to_data)
+        except:
+            print("Having to decode_times=False because unsupported calendar")
+            ds = xr.open_dataset(path_to_data, decode_times=False)
         print(f"{path_to_data.name} read!")
         ds = ds.sortby('time')
         # TODO: infer time frequency ?
