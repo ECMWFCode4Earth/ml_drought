@@ -61,7 +61,7 @@ def download_file_from_ftp(ftp_instance: ftplib.FTP,
         return
 
     # download to output_filename
-    with open(output_filename, 'wb') as out_f:
+    with output_filename.open('wb') as out_f:
         ftp_instance.retrbinary("RETR " + filename, out_f.write)
 
     if output_filename.exists():
