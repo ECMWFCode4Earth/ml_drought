@@ -4,7 +4,7 @@ from pathlib import Path
 from xclim.run_length import rle, longest_run  # , windowed_run_events
 from typing import Tuple, Optional, Any
 import warnings
-
+import pandas as pd
 from scripts.eng_utils import get_ds_mask
 
 
@@ -25,9 +25,13 @@ class EventDetector():
     def read_data(self, path_to_data: Path) -> xr.Dataset:
         try:
             ds = xr.open_dataset(path_to_data)
-        except:
-            print("Having to decode_times=False because unsupported calendar")
+        except ValueError:
+            print(ValueError)
+            warnings.warn("Having to decode_times=False because unsupported calendar")
             ds = xr.open_dataset(path_to_data, decode_times=False)
+            warnings.warn("Hardcoding MONTHLY data (CHIRPS example)")
+            time = pd.date_range(start='1900-01-01', freq='M', periods=len(ds.time.values))
+            ds['time'] = time
         print(f"{path_to_data.name} read!")
         ds = ds.sortby('time')
         # TODO: infer time frequency ?
