@@ -243,6 +243,7 @@ class ERA5Exporter(CDSExporter):
                show_api_request: bool = True,
                selection_request: Optional[Dict] = None,
                break_up: bool = True,
+               parallel: bool = True,
                N_parallel_requests: int = 3) -> List[Path]:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
@@ -265,6 +266,11 @@ class ERA5Exporter(CDSExporter):
         break_up: bool, default = True
             The best way to download the data is by making many small calls to the CDS
             API. If true, the calls will be broken up into months
+        parallel: bool, default = True
+            Whether to download data in parallel
+        N_parallel_requests:
+            How many parallel requests to the CDSAPI to make
+
         Returns:
         -------
         output_files: List of pathlib.Paths
@@ -280,7 +286,10 @@ class ERA5Exporter(CDSExporter):
             dataset = self.get_dataset(variable, granularity)
 
         if break_up:
-            p = multiprocessing.Pool(int(N_parallel_requests))
+            if parallel:  # Run in parallel
+                if N_parallel_requests < 1: N_parallel_requests = 1
+                p = multiprocessing.Pool(int(N_parallel_requests))
+
             output_paths = []
             for year, month in itertools.product(processed_selection_request['year'],
                                                  processed_selection_request['month']):
@@ -288,15 +297,20 @@ class ERA5Exporter(CDSExporter):
                 updated_request['year'] = [year]
                 updated_request['month'] = [month]
 
-                # multiprocessing of the paths
                 output_paths.append(
-                    p.apply_async(
-                        self._export,
-                        args=(dataset, updated_request, show_api_request))
+                    self._export(dataset, updated_request, show_api_request)
                 )
+
+                if parallel:  # Run in parallel
+                    # multiprocessing of the paths
+                    output_paths.append(
+                        p.apply_async(
+                            self._export,
+                            args=(dataset, updated_request, show_api_request)).get()
+                    )
+            if parallel:
                 p.close()
                 p.join()
-
             return output_paths
 
         return [self._export(dataset,
