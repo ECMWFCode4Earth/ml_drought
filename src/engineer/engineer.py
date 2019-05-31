@@ -2,7 +2,7 @@ import numpy as np
 from pathlib import Path
 import xarray as xr
 
-from typing import List, Union, Tuple
+from typing import cast, Dict, List, Union, Tuple
 
 
 class Engineer:
@@ -21,7 +21,12 @@ class Engineer:
 
     def engineer(self, test_year: Union[int, List[int]],
                  target_variable: str = 'VHI'):
-        raise NotImplementedError
+        data = self._make_dataset()
+
+        if type(test_year) is int:
+            test_year = [cast(int, test_year)]
+
+        train, test_dict = self._train_test_split(data, cast(List, test_year), target_variable)
 
     def _get_preprocessed_files(self) -> List[Path]:
         processed_files = []
@@ -52,8 +57,31 @@ class Engineer:
 
         return main_dataset
 
+    def _train_test_split(self, ds: xr.Dataset,
+                          years: List[int],
+                          target_variable: str = 'VHI'
+                          ) -> Tuple[xr.Dataset, Dict[int, xr.Dataset]]:
+        years.sort()
+
+        output_test_arrays = {}
+
+        train, test = self._train_test_split_single_year(ds, years[0],
+                                                         target_variable)
+        output_test_arrays[years[0]] = test
+
+        if len(years) > 1:
+            for year in years[1:]:
+                _, subtest = self._train_test_split_single_year(ds, year,
+                                                                target_variable)
+                output_test_arrays[year] = subtest
+
+        return train, output_test_arrays
+
     @staticmethod
-    def _isolate_year(ds: xr.Dataset, year: int) -> Tuple[xr.Dataset, xr.Dataset]:
+    def _train_test_split_single_year(ds: xr.Dataset,
+                                      year: int,
+                                      target_variable: str
+                                      ) -> Tuple[xr.Dataset, xr.Dataset]:
 
         min_date = np.datetime64(f'{year}-01-01')
         max_date = np.datetime64(f'{year}-12-31')
@@ -61,4 +89,6 @@ class Engineer:
         train = ds.time.values < min_date
         test = ((ds.time.values >= min_date) & (ds.time.values <= max_date))
 
-        return ds.isel(time=train), ds.isel(time=test)
+        test_dataset = ds.isel(time=test)[target_variable].to_dataset()
+
+        return ds.isel(time=train), test_dataset

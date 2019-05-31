@@ -73,7 +73,8 @@ class TestEngineer:
 
         dataset, _, _ = _make_dataset(size=(2, 2))
 
-        train, test = Engineer._isolate_year(dataset, year=2001)
+        train, test = Engineer._train_test_split_single_year(dataset, year=2001,
+                                                             target_variable='VHI')
 
         assert (train.time.values < np.datetime64('2001-01-01')).all(), \
             'Got years greater than the test year in the training set!'
