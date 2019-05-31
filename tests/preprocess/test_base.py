@@ -56,7 +56,8 @@ class TestRegridding:
 
         processor = BasePreProcessor(tmp_path)
         processor.regrid(target_ds, reference_ds)
-        assert (processor.interim_folder / 'nearest_s2d_100x100_10x10.nc').exists() is False, \
+        weight_filename = 'nearest_s2d_100x100_10x10.nc'
+        assert (processor.preprocessed_folder / weight_filename).exists() is False, \
             f'Regridder weight file not deleted!'
 
     def test_load_regridder(self, tmp_path):
