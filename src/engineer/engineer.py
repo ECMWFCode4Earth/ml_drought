@@ -43,13 +43,15 @@ class Engineer:
         Arguments
         ----------
         test_year: Union[int, List[int]]
-            Data to be used for testing. No data earlier than the earliest test year will be used
-            for training.
+            Data to be used for testing. No data earlier than the earliest test year
+            will be used for training.
             If a list is passed, a file for each year will be saved.
         target_variable: str = 'VHI'
-            The variable to be predicted. Only this variable will be saved in the test netcdf files
+            The variable to be predicted. Only this variable will be saved in the test
+            netcdf files
         target_month: int = 6
-            The month being predicted. Test data will consist of this month, plus 11 months of data before
+            The month being predicted. Test data will consist of this month, plus
+            11 months of data before
         """
         data = self._make_dataset()
 
