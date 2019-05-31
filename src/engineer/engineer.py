@@ -1,4 +1,5 @@
 from pathlib import Path
+import xarray as xr
 
 from typing import List
 
@@ -23,3 +24,28 @@ class Engineer:
             if str(subfolder).endswith('_preprocessed') and subfolder.is_dir():
                 processed_files.extend(list(subfolder.glob('*.nc')))
         return processed_files
+
+    def _make_dataset(self) -> xr.Dataset:
+
+        datasets = []
+        dims = ['lon', 'lat']
+        coords = {}
+        for idx, file in enumerate(self._get_preprocessed_files()):
+            datasets.append(xr.open_dataset(file))
+
+            if idx == 0:
+                for dim in dims:
+                    coords[dim] = datasets[idx][dim].values
+            else:
+                for dim in dims:
+                    assert (datasets[idx][dim].values == coords[dim]).all(), \
+                        f'{dim} is different! Was this run using the preprocessor?'
+
+        main_dataset = datasets[0]
+        for dataset in datasets[1:]:
+            main_dataset = main_dataset.merge(dataset, join='inner')
+
+        return main_dataset
+
+    def engineer(self, granularity: str = 'M'):
+        raise NotImplementedError

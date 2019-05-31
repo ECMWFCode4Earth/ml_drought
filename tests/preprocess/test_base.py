@@ -1,6 +1,6 @@
 import pytest
 
-from .test_utils import _make_dataset
+from ..utils import _make_dataset
 
 from src.preprocess.base import BasePreProcessor
 
