@@ -69,15 +69,30 @@ class TestEngineer:
         assert set(output_vars) == set(expected_vars), \
             f'Did not retrieve all the expected variables!'
 
-    def test_yearsplit(self):
+    def test_yearsplit(self, tmp_path):
+
+        self._setup(tmp_path)
 
         dataset, _, _ = _make_dataset(size=(2, 2))
 
-        train, test = Engineer._train_test_split_single_year(dataset, year=2001,
-                                                             target_variable='VHI')
+        engineer = Engineer(tmp_path)
+        train, test = engineer._train_test_split(dataset, years=[2001],
+                                                 target_variable='VHI')
 
         assert (train.time.values < np.datetime64('2001-01-01')).all(), \
             'Got years greater than the test year in the training set!'
 
-        assert (test.time.values > np.datetime64('2000-12-31')).all(), \
+        assert (test[2001].time.values > np.datetime64('2000-12-31')).all(), \
             'Got years smaller than the test year in the test set!'
+
+    def test_engineer(self, tmp_path):
+
+        expected_files, expected_vars = self._setup(tmp_path)
+
+        engineer = Engineer(tmp_path)
+        engineer.engineer(test_year=2001, target_variable='a')
+
+        # first, lets make sure the right files were created
+
+        assert (tmp_path / 'features/train.nc').exists(), f'Training file not generated!'
+        assert (tmp_path / 'features/test_2001.nc').exists(), f'Test file not generated!'

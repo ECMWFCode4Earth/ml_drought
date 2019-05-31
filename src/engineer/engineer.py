@@ -26,7 +26,8 @@ class Engineer:
         if type(test_year) is int:
             test_year = [cast(int, test_year)]
 
-        train, test_dict = self._train_test_split(data, cast(List, test_year), target_variable)
+        train, test = self._train_test_split(data, cast(List, test_year), target_variable)
+        self._save(train, test)
 
     def _get_preprocessed_files(self) -> List[Path]:
         processed_files = []
@@ -92,3 +93,12 @@ class Engineer:
         test_dataset = ds.isel(time=test)[target_variable].to_dataset()
 
         return ds.isel(time=train), test_dataset
+
+    def _save(self, train: xr.Dataset, test: Dict[int, xr.Dataset]):
+        train.to_netcdf(self.output_folder / 'train.nc')
+
+        for key, val in test.items():
+
+            filename = f'test_{key}.nc'
+
+            val.to_netcdf(self.output_folder / filename)

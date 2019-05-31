@@ -19,7 +19,6 @@ def _make_dataset(size, variable_name='VHI', lonmin=-180.0, lonmax=180.0,
         times = pd.date_range('2000-01-01', '2001-12-31', name='time')
         size = (len(times), size[0], size[1])
         dims.insert(0, 'time')
-        print(type(times[0]))
         coords['time'] = times
     var = np.random.randint(100, size=size)
 
