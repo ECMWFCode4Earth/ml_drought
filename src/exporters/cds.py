@@ -6,6 +6,7 @@ import warnings
 import itertools
 import re
 from pprint import pprint
+import multiprocessing
 
 from typing import Dict, Optional, List
 
@@ -241,7 +242,8 @@ class ERA5Exporter(CDSExporter):
                granularity: str = 'hourly',
                show_api_request: bool = True,
                selection_request: Optional[Dict] = None,
-               break_up: bool = True) -> List[Path]:
+               break_up: bool = True,
+               N_parallel_requests: int = 3) -> List[Path]:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
 
@@ -278,6 +280,7 @@ class ERA5Exporter(CDSExporter):
             dataset = self.get_dataset(variable, granularity)
 
         if break_up:
+            p = multiprocessing.Pool(int(N_parallel_requests))
             output_paths = []
             for year, month in itertools.product(processed_selection_request['year'],
                                                  processed_selection_request['month']):
@@ -285,7 +288,14 @@ class ERA5Exporter(CDSExporter):
                 updated_request['year'] = [year]
                 updated_request['month'] = [month]
 
-                output_paths.append(self._export(dataset, updated_request, show_api_request))
+                # multiprocessing of the paths
+                output_paths.append(
+                    p.apply_async(
+                        self._export,
+                        args=(dataset, updated_request, show_api_request))
+                )
+                p.close()
+                p.join()
 
             return output_paths
 
