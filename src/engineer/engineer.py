@@ -1,7 +1,8 @@
+import numpy as np
 from pathlib import Path
 import xarray as xr
 
-from typing import List, Union
+from typing import List, Union, Tuple
 
 
 class Engineer:
@@ -17,6 +18,10 @@ class Engineer:
         self.output_folder = data_folder / 'features'
         if not self.output_folder.exists():
             self.output_folder.mkdir()
+
+    def engineer(self, test_year: Union[int, List[int]],
+                 target_variable: str = 'VHI'):
+        raise NotImplementedError
 
     def _get_preprocessed_files(self) -> List[Path]:
         processed_files = []
@@ -47,7 +52,13 @@ class Engineer:
 
         return main_dataset
 
-    def engineer(self, test_year: Union[int, List[int]],
-                 target_variable: str = 'VHI'):
+    @staticmethod
+    def _isolate_year(ds: xr.Dataset, year: int) -> Tuple[xr.Dataset, xr.Dataset]:
 
-        raise NotImplementedError
+        min_date = np.datetime64(f'{year}-01-01')
+        max_date = np.datetime64(f'{year}-12-31')
+
+        train = ds.time.values < min_date
+        test = ((ds.time.values >= min_date) & (ds.time.values <= max_date))
+
+        return ds.isel(time=train), ds.isel(time=test)

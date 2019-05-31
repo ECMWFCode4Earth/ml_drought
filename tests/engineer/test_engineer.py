@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 
 from src.engineer import Engineer
 
@@ -67,3 +68,15 @@ class TestEngineer:
 
         assert set(output_vars) == set(expected_vars), \
             f'Did not retrieve all the expected variables!'
+
+    def test_yearsplit(self):
+
+        dataset, _, _ = _make_dataset(size=(2, 2))
+
+        train, test = Engineer._isolate_year(dataset, year=2001)
+
+        assert (train.time.values < np.datetime64('2001-01-01')).all(), \
+            'Got years greater than the test year in the training set!'
+
+        assert (test.time.values > np.datetime64('2000-12-31')).all(), \
+            'Got years smaller than the test year in the test set!'
