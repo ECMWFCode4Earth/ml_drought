@@ -32,18 +32,6 @@ class VHIPreprocessor(BasePreProcessor):
 
     dataset = 'vhi'
 
-    def __init__(self, data_folder: Path = Path('data')) -> None:
-        super().__init__(data_folder)
-
-        self.out_dir = self.preprocessed_folder / 'vhi_preprocessed'
-        if not self.out_dir.exists():
-            self.out_dir.mkdir()
-
-        self.interim = self.preprocessed_folder / 'vhi_interim'
-        if not self.interim.exists():
-            print('making')
-            self.interim.mkdir()
-
     def _preprocess(self,
                     netcdf_filepath: str,
                     output_dir: str,

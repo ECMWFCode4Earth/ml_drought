@@ -18,17 +18,6 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
     dataset = 'chirps'
 
-    def __init__(self, data_folder: Path = Path('data')) -> None:
-        super().__init__(data_folder)
-
-        self.out_dir = self.preprocessed_folder / "chirps_preprocessed"
-        if not self.out_dir.exists():
-            self.out_dir.mkdir()
-
-        self.interim = self.preprocessed_folder / "chirps_interim"
-        if not self.interim.exists():
-            self.interim.mkdir()
-
     @staticmethod
     def create_filename(netcdf_filepath: str,
                         subset_name: Optional[str] = None) -> str:

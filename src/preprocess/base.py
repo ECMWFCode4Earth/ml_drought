@@ -35,9 +35,17 @@ class BasePreProcessor:
         if not self.preprocessed_folder.exists():
             self.preprocessed_folder.mkdir()
 
-        # to be defined by the actual preprocessors
-        self.interim: Path
-        self.out_dir: Path
+        try:
+            self.out_dir = self.preprocessed_folder / f'{self.dataset}_preprocessed'
+            if not self.out_dir.exists():
+                self.out_dir.mkdir()
+
+            self.interim = self.preprocessed_folder / f'{self.dataset}_interim'
+            if not self.interim.exists():
+                self.interim.mkdir()
+        except AttributeError:
+            print('A dataset attribute must be added for '
+                  'the interim and out directories to be created')
 
     def get_filepaths(self, folder: str = 'raw') -> List[Path]:
         if folder == 'raw':
