@@ -77,7 +77,8 @@ class TestEngineer:
 
         engineer = Engineer(tmp_path)
         train, test = engineer._train_test_split(dataset, years=[2001],
-                                                 target_variable='VHI')
+                                                 target_variable='VHI',
+                                                 target_month=12)
 
         assert (train.time.values < np.datetime64('2001-01-01')).all(), \
             'Got years greater than the test year in the training set!'

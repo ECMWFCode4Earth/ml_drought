@@ -1,4 +1,7 @@
 import numpy as np
+import calendar
+from dateutil.relativedelta import relativedelta
+from datetime import date
 from pathlib import Path
 import xarray as xr
 
@@ -20,13 +23,15 @@ class Engineer:
             self.output_folder.mkdir()
 
     def engineer(self, test_year: Union[int, List[int]],
-                 target_variable: str = 'VHI'):
+                 target_variable: str = 'VHI',
+                 target_month: int = 6):
         data = self._make_dataset()
 
         if type(test_year) is int:
             test_year = [cast(int, test_year)]
 
-        train, test = self._train_test_split(data, cast(List, test_year), target_variable)
+        train, test = self._train_test_split(data, cast(List, test_year), target_variable,
+                                             target_month)
         self._save(train, test)
 
     def _get_preprocessed_files(self) -> List[Path]:
@@ -60,20 +65,23 @@ class Engineer:
 
     def _train_test_split(self, ds: xr.Dataset,
                           years: List[int],
-                          target_variable: str = 'VHI'
+                          target_variable: str,
+                          target_month: int,
                           ) -> Tuple[xr.Dataset, Dict[int, xr.Dataset]]:
         years.sort()
 
         output_test_arrays = {}
 
         train, test = self._train_test_split_single_year(ds, years[0],
-                                                         target_variable)
+                                                         target_variable,
+                                                         target_month)
         output_test_arrays[years[0]] = test
 
         if len(years) > 1:
             for year in years[1:]:
                 _, subtest = self._train_test_split_single_year(ds, year,
-                                                                target_variable)
+                                                                target_variable,
+                                                                target_month)
                 output_test_arrays[year] = subtest
 
         return train, output_test_arrays
@@ -81,14 +89,17 @@ class Engineer:
     @staticmethod
     def _train_test_split_single_year(ds: xr.Dataset,
                                       year: int,
-                                      target_variable: str
+                                      target_variable: str,
+                                      target_month: int
                                       ) -> Tuple[xr.Dataset, xr.Dataset]:
 
-        min_date = np.datetime64(f'{year}-01-01')
-        max_date = np.datetime64(f'{year}-12-31')
+        max_date = date(year, target_month, calendar.monthrange(year, target_month)[-1])
+        min_date = max_date - relativedelta(years=1)
+        min_date_np = np.datetime64(str(min_date))
+        max_date_np = np.datetime64(str(max_date))
 
-        train = ds.time.values < min_date
-        test = ((ds.time.values >= min_date) & (ds.time.values <= max_date))
+        train = ds.time.values <= min_date_np
+        test = ((ds.time.values > min_date_np) & (ds.time.values <= max_date_np))
 
         test_dataset = ds.isel(time=test)[target_variable].to_dataset()
 
