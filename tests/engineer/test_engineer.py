@@ -1,3 +1,5 @@
+import pytest
+
 from src.engineer import Engineer
 
 from ..utils import _make_dataset
@@ -32,6 +34,18 @@ class TestEngineer:
 
         return expected_output, expected_vars
 
+    def test_init(self, tmp_path):
+
+        with pytest.raises(AssertionError) as e:
+            Engineer(tmp_path)
+            assert 'does not exist. Has the preprocesser been run?' in str(e)
+
+        (tmp_path / 'interim').mkdir()
+
+        Engineer(tmp_path)
+
+        assert (tmp_path / 'features').exists(), 'Features directory not made!'
+
     def test_get_preprocessed(self, tmp_path):
 
         expected_files, expected_vars = self._setup(tmp_path)
@@ -51,4 +65,5 @@ class TestEngineer:
         dims = ['lon', 'lat', 'time']
         output_vars = [var for var in joined_ds.variables if var not in dims]
 
-        assert set(output_vars) == set(expected_vars)
+        assert set(output_vars) == set(expected_vars), \
+            f'Did not retrieve all the expected variables!'

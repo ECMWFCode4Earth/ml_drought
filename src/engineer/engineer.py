@@ -1,7 +1,7 @@
 from pathlib import Path
 import xarray as xr
 
-from typing import List
+from typing import List, Union
 
 
 class Engineer:
@@ -47,5 +47,7 @@ class Engineer:
 
         return main_dataset
 
-    def engineer(self, granularity: str = 'M'):
+    def engineer(self, test_year: Union[int, List[int]],
+                 target_variable: str = 'VHI'):
+
         raise NotImplementedError
