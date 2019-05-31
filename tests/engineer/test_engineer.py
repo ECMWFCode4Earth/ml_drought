@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import xarray as xr
 
 from src.engineer import Engineer
 
@@ -88,12 +89,21 @@ class TestEngineer:
 
     def test_engineer(self, tmp_path):
 
-        expected_files, expected_vars = self._setup(tmp_path)
+        self._setup(tmp_path)
 
         engineer = Engineer(tmp_path)
         engineer.engineer(test_year=2001, target_variable='a')
 
         # first, lets make sure the right files were created
 
-        assert (tmp_path / 'features/train.nc').exists(), f'Training file not generated!'
-        assert (tmp_path / 'features/test_2001.nc').exists(), f'Test file not generated!'
+        assert (tmp_path / 'features/train.nc').exists(), \
+            f'Training file not generated!'
+        assert (tmp_path / 'features/test_2001.nc').exists(), \
+            f'Test file not generated!'
+
+        train = xr.open_dataset(tmp_path / 'features/train.nc')
+        test = xr.open_dataset(tmp_path / 'features/test_2001.nc')
+        for expected_var in {'a', 'b'}:
+            assert expected_var in set(train.variables), \
+                'Missing variables in training set'
+        assert 'b' not in set(test.variables), 'Got unexpected variables in test set'
