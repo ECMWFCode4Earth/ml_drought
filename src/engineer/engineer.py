@@ -75,6 +75,7 @@ class Engineer:
         dims = ['lon', 'lat']
         coords = {}
         for idx, file in enumerate(self._get_preprocessed_files()):
+            print(f'Processing {file}')
             datasets.append(xr.open_dataset(file))
 
             if idx == 0:
@@ -121,10 +122,12 @@ class Engineer:
                                       target_month: int
                                       ) -> Tuple[xr.Dataset, xr.Dataset]:
 
+        print(f'Generating test data for year: {year}, target month: {target_month}')
         max_date = date(year, target_month, calendar.monthrange(year, target_month)[-1])
         min_date = max_date - relativedelta(years=1)
         min_date_np = np.datetime64(str(min_date))
         max_date_np = np.datetime64(str(max_date))
+        print(f'Max date: {str(max_date)}, min date: {str(min_date)}')
 
         train = ds.time.values <= min_date_np
         test = ((ds.time.values > min_date_np) & (ds.time.values <= max_date_np))
