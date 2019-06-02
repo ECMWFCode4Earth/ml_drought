@@ -78,13 +78,14 @@ class TestEngineer:
 
         engineer = Engineer(tmp_path)
         train, test = engineer._train_test_split(dataset, years=[2001],
-                                                 target_variable='VHI',
-                                                 target_month=12)
+                                                 target_variable='VHI')
 
         assert (train.time.values < np.datetime64('2001-01-01')).all(), \
             'Got years greater than the test year in the training set!'
 
-        assert (test[2001].time.values > np.datetime64('2000-12-31')).all(), \
+        assert len(test[2001]) == 12, f'Expected 12 testing months in the test dataset'
+
+        assert (test[2001][12].time.values > np.datetime64('2000-12-31')).all(), \
             'Got years smaller than the test year in the test set!'
 
     def test_engineer(self, tmp_path):
@@ -98,12 +99,15 @@ class TestEngineer:
 
         assert (tmp_path / 'features/train.nc').exists(), \
             f'Training file not generated!'
-        assert (tmp_path / 'features/test_2001.nc').exists(), \
-            f'Test file not generated!'
+
+        for month in range(1, 13):
+            assert (tmp_path / f'features/test_2001_{month}.nc').exists(), \
+                f'Test file not generated!'
 
         train = xr.open_dataset(tmp_path / 'features/train.nc')
-        test = xr.open_dataset(tmp_path / 'features/test_2001.nc')
         for expected_var in {'a', 'b'}:
             assert expected_var in set(train.variables), \
                 'Missing variables in training set'
-        assert 'b' not in set(test.variables), 'Got unexpected variables in test set'
+        for month in range(1, 13):
+            test = xr.open_dataset(tmp_path / f'features/test_2001_{month}.nc')
+            assert 'b' not in set(test.variables), 'Got unexpected variables in test set'
