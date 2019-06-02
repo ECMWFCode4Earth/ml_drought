@@ -6,7 +6,8 @@ from datetime import date
 from pathlib import Path
 import xarray as xr
 
-from typing import cast, DefaultDict, Dict, List, Union, Tuple
+from typing import cast, Dict, List, Optional, Union, Tuple
+from typing import DefaultDict as DDict
 
 
 class Engineer:
@@ -91,15 +92,17 @@ class Engineer:
     def _train_test_split(self, ds: xr.Dataset,
                           years: List[int],
                           target_variable: str
-                          ) -> Tuple[xr.Dataset, DefaultDict[int, Dict[int, xr.Dataset]]]:
+                          ) -> Tuple[xr.Dataset, DDict[int, DDict[int, Dict[str, xr.Dataset]]]]:
         years.sort()
 
-        output_test_arrays = defaultdict(dict)
+        output_test_arrays: DDict[int, DDict[int, Dict[str, xr.Dataset]]] = \
+            defaultdict(lambda: defaultdict(dict))
 
-        train, test = self._train_test_split_single_year(ds, years[0],
-                                                         target_variable,
-                                                         target_month=1)
-        output_test_arrays[years[0]][1] = test
+        train, test_datasets = self._train_test_split_single_year(ds, years[0],
+                                                                  target_variable,
+                                                                  target_month=1,
+                                                                  make_train=True)
+        output_test_arrays[years[0]][1] = test_datasets
 
         for year in years:
             for month in range(1, 13):
@@ -116,30 +119,44 @@ class Engineer:
     def _train_test_split_single_year(ds: xr.Dataset,
                                       year: int,
                                       target_variable: str,
-                                      target_month: int
-                                      ) -> Tuple[xr.Dataset, xr.Dataset]:
+                                      target_month: int,
+                                      make_train: bool = False,
+                                      ) -> Tuple[Optional[xr.Dataset], Dict[str, xr.Dataset]]:
 
         print(f'Generating test data for year: {year}, target month: {target_month}')
         max_date = date(year, target_month, calendar.monthrange(year, target_month)[-1])
         min_date = max_date - relativedelta(years=1)
+        max_train_date = max_date - relativedelta(months=1)
+
         min_date_np = np.datetime64(str(min_date))
         max_date_np = np.datetime64(str(max_date))
-        print(f'Max date: {str(max_date)}, min date: {str(min_date)}')
+        max_train_date_np = np.datetime64(str(max_train_date))
+        print(f'Max date: {str(max_date)}, max train date: {str(max_train_date)}, '
+              f'min train date: {str(min_date)}')
 
-        train = ds.time.values <= min_date_np
-        test = ((ds.time.values > min_date_np) & (ds.time.values <= max_date_np))
+        test_x = ((ds.time.values > min_date_np) & (ds.time.values <= max_train_date_np))
+        test_y = ((ds.time.values > max_train_date_np) & (ds.time.values <= max_date_np))
 
-        test_dataset = ds.isel(time=test)[target_variable].to_dataset()
+        test_x_dataset = ds.isel(time=test_x)
+        test_y_dataset = ds.isel(time=test_y)[target_variable].to_dataset()
 
-        return ds.isel(time=train), test_dataset
+        if make_train:
+            train = ds.time.values <= min_date_np
+            train_ds = ds.isel(time=train)
+        else:
+            train_ds = None
 
-    def _save(self, train: xr.Dataset, test: DefaultDict[int, Dict[int, xr.Dataset]]):
+        return train_ds, {'x': test_x_dataset, 'y': test_y_dataset}
+
+    def _save(self, train: xr.Dataset, test: DDict[int, DDict[int, Dict[str, xr.Dataset]]]):
         train.to_netcdf(self.output_folder / 'train.nc')
 
         for year_key, val in test.items():
 
-            for month_key, test_ds in val.items():
+            for month_key, test_dict in val.items():
 
-                filename = f'test_{year_key}_{month_key}.nc'
+                test_folder = self.output_folder / f'test_{year_key}_{month_key}'
+                test_folder.mkdir()
 
-                test_ds.to_netcdf(self.output_folder / filename)
+                for x_or_y, ds in test_dict.items():
+                    ds.to_netcdf(test_folder / f'{x_or_y}.nc')
