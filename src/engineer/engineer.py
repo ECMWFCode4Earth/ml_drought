@@ -180,6 +180,4 @@ class Engineer:
                 test_folder.mkdir()
 
                 for x_or_y, ds in test_dict.items():
-                    print(year_key, month_key, x_or_y)
-                    print(ds)
                     ds.to_netcdf(test_folder / f'{x_or_y}.nc')
