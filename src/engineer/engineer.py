@@ -101,36 +101,35 @@ class Engineer:
         output_test_arrays: DDict[int, DDict[int, Dict[str, xr.Dataset]]] = \
             defaultdict(lambda: defaultdict(dict))
 
-        train, test_datasets = self._train_test_split_single_month(ds, years[0],
-                                                                   target_variable,
-                                                                   1, pred_months,
-                                                                   expected_length, True)
-        if test_datasets is not None:
-            output_test_arrays[years[0]][1] = test_datasets
+        xy_test, min_date = self.stratify_xy(ds, years[0], target_variable, 1, pred_months,
+                                             expected_length, True)
+
+        train_dates = ds.time.values <= np.datetime64(str(min_date))
+        train_ds = ds.isel(time=train_dates)
+
+        if xy_test is not None:
+            output_test_arrays[years[0]][1] = xy_test
 
         for year in years:
             for month in range(1, 13):
                 if year > years[0] or month > 1:
                     # prevents the initial test set from being recalculated
-                    _, subtest = self._train_test_split_single_month(ds, year,
-                                                                     target_variable,
-                                                                     month, pred_months,
-                                                                     expected_length)
-                    if subtest is not None:
-                        output_test_arrays[year][month] = subtest
+                    xy_test, _ = self.stratify_xy(ds, year, target_variable, month, pred_months,
+                                                  expected_length)
+                    if xy_test is not None:
+                        output_test_arrays[year][month] = xy_test
 
-        return train, output_test_arrays
+        return train_ds, output_test_arrays
 
     @staticmethod
-    def _train_test_split_single_month(ds: xr.Dataset,
-                                       year: int,
-                                       target_variable: str,
-                                       target_month: int,
-                                       pred_months: int,
-                                       expected_length: Optional[int],
-                                       make_train: bool = False,
-                                       ) -> Tuple[Optional[xr.Dataset],
-                                                  Optional[Dict[str, xr.Dataset]]]:
+    def stratify_xy(ds: xr.Dataset,
+                    year: int,
+                    target_variable: str,
+                    target_month: int,
+                    pred_months: int,
+                    expected_length: Optional[int],
+                    return_min_date: bool = False,
+                    ) -> Tuple[Optional[Dict[str, xr.Dataset]], Optional[date]]:
 
         print(f'Generating test data for year: {year}, target month: {target_month}')
 
@@ -145,29 +144,28 @@ class Engineer:
         print(f'Max date: {str(max_date)}, max train date: {str(max_train_date)}, '
               f'min train date: {str(min_date)}')
 
-        if make_train:
-            train = ds.time.values <= min_date_np
-            train_ds = ds.isel(time=train)
+        if return_min_date:
+            output_min_date: Optional[date] = min_date
         else:
-            train_ds = None
+            output_min_date = None
 
         test_x = ((ds.time.values > min_date_np) & (ds.time.values <= max_train_date_np))
         test_y = ((ds.time.values > max_train_date_np) & (ds.time.values <= max_date_np))
 
         if sum(test_y) == 0:
             print('Wrong number of test y values! Got 0; returning None')
-            return train_ds, None
+            return None, output_min_date
 
         if expected_length is not None:
             if sum(test_x) != expected_length:
                 print(f'Wrong number of test x values! Got {sum(test_x)} Returning None')
 
-                return train_ds, None
+                return None, output_min_date
 
         test_x_dataset = ds.isel(time=test_x)
         test_y_dataset = ds.isel(time=test_y)[target_variable].to_dataset()
 
-        return train_ds, {'x': test_x_dataset, 'y': test_y_dataset}
+        return {'x': test_x_dataset, 'y': test_y_dataset}, output_min_date
 
     def _save(self, train: xr.Dataset, test: DDict[int, DDict[int, Dict[str, xr.Dataset]]]):
         train.to_netcdf(self.output_folder / 'train.nc')
