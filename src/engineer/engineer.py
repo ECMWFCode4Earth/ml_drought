@@ -94,6 +94,7 @@ class Engineer:
                           years: List[int],
                           target_variable: str,
                           pred_months: int = 11,
+                          expected_length: Optional[int] = 11,
                           ) -> Tuple[xr.Dataset, DDict[int, DDict[int, Dict[str, xr.Dataset]]]]:
         years.sort()
 
@@ -104,8 +105,10 @@ class Engineer:
                                                                   target_variable,
                                                                   target_month=1,
                                                                   make_train=True,
-                                                                  pred_months=pred_months)
-        output_test_arrays[years[0]][1] = test_datasets
+                                                                  pred_months=pred_months,
+                                                                  expected_length=expected_length)
+        if test_datasets is not None:
+            output_test_arrays[years[0]][1] = test_datasets
 
         for year in years:
             for month in range(1, 13):
@@ -113,8 +116,10 @@ class Engineer:
                     # prevents the initial test set from being recalculated
                     _, subtest = self._train_test_split_single_year(ds, year,
                                                                     target_variable,
-                                                                    month, pred_months)
-                    output_test_arrays[year][month] = subtest
+                                                                    month, pred_months,
+                                                                    expected_length)
+                    if subtest is not None:
+                        output_test_arrays[year][month] = subtest
 
         return train, output_test_arrays
 
@@ -124,8 +129,10 @@ class Engineer:
                                       target_variable: str,
                                       target_month: int,
                                       pred_months: int,
+                                      expected_length: Optional[int],
                                       make_train: bool = False,
-                                      ) -> Tuple[Optional[xr.Dataset], Dict[str, xr.Dataset]]:
+                                      ) -> Tuple[Optional[xr.Dataset],
+                                                 Optional[Dict[str, xr.Dataset]]]:
 
         print(f'Generating test data for year: {year}, target month: {target_month}')
 
@@ -140,19 +147,23 @@ class Engineer:
         print(f'Max date: {str(max_date)}, max train date: {str(max_train_date)}, '
               f'min train date: {str(min_date)}')
 
-        test_x = ((ds.time.values > min_date_np) & (ds.time.values <= max_train_date_np))
-        test_y = ((ds.time.values > max_train_date_np) & (ds.time.values <= max_date_np))
-
-        test_x_dataset = ds.isel(time=test_x)
-        test_y_dataset = ds.isel(time=test_y)[target_variable].to_dataset()
-
-        print(len(test_x_dataset.time))
-
         if make_train:
             train = ds.time.values <= min_date_np
             train_ds = ds.isel(time=train)
         else:
             train_ds = None
+
+        test_x = ((ds.time.values > min_date_np) & (ds.time.values <= max_train_date_np))
+        test_y = ((ds.time.values > max_train_date_np) & (ds.time.values <= max_date_np))
+
+        if expected_length is not None:
+            if sum(test_x) != expected_length:
+                print(f'Wrong number of test x values! Got {len(test_x)} Returning None')
+
+                return train_ds, None
+
+        test_x_dataset = ds.isel(time=test_x)
+        test_y_dataset = ds.isel(time=test_y)[target_variable].to_dataset()
 
         return train_ds, {'x': test_x_dataset, 'y': test_y_dataset}
 
