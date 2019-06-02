@@ -158,7 +158,7 @@ class Engineer:
 
         if expected_length is not None:
             if sum(test_x) != expected_length:
-                print(f'Wrong number of test x values! Got {len(test_x)} Returning None')
+                print(f'Wrong number of test x values! Got {sum(test_x)} Returning None')
 
                 return train_ds, None
 
