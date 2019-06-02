@@ -8,6 +8,8 @@ import xarray as xr
 from typing import cast, Dict, List, Optional, Union, Tuple
 from typing import DefaultDict as DDict
 
+from ..utils import minus_months
+
 
 class Engineer:
     """The engineer is responsible for taking all the data from the preprocessors,
@@ -117,30 +119,7 @@ class Engineer:
         return train, output_test_arrays
 
     @staticmethod
-    def minus_ym(cur_year: int, cur_month: int, diff_months: int,
-                 to_endmonth_datetime: bool = True) -> Tuple[int, int, Optional[date]]:
-        """Given a year-month pair (e.g. 2018, 1), and a number of months subtracted
-        from that (e.g. 2), return the new year-month pair (e.g. 2017, 11).
-
-        Optionally, a date object representing the end of that month can be returned too
-        """
-
-        new_month = cur_month - diff_months
-        if new_month < 1:
-            new_month += 12
-            new_year = cur_year - 1
-        else:
-            new_year = cur_year
-
-        if to_endmonth_datetime:
-            newdate: Optional[date] = date(new_year, new_month,
-                                           calendar.monthrange(new_year, new_month)[-1])
-        else:
-            newdate = None
-        return new_year, new_month, newdate
-
-    def _train_test_split_single_year(self,
-                                      ds: xr.Dataset,
+    def _train_test_split_single_year(ds: xr.Dataset,
                                       year: int,
                                       target_variable: str,
                                       target_month: int,
@@ -151,8 +130,8 @@ class Engineer:
         print(f'Generating test data for year: {year}, target month: {target_month}')
 
         max_date = date(year, target_month, calendar.monthrange(year, target_month)[-1])
-        mx_year, mx_month, max_train_date = self.minus_ym(year, target_month, diff_months=1)
-        _, _, min_date = self.minus_ym(mx_year, mx_month, diff_months=pred_months)
+        mx_year, mx_month, max_train_date = minus_months(year, target_month, diff_months=1)
+        _, _, min_date = minus_months(mx_year, mx_month, diff_months=pred_months)
 
         min_date_np = np.datetime64(str(min_date))
         max_date_np = np.datetime64(str(max_date))
