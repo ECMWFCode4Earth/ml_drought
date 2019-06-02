@@ -118,3 +118,4 @@ class TestEngineer:
             for expected_var in {'a', 'b'}:
                 assert expected_var in set(test_x.variables), \
                     'Missing variables in testing input dataset'
+            assert len(test_x.time.values) == 11, f'Wrong number of months in the test dataset'

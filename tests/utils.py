@@ -16,7 +16,7 @@ def _make_dataset(size, variable_name='VHI', lonmin=-180.0, lonmax=180.0,
               'lon': longitudes}
 
     if add_times:
-        times = pd.date_range('2000-01-01', '2001-12-31', name='time')
+        times = pd.date_range('2000-01-01', '2001-12-31', name='time', freq='M')
         size = (len(times), size[0], size[1])
         dims.insert(0, 'time')
         coords['time'] = times

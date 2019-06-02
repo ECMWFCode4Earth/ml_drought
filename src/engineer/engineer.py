@@ -1,7 +1,6 @@
 import numpy as np
 from collections import defaultdict
 import calendar
-from dateutil.relativedelta import relativedelta
 from datetime import date
 from pathlib import Path
 import xarray as xr
@@ -91,7 +90,8 @@ class Engineer:
 
     def _train_test_split(self, ds: xr.Dataset,
                           years: List[int],
-                          target_variable: str
+                          target_variable: str,
+                          pred_months: int = 11,
                           ) -> Tuple[xr.Dataset, DDict[int, DDict[int, Dict[str, xr.Dataset]]]]:
         years.sort()
 
@@ -101,7 +101,8 @@ class Engineer:
         train, test_datasets = self._train_test_split_single_year(ds, years[0],
                                                                   target_variable,
                                                                   target_month=1,
-                                                                  make_train=True)
+                                                                  make_train=True,
+                                                                  pred_months=pred_months)
         output_test_arrays[years[0]][1] = test_datasets
 
         for year in years:
@@ -110,27 +111,53 @@ class Engineer:
                     # prevents the initial test set from being recalculated
                     _, subtest = self._train_test_split_single_year(ds, year,
                                                                     target_variable,
-                                                                    month)
+                                                                    month, pred_months)
                     output_test_arrays[year][month] = subtest
 
         return train, output_test_arrays
 
     @staticmethod
-    def _train_test_split_single_year(ds: xr.Dataset,
+    def minus_ym(cur_year: int, cur_month: int, diff_months: int,
+                 to_endmonth_datetime: bool = True) -> Tuple[int, int, Optional[date]]:
+        """Given a year-month pair (e.g. 2018, 1), and a number of months subtracted
+        from that (e.g. 2), return the new year-month pair (e.g. 2017, 11).
+
+        Optionally, a date object representing the end of that month can be returned too
+        """
+
+        new_month = cur_month - diff_months
+        if new_month < 1:
+            new_month += 12
+            new_year = cur_year - 1
+        else:
+            new_year = cur_year
+
+        if to_endmonth_datetime:
+            newdate: Optional[date] = date(new_year, new_month,
+                                           calendar.monthrange(new_year, new_month)[-1])
+        else:
+            newdate = None
+        return new_year, new_month, newdate
+
+    def _train_test_split_single_year(self,
+                                      ds: xr.Dataset,
                                       year: int,
                                       target_variable: str,
                                       target_month: int,
+                                      pred_months: int,
                                       make_train: bool = False,
                                       ) -> Tuple[Optional[xr.Dataset], Dict[str, xr.Dataset]]:
 
         print(f'Generating test data for year: {year}, target month: {target_month}')
+
         max_date = date(year, target_month, calendar.monthrange(year, target_month)[-1])
-        min_date = max_date - relativedelta(years=1)
-        max_train_date = max_date - relativedelta(months=1)
+        mx_year, mx_month, max_train_date = self.minus_ym(year, target_month, diff_months=1)
+        _, _, min_date = self.minus_ym(mx_year, mx_month, diff_months=pred_months)
 
         min_date_np = np.datetime64(str(min_date))
         max_date_np = np.datetime64(str(max_date))
         max_train_date_np = np.datetime64(str(max_train_date))
+
         print(f'Max date: {str(max_date)}, max train date: {str(max_train_date)}, '
               f'min train date: {str(min_date)}')
 
@@ -139,6 +166,8 @@ class Engineer:
 
         test_x_dataset = ds.isel(time=test_x)
         test_y_dataset = ds.isel(time=test_y)[target_variable].to_dataset()
+
+        print(len(test_x_dataset.time))
 
         if make_train:
             train = ds.time.values <= min_date_np
