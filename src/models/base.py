@@ -2,6 +2,7 @@ from pathlib import Path
 import numpy as np
 import json
 import xarray as xr
+import pandas as pd
 from dataclasses import dataclass
 from sklearn.metrics import mean_squared_error
 
@@ -53,7 +54,7 @@ class ModelBase:
     def save_model(self):
         raise NotImplementedError
 
-    def evaluate(self, save_results: bool = True) -> None:
+    def evaluate(self, save_results: bool = True, save_preds: bool = False) -> None:
         test_arrays_dict, preds_dict = self.predict()
 
         output_dict: Dict[str, int] = {}
@@ -77,7 +78,16 @@ class ModelBase:
             with (self.model_dir / 'results.json').open('w') as outfile:
                 json.dump(output_dict, outfile)
 
-        # TODO: save preds
+        if save_preds:
+            for key, val in test_arrays_dict.items():
+                latlons = val.latlons
+                preds = preds_dict[key]
+
+                preds_xr = pd.DataFrame(data={
+                    'preds': preds, 'lat': latlons[:, 0],
+                    'lon': latlons[:, 1]}).set_index(['lat', 'lon']).to_xarray()
+
+                preds_xr.to_netcdf(self.model_dir / f'preds_{key}.nc')
 
     def load_test_arrays(self) -> Dict[str, ModelArrays]:
         test_data_path = self.data_path / 'features/test'
