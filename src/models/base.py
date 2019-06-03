@@ -13,6 +13,8 @@ from typing import cast, Dict, List, Optional, Tuple
 class ModelArrays:
     x: np.ndarray
     y: np.ndarray
+    x_vars: List[str]
+    y_var: str
     latlons: Optional[np.ndarray] = None
 
 
@@ -43,7 +45,7 @@ class ModelBase:
         self.model: Optional[str] = None  # to be added by the model classes
         self.data_vars: Optional[List[str]] = None  # to be added by the train step
 
-    def train(self):
+    def train(self) -> None:
         raise NotImplementedError
 
     def predict(self) -> Tuple[Dict[str, ModelArrays], Dict[str, np.ndarray]]:
@@ -51,7 +53,7 @@ class ModelBase:
         # load_test_arrays, and the corresponding predictions
         raise NotImplementedError
 
-    def save_model(self):
+    def save_model(self) -> None:
         raise NotImplementedError
 
     def evaluate(self, save_results: bool = True, save_preds: bool = False) -> None:
@@ -119,6 +121,7 @@ class ModelBase:
                         ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / 'x.nc'), xr.open_dataset(folder / 'y.nc')
+        assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable!'
         x_np, y_np = x.to_array().values, y.to_array().values
 
         # first, x
@@ -149,5 +152,8 @@ class ModelBase:
 
             if clear_nans:
                 latlons = latlons[notnan_indices]
-            return ModelArrays(x=x_np, y=y_np, latlons=latlons)
-        return ModelArrays(x=x_np, y=y_np)
+            return ModelArrays(x=x_np, y=y_np, x_vars=list(x.data_vars),
+                               y_var=list(y.data_vars)[0], latlons=latlons)
+
+        return ModelArrays(x=x_np, y=y_np, x_vars=list(x.data_vars),
+                           y_var=list(y.data_vars)[0])

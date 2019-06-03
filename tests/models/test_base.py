@@ -51,7 +51,8 @@ class TestBase:
             x = np.array([1, 1, 1, 1, 1])
             y = np.array([1, 1, 1, 1, 1])
 
-            test_arrays = {'hello': ModelArrays(x=x, y=y)}
+            test_arrays = {'hello': ModelArrays(x=x, y=y, x_vars=['foo'],
+                                                y_var='bar')}
             preds_arrays = {'hello': y}
 
             return test_arrays, preds_arrays
