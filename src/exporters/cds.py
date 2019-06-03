@@ -85,16 +85,21 @@ class CDSExporter(BaseExporter):
 
     @staticmethod
     def _print_api_request(dataset: str,
-                           selection_request: Dict) -> None:
+                           selection_request: Dict,
+                           output_file: Path) -> None:
         print('------------------------')
         print(f'Dataset: {dataset}')
         print('Selection Request:')
         pprint(selection_request)
         print('------------------------')
+        print('Output Filename:')
+        print(output_file)
+        print('------------------------')
 
     def _export(self, dataset: str,
                 selection_request: Dict,
-                show_api_request: bool = False) -> Path:
+                show_api_request: bool = False,
+                in_parallel: bool = False) -> Path:
         """Export CDS data
 
         Parameters
@@ -113,10 +118,14 @@ class CDSExporter(BaseExporter):
         output_file = self.make_filename(dataset, selection_request)
 
         if show_api_request:
-            self._print_api_request(dataset, selection_request)
+            self._print_api_request(dataset, selection_request, output_file)
 
         if not output_file.exists():
-            self.client.retrieve(dataset, selection_request, str(output_file))
+            if not in_parallel:
+                self.client.retrieve(dataset, selection_request, str(output_file))
+            else:  # in parallel create a new Client each time it's called
+                client = cdsapi.Client()
+                client.retrieve(dataset, selection_request, str(output_file))
 
         return output_file
 
@@ -298,16 +307,17 @@ class ERA5Exporter(CDSExporter):
                 updated_request['year'] = [year]
                 updated_request['month'] = [month]
 
-                output_paths.append(
-                    self._export(dataset, updated_request, show_api_request)
-                )
-
                 if N_parallel_requests > 1:  # Run in parallel
                     # multiprocessing of the paths
                     output_paths.append(
                         p.apply_async(
                             self._export,
-                            args=(dataset, updated_request, show_api_request)).get()
+                            args=(dataset, updated_request, show_api_request, True)
+                        ).get()
+                    )
+                else: # run sequentially
+                    output_paths.append(
+                        self._export(dataset, updated_request, show_api_request)
                     )
             if N_parallel_requests > 1:
                 p.close()
