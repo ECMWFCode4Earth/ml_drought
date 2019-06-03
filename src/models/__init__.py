@@ -1,3 +1,3 @@
-from .parsimonious import PredictPreviousMonth
+from .parsimonious import Persistence
 
-__all__ = ['PredictPreviousMonth']
+__all__ = ['Persistence']

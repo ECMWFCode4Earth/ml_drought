@@ -1,10 +1,10 @@
 import numpy as np
 
-from src.models.parsimonious import PredictPreviousMonth
+from src.models.parsimonious import Persistence
 from src.models.base import ModelArrays
 
 
-class TestPredictPreviousMonth:
+class TestPersistence:
 
     def test_predict(self, tmp_path, monkeypatch):
 
@@ -21,9 +21,9 @@ class TestPredictPreviousMonth:
 
             return {'hello': ModelArrays(x=x, x_vars=x_vars, y=y, y_var=y_var)}
 
-        monkeypatch.setattr(PredictPreviousMonth, 'load_test_arrays', mockreturn)
+        monkeypatch.setattr(Persistence, 'load_test_arrays', mockreturn)
 
-        predictor = PredictPreviousMonth(tmp_path)
+        predictor = Persistence(tmp_path)
 
         test_arrays, preds = predictor.predict()
 

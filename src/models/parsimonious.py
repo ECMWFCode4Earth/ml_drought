@@ -5,7 +5,7 @@ from typing import Dict, Tuple
 from .base import ModelBase, ModelArrays
 
 
-class PredictPreviousMonth(ModelBase):
+class Persistence(ModelBase):
 
     model_name = 'previous_month'
 
