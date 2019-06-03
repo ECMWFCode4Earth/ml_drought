@@ -96,27 +96,18 @@ class TestEngineer:
         engineer = Engineer(tmp_path)
         engineer.engineer(test_year=2001, target_variable='a')
 
-        # first, lets make sure the right files were created
+        def check_folder(folder_path):
+            y = xr.open_dataset(folder_path / 'y.nc')
+            assert 'b' not in set(y.variables), 'Got unexpected variables in test set'
 
-        assert (tmp_path / 'features/train.nc').exists(), \
-            f'Training file not generated!'
-
-        for month in range(1, 13):
-            for ds in {'x', 'y'}:
-                assert (tmp_path / f'features/test_2001_{month}/{ds}.nc').exists(), \
-                    f'Test folder not generated!'
-
-        train = xr.open_dataset(tmp_path / 'features/train.nc')
-        for expected_var in {'a', 'b'}:
-            assert expected_var in set(train.variables), \
-                'Missing variables in training set'
-        for month in range(1, 13):
-            test_y = xr.open_dataset(tmp_path / f'features/test_2001_{month}/y.nc')
-            assert 'b' not in set(test_y.variables), 'Got unexpected variables in test set'
-
-            test_x = xr.open_dataset(tmp_path / f'features/test_2001_{month}/x.nc')
+            x = xr.open_dataset(folder_path / 'x.nc')
             for expected_var in {'a', 'b'}:
-                assert expected_var in set(test_x.variables), \
+                assert expected_var in set(x.variables), \
                     'Missing variables in testing input dataset'
-            assert len(test_x.time.values) == 11, f'Wrong number of months in the test x dataset'
-            assert len(test_y.time.values) == 1, f'Wrong number of months in test y dataset'
+            assert len(x.time.values) == 11, 'Wrong number of months in the test x dataset'
+            assert len(y.time.values) == 1, 'Wrong number of months in test y dataset'
+
+        check_folder(tmp_path / 'features/train/1999_12')
+        for month in range(1, 13):
+            check_folder(tmp_path / f'features/test/2001_{month}')
+            check_folder(tmp_path / f'features/train/2000_{month}')
