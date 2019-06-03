@@ -315,7 +315,7 @@ class ERA5Exporter(CDSExporter):
                             args=(dataset, updated_request, show_api_request, True)
                         ).get()
                     )
-                else: # run sequentially
+                else:  # run sequentially
                     output_paths.append(
                         self._export(dataset, updated_request, show_api_request)
                     )
