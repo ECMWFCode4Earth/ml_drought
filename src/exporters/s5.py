@@ -1,13 +1,11 @@
 from pathlib import Path
-import warnings
 import itertools
 import numpy as np
-import multiprocessing
 from pathos.pools import _ThreadPool as pool
 
 from typing import Dict, Optional, List
 from .all_valid_s5 import datasets as dataset_reference
-from .base import Region, get_kenya
+from .base import get_kenya
 from .cds import CDSExporter
 
 
@@ -183,7 +181,8 @@ class S5Exporter(CDSExporter):
         valid_product_types = self.dataset_reference["product_type"]
 
         if valid_product_types is None:
-            f"{self.dataset} has no `product_type` key. Only the monthly datasets have product types!"
+            f"{self.dataset} has no `product_type` key. \
+            Only the monthly datasets have product types!"
             return None
 
         # if not provided then download monthly_mean
@@ -356,7 +355,6 @@ class S5Exporter(CDSExporter):
         months = self._filename_from_selection_request(
             selection_request["month"], "month"
         )
-        variable = selection_request["variable"]
         if self.pressure_level:
             plevels = selection_request["pressure_level"]
             plevels = "_".join(plevels)
