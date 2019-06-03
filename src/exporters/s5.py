@@ -1,23 +1,14 @@
-import cdsapi
 from pathlib import Path
-import certifi
-import urllib3
 import warnings
 import itertools
-# import re
 import numpy as np
-# from pprint import pprint
 import multiprocessing
+from pathos.pools import _ThreadPool as pool
 
 from typing import Dict, Optional, List
 from .all_valid_s5 import datasets as dataset_reference
 from .base import Region, get_kenya
 from .cds import CDSExporter
-
-http = urllib3.PoolManager(
-    cert_reqs='CERT_REQUIRED',
-    ca_certs=certifi.where()
-)
 
 class S5Exporter(CDSExporter):
 
@@ -304,6 +295,46 @@ class S5Exporter(CDSExporter):
         elif granularity == 'hourly':
             return 'seasonal-original-pressure-levels' if pressure_level else 'seasonal-original-single-levels'
 
+    @staticmethod
+    def _make_filename(self, selection_request: Dict) -> Path:
+        """
+        data/raw/seasonal-monthly-single-levels
+         /total_precipitation/2017/M01-Vmonthly_mean-P.grib
+        """
+        # base data folder
+        dataset_folder = self.raw_folder / self.dataset
+        if not dataset_folder.exists():
+            dataset_folder.mkdir()
+
+        # variable name (flexible for multiple variables)
+        variables = '_'.join(selection_request['variable'])
+        variables_folder = dataset_folder / variables
+        if not variables_folder.exists():
+            variables_folder.mkdir()
+
+        # year of download
+        years = self._filename_from_selection_request(selection_request['year'], 'year')
+        years_folder = variables_folder / years
+        if not years_folder.exists():
+            years_folder.mkdir()
+
+        # file per month
+        months = self._filename_from_selection_request(selection_request['month'], 'month')
+        variable = selection_request['variable']
+        if self.pressure_level:
+            plevels = selection_request['pressure_level']
+            plevels = '_'.join(plevels)
+            fname = f'M{months}-P{plevels}.grib'
+        else:
+            fname = f'M{months}.grib'
+        output_filename = years_folder / fname
+
+        return output_filename
+
+    # @staticmethod
+    # def _export():
+    #     pass
+
     def export(self,
                variable: str,
                min_year: Optional[int] = 2017,
@@ -372,7 +403,8 @@ class S5Exporter(CDSExporter):
             processed_selection_request.update(self.get_pressure_levels(pressure_levels))
 
         if N_parallel_requests > 1:  # Run in parallel
-            p = multiprocessing.Pool(int(N_parallel_requests))
+            # p = multiprocessing.Pool(int(N_parallel_requests))
+            p = pool(int(N_parallel_requests))  # pathos seems to pickle classes
 
         # SPLIT THE API CALLS INTO MONTHS (speed up downloads)
         output_paths = []
