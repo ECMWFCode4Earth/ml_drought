@@ -3,10 +3,11 @@ from pathlib import Path
 import certifi
 import urllib3
 import warnings
-# import itertools
+import itertools
 # import re
 import numpy as np
 # from pprint import pprint
+import multiprocessing
 
 from typing import Dict, Optional, List
 from .all_valid_s5 import datasets as dataset_reference
@@ -19,6 +20,71 @@ http = urllib3.PoolManager(
 )
 
 class S5Exporter(CDSExporter):
+
+    def __init__(self,
+                 pressure_level: bool,
+                 granularity: str = 'monthly',
+                 data_folder: Path = Path('data'),
+                 product_type: Optional[str] = None,
+                 dataset: Optional[str] = None,) -> None:
+        """
+        Arguments
+        --------
+        data_folder: Path
+            path to the data folder (where data will be stored)
+
+        variable: str
+            the variable that you want to download.
+
+        pressure_level: bool
+            Do you want data at different atmospheric heights?
+            True = yes want data at different `pressure-levels`
+            False = no want only `single-level` data
+
+        granularity: str, {'monthly', 'hourly'}, default: 'monthly'
+            The granularity of data being pulled.
+            'hourly'/'pressure_level' data has a forecast for every 12hrs (12, 24, 36 ...)
+            'hourly'/'single_level' data has a forecast for every 6hrs (6, 12, 18, 24 ...)
+            'monthly' data has a forecast for every month {1 ... 6}
+
+        product_type : str
+            The product type is only valid for monthly datasets. It corresponds
+            to the post-processing of the monthly forecasts
+            Defaults to 'monthly_mean' if no product_type is given
+                if pressure_level == True:
+                 {'ensemble_mean', 'hindcast_climate_mean', 'monthly_mean'}
+                else
+                 {'ensemble_mean', 'hindcast_climate_mean', 'monthly_mean',
+                  'monthly_standard_deviation', 'monthly_maximum', 'monthly_minimum'}
+
+        Notes:
+        -----
+        - because the `dataset` argument is not intuitive, the s5 downloader
+        makes decisions for the user based on their preferences in the args
+        `pressure_level` and `granularity`.
+        - these are constant for one download
+        """
+        super().__init__(data_folder)
+
+        # initialise attributes for this export
+        self.pressure_level = pressure_level
+        self.granularity = granularity
+
+        if dataset is None:
+            self.dataset = self.get_dataset(self.granularity, self.pressure_level)
+        else:
+            self.dataset = dataset
+
+        # get the reference dictionary that corresponds to that dataset
+        self.dataset_reference = dataset_reference[self.dataset]
+
+        # get the product type if it exists
+        self.product_type = self.get_product_type(product_type)
+
+        # check the product_type is valid for this dataset
+        assert self.product_type in self.dataset_reference['product_type'], f"\
+            {self.product_type} is not a valid variable for the {self.dataset} dataset.\
+            Try one of: {self.dataset_reference['product_type']}"
 
     @staticmethod
     def get_s5_initialisation_times(granularity: str,
@@ -141,6 +207,27 @@ class S5Exporter(CDSExporter):
     #             return '{:02d}:00'.format(value)
     #     return str(value)
 
+    def get_pressure_levels(self,
+                            pressure_levels: Optional[List[int]] = None,
+                           ) -> Optional[Dict]:
+        if self.pressure_level:
+            # make sure the dataset requires pressure_levels
+            assert 'pressure_level' in [k for k in self.dataset_reference.keys()], f"\
+            {self.dataset} has no 'pressure_level' keys. Cannot assign pressure levels"
+
+            # make sure the pressure levels are legitimate choices
+            assert (all(np.isin(pressure_levels, self.dataset_reference['pressure_level']))), f"\
+            {pressure_levels} contains invalid pressure levels!\
+            Must be one of:{self.dataset_reference['pressure_level']}"
+
+            return {'pressure_level': [str(pl) for pl in pressure_levels]}
+        else:
+            return None
+
+    def get_valid_variables(self) -> List:
+        """ get `valid_variables` for this S5Exporter object """
+        # print(self.dataset_reference['variable'])
+        return self.dataset_reference['variable']
 
     def create_selection_request(self,
                                  variable: str,
@@ -167,15 +254,9 @@ class S5Exporter(CDSExporter):
         - Some attributes are used to create the default arguments
             (self.product_type, self.granularity, self.dataset, self.pressure_level)
         """
-        # check the variable is valid for this dataset
         assert variable in self.dataset_reference['variable'], f"\
-            {variable} is not a valid variable for the {self.dataset} dataset.\
-            Try one of: {self.dataset_reference['variable']}"
-
-        # check the product_type is valid for this dataset
-        assert self.product_type in self.dataset_reference['product_type'], f"\
-            {self.product_type} is not a valid variable for the {self.dataset} dataset.\
-            Try one of: {self.dataset_reference['product_type']}"
+            Variable: {variable} is not in the valid variables for this \
+            dataset. Valid variables: {self.dataset_reference['variable']}"
 
         # setup the default selection request
         processed_selection_request = {
@@ -223,44 +304,20 @@ class S5Exporter(CDSExporter):
         elif granularity == 'hourly':
             return 'seasonal-original-pressure-levels' if pressure_level else 'seasonal-original-single-levels'
 
-    def export(variable: str,
-               pressure_level: bool,
-               granularity: str = 'monthly',
-               product_type: Optional[str] = None,
-               dataset: Optional[str] = None,
+    def export(self,
+               variable: str,
                min_year: Optional[int] = 2017,
                max_year: Optional[int] = 2018,
                min_month: Optional[int] = 1,
                max_month: Optional[int] = 12,
                max_leadtime: Optional[int] = None,
+               pressure_levels: Optional[int] = None,
                selection_request: Optional[Dict] = None,
-               ):
+               N_parallel_requests: int = 3,
+               show_api_request: bool = True):
         """
         Arguments
         --------
-        variable: str
-            the variable that you want to download.
-
-        pressure_level: bool
-            Do you want data at different atmospheric heights?
-            True = yes want data at different `pressure-levels`
-            False = no want only `single-level` data
-
-        granularity: str, {'monthly', 'hourly'}, default: 'monthly'
-            The granularity of data being pulled.
-            'hourly'/'pressure_level' data has a forecast for every 12hrs (12, 24, 36 ...)
-            'hourly'/'single_level' data has a forecast for every 6hrs (6, 12, 18, 24 ...)
-            'monthly' data has a forecast for every month {1 ... 6}
-
-        product_type : str
-            The product type is only valid for monthly datasets. It corresponds
-            to the post-processing of the monthly forecasts
-                if pressure_level == True:
-                 {'ensemble_mean', 'hindcast_climate_mean', 'monthly_mean'}
-                else
-                 {'ensemble_mean', 'hindcast_climate_mean', 'monthly_mean',
-                  'monthly_standard_deviation', 'monthly_maximum', 'monthly_minimum'}
-
         min_year: Optional[int] default = 2017
             the minimum year of your request
 
@@ -279,50 +336,71 @@ class S5Exporter(CDSExporter):
                 (elif granularity is `monthly` then provide in months)
             defaults to ~3 months (90 days)
 
+        pressure_levels: Optional[int]
+            Pressure levels to download data at
+
         Note:
         ----
         - All parameters that are assigned to class attributes are fixed for one download
+        - these are required to initialise the object [granularity, pressure_level]
         - Only time will be chunked (by months) to send separate calls to the cdsapi
         """
-        self.variable = variable
-        self.pressure_level = pressure_level
-        self.granularity = granularity
-
-        if dataset is None:
-            self.dataset = self.get_dataset(self.granularity, self.pressure_level)
-        else:
-            self.dataset = dataset
-
-        # get the reference dictionary that corresponds to that dataset
-        self.dataset_reference = dataset_reference[self.dataset]
-
-        assert self.variable in self.dataset_reference['variable'], f"\
-            Variable: {variable} is not in the valid variables for this \
-            dataset. Valid variables: {self.dataset_reference['variable']}"
-
-        # get the product type if it exists
-        self.product_type = self.get_product_type(product_type)
+        # N_parallel_requests can only be a MINIMUM of 1
+        if N_parallel_requests < 1: N_parallel_requests = 1
 
         # max_leadtime defaults
         if max_leadtime is None:
-            # set the max_leadtime to 3 months
+            # set the max_leadtime to 3 months as default
             max_leadtime = 90 if (self.granularity == 'hourly') else 3
 
-    #
-    # def create_filename():
-    #     """ """
-    #     return
-    #
-    # def export(self,
-    #            variable: str,
-    #            dataset: Optional[str] = None,
-    #            granularity: str = 'hourly',
-    #            show_api_request: bool = True,
-    #            selection_request: Optional[Dict] = None,
-    #            break_up: bool = True) -> List[Path]:
-    #
-    #     # create the default template for the selection request
-    #     processed_selection_request = self.create_selection_request(variable,
-    #                                                                 selection_request,
-    #                                                                 granularity)
-    #     return
+        if pressure_levels is None:
+            # set the pressure_levels to ['200', '500', '925'] as default
+            pressure_levels = [200, 500, 925] if (self.pressure_level) else None
+
+
+        processed_selection_request = self.create_selection_request(
+            variable=variable,
+            max_leadtime=max_leadtime,
+            min_year=min_year,
+            max_year=max_year,
+            min_month=min_month,
+            max_month=max_month,
+            selection_request=selection_request,
+        )
+
+        if self.pressure_level:  # if we are using the pressure_level dataset
+            processed_selection_request.update(self.get_pressure_levels(pressure_levels))
+
+        if N_parallel_requests > 1:  # Run in parallel
+            p = multiprocessing.Pool(int(N_parallel_requests))
+
+        # SPLIT THE API CALLS INTO MONTHS (speed up downloads)
+        output_paths = []
+        for year, month in itertools.product(processed_selection_request['year'],
+                                             processed_selection_request['month']):
+            updated_request = processed_selection_request.copy()
+            updated_request['year'] = [year]
+            updated_request['month'] = [month]
+
+            if N_parallel_requests > 1:  # Run in parallel
+                # multiprocessing of the paths
+                in_parallel = True
+                output_paths.append(
+                    p.apply_async(
+                        self._export,
+                        args=(self.dataset, updated_request, show_api_request, in_parallel)
+                    ).get()
+                )
+
+            else:  # run sequentially
+                in_parallel = False
+                output_paths.append(
+                    self._export(self.dataset, updated_request, show_api_request, in_parallel)
+                )
+
+        # close the multiprocessing pool
+        if N_parallel_requests > 1:
+            p.close()
+            p.join()
+
+        return output_paths
