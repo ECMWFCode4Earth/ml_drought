@@ -6,7 +6,7 @@ import pandas as pd
 from dataclasses import dataclass
 from sklearn.metrics import mean_squared_error
 
-from typing import Dict, List, Optional, Tuple
+from typing import cast, Dict, List, Optional, Tuple
 
 
 @dataclass
@@ -80,7 +80,7 @@ class ModelBase:
 
         if save_preds:
             for key, val in test_arrays_dict.items():
-                latlons = val.latlons
+                latlons = cast(np.ndarray, val.latlons)
                 preds = preds_dict[key]
 
                 preds_xr = pd.DataFrame(data={

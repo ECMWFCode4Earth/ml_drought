@@ -1,4 +1,6 @@
-from src.models.base import ModelBase
+import numpy as np
+
+from src.models.base import ModelBase, ModelArrays
 
 from ..utils import _make_dataset
 
@@ -41,3 +43,25 @@ class TestBase:
             assert target_y == y_np[idx, 0], \
                 f'Got y different values for lat: {lat}, ' \
                 f'lon: {lon}.Expected {target_y}, got {y_np[idx, 0]}'
+
+    def test_evaluate(self, tmp_path, monkeypatch, capsys):
+
+        def mockreturn(self):
+
+            x = np.array([1, 1, 1, 1, 1])
+            y = np.array([1, 1, 1, 1, 1])
+
+            test_arrays = {'hello': ModelArrays(x=x, y=y)}
+            preds_arrays = {'hello': y}
+
+            return test_arrays, preds_arrays
+
+        monkeypatch.setattr(ModelBase, 'predict', mockreturn)
+
+        base = ModelBase(tmp_path)
+        base.evaluate(save_results=False, save_preds=False)
+
+        captured = capsys.readouterr()
+        expected_stdout = 'RMSE: 0.0'
+        assert expected_stdout in captured.out, \
+            f'Expected stdout to be {expected_stdout}, got {captured.out}'
