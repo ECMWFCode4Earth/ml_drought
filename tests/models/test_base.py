@@ -5,6 +5,10 @@ from ..utils import _make_dataset
 
 class TestBase:
 
+    def test_init(self, tmp_path):
+        ModelBase(tmp_path)
+        assert (tmp_path / 'models').exists(), f'Models dir not made!'
+
     def test_ds_to_np(self, tmp_path):
 
         x, _, _ = _make_dataset(size=(5, 5))
@@ -15,8 +19,6 @@ class TestBase:
         y.to_netcdf(tmp_path / 'y.nc')
 
         x_np, y_np, latlons = ModelBase.ds_folder_to_np(tmp_path, return_latlons=True)
-
-        print(x_np.shape, latlons.shape)
 
         assert x_np.shape[0] == y_np.shape[0] == latlons.shape[0], \
             f'x, y and latlon data have a different number of instances! ' \
@@ -37,3 +39,7 @@ class TestBase:
             assert target_y == y_np[idx, 0], \
                 f'Got y different values for lat: {lat}, ' \
                 f'lon: {lon}.Expected {target_y}, got {y_np[idx, 0]}'
+
+    def test_load_train(self, tmp_path):
+
+        assert 1 == 1

@@ -2,7 +2,7 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
-from typing import cast, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 
 class ModelBase:
@@ -13,7 +13,7 @@ class ModelBase:
         The location of the data folder.
     """
 
-    model_name: Optional[str] = None  # to be added by the model classes
+    model_name: str  # to be added by the model classes
 
     def __init__(self, data: Path = Path('data')):
 
@@ -23,7 +23,7 @@ class ModelBase:
             self.models_dir.mkdir()
 
         try:
-            self.model_dir = self.models_dir / cast(str, self.model_name)
+            self.model_dir = self.models_dir / self.model_name
             if not self.model_dir.exists():
                 self.model_dir.mkdir()
         except AttributeError:
@@ -49,9 +49,29 @@ class ModelBase:
         # TODO
         raise NotImplementedError
 
-    def load_test_arrays(self):
-        # TODO
-        raise NotImplementedError
+    def load_test_arrays(self) -> Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+        test_data_path = self.data_path / 'features/test'
+
+        out_dict = {}
+        for subtrain in test_data_path.iterdir():
+            if (subtrain / 'x.nc').exists() and (subtrain / 'y.nc').exists():
+                x_np, y_np, latlons = self.ds_folder_to_np(subtrain, clear_nans=True,
+                                                           return_latlons=True)
+                out_dict[subtrain.parts[-1]] = (x_np, y_np, latlons)
+        return out_dict
+
+    def load_train_arrays(self) -> Tuple[np.ndarray, np.ndarray]:
+
+        train_data_path = self.data_path / 'features/train'
+
+        out_x, out_y = [], []
+        for subtrain in train_data_path.iterdir():
+            if (subtrain / 'x.nc').exists() and (subtrain / 'y.nc').exists():
+                x_np, y_np, _ = self.ds_folder_to_np(subtrain, clear_nans=True,
+                                                     return_latlons=False)
+                out_x.append(x_np)
+                out_y.append(y_np)
+        return np.concatenate(out_x, dim=0), np.concatenate(out_y, dim=0)
 
     @staticmethod
     def ds_folder_to_np(folder: Path,
