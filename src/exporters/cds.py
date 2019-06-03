@@ -243,7 +243,6 @@ class ERA5Exporter(CDSExporter):
                show_api_request: bool = True,
                selection_request: Optional[Dict] = None,
                break_up: bool = True,
-               parallel: bool = True,
                N_parallel_requests: int = 3) -> List[Path]:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
@@ -285,9 +284,11 @@ class ERA5Exporter(CDSExporter):
         if dataset is None:
             dataset = self.get_dataset(variable, granularity)
 
+        if N_parallel_requests < 1: N_parallel_requests = 1
+
+        # break up by month
         if break_up:
-            if parallel:  # Run in parallel
-                if N_parallel_requests < 1: N_parallel_requests = 1
+            if N_parallel_requests > 1:  # Run in parallel
                 p = multiprocessing.Pool(int(N_parallel_requests))
 
             output_paths = []
@@ -301,14 +302,14 @@ class ERA5Exporter(CDSExporter):
                     self._export(dataset, updated_request, show_api_request)
                 )
 
-                if parallel:  # Run in parallel
+                if N_parallel_requests > 1:  # Run in parallel
                     # multiprocessing of the paths
                     output_paths.append(
                         p.apply_async(
                             self._export,
                             args=(dataset, updated_request, show_api_request)).get()
                     )
-            if parallel:
+            if N_parallel_requests > 1:
                 p.close()
                 p.join()
             return output_paths

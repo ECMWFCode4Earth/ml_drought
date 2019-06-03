@@ -5,6 +5,7 @@ import urllib3
 import warnings
 import itertools
 import re
+import numpy as np
 from pprint import pprint
 
 from typing import Dict, Optional, List
@@ -102,7 +103,7 @@ class S5Exporter(CDSExporter):
                                       f'and times (the default) are being downloaded')
                     val = self._check_iterable(val, key)
                     processed_selection_request[key] = [self._correct_input(x, key) for x in val]
-        return processed_selection_request
+            return processed_selection_request
     #
     # def create_filename():
     #     """ """
