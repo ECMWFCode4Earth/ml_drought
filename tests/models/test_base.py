@@ -18,7 +18,9 @@ class TestBase:
         x.to_netcdf(tmp_path / 'x.nc')
         y.to_netcdf(tmp_path / 'y.nc')
 
-        x_np, y_np, latlons = ModelBase.ds_folder_to_np(tmp_path, return_latlons=True)
+        arrays = ModelBase.ds_folder_to_np(tmp_path, return_latlons=True)
+
+        x_np, y_np, latlons = arrays.x, arrays.y, arrays.latlons
 
         assert x_np.shape[0] == y_np.shape[0] == latlons.shape[0], \
             f'x, y and latlon data have a different number of instances! ' \
@@ -39,7 +41,3 @@ class TestBase:
             assert target_y == y_np[idx, 0], \
                 f'Got y different values for lat: {lat}, ' \
                 f'lon: {lon}.Expected {target_y}, got {y_np[idx, 0]}'
-
-    def test_load_train(self, tmp_path):
-
-        assert 1 == 1

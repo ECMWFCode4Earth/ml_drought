@@ -1,8 +1,18 @@
 from pathlib import Path
 import numpy as np
+import json
 import xarray as xr
+from dataclasses import dataclass
+from sklearn.metrics import mean_squared_error
 
 from typing import Dict, List, Optional, Tuple
+
+
+@dataclass
+class ModelArrays:
+    x: np.ndarray
+    y: np.ndarray
+    latlons: Optional[np.ndarray] = None
 
 
 class ModelBase:
@@ -35,29 +45,48 @@ class ModelBase:
     def train(self):
         raise NotImplementedError
 
-    def predict(self):
-        # This method should return the predictions, and
-        # the corresponding true values, read from the test
-        # arrays
+    def predict(self) -> Tuple[Dict[str, ModelArrays], Dict[str, np.ndarray]]:
+        # This method should return the test arrays as loaded by
+        # load_test_arrays, and the corresponding predictions
         raise NotImplementedError
 
     def save_model(self):
-        # This method should save the model in data / model_name
         raise NotImplementedError
 
-    def evaluate(self, return_eval=False, save_preds=False):
-        # TODO
-        raise NotImplementedError
+    def evaluate(self, save_results: bool = True) -> None:
+        test_arrays_dict, preds_dict = self.predict()
 
-    def load_test_arrays(self) -> Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+        output_dict: Dict[str, int] = {}
+        total_preds: List[np.ndarray] = []
+        total_true: List[np.ndarray] = []
+        for key, val in test_arrays_dict.items():
+            preds = preds_dict[key]
+            true = val.y
+
+            output_dict[key] = np.sqrt(mean_squared_error(true, preds))
+
+            total_preds.append(preds)
+            total_true.append(true)
+
+        output_dict['total'] = np.sqrt(mean_squared_error(np.concatenate(total_true),
+                                                          np.concatenate(total_preds)))
+
+        print(f'RMSE: {output_dict["total"]}')
+
+        if save_results:
+            with (self.model_dir / 'results.json').open('w') as outfile:
+                json.dump(output_dict, outfile)
+
+        # TODO: save preds
+
+    def load_test_arrays(self) -> Dict[str, ModelArrays]:
         test_data_path = self.data_path / 'features/test'
 
         out_dict = {}
         for subtrain in test_data_path.iterdir():
             if (subtrain / 'x.nc').exists() and (subtrain / 'y.nc').exists():
-                x_np, y_np, latlons = self.ds_folder_to_np(subtrain, clear_nans=True,
-                                                           return_latlons=True)
-                out_dict[subtrain.parts[-1]] = (x_np, y_np, latlons)
+                out_dict[subtrain.parts[-1]] = self.ds_folder_to_np(subtrain, clear_nans=True,
+                                                                    return_latlons=True)
         return out_dict
 
     def load_train_arrays(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -67,17 +96,17 @@ class ModelBase:
         out_x, out_y = [], []
         for subtrain in train_data_path.iterdir():
             if (subtrain / 'x.nc').exists() and (subtrain / 'y.nc').exists():
-                x_np, y_np, _ = self.ds_folder_to_np(subtrain, clear_nans=True,
-                                                     return_latlons=False)
-                out_x.append(x_np)
-                out_y.append(y_np)
+                arrays = self.ds_folder_to_np(subtrain, clear_nans=True,
+                                              return_latlons=False)
+                out_x.append(arrays.x)
+                out_y.append(arrays.y)
         return np.concatenate(out_x, dim=0), np.concatenate(out_y, dim=0)
 
     @staticmethod
     def ds_folder_to_np(folder: Path,
                         clear_nans: bool = True,
                         return_latlons: bool = False,
-                        ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
+                        ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / 'x.nc'), xr.open_dataset(folder / 'y.nc')
         x_np, y_np = x.to_array().values, y.to_array().values
@@ -103,7 +132,6 @@ class ModelBase:
             notnan_indices = np.where((x_nans_summed == 0) & (y_nans_summed == 0))[0]
             x_np, y_np = x_np[notnan_indices], y_np[notnan_indices]
 
-        latlons = None
         if return_latlons:
             lons, lats = np.meshgrid(x.lon.values, x.lat.values)
             flat_lats, flat_lons = lats.reshape(-1, 1), lons.reshape(-1, 1)
@@ -111,5 +139,5 @@ class ModelBase:
 
             if clear_nans:
                 latlons = latlons[notnan_indices]
-
-        return x_np, y_np, latlons
+            return ModelArrays(x=x_np, y=y_np, latlons=latlons)
+        return ModelArrays(x=x_np, y=y_np)
