@@ -193,8 +193,8 @@ class Engineer:
         x = ((ds.time.values > min_date_np) & (ds.time.values <= max_train_date_np))
         y = ((ds.time.values > max_train_date_np) & (ds.time.values <= max_date_np))
 
-        if sum(y) == 0:
-            print('Wrong number of test y values! Got 0; returning None')
+        if sum(y) != 1:
+            print(f'Wrong number of test y values! Expected 1, got {sum(y)}; returning None')
             return None, output_min_date
 
         if expected_length is not None:
