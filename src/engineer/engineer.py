@@ -172,7 +172,7 @@ class Engineer:
                     return_min_date: bool = False,
                     ) -> Tuple[Optional[Dict[str, xr.Dataset]], Optional[date]]:
 
-        print(f'Generating test data for year: {year}, target month: {target_month}')
+        print(f'Generating data for year: {year}, target month: {target_month}')
 
         max_date = date(year, target_month, calendar.monthrange(year, target_month)[-1])
         mx_year, mx_month, max_train_date = minus_months(year, target_month, diff_months=1)
