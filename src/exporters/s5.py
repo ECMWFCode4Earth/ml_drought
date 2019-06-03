@@ -10,14 +10,16 @@ from .all_valid_s5 import datasets as dataset_reference
 from .base import Region, get_kenya
 from .cds import CDSExporter
 
-class S5Exporter(CDSExporter):
 
-    def __init__(self,
-                 pressure_level: bool,
-                 granularity: str = 'monthly',
-                 data_folder: Path = Path('data'),
-                 product_type: Optional[str] = None,
-                 dataset: Optional[str] = None,) -> None:
+class S5Exporter(CDSExporter):
+    def __init__(
+        self,
+        pressure_level: bool,
+        granularity: str = "monthly",
+        data_folder: Path = Path("data"),
+        product_type: Optional[str] = None,
+        dataset: Optional[str] = None,
+    ) -> None:
         """
         Arguments
         --------
@@ -73,16 +75,20 @@ class S5Exporter(CDSExporter):
         self.product_type = self.get_product_type(product_type)
 
         # check the product_type is valid for this dataset
-        assert self.product_type in self.dataset_reference['product_type'], f"\
+        assert (
+            self.product_type in self.dataset_reference["product_type"]
+        ), f"\
             {self.product_type} is not a valid variable for the {self.dataset} dataset.\
             Try one of: {self.dataset_reference['product_type']}"
 
     @staticmethod
-    def get_s5_initialisation_times(granularity: str,
-                     min_year: int = 1993,
-                     max_year: int = 2019,
-                     min_month: int = 1,
-                     max_month: int = 12,) -> Dict:
+    def get_s5_initialisation_times(
+        granularity: str,
+        min_year: int = 1993,
+        max_year: int = 2019,
+        min_month: int = 1,
+        max_month: int = 12,
+    ) -> Dict:
         """Returns the SEAS5 initialisation times
         for the hourly or monthly data
 
@@ -92,24 +98,28 @@ class S5Exporter(CDSExporter):
 
         """
         # check that valid requests
-        assert granularity in ['monthly', 'hourly'], f"Invalid granularity \
+        assert granularity in [
+            "monthly",
+            "hourly",
+        ], f"Invalid granularity \
             argument. Expected: {['monthly', 'hourly']} Got: {granularity}"
-        assert min_year >= 1993, f"The minimum year is 1993. You asked for:\
+        assert (
+            min_year >= 1993
+        ), f"The minimum year is 1993. You asked for:\
             {min_year}"
-        assert max_year <= 2019, f"The maximum year is 2019. You asked for:\
+        assert (
+            max_year <= 2019
+        ), f"The maximum year is 2019. You asked for:\
             {max_year}"
 
         # build up list of years
         years = [str(year) for year in range(min_year, max_year + 1)]
-        months = [
-            '{:02d}'.format(month)
-            for month in range(min_month, max_month + 1)
-        ]
+        months = ["{:02d}".format(month) for month in range(min_month, max_month + 1)]
 
         selection_dict = {
-            'year': years,
-            'month': months,
-            'day': '01',  # forecast initialised on 1st each month
+            "year": years,
+            "month": months,
+            "day": "01",  # forecast initialised on 1st each month
         }
 
         return selection_dict
@@ -119,52 +129,58 @@ class S5Exporter(CDSExporter):
         # every 6hours up to the max number of days
         hrly_6 = np.array([6, 12, 18, 24])
         all_hrs = np.array(
-            [hrly_6 + ((day-1) * 24) for day in range(1, max_leadtime + 1)]
+            [hrly_6 + ((day - 1) * 24) for day in range(1, max_leadtime + 1)]
         )
         # prepend the 0th hour to the list
         leadtime_times = np.insert(all_hrs.flatten(), 0, 0)
 
         return leadtime_times
 
-    def get_s5_leadtimes(self,
-                         granularity: str,
-                         max_leadtime: int,
-                         pressure_level: bool) -> Dict:
+    def get_s5_leadtimes(
+        self, granularity: str, max_leadtime: int, pressure_level: bool
+    ) -> Dict:
         """Get the leadtimes for monthly or hourly data"""
-        if granularity == 'monthly':
-            assert max_leadtime <= 6, f"The maximum leadtime is 6 months.\
+        if granularity == "monthly":
+            assert (
+                max_leadtime <= 6
+            ), f"The maximum leadtime is 6 months.\
                 You asked for: {max_leadtime}"
-            leadtime_key = 'leadtime_month'
+            leadtime_key = "leadtime_month"
             leadtime_times = [m for m in range(1, max_leadtime + 1)]
 
-        elif granularity == 'hourly':
-            assert max_leadtime <= 215, f"The maximum leadtime is 215 days.\
+        elif granularity == "hourly":
+            assert (
+                max_leadtime <= 215
+            ), f"The maximum leadtime is 215 days.\
                 You asked for: {max_leadtime}"
-            leadtime_key = 'leadtime_hour'
+            leadtime_key = "leadtime_hour"
 
             if pressure_level:
                 leadtime_times = [day * 24 for day in range(1, 215 + 1)]
             else:
                 leadtime_times = list(self.get_6hrly_leadtimes(max_leadtime))
 
-            assert max(leadtime_times) <= 5160, f"Max leadtime must be less \
+            assert (
+                max(leadtime_times) <= 5160
+            ), f"Max leadtime must be less \
                 than 215 days (5160hrs)"
         else:
-            assert False, f'granularity must be in ["monthly", "hourly"]\
+            assert (
+                False
+            ), f'granularity must be in ["monthly", "hourly"]\
                 Currently: {granularity}'
 
         # convert to strings
         leadtime_times = [str(lt) for lt in leadtime_times]
         selection_dict = {
-            leadtime_key: leadtime_times,  # leadtime_key differs for monthly/hourly
+            leadtime_key: leadtime_times  # leadtime_key differs for monthly/hourly
         }
 
         return selection_dict
 
-    def get_product_type(self,
-                         product_type: Optional[str] = None) -> Optional[str]:
+    def get_product_type(self, product_type: Optional[str] = None) -> Optional[str]:
         """By default download the 'monthly_mean' product for monthly data """
-        valid_product_types = self.dataset_reference['product_type']
+        valid_product_types = self.dataset_reference["product_type"]
 
         if valid_product_types is None:
             f"{self.dataset} has no `product_type` key. Only the monthly datasets have product types!"
@@ -173,9 +189,11 @@ class S5Exporter(CDSExporter):
         # if not provided then download monthly_mean
         if product_type is None:
             print("No `product_type` provided. Therefore, downloading `monthly_mean`")
-            product_type = 'monthly_mean'
+            product_type = "monthly_mean"
 
-        assert product_type in valid_product_types, f"Invalid `product_type`: \
+        assert (
+            product_type in valid_product_types
+        ), f"Invalid `product_type`: \
             {product_type}. Must be one of: {valid_product_types}"
 
         return product_type
@@ -198,37 +216,42 @@ class S5Exporter(CDSExporter):
     #             return '{:02d}:00'.format(value)
     #     return str(value)
 
-    def get_pressure_levels(self,
-                            pressure_levels: Optional[List[int]] = None,
-                           ) -> Optional[Dict]:
+    def get_pressure_levels(
+        self, pressure_levels: Optional[List[int]] = None
+    ) -> Optional[Dict]:
         if self.pressure_level:
             # make sure the dataset requires pressure_levels
-            assert 'pressure_level' in [k for k in self.dataset_reference.keys()], f"\
+            assert "pressure_level" in [
+                k for k in self.dataset_reference.keys()
+            ], f"\
             {self.dataset} has no 'pressure_level' keys. Cannot assign pressure levels"
 
             # make sure the pressure levels are legitimate choices
-            assert (all(np.isin(pressure_levels, self.dataset_reference['pressure_level']))), f"\
+            assert all(
+                np.isin(pressure_levels, self.dataset_reference["pressure_level"])
+            ), f"\
             {pressure_levels} contains invalid pressure levels!\
             Must be one of:{self.dataset_reference['pressure_level']}"
 
-            return {'pressure_level': [str(pl) for pl in pressure_levels]}
+            return {"pressure_level": [str(pl) for pl in pressure_levels]}
         else:
             return None
 
     def get_valid_variables(self) -> List:
         """ get `valid_variables` for this S5Exporter object """
         # print(self.dataset_reference['variable'])
-        return self.dataset_reference['variable']
+        return self.dataset_reference["variable"]
 
-    def create_selection_request(self,
-                                 variable: str,
-                                 max_leadtime: int,
-                                 min_year: int = 1993,
-                                 max_year: int = 2019,
-                                 min_month: int = 1,
-                                 max_month: int = 12,
-                                 selection_request: Optional[Dict] = None,
-                                 ) -> Dict:
+    def create_selection_request(
+        self,
+        variable: str,
+        max_leadtime: int,
+        min_year: int = 1993,
+        max_year: int = 2019,
+        min_month: int = 1,
+        max_month: int = 12,
+        selection_request: Optional[Dict] = None,
+    ) -> Dict:
         """Build up the selection_request dictionary with defaults
 
         Returns
@@ -245,34 +268,38 @@ class S5Exporter(CDSExporter):
         - Some attributes are used to create the default arguments
             (self.product_type, self.granularity, self.dataset, self.pressure_level)
         """
-        assert variable in self.dataset_reference['variable'], f"\
+        assert (
+            variable in self.dataset_reference["variable"]
+        ), f"\
             Variable: {variable} is not in the valid variables for this \
             dataset. Valid variables: {self.dataset_reference['variable']}"
 
         # setup the default selection request
         processed_selection_request = {
-            'format': 'grib',
-            'originating_centre': 'ecmwf',
-            'system': '5',
-            'variable': [variable],
-            'product_type': [self.product_type]
+            "format": "grib",
+            "originating_centre": "ecmwf",
+            "system": "5",
+            "variable": [variable],
+            "product_type": [self.product_type],
         }
 
         # get the initialisation time information
         init_times_dict = self.get_s5_initialisation_times(
-            self.granularity, min_year, max_year, min_month, max_month,
+            self.granularity, min_year, max_year, min_month, max_month
         )
         for key, val in init_times_dict.items():
             processed_selection_request[key] = val
 
         # get the leadtime information
-        leadtimes_dict = self.get_s5_leadtimes(self.granularity, max_leadtime, self.pressure_level)
+        leadtimes_dict = self.get_s5_leadtimes(
+            self.granularity, max_leadtime, self.pressure_level
+        )
         for key, val in leadtimes_dict.items():
             processed_selection_request[key] = val
 
         # by default, we investigate Kenya
         kenya_region = get_kenya()
-        processed_selection_request['area'] = self.create_area(kenya_region)
+        processed_selection_request["area"] = self.create_area(kenya_region)
 
         # TODO: do we want this level of flexibility for the user? why add complexity?
         # # update with user arguments
@@ -288,12 +315,19 @@ class S5Exporter(CDSExporter):
         return processed_selection_request
 
     @staticmethod
-    def get_dataset(granularity: str,
-                    pressure_level: bool) -> str:
-        if granularity == 'monthly':
-            return 'seasonal-monthly-pressure-levels' if pressure_level else 'seasonal-monthly-single-levels'
-        elif granularity == 'hourly':
-            return 'seasonal-original-pressure-levels' if pressure_level else 'seasonal-original-single-levels'
+    def get_dataset(granularity: str, pressure_level: bool) -> str:
+        if granularity == "monthly":
+            return (
+                "seasonal-monthly-pressure-levels"
+                if pressure_level
+                else "seasonal-monthly-single-levels"
+            )
+        elif granularity == "hourly":
+            return (
+                "seasonal-original-pressure-levels"
+                if pressure_level
+                else "seasonal-original-single-levels"
+            )
 
     @staticmethod
     def _make_filename(self, selection_request: Dict) -> Path:
@@ -307,26 +341,28 @@ class S5Exporter(CDSExporter):
             dataset_folder.mkdir()
 
         # variable name (flexible for multiple variables)
-        variables = '_'.join(selection_request['variable'])
+        variables = "_".join(selection_request["variable"])
         variables_folder = dataset_folder / variables
         if not variables_folder.exists():
             variables_folder.mkdir()
 
-        # year of download
-        years = self._filename_from_selection_request(selection_request['year'], 'year')
+        #  year of download
+        years = self._filename_from_selection_request(selection_request["year"], "year")
         years_folder = variables_folder / years
         if not years_folder.exists():
             years_folder.mkdir()
 
         # file per month
-        months = self._filename_from_selection_request(selection_request['month'], 'month')
-        variable = selection_request['variable']
+        months = self._filename_from_selection_request(
+            selection_request["month"], "month"
+        )
+        variable = selection_request["variable"]
         if self.pressure_level:
-            plevels = selection_request['pressure_level']
-            plevels = '_'.join(plevels)
-            fname = f'M{months}-P{plevels}.grib'
+            plevels = selection_request["pressure_level"]
+            plevels = "_".join(plevels)
+            fname = f"M{months}-P{plevels}.grib"
         else:
-            fname = f'M{months}.grib'
+            fname = f"M{months}.grib"
         output_filename = years_folder / fname
 
         return output_filename
@@ -335,17 +371,19 @@ class S5Exporter(CDSExporter):
     # def _export():
     #     pass
 
-    def export(self,
-               variable: str,
-               min_year: Optional[int] = 2017,
-               max_year: Optional[int] = 2018,
-               min_month: Optional[int] = 1,
-               max_month: Optional[int] = 12,
-               max_leadtime: Optional[int] = None,
-               pressure_levels: Optional[int] = None,
-               selection_request: Optional[Dict] = None,
-               N_parallel_requests: int = 3,
-               show_api_request: bool = True):
+    def export(
+        self,
+        variable: str,
+        min_year: Optional[int] = 2017,
+        max_year: Optional[int] = 2018,
+        min_month: Optional[int] = 1,
+        max_month: Optional[int] = 12,
+        max_leadtime: Optional[int] = None,
+        pressure_levels: Optional[int] = None,
+        selection_request: Optional[Dict] = None,
+        N_parallel_requests: int = 3,
+        show_api_request: bool = True,
+    ):
         """
         Arguments
         --------
@@ -377,17 +415,17 @@ class S5Exporter(CDSExporter):
         - Only time will be chunked (by months) to send separate calls to the cdsapi
         """
         # N_parallel_requests can only be a MINIMUM of 1
-        if N_parallel_requests < 1: N_parallel_requests = 1
+        if N_parallel_requests < 1:
+            N_parallel_requests = 1
 
         # max_leadtime defaults
         if max_leadtime is None:
             # set the max_leadtime to 3 months as default
-            max_leadtime = 90 if (self.granularity == 'hourly') else 3
+            max_leadtime = 90 if (self.granularity == "hourly") else 3
 
         if pressure_levels is None:
             # set the pressure_levels to ['200', '500', '925'] as default
             pressure_levels = [200, 500, 925] if (self.pressure_level) else None
-
 
         processed_selection_request = self.create_selection_request(
             variable=variable,
@@ -400,7 +438,9 @@ class S5Exporter(CDSExporter):
         )
 
         if self.pressure_level:  # if we are using the pressure_level dataset
-            processed_selection_request.update(self.get_pressure_levels(pressure_levels))
+            processed_selection_request.update(
+                self.get_pressure_levels(pressure_levels)
+            )
 
         if N_parallel_requests > 1:  # Run in parallel
             # p = multiprocessing.Pool(int(N_parallel_requests))
@@ -408,11 +448,12 @@ class S5Exporter(CDSExporter):
 
         # SPLIT THE API CALLS INTO MONTHS (speed up downloads)
         output_paths = []
-        for year, month in itertools.product(processed_selection_request['year'],
-                                             processed_selection_request['month']):
+        for year, month in itertools.product(
+            processed_selection_request["year"], processed_selection_request["month"]
+        ):
             updated_request = processed_selection_request.copy()
-            updated_request['year'] = [year]
-            updated_request['month'] = [month]
+            updated_request["year"] = [year]
+            updated_request["month"] = [month]
 
             if N_parallel_requests > 1:  # Run in parallel
                 # multiprocessing of the paths
@@ -420,14 +461,21 @@ class S5Exporter(CDSExporter):
                 output_paths.append(
                     p.apply_async(
                         self._export,
-                        args=(self.dataset, updated_request, show_api_request, in_parallel)
+                        args=(
+                            self.dataset,
+                            updated_request,
+                            show_api_request,
+                            in_parallel,
+                        ),
                     ).get()
                 )
 
             else:  # run sequentially
                 in_parallel = False
                 output_paths.append(
-                    self._export(self.dataset, updated_request, show_api_request, in_parallel)
+                    self._export(
+                        self.dataset, updated_request, show_api_request, in_parallel
+                    )
                 )
 
         # close the multiprocessing pool
