@@ -34,10 +34,10 @@ class TestCHIRPSPreprocessor:
     def test_directories_created(tmp_path):
         v = CHIRPSPreprocesser(tmp_path)
 
-        assert (tmp_path / v.interim_folder / 'chirps_preprocessed').exists(), \
+        assert (tmp_path / v.preprocessed_folder / 'chirps_preprocessed').exists(), \
             'Should have created a directory tmp_path/interim/chirps_preprocessed'
 
-        assert (tmp_path / v.interim_folder / 'chirps_interim').exists(), \
+        assert (tmp_path / v.preprocessed_folder / 'chirps_interim').exists(), \
             'Should have created a directory tmp_path/interim/chirps_interim'
 
     @staticmethod
@@ -50,7 +50,7 @@ class TestCHIRPSPreprocessor:
 
         processor = CHIRPSPreprocesser(tmp_path)
 
-        files = processor.get_chirps_filepaths()
+        files = processor.get_filepaths()
         assert files[0] == test_file, f'Expected {test_file} to be retrieved'
 
     @staticmethod
@@ -104,5 +104,5 @@ class TestCHIRPSPreprocessor:
 
         assert out_data.VHI.values.shape[1:] == (20, 20)
 
-        assert not processor.chirps_interim.exists(), \
+        assert not processor.interim.exists(), \
             f'Interim chirps folder should have been deleted'

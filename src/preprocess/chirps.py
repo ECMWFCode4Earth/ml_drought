@@ -7,7 +7,7 @@ from functools import partial
 import xarray as xr
 import multiprocessing
 from shutil import rmtree
-from typing import List, Optional
+from typing import Optional
 
 from .base import BasePreProcessor, get_kenya
 from .utils import select_bounding_box
@@ -16,23 +16,7 @@ from .utils import select_bounding_box
 class CHIRPSPreprocesser(BasePreProcessor):
     """ Preprocesses the CHIRPS data """
 
-    def __init__(self, data_folder: Path = Path('data')) -> None:
-        super().__init__(data_folder)
-
-        self.out_dir = self.interim_folder / "chirps_preprocessed"
-        if not self.out_dir.exists():
-            self.out_dir.mkdir()
-
-        self.chirps_interim = self.interim_folder / "chirps_interim"
-        if not self.chirps_interim.exists():
-            self.chirps_interim.mkdir()
-
-    def get_chirps_filepaths(self, folder: str = 'raw') -> List[Path]:
-        if folder == 'raw':
-            target_folder = self.raw_folder / 'chirps'
-        else:
-            target_folder = self.chirps_interim
-        return list(target_folder.glob('**/*.nc'))
+    dataset = 'chirps'
 
     @staticmethod
     def create_filename(netcdf_filepath: str,
@@ -85,15 +69,15 @@ class CHIRPSPreprocesser(BasePreProcessor):
             netcdf_filepath.name,
             subset_name='kenya' if subset_kenya else None
         )
-        print(f"Saving to {self.chirps_interim}/{filename}")
-        ds.to_netcdf(self.chirps_interim / filename)
+        print(f"Saving to {self.interim}/{filename}")
+        ds.to_netcdf(self.interim / filename)
 
         print(f"** Done for CHIRPS {netcdf_filepath.name} **")
 
     def merge_all_timesteps(self, subset_kenya: bool = True,
                             resample_time: Optional[str] = None,
                             upsampling: bool = False) -> None:
-        ds = xr.open_mfdataset(self.get_chirps_filepaths('interim'))
+        ds = xr.open_mfdataset(self.get_filepaths('interim'))
 
         if resample_time is not None:
             ds = self.resample_time(ds, resample_time, upsampling)
@@ -128,10 +112,10 @@ class CHIRPSPreprocesser(BasePreProcessor):
         cleanup: bool = True
             If true, delete interim files created by the class
         """
-        print(f'Reading data from {self.raw_folder}. Writing to {self.interim_folder}')
+        print(f'Reading data from {self.raw_folder}. Writing to {self.interim}')
 
         # get the filepaths for all of the downloaded data
-        nc_files = self.get_chirps_filepaths()
+        nc_files = self.get_filepaths()
 
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
@@ -149,4 +133,4 @@ class CHIRPSPreprocesser(BasePreProcessor):
         self.merge_all_timesteps(subset_kenya, resample_time, upsampling)
 
         if cleanup:
-            rmtree(self.chirps_interim)
+            rmtree(self.interim)
