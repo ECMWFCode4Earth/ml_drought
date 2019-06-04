@@ -1,7 +1,5 @@
 import cdsapi
 from pathlib import Path
-# import certifi
-# import urllib3
 import warnings
 import itertools
 import re
@@ -12,10 +10,6 @@ from typing import Dict, Optional, List
 
 from .base import BaseExporter, Region, get_kenya
 
-# http = urllib3.PoolManager(
-#     cert_reqs='CERT_REQUIRED',
-#     ca_certs=certifi.where()
-# )
 
 class CDSExporter(BaseExporter):
     """Exports for the Climate Data Store

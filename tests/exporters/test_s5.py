@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest.mock import patch, Mock
 import pytest
-import re
+import numpy as np
 
 from src.exporters import S5Exporter
 from src.exporters.all_valid_s5 import datasets as dataset_reference
@@ -133,14 +133,14 @@ class TestS5Exporter:
 
         # monthly_mean is the product_type
         assert (
-            s5.get_product_type() is "monthly_mean"
+            s5.get_product_type() == "monthly_mean"
         ), f"\
         Expecting `product_type` for `seasonal-original-single-levels` \
         dataset to be 'monthly_mean'. Returned: {s5.get_product_type(None)}"
 
         # hindcast_climate_mean is a valid product type
         assert (
-            s5.get_product_type("hindcast_climate_mean") is "hindcast_climate_mean"
+            s5.get_product_type("hindcast_climate_mean") == "hindcast_climate_mean"
         ), f"\
         Expecting `product_type` for `seasonal-original-single-levels`\
         dataset to be 'hindcast_climate_mean' Got: {s5.get_product_type('hindcast_climate_mean')}"
@@ -233,6 +233,11 @@ class TestS5Exporter:
             max_month=max_month,
         )
 
+        filepath = s5.make_filename(
+            dataset=s5.dataset,
+            selection_request=processed_selection_request
+        )
+
         assert (
             expected_filepath == filepath.as_posix()
         ), f"\
@@ -291,6 +296,7 @@ class TestS5Exporter:
             max_month=max_month,
             max_leadtime=max_leadtime,
             show_api_request=show_api_request,
+            N_parallel_requests=N_parallel_requests,
         )
 
         expected_path = (
