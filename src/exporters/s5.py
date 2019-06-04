@@ -8,6 +8,7 @@ from .all_valid_s5 import datasets as dataset_reference
 from .base import get_kenya
 from .cds import CDSExporter
 
+
 class S5Exporter(CDSExporter):
     def __init__(
         self,
@@ -79,6 +80,120 @@ class S5Exporter(CDSExporter):
                 {self.product_type} is not a valid variable for the {self.dataset} dataset.\
                 Try one of: {self.dataset_reference['product_type']}"
 
+    def export(
+        self,
+        variable: str,
+        min_year: Optional[int] = 2017,
+        max_year: Optional[int] = 2018,
+        min_month: Optional[int] = 1,
+        max_month: Optional[int] = 12,
+        max_leadtime: Optional[int] = None,
+        pressure_levels: Optional[int] = None,
+        selection_request: Optional[Dict] = None,
+        N_parallel_requests: int = 3,
+        show_api_request: bool = True,
+    ):
+        """
+        Arguments
+        --------
+        min_year: Optional[int] default = 2017
+            the minimum year of your request
+
+        max_year: Optional[int] default = 2018
+            the maximum year of your request
+
+        min_month: Optional[int] default = 1
+            the minimum month of your request
+
+        max_month: Optional[int] default = 12
+            the maximum month of your request
+
+        max_leadtime: Optional[int]
+            the maximum leadtime of your request
+                (if granularity is `hourly` then provide in days)
+                (elif granularity is `monthly` then provide in months)
+            defaults to ~3 months (90 days)
+
+        pressure_levels: Optional[int]
+            Pressure levels to download data at
+
+        Note:
+        ----
+        - All parameters that are assigned to class attributes are fixed for one download
+        - these are required to initialise the object [granularity, pressure_level]
+        - Only time will be chunked (by months) to send separate calls to the cdsapi
+        """
+        # N_parallel_requests can only be a MINIMUM of 1
+        if N_parallel_requests < 1:
+            N_parallel_requests = 1
+
+        # max_leadtime defaults
+        if max_leadtime is None:
+            # set the max_leadtime to 3 months as default
+            max_leadtime = 90 if (self.granularity == "hourly") else 3
+
+        if pressure_levels is None:
+            # set the pressure_levels to ['200', '500', '925'] as default
+            pressure_levels = [200, 500, 925] if (self.pressure_level) else None
+
+        processed_selection_request = self.create_selection_request(
+            variable=variable,
+            max_leadtime=max_leadtime,
+            min_year=min_year,
+            max_year=max_year,
+            min_month=min_month,
+            max_month=max_month,
+            selection_request=selection_request,
+        )
+
+        if self.pressure_level:  # if we are using the pressure_level dataset
+            processed_selection_request.update(
+                self.get_pressure_levels(pressure_levels)
+            )
+
+        if N_parallel_requests > 1:  # Run in parallel
+            # p = multiprocessing.Pool(int(N_parallel_requests))
+            p = pool(int(N_parallel_requests))  # pathos seems to pickle classes
+
+        # SPLIT THE API CALLS INTO MONTHS (speed up downloads)
+        output_paths = []
+        for year, month in itertools.product(
+            processed_selection_request["year"], processed_selection_request["month"]
+        ):
+            updated_request = processed_selection_request.copy()
+            updated_request["year"] = [year]
+            updated_request["month"] = [month]
+
+            if N_parallel_requests > 1:  # Run in parallel
+                # multiprocessing of the paths
+                in_parallel = True
+                output_paths.append(
+                    p.apply_async(
+                        self._export,
+                        args=(
+                            self.dataset,
+                            updated_request,
+                            show_api_request,
+                            in_parallel,
+                        ),
+                    )
+                )
+
+            else:  # run sequentially
+                in_parallel = False
+                output_paths.append(
+                    self._export(
+                        self.dataset, updated_request, show_api_request, in_parallel
+                    )
+                )
+
+        # close the multiprocessing pool
+        if N_parallel_requests > 1:
+            p.close()
+            p.join()
+
+        return output_paths
+
     @staticmethod
     def get_s5_initialisation_times(
         granularity: str,
@@ -100,15 +215,15 @@ class S5Exporter(CDSExporter):
             "monthly",
             "hourly",
         ], f"Invalid granularity \
-            argument. Expected: {['monthly', 'hourly']} Got: {granularity}"
+        argument. Expected: {['monthly', 'hourly']} Got: {granularity}"
         assert (
             min_year >= 1993
         ), f"The minimum year is 1993. You asked for:\
-            {min_year}"
+        {min_year}"
         assert (
             max_year <= 2019
         ), f"The maximum year is 2019. You asked for:\
-            {max_year}"
+        {max_year}"
 
         # build up list of years
         years = [str(year) for year in range(min_year, max_year + 1)]
@@ -134,11 +249,9 @@ class S5Exporter(CDSExporter):
 
         return leadtime_times
 
-    def get_s5_leadtimes(
-        self, granularity: str, max_leadtime: int, pressure_level: bool
-    ) -> Dict:
+    def get_s5_leadtimes(self, max_leadtime: int) -> Dict:
         """Get the leadtimes for monthly or hourly data"""
-        if granularity == "monthly":
+        if self.granularity == "monthly":
             assert (
                 max_leadtime <= 6
             ), f"The maximum leadtime is 6 months.\
@@ -146,14 +259,14 @@ class S5Exporter(CDSExporter):
             leadtime_key = "leadtime_month"
             leadtime_times = [m for m in range(1, max_leadtime + 1)]
 
-        elif granularity == "hourly":
+        elif self.granularity == "hourly":
             assert (
                 max_leadtime <= 215
             ), f"The maximum leadtime is 215 days.\
                 You asked for: {max_leadtime}"
             leadtime_key = "leadtime_hour"
 
-            if pressure_level:
+            if self.pressure_level:
                 leadtime_times = [day * 24 for day in range(1, 215 + 1)]
             else:
                 leadtime_times = list(self.get_6hrly_leadtimes(max_leadtime))
@@ -166,7 +279,7 @@ class S5Exporter(CDSExporter):
             assert (
                 False
             ), f'granularity must be in ["monthly", "hourly"]\
-                Currently: {granularity}'
+                Currently: {self.granularity}'
 
         # convert to strings
         leadtime_times = [str(lt) for lt in leadtime_times]
@@ -283,9 +396,7 @@ class S5Exporter(CDSExporter):
 
         # add product_type if required
         if self.product_type is not None:
-            processed_selection_request.update(
-                {'product_type': [self.product_type]}
-            )
+            processed_selection_request.update({"product_type": [self.product_type]})
 
         # get the initialisation time information
         init_times_dict = self.get_s5_initialisation_times(
@@ -295,9 +406,7 @@ class S5Exporter(CDSExporter):
             processed_selection_request[key] = val
 
         # get the leadtime information
-        leadtimes_dict = self.get_s5_leadtimes(
-            self.granularity, max_leadtime, self.pressure_level
-        )
+        leadtimes_dict = self.get_s5_leadtimes(max_leadtime)
         for key, val in leadtimes_dict.items():
             processed_selection_request[key] = val
 
@@ -374,121 +483,3 @@ class S5Exporter(CDSExporter):
         output_filename = years_folder / fname
 
         return output_filename
-
-    # @staticmethod
-    # def _export():
-    #     pass
-
-    def export(
-        self,
-        variable: str,
-        min_year: Optional[int] = 2017,
-        max_year: Optional[int] = 2018,
-        min_month: Optional[int] = 1,
-        max_month: Optional[int] = 12,
-        max_leadtime: Optional[int] = None,
-        pressure_levels: Optional[int] = None,
-        selection_request: Optional[Dict] = None,
-        N_parallel_requests: int = 3,
-        show_api_request: bool = True,
-    ):
-        """
-        Arguments
-        --------
-        min_year: Optional[int] default = 2017
-            the minimum year of your request
-
-        max_year: Optional[int] default = 2018
-            the maximum year of your request
-
-        min_month: Optional[int] default = 1
-            the minimum month of your request
-
-        max_month: Optional[int] default = 12
-            the maximum month of your request
-
-        max_leadtime: Optional[int]
-            the maximum leadtime of your request
-                (if granularity is `hourly` then provide in days)
-                (elif granularity is `monthly` then provide in months)
-            defaults to ~3 months (90 days)
-
-        pressure_levels: Optional[int]
-            Pressure levels to download data at
-
-        Note:
-        ----
-        - All parameters that are assigned to class attributes are fixed for one download
-        - these are required to initialise the object [granularity, pressure_level]
-        - Only time will be chunked (by months) to send separate calls to the cdsapi
-        """
-        # N_parallel_requests can only be a MINIMUM of 1
-        if N_parallel_requests < 1:
-            N_parallel_requests = 1
-
-        # max_leadtime defaults
-        if max_leadtime is None:
-            # set the max_leadtime to 3 months as default
-            max_leadtime = 90 if (self.granularity == "hourly") else 3
-
-        if pressure_levels is None:
-            # set the pressure_levels to ['200', '500', '925'] as default
-            pressure_levels = [200, 500, 925] if (self.pressure_level) else None
-
-        processed_selection_request = self.create_selection_request(
-            variable=variable,
-            max_leadtime=max_leadtime,
-            min_year=min_year,
-            max_year=max_year,
-            min_month=min_month,
-            max_month=max_month,
-            selection_request=selection_request,
-        )
-
-        if self.pressure_level:  # if we are using the pressure_level dataset
-            processed_selection_request.update(
-                self.get_pressure_levels(pressure_levels)
-            )
-
-        if N_parallel_requests > 1:  # Run in parallel
-            # p = multiprocessing.Pool(int(N_parallel_requests))
-            p = pool(int(N_parallel_requests))  # pathos seems to pickle classes
-
-        # SPLIT THE API CALLS INTO MONTHS (speed up downloads)
-        output_paths = []
-        for year, month in itertools.product(
-            processed_selection_request["year"], processed_selection_request["month"]
-        ):
-            updated_request = processed_selection_request.copy()
-            updated_request["year"] = [year]
-            updated_request["month"] = [month]
-
-            if N_parallel_requests > 1:  # Run in parallel
-                # multiprocessing of the paths
-                in_parallel = True
-                output_paths.append(
-                    p.apply_async(
-                        self._export,
-                        args=(
-                            self.dataset,
-                            updated_request,
-                            show_api_request,
-                            in_parallel,
-                        ),
-                    )
-                )
-
-            else:  # run sequentially
-                in_parallel = False
-                output_paths.append(
-                    self._export(
-                        self.dataset, updated_request, show_api_request, in_parallel
-                    )
-                )
-
-        # close the multiprocessing pool
-        if N_parallel_requests > 1:
-            p.close()
-            p.join()
-
-        return output_paths
