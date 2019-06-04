@@ -206,8 +206,8 @@ class TestS5Exporter:
         )
 
         expected_filepath = (
-            tmp_path / "raw/seasonal-monthly-single-levels/total_precipitation\
-            /2017_2018/M01_12.grib"
+            tmp_path
+            / "raw/seasonal-monthly-single-levels/total_precipitation/2017_2018/M01_12.grib"
         ).as_posix()
 
         variable = "total_precipitation"
@@ -227,8 +227,7 @@ class TestS5Exporter:
         )
 
         filepath = s5.make_filename(
-            dataset=s5.dataset,
-            selection_request=processed_selection_request
+            dataset=s5.dataset, selection_request=processed_selection_request
         )
 
         assert (
@@ -291,6 +290,7 @@ class TestS5Exporter:
         )
 
         (
-            tmp_path / "raw/seasonal-monthly-single-levels\
+            tmp_path
+            / "raw/seasonal-monthly-single-levels\
             /total_precipitation/2017/M01.grib"
         ).as_posix()
