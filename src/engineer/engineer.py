@@ -223,7 +223,7 @@ class Engineer:
             for month_key, test_dict in val.items():
 
                 output_location = save_folder / f'{year_key}_{month_key}'
-                output_location.mkdir()
+                output_location.mkdir(exist_ok=True)
 
                 for x_or_y, output_ds in test_dict.items():
                     output_ds.to_netcdf(output_location / f'{x_or_y}.nc')
