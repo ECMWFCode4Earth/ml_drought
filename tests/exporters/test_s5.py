@@ -299,7 +299,7 @@ class TestS5Exporter:
             N_parallel_requests=N_parallel_requests,
         )
 
-        expected_path = (
-            data_dir
-            / "raw/seasonal-monthly-single-levels/total_precipitation/2017/M01.grib"
+        (
+            data_dir / "raw/seasonal-monthly-single-levels\
+            /total_precipitation/2017/M01.grib"
         ).as_posix()
