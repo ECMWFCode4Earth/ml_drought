@@ -123,10 +123,9 @@ class Engineer:
         cur_min_date = max_date
         while cur_min_date >= min_date:
 
-            arrays, cur_min_date = cast(Tuple[Optional[Dict[str, xr.Dataset]], date],
-                                        self.stratify_xy(train_ds, cur_pred_year,
-                                                         target_variable, cur_pred_month,
-                                                         pred_months, expected_length, True))
+            arrays, cur_min_date = self.stratify_xy(train_ds, cur_pred_year,
+                                                    target_variable, cur_pred_month,
+                                                    pred_months, expected_length)
             if arrays is not None:
                 output_dict[cur_pred_year][cur_pred_month] = arrays
             cur_pred_year, cur_pred_month = cur_min_date.year, cur_min_date.month
@@ -144,8 +143,8 @@ class Engineer:
         output_test_arrays: DDict[int, DDict[int, Dict[str, xr.Dataset]]] = \
             defaultdict(lambda: defaultdict(dict))
 
-        xy_test, min_test_date = self.stratify_xy(ds, years[0], target_variable, 1, pred_months,
-                                                  expected_length, True)
+        xy_test, min_test_date = self.stratify_xy(ds, years[0], target_variable, 1,
+                                                  pred_months, expected_length)
 
         train_dates = ds.time.values <= np.datetime64(str(min_test_date))
         train_ds = ds.isel(time=train_dates)
@@ -157,8 +156,8 @@ class Engineer:
             for month in range(1, 13):
                 if year > years[0] or month > 1:
                     # prevents the initial test set from being recalculated
-                    xy_test, _ = self.stratify_xy(ds, year, target_variable, month, pred_months,
-                                                  expected_length)
+                    xy_test, _ = self.stratify_xy(ds, year, target_variable, month,
+                                                  pred_months, expected_length)
                     if xy_test is not None:
                         output_test_arrays[year][month] = xy_test
 
@@ -171,8 +170,7 @@ class Engineer:
                     target_month: int,
                     pred_months: int,
                     expected_length: Optional[int],
-                    return_min_date: bool = False,
-                    ) -> Tuple[Optional[Dict[str, xr.Dataset]], Optional[date]]:
+                    ) -> Tuple[Optional[Dict[str, xr.Dataset]], date]:
 
         print(f'Generating data for year: {year}, target month: {target_month}')
 
@@ -187,23 +185,18 @@ class Engineer:
         print(f'Max date: {str(max_date)}, max train date: {str(max_train_date)}, '
               f'min train date: {str(min_date)}')
 
-        if return_min_date:
-            output_min_date: Optional[date] = min_date
-        else:
-            output_min_date = None
-
         x = ((ds.time.values > min_date_np) & (ds.time.values <= max_train_date_np))
         y = ((ds.time.values > max_train_date_np) & (ds.time.values <= max_date_np))
 
         if sum(y) != 1:
             print(f'Wrong number of test y values! Expected 1, got {sum(y)}; returning None')
-            return None, output_min_date
+            return None, max_train_date
 
         if expected_length is not None:
             if sum(x) != expected_length:
                 print(f'Wrong number of test x values! Got {sum(x)} Returning None')
 
-                return None, output_min_date
+                return None, max_train_date
 
         x_dataset = ds.isel(time=x)
         y_dataset = ds.isel(time=y)[target_variable].to_dataset(name=target_variable)

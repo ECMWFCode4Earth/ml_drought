@@ -111,3 +111,6 @@ class TestEngineer:
         for month in range(1, 13):
             check_folder(tmp_path / f'features/test/2001_{month}')
             check_folder(tmp_path / f'features/train/2000_{month}')
+
+        assert len(list((tmp_path / 'features/train').glob('2001_*'))) == 0, \
+            'Test data in the training data!'
