@@ -330,7 +330,7 @@ class S5Exporter(CDSExporter):
             )
 
     @staticmethod
-    def _make_filename(self, selection_request: Dict) -> Path:
+    def make_filename(self, selection_request: Dict) -> Path:
         """
         data/raw/seasonal-monthly-single-levels
          /total_precipitation/2017/M01-Vmonthly_mean-P.grib
