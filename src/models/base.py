@@ -117,7 +117,7 @@ class ModelBase:
         return out_dict
 
     def load_train_arrays(self) -> Tuple[np.ndarray, np.ndarray]:
-
+        print('Loading training arrays')
         train_data_path = self.data_path / 'features/train'
 
         out_x, out_y = [], []
