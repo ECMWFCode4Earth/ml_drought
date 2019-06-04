@@ -9,16 +9,14 @@ from src.exporters.all_valid_s5 import datasets as dataset_reference
 
 class TestS5Exporter:
     def test_failure_on_invalid_granularity(self, tmp_path):
-        data_dir = tmp_path / 'data'
-        s5 = S5Exporter(data_dir)
+        s5 = S5Exporter(tmp_path)
 
         with pytest.raises(AssertionError) as e:
             s5.get_s5_initialisation_times("daily")
             e.match(r"Invalid granularity*")
 
     def test_initialisation_times_produces_correct_keys(self, tmp_path):
-        data_dir = tmp_path / 'data'
-        s5 = S5Exporter(data_dir)
+        s5 = S5Exporter(tmp_path)
         selection_request = s5.get_s5_initialisation_times(
             "hourly", min_year=2017, max_year=2018, min_month=1, max_month=1
         )
@@ -30,13 +28,12 @@ class TestS5Exporter:
         Got: {[k for k in selection_request.keys()]}"
 
     def test_leadtimes_produces_correct_keys_values_hourly(self, tmp_path):
-        data_dir = tmp_path / 'data'
 
         granularity = "hourly"
         pressure_level = False
 
         s5 = S5Exporter(
-            data_folder=data_dir, granularity=granularity, pressure_level=pressure_level
+            data_folder=tmp_path, granularity=granularity, pressure_level=pressure_level
         )
 
         # 5 days because hourly data
@@ -63,12 +60,11 @@ class TestS5Exporter:
         Got: {max(leadtimes_int)}hrs"
 
     def test_leadtimes_produces_correct_keys_values_monthly(self, tmp_path):
-        data_dir = tmp_path / 'data'
         granularity = "monthly"
         pressure_level = False
 
         s5 = S5Exporter(
-            data_folder=data_dir, granularity=granularity, pressure_level=pressure_level
+            data_folder=tmp_path, granularity=granularity, pressure_level=pressure_level
         )
 
         # 5 months because monthly data
@@ -95,12 +91,11 @@ class TestS5Exporter:
         Got: {max(leadtimes_int)}months"
 
     def test_dataset_reference_creation(self, tmp_path):
-        data_dir = tmp_path / 'data'
         granularity = "monthly"
         pressure_level = False
 
         s5 = S5Exporter(
-            data_folder=data_dir, granularity=granularity, pressure_level=pressure_level
+            data_folder=tmp_path, granularity=granularity, pressure_level=pressure_level
         )
 
         expected_dataset_reference = dataset_reference["seasonal-monthly-single-levels"]
@@ -111,11 +106,10 @@ class TestS5Exporter:
         getting the expected_dataset_reference"
 
     def test_None_product_type_for_original_single_levels(self, tmp_path):
-        data_dir = tmp_path / 'data'
         granularity = "hourly"
         pressure_level = False
         s5 = S5Exporter(
-            data_folder=data_dir, granularity=granularity, pressure_level=pressure_level
+            data_folder=tmp_path, granularity=granularity, pressure_level=pressure_level
         )
         assert (
             s5.get_product_type() is None
@@ -124,11 +118,10 @@ class TestS5Exporter:
         {s5.get_product_type()}"
 
     def test_product_type_single_levels_monthly(self, tmp_path):
-        data_dir = tmp_path / 'data'
         granularity = "monthly"
         pressure_level = False
         s5 = S5Exporter(
-            data_folder=data_dir, granularity=granularity, pressure_level=pressure_level
+            data_folder=tmp_path, granularity=granularity, pressure_level=pressure_level
         )
 
         # monthly_mean is the product_type
@@ -151,12 +144,11 @@ class TestS5Exporter:
             e.match(r"Invalid `product_type`*")
 
     def test_create_selection_request(self, tmp_path):
-        data_dir = tmp_path / 'data'
         granularity = "monthly"
         pressure_level = False
 
         s5 = S5Exporter(
-            data_folder=data_dir, granularity=granularity, pressure_level=pressure_level
+            data_folder=tmp_path, granularity=granularity, pressure_level=pressure_level
         )
 
         variable = "total_precipitation"
@@ -206,12 +198,11 @@ class TestS5Exporter:
         {processed_selection_request['month']}"
 
     def test_expected_filepath(self, tmp_path):
-        data_dir = tmp_path / 'data'
         granularity = "monthly"
         pressure_level = False
 
         s5 = S5Exporter(
-            data_folder=data_dir, granularity=granularity, pressure_level=pressure_level
+            data_folder=tmp_path, granularity=granularity, pressure_level=pressure_level
         )
 
         expected_filepath = "data/raw/seasonal-monthly-single-levels/\
@@ -244,7 +235,6 @@ class TestS5Exporter:
             Expected: {expected_filepath}. Got: {filepath.as_posix()}"
 
     def test_dataset_created_properly(self, tmp_path):
-        data_dir = tmp_path / 'data'
 
         expected_datasets = [
             "seasonal-monthly-single-levels",
@@ -257,7 +247,7 @@ class TestS5Exporter:
 
         for ix, expected in enumerate(expected_datasets):
             s5 = S5Exporter(
-                data_folder=data_dir,
+                data_folder=tmp_path,
                 granularity=granularities[ix],
                 pressure_level=pressure_levels[ix],
             )
@@ -270,12 +260,11 @@ class TestS5Exporter:
     @patch("cdsapi.Client")
     def test_export_functionality(self, cdsapi_mock, tmp_path):
         cdsapi_mock.return_value = Mock()
-        data_dir = tmp_path / 'data'
         granularity = "monthly"
         pressure_level = False
 
         s5 = S5Exporter(
-            data_folder=data_dir, granularity=granularity, pressure_level=pressure_level
+            data_folder=tmp_path, granularity=granularity, pressure_level=pressure_level
         )
         s5.get_valid_variables()
 
