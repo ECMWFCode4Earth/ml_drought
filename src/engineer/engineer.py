@@ -190,18 +190,18 @@ class Engineer:
 
         if sum(y) != 1:
             print(f'Wrong number of test y values! Expected 1, got {sum(y)}; returning None')
-            return None, max_train_date
+            return None, cast(date, max_train_date)
 
         if expected_length is not None:
             if sum(x) != expected_length:
                 print(f'Wrong number of test x values! Got {sum(x)} Returning None')
 
-                return None, max_train_date
+                return None, cast(date, max_train_date)
 
         x_dataset = ds.isel(time=x)
         y_dataset = ds.isel(time=y)[target_variable].to_dataset(name=target_variable)
 
-        return {'x': x_dataset, 'y': y_dataset}, max_train_date
+        return {'x': x_dataset, 'y': y_dataset}, cast(date, max_train_date)
 
     @staticmethod
     def get_datetime(time: np.datetime64) -> date:
