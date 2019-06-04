@@ -329,7 +329,6 @@ class S5Exporter(CDSExporter):
                 else "seasonal-original-single-levels"
             )
 
-    @staticmethod
     def make_filename(self, dataset: str, selection_request: Dict) -> Path:
         """
         data/raw/seasonal-monthly-single-levels
