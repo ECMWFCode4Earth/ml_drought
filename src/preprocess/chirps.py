@@ -75,7 +75,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
         print(f"** Done for CHIRPS {netcdf_filepath.name} **")
 
     def merge_all_timesteps(self, subset_kenya: bool = True,
-                            resample_time: Optional[str] = None,
+                            resample_time: Optional[str] = 'M',
                             upsampling: bool = False) -> None:
         ds = xr.open_mfdataset(self.get_filepaths('interim'))
 
@@ -88,7 +88,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
     def preprocess(self, subset_kenya: bool = True,
                    regrid: Optional[Path] = None,
-                   resample_time: Optional[str] = None,
+                   resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
                    parallel: bool = False,
                    cleanup: bool = True) -> None:

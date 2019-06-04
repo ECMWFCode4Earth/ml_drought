@@ -1,10 +1,11 @@
 import xarray as xr
 import numpy as np
+from datetime import datetime
 
 from src.preprocess import CHIRPSPreprocesser
 from src.utils import get_kenya
 
-from .test_utils import _make_dataset
+from ..utils import _make_dataset
 
 
 class TestCHIRPSPreprocessor:
@@ -25,7 +26,7 @@ class TestCHIRPSPreprocessor:
         if add_times:
             size = (2, size[0], size[1])
             dims.insert(0, 'time')
-            coords['time'] = [0, 1]
+            coords['time'] = [datetime(2019, 1, 1), datetime(2019, 1, 2)]
         vhi = np.random.randint(100, size=size)
 
         return xr.Dataset({'VHI': (dims, vhi)}, coords=coords)
