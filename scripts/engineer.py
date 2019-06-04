@@ -1,7 +1,7 @@
-from pathlib import Path
-
 import sys
 sys.path.append('..')
+
+from pathlib import Path
 from src.engineer import Engineer
 from src.models.parsimonious import Persistence
 
