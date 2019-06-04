@@ -19,4 +19,4 @@ class BaseExporter:
         self.data_folder = data_folder
         self.raw_folder = self.data_folder / 'raw'
         if not self.raw_folder.exists():
-            self.raw_folder.mkdir()
+            self.raw_folder.mkdir(exist_ok=True)
