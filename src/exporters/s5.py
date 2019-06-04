@@ -330,13 +330,13 @@ class S5Exporter(CDSExporter):
             )
 
     @staticmethod
-    def make_filename(self, selection_request: Dict) -> Path:
+    def make_filename(self, dataset: str, selection_request: Dict) -> Path:
         """
         data/raw/seasonal-monthly-single-levels
          /total_precipitation/2017/M01-Vmonthly_mean-P.grib
         """
         # base data folder
-        dataset_folder = self.raw_folder / self.dataset
+        dataset_folder = self.raw_folder / dataset
         if not dataset_folder.exists():
             dataset_folder.mkdir()
 
