@@ -447,6 +447,9 @@ class S5Exporter(CDSExporter):
                 if pressure_level
                 else "seasonal-original-single-levels"
             )
+        else:
+            assert False, f"No dataset can be created with \
+            granularity: {granularity} and pressure_level: {pressure_level}"
 
     def make_filename(self, dataset: str, selection_request: Dict) -> Path:
         """
