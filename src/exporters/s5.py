@@ -73,11 +73,12 @@ class S5Exporter(CDSExporter):
         self.product_type = self.get_product_type(product_type)
 
         # check the product_type is valid for this dataset
-        assert (
-            self.product_type in self.dataset_reference["product_type"]
-        ), f"\
-            {self.product_type} is not a valid variable for the {self.dataset} dataset.\
-            Try one of: {self.dataset_reference['product_type']}"
+        if self.dataset_reference["product_type"] is not None:
+            assert (
+                self.product_type in self.dataset_reference["product_type"]
+            ), f"\
+                {self.product_type} is not a valid variable for the {self.dataset} dataset.\
+                Try one of: {self.dataset_reference['product_type']}"
 
     @staticmethod
     def get_s5_initialisation_times(

@@ -42,6 +42,8 @@ class CDSExporter(BaseExporter):
         ----------
         area: str
             A string representing the region which can be passed to the CDS API
+
+        format = 'North/West/South/East'
         """
         x = [region.latmax, region.lonmin, region.latmin, region.lonmax]
 
