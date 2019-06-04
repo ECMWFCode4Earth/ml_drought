@@ -385,8 +385,7 @@ class S5Exporter(CDSExporter):
         """
         assert (
             variable in self.dataset_reference["variable"]
-        ), f"\
-            Variable: {variable} is not in the valid variables for this \
+        ), f"Variable: {variable} is not in the valid variables for this \
             dataset. Valid variables: {self.dataset_reference['variable']}"
 
         # setup the default selection request

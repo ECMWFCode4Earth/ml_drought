@@ -206,7 +206,7 @@ class TestS5Exporter:
         Expected 'month' to be {exp_months}. Got:\
         {processed_selection_request['month']}"
 
-    @patch('cdsapi.Client')
+    # @patch('cdsapi.Client')
     def test_expected_filepath(self, tmp_path):
         granularity = "monthly"
         pressure_level = False
