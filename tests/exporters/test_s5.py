@@ -205,8 +205,10 @@ class TestS5Exporter:
             data_folder=tmp_path, granularity=granularity, pressure_level=pressure_level
         )
 
-        expected_filepath = "data/raw/seasonal-monthly-single-levels/\
-        total_precipitation/2017_2018/M01_12.grib"
+        expected_filepath = (
+            tmp_path / "raw/seasonal-monthly-single-levels/total_precipitation\
+            /2017_2018/M01_12.grib"
+        ).as_posix()
 
         variable = "total_precipitation"
         max_leadtime = 5
