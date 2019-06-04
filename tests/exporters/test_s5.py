@@ -289,6 +289,6 @@ class TestS5Exporter:
         )
 
         (
-            data_dir / "raw/seasonal-monthly-single-levels\
+            tmp_path / "raw/seasonal-monthly-single-levels\
             /total_precipitation/2017/M01.grib"
         ).as_posix()
