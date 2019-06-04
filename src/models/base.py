@@ -127,7 +127,7 @@ class ModelBase:
                                               return_latlons=False)
                 out_x.append(arrays.x)
                 out_y.append(arrays.y)
-        return np.concatenate(out_x, dim=0), np.concatenate(out_y, dim=0)
+        return np.concatenate(out_x, axis=0), np.concatenate(out_y, axis=0)
 
     @staticmethod
     def ds_folder_to_np(folder: Path,

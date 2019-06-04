@@ -16,8 +16,5 @@ def engineer():
     engineer.engineer(test_year=1994, target_variable='VHI')
 
 
-
-
-
 if __name__ == '__main__':
     engineer()
