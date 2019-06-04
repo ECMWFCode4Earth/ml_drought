@@ -1,3 +1,6 @@
+import os; import sys
+sys.path.append('..')
+
 from src.exporters.s5 import (S5Exporter)
 from pathlib import Path
 import numpy as np
