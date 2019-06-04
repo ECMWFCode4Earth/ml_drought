@@ -3,7 +3,7 @@ import itertools
 import numpy as np
 from pathos.pools import _ThreadPool as pool
 
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, cast
 from .all_valid_s5 import datasets as dataset_reference
 from .base import get_kenya
 from .cds import CDSExporter
@@ -88,7 +88,7 @@ class S5Exporter(CDSExporter):
         min_month: Optional[int] = 1,
         max_month: Optional[int] = 12,
         max_leadtime: Optional[int] = None,
-        pressure_levels: Optional[int] = None,
+        pressure_levels: Optional[List[int]] = None,
         selection_request: Optional[Dict] = None,
         N_parallel_requests: int = 3,
         show_api_request: bool = True,
@@ -282,9 +282,9 @@ class S5Exporter(CDSExporter):
                 Currently: {self.granularity}'
 
         # convert to strings
-        leadtime_times = [str(lt) for lt in leadtime_times]
+        leadtime_times_str = [str(lt) for lt in leadtime_times]
         selection_dict = {
-            leadtime_key: leadtime_times  # leadtime_key differs for monthly/hourly
+            leadtime_key: leadtime_times_str  # leadtime_key differs for monthly/hourly
         }
 
         return selection_dict
@@ -345,7 +345,10 @@ class S5Exporter(CDSExporter):
             {pressure_levels} contains invalid pressure levels!\
             Must be one of:{self.dataset_reference['pressure_level']}"
 
-            return {"pressure_level": [str(pl) for pl in pressure_levels]}
+            if pressure_levels is not None:  # (s0rry) for mypy
+                return {"pressure_level": [str(pl) for pl in pressure_levels]}
+            else:
+                return None
         else:
             return None
 
@@ -358,10 +361,10 @@ class S5Exporter(CDSExporter):
         self,
         variable: str,
         max_leadtime: int,
-        min_year: int = 1993,
-        max_year: int = 2019,
-        min_month: int = 1,
-        max_month: int = 12,
+        min_year: Optional[int] = 1993,
+        max_year: Optional[int] = 2019,
+        min_month: Optional[int] = 1,
+        max_month: Optional[int] = 12,
         selection_request: Optional[Dict] = None,
     ) -> Dict:
         """Build up the selection_request dictionary with defaults
