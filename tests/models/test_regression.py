@@ -31,7 +31,7 @@ class TestLinearRegression:
     def test_train(self, tmp_path, monkeypatch, capsys):
 
         y = np.array([1, 1, 1, 1, 1])
-        x = np.expand_dims(y, 1)
+        x = np.expand_dims(np.expand_dims(y, 1), 1)
 
         def mockloadtrain(self):
             return x, y
