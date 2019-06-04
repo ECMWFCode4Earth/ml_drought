@@ -280,8 +280,13 @@ class S5Exporter(CDSExporter):
             "originating_centre": "ecmwf",
             "system": "5",
             "variable": [variable],
-            "product_type": [self.product_type],
         }
+
+        # add product_type if required
+        if self.dataset_reference["product_type"] is not None:
+            processed_selection_request.update(
+                {'product_type': [self.product_type]}
+            )
 
         # get the initialisation time information
         init_times_dict = self.get_s5_initialisation_times(
