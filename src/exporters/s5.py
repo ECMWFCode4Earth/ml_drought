@@ -8,8 +8,6 @@ from .all_valid_s5 import datasets as dataset_reference
 from .base import get_kenya
 from .cds import CDSExporter
 
-import ipdb
-
 class S5Exporter(CDSExporter):
     def __init__(
         self,
@@ -468,7 +466,6 @@ class S5Exporter(CDSExporter):
             if N_parallel_requests > 1:  # Run in parallel
                 # multiprocessing of the paths
                 in_parallel = True
-                # ipdb.set_trace()
                 output_paths.append(
                     p.apply_async(
                         self._export,
