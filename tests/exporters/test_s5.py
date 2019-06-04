@@ -209,7 +209,7 @@ class TestS5Exporter:
             tmp_path
             / "raw/seasonal-monthly-single-levels/total_precipitation/2017_2018/M01_12.grib"
         ).as_posix()
-        expected_filepath = expected_filepath.replace(' ','')
+        expected_filepath = expected_filepath.replace(' ', '')
 
         variable = "total_precipitation"
         max_leadtime = 5
