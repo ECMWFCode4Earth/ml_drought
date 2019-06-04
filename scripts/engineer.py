@@ -1,9 +1,9 @@
-from pathlib import Path
-
 import sys
 sys.path.append('..')
+
+from pathlib import Path
 from src.engineer import Engineer
-from src.models.parsimonious import PredictPreviousMonth
+from src.models.parsimonious import Persistence
 
 
 def engineer():
@@ -24,7 +24,7 @@ def parsimonious():
     else:
         data_path = Path('../data')
 
-    predictor = PredictPreviousMonth(data_path)
+    predictor = Persistence(data_path)
     predictor.evaluate(save_preds=True)
 
 
