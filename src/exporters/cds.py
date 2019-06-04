@@ -17,8 +17,6 @@ from .base import BaseExporter, Region, get_kenya
 #     ca_certs=certifi.where()
 # )
 
-import ipdb
-
 class CDSExporter(BaseExporter):
     """Exports for the Climate Data Store
 

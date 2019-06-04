@@ -296,7 +296,7 @@ class S5Exporter(CDSExporter):
         if valid_product_types is None:
             f"{self.dataset} has no `product_type` key. \
             Only the monthly datasets have product types!"
-            return
+            return None
 
         # if not provided then download monthly_mean
         if product_type is None:
