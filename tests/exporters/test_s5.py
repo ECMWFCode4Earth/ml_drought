@@ -206,8 +206,8 @@ class TestS5Exporter:
         )
 
         expected_filepath = (
-            tmp_path
-            / "raw/seasonal-monthly-single-levels/total_precipitation/2017_2018/M01_12.grib"
+            tmp_path / "raw/seasonal-monthly-single-levels/\
+            total_precipitation/2017_2018/M01_12.grib"
         ).as_posix()
         expected_filepath = expected_filepath.replace(' ', '')
 
@@ -291,7 +291,6 @@ class TestS5Exporter:
         )
 
         (
-            tmp_path
-            / "raw/seasonal-monthly-single-levels\
+            tmp_path / "raw/seasonal-monthly-single-levels\
             /total_precipitation/2017/M01.grib"
-        ).as_posix()
+        ).as_posix().replace(' ', '')
