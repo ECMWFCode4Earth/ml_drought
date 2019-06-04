@@ -9,7 +9,7 @@ from src.exporters.all_valid_s5 import datasets as dataset_reference
 
 class TestS5Exporter:
     def test_failure_on_invalid_granularity(self, tmp_path):
-        data_dir = tmp_path / 'data'
+        data_dir = tmp_path / 'raw'
         s5 = S5Exporter(data_dir)
 
         with pytest.raises(AssertionError) as e:
@@ -17,7 +17,7 @@ class TestS5Exporter:
             e.match(r"Invalid granularity*")
 
     def test_initialisation_times_produces_correct_keys(self, tmp_path):
-        data_dir = tmp_path / 'data'
+        data_dir = tmp_path / 'raw'
         s5 = S5Exporter(data_dir)
         selection_request = s5.get_s5_initialisation_times(
             "hourly", min_year=2017, max_year=2018, min_month=1, max_month=1
@@ -30,7 +30,7 @@ class TestS5Exporter:
         Got: {[k for k in selection_request.keys()]}"
 
     def test_leadtimes_produces_correct_keys_values_hourly(self, tmp_path):
-        data_dir = tmp_path / 'data'
+        data_dir = tmp_path / 'raw'
 
         granularity = "hourly"
         pressure_level = False
@@ -63,7 +63,7 @@ class TestS5Exporter:
         Got: {max(leadtimes_int)}hrs"
 
     def test_leadtimes_produces_correct_keys_values_monthly(self, tmp_path):
-        data_dir = tmp_path / 'data'
+        data_dir = tmp_path / 'raw'
         granularity = "monthly"
         pressure_level = False
 
@@ -95,7 +95,7 @@ class TestS5Exporter:
         Got: {max(leadtimes_int)}months"
 
     def test_dataset_reference_creation(self, tmp_path):
-        data_dir = tmp_path / 'data'
+        data_dir = tmp_path / 'raw'
         granularity = "monthly"
         pressure_level = False
 
@@ -111,7 +111,7 @@ class TestS5Exporter:
         getting the expected_dataset_reference"
 
     def test_None_product_type_for_original_single_levels(self, tmp_path):
-        data_dir = tmp_path / 'data'
+        data_dir = tmp_path / 'raw'
         granularity = "hourly"
         pressure_level = False
         s5 = S5Exporter(
@@ -124,7 +124,7 @@ class TestS5Exporter:
         {s5.get_product_type()}"
 
     def test_product_type_single_levels_monthly(self, tmp_path):
-        data_dir = tmp_path / 'data'
+        data_dir = tmp_path / 'raw'
         granularity = "monthly"
         pressure_level = False
         s5 = S5Exporter(
@@ -151,7 +151,7 @@ class TestS5Exporter:
             e.match(r"Invalid `product_type`*")
 
     def test_create_selection_request(self, tmp_path):
-        data_dir = tmp_path / 'data'
+        data_dir = tmp_path / 'raw'
         granularity = "monthly"
         pressure_level = False
 
@@ -206,7 +206,7 @@ class TestS5Exporter:
         {processed_selection_request['month']}"
 
     def test_expected_filepath(self, tmp_path):
-        data_dir = tmp_path / 'data'
+        data_dir = tmp_path / 'raw'
         granularity = "monthly"
         pressure_level = False
 
@@ -244,7 +244,7 @@ class TestS5Exporter:
             Expected: {expected_filepath}. Got: {filepath.as_posix()}"
 
     def test_dataset_created_properly(self, tmp_path):
-        data_dir = tmp_path / 'data'
+        data_dir = tmp_path / 'raw'
 
         expected_datasets = [
             "seasonal-monthly-single-levels",
@@ -270,7 +270,7 @@ class TestS5Exporter:
     @patch("cdsapi.Client")
     def test_export_functionality(self, cdsapi_mock, tmp_path):
         cdsapi_mock.return_value = Mock()
-        data_dir = tmp_path / 'data'
+        data_dir = tmp_path / 'raw'
         granularity = "monthly"
         pressure_level = False
 
