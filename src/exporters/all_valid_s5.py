@@ -35,6 +35,7 @@ Note:
 """
 
 import numpy as np
+from typing import Dict, List
 
 hrly_6 = np.array([6, 12, 18, 24])
 all_hrs = np.array([hrly_6 + ((day - 1) * 24) for day in range(1, 215 + 1)])
@@ -43,14 +44,14 @@ leadtime_hours_6 = np.insert(all_hrs.flatten(), 0, 0)
 leadtime_hours_6 = list([str(lt) for lt in leadtime_hours_6])
 
 
-valid_datasets = [
+valid_datasets: List[str] = [
     "seasonal-original-single-levels",
     "seasonal-original-pressure-levels",
     "seasonal-monthly-single-levels",
     "seasonal-monthly-pressure-levels",
 ]
 
-datasets = {
+datasets: Dict = {
     "seasonal-original-single-levels": {
         "format": "grib",
         "originating_centre": "ecmwf",

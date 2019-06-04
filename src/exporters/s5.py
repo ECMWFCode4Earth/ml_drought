@@ -3,7 +3,7 @@ import itertools
 import numpy as np
 from pathos.pools import _ThreadPool as pool
 
-from typing import Dict, Optional, List  # , cast
+from typing import cast, Dict, Optional, List
 from .all_valid_s5 import datasets as dataset_reference
 from .base import get_kenya
 from .cds import CDSExporter
@@ -147,9 +147,10 @@ class S5Exporter(CDSExporter):
         )
 
         if self.pressure_level:  # if we are using the pressure_level dataset
-            processed_selection_request.update(
-                self.get_pressure_levels(pressure_levels)
-            )
+            pressure_levels_dict = self.get_pressure_levels(pressure_levels)
+
+            if pressure_levels_dict is not None:
+                processed_selection_request.update(cast(Dict, pressure_levels_dict))
 
         if N_parallel_requests > 1:  # Run in parallel
             # p = multiprocessing.Pool(int(N_parallel_requests))
@@ -401,9 +402,14 @@ class S5Exporter(CDSExporter):
             processed_selection_request.update({"product_type": [self.product_type]})
 
         # get the initialisation time information
+        times_variables: Dict[str, int] = {}
+        for key, var in {'min_year': min_year, 'max_year': max_year,
+                         'min_month': min_month, 'max_month': max_month}.items():
+            if var is None:
+                times_variables[key] = cast(int, var)
+
         init_times_dict = self.get_s5_initialisation_times(
-            self.granularity, min_year, max_year, min_month, max_month
-        )
+            self.granularity, **times_variables)
         for key, val in init_times_dict.items():
             processed_selection_request[key] = val
 
