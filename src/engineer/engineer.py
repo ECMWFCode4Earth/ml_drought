@@ -204,7 +204,7 @@ class Engineer:
                 return None, output_min_date
 
         x_dataset = ds.isel(time=x)
-        y_dataset = ds.isel(time=y)[target_variable].to_dataset()
+        y_dataset = ds.isel(time=y)[target_variable].to_dataset(name=target_variable)
 
         return {'x': x_dataset, 'y': y_dataset}, max_train_date
 
