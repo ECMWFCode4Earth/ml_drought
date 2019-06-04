@@ -95,7 +95,7 @@ class Engineer:
                     coords[dim] = datasets[idx][dim].values
             else:
                 for dim in dims:
-                    assert (datasets[idx][dim].values == coords[dim]).all(), \
+                    assert np.array_equal(datasets[idx][dim].values, coords[dim]), \
                         f'{dim} is different! Was this run using the preprocessor?'
 
         main_dataset = datasets[0]
