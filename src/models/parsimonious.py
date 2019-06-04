@@ -6,6 +6,11 @@ from .base import ModelBase, ModelArrays
 
 
 class Persistence(ModelBase):
+    """A parsimonious persistence model.
+
+    This "model" predicts the previous time-value of data. For example, its prediction
+    for VHI in March 2018 will be VHI for February 2018 (assuming monthly time-granularity).
+    """
 
     model_name = 'previous_month'
 

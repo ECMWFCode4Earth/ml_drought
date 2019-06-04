@@ -59,7 +59,9 @@ class Engineer:
             prediction
         expected_length: Optional[int] = 11
             The expected length of the x data along its time-dimension. If this is not None
-            and an x array has a different time dimension size, the array is ignored
+            and an x array has a different time dimension size, the array is ignored. This
+            differs from pred_months if the preprocessors are run with a time granularity
+            different from 'M'
         """
         data = self._make_dataset()
 

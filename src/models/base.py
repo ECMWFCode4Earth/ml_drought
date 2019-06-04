@@ -57,6 +57,18 @@ class ModelBase:
         raise NotImplementedError
 
     def evaluate(self, save_results: bool = True, save_preds: bool = False) -> None:
+        """
+        Evaluate the trained model
+
+        Arguments
+        ----------
+        save_results: bool = True
+            Whether to save the results of the evaluation. If true, they are
+            saved in self.model_dir / results.json
+        save_preds: bool = False
+            Whether to save the model predictions. If true, they are saved in
+            self.model_dir / {year}_{month}.nc
+        """
         test_arrays_dict, preds_dict = self.predict()
 
         output_dict: Dict[str, int] = {}
