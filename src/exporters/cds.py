@@ -17,6 +17,7 @@ from .base import BaseExporter, Region, get_kenya
 #     ca_certs=certifi.where()
 # )
 
+import ipdb
 
 class CDSExporter(BaseExporter):
     """Exports for the Climate Data Store
@@ -124,8 +125,10 @@ class CDSExporter(BaseExporter):
             self._print_api_request(dataset, selection_request, output_file)
 
         if not output_file.exists():
+
             if not in_parallel:
                 self.client.retrieve(dataset, selection_request, str(output_file))
+
             else:  # in parallel create a new Client each time it's called
                 client = cdsapi.Client()
                 client.retrieve(dataset, selection_request, str(output_file))

@@ -8,6 +8,7 @@ from .all_valid_s5 import datasets as dataset_reference
 from .base import get_kenya
 from .cds import CDSExporter
 
+import ipdb
 
 class S5Exporter(CDSExporter):
     def __init__(
@@ -184,7 +185,7 @@ class S5Exporter(CDSExporter):
         if valid_product_types is None:
             f"{self.dataset} has no `product_type` key. \
             Only the monthly datasets have product types!"
-            return None
+            return
 
         # if not provided then download monthly_mean
         if product_type is None:
@@ -283,7 +284,7 @@ class S5Exporter(CDSExporter):
         }
 
         # add product_type if required
-        if self.dataset_reference["product_type"] is not None:
+        if self.product_type is not None:
             processed_selection_request.update(
                 {'product_type': [self.product_type]}
             )
@@ -316,6 +317,12 @@ class S5Exporter(CDSExporter):
         #                           f'and times (the default) are being downloaded')
         #         val = self._check_iterable(val, key)
         #         processed_selection_request[key] = [self._correct_input(x, key) for x in val]
+        if self.product_type is None:
+            keys = [k for k in processed_selection_request.keys()]
+            assert (
+                "product_type" not in keys
+            ), f"product type should not be in selection_request keys\
+            for dataset {self.dataset}"
 
         return processed_selection_request
 
@@ -461,6 +468,7 @@ class S5Exporter(CDSExporter):
             if N_parallel_requests > 1:  # Run in parallel
                 # multiprocessing of the paths
                 in_parallel = True
+                # ipdb.set_trace()
                 output_paths.append(
                     p.apply_async(
                         self._export,
@@ -470,7 +478,7 @@ class S5Exporter(CDSExporter):
                             show_api_request,
                             in_parallel,
                         ),
-                    ).get()
+                    )
                 )
 
             else:  # run sequentially
