@@ -17,7 +17,7 @@ class TestS5Exporter:
             e.match(r"Invalid granularity*")
 
     def test_initialisation_times_produces_correct_keys(self, tmp_path):
-        data_dir = Path(f"{tmp_path}/data")
+        data_dir = Path(tmp_path) / 'data'
         s5 = S5Exporter(data_dir)
         selection_request = s5.get_s5_initialisation_times(
             "hourly", min_year=2017, max_year=2018, min_month=1, max_month=1
