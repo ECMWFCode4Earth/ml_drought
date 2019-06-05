@@ -402,8 +402,10 @@ class S5Exporter(CDSExporter):
 
         # get the initialisation time information
         init_times_dict = self.get_s5_initialisation_times(
-            self.granularity, min_year, max_year, min_month, max_month
+            self.granularity, min_year=min_year, max_year=max_year,
+            min_month=min_month, max_month=max_month
         )
+        
         for key, val in init_times_dict.items():
             processed_selection_request[key] = val
 
