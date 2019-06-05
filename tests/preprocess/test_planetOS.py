@@ -11,8 +11,8 @@ from ..utils import _make_dataset
 class TestPlanetOSPreprocessor:
 
     @staticmethod
-    def _make_era5POS_dataset(size, lonmin=-180.0, lonmax=180.0,
-                              latmin=-55.152, latmax=75.024,
+    def _make_era5POS_dataset(size, lonmin=0.0, lonmax=360.0,
+                              latmin=89.78, latmax=-89.78,
                               add_times=True):
         # Same as make_chirps_dataset, except with two variables
         # sine the era5 POS exporter might download multiple variables
@@ -22,7 +22,7 @@ class TestPlanetOSPreprocessor:
         longitudes = np.linspace(lonmin, lonmax, lon_len)
         latitudes = np.linspace(latmin, latmax, lat_len)
 
-        dims = ['lat', 'lon']
+        dims = ['lon', 'lat']
         coords = {'lat': latitudes,
                   'lon': longitudes}
 
@@ -100,3 +100,11 @@ class TestPlanetOSPreprocessor:
 
         assert not processor.interim.exists(), \
             f'Interim era5 folder should have been deleted'
+
+    def test_rotate_and_filter(self):
+
+        dataset = self._make_era5POS_dataset(size=(100, 100)).rename({'time1': 'time'})
+        rotated_ds = PlanetOSPreprocessor._rotate_and_filter(dataset)
+
+        assert (rotated_ds.lon.min() > -180) & (rotated_ds.lon.max() < 180), \
+            f'Longitudes not properly rotated!'
