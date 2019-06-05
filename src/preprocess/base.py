@@ -89,10 +89,13 @@ class BasePreProcessor:
 
         shape_in = len(ds.lat), len(ds.lon)
         shape_out = len(reference_ds.lat), len(reference_ds.lon)
+        # unique id so when parallel process doesn't write to same file
+        uid = f"{np.random.rand(1)[0]:.2f}"
 
         # The weight file should be deleted by regridder.clean_weight_files(), but in case
         # something goes wrong and its not, lets use a descriptive filename
-        filename = f'{method}_{shape_in[0]}x{shape_in[1]}_{shape_out[0]}x{shape_out[1]}.nc'
+        filename = f'{method}_{shape_in[0]}x{shape_in[1]}_\
+        {shape_out[0]}x{shape_out[1]}_{uid}.nc'.replace(' ', '')
         savedir = self.preprocessed_folder / filename
 
         regridder = xe.Regridder(ds, ds_out, method,
