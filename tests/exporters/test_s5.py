@@ -286,7 +286,7 @@ class TestS5Exporter:
         min_month = 1
         max_month = 1
         max_leadtime = 1
-        N_parallel_requests = 1
+        n_parallel_requests = 1
         show_api_request = True
 
         s5.export(
@@ -297,7 +297,7 @@ class TestS5Exporter:
             max_month=max_month,
             max_leadtime=max_leadtime,
             show_api_request=show_api_request,
-            N_parallel_requests=N_parallel_requests,
+            n_parallel_requests=n_parallel_requests,
         )
 
         (

@@ -61,7 +61,7 @@ class S5Exporter(CDSExporter):
         self.pressure_level = pressure_level
         self.granularity = granularity
 
-        assert self.granularity in ['hourly','monthly'], f"\
+        assert self.granularity in ['hourly', 'monthly'], f"\
         No dataset can be created with \
         granularity: {granularity} and pressure_level: {pressure_level}"
 
