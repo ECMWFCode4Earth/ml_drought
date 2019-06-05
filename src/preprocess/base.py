@@ -2,7 +2,7 @@ from pathlib import Path
 import xarray as xr
 import xesmf as xe
 
-from typing import List
+from typing import List, Optional
 
 from ..utils import Region, get_kenya
 
@@ -52,7 +52,9 @@ class BasePreProcessor:
             target_folder = self.raw_folder / self.dataset
         else:
             target_folder = self.interim
-        return list(target_folder.glob('**/*.nc'))
+        outfiles = list(target_folder.glob('**/*.nc'))
+        outfiles.sort()
+        return outfiles
 
     def regrid(self,
                ds: xr.Dataset,
@@ -138,3 +140,16 @@ class BasePreProcessor:
             return resampler.mean()
         else:
             return resampler.nearest()
+
+    def merge_files(self, subset_kenya: bool = True,
+                    resample_time: Optional[str] = 'M',
+                    upsampling: bool = False) -> None:
+
+        ds = xr.open_mfdataset(self.get_filepaths('interim'))
+
+        if resample_time is not None:
+            ds = self.resample_time(ds, resample_time, upsampling)
+
+        out = self.out_dir / f'{self.dataset}{"_kenya" if subset_kenya else ""}.nc'
+        ds.to_netcdf(out)
+        print(f"\n**** {out} Created! ****\n")

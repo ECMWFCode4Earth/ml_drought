@@ -74,18 +74,6 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         print(f"** Done for CHIRPS {netcdf_filepath.name} **")
 
-    def merge_all_timesteps(self, subset_kenya: bool = True,
-                            resample_time: Optional[str] = 'M',
-                            upsampling: bool = False) -> None:
-        ds = xr.open_mfdataset(self.get_filepaths('interim'))
-
-        if resample_time is not None:
-            ds = self.resample_time(ds, resample_time, upsampling)
-
-        out = self.out_dir / f'chirps{"_kenya" if subset_kenya else ""}.nc'
-        ds.to_netcdf(out)
-        print(f"\n**** {out} Created! ****\n")
-
     def preprocess(self, subset_kenya: bool = True,
                    regrid: Optional[Path] = None,
                    resample_time: Optional[str] = 'M',
@@ -130,7 +118,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
                 self._preprocess(file, subset_kenya, regrid,)
 
         # merge all of the timesteps
-        self.merge_all_timesteps(subset_kenya, resample_time, upsampling)
+        self.merge_files(subset_kenya, resample_time, upsampling)
 
         if cleanup:
             rmtree(self.interim)

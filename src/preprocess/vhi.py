@@ -160,8 +160,8 @@ class VHIPreprocessor(BasePreProcessor):
             for file in nc_files:
                 self._preprocess_wrapper(str(file), subset_kenya=subset_kenya, regrid=regrid)
 
-        self.merge_to_one_file(subset_kenya, resample_time=resample_time,
-                               upsampling=upsampling)
+        self.merge_files(subset_kenya, resample_time=resample_time,
+                         upsampling=upsampling)
         if cleanup:
             rmtree(self.interim)
 
@@ -181,25 +181,6 @@ class VHIPreprocessor(BasePreProcessor):
             pickle.dump([error[-1] for error in outputs if error is not None], f)
 
         return self.interim / 'vhi_preprocess_errors.pkl'
-
-    def merge_to_one_file(self, subset_kenya: bool = True,
-                          resample_time: Optional[str] = 'M',
-                          upsampling: bool = False) -> None:
-        # TODO how do we figure out the misisng timestamps?
-        # 1) find the anomalous gaps in the timesteps (> 7 days)
-        # 2) find the years where there are less than 52 timesteps
-        nc_files = self.get_filepaths('interim')
-        nc_files.sort()
-        ds = xr.open_mfdataset(nc_files)
-
-        if resample_time is not None:
-            ds = self.resample_time(ds, resample_time, upsampling)
-
-        outpath = self.out_dir / f'vhi{"_kenya" if subset_kenya else ""}.nc'
-
-        # save the merged filepath
-        ds.to_netcdf(outpath)
-        print(f'Timesteps merged and saved: {outpath}')
 
     @staticmethod
     def create_filename(t: Timestamp,
