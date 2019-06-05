@@ -51,6 +51,19 @@ class PlanetOSPreprocessor(BasePreProcessor):
                                   'lon': new_lon,
                                   'time': df.time.values})
 
+    @staticmethod
+    def create_filename(netcdf_filepath: Path,
+                        subset_name: Optional[str] = None) -> str:
+
+        var_name = netcdf_filepath.name[:-3]
+        month = netcdf_filepath.parts[-2]
+        year = netcdf_filepath.parts[-3]
+
+        stem = f'{year}_{month}_{var_name}'
+        if subset_name is not None:
+            stem = f'{stem}_{subset_name}'
+        return f'{stem}.nc'
+
     def _preprocess_single(self, netcdf_filepath: Path,
                            subset_kenya: bool = True,
                            regrid: Optional[xr.Dataset] = None) -> None:
@@ -70,7 +83,7 @@ class PlanetOSPreprocessor(BasePreProcessor):
             ds = self.regrid(ds, regrid)
 
         filename = self.create_filename(
-            netcdf_filepath.name,
+            netcdf_filepath,
             subset_name='kenya' if subset_kenya else None
         )
         print(f'Saving to {self.interim}/{filename}')

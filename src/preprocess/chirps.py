@@ -55,6 +55,25 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         print(f"** Done for CHIRPS {netcdf_filepath.name} **")
 
+    @staticmethod
+    def create_filename(netcdf_filepath: str,
+                        subset_name: Optional[str] = None) -> str:
+        """
+        chirps-v2.0.2009.pentads.nc
+            =>
+        chirps-v2.0.2009.pentads_kenya.nc
+        """
+        if netcdf_filepath[-3:] == '.nc':
+            filename_stem = netcdf_filepath[:-3]
+        else:
+            filename_stem = netcdf_filepath
+
+        if subset_name is not None:
+            new_filename = f"{filename_stem}_{subset_name}.nc"
+        else:
+            new_filename = f"{filename_stem}.nc"
+        return new_filename
+
     def preprocess(self, subset_kenya: bool = True,
                    regrid: Optional[Path] = None,
                    resample_time: Optional[str] = 'M',

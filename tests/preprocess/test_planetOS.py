@@ -1,6 +1,7 @@
 import xarray as xr
 import numpy as np
 from datetime import datetime
+from pathlib import Path
 
 from src.preprocess import PlanetOSPreprocessor
 from src.utils import get_kenya
@@ -42,6 +43,14 @@ class TestPlanetOSPreprocessor:
 
         assert (tmp_path / 'interim/era5POS_preprocessed').exists()
         assert (tmp_path / 'interim/era5POS_interim').exists()
+
+    @staticmethod
+    def test_make_filename():
+        path = Path('2008/01/vhi.nc')
+
+        name = PlanetOSPreprocessor.create_filename(path, 'kenya')
+        expected_name = '2008_01_vhi_kenya.nc'
+        assert name == expected_name, f'{name} generated, expected {expected_name}'
 
     @staticmethod
     def test_get_filenames(tmp_path):

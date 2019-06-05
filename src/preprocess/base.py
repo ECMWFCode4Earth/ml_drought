@@ -153,22 +153,3 @@ class BasePreProcessor:
         out = self.out_dir / f'{self.dataset}{"_kenya" if subset_kenya else ""}.nc'
         ds.to_netcdf(out)
         print(f"\n**** {out} Created! ****\n")
-
-    @staticmethod
-    def create_filename(netcdf_filepath: str,
-                        subset_name: Optional[str] = None) -> str:
-        """
-        chirps-v2.0.2009.pentads.nc
-            =>
-        chirps-v2.0.2009.pentads_kenya.nc
-        """
-        if netcdf_filepath[-3:] == '.nc':
-            filename_stem = netcdf_filepath[:-3]
-        else:
-            filename_stem = netcdf_filepath
-
-        if subset_name is not None:
-            new_filename = f"{filename_stem}_{subset_name}.nc"
-        else:
-            new_filename = f"{filename_stem}.nc"
-        return new_filename

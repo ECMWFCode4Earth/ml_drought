@@ -7,16 +7,6 @@ from src.preprocess.base import BasePreProcessor
 
 class TestBase:
 
-    @staticmethod
-    def test_make_filename():
-
-        test_file = 'testy_test.nc'
-        expected_output = 'testy_test_kenya.nc'
-
-        filename = BasePreProcessor.create_filename(test_file, 'kenya')
-        assert filename == expected_output, \
-            f'Expected output to be {expected_output}, got {filename}'
-
     def test_resampling(self):
         monthly_in, _, _ = _make_dataset(size=(10, 10))
 

@@ -89,7 +89,7 @@ class TestVHIPreprocessor:
         subset_name = 'kenya'
         t = pd.to_datetime('1981-08-31')
 
-        out_fname = VHIPreprocessor.create_vhi_filename(
+        out_fname = VHIPreprocessor.create_filename(
             t,
             netcdf_filepath,
             subset_name,

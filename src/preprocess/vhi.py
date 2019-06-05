@@ -70,7 +70,7 @@ class VHIPreprocessor(BasePreProcessor):
             new_ds = self.regrid(new_ds, regrid)
 
         # 6. create the filepath and save to that location
-        filename = self.create_vhi_filename(
+        filename = self.create_filename(
             timestamp,
             netcdf_filepath,
             subset_name='kenya' if subset_kenya else None
@@ -183,9 +183,9 @@ class VHIPreprocessor(BasePreProcessor):
         return self.interim / 'vhi_preprocess_errors.pkl'
 
     @staticmethod
-    def create_vhi_filename(t: Timestamp,
-                            netcdf_filepath: str,
-                            subset_name: Optional[str] = None) -> str:
+    def create_filename(t: Timestamp,
+                        netcdf_filepath: str,
+                        subset_name: Optional[str] = None) -> str:
         """ create a sensible output filename (HARDCODED for this problem)
         Arguments:
         ---------
