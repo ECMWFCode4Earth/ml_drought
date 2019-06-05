@@ -54,16 +54,6 @@ class TestCHIRPSPreprocessor:
         files = processor.get_filepaths()
         assert files[0] == test_file, f'Expected {test_file} to be retrieved'
 
-    @staticmethod
-    def test_make_filename():
-
-        test_file = 'testy_test.nc'
-        expected_output = 'testy_test_kenya.nc'
-
-        filename = CHIRPSPreprocesser.create_filename(test_file, 'kenya')
-        assert filename == expected_output, \
-            f'Expected output to be {expected_output}, got {filename}'
-
     def test_preprocess(self, tmp_path):
 
         (tmp_path / 'raw/chirps/global').mkdir(parents=True)

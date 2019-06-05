@@ -18,25 +18,6 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
     dataset = 'chirps'
 
-    @staticmethod
-    def create_filename(netcdf_filepath: str,
-                        subset_name: Optional[str] = None) -> str:
-        """
-        chirps-v2.0.2009.pentads.nc
-            =>
-        chirps-v2.0.2009.pentads_kenya.nc
-        """
-        if netcdf_filepath[-3:] == '.nc':
-            filename_stem = netcdf_filepath[:-3]
-        else:
-            filename_stem = netcdf_filepath
-
-        if subset_name is not None:
-            new_filename = f"{filename_stem}_{subset_name}.nc"
-        else:
-            new_filename = f"{filename_stem}.nc"
-        return new_filename
-
     def _preprocess_single(self, netcdf_filepath: Path,
                            subset_kenya: bool = True,
                            regrid: Optional[xr.Dataset] = None) -> None:
@@ -49,7 +30,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
         * create new dataset with these dimensions
         * Save the output file to new folder
         """
-        print(f"** Starting work on {netcdf_filepath.as_posix().split('/')[-1]} **")
+        print(f'Starting work on {netcdf_filepath.name}')
         # 1. read in the dataset
         ds = xr.open_dataset(netcdf_filepath).rename({'longitude': 'lon', 'latitude': 'lat'})
 

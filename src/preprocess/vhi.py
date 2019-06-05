@@ -46,7 +46,7 @@ class VHIPreprocessor(BasePreProcessor):
         * create new dataset with these dimensions
         * Save the output file to new folder
         """
-        print(f'** Starting work on {netcdf_filepath.split("/")[-1]} **')
+        print(f'Starting work on {netcdf_filepath.split("/")[-1]}')
         # 1. read in the dataset
         ds = xr.open_dataset(netcdf_filepath)
         # FLIP the `HEIGHT` array
@@ -61,7 +61,7 @@ class VHIPreprocessor(BasePreProcessor):
         # 4. create new dataset with these dimensions
         new_ds = self.create_new_dataset(ds, longitudes, latitudes, timestamp)
 
-        # 5. chop out EastAfrica - TODO: have a dictionary of legitimate args
+        # 5. chop out EastAfrica
         if subset_kenya:
             kenya_region = get_kenya()
             new_ds = select_bounding_box(new_ds, kenya_region)
@@ -70,7 +70,7 @@ class VHIPreprocessor(BasePreProcessor):
             new_ds = self.regrid(new_ds, regrid)
 
         # 6. create the filepath and save to that location
-        filename = self.create_filename(
+        filename = self.create_vhi_filename(
             timestamp,
             netcdf_filepath,
             subset_name='kenya' if subset_kenya else None
@@ -183,9 +183,9 @@ class VHIPreprocessor(BasePreProcessor):
         return self.interim / 'vhi_preprocess_errors.pkl'
 
     @staticmethod
-    def create_filename(t: Timestamp,
-                        netcdf_filepath: str,
-                        subset_name: Optional[str] = None) -> str:
+    def create_vhi_filename(t: Timestamp,
+                            netcdf_filepath: str,
+                            subset_name: Optional[str] = None) -> str:
         """ create a sensible output filename (HARDCODED for this problem)
         Arguments:
         ---------
