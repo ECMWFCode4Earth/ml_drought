@@ -1,10 +1,9 @@
-# from pathlib import Path
 from unittest.mock import patch, Mock
 import pytest
 import numpy as np
 
 from src.exporters import S5Exporter
-from src.exporters.all_valid_s5 import datasets as dataset_reference
+from src.exporters.seas5.all_valid_s5 import datasets as dataset_reference
 
 
 class TestS5Exporter:

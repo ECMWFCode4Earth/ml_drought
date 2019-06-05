@@ -208,9 +208,3 @@ datasets: Dict = {
         "year": [str(y) for y in range(1993, 2020)],
     },
 }
-
-
-lens = []
-for key in datasets.keys():
-    lens.append(len(datasets[key].keys()))
-# assert all(lens are equal)

@@ -5,8 +5,8 @@ from pathos.pools import _ThreadPool as pool
 
 from typing import cast, Dict, Optional, List
 from .all_valid_s5 import datasets as dataset_reference
-from .base import get_kenya
-from .cds import CDSExporter
+from ..base import get_kenya
+from ..cds import CDSExporter
 
 
 class S5Exporter(CDSExporter):
@@ -61,6 +61,10 @@ class S5Exporter(CDSExporter):
         self.pressure_level = pressure_level
         self.granularity = granularity
 
+        assert self.granularity in ['hourly','monthly'], f"\
+        No dataset can be created with \
+        granularity: {granularity} and pressure_level: {pressure_level}"
+
         if dataset is None:
             self.dataset = self.get_dataset(self.granularity, self.pressure_level)
         else:
@@ -83,8 +87,8 @@ class S5Exporter(CDSExporter):
     def export(
         self,
         variable: str,
-        min_year: int = 2017,
-        max_year: int = 2018,
+        min_year: int = 1993,
+        max_year: int = 2019,
         min_month: int = 1,
         max_month: int = 12,
         max_leadtime: Optional[int] = None,
@@ -92,10 +96,14 @@ class S5Exporter(CDSExporter):
         selection_request: Optional[Dict] = None,
         N_parallel_requests: int = 3,
         show_api_request: bool = True,
+        break_up: bool = True,
     ):
         """
         Arguments
         --------
+        variable: str
+            the variable that you want to download
+
         min_year: Optional[int] default = 2017
             the minimum year of your request
 
@@ -116,6 +124,9 @@ class S5Exporter(CDSExporter):
 
         pressure_levels: Optional[int]
             Pressure levels to download data at
+
+        break_up: bool - default: True
+            whether to break up requests into parallel
 
         Note:
         ----
@@ -156,42 +167,51 @@ class S5Exporter(CDSExporter):
             # p = multiprocessing.Pool(int(N_parallel_requests))
             p = pool(int(N_parallel_requests))  # pathos seems to pickle classes
 
-        # SPLIT THE API CALLS INTO MONTHS (speed up downloads)
         output_paths = []
-        for year, month in itertools.product(
-            processed_selection_request["year"], processed_selection_request["month"]
-        ):
-            updated_request = processed_selection_request.copy()
-            updated_request["year"] = [year]
-            updated_request["month"] = [month]
+        if break_up:
+            # SPLIT THE API CALLS INTO MONTHS (speed up downloads)
+            for year, month in itertools.product(
+                processed_selection_request["year"], processed_selection_request["month"]
+            ):
+                updated_request = processed_selection_request.copy()
+                updated_request["year"] = [year]
+                updated_request["month"] = [month]
 
-            if N_parallel_requests > 1:  # Run in parallel
-                # multiprocessing of the paths
-                in_parallel = True
-                output_paths.append(
-                    p.apply_async(
-                        self._export,
-                        args=(
-                            self.dataset,
-                            updated_request,
-                            show_api_request,
-                            in_parallel,
-                        ),
+                if N_parallel_requests > 1:  # Run in parallel
+                    # multiprocessing of the paths
+                    in_parallel = True
+                    output_paths.append(
+                        p.apply_async(
+                            self._export,
+                            args=(
+                                self.dataset,
+                                updated_request,
+                                show_api_request,
+                                in_parallel,
+                            ),
+                        )
                     )
-                )
 
-            else:  # run sequentially
-                in_parallel = False
-                output_paths.append(
-                    self._export(
-                        self.dataset, updated_request, show_api_request, in_parallel
+                else:  # run sequentially
+                    in_parallel = False
+                    output_paths.append(
+                        self._export(
+                            self.dataset, updated_request, show_api_request, in_parallel
+                        )
                     )
-                )
 
-        # close the multiprocessing pool
-        if N_parallel_requests > 1:
-            p.close()
-            p.join()
+            # close the multiprocessing pool
+            if N_parallel_requests > 1:
+                p.close()
+                p.join()
+
+        else:  # don't split by month
+            output_paths.append(
+                self._export(
+                    self.dataset, processed_selection_request,
+                    show_api_request, in_parallel=False
+                )
+            )
 
         return output_paths
 
@@ -353,9 +373,9 @@ class S5Exporter(CDSExporter):
         else:
             return None
 
+    @property
     def get_valid_variables(self) -> List:
         """ get `valid_variables` for this S5Exporter object """
-        # print(self.dataset_reference['variable'])
         return self.dataset_reference["variable"]
 
     def create_selection_request(
@@ -445,15 +465,12 @@ class S5Exporter(CDSExporter):
                 if pressure_level
                 else "seasonal-monthly-single-levels"
             )
-        elif granularity == "hourly":
+        else:  # granularity == "hourly"
             return (
                 "seasonal-original-pressure-levels"
                 if pressure_level
                 else "seasonal-original-single-levels"
             )
-        else:
-            assert False, f"No dataset can be created with \
-            granularity: {granularity} and pressure_level: {pressure_level}"
 
     def make_filename(self, dataset: str, selection_request: Dict) -> Path:
         """
