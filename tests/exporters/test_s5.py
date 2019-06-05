@@ -279,7 +279,6 @@ class TestS5Exporter:
         s5 = S5Exporter(
             data_folder=tmp_path, granularity=granularity, pressure_level=pressure_level
         )
-        s5.get_valid_variables()
 
         variable = "total_precipitation"
         min_year = 2017
