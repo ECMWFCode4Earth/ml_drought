@@ -150,7 +150,7 @@ class S5Exporter(CDSExporter):
 
         if pressure_levels is None:
             # set the pressure_levels to ['200', '500', '925'] as default
-            pressure_levels = [200, 500, 925] if (self.pressure_level) else None
+            pressure_levels = [200, 500, 925] if self.pressure_level else None
 
         processed_selection_request = self.create_selection_request(
             variable=variable,
