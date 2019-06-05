@@ -49,6 +49,6 @@ def process_era5POS_2018():
 
 
 if __name__ == '__main__':
-    # process_precip_2018()
-    # process_vhi_2018()
+    process_precip_2018()
+    process_vhi_2018()
     process_era5POS_2018()
