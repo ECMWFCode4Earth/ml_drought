@@ -207,7 +207,8 @@ class TestS5Exporter:
         {processed_selection_request['month']}"
 
     @patch('cdsapi.Client')
-    def test_expected_filepath(self, tmp_path):
+    def test_expected_filepath(self, cdsapi_mock, tmp_path):
+        cdsapi_mock.return_value = Mock()
         granularity = "monthly"
         pressure_level = False
 
