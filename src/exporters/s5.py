@@ -3,7 +3,7 @@ import itertools
 import numpy as np
 from pathos.pools import _ThreadPool as pool
 
-from typing import Dict, Optional, List  # , cast
+from typing import cast, Dict, Optional, List
 from .all_valid_s5 import datasets as dataset_reference
 from .base import get_kenya
 from .cds import CDSExporter
@@ -83,10 +83,10 @@ class S5Exporter(CDSExporter):
     def export(
         self,
         variable: str,
-        min_year: Optional[int] = 2017,
-        max_year: Optional[int] = 2018,
-        min_month: Optional[int] = 1,
-        max_month: Optional[int] = 12,
+        min_year: int = 2017,
+        max_year: int = 2018,
+        min_month: int = 1,
+        max_month: int = 12,
         max_leadtime: Optional[int] = None,
         pressure_levels: Optional[List[int]] = None,
         selection_request: Optional[Dict] = None,
@@ -147,9 +147,10 @@ class S5Exporter(CDSExporter):
         )
 
         if self.pressure_level:  # if we are using the pressure_level dataset
-            processed_selection_request.update(
-                self.get_pressure_levels(pressure_levels)
-            )
+            pressure_levels_dict = self.get_pressure_levels(pressure_levels)
+
+            if pressure_levels_dict is not None:
+                processed_selection_request.update(cast(Dict, pressure_levels_dict))
 
         if N_parallel_requests > 1:  # Run in parallel
             # p = multiprocessing.Pool(int(N_parallel_requests))
@@ -361,10 +362,10 @@ class S5Exporter(CDSExporter):
         self,
         variable: str,
         max_leadtime: int,
-        min_year: Optional[int] = 1993,
-        max_year: Optional[int] = 2019,
-        min_month: Optional[int] = 1,
-        max_month: Optional[int] = 12,
+        min_year: int = 1993,
+        max_year: int = 2019,
+        min_month: int = 1,
+        max_month: int = 12,
         selection_request: Optional[Dict] = None,
     ) -> Dict:
         """Build up the selection_request dictionary with defaults
@@ -400,12 +401,12 @@ class S5Exporter(CDSExporter):
         if self.product_type is not None:
             processed_selection_request.update({"product_type": [self.product_type]})
 
-        # get the initialisation time information
+
         init_times_dict = self.get_s5_initialisation_times(
             self.granularity, min_year=min_year, max_year=max_year,
             min_month=min_month, max_month=max_month
         )
-        
+
         for key, val in init_times_dict.items():
             processed_selection_request[key] = val
 
