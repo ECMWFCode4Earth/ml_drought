@@ -1,6 +1,7 @@
 from pathlib import Path
 import xarray as xr
 import xesmf as xe
+import numpy as np
 
 from typing import List, Optional
 
