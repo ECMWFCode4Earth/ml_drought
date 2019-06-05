@@ -30,24 +30,7 @@ from .utils import select_bounding_box
 class VHIPreprocessor(BasePreProcessor):
     """ Preprocesses the VHI data """
 
-    def __init__(self, data_folder: Path = Path('data')) -> None:
-        super().__init__(data_folder)
-
-        self.out_dir = self.interim_folder / 'vhi_preprocessed'
-        if not self.out_dir.exists():
-            self.out_dir.mkdir()
-
-        self.vhi_interim = self.interim_folder / 'vhi_interim'
-        if not self.vhi_interim.exists():
-            print('making')
-            self.vhi_interim.mkdir()
-
-    def get_vhi_filepaths(self, folder: str = 'raw') -> List[Path]:
-        if folder == 'raw':
-            target_folder = self.raw_folder / 'vhi'
-        else:
-            target_folder = self.vhi_interim
-        return list(target_folder.glob('**/*.nc'))
+    dataset = 'vhi'
 
     def _preprocess(self,
                     netcdf_filepath: str,
@@ -63,7 +46,7 @@ class VHIPreprocessor(BasePreProcessor):
         * create new dataset with these dimensions
         * Save the output file to new folder
         """
-        print(f'** Starting work on {netcdf_filepath.split("/")[-1]} **')
+        print(f'Starting work on {netcdf_filepath.split("/")[-1]}')
         # 1. read in the dataset
         ds = xr.open_dataset(netcdf_filepath)
         # FLIP the `HEIGHT` array
@@ -78,7 +61,7 @@ class VHIPreprocessor(BasePreProcessor):
         # 4. create new dataset with these dimensions
         new_ds = self.create_new_dataset(ds, longitudes, latitudes, timestamp)
 
-        # 5. chop out EastAfrica - TODO: have a dictionary of legitimate args
+        # 5. chop out EastAfrica
         if subset_kenya:
             kenya_region = get_kenya()
             new_ds = select_bounding_box(new_ds, kenya_region)
@@ -110,15 +93,15 @@ class VHIPreprocessor(BasePreProcessor):
         https://stackoverflow.com/a/24683990/9940782
         """
         print(f"Starting work on {netcdf_filepath}")
-        if not self.vhi_interim.exists():
-            self.vhi_interim.mkdir()
+        if not self.interim.exists():
+            self.interim.mkdir()
 
         if isinstance(netcdf_filepath, pathlib.PosixPath):
             netcdf_filepath = netcdf_filepath.as_posix()
 
         try:
             return self._preprocess(
-                netcdf_filepath, self.vhi_interim.as_posix(), subset_kenya, regrid
+                netcdf_filepath, self.interim.as_posix(), subset_kenya, regrid
             )
         except Exception as e:
             print(f"### FAILED: {netcdf_filepath}")
@@ -154,13 +137,13 @@ class VHIPreprocessor(BasePreProcessor):
             If true, delete interim files created by the class
         """
         # get the filepaths for all of the downloaded data
-        nc_files = self.get_vhi_filepaths()
+        nc_files = self.get_filepaths()
 
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
 
         print(f"Reading data from {self.raw_folder}. \
-            Writing to {self.interim_folder}")
+            Writing to {self.interim}")
         if parallel:
             pool = multiprocessing.Pool(processes=100)
             outputs = pool.map(partial(self._preprocess_wrapper,
@@ -177,10 +160,10 @@ class VHIPreprocessor(BasePreProcessor):
             for file in nc_files:
                 self._preprocess_wrapper(str(file), subset_kenya=subset_kenya, regrid=regrid)
 
-        self.merge_to_one_file(subset_kenya, resample_time=resample_time,
-                               upsampling=upsampling)
+        self.merge_files(subset_kenya, resample_time=resample_time,
+                         upsampling=upsampling)
         if cleanup:
-            rmtree(self.vhi_interim)
+            rmtree(self.interim)
 
     @staticmethod
     def print_output(outputs: List) -> None:
@@ -194,29 +177,10 @@ class VHIPreprocessor(BasePreProcessor):
 
     def save_errors(self, outputs: List) -> Path:
         # write output of failed files to python.txt
-        with open(self.interim_folder / 'vhi_preprocess_errors.pkl', 'wb') as f:
+        with open(self.interim / 'vhi_preprocess_errors.pkl', 'wb') as f:
             pickle.dump([error[-1] for error in outputs if error is not None], f)
 
-        return self.interim_folder / 'vhi_preprocess_errors.pkl'
-
-    def merge_to_one_file(self, subset_kenya: bool = True,
-                          resample_time: Optional[str] = 'M',
-                          upsampling: bool = False) -> None:
-        # TODO how do we figure out the misisng timestamps?
-        # 1) find the anomalous gaps in the timesteps (> 7 days)
-        # 2) find the years where there are less than 52 timesteps
-        nc_files = self.get_vhi_filepaths('interim')
-        nc_files.sort()
-        ds = xr.open_mfdataset(nc_files)
-
-        if resample_time is not None:
-            ds = self.resample_time(ds, resample_time, upsampling)
-
-        outpath = self.out_dir / f'vhi{"_kenya" if subset_kenya else ""}.nc'
-
-        # save the merged filepath
-        ds.to_netcdf(outpath)
-        print(f'Timesteps merged and saved: {outpath}')
+        return self.interim / 'vhi_preprocess_errors.pkl'
 
     @staticmethod
     def create_filename(t: Timestamp,

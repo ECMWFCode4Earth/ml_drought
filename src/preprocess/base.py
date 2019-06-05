@@ -1,6 +1,9 @@
 from pathlib import Path
 import xarray as xr
 import xesmf as xe
+import numpy as np
+
+from typing import List, Optional
 
 from ..utils import Region, get_kenya
 
@@ -23,13 +26,36 @@ class BasePreProcessor:
     data_folder: Path, default: Path('data')
         The location of the data folder.
     """
+    dataset: str
+
     def __init__(self, data_folder: Path = Path('data')) -> None:
         self.data_folder = data_folder
         self.raw_folder = self.data_folder / 'raw'
-        self.interim_folder = self.data_folder / 'interim'
+        self.preprocessed_folder = self.data_folder / 'interim'
 
-        if not self.interim_folder.exists():
-            self.interim_folder.mkdir()
+        if not self.preprocessed_folder.exists():
+            self.preprocessed_folder.mkdir()
+
+        try:
+            self.out_dir = self.preprocessed_folder / f'{self.dataset}_preprocessed'
+            if not self.out_dir.exists():
+                self.out_dir.mkdir()
+
+            self.interim = self.preprocessed_folder / f'{self.dataset}_interim'
+            if not self.interim.exists():
+                self.interim.mkdir()
+        except AttributeError:
+            print('A dataset attribute must be added for '
+                  'the interim and out directories to be created')
+
+    def get_filepaths(self, folder: str = 'raw') -> List[Path]:
+        if folder == 'raw':
+            target_folder = self.raw_folder / self.dataset
+        else:
+            target_folder = self.interim
+        outfiles = list(target_folder.glob('**/*.nc'))
+        outfiles.sort()
+        return outfiles
 
     def regrid(self,
                ds: xr.Dataset,
@@ -64,11 +90,14 @@ class BasePreProcessor:
 
         shape_in = len(ds.lat), len(ds.lon)
         shape_out = len(reference_ds.lat), len(reference_ds.lon)
+        # unique id so when parallel process doesn't write to same file
+        uid = f"{np.random.rand(1)[0]:.2f}"
 
         # The weight file should be deleted by regridder.clean_weight_files(), but in case
         # something goes wrong and its not, lets use a descriptive filename
-        filename = f'{method}_{shape_in[0]}x{shape_in[1]}_{shape_out[0]}x{shape_out[1]}.nc'
-        savedir = self.interim_folder / filename
+        filename = f'{method}_{shape_in[0]}x{shape_in[1]}_\
+        {shape_out[0]}x{shape_out[1]}_{uid}.nc'.replace(' ', '')
+        savedir = self.preprocessed_folder / filename
 
         regridder = xe.Regridder(ds, ds_out, method,
                                  filename=str(savedir),
@@ -115,3 +144,16 @@ class BasePreProcessor:
             return resampler.mean()
         else:
             return resampler.nearest()
+
+    def merge_files(self, subset_kenya: bool = True,
+                    resample_time: Optional[str] = 'M',
+                    upsampling: bool = False) -> None:
+
+        ds = xr.open_mfdataset(self.get_filepaths('interim'))
+
+        if resample_time is not None:
+            ds = self.resample_time(ds, resample_time, upsampling)
+
+        out = self.out_dir / f'{self.dataset}{"_kenya" if subset_kenya else ""}.nc'
+        ds.to_netcdf(out)
+        print(f"\n**** {out} Created! ****\n")

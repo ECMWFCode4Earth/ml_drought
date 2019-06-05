@@ -1,13 +1,24 @@
 import xarray as xr
 import numpy as np
+from datetime import datetime
 
 from src.preprocess import CHIRPSPreprocesser
 from src.utils import get_kenya
 
-from .test_utils import _make_dataset
+from ..utils import _make_dataset
 
 
 class TestCHIRPSPreprocessor:
+
+    @staticmethod
+    def test_make_filename():
+
+        test_file = 'testy_test.nc'
+        expected_output = 'testy_test_kenya.nc'
+
+        filename = CHIRPSPreprocesser.create_filename(test_file, 'kenya')
+        assert filename == expected_output, \
+            f'Expected output to be {expected_output}, got {filename}'
 
     @staticmethod
     def _make_chirps_dataset(size, lonmin=-180.0, lonmax=180.0,
@@ -25,7 +36,7 @@ class TestCHIRPSPreprocessor:
         if add_times:
             size = (2, size[0], size[1])
             dims.insert(0, 'time')
-            coords['time'] = [0, 1]
+            coords['time'] = [datetime(2019, 1, 1), datetime(2019, 1, 2)]
         vhi = np.random.randint(100, size=size)
 
         return xr.Dataset({'VHI': (dims, vhi)}, coords=coords)
@@ -34,10 +45,10 @@ class TestCHIRPSPreprocessor:
     def test_directories_created(tmp_path):
         v = CHIRPSPreprocesser(tmp_path)
 
-        assert (tmp_path / v.interim_folder / 'chirps_preprocessed').exists(), \
+        assert (tmp_path / v.preprocessed_folder / 'chirps_preprocessed').exists(), \
             'Should have created a directory tmp_path/interim/chirps_preprocessed'
 
-        assert (tmp_path / v.interim_folder / 'chirps_interim').exists(), \
+        assert (tmp_path / v.preprocessed_folder / 'chirps_interim').exists(), \
             'Should have created a directory tmp_path/interim/chirps_interim'
 
     @staticmethod
@@ -50,18 +61,8 @@ class TestCHIRPSPreprocessor:
 
         processor = CHIRPSPreprocesser(tmp_path)
 
-        files = processor.get_chirps_filepaths()
+        files = processor.get_filepaths()
         assert files[0] == test_file, f'Expected {test_file} to be retrieved'
-
-    @staticmethod
-    def test_make_filename():
-
-        test_file = 'testy_test.nc'
-        expected_output = 'testy_test_kenya.nc'
-
-        filename = CHIRPSPreprocesser.create_filename(test_file, 'kenya')
-        assert filename == expected_output, \
-            f'Expected output to be {expected_output}, got {filename}'
 
     def test_preprocess(self, tmp_path):
 
@@ -104,5 +105,5 @@ class TestCHIRPSPreprocessor:
 
         assert out_data.VHI.values.shape[1:] == (20, 20)
 
-        assert not processor.chirps_interim.exists(), \
+        assert not processor.interim.exists(), \
             f'Interim chirps folder should have been deleted'

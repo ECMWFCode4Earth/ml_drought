@@ -11,11 +11,11 @@ class TestVHIPreprocessor:
     def test_vhi_init_directories_created(tmp_path):
         v = VHIPreprocessor(tmp_path)
 
-        assert (tmp_path / v.interim_folder / "vhi_preprocessed").exists(), f"\
-            Should have created a directory tmp_path/interim/vhi_preprocessed"
+        assert (tmp_path / v.preprocessed_folder / "vhi_preprocessed").exists(), \
+            f'Should have created a directory tmp_path/interim/vhi_preprocessed'
 
-        assert (tmp_path / v.interim_folder / "vhi_interim").exists(), f"\
-            Should have created a directory tmp_path/interim/vhi_interim"
+        assert (tmp_path / v.preprocessed_folder / "vhi_interim").exists(), \
+            f'Should have created a directory tmp_path/interim/vhi_interim'
 
     @staticmethod
     def test_vhi_raw_filenames(tmp_path):
@@ -35,7 +35,7 @@ class TestVHIPreprocessor:
         (demo_raw_folder / 'info.md').touch()
 
         # get the filepaths using the VHIPreprocessor function
-        recovered_names = [f.name for f in v.get_vhi_filepaths()]
+        recovered_names = [f.name for f in v.get_filepaths()]
         recovered_names.sort()
 
         assert recovered_names == fnames, \
@@ -67,7 +67,7 @@ class TestVHIPreprocessor:
 
         # run the preprocessing steps
         out = v._preprocess(
-            netcdf_filepath.as_posix(), v.vhi_interim.as_posix(),
+            netcdf_filepath.as_posix(), v.interim.as_posix(),
         )
         expected = "STAR_VHP.G04.C07.NC_1981_8_31_kenya_VH.nc"
 

@@ -1,34 +1,6 @@
-import xarray as xr
-import numpy as np
-import pandas as pd
-
 from src.utils import Region
 from src.preprocess.utils import select_bounding_box
-
-
-def _make_dataset(size, lonmin=-180.0, lonmax=180.0,
-                  latmin=-55.152, latmax=75.024,
-                  add_times=True):
-
-    lat_len, lon_len = size
-    # create the vector
-    longitudes = np.linspace(lonmin, lonmax, lon_len)
-    latitudes = np.linspace(latmin, latmax, lat_len)
-
-    dims = ['lat', 'lon']
-    coords = {'lat': latitudes,
-              'lon': longitudes}
-
-    if add_times:
-        times = pd.date_range('2000-01-01', '2001-12-31', name='time')
-        size = (len(times), size[0], size[1])
-        dims.insert(0, 'time')
-        coords['time'] = times
-    vhi = np.random.randint(100, size=size)
-
-    ds = xr.Dataset({'VHI': (dims, vhi)}, coords=coords)
-
-    return ds, (lonmin, lonmax), (latmin, latmax)
+from ..utils import _make_dataset
 
 
 class TestSelectBoundingBox:

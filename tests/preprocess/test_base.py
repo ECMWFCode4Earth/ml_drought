@@ -1,21 +1,18 @@
 import pytest
 
-from .test_utils import _make_dataset
+from ..utils import _make_dataset
 
 from src.preprocess.base import BasePreProcessor
 
 
-class TestTimeResampling:
+class TestBase:
 
-    def test_downsampling(self):
-        daily, _, _ = _make_dataset(size=(10, 10))
+    def test_resampling(self):
+        monthly_in, _, _ = _make_dataset(size=(10, 10))
 
-        monthly = BasePreProcessor.resample_time(daily, resample_length='M')
+        monthly = BasePreProcessor.resample_time(monthly_in, resample_length='M')
 
-        assert len(daily.time) // 30 == len(monthly.time)
-
-
-class TestRegridding:
+        assert len(monthly_in.time) == len(monthly.time)
 
     def test_regridding(self, tmp_path):
 
@@ -56,7 +53,8 @@ class TestRegridding:
 
         processor = BasePreProcessor(tmp_path)
         processor.regrid(target_ds, reference_ds)
-        assert (processor.interim_folder / 'nearest_s2d_100x100_10x10.nc').exists() is False, \
+        weight_filename = 'nearest_s2d_100x100_10x10.nc'
+        assert (processor.preprocessed_folder / weight_filename).exists() is False, \
             f'Regridder weight file not deleted!'
 
     def test_load_regridder(self, tmp_path):
