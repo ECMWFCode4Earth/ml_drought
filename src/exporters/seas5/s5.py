@@ -93,8 +93,7 @@ class S5Exporter(CDSExporter):
         max_month: int = 12,
         max_leadtime: Optional[int] = None,
         pressure_levels: Optional[List[int]] = None,
-        selection_request: Optional[Dict] = None,
-        N_parallel_requests: int = 3,
+        n_parallel_requests: int = 3,
         show_api_request: bool = True,
         break_up: bool = True,
     ):
@@ -125,6 +124,12 @@ class S5Exporter(CDSExporter):
         pressure_levels: Optional[int]
             Pressure levels to download data at
 
+        n_parallel_requests: int
+            the number of parallel requests to initialise
+
+        show_api_request: bool
+            do you want to print the api request to view it?
+
         break_up: bool - default: True
             whether to break up requests into parallel
 
@@ -134,9 +139,9 @@ class S5Exporter(CDSExporter):
         - these are required to initialise the object [granularity, pressure_level]
         - Only time will be chunked (by months) to send separate calls to the cdsapi
         """
-        # N_parallel_requests can only be a MINIMUM of 1
-        if N_parallel_requests < 1:
-            N_parallel_requests = 1
+        # n_parallel_requests can only be a MINIMUM of 1
+        if n_parallel_requests < 1:
+            n_parallel_requests = 1
 
         # max_leadtime defaults
         if max_leadtime is None:
@@ -154,7 +159,6 @@ class S5Exporter(CDSExporter):
             max_year=max_year,
             min_month=min_month,
             max_month=max_month,
-            selection_request=selection_request,
         )
 
         if self.pressure_level:  # if we are using the pressure_level dataset
@@ -163,9 +167,9 @@ class S5Exporter(CDSExporter):
             if pressure_levels_dict is not None:
                 processed_selection_request.update(cast(Dict, pressure_levels_dict))
 
-        if N_parallel_requests > 1:  # Run in parallel
-            # p = multiprocessing.Pool(int(N_parallel_requests))
-            p = pool(int(N_parallel_requests))  # pathos seems to pickle classes
+        if n_parallel_requests > 1:  # Run in parallel
+            # p = multiprocessing.Pool(int(n_parallel_requests))
+            p = pool(int(n_parallel_requests))  # pathos seems to pickle classes
 
         output_paths = []
         if break_up:
@@ -177,7 +181,7 @@ class S5Exporter(CDSExporter):
                 updated_request["year"] = [year]
                 updated_request["month"] = [month]
 
-                if N_parallel_requests > 1:  # Run in parallel
+                if n_parallel_requests > 1:  # Run in parallel
                     # multiprocessing of the paths
                     in_parallel = True
                     output_paths.append(
@@ -201,7 +205,7 @@ class S5Exporter(CDSExporter):
                     )
 
             # close the multiprocessing pool
-            if N_parallel_requests > 1:
+            if n_parallel_requests > 1:
                 p.close()
                 p.join()
 
@@ -331,24 +335,6 @@ class S5Exporter(CDSExporter):
 
         return product_type
 
-    # @staticmethod
-    # def _correct_input(value, key):
-    #     if type(value) is str:
-    #         # check the string is correctly formatted
-    #         if key == 'time':
-    #             assert (re.match(r"\d{2}:0{2}", value)), \
-    #                 f'Expected time string {value} to be in hour:minute format, \
-    #                 e.g. 01:00. Minutes MUST be `00`'
-    #         return value
-    #     else:
-    #         if key == 'year':
-    #             return str(value)
-    #         elif key in {'month', 'day'}:
-    #             return '{:02d}'.format(value)
-    #         elif key == 'time':
-    #             return '{:02d}:00'.format(value)
-    #     return str(value)
-
     def get_pressure_levels(
         self, pressure_levels: Optional[List[int]] = None
     ) -> Optional[Dict]:
@@ -386,7 +372,6 @@ class S5Exporter(CDSExporter):
         max_year: int = 2019,
         min_month: int = 1,
         max_month: int = 12,
-        selection_request: Optional[Dict] = None,
     ) -> Dict:
         """Build up the selection_request dictionary with defaults
 
