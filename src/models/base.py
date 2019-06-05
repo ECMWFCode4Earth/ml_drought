@@ -6,7 +6,7 @@ import pandas as pd
 from dataclasses import dataclass
 from sklearn.metrics import mean_squared_error
 
-from typing import cast, Dict, List, Optional, Tuple
+from typing import cast, Any, Dict, List, Optional, Tuple
 
 
 @dataclass
@@ -42,7 +42,7 @@ class ModelBase:
         except AttributeError:
             print('Model name attribute must be defined for the model directory to be created')
 
-        self.model: Optional[str] = None  # to be added by the model classes
+        self.model: Any = None  # to be added by the model classes
         self.data_vars: Optional[List[str]] = None  # to be added by the train step
 
     def train(self) -> None:
@@ -117,7 +117,7 @@ class ModelBase:
         return out_dict
 
     def load_train_arrays(self) -> Tuple[np.ndarray, np.ndarray]:
-
+        print('Loading training arrays')
         train_data_path = self.data_path / 'features/train'
 
         out_x, out_y = [], []
@@ -127,7 +127,7 @@ class ModelBase:
                                               return_latlons=False)
                 out_x.append(arrays.x)
                 out_y.append(arrays.y)
-        return np.concatenate(out_x, dim=0), np.concatenate(out_y, dim=0)
+        return np.concatenate(out_x, axis=0), np.concatenate(out_y, axis=0)
 
     @staticmethod
     def ds_folder_to_np(folder: Path,
