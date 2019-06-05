@@ -29,7 +29,7 @@ class PlanetOSPreprocessor(BasePreProcessor):
         # rotates the longitudes so they are in the -180 to 180 range
         data_vars = [x for x in ds.data_vars if x != 'time1_bounds']
         dims = ['time', 'lat', 'lon']
-        _time = (ds['time.year'].min().values[0], ds['time.month'].min().values[0])
+        _time = (int(ds['time.year'].min().values), int(ds['time.month'].min().values))
 
         print(f'Rotating {data_vars} on {dims} for {_time}')
 
