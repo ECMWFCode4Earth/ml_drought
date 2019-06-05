@@ -401,7 +401,6 @@ class S5Exporter(CDSExporter):
         if self.product_type is not None:
             processed_selection_request.update({"product_type": [self.product_type]})
 
-
         init_times_dict = self.get_s5_initialisation_times(
             self.granularity, min_year=min_year, max_year=max_year,
             min_month=min_month, max_month=max_month
