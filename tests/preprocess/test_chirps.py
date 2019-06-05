@@ -11,6 +11,16 @@ from ..utils import _make_dataset
 class TestCHIRPSPreprocessor:
 
     @staticmethod
+    def test_make_filename():
+
+        test_file = 'testy_test.nc'
+        expected_output = 'testy_test_kenya.nc'
+
+        filename = CHIRPSPreprocesser.create_filename(test_file, 'kenya')
+        assert filename == expected_output, \
+            f'Expected output to be {expected_output}, got {filename}'
+
+    @staticmethod
     def _make_chirps_dataset(size, lonmin=-180.0, lonmax=180.0,
                              latmin=-55.152, latmax=75.024,
                              add_times=True):
@@ -53,16 +63,6 @@ class TestCHIRPSPreprocessor:
 
         files = processor.get_filepaths()
         assert files[0] == test_file, f'Expected {test_file} to be retrieved'
-
-    @staticmethod
-    def test_make_filename():
-
-        test_file = 'testy_test.nc'
-        expected_output = 'testy_test_kenya.nc'
-
-        filename = CHIRPSPreprocesser.create_filename(test_file, 'kenya')
-        assert filename == expected_output, \
-            f'Expected output to be {expected_output}, got {filename}'
 
     def test_preprocess(self, tmp_path):
 

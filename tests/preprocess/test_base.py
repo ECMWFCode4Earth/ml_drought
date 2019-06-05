@@ -5,7 +5,7 @@ from ..utils import _make_dataset
 from src.preprocess.base import BasePreProcessor
 
 
-class TestTimeResampling:
+class TestBase:
 
     def test_resampling(self):
         monthly_in, _, _ = _make_dataset(size=(10, 10))
@@ -13,9 +13,6 @@ class TestTimeResampling:
         monthly = BasePreProcessor.resample_time(monthly_in, resample_length='M')
 
         assert len(monthly_in.time) == len(monthly.time)
-
-
-class TestRegridding:
 
     def test_regridding(self, tmp_path):
 

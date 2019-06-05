@@ -1,8 +1,9 @@
 from pathlib import Path
 import xarray as xr
 import xesmf as xe
+import numpy as np
 
-from typing import List
+from typing import List, Optional
 
 from ..utils import Region, get_kenya
 
@@ -52,7 +53,9 @@ class BasePreProcessor:
             target_folder = self.raw_folder / self.dataset
         else:
             target_folder = self.interim
-        return list(target_folder.glob('**/*.nc'))
+        outfiles = list(target_folder.glob('**/*.nc'))
+        outfiles.sort()
+        return outfiles
 
     def regrid(self,
                ds: xr.Dataset,
@@ -87,10 +90,13 @@ class BasePreProcessor:
 
         shape_in = len(ds.lat), len(ds.lon)
         shape_out = len(reference_ds.lat), len(reference_ds.lon)
+        # unique id so when parallel process doesn't write to same file
+        uid = f"{np.random.rand(1)[0]:.2f}"
 
         # The weight file should be deleted by regridder.clean_weight_files(), but in case
         # something goes wrong and its not, lets use a descriptive filename
-        filename = f'{method}_{shape_in[0]}x{shape_in[1]}_{shape_out[0]}x{shape_out[1]}.nc'
+        filename = f'{method}_{shape_in[0]}x{shape_in[1]}_\
+        {shape_out[0]}x{shape_out[1]}_{uid}.nc'.replace(' ', '')
         savedir = self.preprocessed_folder / filename
 
         regridder = xe.Regridder(ds, ds_out, method,
@@ -138,3 +144,16 @@ class BasePreProcessor:
             return resampler.mean()
         else:
             return resampler.nearest()
+
+    def merge_files(self, subset_kenya: bool = True,
+                    resample_time: Optional[str] = 'M',
+                    upsampling: bool = False) -> None:
+
+        ds = xr.open_mfdataset(self.get_filepaths('interim'))
+
+        if resample_time is not None:
+            ds = self.resample_time(ds, resample_time, upsampling)
+
+        out = self.out_dir / f'{self.dataset}{"_kenya" if subset_kenya else ""}.nc'
+        ds.to_netcdf(out)
+        print(f"\n**** {out} Created! ****\n")
