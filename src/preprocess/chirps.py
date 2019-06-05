@@ -37,9 +37,9 @@ class CHIRPSPreprocesser(BasePreProcessor):
             new_filename = f"{filename_stem}.nc"
         return new_filename
 
-    def _preprocess(self, netcdf_filepath: Path,
-                    subset_kenya: bool = True,
-                    regrid: Optional[xr.Dataset] = None) -> None:
+    def _preprocess_single(self, netcdf_filepath: Path,
+                           subset_kenya: bool = True,
+                           regrid: Optional[xr.Dataset] = None) -> None:
         """Run the Preprocessing steps for the CHIRPS data
 
         Process:
@@ -110,12 +110,12 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         if parallel:
             pool = multiprocessing.Pool(processes=100)
-            outputs = pool.map(partial(self._preprocess, subset_kenya=subset_kenya,
+            outputs = pool.map(partial(self._preprocess_single, subset_kenya=subset_kenya,
                                        regrid=regrid), nc_files)
             print("\nOutputs (errors):\n\t", outputs)
         else:
             for file in nc_files:
-                self._preprocess(file, subset_kenya, regrid,)
+                self._preprocess_single(file, subset_kenya, regrid)
 
         # merge all of the timesteps
         self.merge_files(subset_kenya, resample_time, upsampling)
