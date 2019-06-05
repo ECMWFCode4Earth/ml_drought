@@ -25,31 +25,31 @@ class PlanetOSPreprocessor(BasePreProcessor):
         return df
 
     @staticmethod
-    def _rotate_and_filter(df: xr.Dataset) -> xr.Dataset:
+    def _rotate_and_filter(ds: xr.Dataset) -> xr.Dataset:
         # rotates the longitudes so they are in the -180 to 180 range
-
-        data_vars = [x for x in df.data_vars if x != 'time1_bounds']
+        data_vars = [x for x in ds.data_vars if x != 'time1_bounds']
         dims = ['time', 'lat', 'lon']
+        _time = (ds['time.year'].min().values[0], ds['time.month'].min().values[0])
 
-        print(f'Rotating {data_vars} on {dims}')
+        print(f'Rotating {data_vars} on {dims} for {_time}')
 
-        boundary = sum(df.lon.values < 180)
-        new_lon = np.concatenate([df.lon.values[boundary:] - 360,
-                                  df.lon.values[:boundary]])
+        boundary = sum(ds.lon.values < 180)
+        new_lon = np.concatenate([ds.lon.values[boundary:] - 360,
+                                  ds.lon.values[:boundary]])
 
         dataarrays: Dict[str, Tuple[List[str], np.ndarray]] = {}
 
         for var in data_vars:
-            var_array = df[var]
+            var_array = ds[var]
             upper, lower = var_array[:, :, :boundary], var_array[:, :, boundary:]
             rotated_var = np.concatenate((lower, upper), axis=-1)
 
             dataarrays[var] = (dims, rotated_var)
 
         return xr.Dataset(dataarrays,
-                          coords={'lat': df.lat.values,
+                          coords={'lat': ds.lat.values,
                                   'lon': new_lon,
-                                  'time': df.time.values})
+                                  'time': ds.time.values})
 
     @staticmethod
     def create_filename(netcdf_filepath: Path,
