@@ -2,20 +2,19 @@
     "data":"data",
    "export":{
       "vhi": [
-            {"years": [
-                        2017,
-                        2018
-                    ]
-                }
+            {"years": [2017, 2018]}
             ],
       "era5POS": [
          {
             "variable":"precipitation_amount_1hour_Accumulation",
             "years": [2017, 2018]
          }
-      ]
+      ],
+     "chirps": [
+       {"years": [2017, 2018]}
+     ]
   },
   "preprocess":{
-      "vhi": [{"subset_kenya": true}]
+      "vhi": {"subset_kenya": true}
   }
 }

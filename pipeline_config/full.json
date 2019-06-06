@@ -2,10 +2,7 @@
     "data": "data",
     "export": {
         "vhi": [{}],
-            "era5": [
-                {
-                    "variable": "total_precipitation"
-                }
-            ]
+        "era5": [{"variable": "total_precipitation"}],
+        "chirps": [{}]
     }
 }

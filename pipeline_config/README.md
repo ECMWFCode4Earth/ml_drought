@@ -14,7 +14,7 @@ The following exporters have been implemented:
 #### 1.a. ERA5
 
 Download ERA5 reanalysis data from the [climate data store](https://cds.climate.copernicus.eu/#!/home).
-For more complete documentation on the inputs, see the [`ERA5 exporter docstring`](../src/exporters/cds.py)
+For more complete documentation on the inputs, see the [`ERA5 exporter docstring`](../src/exporters/cds.py).
 
 ```
 "era5": [
@@ -38,10 +38,25 @@ For more complete documentation on the inputs, see the [`ERA5 exporter docstring
 Download vegetation health index data from the NOAA 
 [Center for Satellite Applications and Research](https://www.star.nesdis.noaa.gov/smcd/emb/vci/VH/vh_browse.php).
 
-For more complete documentation on the inputs, see the [`VHI exporter docstring`](../src/exporters/vhi.py)
+For more complete documentation on the inputs, see the [`VHI exporter docstring`](../src/exporters/vhi.py).
 
 ```
 "vhi": [
         {"years": List of ints between 1981 and 2019, default: all}
+    ]
+```
+
+#### 1.c. CHIRPS
+
+Download [CHIRPS precipitation data](http://chg.geog.ucsb.edu/data/chirps/), from UC Santa Barbara's Climate Hazards 
+Group.
+
+For more complete documentation of the inputs, see the [`CHIRPS exporter docstring`](https://github.com/esowc/ml_drought/blob/master/src/exporters/chirps.py).
+
+```
+"chirps": [
+        {"years": None, or list of ints. If None, all years of available data are downloaded,
+         "region": "global" (or "africa", but this downloads .tif files), geographic area to download data from,
+         "period": "monthly", data frequency to download. See the ftp for available options}
     ]
 ```
