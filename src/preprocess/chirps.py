@@ -110,8 +110,11 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         if parallel:
             pool = multiprocessing.Pool(processes=100)
-            outputs = pool.map(partial(self._preprocess_single, subset_kenya=subset_kenya,
-                                       regrid=regrid), nc_files)
+            outputs = pool.map(
+                partial(self._preprocess_single,
+                        subset_kenya=subset_kenya,
+                        regrid=regrid),
+                nc_files)
             print("\nOutputs (errors):\n\t", outputs)
         else:
             for file in nc_files:
