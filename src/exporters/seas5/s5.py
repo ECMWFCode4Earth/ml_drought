@@ -423,16 +423,6 @@ class S5Exporter(CDSExporter):
         kenya_region = get_kenya()
         processed_selection_request["area"] = self.create_area(kenya_region)
 
-        # TODO: do we want this level of flexibility for the user? why add complexity?
-        # # update with user arguments
-        # if selection_request is not None:
-        #     for key, val in selection_request.items():
-        #         if key in {'day', 'hour'}:
-        #             warnings.warn(f'Overriding default {key} values. '
-        #                           f'The ERA5Exporter assumes all days '
-        #                           f'and times (the default) are being downloaded')
-        #         val = self._check_iterable(val, key)
-        #         processed_selection_request[key] = [self._correct_input(x, key) for x in val]
         if self.product_type is None:
             keys = [k for k in processed_selection_request.keys()]
             assert (
