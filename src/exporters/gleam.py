@@ -18,6 +18,10 @@ class GLEAMExporter(BaseExporter):
                  data_folder: Path = Path('data')) -> None:
         super().__init__(data_folder)
 
+        self.gleam_folder = self.raw_folder / 'gleam'
+        if not self.gleam_folder.exists():
+            self.gleam_folder.mkdir()
+
         transport = paramiko.Transport((host, port))
         transport.connect(username=username, password=password)
         self.sftp = paramiko.SFTPClient.from_transport(transport)
