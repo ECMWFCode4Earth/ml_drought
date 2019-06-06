@@ -104,3 +104,17 @@ class TestGLEAMExporter:
         expected_filename = f'{path}/SMroot_1980_2018_GLEAM_v3.3a_MO.nc'
         assert var_path[0] == expected_filename, \
             f'Expected {expected_filename}, got {var_path[0]}'
+
+    @patch('paramiko.Transport', autospec=True)
+    def test_sftppath_to_localpath(self, mock_paramiko, tmp_path, monkeypatch):
+        mock_paramiko.return_value = Mock()
+        monkeypatch.setattr(paramiko.SFTPClient, 'from_transport',
+                            self.mock_sftp_connection)
+
+        exporter = GLEAMExporter(username='Bob', password='123', host='453',
+                                 port=789, data_folder=tmp_path)
+
+        sftppath = '/data/v3.3a/yearly/Eb_1980_2018_GLEAM_v3.3a_MO.nc'
+        localpath = exporter.sftppath_to_localpath(sftppath)
+
+        assert localpath == tmp_path / 'raw/gleam/yearly'
