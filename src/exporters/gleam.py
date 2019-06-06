@@ -72,12 +72,20 @@ class GLEAMExporter(BaseExporter):
                variables: Union[str, List[str]],
                granularity: str) -> None:
 
+        acceptable_granularities = set(self.get_granularities())
+        assert granularity in acceptable_granularities, \
+            f'{granularity} not an acceptable granularity! ' \
+            f'Must be one of {acceptable_granularities}'
+
         if type(variables) == str:
             variables = cast(List[str], [variables])
 
         for variable in variables:
             relevant_datasets = self.variable_to_filename(variable,
                                                           self.get_datasets(granularity))
+            if len(relevant_datasets) == 0:
+                print('No files found! Check your variable names')
+
             for dataset in relevant_datasets:
                 localpath, filename = self.sftppath_to_localpath(dataset)
                 print(f'Downloading {dataset} to {localpath}')
