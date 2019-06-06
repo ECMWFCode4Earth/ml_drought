@@ -10,7 +10,7 @@ class TestS5Exporter:
 
     @patch('cdsapi.Client')
     def test_failure_on_invalid_granularity(self, tmp_path):
-        s5 = S5Exporter(tmp_path)
+        s5 = S5Exporter(pressure_level=True, data_folder=tmp_path)
 
         with pytest.raises(AssertionError) as e:
             s5.get_s5_initialisation_times("daily")
@@ -18,7 +18,7 @@ class TestS5Exporter:
 
     @patch('cdsapi.Client')
     def test_initialisation_times_produces_correct_keys(self, tmp_path):
-        s5 = S5Exporter(tmp_path)
+        s5 = S5Exporter(pressure_level=True, data_folder=tmp_path)
         selection_request = s5.get_s5_initialisation_times(
             "hourly", min_year=2017, max_year=2018, min_month=1, max_month=1
         )
