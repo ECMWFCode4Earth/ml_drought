@@ -304,3 +304,4 @@ class TestS5Exporter:
             tmp_path / "raw/seasonal-monthly-single-levels\
             /total_precipitation/2017/M01.grib"
         ).as_posix().replace(' ', '')
+        cdsapi_mock.assert_called()
