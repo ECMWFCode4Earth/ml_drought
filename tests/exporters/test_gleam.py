@@ -115,6 +115,7 @@ class TestGLEAMExporter:
                                  port=789, data_folder=tmp_path)
 
         sftppath = '/data/v3.3a/yearly/Eb_1980_2018_GLEAM_v3.3a_MO.nc'
-        localpath = exporter.sftppath_to_localpath(sftppath)
+        localpath, filename = exporter.sftppath_to_localpath(sftppath)
 
         assert localpath == tmp_path / 'raw/gleam/yearly'
+        assert filename == 'Eb_1980_2018_GLEAM_v3.3a_MO.nc'

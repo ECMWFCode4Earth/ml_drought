@@ -1,7 +1,7 @@
 import paramiko
 from pathlib import Path
 
-from typing import cast, List, Union
+from typing import cast, List, Union, Tuple
 
 from .base import BaseExporter
 
@@ -62,12 +62,11 @@ class GLEAMExporter(BaseExporter):
 
         return output_datasets
 
-    def sftppath_to_localpath(self, sftppath: str) -> Path:
+    def sftppath_to_localpath(self, sftppath: str) -> Tuple[Path, str]:
 
         stem = sftppath[len(self.base_sftp_path):]
         filename = sftppath.split('/')[-1]
-
-        return self.gleam_folder / stem[:-len(filename)]
+        return self.gleam_folder / stem[:-len(filename)].strip('/'), filename
 
     def export(self,
                variables: Union[str, List[str]],
@@ -80,7 +79,7 @@ class GLEAMExporter(BaseExporter):
             relevant_datasets = self.variable_to_filename(variable,
                                                           self.get_datasets(granularity))
             for dataset in relevant_datasets:
-                localpath = self.sftppath_to_localpath(dataset)
-                Path(localpath).mkdir(parents=True, exist_ok=True)
+                localpath, filename = self.sftppath_to_localpath(dataset)
                 print(f'Downloading {dataset} to {localpath}')
-                self.sftp.get(dataset, str(localpath))
+                localpath.mkdir(parents=True, exist_ok=True)
+                self.sftp.get(dataset, str(localpath / filename))
