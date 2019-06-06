@@ -79,3 +79,28 @@ class TestGLEAMExporter:
             assert len(datasets) == 1, 'Only expected one output filename'
             output_file = datasets[0].split('/')[-1]
             assert output_file == val, f'Expected {val}, got {output_file}'
+
+    def test_variable_to_filename(self):
+
+        real_files = [
+            'Eb_1980_2018_GLEAM_v3.3a_MO.nc',
+            'Ei_1980_2018_GLEAM_v3.3a_MO.nc',
+            'Ep_1980_2018_GLEAM_v3.3a_MO.nc',
+            'Es_1980_2018_GLEAM_v3.3a_MO.nc',
+            'Et_1980_2018_GLEAM_v3.3a_MO.nc',
+            'Ew_1980_2018_GLEAM_v3.3a_MO.nc',
+            'E_1980_2018_GLEAM_v3.3a_MO.nc',
+            'SMroot_1980_2018_GLEAM_v3.3a_MO.nc',
+            'SMsurf_1980_2018_GLEAM_v3.3a_MO.nc',
+            'S_1980_2018_GLEAM_v3.3a_MO.nc'
+        ]
+
+        path = '/base/interim1/interim2'
+        input_filenames = [f'{path}/{filename}' for filename in real_files]
+
+        var_path = GLEAMExporter.variable_to_filename('SMroot', input_filenames)
+
+        assert len(var_path) == 1, 'Only expected one output filename'
+        expected_filename = f'{path}/SMroot_1980_2018_GLEAM_v3.3a_MO.nc'
+        assert var_path[0] == expected_filename, \
+            f'Expected {expected_filename}, got {var_path[0]}'

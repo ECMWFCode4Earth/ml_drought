@@ -49,3 +49,15 @@ class GLEAMExporter(BaseExporter):
             datasets.extend([f'{granularity_path}/{subfile}' for subfile in granularity_listdir])
 
         return datasets
+
+    @staticmethod
+    def variable_to_filename(variable: str, datasets: List[str]) -> List[str]:
+        output_datasets: List[str] = []
+
+        for filepath in datasets:
+            filename = filepath.split('/')[-1]
+            variable_name = filename.split('_')[0]
+            if variable_name == variable:
+                output_datasets.append(filepath)
+
+        return output_datasets
