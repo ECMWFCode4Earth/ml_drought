@@ -128,19 +128,15 @@ class ModelBase:
         print('Loading training arrays')
         train_data_path = self.data_path / 'features/train'
 
-        out_x: Optional[np.ndarray] = None
-        out_y: Optional[np.ndarray] = None
+        out_x, out_y = [], []
         for subtrain in train_data_path.iterdir():
             if (subtrain / 'x.nc').exists() and (subtrain / 'y.nc').exists():
                 arrays = self.ds_folder_to_np(subtrain, clear_nans=True,
                                               return_latlons=False)
-                if out_x is None:
-                    out_x = cast(np.ndarray, arrays.x)
-                    out_y = cast(np.ndarray, arrays.y)
-                else:
-                    out_x = np.concatenate((out_x, arrays.x), axis=0)
-                    out_y = np.concatenate((out_y, arrays.y), axis=0)
-        return self.normalize(out_x, 'train'), out_y
+                out_x.append(arrays.x)
+                out_y.append(arrays.y)
+        return (self.normalize(np.concatenate(out_x, axis=0), 'train'),
+                np.concatenate(out_y, axis=0))
 
     @staticmethod
     def ds_folder_to_np(folder: Path,
