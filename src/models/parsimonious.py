@@ -1,3 +1,4 @@
+from pathlib import Path
 import numpy as np
 
 from typing import Dict, Tuple
@@ -13,6 +14,9 @@ class Persistence(ModelBase):
     """
 
     model_name = 'previous_month'
+
+    def __init__(self, data_folder: Path = Path('data')):
+        super().__init__(data_folder=data_folder, normalize_inputs=False)
 
     def train(self) -> None:
         pass
