@@ -1,4 +1,5 @@
 from pathlib import Path
+import pickle
 import numpy as np
 import json
 import xarray as xr
@@ -28,10 +29,11 @@ class ModelBase:
 
     model_name: str  # to be added by the model classes
 
-    def __init__(self, data: Path = Path('data')):
+    def __init__(self, data_folder: Path = Path('data'),
+                 normalize_inputs: bool = True) -> None:
 
-        self.data_path = data
-        self.models_dir = data / 'models'
+        self.data_path = data_folder
+        self.models_dir = data_folder / 'models'
         if not self.models_dir.exists():
             self.models_dir.mkdir()
 
@@ -44,6 +46,10 @@ class ModelBase:
 
         self.model: Any = None  # to be added by the model classes
         self.data_vars: Optional[List[str]] = None  # to be added by the train step
+
+        self.normalize_inputs = normalize_inputs
+        if self.normalize_inputs:
+            self.normalizing_values: Optional[Dict[str, np.ndarray]] = None
 
     def train(self) -> None:
         raise NotImplementedError
@@ -112,8 +118,10 @@ class ModelBase:
         out_dict = {}
         for subtrain in test_data_path.iterdir():
             if (subtrain / 'x.nc').exists() and (subtrain / 'y.nc').exists():
-                out_dict[subtrain.parts[-1]] = self.ds_folder_to_np(subtrain, clear_nans=True,
-                                                                    return_latlons=True)
+                modelarrays = self.ds_folder_to_np(subtrain, clear_nans=True,
+                                                   return_latlons=True)
+                modelarrays.x = self.normalize(modelarrays.x, 'test')
+                out_dict[subtrain.parts[-1]] = modelarrays
         return out_dict
 
     def load_train_arrays(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -127,7 +135,8 @@ class ModelBase:
                                               return_latlons=False)
                 out_x.append(arrays.x)
                 out_y.append(arrays.y)
-        return np.concatenate(out_x, axis=0), np.concatenate(out_y, axis=0)
+        return (self.normalize(np.concatenate(out_x, axis=0), 'train'),
+                np.concatenate(out_y, axis=0))
 
     @staticmethod
     def ds_folder_to_np(folder: Path,
@@ -172,3 +181,42 @@ class ModelBase:
 
         return ModelArrays(x=x_np, y=y_np, x_vars=list(x.data_vars),
                            y_var=list(y.data_vars)[0])
+
+    def normalize(self, x_in: np.ndarray, mode: str) -> np.ndarray:
+
+        if not self.normalize_inputs:
+            return x_in
+
+        if self.normalizing_values is None:
+            if mode == 'test':
+                # we normalize using values from the training
+                # array
+                x_norm, _ = self.load_train_arrays()
+                self.normalizing_values = {
+                    'mean': np.mean(x_norm, axis=0),
+                    'std': np.std(x_norm, axis=0)
+                }
+            else:
+                self.normalizing_values = {
+                    'mean': np.mean(x_in, axis=0),
+                    'std': np.std(x_in, axis=0)
+                }
+            # automatically save the normalizing values
+            savepath = self.model_dir / 'normalizing_values.pkl'
+            with savepath.open('wb') as f:
+                pickle.dump(self.normalizing_values, f)
+
+        return (x_in - self.normalizing_values['mean']) / self.normalizing_values['std']
+
+    def load_normalizing_values(self) -> None:
+
+        savepath = self.model_dir / 'normalizing_values.pkl'
+        if savepath.exists():
+            with savepath.open('rb') as f:
+                self.normalizing_values = pickle.load(f)
+        else:
+            x_norm, _ = self.load_train_arrays()
+            self.normalizing_values = {
+                'mean': np.mean(x_norm, axis=0),
+                'std': np.std(x_norm, axis=0)
+            }
