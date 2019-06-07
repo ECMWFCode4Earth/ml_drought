@@ -12,6 +12,7 @@ dependencies:
   - backports=1.0
   - backports.tempfile=1.0
   - backports.weakref=1.0.post1
+  - bcrypt=3.1.6
   - beautifulsoup4=4.7.1
   - bokeh=1.2.0
   - boto=2.49.0
@@ -101,6 +102,7 @@ dependencies:
   - openssl=1.1.1b
   - packaging=19.0
   - pandas=0.24.2
+  - paramiko=2.4.2
   - partd=0.3.9
   - pathos=0.2.3
   - pillow=5.3.0
@@ -110,10 +112,12 @@ dependencies:
   - ppft=1.6.4.9
   - psutil=5.4.8
   - py=1.8.0
+  - pyasn1=0.4.5
   - pycodestyle=2.5.0
   - pycparser=2.19
   - pycryptodome=3.7.3
   - pyflakes=2.1.1
+  - pynacl=1.3.0
   - pyopenssl=19.0.0
   - pyparsing=2.4.0
   - pyrsistent=0.15.2
