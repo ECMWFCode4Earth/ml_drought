@@ -1,8 +1,7 @@
 from pathlib import Path
 import xarray as xr
-import numpy as np
 from shutil import rmtree
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 from .base import BasePreProcessor, get_kenya
 from .utils import select_bounding_box
@@ -20,20 +19,8 @@ class GLEAMPreprocessor(BasePreProcessor):
         ds = ds.drop_dims('bnds')
 
         expected_dims = ['time', 'lat', 'lon']
-
-        if list(ds.dims) == expected_dims:
-            return ds
-
         print('Transposing arrays')
-        dataarrays: Dict[str, Tuple[List[str], np.ndarray]] = {}
-        for variable in ds.data_vars:
-            transposed = np.swapaxes(ds[variable].values, 1, 2)
-            dataarrays[variable] = (expected_dims, transposed)
-
-        return xr.Dataset(dataarrays,
-                          coords={'lat': ds.lat.values,
-                                  'lon': ds.lon.values,
-                                  'time': ds.time.values})
+        return ds.transpose(*expected_dims)
 
     def _preprocess_single(self, netcdf_filepath: Path,
                            subset_kenya: bool = True,
