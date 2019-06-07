@@ -1,7 +1,8 @@
 from pathlib import Path
 import xarray as xr
+import numpy as np
 from shutil import rmtree
-from typing import Optional
+from typing import Dict, List, Optional, Tuple
 
 from .base import BasePreProcessor, get_kenya
 from .utils import select_bounding_box
@@ -12,6 +13,27 @@ class GLEAMPreprocessor(BasePreProcessor):
     """
 
     dataset = 'gleam'
+
+    @staticmethod
+    def _swap_dims_and_filter(ds: xr.Dataset) -> xr.Dataset:
+
+        ds = ds.drop_dims('bnds')
+
+        expected_dims = ['time', 'lat', 'lon']
+
+        if list(ds.dims) == expected_dims:
+            return ds
+
+        print('Transposing arrays')
+        dataarrays: Dict[str, Tuple[List[str], np.ndarray]] = {}
+        for variable in ds.data_vars:
+            transposed = np.swapaxes(ds[variable].values, 1, 2)
+            dataarrays[variable] = (expected_dims, transposed)
+
+        return xr.Dataset(dataarrays,
+                          coords={'lat': ds.lat.values,
+                                  'lon': ds.lon.values,
+                                  'time': ds.time.values})
 
     def _preprocess_single(self, netcdf_filepath: Path,
                            subset_kenya: bool = True,
@@ -30,12 +52,12 @@ class GLEAMPreprocessor(BasePreProcessor):
         ds = xr.open_dataset(netcdf_filepath)
 
         # remove the time bounds variable
-        ds = ds.drop_dims('bnds')
+        ds = self._swap_dims_and_filter(ds)
 
         # 2. chop out EastAfrica
         if subset_kenya:
             kenya_region = get_kenya()
-            ds = select_bounding_box(ds, kenya_region)
+            ds = select_bounding_box(ds, kenya_region, inverse_lat=True)
 
         if regrid is not None:
             ds = self.regrid(ds, regrid)

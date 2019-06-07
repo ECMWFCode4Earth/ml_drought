@@ -22,13 +22,13 @@ class TestCHIRPSPreprocessor:
 
     @staticmethod
     def _make_gleam_dataset(size, lonmin=-180.0, lonmax=180.0,
-                            latmin=-55.152, latmax=75.024):
-        lat_len, lon_len = size
+                            latmin=90, latmax=-90):
+        lon_len, lat_len = size
         # create the vector
         longitudes = np.linspace(lonmin, lonmax, lon_len)
         latitudes = np.linspace(latmin, latmax, lat_len)
 
-        dims_e = ['time', 'lat', 'lon']
+        dims_e = ['time', 'lon', 'lat']
         dims_tb = ['time', 'bnds']
 
         coords = {'lat': latitudes,
@@ -105,8 +105,15 @@ class TestCHIRPSPreprocessor:
         assert (lats.min() >= kenya.latmin) and (lats.max() <= kenya.latmax), \
             'Latitudes not correctly subset'
 
-        assert out_data.E.values.shape[1:] == (20, 20)
         assert set(out_data.data_vars) == {'E'}, f'Got unexpected variables!'
 
         assert not processor.interim.exists(), \
             f'Interim gleam folder should have been deleted'
+
+    def test_swapaxes(self):
+
+        dataset = self._make_gleam_dataset(size=(20, 30))
+
+        out = GLEAMPreprocessor._swap_dims_and_filter(dataset)
+
+        assert out.E.values.shape[1:] == (30, 20), f'Array axes not properly swapped!'
