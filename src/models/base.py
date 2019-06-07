@@ -130,8 +130,8 @@ class ModelBase:
                     out_x = cast(np.ndarray, arrays.x)
                     out_y = cast(np.ndarray, arrays.y)
                 else:
-                    out_x = np.concatenate(arrays.x, axis=0)
-                    out_y = np.concatenate(arrays.y, axis=0)
+                    out_x = np.concatenate((out_x, arrays.x), axis=0)
+                    out_y = np.concatenate((out_y, arrays.y), axis=0)
         return out_x, out_y
 
     @staticmethod
