@@ -13,14 +13,17 @@ class GLEAMExporter(BaseExporter):
     Access information can be found at gleam.eu
     """
 
-    def __init__(self, username: str, password: str,
-                 host: str, port: int,
-                 data_folder: Path = Path('data')) -> None:
+    def __init__(self, data_folder: Path = Path('data')) -> None:
         super().__init__(data_folder)
 
         self.gleam_folder = self.raw_folder / 'gleam'
         if not self.gleam_folder.exists():
             self.gleam_folder.mkdir()
+
+        password = 'v33_GLEAM2019#aw'
+        username = 'gleamuser'
+        host = 'hydras.ugent.be'
+        port = 2225
 
         transport = paramiko.Transport((host, port))
         transport.connect(username=username, password=password)

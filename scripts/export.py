@@ -66,13 +66,7 @@ def export_gleam():
     else:
         data_path = Path('../data')
 
-    host = 'Get the login details'
-    port = 0
-    password = 'by going to gleam.eu'
-    username = 'and registering your email'
-
-    exporter = GLEAMExporter(username=username, password=password, host=host,
-                             port=port, data_folder=data_path)
+    exporter = GLEAMExporter(data_folder=data_path)
     exporter.export(['E', 'SMroot', 'SMsurf'], 'monthly')
 
 

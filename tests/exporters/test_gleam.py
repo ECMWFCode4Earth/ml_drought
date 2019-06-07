@@ -44,8 +44,7 @@ class TestGLEAMExporter:
         monkeypatch.setattr(paramiko.SFTPClient, 'from_transport',
                             self.mock_sftp_connection)
 
-        GLEAMExporter(username='Bob', password='123', host='453', port=789,
-                      data_folder=tmp_path)
+        GLEAMExporter(data_folder=tmp_path)
         assert (tmp_path / 'raw/gleam').exists(), 'Gleam folder not made!'
 
         mock_paramiko.assert_called(), 'paramiko.Transport never called!'
@@ -56,8 +55,7 @@ class TestGLEAMExporter:
         monkeypatch.setattr(paramiko.SFTPClient, 'from_transport',
                             self.mock_sftp_connection)
 
-        exporter = GLEAMExporter(username='Bob', password='123', host='453',
-                                 port=789, data_folder=tmp_path)
+        exporter = GLEAMExporter(data_folder=tmp_path)
         granularities = exporter.get_granularities()
 
         assert set(granularities) == {'daily', 'monthly', 'yearly'}
@@ -68,8 +66,7 @@ class TestGLEAMExporter:
         monkeypatch.setattr(paramiko.SFTPClient, 'from_transport',
                             self.mock_sftp_connection)
 
-        exporter = GLEAMExporter(username='Bob', password='123', host='453',
-                                 port=789, data_folder=tmp_path)
+        exporter = GLEAMExporter(data_folder=tmp_path)
 
         expected = {'yearly': 'hello_1.nc', 'monthly': 'hello_2.nc', 'daily': 'hello_3.nc'}
 
@@ -111,8 +108,7 @@ class TestGLEAMExporter:
         monkeypatch.setattr(paramiko.SFTPClient, 'from_transport',
                             self.mock_sftp_connection)
 
-        exporter = GLEAMExporter(username='Bob', password='123', host='453',
-                                 port=789, data_folder=tmp_path)
+        exporter = GLEAMExporter(data_folder=tmp_path)
 
         sftppath = '/data/v3.3a/yearly/Eb_1980_2018_GLEAM_v3.3a_MO.nc'
         localpath, filename = exporter.sftppath_to_localpath(sftppath)
