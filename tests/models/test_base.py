@@ -66,3 +66,35 @@ class TestBase:
         expected_stdout = 'RMSE: 0.0'
         assert expected_stdout in captured.out, \
             f'Expected stdout to be {expected_stdout}, got {captured.out}'
+
+    def test_normalizing(self, tmp_path):
+
+        base = ModelBase(tmp_path)
+        base.model_dir = base.models_dir / 'base'
+        base.model_dir.mkdir(parents=True)
+
+        # batch_size = 100, timesteps = 11, n_features = 2
+        array_shape = (100, 11, 2)
+        test_array = np.ones(array_shape)
+
+        normalized = base.normalize(test_array, mode='train')
+
+        assert normalized.shape == array_shape, f'Normalizing changed the shape of the array!'
+        assert base.normalizing_values is not None, \
+            f'Normalizing values not assigned in the model!'
+        assert (base.normalizing_values['mean'] == np.mean(test_array, axis=0)).all()
+        assert (base.normalizing_values['std'] == np.std(test_array, axis=0)).all()
+
+        # finally, we check its been saved
+        assert (base.model_dir / 'normalizing_values.pkl').exists(), \
+            f'Normalizing dict not saved!'
+
+        # then, we check it loads properly
+        expected_vals = base.normalizing_values
+        base.normalizing_values = None
+        assert base.normalizing_values is None  # This is just to make sure the next test works
+
+        base.load_normalizing_values()
+        for key, val in expected_vals.items():
+            assert (base.normalizing_values[key] == val).all(), \
+                f'Normalizing dict not properly loaded!'
