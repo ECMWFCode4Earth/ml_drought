@@ -8,7 +8,7 @@ from src.utils import get_kenya
 from ..utils import _make_dataset
 
 
-class TestCHIRPSPreprocessor:
+class TestGLEAMPreprocessor:
 
     @staticmethod
     def test_make_filename():

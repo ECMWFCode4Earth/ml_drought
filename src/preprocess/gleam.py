@@ -25,7 +25,7 @@ class GLEAMPreprocessor(BasePreProcessor):
     def _preprocess_single(self, netcdf_filepath: Path,
                            subset_kenya: bool = True,
                            regrid: Optional[xr.Dataset] = None) -> None:
-        """Run the Preprocessing steps for the CHIRPS data
+        """Run the Preprocessing steps for the GLEAM data
 
         Process:
         -------
