@@ -236,4 +236,4 @@ class Engineer:
                 self.normalization_values[var]['mean'] = mean
                 self.normalization_values[var]['std'] = std
 
-            self.num_normalization_values += 1
+        self.num_normalization_values += 1

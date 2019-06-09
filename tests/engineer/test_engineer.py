@@ -117,7 +117,7 @@ class TestEngineer:
 
         for key, val in norm_dict.items():
             assert key in {'a', 'b'}, f'Unexpected key!'
-            assert np.count_nonzero(norm_dict[key]['mean']) == 0, \
+            assert (norm_dict[key]['mean'] == 1).all(), \
                 f'Mean incorrectly calculated!'
-            assert np.count_nonzero(norm_dict[key]['std']) == 0, \
+            assert (norm_dict[key]['std'] == 0).all(), \
                 f'Std incorrectly calculated!'

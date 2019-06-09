@@ -23,6 +23,7 @@ def _make_dataset(size, variable_name='VHI', lonmin=-180.0, lonmax=180.0,
     var = np.random.randint(100, size=size)
     if const:
         var *= 0
+        var += 1
 
     ds = xr.Dataset({variable_name: (dims, var)}, coords=coords)
 
