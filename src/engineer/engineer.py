@@ -1,12 +1,10 @@
 import numpy as np
-from collections import defaultdict
 import calendar
 from datetime import datetime, date
 from pathlib import Path
 import xarray as xr
 
 from typing import cast, Dict, List, Optional, Union, Tuple
-from typing import DefaultDict as DDict
 
 from ..utils import minus_months
 
@@ -68,13 +66,11 @@ class Engineer:
         if type(test_year) is int:
             test_year = [cast(int, test_year)]
 
-        train_ds, test_dict = self._train_test_split(data, cast(List, test_year), target_variable,
-                                                     pred_months, expected_length)
+        train_ds = self._train_test_split(data, cast(List, test_year), target_variable,
+                                          pred_months, expected_length)
 
-        train_dict = self._stratify_training_data(train_ds, target_variable, pred_months,
-                                                  expected_length)
-        self._save(train_dict, 'train')
-        self._save(test_dict, 'test')
+        self._stratify_training_data(train_ds, target_variable, pred_months,
+                                     expected_length)
 
     def _get_preprocessed_files(self) -> List[Path]:
         processed_files = []
@@ -110,15 +106,12 @@ class Engineer:
                                 target_variable: str,
                                 pred_months: int = 11,
                                 expected_length: Optional[int] = 11
-                                ) -> DDict[int, DDict[int, Dict[str, xr.Dataset]]]:
+                                ) -> None:
 
         min_date = self.get_datetime(train_ds.time.values.min())
         max_date = self.get_datetime(train_ds.time.values.max())
 
         cur_pred_year, cur_pred_month = max_date.year, max_date.month
-
-        output_dict: DDict[int, DDict[int, Dict[str, xr.Dataset]]] = \
-            defaultdict(lambda: defaultdict(dict))
 
         cur_min_date = max_date
         while cur_min_date >= min_date:
@@ -127,21 +120,17 @@ class Engineer:
                                                     target_variable, cur_pred_month,
                                                     pred_months, expected_length)
             if arrays is not None:
-                output_dict[cur_pred_year][cur_pred_month] = arrays
+                self._save(arrays, year=cur_pred_year, month=cur_pred_month,
+                           dataset_type='train')
             cur_pred_year, cur_pred_month = cur_min_date.year, cur_min_date.month
-
-        return output_dict
 
     def _train_test_split(self, ds: xr.Dataset,
                           years: List[int],
                           target_variable: str,
                           pred_months: int = 11,
                           expected_length: Optional[int] = 11,
-                          ) -> Tuple[xr.Dataset, DDict[int, DDict[int, Dict[str, xr.Dataset]]]]:
+                          ) -> xr.Dataset:
         years.sort()
-
-        output_test_arrays: DDict[int, DDict[int, Dict[str, xr.Dataset]]] = \
-            defaultdict(lambda: defaultdict(dict))
 
         xy_test, min_test_date = self.stratify_xy(ds, years[0], target_variable, 1,
                                                   pred_months, expected_length)
@@ -150,7 +139,8 @@ class Engineer:
         train_ds = ds.isel(time=train_dates)
 
         if xy_test is not None:
-            output_test_arrays[years[0]][1] = xy_test
+            self._save(xy_test, year=years[0], month=1,
+                       dataset_type='test')
 
         for year in years:
             for month in range(1, 13):
@@ -159,9 +149,9 @@ class Engineer:
                     xy_test, _ = self.stratify_xy(ds, year, target_variable, month,
                                                   pred_months, expected_length)
                     if xy_test is not None:
-                        output_test_arrays[year][month] = xy_test
-
-        return train_ds, output_test_arrays
+                        self._save(xy_test, year=year, month=month,
+                                   dataset_type='test')
+        return train_ds
 
     @staticmethod
     def stratify_xy(ds: xr.Dataset,
@@ -207,18 +197,14 @@ class Engineer:
     def get_datetime(time: np.datetime64) -> date:
         return datetime.strptime(time.astype(str)[:10], '%Y-%m-%d').date()
 
-    def _save(self, ds: DDict[int, DDict[int, Dict[str, xr.Dataset]]],
-              dataset_type: str) -> None:
+    def _save(self, ds_dict: Dict[str, xr.Dataset], year: int,
+              month: int, dataset_type: str) -> None:
 
         save_folder = self.output_folder / dataset_type
         save_folder.mkdir(exist_ok=True)
 
-        for year_key, val in ds.items():
+        output_location = save_folder / f'{year}_{month}'
+        output_location.mkdir(exist_ok=True)
 
-            for month_key, test_dict in val.items():
-
-                output_location = save_folder / f'{year_key}_{month_key}'
-                output_location.mkdir(exist_ok=True)
-
-                for x_or_y, output_ds in test_dict.items():
-                    output_ds.to_netcdf(output_location / f'{x_or_y}.nc')
+        for x_or_y, output_ds in ds_dict.items():
+            output_ds.to_netcdf(output_location / f'{x_or_y}.nc')

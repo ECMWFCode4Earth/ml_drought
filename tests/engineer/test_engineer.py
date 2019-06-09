@@ -77,17 +77,11 @@ class TestEngineer:
         dataset, _, _ = _make_dataset(size=(2, 2))
 
         engineer = Engineer(tmp_path)
-        train, test = engineer._train_test_split(dataset, years=[2001],
-                                                 target_variable='VHI')
+        train = engineer._train_test_split(dataset, years=[2001],
+                                           target_variable='VHI')
 
         assert (train.time.values < np.datetime64('2001-01-01')).all(), \
             'Got years greater than the test year in the training set!'
-
-        assert len(test[2001]) == 12, f'Expected 12 testing months in the test dataset'
-
-        for dataset in {'x', 'y'}:
-            assert (test[2001][12][dataset].time.values > np.datetime64('2000-12-31')).all(), \
-                'Got years smaller than the test year in the test set!'
 
     def test_engineer(self, tmp_path):
 
