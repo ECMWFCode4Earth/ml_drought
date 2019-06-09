@@ -40,13 +40,14 @@ class DataLoader:
     """
     def __init__(self, data_path: Path = Path('data'), batch_file_size: int = 1,
                  mode: str = 'train', shuffle_data: bool = True,
-                 clear_nans: bool = True, normalize: bool = True) -> None:
+                 clear_nans: bool = True, normalize: bool = True,
+                 mask: Optional[List[bool]] = None) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
         self.shuffle = shuffle_data
         self.clear_nans = clear_nans
-        self.data_files = self._load_datasets(data_path, mode, shuffle_data)
+        self.data_files = self._load_datasets(data_path, mode, shuffle_data, mask)
 
         self.normalizing_dict = None
         if normalize:
@@ -63,7 +64,8 @@ class DataLoader:
         return len(self.data_files) // self.batch_file_size
 
     @staticmethod
-    def _load_datasets(data_path: Path, mode: str, shuffle_data: bool) -> List[Path]:
+    def _load_datasets(data_path: Path, mode: str, shuffle_data: bool,
+                       mask: Optional[List[bool]] = None) -> List[Path]:
 
         data_folder = data_path / f'features/{mode}'
         output_paths: List[Path] = []
@@ -71,6 +73,11 @@ class DataLoader:
         for subtrain in data_folder.iterdir():
             if (subtrain / 'x.nc').exists() and (subtrain / 'y.nc').exists():
                 output_paths.append(subtrain)
+        if mask is not None:
+            output_paths.sort()
+            assert len(output_paths) == len(mask), \
+                f'Output path and mask must be the same length!'
+            output_paths = [o_p for o_p, include in zip(output_paths, mask) if include]
         if shuffle_data:
             shuffle(output_paths)
         return output_paths

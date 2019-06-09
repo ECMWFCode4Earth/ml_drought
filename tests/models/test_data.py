@@ -1,11 +1,29 @@
 import pytest
 
-from src.models.data import _BaseIter
+from src.models.data import DataLoader, _BaseIter
 
 from ..utils import _make_dataset
 
 
 class TestBaseIter:
+
+    def test_mask(self, tmp_path):
+
+        for i in range(5):
+            (tmp_path / f'features/train/{i}').mkdir(parents=True)
+            (tmp_path / f'features/train/{i}/x.nc').touch()
+            (tmp_path / f'features/train/{i}/y.nc').touch()
+
+        mask_train = [True, True, False, True, False]
+        mask_val = [False, False, True, False, True]
+
+        train_paths = DataLoader._load_datasets(tmp_path, mode='train',
+                                                shuffle_data=True, mask=mask_train)
+        val_paths = DataLoader._load_datasets(tmp_path, mode='train',
+                                              shuffle_data=True, mask=mask_val)
+        assert len(set(train_paths).intersection(set(val_paths))) == 0, \
+            f'Got the same file in both train and val set!'
+        assert len(train_paths) + len(val_paths) == 5, f'Not all files loaded!'
 
     @pytest.mark.parametrize('normalize', [True, False])
     def test_ds_to_np(self, tmp_path, normalize):
