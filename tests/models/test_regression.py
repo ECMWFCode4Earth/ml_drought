@@ -51,6 +51,9 @@ class TestLinearRegression:
         model.train()
 
         captured = capsys.readouterr()
+        # Because the y data is the last timestep of the x data, and the normalization
+        # leaves the values unchanged, the model should have a perfect RMSE. If it doesn't,
+        # something has probably been broken (e.g. by weird array broadcasting)
         expected_stdout = 'Train set RMSE: 0.0'
         assert expected_stdout in captured.out, \
             f'Expected stdout to be {expected_stdout}, got {captured.out}'
