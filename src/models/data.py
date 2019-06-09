@@ -2,9 +2,10 @@ from dataclasses import dataclass
 import numpy as np
 from random import shuffle
 from pathlib import Path
+import pickle
 import xarray as xr
 
-from typing import Dict, Optional, List, Tuple
+from typing import cast, Dict, Optional, List, Tuple
 
 
 @dataclass
@@ -21,13 +22,18 @@ class DataLoader:
     """
     def __init__(self, data_path: Path = Path('data'), batch_file_size: int = 1,
                  mode: str = 'train', shuffle_data: bool = True,
-                 clear_nans: bool = True) -> None:
+                 clear_nans: bool = True, normalize: bool = True) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
         self.shuffle = shuffle_data
         self.clear_nans = clear_nans
         self.data_files = self._load_datasets(data_path, mode, shuffle_data)
+
+        self.normalizing_dict = None
+        if normalize:
+            with (data_path / 'features/normalizing_dict.pkl').open('rb') as f:
+                self.normalizing_dict = pickle.load(f)
 
     def __iter__(self):
         if self.mode == 'train':
@@ -61,14 +67,32 @@ class _BaseIter:
         self.shuffle = loader.shuffle
         self.clear_nans = loader.clear_nans
 
+        self.normalizing_dict = loader.normalizing_dict
+        self.normalizing_array: Optional[Dict[str, np.ndarray]] = None
+
         self.idx = 0
         self.max_idx = len(loader.data_files)
 
     def __iter__(self):
         return self
 
-    @staticmethod
-    def ds_folder_to_np(folder: Path,
+    def calculate_normalizing_array(self, data_vars: List[str]):
+        # If we've made it here, normalizing_dict is definitely not None
+        self.normalizing_dict = cast(Dict[str, Dict[str, np.ndarray]], self.normalizing_dict)
+
+        mean, std = [], []
+        for var in data_vars:
+            mean.append(self.normalizing_dict[var]['mean'])
+            std.append(self.normalizing_dict[var]['std'])
+
+        self.normalizing_array = cast(Dict[str, np.ndarray], {
+            # swapaxes so that its [timesteps, features], not [features, timesteps]
+            'mean': np.vstack(mean).swapaxes(0, 1),
+            'std': np.vstack(std).swapaxes(0, 1)
+        })
+
+    def ds_folder_to_np(self,
+                        folder: Path,
                         clear_nans: bool = True,
                         return_latlons: bool = False,
                         ) -> ModelArrays:
@@ -77,12 +101,18 @@ class _BaseIter:
         assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable!'
         x_np, y_np = x.to_array().values, y.to_array().values
 
+        if (self.normalizing_dict is not None) and (self.normalizing_array is None):
+            self.calculate_normalizing_array(list(x.data_vars))
+
         # first, x
         x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
         x_np = np.moveaxis(np.moveaxis(x_np, 0, 1), -1, 0)
         # then, y
         y_np = y_np.reshape(y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
         y_np = np.moveaxis(y_np, -1, 0).reshape(-1, 1)
+
+        if self.normalizing_array is not None:
+            x_np = (x_np - self.normalizing_array['mean']) / (self.normalizing_array['std'])
 
         assert y_np.shape[0] == x_np.shape[0], f'x and y data have a different ' \
             f'number of instances! x: {x_np.shape[0]}, y: {y_np.shape[0]}'

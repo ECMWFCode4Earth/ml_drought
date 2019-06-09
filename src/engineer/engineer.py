@@ -226,8 +226,8 @@ class Engineer:
     def calculate_normalization_values(self, x_data: xr.Dataset) -> None:
 
         for var in x_data.data_vars:
-            mean = x_data[var].mean(dim=['lat', 'lon']).values
-            std = x_data[var].std(dim=['lat', 'lon']).values
+            mean = x_data[var].mean(dim=['lat', 'lon'], skipna=True).values
+            std = x_data[var].std(dim=['lat', 'lon'], skipna=True).values
 
             if var in self.normalization_values:
                 self.normalization_values[var]['mean'] += mean

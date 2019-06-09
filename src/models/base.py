@@ -18,7 +18,6 @@ class ModelBase:
     model_name: str  # to be added by the model classes
 
     def __init__(self, data_folder: Path = Path('data'),
-                 normalize_inputs: bool = True,
                  batch_size: int = 1) -> None:
 
         self.batch_size = batch_size
@@ -36,10 +35,6 @@ class ModelBase:
 
         self.model: Any = None  # to be added by the model classes
         self.data_vars: Optional[List[str]] = None  # to be added by the train step
-
-        self.normalize_inputs = normalize_inputs
-        if self.normalize_inputs:
-            self.normalizing_values: Optional[Dict[str, np.ndarray]] = None
 
     def train(self) -> None:
         raise NotImplementedError

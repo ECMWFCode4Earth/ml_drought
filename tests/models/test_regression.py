@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 
 from sklearn import linear_model
 from src.models import LinearRegression
@@ -36,6 +37,12 @@ class TestLinearRegression:
 
         test_features = tmp_path / 'features/train/hello'
         test_features.mkdir(parents=True)
+
+        norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
+                             'std': np.ones(x.to_array().values.shape[:2])}
+                     }
+        with (tmp_path / 'features/normalizing_dict.pkl').open('wb') as f:
+            pickle.dump(norm_dict, f)
 
         x.to_netcdf(test_features / 'x.nc')
         y.to_netcdf(test_features / 'y.nc')

@@ -1,3 +1,5 @@
+import pytest
+
 from src.models.data import _BaseIter
 
 from ..utils import _make_dataset
@@ -5,16 +7,34 @@ from ..utils import _make_dataset
 
 class TestBaseIter:
 
-    def test_ds_to_np(self, tmp_path):
+    @pytest.mark.parametrize('normalize', [True, False])
+    def test_ds_to_np(self, tmp_path, normalize):
 
         x, _, _ = _make_dataset(size=(5, 5))
-        y, _, _ = _make_dataset(size=(5, 5))
-        y = y.isel(time=[0])
+        y = x.isel(time=[0])
 
         x.to_netcdf(tmp_path / 'x.nc')
         y.to_netcdf(tmp_path / 'y.nc')
 
-        arrays = _BaseIter.ds_folder_to_np(tmp_path, return_latlons=True)
+        norm_dict = {}
+        for var in x.data_vars:
+            norm_dict[var] = {
+                'mean': x[var].mean(dim=['lat', 'lon'], skipna=True).values,
+                'std': x[var].std(dim=['lat', 'lon'], skipna=True).values
+            }
+
+        class MockLoader:
+            def __init__(self):
+                self.batch_file_size = None
+                self.mode = None
+                self.shuffle = None
+                self.clear_nans = None
+                self.data_files = []
+                self.normalizing_dict = norm_dict if normalize else None
+
+        base_iterator = _BaseIter(MockLoader())
+
+        arrays = base_iterator.ds_folder_to_np(tmp_path, return_latlons=True)
 
         x_np, y_np, latlons = arrays.x, arrays.y, arrays.latlons
 
@@ -29,9 +49,10 @@ class TestBaseIter:
             for time in range(x_np.shape[1]):
                 target = x.isel(time=time).sel(lat=lat).sel(lon=lon).VHI.values
 
-                assert target == x_np[idx, time, 0], \
-                    f'Got different x values for time idx: {time}, lat: {lat}, ' \
-                    f'lon: {lon}.Expected {target}, got {x_np[idx, time, 0]}'
+                if not normalize:
+                    assert target == x_np[idx, time, 0], \
+                        f'Got different x values for time idx: {time}, lat: {lat}, ' \
+                        f'lon: {lon}.Expected {target}, got {x_np[idx, time, 0]}'
 
             target_y = y.isel(time=0).sel(lat=lat).sel(lon=lon).VHI.values
             assert target_y == y_np[idx, 0], \
