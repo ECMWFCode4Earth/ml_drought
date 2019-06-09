@@ -20,5 +20,5 @@ class TestPersistence:
 
         test_arrays, preds = predictor.predict()
 
-        assert (test_arrays['hello'] == preds['hello']).all(), \
+        assert (test_arrays['hello']['y'] == preds['hello']).all(), \
             f'Last timestep not correctly taken!'

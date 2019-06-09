@@ -38,13 +38,13 @@ class LinearRegression(ModelBase):
         coefs = self.model.coef_
         np.save(self.model_dir / 'model.npy', coefs)
 
-    def predict(self) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+    def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
 
         test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=self.batch_size,
                                         shuffle_data=False, mode='test')
 
         preds_dict: Dict[str, np.ndarray] = {}
-        test_arrays_dict: Dict[str, np.ndarray] = {}
+        test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
 
         if self.model is None:
             self.train()
@@ -55,6 +55,6 @@ class LinearRegression(ModelBase):
                 preds = self.model.predict(val.x.reshape(val.x.shape[0],
                                                          val.x.shape[1] * val.x.shape[2]))
                 preds_dict[key] = preds
-                test_arrays_dict[key] = val.y
+                test_arrays_dict[key] = {'y': val.y, 'latlons': val.latlons}
 
         return test_arrays_dict, preds_dict

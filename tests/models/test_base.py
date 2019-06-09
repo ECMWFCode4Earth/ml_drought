@@ -15,7 +15,7 @@ class TestBase:
 
             y = np.array([1, 1, 1, 1, 1])
 
-            test_arrays = {'hello': y}
+            test_arrays = {'hello': {'y': y}}
             preds_arrays = {'hello': y}
 
             return test_arrays, preds_arrays

@@ -18,7 +18,25 @@ class ModelArrays:
 
 
 class DataLoader:
-    """Base class for the train and test dataloaders
+    """Dataloader; lazily load the training and test data
+
+    Attributes:
+    ----------
+    data_path: Path = Path('data')
+        Location of the data folder
+    batch_file_size: int = 1
+        The number of files to load at a time
+    mode: str {'test', 'train'} = 'train'
+        Whether to load testing or training data. This also affects the way the data is
+        returned; for train, it is a concatenated array, but for test it is a dict with dates
+        so that the netcdf file can easily be reconstructed
+    shuffle_data: bool = True
+        Whether or not to shuffle data
+    clear_nans: bool = True
+        Whether to remove nan values
+    normalize: bool = True
+        Whether to normalize the data. This assumes a normalizing_dict.pkl was saved by the
+        engineer
     """
     def __init__(self, data_path: Path = Path('data'), batch_file_size: int = 1,
                  mode: str = 'train', shuffle_data: bool = True,

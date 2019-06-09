@@ -39,7 +39,7 @@ class ModelBase:
     def train(self) -> None:
         raise NotImplementedError
 
-    def predict(self) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+    def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         # This method should return the test arrays as loaded by
         # the test array dataloader, and the corresponding predictions
         raise NotImplementedError
@@ -65,7 +65,8 @@ class ModelBase:
         output_dict: Dict[str, int] = {}
         total_preds: List[np.ndarray] = []
         total_true: List[np.ndarray] = []
-        for key, true in test_arrays_dict.items():
+        for key, vals in test_arrays_dict.items():
+            true = vals['y']
             preds = preds_dict[key]
 
             output_dict[key] = np.sqrt(mean_squared_error(true, preds))
@@ -84,7 +85,7 @@ class ModelBase:
 
         if save_preds:
             for key, val in test_arrays_dict.items():
-                latlons = cast(np.ndarray, val.latlons)
+                latlons = cast(np.ndarray, val['latlons'])
                 preds = preds_dict[key]
 
                 if len(preds.shape) > 1:
