@@ -17,6 +17,28 @@ class ModelArrays:
     latlons: Optional[np.ndarray] = None
 
 
+def train_val_mask(mask_len: int, val_ratio: float = 0.3) -> Tuple[List[bool], List[bool]]:
+    """Makes a trainining and validation mask which can be passed to the dataloader
+
+    Arguments
+    ----------
+    mask_len: int
+        The length of the mask to be created
+    val_ratio: float = 0.3
+        The ratio of instances which should be True for the val mask and False for the train
+        mask
+
+    Returns
+    ----------
+    The train mask and the val mask, both as lists
+    """
+    assert val_ratio < 1, f'Val ratio must be smaller than 1'
+    train_mask = np.random.rand(mask_len) < 1 - val_ratio
+    val_mask = ~train_mask
+
+    return train_mask.tolist(), val_mask.tolist()
+
+
 class DataLoader:
     """Dataloader; lazily load the training and test data
 
@@ -91,6 +113,10 @@ class _BaseIter:
         self.batch_file_size = loader.batch_file_size
         self.shuffle = loader.shuffle
         self.clear_nans = loader.clear_nans
+
+        if self.shuffle:
+            # makes sure they are shuffled every epoch
+            shuffle(self.data_files)
 
         self.normalizing_dict = loader.normalizing_dict
         self.normalizing_array: Optional[Dict[str, np.ndarray]] = None
