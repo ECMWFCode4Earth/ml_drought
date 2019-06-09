@@ -22,7 +22,7 @@ class LinearRegression(ModelBase):
         for x, y in train_dataloader:
             x = x.reshape(x.shape[0], x.shape[1] * x.shape[2])
 
-            self.model.partial_fit(x, y)
+            self.model.partial_fit(x, y.ravel())
 
             train_pred_y = self.model.predict(x)
             train_rmse = np.sqrt(mean_squared_error(y, train_pred_y))

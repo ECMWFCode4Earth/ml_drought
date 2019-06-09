@@ -168,14 +168,22 @@ class _TrainIter(_BaseIter):
             out_x, out_y = [], []
 
             cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
-            for subfolder in self.data_files[self.idx: cur_max_idx]:
+            while self.idx < cur_max_idx:
+                subfolder = self.data_files[self.idx]
                 arrays = self.ds_folder_to_np(subfolder, clear_nans=self.clear_nans,
                                               return_latlons=False)
+                if arrays.x.shape[0] == 0:
+                    print(f'{subfolder} returns no values. Skipping')
+                    cur_max_idx = min(cur_max_idx + 1, self.max_idx)
                 out_x.append(arrays.x)
                 out_y.append(arrays.y)
+                self.idx += 1
 
-            self.idx = self.idx + self.batch_file_size
-            return np.concatenate(out_x, axis=0), np.concatenate(out_y, axis=0)
+            final_x = np.concatenate(out_x, axis=0)
+            final_y = np.concatenate(out_y, axis=0)
+            if final_x.shape[0] == 0:
+                raise StopIteration()
+            return final_x, final_y
         else:
             raise StopIteration()
 
@@ -188,12 +196,19 @@ class _TestIter(_BaseIter):
             out_dict = {}
 
             cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
-            for subtrain in self.data_files[self.idx: cur_max_idx]:
-                modelarrays = self.ds_folder_to_np(subtrain, clear_nans=self.clear_nans,
-                                                   return_latlons=True)
-                out_dict[subtrain.parts[-1]] = modelarrays
+            while self.idx < cur_max_idx:
+                subfolder = self.data_files[self.idx]
+                arrays = self.ds_folder_to_np(subfolder, clear_nans=self.clear_nans,
+                                              return_latlons=True)
+                if arrays.x.shape[0] == 0:
+                    print(f'{subfolder} returns no values. Skipping')
+                    cur_max_idx = min(cur_max_idx + 1, self.max_idx)
+                else:
+                    out_dict[subfolder.parts[-1]] = arrays
+                self.idx += 1
 
-            self.idx = self.idx + self.batch_file_size
+            if len(out_dict) == 0:
+                raise StopIteration()
             return out_dict
         else:
             raise StopIteration()

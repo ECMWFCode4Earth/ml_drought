@@ -142,7 +142,7 @@ class Engineer:
                           years: List[int],
                           target_variable: str,
                           pred_months: int = 11,
-                          expected_length: Optional[int] = 11,
+                          expected_length: Optional[int] = 11
                           ) -> xr.Dataset:
         years.sort()
 
@@ -173,7 +173,7 @@ class Engineer:
                     target_variable: str,
                     target_month: int,
                     pred_months: int,
-                    expected_length: Optional[int],
+                    expected_length: Optional[int]
                     ) -> Tuple[Optional[Dict[str, xr.Dataset]], date]:
 
         print(f'Generating data for year: {year}, target month: {target_month}')
@@ -229,11 +229,12 @@ class Engineer:
             mean = x_data[var].mean(dim=['lat', 'lon'], skipna=True).values
             std = x_data[var].std(dim=['lat', 'lon'], skipna=True).values
 
-            if var in self.normalization_values:
-                self.normalization_values[var]['mean'] += mean
-                self.normalization_values[var]['std'] += std
-            else:
-                self.normalization_values[var]['mean'] = mean
-                self.normalization_values[var]['std'] = std
+            if not (np.isnan(mean).any() or np.isnan(std).any()):
+                if var in self.normalization_values:
+                    self.normalization_values[var]['mean'] += mean
+                    self.normalization_values[var]['std'] += std
+                else:
+                    self.normalization_values[var]['mean'] = mean
+                    self.normalization_values[var]['std'] = std
 
         self.num_normalization_values += 1
