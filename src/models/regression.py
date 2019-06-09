@@ -4,7 +4,8 @@ from sklearn.metrics import mean_squared_error
 
 from typing import Dict, Tuple
 
-from .base import ModelBase, ModelArrays
+from .base import ModelBase
+from .data import DataLoader
 
 
 class LinearRegression(ModelBase):
@@ -13,17 +14,20 @@ class LinearRegression(ModelBase):
 
     def train(self) -> None:
         print(f'Training {self.model_name}')
-        x, y = self.load_train_arrays()
 
-        x = x.reshape(x.shape[0], x.shape[1] * x.shape[2])
+        train_dataloader = DataLoader(data_path=self.data_path, batch_file_size=self.batch_size,
+                                      shuffle_data=True, mode='train')
+        self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
 
-        self.model: linear_model.LinearRegression = linear_model.LinearRegression()
-        self.model.fit(x, y)
+        for x, y in train_dataloader:
+            x = x.reshape(x.shape[0], x.shape[1] * x.shape[2])
 
-        train_pred_y = self.model.predict(x)
-        train_rmse = np.sqrt(mean_squared_error(y, train_pred_y))
+            self.model.partial_fit(x, y)
 
-        print(f'Train set RMSE: {train_rmse}')
+            train_pred_y = self.model.predict(x)
+            train_rmse = np.sqrt(mean_squared_error(y, train_pred_y))
+
+            print(f'Train set RMSE: {train_rmse}')
 
     def save_model(self) -> None:
 
@@ -34,18 +38,23 @@ class LinearRegression(ModelBase):
         coefs = self.model.coef_
         np.save(self.model_dir / 'model.npy', coefs)
 
-    def predict(self) -> Tuple[Dict[str, ModelArrays], Dict[str, np.ndarray]]:
-        test_arrays = self.load_test_arrays()
+    def predict(self) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+
+        test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=self.batch_size,
+                                        shuffle_data=False, mode='test')
 
         preds_dict: Dict[str, np.ndarray] = {}
+        test_arrays_dict: Dict[str, np.ndarray] = {}
 
         if self.model is None:
             self.train()
-            self.model: linear_model.LinearRegression
+            self.model: linear_model.SGDRegressor
 
-        for key, val in test_arrays.items():
-            preds = self.model.predict(val.x.reshape(val.x.shape[0],
-                                                     val.x.shape[1] * val.x.shape[2]))
-            preds_dict[key] = preds
+        for dict in test_arrays_loader:
+            for key, val in dict.items():
+                preds = self.model.predict(val.x.reshape(val.x.shape[0],
+                                                         val.x.shape[1] * val.x.shape[2]))
+                preds_dict[key] = preds
+                test_arrays_dict[key] = val.y
 
-        return test_arrays, preds_dict
+        return test_arrays_dict, preds_dict

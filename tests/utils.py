@@ -4,7 +4,7 @@ import xarray as xr
 
 
 def _make_dataset(size, variable_name='VHI', lonmin=-180.0, lonmax=180.0,
-                  latmin=-55.152, latmax=75.024, add_times=True):
+                  latmin=-55.152, latmax=75.024, add_times=True, const=False):
 
     lat_len, lon_len = size
     # create the vector
@@ -21,6 +21,8 @@ def _make_dataset(size, variable_name='VHI', lonmin=-180.0, lonmax=180.0,
         dims.insert(0, 'time')
         coords['time'] = times
     var = np.random.randint(100, size=size)
+    if const:
+        var *= 0
 
     ds = xr.Dataset({variable_name: (dims, var)}, coords=coords)
 
