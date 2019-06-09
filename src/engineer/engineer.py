@@ -1,10 +1,12 @@
 import numpy as np
 import calendar
+from collections import defaultdict
 from datetime import datetime, date
 from pathlib import Path
+import pickle
 import xarray as xr
 
-from typing import cast, Dict, List, Optional, Union, Tuple
+from typing import cast, DefaultDict, Dict, List, Optional, Union, Tuple
 
 from ..utils import minus_months
 
@@ -33,6 +35,9 @@ class Engineer:
         self.output_folder = data_folder / 'features'
         if not self.output_folder.exists():
             self.output_folder.mkdir()
+
+        self.num_normalization_values: int = 0
+        self.normalization_values: DefaultDict[str, Dict[str, np.ndarray]] = defaultdict(dict)
 
     def engineer(self, test_year: Union[int, List[int]],
                  target_variable: str = 'VHI',
@@ -71,6 +76,14 @@ class Engineer:
 
         self._stratify_training_data(train_ds, target_variable, pred_months,
                                      expected_length)
+
+        for var in self.normalization_values.keys():
+            self.normalization_values[var]['mean'] /= self.num_normalization_values
+            self.normalization_values[var]['std'] /= self.num_normalization_values
+
+        savepath = self.output_folder / 'normalizing_dict.pkl'
+        with savepath.open('wb') as f:
+            pickle.dump(self.normalization_values, f)
 
     def _get_preprocessed_files(self) -> List[Path]:
         processed_files = []
@@ -120,6 +133,7 @@ class Engineer:
                                                     target_variable, cur_pred_month,
                                                     pred_months, expected_length)
             if arrays is not None:
+                self.calculate_normalization_values(arrays['x'])
                 self._save(arrays, year=cur_pred_year, month=cur_pred_month,
                            dataset_type='train')
             cur_pred_year, cur_pred_month = cur_min_date.year, cur_min_date.month
@@ -208,3 +222,18 @@ class Engineer:
 
         for x_or_y, output_ds in ds_dict.items():
             output_ds.to_netcdf(output_location / f'{x_or_y}.nc')
+
+    def calculate_normalization_values(self, x_data: xr.Dataset) -> None:
+
+        for var in x_data.data_vars:
+            mean = x_data[var].mean(dim=['lat', 'lon']).values
+            std = x_data[var].std(dim=['lat', 'lon']).values
+
+            if var in self.normalization_values:
+                self.normalization_values[var]['mean'] += mean
+                self.normalization_values[var]['std'] += std
+            else:
+                self.normalization_values[var]['mean'] = mean
+                self.normalization_values[var]['std'] = std
+
+            self.num_normalization_values += 1

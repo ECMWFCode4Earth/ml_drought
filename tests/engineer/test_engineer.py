@@ -1,4 +1,5 @@
 import pytest
+import pickle
 import numpy as np
 import xarray as xr
 
@@ -19,7 +20,7 @@ class TestEngineer:
             (interim_folder / f'{var}_preprocessed').mkdir()
 
             # this file should be captured
-            data, _, _ = _make_dataset((10, 10), var)
+            data, _, _ = _make_dataset((10, 10), var, const=True)
             filename = interim_folder / f'{var}_preprocessed/hello.nc'
             data.to_netcdf(filename)
 
@@ -108,3 +109,15 @@ class TestEngineer:
 
         assert len(list((tmp_path / 'features/train').glob('2001_*'))) == 0, \
             'Test data in the training data!'
+
+        assert (tmp_path / 'features/normalizing_dict.pkl').exists(), \
+            f'Normalizing dict not saved!'
+        with (tmp_path / 'features/normalizing_dict.pkl').open('rb') as f:
+            norm_dict = pickle.load(f)
+
+        for key, val in norm_dict.items():
+            assert key in {'a', 'b'}, f'Unexpected key!'
+            assert np.count_nonzero(norm_dict[key]['mean']) == 0, \
+                f'Mean incorrectly calculated!'
+            assert np.count_nonzero(norm_dict[key]['std']) == 0, \
+                f'Std incorrectly calculated!'
