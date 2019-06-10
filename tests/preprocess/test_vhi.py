@@ -179,7 +179,7 @@ class TestVHIPreprocessor:
         demo_raw_folder.mkdir(parents=True, exist_ok=True)
         # make the dataset
         dataset = self._make_vhi_dataset()
-        data_path = demo_raw_folder /'testy_test.nc'
+        data_path = demo_raw_folder / 'testy_test.nc'
         dataset.to_netcdf(path=data_path)
 
         ethiopia = get_ethiopia()
