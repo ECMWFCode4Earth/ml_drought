@@ -211,7 +211,7 @@ class TestVHIPreprocessor:
         regrid_dataset.to_netcdf(regrid_path)
 
         # build the Preprocessor object and subset with a different subset_str
-        v._preprocess_wrapper(
+        out_path = v._preprocess_wrapper(
             netcdf_filepath=out, subset_str='ethiopia',
             regrid=regrid_path
         )
