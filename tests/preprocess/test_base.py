@@ -65,3 +65,9 @@ class TestBase:
         output = BasePreProcessor.load_reference_grid(tmp_path / 'regridder.nc')
 
         assert set(output.variables) == {'lat', 'lon'}, f'Got extra variables: {output.variables}'
+
+    def test_chop_roi(self):
+        test_dataset, _, _ = _make_dataset(size=(10, 10))
+        test_dataset.to_netcdf(tmp_path / 'regridder.nc')
+        output.chop_roi
+        assert

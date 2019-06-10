@@ -116,15 +116,17 @@ class TestCHIRPSPreprocessor:
         dataset.to_netcdf(path=data_path)
         ethiopia = get_ethiopia()
 
-
+        # regrid the datasets
         regrid_dataset, _, _ = _make_dataset(size=(20, 20),
-                                     latmin=ethiopia.latmin, latmax=ethiopia.latmax,
-                                     lonmin=ethiopia.lonmin, lonmax=ethiopia.lonmax)
+                               latmin=ethiopia.latmin, latmax=ethiopia.latmax,
+                               lonmin=ethiopia.lonmin, lonmax=ethiopia.lonmax)
         regrid_path = tmp_path / 'regridder.nc'
         regrid_dataset.to_netcdf(regrid_path)
+
+        # build the Preprocessor object and subset with a different subset_str
         processor = CHIRPSPreprocesser(tmp_path)
         processor.preprocess(subset_str='ethiopia', regrid=regrid_path,
-                     parallel=False)
+                             parallel=False)
 
         expected_out_path = tmp_path / 'interim/chirps_preprocessed/chirps_ethiopia.nc'
         assert expected_out_path.exists(), \
