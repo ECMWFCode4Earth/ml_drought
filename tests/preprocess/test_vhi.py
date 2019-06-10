@@ -8,6 +8,25 @@ from src.preprocess import VHIPreprocessor
 class TestVHIPreprocessor:
 
     @staticmethod
+    def _make_vhi_dataset():
+        # build dummy .nc object
+        height = list(range(0, 3616))
+        width = list(range(0, 10000))
+        vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
+
+        ds = xr.Dataset(
+            {'VCI': (['HEIGHT', 'WIDTH'], vci),
+             'TCI': (['HEIGHT', 'WIDTH'], tci),
+             'VHI': (['HEIGHT', 'WIDTH'], vhi)},
+            coords={
+                'HEIGHT': height,
+                'WIDTH': width}
+        )
+
+        return ds
+
+
+    @staticmethod
     def test_vhi_init_directories_created(tmp_path):
         v = VHIPreprocessor(tmp_path)
 
@@ -150,3 +169,20 @@ class TestVHIPreprocessor:
         out_variables = [var for var in out_ds.variables.keys() if var not in out_dims]
         assert out_variables == ['VHI'], \
             f'Expected dataset variables to only have VHI, got {out_variables}'
+
+
+    def test_alternative_region(self, tmp_path):
+        # make the dataset
+        (tmp_path / 'data/raw/vhi').mkdir(parents=True)
+        data_path = tmp_path / 'raw/vhi/1981/testy_test.nc'
+        dataset = self._make_vhi_dataset()
+        dataset.to_netcdf(path=data_path)
+        ethiopia = get_ethiopia()
+
+        # build the Preprocessor object and subset with a different subset_str
+        processor = CHIRPSPreprocesser(tmp_path)
+        processor.preprocess(subset_str='ethiopia', regrid=regrid_path,
+                             parallel=False)
+        expected_out_path = tmp_path / 'interim/vhi_preprocessed/vhi_ethiopia.nc'
+        assert expected_out_path.exists(), \
+            f'Expected processed file to be saved to {expected_out_path}'

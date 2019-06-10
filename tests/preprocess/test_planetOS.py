@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 from src.preprocess import PlanetOSPreprocessor
-from src.utils import get_kenya
+from src.utils import get_kenya, get_ethiopia
 
 from ..utils import _make_dataset
 

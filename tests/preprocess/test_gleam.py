@@ -3,7 +3,7 @@ import numpy as np
 from datetime import datetime
 
 from src.preprocess import GLEAMPreprocessor
-from src.utils import get_kenya
+from src.utils import get_kenya, get_ethiopia
 
 from ..utils import _make_dataset
 
