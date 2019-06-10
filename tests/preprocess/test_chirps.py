@@ -117,9 +117,11 @@ class TestCHIRPSPreprocessor:
         ethiopia = get_ethiopia()
 
         # regrid the datasets
-        regrid_dataset, _, _ = _make_dataset(size=(20, 20),
-                               latmin=ethiopia.latmin, latmax=ethiopia.latmax,
-                               lonmin=ethiopia.lonmin, lonmax=ethiopia.lonmax)
+        regrid_dataset, _, _ = _make_dataset(
+            size=(20, 20), latmin=ethiopia.latmin,
+            latmax=ethiopia.latmax, lonmin=ethiopia.lonmin,
+            lonmax=ethiopia.lonmax
+        )
         regrid_path = tmp_path / 'regridder.nc'
         regrid_dataset.to_netcdf(regrid_path)
 
