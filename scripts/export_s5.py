@@ -1,7 +1,7 @@
 import os; import sys
 sys.path.append('..')
 
-from src.exporters.s5 import (S5Exporter)
+from src.exporters.seas5.s5 import (S5Exporter)
 from pathlib import Path
 import numpy as np
 
@@ -20,14 +20,14 @@ s5 = S5Exporter(
 )
 
 variable = 'total_precipitation'
-min_year = 2015
-max_year = 2018
+min_year = 1993
+max_year = 2014
 min_month = 1
 max_month = 12
 max_leadtime = None
 pressure_levels = [200, 500, 925]
 selection_request = None
-N_parallel_requests = 20
+n_parallel_requests = 20
 show_api_request = True
 
 s5.export(
@@ -38,5 +38,5 @@ s5.export(
     max_month=max_month,
     max_leadtime=max_leadtime,
     pressure_levels=pressure_levels,
-    N_parallel_requests=N_parallel_requests,
+    n_parallel_requests=n_parallel_requests,
 )
