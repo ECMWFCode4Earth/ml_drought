@@ -171,7 +171,7 @@ class TestVHIPreprocessor:
         assert out_variables == ['VHI'], \
             f'Expected dataset variables to only have VHI, got {out_variables}'
 
-    def test_alternative_region(self, tmp_path):
+    def test_alternative_region_interim_creation(self, tmp_path):
         v = VHIPreprocessor(tmp_path)
 
         # get filename
@@ -213,7 +213,7 @@ class TestVHIPreprocessor:
             regrid=regrid_dataset
         )
 
-        expected_out_path = tmp_path / 'interim/vhi_preprocessed/\
+        expected_out_path = tmp_path / 'interim/vhi_interim/\
         STAR_VHP.G04.C07.NC_1981_8_31_ethiopia_VH.nc'.replace(' ', '')
         assert expected_out_path.exists(), \
             f'Expected processed file to be saved to {expected_out_path}'
