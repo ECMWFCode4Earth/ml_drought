@@ -25,7 +25,6 @@ class TestVHIPreprocessor:
 
         return ds
 
-
     @staticmethod
     def test_vhi_init_directories_created(tmp_path):
         v = VHIPreprocessor(tmp_path)
@@ -170,17 +169,24 @@ class TestVHIPreprocessor:
         assert out_variables == ['VHI'], \
             f'Expected dataset variables to only have VHI, got {out_variables}'
 
-
     def test_alternative_region(self, tmp_path):
         # make the dataset
-        (tmp_path / 'data/raw/vhi').mkdir(parents=True)
+        (tmp_path / 'data/raw/vhi/1981').mkdir(parents=True)
         data_path = tmp_path / 'raw/vhi/1981/testy_test.nc'
         dataset = self._make_vhi_dataset()
         dataset.to_netcdf(path=data_path)
+
         ethiopia = get_ethiopia()
 
+        regrid_dataset, _, _ = _make_dataset(size=(20, 20),
+                                             latmin=kenya.latmin, latmax=kenya.latmax,
+                                             lonmin=kenya.lonmin, lonmax=kenya.lonmax)
+
+        regrid_path = tmp_path / 'regridder.nc'
+        regrid_dataset.to_netcdf(regrid_path)
+
         # build the Preprocessor object and subset with a different subset_str
-        processor = CHIRPSPreprocesser(tmp_path)
+        processor = VHIPreprocessor(tmp_path)
         processor.preprocess(subset_str='ethiopia', regrid=regrid_path,
                              parallel=False)
         expected_out_path = tmp_path / 'interim/vhi_preprocessed/vhi_ethiopia.nc'

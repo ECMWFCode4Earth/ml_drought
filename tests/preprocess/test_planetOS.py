@@ -117,3 +117,26 @@ class TestPlanetOSPreprocessor:
 
         assert (rotated_ds.lon.min() > -180) & (rotated_ds.lon.max() < 180), \
             f'Longitudes not properly rotated!'
+
+    def test_alternative_region(self, tmp_path):
+        # make the dataset
+        (tmp_path / 'raw/era5POS/global').mkdir(parents=True)
+        data_path = tmp_path / 'raw/era5POS/global/testy_test.nc'
+        dataset = self._make_era5POS_dataset(size=(100, 100))
+        dataset.to_netcdf(path=data_path)
+        ethiopia = get_ethiopia()
+
+        regrid_dataset, _, _ = _make_dataset(size=(20, 20),
+                                             latmin=kenya.latmin, latmax=kenya.latmax,
+                                             lonmin=kenya.lonmin, lonmax=kenya.lonmax)
+
+        regrid_path = tmp_path / 'regridder.nc'
+        regrid_dataset.to_netcdf(regrid_path)
+
+        processor = PlanetOSPreprocessor(tmp_path)
+        processor.preprocess(subset_str='ethiopia', regrid=regrid_path,
+                             parallel=False)
+
+        expected_out_path = tmp_path / 'interim/era5POS_preprocessed/era5POS_ethiopia.nc'
+        assert expected_out_path.exists(), \
+            f'Expected processed file to be saved to {expected_out_path}'

@@ -137,8 +137,7 @@ class TestGLEAMPreprocessor:
 
         # build the Preprocessor object and subset with a different subset_str
         processor = GLEAMPreprocessor(tmp_path)
-        processor.preprocess(subset_str='ethiopia', regrid=regrid_path,
-                             parallel=False)
+        processor.preprocess(subset_str='ethiopia', regrid=regrid_path)
 
         expected_out_path = tmp_path / 'interim/gleam_preprocessed/gleam_ethiopia.nc'
         assert expected_out_path.exists(), \
