@@ -213,14 +213,9 @@ class TestVHIPreprocessor:
             regrid=regrid_dataset
         )
 
-        assert isinstance(out, dict)
-
-        # build the Preprocessor object and subset with a different subset_str
-        # out_path = v._preprocess_wrapper(
-        #     netcdf_filepath=out, subset_str='ethiopia',
-        #     regrid=regrid_path
-        # )
-        # expected_out_path = tmp_path / 'interim/vhi_preprocessed/\
-        # STAR_VHP.G04.C07.NC_1981_8_31_ethiopia_VH.nc'.replace(' ', '')
-        # assert expected_out_path.exists(), \
-        #     f'Expected processed file to be saved to {expected_out_path}'
+        expected_out_path = tmp_path / 'interim/vhi_preprocessed/\
+        STAR_VHP.G04.C07.NC_1981_8_31_ethiopia_VH.nc'.replace(' ', '')
+        assert expected_out_path.exists(), \
+            f'Expected processed file to be saved to {expected_out_path}'
+        assert out == expected_out_path, f"Expected: {expected_out_path}, \
+        Got: {out}"
