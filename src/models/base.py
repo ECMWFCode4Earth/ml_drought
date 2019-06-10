@@ -1,22 +1,10 @@
 from pathlib import Path
-import pickle
 import numpy as np
 import json
-import xarray as xr
 import pandas as pd
-from dataclasses import dataclass
 from sklearn.metrics import mean_squared_error
 
 from typing import cast, Any, Dict, List, Optional, Tuple
-
-
-@dataclass
-class ModelArrays:
-    x: np.ndarray
-    y: np.ndarray
-    x_vars: List[str]
-    y_var: str
-    latlons: Optional[np.ndarray] = None
 
 
 class ModelBase:
@@ -30,8 +18,9 @@ class ModelBase:
     model_name: str  # to be added by the model classes
 
     def __init__(self, data_folder: Path = Path('data'),
-                 normalize_inputs: bool = True) -> None:
+                 batch_size: int = 1) -> None:
 
+        self.batch_size = batch_size
         self.data_path = data_folder
         self.models_dir = data_folder / 'models'
         if not self.models_dir.exists():
@@ -47,16 +36,12 @@ class ModelBase:
         self.model: Any = None  # to be added by the model classes
         self.data_vars: Optional[List[str]] = None  # to be added by the train step
 
-        self.normalize_inputs = normalize_inputs
-        if self.normalize_inputs:
-            self.normalizing_values: Optional[Dict[str, np.ndarray]] = None
-
     def train(self) -> None:
         raise NotImplementedError
 
-    def predict(self) -> Tuple[Dict[str, ModelArrays], Dict[str, np.ndarray]]:
+    def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         # This method should return the test arrays as loaded by
-        # load_test_arrays, and the corresponding predictions
+        # the test array dataloader, and the corresponding predictions
         raise NotImplementedError
 
     def save_model(self) -> None:
@@ -80,9 +65,9 @@ class ModelBase:
         output_dict: Dict[str, int] = {}
         total_preds: List[np.ndarray] = []
         total_true: List[np.ndarray] = []
-        for key, val in test_arrays_dict.items():
+        for key, vals in test_arrays_dict.items():
+            true = vals['y']
             preds = preds_dict[key]
-            true = val.y
 
             output_dict[key] = np.sqrt(mean_squared_error(true, preds))
 
@@ -100,7 +85,7 @@ class ModelBase:
 
         if save_preds:
             for key, val in test_arrays_dict.items():
-                latlons = cast(np.ndarray, val.latlons)
+                latlons = cast(np.ndarray, val['latlons'])
                 preds = preds_dict[key]
 
                 if len(preds.shape) > 1:
@@ -111,112 +96,3 @@ class ModelBase:
                     'lon': latlons[:, 1]}).set_index(['lat', 'lon']).to_xarray()
 
                 preds_xr.to_netcdf(self.model_dir / f'preds_{key}.nc')
-
-    def load_test_arrays(self) -> Dict[str, ModelArrays]:
-        test_data_path = self.data_path / 'features/test'
-
-        out_dict = {}
-        for subtrain in test_data_path.iterdir():
-            if (subtrain / 'x.nc').exists() and (subtrain / 'y.nc').exists():
-                modelarrays = self.ds_folder_to_np(subtrain, clear_nans=True,
-                                                   return_latlons=True)
-                modelarrays.x = self.normalize(modelarrays.x, 'test')
-                out_dict[subtrain.parts[-1]] = modelarrays
-        return out_dict
-
-    def load_train_arrays(self) -> Tuple[np.ndarray, np.ndarray]:
-        print('Loading training arrays')
-        train_data_path = self.data_path / 'features/train'
-
-        out_x, out_y = [], []
-        for subtrain in train_data_path.iterdir():
-            if (subtrain / 'x.nc').exists() and (subtrain / 'y.nc').exists():
-                arrays = self.ds_folder_to_np(subtrain, clear_nans=True,
-                                              return_latlons=False)
-                out_x.append(arrays.x)
-                out_y.append(arrays.y)
-        return (self.normalize(np.concatenate(out_x, axis=0), 'train'),
-                np.concatenate(out_y, axis=0))
-
-    @staticmethod
-    def ds_folder_to_np(folder: Path,
-                        clear_nans: bool = True,
-                        return_latlons: bool = False,
-                        ) -> ModelArrays:
-
-        x, y = xr.open_dataset(folder / 'x.nc'), xr.open_dataset(folder / 'y.nc')
-        assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable!'
-        x_np, y_np = x.to_array().values, y.to_array().values
-
-        # first, x
-        x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
-        x_np = np.moveaxis(np.moveaxis(x_np, 0, 1), -1, 0)
-        # then, y
-        y_np = y_np.reshape(y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
-        y_np = np.moveaxis(y_np, -1, 0).reshape(-1, 1)
-
-        assert y_np.shape[0] == x_np.shape[0], f'x and y data have a different ' \
-            f'number of instances! x: {x_np.shape[0]}, y: {y_np.shape[0]}'
-
-        if clear_nans:
-            # remove nans if they are in the x or y data
-            x_nans, y_nans = np.isnan(x_np), np.isnan(y_np)
-
-            x_nans_summed = x_nans.reshape(x_nans.shape[0],
-                                           x_nans.shape[1] * x_nans.shape[2]).sum(axis=-1)
-            y_nans_summed = y_nans.sum(axis=-1)
-
-            notnan_indices = np.where((x_nans_summed == 0) & (y_nans_summed == 0))[0]
-            x_np, y_np = x_np[notnan_indices], y_np[notnan_indices]
-
-        if return_latlons:
-            lons, lats = np.meshgrid(x.lon.values, x.lat.values)
-            flat_lats, flat_lons = lats.reshape(-1, 1), lons.reshape(-1, 1)
-            latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
-
-            if clear_nans:
-                latlons = latlons[notnan_indices]
-            return ModelArrays(x=x_np, y=y_np, x_vars=list(x.data_vars),
-                               y_var=list(y.data_vars)[0], latlons=latlons)
-
-        return ModelArrays(x=x_np, y=y_np, x_vars=list(x.data_vars),
-                           y_var=list(y.data_vars)[0])
-
-    def normalize(self, x_in: np.ndarray, mode: str) -> np.ndarray:
-
-        if not self.normalize_inputs:
-            return x_in
-
-        if self.normalizing_values is None:
-            if mode == 'test':
-                # we normalize using values from the training
-                # array
-                x_norm, _ = self.load_train_arrays()
-                self.normalizing_values = {
-                    'mean': np.mean(x_norm, axis=0),
-                    'std': np.std(x_norm, axis=0)
-                }
-            else:
-                self.normalizing_values = {
-                    'mean': np.mean(x_in, axis=0),
-                    'std': np.std(x_in, axis=0)
-                }
-            # automatically save the normalizing values
-            savepath = self.model_dir / 'normalizing_values.pkl'
-            with savepath.open('wb') as f:
-                pickle.dump(self.normalizing_values, f)
-
-        return (x_in - self.normalizing_values['mean']) / self.normalizing_values['std']
-
-    def load_normalizing_values(self) -> None:
-
-        savepath = self.model_dir / 'normalizing_values.pkl'
-        if savepath.exists():
-            with savepath.open('rb') as f:
-                self.normalizing_values = pickle.load(f)
-        else:
-            x_norm, _ = self.load_train_arrays()
-            self.normalizing_values = {
-                'mean': np.mean(x_norm, axis=0),
-                'std': np.std(x_norm, axis=0)
-            }
