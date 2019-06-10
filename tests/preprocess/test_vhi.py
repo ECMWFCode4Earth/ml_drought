@@ -179,8 +179,8 @@ class TestVHIPreprocessor:
         ethiopia = get_ethiopia()
 
         regrid_dataset, _, _ = _make_dataset(size=(20, 20),
-                                             latmin=kenya.latmin, latmax=kenya.latmax,
-                                             lonmin=kenya.lonmin, lonmax=kenya.lonmax)
+                                             latmin=ethiopia.latmin, latmax=ethiopia.latmax,
+                                             lonmin=ethiopia.lonmin, lonmax=ethiopia.lonmax)
 
         regrid_path = tmp_path / 'regridder.nc'
         regrid_dataset.to_netcdf(regrid_path)
