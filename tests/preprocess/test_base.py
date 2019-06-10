@@ -67,7 +67,16 @@ class TestBase:
         assert set(output.variables) == {'lat', 'lon'}, f'Got extra variables: {output.variables}'
 
     def test_chop_roi(self):
-        test_dataset, _, _ = _make_dataset(size=(10, 10))
-        test_dataset.to_netcdf(tmp_path / 'regridder.nc')
-        output.chop_roi
-        assert
+        size_original = (80, 80)
+        original_ds, _, _ = _make_dataset(size_original)
+
+        original_shape = original_ds.VHI.shape
+
+        processor = BasePreProcessor(tmp_path)
+        subset_str = 'east_africa'
+        new_ds = processor.chop_roi(ds=original_ds, subset_str=subset_str)
+        output_shape = new_ds.VHI.shape
+
+        assert original_shape != output_shape, f"The chop_roi should lead to\
+        smaller datasets than the original. Expected output_shape: {output_shape}\
+        to be different from original_shape: {original_shape}"
