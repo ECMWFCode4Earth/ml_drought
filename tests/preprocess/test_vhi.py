@@ -199,6 +199,16 @@ class TestVHIPreprocessor:
             netcdf_filepath.as_posix(), v.interim.as_posix(),
         )
 
+        # get regridder
+        regrid_dataset, _, _ = _make_dataset(
+            size=(20, 20), latmin=ethiopia.latmin,
+            latmax=ethiopia.latmax, lonmin=ethiopia.lonmin,
+            lonmax=ethiopia.lonmax
+        )
+
+        regrid_path = tmp_path / 'regridder.nc'
+        regrid_dataset.to_netcdf(regrid_path)
+
         # build the Preprocessor object and subset with a different subset_str
         v._preprocess_wrapper(
             netcdf_filepath=out, subset_str='ethiopia',
