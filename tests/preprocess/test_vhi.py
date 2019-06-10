@@ -207,8 +207,10 @@ class TestVHIPreprocessor:
 
         # run the preprocessing steps
         out = v._preprocess(
-            netcdf_filepath.as_posix(), v.interim.as_posix(),
-            subset_str='ethiopia', regrid=regrid_path
+            netcdf_filepath=netcdf_filepath.as_posix(),
+            output_dir=v.interim.as_posix(),
+            subset_str='ethiopia',
+            regrid=regrid_dataset
         )
 
         # build the Preprocessor object and subset with a different subset_str
