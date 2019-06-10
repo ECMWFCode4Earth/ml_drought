@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 
 from src.preprocess import VHIPreprocessor
+from src.utils import get_ethiopia
+from ..utils import _make_dataset
 
 
 class TestVHIPreprocessor:
