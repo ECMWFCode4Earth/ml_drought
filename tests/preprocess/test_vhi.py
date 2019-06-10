@@ -192,8 +192,7 @@ class TestVHIPreprocessor:
         regrid_dataset.to_netcdf(regrid_path)
 
         # build the Preprocessor object and subset with a different subset_str
-        processor = VHIPreprocessor(tmp_path)
-        processor.preprocess(subset_str='ethiopia', regrid=regrid_path,
+        v.preprocess(subset_str='ethiopia', regrid=regrid_path,
                              parallel=False)
         expected_out_path = tmp_path / 'interim/vhi_preprocessed/vhi_ethiopia.nc'
         assert expected_out_path.exists(), \
