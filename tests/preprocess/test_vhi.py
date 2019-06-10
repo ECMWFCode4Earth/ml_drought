@@ -172,10 +172,14 @@ class TestVHIPreprocessor:
             f'Expected dataset variables to only have VHI, got {out_variables}'
 
     def test_alternative_region(self, tmp_path):
+        # intiailise the preprocessor
+        v = VHIPreprocessor(tmp_path)
+        # initialise the folders
+        demo_raw_folder = (v.raw_folder / 'vhi' / '1981')
+        demo_raw_folder.mkdir(parents=True, exist_ok=True)
         # make the dataset
-        (tmp_path / 'data/raw/vhi/1981').mkdir(parents=True)
-        data_path = tmp_path / 'raw/vhi/1981/testy_test.nc'
         dataset = self._make_vhi_dataset()
+        data_path = demo_raw_folder /'testy_test.nc'
         dataset.to_netcdf(path=data_path)
 
         ethiopia = get_ethiopia()
