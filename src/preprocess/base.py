@@ -147,10 +147,15 @@ class BasePreProcessor:
 
     @staticmethod
     def chop_roi(ds: xr.Dataset,
-                 subset_str: str = 'kenya',) -> xr.Dataset:
+                 subset_str: str = 'kenya',
+                 inverse_lat: bool = False) -> xr.Dataset:
+        """ lookup the region information from the dictionary in
+        `src.utils.region_lookup` and subset the `ds` object based on that
+        region.
+        """
         region = region_lookup[subset_str] if subset_str is not None else None
         if region is not None:
-            ds = select_bounding_box(ds, region)
+            ds = select_bounding_box(ds, region, inverse_lat=inverse_lat)
 
         return ds
 

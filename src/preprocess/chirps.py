@@ -9,8 +9,7 @@ import multiprocessing
 from shutil import rmtree
 from typing import Optional
 
-from .base import BasePreProcessor, get_kenya
-from .utils import select_bounding_box
+from .base import BasePreProcessor
 
 
 class CHIRPSPreprocesser(BasePreProcessor):
@@ -19,7 +18,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
     dataset = 'chirps'
 
     def _preprocess_single(self, netcdf_filepath: Path,
-                           subset_kenya: bool = True,
+                           subset_str: str = 'kenya',
                            regrid: Optional[xr.Dataset] = None) -> None:
         """Run the Preprocessing steps for the CHIRPS data
 
@@ -35,9 +34,8 @@ class CHIRPSPreprocesser(BasePreProcessor):
         ds = xr.open_dataset(netcdf_filepath).rename({'longitude': 'lon', 'latitude': 'lat'})
 
         # 2. chop out EastAfrica
-        if subset_kenya:
-            kenya_region = get_kenya()
-            ds = select_bounding_box(ds, kenya_region)
+        if subset_str is not None:
+            new_ds = self.chop_roi(new_ds, subset_str)
 
         if regrid is not None:
             ds = self.regrid(ds, regrid)
@@ -48,7 +46,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         filename = self.create_filename(
             netcdf_filepath.name,
-            subset_name='kenya' if subset_kenya else None
+            subset_name=subset_str if subset_str is not None else None
         )
         print(f"Saving to {self.interim}/{filename}")
         ds.to_netcdf(self.interim / filename)
@@ -74,7 +72,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
             new_filename = f"{filename_stem}.nc"
         return new_filename
 
-    def preprocess(self, subset_kenya: bool = True,
+    def preprocess(self, subset_str: str = 'kenya',
                    regrid: Optional[Path] = None,
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
@@ -85,7 +83,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         Arguments
         ----------
-        subset_kenya: bool = True
+        subset_str: str = 'kenya'
             Whether to subset Kenya when preprocessing
         regrid: Optional[Path] = None
             If a Path is passed, the CHIRPS files will be regridded to have the same
@@ -112,16 +110,16 @@ class CHIRPSPreprocesser(BasePreProcessor):
             pool = multiprocessing.Pool(processes=100)
             outputs = pool.map(
                 partial(self._preprocess_single,
-                        subset_kenya=subset_kenya,
+                        subset_str=subset_str,
                         regrid=regrid),
                 nc_files)
             print("\nOutputs (errors):\n\t", outputs)
         else:
             for file in nc_files:
-                self._preprocess_single(file, subset_kenya, regrid)
+                self._preprocess_single(file, subset_str, regrid)
 
         # merge all of the timesteps
-        self.merge_files(subset_kenya, resample_time, upsampling)
+        self.merge_files(subset_str, resample_time, upsampling)
 
         if cleanup:
             rmtree(self.interim)

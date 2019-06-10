@@ -19,9 +19,10 @@ from functools import partial
 
 from xarray import Dataset, DataArray
 
-from .base import (BasePreProcessor, get_kenya)
+from .base import (BasePreProcessor,)
 
 from typing import Any, List, Optional, Tuple, Union
+
 
 class VHIPreprocessor(BasePreProcessor):
     """ Preprocesses the VHI data """
@@ -32,7 +33,6 @@ class VHIPreprocessor(BasePreProcessor):
                     netcdf_filepath: str,
                     output_dir: str,
                     subset_str: Optional[str] = 'kenya',
-                    # subset_kenya: bool = True,
                     regrid: Optional[Dataset] = None) -> Path:
         """Run the Preprocessing steps for the NOAA VHI data
 
@@ -61,7 +61,7 @@ class VHIPreprocessor(BasePreProcessor):
         # 5. chop out EastAfrica
         if subset_str is not None:
             new_ds = self.chop_roi(new_ds, subset_str)
-        
+
         if regrid is not None:
             new_ds = self.regrid(new_ds, regrid)
 
@@ -156,7 +156,7 @@ class VHIPreprocessor(BasePreProcessor):
             for file in nc_files:
                 self._preprocess_wrapper(str(file), subset_str=subset_str, regrid=regrid)
 
-        self.merge_files(subset_str, resample_time=resample_time,
+        self.merge_files(subset_str=subset_str, resample_time=resample_time,
                          upsampling=upsampling)
         if cleanup:
             rmtree(self.interim)
