@@ -200,6 +200,7 @@ class TestVHIPreprocessor:
         )
 
         # get regridder
+        ethiopia = get_ethiopia()
         regrid_dataset, _, _ = _make_dataset(
             size=(20, 20), latmin=ethiopia.latmin,
             latmax=ethiopia.latmax, lonmin=ethiopia.lonmin,
