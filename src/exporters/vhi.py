@@ -59,17 +59,30 @@ class VHIExporter(BaseExporter):
         with open(self.raw_folder / 'vhi_export_errors.pkl', 'wb') as f:
             pickle.dump([error[-1] for error in outputs if error is not None], f)
 
-    def run_parallel(self,
-                     vhi_files: List,
-                     ) -> List:
-        pool = Pool(processes=100)
+    def _run_export(self,
+                    vhi_files: List,
+                    num_processes: int = 100
+                    ) -> List:
 
-        # split the filenames into batches of 100
-        batches = [batch for batch in self.chunks(vhi_files, 100)]
+        if num_processes > 1:
+            pool = Pool(processes=num_processes)
 
-        # run in parallel for multiple file downloads
-        args = dict(raw_folder=self.raw_folder)
-        outputs = pool.map(partial(batch_ftp_request, args), batches)
+            # split the filenames into batches of 100
+            batches = [batch for batch in self.chunks(vhi_files, 100)]
+
+            # run in parallel for multiple file downloads
+            args = dict(raw_folder=self.raw_folder)
+            outputs = pool.map(partial(batch_ftp_request, args), batches)
+        else:
+            outputs = []
+            batches = []
+            for vhi_file in vhi_files:
+                try:
+                    batch_ftp_request(args={'raw_folder': self.raw_folder},
+                                      filenames=[vhi_file])
+                    batches.append([vhi_file])
+                except Exception as e:
+                    outputs.append(e)
 
         # write the output (TODO: turn into logging behaviour)
         print("\n\n*************************")
@@ -134,13 +147,8 @@ class VHIExporter(BaseExporter):
 
         return missing_filepaths
 
-    def rerun_missing_files(self):
-        vhi_files = self.get_missing_filepaths()
-
-        batches = self.run_parallel(vhi_files)
-        return batches
-
-    def export(self, years: Optional[List] = None, repeats: int = 5) -> List:
+    def export(self, years: Optional[List] = None, repeats: int = 5,
+               num_processes: int = 100) -> List:
         """Export VHI data from the ftp server.
         By default write output to raw/vhi/{YEAR}/{filename}
 
@@ -149,6 +157,10 @@ class VHIExporter(BaseExporter):
         years : Optional[List] = None
             list of years that you want to download. If None, all years will
             be downloaded
+        repeats: int = 5
+            The number of times to retry downloads which failed
+        num_processes: int = 100
+            The number of processes to run. If 1, the download happens serially
 
         Returns:
         -------
@@ -166,11 +178,11 @@ class VHIExporter(BaseExporter):
         vhi_files = self.get_ftp_filenames(years)
 
         # run the download steps in parallel
-        batches = self.run_parallel(vhi_files)
+        batches = self._run_export(vhi_files, num_processes)
 
         for _ in range(repeats):
             missing_filepaths = self.get_missing_filepaths(vhi_files)
-            batches = self.run_parallel(missing_filepaths)
+            batches = self._run_export(missing_filepaths, num_processes)
             print(f'**{_} of {repeats} VHI Downloads completed **')
 
         return batches
