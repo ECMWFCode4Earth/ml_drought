@@ -42,7 +42,7 @@ class GLEAMPreprocessor(BasePreProcessor):
 
         # 2. chop out EastAfrica
         if subset_str is not None:
-            new_ds = self.chop_roi(new_ds, subset_str, inverse_lat=True)
+            ds = self.chop_roi(ds, subset_str, inverse_lat=True)
 
         if regrid is not None:
             ds = self.regrid(ds, regrid)

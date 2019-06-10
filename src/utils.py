@@ -21,6 +21,7 @@ def get_kenya() -> Region:
     return Region(name='kenya', lonmin=33.501, lonmax=42.283,
                   latmin=-5.202, latmax=6.002)
 
+
 def get_ethiopia() -> Region:
     return Region(name='ethiopia', lonmin=32.9975838, lonmax=47.9823797,
                   latmin=3.397448, latmax=14.8940537)
