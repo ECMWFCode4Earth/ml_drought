@@ -83,7 +83,7 @@ class TestGLEAMPreprocessor:
         regrid_dataset.to_netcdf(regrid_path)
 
         processor = GLEAMPreprocessor(tmp_path)
-        processor.preprocess(subset_kenya=True, regrid=regrid_path)
+        processor.preprocess(subset_str='kenya', regrid=regrid_path)
 
         expected_out_path = tmp_path / 'interim/gleam_preprocessed/gleam_kenya.nc'
         assert expected_out_path.exists(), \

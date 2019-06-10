@@ -81,7 +81,7 @@ class TestPlanetOSPreprocessor:
         regrid_dataset.to_netcdf(regrid_path)
 
         processor = PlanetOSPreprocessor(tmp_path)
-        processor.preprocess(subset_kenya=True, regrid=regrid_path,
+        processor.preprocess(subset_str='kenya', regrid=regrid_path,
                              parallel=False)
 
         expected_out_path = tmp_path / 'interim/era5POS_preprocessed/era5POS_kenya.nc'
