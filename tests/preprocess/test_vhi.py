@@ -193,7 +193,7 @@ class TestVHIPreprocessor:
         regrid_path = tmp_path / 'regridder.nc'
         regrid_dataset.to_netcdf(regrid_path)
 
-        timestamp = v.extract_timestamp(ds, netcdf_filepath, use_filepath=True)
+        timestamp = v.extract_timestamp(ds, data_path, use_filepath=True)
         longitudes, latitudes = v.create_lat_lon_vectors(ds)
         out_ds = v.create_new_dataset(ds,
                                       longitudes,
