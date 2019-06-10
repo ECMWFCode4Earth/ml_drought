@@ -182,19 +182,19 @@ class Engineer:
         max_date_np = np.datetime64(str(max_date))
         max_train_date_np = np.datetime64(str(max_train_date))
 
-        print(f'Max date: {str(max_date)}, max train date: {str(max_train_date)}, '
-              f'min train date: {str(min_date)}')
+        print(f'Max date: {str(max_date)}, max input date: {str(max_train_date)}, '
+              f'min input date: {str(min_date)}')
 
         x = ((ds.time.values > min_date_np) & (ds.time.values <= max_train_date_np))
         y = ((ds.time.values > max_train_date_np) & (ds.time.values <= max_date_np))
 
         if sum(y) != 1:
-            print(f'Wrong number of test y values! Expected 1, got {sum(y)}; returning None')
+            print(f'Wrong number of y values! Expected 1, got {sum(y)}; returning None')
             return None, cast(date, max_train_date)
 
         if expected_length is not None:
             if sum(x) != expected_length:
-                print(f'Wrong number of test x values! Got {sum(x)} Returning None')
+                print(f'Wrong number of x values! Got {sum(x)} Returning None')
 
                 return None, cast(date, max_train_date)
 
