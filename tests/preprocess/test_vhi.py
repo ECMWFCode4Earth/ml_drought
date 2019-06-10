@@ -172,39 +172,38 @@ class TestVHIPreprocessor:
             f'Expected dataset variables to only have VHI, got {out_variables}'
 
     def test_alternative_region(self, tmp_path):
-        # intiailise the preprocessor
         v = VHIPreprocessor(tmp_path)
-        # initialise the folders
+
+        # get filename
         demo_raw_folder = (v.raw_folder / 'vhi' / '1981')
         demo_raw_folder.mkdir(parents=True, exist_ok=True)
-        # make the dataset
-        ds = self._make_vhi_dataset()
-        data_path = demo_raw_folder / 'VHP.G04.C07.NC.P1981035.VH.nc'
-        ds.to_netcdf(path=data_path)
+        netcdf_filepath = demo_raw_folder / 'VHP.G04.C07.NC.P1981035.VH.nc'
 
-        ethiopia = get_ethiopia()
+        # build dummy .nc object
+        height = list(range(0, 3616))
+        width = list(range(0, 10000))
+        vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
 
-        regrid_dataset, _, _ = _make_dataset(
-            size=(20, 20), latmin=ethiopia.latmin,
-            latmax=ethiopia.latmax, lonmin=ethiopia.lonmin,
-            lonmax=ethiopia.lonmax
+        raw_ds = xr.Dataset(
+            {'VCI': (['HEIGHT', 'WIDTH'], vci),
+             'TCI': (['HEIGHT', 'WIDTH'], tci),
+             'VHI': (['HEIGHT', 'WIDTH'], vhi)},
+            coords={
+                'HEIGHT': height,
+                'WIDTH': width}
+        )
+        raw_ds.to_netcdf(netcdf_filepath)
+
+        # run the preprocessing steps
+        out = v._preprocess(
+            netcdf_filepath.as_posix(), v.interim.as_posix(),
         )
 
-        regrid_path = tmp_path / 'regridder.nc'
-        regrid_dataset.to_netcdf(regrid_path)
-
-        timestamp = v.extract_timestamp(ds, data_path.as_posix(), use_filepath=True)
-        longitudes, latitudes = v.create_lat_lon_vectors(ds)
-        out_ds = v.create_new_dataset(ds,
-                                      longitudes,
-                                      latitudes,
-                                      timestamp,
-                                      all_vars=False)
-        out_ds.to_netcdf(v.interim / 'vhi_1981_08_31.nc')
-
         # build the Preprocessor object and subset with a different subset_str
-        v.preprocess(subset_str='ethiopia', regrid=regrid_path,
-                     parallel=False)
+        v._preprocess_wrapper(
+            netcdf_filepath=out, subset_str='ethiopia',
+            regrid=regrid_path
+        )
         expected_out_path = tmp_path / 'interim/vhi_preprocessed/vhi_ethiopia.nc'
         assert expected_out_path.exists(), \
             f'Expected processed file to be saved to {expected_out_path}'
