@@ -179,7 +179,7 @@ class TestVHIPreprocessor:
         demo_raw_folder.mkdir(parents=True, exist_ok=True)
         # make the dataset
         dataset = self._make_vhi_dataset()
-        data_path = demo_raw_folder / 'testy_test.nc'
+        data_path = demo_raw_folder / 'VHP.G04.C07.NC.P1981035.VH.nc'
         dataset.to_netcdf(path=data_path)
 
         ethiopia = get_ethiopia()
@@ -193,12 +193,16 @@ class TestVHIPreprocessor:
         regrid_path = tmp_path / 'regridder.nc'
         regrid_dataset.to_netcdf(regrid_path)
 
-        # build the Preprocessor object and subset with a different subset_str
-        # TODO: what is different about vhi api to cause this?
-        #  the interim files are required to test the preprocessing?
-        dataset.to_netcdf(v.interim / "test1.nc")
-        dataset.to_netcdf(v.interim / "test2.nc")
+        timestamp = processor.extract_timestamp(ds, netcdf_filepath, use_filepath=True)
+        longitudes, latitudes = processor.create_lat_lon_vectors(ds)
+        out_ds = processor.create_new_dataset(ds,
+                                              longitudes,
+                                              latitudes,
+                                              timestamp,
+                                              all_vars=False)
+        out_ds.to_netcdf(v.interim / 'vhi_1981_08_31.nc')
 
+        # build the Preprocessor object and subset with a different subset_str
         v.preprocess(subset_str='ethiopia', regrid=regrid_path,
                      parallel=False)
         expected_out_path = tmp_path / 'interim/vhi_preprocessed/vhi_ethiopia.nc'
