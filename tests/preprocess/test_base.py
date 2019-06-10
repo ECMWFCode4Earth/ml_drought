@@ -66,7 +66,7 @@ class TestBase:
 
         assert set(output.variables) == {'lat', 'lon'}, f'Got extra variables: {output.variables}'
 
-    def test_chop_roi(self):
+    def test_chop_roi(self, tmp_path):
         size_original = (80, 80)
         original_ds, _, _ = _make_dataset(size_original)
 
