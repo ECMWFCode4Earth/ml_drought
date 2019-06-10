@@ -5,8 +5,8 @@ import numpy as np
 
 from typing import List, Optional
 
-from ..utils import Region, get_kenya
-
+from ..utils import Region, get_kenya, region_lookup
+from .utils import select_bounding_box
 
 __all__ = ['BasePreProcessor', 'Region', 'get_kenya']
 
@@ -145,7 +145,16 @@ class BasePreProcessor:
         else:
             return resampler.nearest()
 
-    def merge_files(self, subset_kenya: bool = True,
+    @staticmethod
+    def chop_roi(ds: xr.Dataset,
+                 subset_str: str = 'kenya',) -> xr.Dataset:
+        region = region_lookup[subset_str] if subset_str is not None else None
+        if region is not None:
+            ds = select_bounding_box(ds, region)
+
+        return ds
+
+    def merge_files(self, subset_str: str = 'kenya',
                     resample_time: Optional[str] = 'M',
                     upsampling: bool = False) -> None:
 
@@ -154,6 +163,6 @@ class BasePreProcessor:
         if resample_time is not None:
             ds = self.resample_time(ds, resample_time, upsampling)
 
-        out = self.out_dir / f'{self.dataset}{"_kenya" if subset_kenya else ""}.nc'
+        out = self.out_dir / f'{self.dataset}_{subset_str if subset_str is not None else ""}.nc'
         ds.to_netcdf(out)
         print(f"\n**** {out} Created! ****\n")
