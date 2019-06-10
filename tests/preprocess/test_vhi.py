@@ -184,9 +184,11 @@ class TestVHIPreprocessor:
 
         ethiopia = get_ethiopia()
 
-        regrid_dataset, _, _ = _make_dataset(size=(20, 20),
-                                             latmin=ethiopia.latmin, latmax=ethiopia.latmax,
-                                             lonmin=ethiopia.lonmin, lonmax=ethiopia.lonmax)
+        regrid_dataset, _, _ = _make_dataset(
+            size=(20, 20), latmin=ethiopia.latmin,
+            latmax=ethiopia.latmax, lonmin=ethiopia.lonmin,
+            lonmax=ethiopia.lonmax
+        )
 
         regrid_path = tmp_path / 'regridder.nc'
         regrid_dataset.to_netcdf(regrid_path)
@@ -198,7 +200,7 @@ class TestVHIPreprocessor:
         dataset.to_netcdf(v.interim / "test2.nc")
 
         v.preprocess(subset_str='ethiopia', regrid=regrid_path,
-                             parallel=False)
+                     parallel=False)
         expected_out_path = tmp_path / 'interim/vhi_preprocessed/vhi_ethiopia.nc'
         assert expected_out_path.exists(), \
             f'Expected processed file to be saved to {expected_out_path}'
