@@ -194,11 +194,6 @@ class TestVHIPreprocessor:
         )
         raw_ds.to_netcdf(netcdf_filepath)
 
-        # run the preprocessing steps
-        out = v._preprocess(
-            netcdf_filepath.as_posix(), v.interim.as_posix(),
-        )
-
         # get regridder
         ethiopia = get_ethiopia()
         regrid_dataset, _, _ = _make_dataset(
@@ -210,11 +205,18 @@ class TestVHIPreprocessor:
         regrid_path = tmp_path / 'regridder.nc'
         regrid_dataset.to_netcdf(regrid_path)
 
+        # run the preprocessing steps
+        out = v._preprocess(
+            netcdf_filepath.as_posix(), v.interim.as_posix(),
+            subset_str='ethiopia', regrid=regrid_path
+        )
+
         # build the Preprocessor object and subset with a different subset_str
         out_path = v._preprocess_wrapper(
             netcdf_filepath=out, subset_str='ethiopia',
             regrid=regrid_path
         )
-        expected_out_path = tmp_path / 'interim/vhi_preprocessed/vhi_ethiopia.nc'
+        expected_out_path = tmp_path / 'interim/vhi_preprocessed/\
+        STAR_VHP.G04.C07.NC_1981_8_31_ethiopia_VH.nc'.replace(' ', '')
         assert expected_out_path.exists(), \
             f'Expected processed file to be saved to {expected_out_path}'
