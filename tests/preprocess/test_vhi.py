@@ -192,6 +192,11 @@ class TestVHIPreprocessor:
         regrid_dataset.to_netcdf(regrid_path)
 
         # build the Preprocessor object and subset with a different subset_str
+        # TODO: what is different about vhi api to cause this?
+        #  the interim files are required to test the preprocessing?
+        dataset.to_netcdf(v.interim / "test1.nc")
+        dataset.to_netcdf(v.interim / "test2.nc")
+
         v.preprocess(subset_str='ethiopia', regrid=regrid_path,
                              parallel=False)
         expected_out_path = tmp_path / 'interim/vhi_preprocessed/vhi_ethiopia.nc'
