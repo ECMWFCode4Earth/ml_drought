@@ -174,7 +174,7 @@ class Engineer:
         )
 
         # the train_ds MUST BE from before minimum test date
-        train_dates = ds.time.values < np.datetime64(str(min_test_date))
+        train_dates = ds.time.values <= np.datetime64(str(min_test_date))
         train_ds = ds.isel(time=train_dates)
 
         # save the xy_test dictionary

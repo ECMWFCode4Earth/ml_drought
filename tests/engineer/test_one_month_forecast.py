@@ -56,7 +56,7 @@ class TestOneMonthForecastEngineer(TestEngineer):
             assert len(y.time.values) == 1, 'Wrong number of months in test y dataset'
 
         check_folder(tmp_path / 'features/one_month_forecast/train/1999_12')
-        for month in range(1, 12):
+        for month in range(1, 13):
             check_folder(tmp_path / f'features/one_month_forecast/test/2001_{month}')
             check_folder(tmp_path / f'features/one_month_forecast/train/2000_{month}')
 
