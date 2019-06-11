@@ -75,11 +75,13 @@ class Engineer:
         if type(test_year) is int:
             test_year = [cast(int, test_year)]
 
+        # save test data (x, y) and return the train_ds (subset of `data`)
         train_ds = self._train_test_split(
             data, cast(List, test_year), target_variable,
             pred_months, expected_length
         )
 
+        # train_ds into x, y for each year-month in trianing period
         self._stratify_training_data(train_ds, target_variable, pred_months,
                                      expected_length)
 
@@ -237,6 +239,7 @@ class Engineer:
         output_location.mkdir(exist_ok=True)
 
         for x_or_y, output_ds in ds_dict.items():
+            print(f'Saving data to {output_location.as_posix()}/{x_or_y}.nc')
             output_ds.to_netcdf(output_location / f'{x_or_y}.nc')
 
     def calculate_normalization_values(self, x_data: xr.Dataset) -> None:
