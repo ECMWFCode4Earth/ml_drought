@@ -16,6 +16,6 @@
       ]
   },
   "preprocess":{
-      "vhi": [{"subset_kenya": true}]
+      "vhi": [{"subset_str": "kenya"}]
   }
 }
