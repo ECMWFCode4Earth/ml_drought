@@ -5,7 +5,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from typing import cast, List, Optional, Union
+from typing import cast, Dict, List, Optional, Tuple, Union
 
 from .base import ModelBase
 from .data import DataLoader, train_val_mask
@@ -27,7 +27,6 @@ class LinearNetwork(ModelBase):
 
     def train(self, num_epochs: int = 1,
               early_stopping: Optional[int] = None,
-              batch_size: int = 256,
               learning_rate: float = 1e-3) -> None:
         print(f'Training {self.model_name}')
 
@@ -98,6 +97,27 @@ class LinearNetwork(ModelBase):
                     if batches_without_improvement == early_stopping:
                         print('Early stopping!')
                         return None
+
+    def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
+        test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=self.batch_size,
+                                        shuffle_data=False, mode='test', to_tensor=True)
+
+        preds_dict: Dict[str, np.ndarray] = {}
+        test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
+
+        if self.model is None:
+            self.train()
+            self.model: LinearModel
+
+        self.model.eval()
+        with torch.no_grad():
+            for dict in test_arrays_loader:
+                for key, val in dict.items():
+                    preds = self.model.predict(val.x)
+                    preds_dict[key] = preds.to_numpy()
+                    test_arrays_dict[key] = {'y': val.y.to_numpy(), 'latlons': val.latlons}
+
+        return test_arrays_dict, preds_dict
 
 
 class LinearModel(nn.Module):
