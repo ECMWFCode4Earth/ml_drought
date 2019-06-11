@@ -11,7 +11,7 @@ from ..utils import minus_months
 from .engineer import Engineer
 
 
-class Nowcast(Engineer):
+class NowcastEngineer(Engineer):
     """Engineer the preprocessed `.nc` files into `/train`, `/test` `{x, y}.nc`
     for the `nowcast` experiment.
 

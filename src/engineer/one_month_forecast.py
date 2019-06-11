@@ -11,7 +11,7 @@ from ..utils import minus_months
 from .engineer import Engineer
 
 
-class OneMonthForecast(Engineer):
+class OneMonthForecastEngineer(Engineer):
     def __init__(self, data_folder: Path = Path("data")) -> None:
         self.name: str = "one_month_forecast"
 

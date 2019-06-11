@@ -3,22 +3,22 @@ import pickle
 import numpy as np
 import xarray as xr
 
-from src.engineer import OneMonthForecast
+from src.engineer import OneMonthForecastEngineer
 
 from ..utils import _make_dataset
 from .test_engineer import TestEngineer
 
 
-class TestOneMonthForecast(TestEngineer):
+class TestOneMonthForecastEngineer(TestEngineer):
     def test_init(self, tmp_path):
 
         with pytest.raises(AssertionError) as e:
-            OneMonthForecast(tmp_path)
+            OneMonthForecastEngineer(tmp_path)
             assert 'does not exist. Has the preprocesser been run?' in str(e)
 
         (tmp_path / 'interim').mkdir()
 
-        OneMonthForecast(tmp_path)
+        OneMonthForecastEngineer(tmp_path)
 
         assert (tmp_path / 'features').exists(), 'Features directory not made!'
         assert (tmp_path / 'features' / 'one_month_forecast').exists(), '\
@@ -30,7 +30,7 @@ class TestOneMonthForecast(TestEngineer):
 
         dataset, _, _ = _make_dataset(size=(2, 2))
 
-        engineer = OneMonthForecast(tmp_path)
+        engineer = OneMonthForecastEngineer(tmp_path)
         train = engineer._train_test_split(dataset, years=[2001],
                                            target_variable='VHI')
 
@@ -41,7 +41,7 @@ class TestOneMonthForecast(TestEngineer):
 
         self._setup(tmp_path)
 
-        engineer = OneMonthForecast(tmp_path)
+        engineer = OneMonthForecastEngineer(tmp_path)
         engineer.engineer(test_year=2001, target_variable='a')
 
         def check_folder(folder_path):
