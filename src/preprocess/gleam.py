@@ -22,7 +22,7 @@ class GLEAMPreprocessor(BasePreProcessor):
         return ds.transpose(*expected_dims)
 
     def _preprocess_single(self, netcdf_filepath: Path,
-                           subset_str: str = 'kenya',
+                           subset_str: Optional[str] = 'kenya',
                            regrid: Optional[xr.Dataset] = None) -> None:
         """Run the Preprocessing steps for the GLEAM data
 
@@ -75,7 +75,7 @@ class GLEAMPreprocessor(BasePreProcessor):
             new_filename = f'{filename_stem}.nc'
         return new_filename
 
-    def preprocess(self, subset_str: str = 'kenya',
+    def preprocess(self, subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
@@ -85,7 +85,7 @@ class GLEAMPreprocessor(BasePreProcessor):
 
         Arguments
         ----------
-        subset_str: str = 'kenya'
+        subset_str: Optional[str] = 'kenya'
             Whether to subset Kenya when preprocessing
         regrid: Optional[Path] = None
             If a Path is passed, the CHIRPS files will be regridded to have the same
