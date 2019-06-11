@@ -2,7 +2,7 @@ import numpy as np
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error
 
-from typing import Dict, Tuple, Optional
+from typing import cast, Dict, Tuple, Optional
 
 from .base import ModelBase
 from .utils import chunk_array
@@ -41,6 +41,7 @@ class LinearRegression(ModelBase):
             train_rmse = []
             for x, y in train_dataloader:
                 for batch_x, batch_y in chunk_array(x, y, batch_size):
+                    batch_x, batch_y = cast(np.ndarray, batch_x), cast(np.ndarray, batch_y)
                     batch_x = batch_x.reshape(batch_x.shape[0],
                                               batch_x.shape[1] * batch_x.shape[2])
                     self.model.partial_fit(batch_x, batch_y.ravel())

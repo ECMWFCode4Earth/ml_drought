@@ -16,13 +16,13 @@ def chunk_array(x: Union[torch.Tensor, np.ndarray],
 
 def _chunk_ndarray(x: np.ndarray, y: np.ndarray,
                    batch_size: int) -> Iterable[Tuple[np.ndarray, np.ndarray]]:
-    num_sections = x.shape[0] // batch_size
+    num_sections = max(1, x.shape[0] // batch_size)
 
     return zip(np.array_split(x, num_sections), np.array_split(y, num_sections))
 
 
 def _chunk_tensor(x: torch.Tensor, y: torch.Tensor,
                   batch_size: int) -> Iterable[Tuple[torch.Tensor, torch.Tensor]]:
-    num_sections = x.shape[0] // batch_size
+    num_sections = max(1, x.shape[0] // batch_size)
 
     return zip(torch.chunk(x, num_sections), torch.chunk(y, num_sections))
