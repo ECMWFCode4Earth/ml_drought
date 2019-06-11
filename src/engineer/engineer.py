@@ -1,12 +1,12 @@
 import numpy as np
-from collections import defaultdict
 import calendar
+from collections import defaultdict
 from datetime import datetime, date
 from pathlib import Path
+import pickle
 import xarray as xr
 
-from typing import cast, Dict, List, Optional, Union, Tuple
-from typing import DefaultDict as DDict
+from typing import cast, DefaultDict, Dict, List, Optional, Union, Tuple
 
 from ..utils import minus_months
 
@@ -35,6 +35,9 @@ class Engineer:
         self.output_folder = data_folder / 'features'
         if not self.output_folder.exists():
             self.output_folder.mkdir()
+
+        self.num_normalization_values: int = 0
+        self.normalization_values: DefaultDict[str, Dict[str, np.ndarray]] = defaultdict(dict)
 
     def engineer(self, test_year: Union[int, List[int]],
                  target_variable: str = 'VHI',
@@ -77,10 +80,16 @@ class Engineer:
             pred_months, expected_length
         )
 
-        train_dict = self._stratify_training_data(train_ds, target_variable, pred_months,
-                                                  expected_length)
-        self._save(train_dict, 'train')
-        self._save(test_dict, 'test')
+        self._stratify_training_data(train_ds, target_variable, pred_months,
+                                     expected_length)
+
+        for var in self.normalization_values.keys():
+            self.normalization_values[var]['mean'] /= self.num_normalization_values
+            self.normalization_values[var]['std'] /= self.num_normalization_values
+
+        savepath = self.output_folder / 'normalizing_dict.pkl'
+        with savepath.open('wb') as f:
+            pickle.dump(self.normalization_values, f)
 
     def _get_preprocessed_files(self) -> List[Path]:
         processed_files = []
@@ -106,7 +115,7 @@ class Engineer:
                     assert np.array_equal(datasets[idx][dim].values, coords[dim]), \
                         f'{dim} is different! Was this run using the preprocessor?'
 
-        # join all preprocessed datasets 
+        # join all preprocessed datasets
         main_dataset = datasets[0]
         for dataset in datasets[1:]:
             # ensure equal timesteps ('inner' join)
@@ -118,15 +127,12 @@ class Engineer:
                                 target_variable: str,
                                 pred_months: int = 11,
                                 expected_length: Optional[int] = 11
-                                ) -> DDict[int, DDict[int, Dict[str, xr.Dataset]]]:
+                                ) -> None:
 
         min_date = self.get_datetime(train_ds.time.values.min())
         max_date = self.get_datetime(train_ds.time.values.max())
 
         cur_pred_year, cur_pred_month = max_date.year, max_date.month
-
-        output_dict: DDict[int, DDict[int, Dict[str, xr.Dataset]]] = \
-            defaultdict(lambda: defaultdict(dict))
 
         cur_min_date = max_date
         while cur_min_date >= min_date:
@@ -135,21 +141,18 @@ class Engineer:
                                                     target_variable, cur_pred_month,
                                                     pred_months, expected_length)
             if arrays is not None:
-                output_dict[cur_pred_year][cur_pred_month] = arrays
+                self.calculate_normalization_values(arrays['x'])
+                self._save(arrays, year=cur_pred_year, month=cur_pred_month,
+                           dataset_type='train')
             cur_pred_year, cur_pred_month = cur_min_date.year, cur_min_date.month
-
-        return output_dict
 
     def _train_test_split(self, ds: xr.Dataset,
                           years: List[int],
                           target_variable: str,
                           pred_months: int = 11,
-                          expected_length: Optional[int] = 11,
-                          ) -> Tuple[xr.Dataset, DDict[int, DDict[int, Dict[str, xr.Dataset]]]]:
+                          expected_length: Optional[int] = 11
+                          ) -> xr.Dataset:
         years.sort()
-
-        output_test_arrays: DDict[int, DDict[int, Dict[str, xr.Dataset]]] = \
-            defaultdict(lambda: defaultdict(dict))
 
         xy_test, min_test_date = self.stratify_xy(ds, years[0], target_variable, 1,
                                                   pred_months, expected_length)
@@ -158,7 +161,8 @@ class Engineer:
         train_ds = ds.isel(time=train_dates)
 
         if xy_test is not None:
-            output_test_arrays[years[0]][1] = xy_test
+            self._save(xy_test, year=years[0], month=1,
+                       dataset_type='test')
 
         # each month in test_year produce an x,y pair for testing
         for year in years:
@@ -168,9 +172,9 @@ class Engineer:
                     xy_test, _ = self.stratify_xy(ds, year, target_variable, month,
                                                   pred_months, expected_length)
                     if xy_test is not None:
-                        output_test_arrays[year][month] = xy_test
-
-        return train_ds, output_test_arrays
+                        self._save(xy_test, year=year, month=month,
+                                   dataset_type='test')
+        return train_ds
 
     @staticmethod
     def stratify_xy(ds: xr.Dataset,
@@ -178,7 +182,7 @@ class Engineer:
                     target_variable: str,
                     target_month: int,
                     pred_months: int,
-                    expected_length: Optional[int],
+                    expected_length: Optional[int]
                     ) -> Tuple[Optional[Dict[str, xr.Dataset]], date]:
 
         print(f'Generating data for year: {year}, target month: {target_month}')
@@ -221,18 +225,30 @@ class Engineer:
     def get_datetime(time: np.datetime64) -> date:
         return datetime.strptime(time.astype(str)[:10], '%Y-%m-%d').date()
 
-    def _save(self, ds: DDict[int, DDict[int, Dict[str, xr.Dataset]]],
-              dataset_type: str) -> None:
+    def _save(self, ds_dict: Dict[str, xr.Dataset], year: int,
+              month: int, dataset_type: str) -> None:
 
         save_folder = self.output_folder / dataset_type
         save_folder.mkdir(exist_ok=True)
 
-        for year_key, val in ds.items():
+        output_location = save_folder / f'{year}_{month}'
+        output_location.mkdir(exist_ok=True)
 
-            for month_key, test_dict in val.items():
+        for x_or_y, output_ds in ds_dict.items():
+            output_ds.to_netcdf(output_location / f'{x_or_y}.nc')
 
-                output_location = save_folder / f'{year_key}_{month_key}'
-                output_location.mkdir(exist_ok=True)
+    def calculate_normalization_values(self, x_data: xr.Dataset) -> None:
 
-                for x_or_y, output_ds in test_dict.items():
-                    output_ds.to_netcdf(output_location / f'{x_or_y}.nc')
+        for var in x_data.data_vars:
+            mean = x_data[var].mean(dim=['lat', 'lon'], skipna=True).values
+            std = x_data[var].std(dim=['lat', 'lon'], skipna=True).values
+
+            if not (np.isnan(mean).any() or np.isnan(std).any()):
+                if var in self.normalization_values:
+                    self.normalization_values[var]['mean'] += mean
+                    self.normalization_values[var]['std'] += std
+                else:
+                    self.normalization_values[var]['mean'] = mean
+                    self.normalization_values[var]['std'] = std
+
+        self.num_normalization_values += 1

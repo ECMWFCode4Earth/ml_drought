@@ -3,7 +3,7 @@ import numpy as np
 from datetime import datetime
 
 from src.preprocess import GLEAMPreprocessor
-from src.utils import get_kenya
+from src.utils import get_kenya, get_ethiopia
 
 from ..utils import _make_dataset
 
@@ -83,7 +83,7 @@ class TestGLEAMPreprocessor:
         regrid_dataset.to_netcdf(regrid_path)
 
         processor = GLEAMPreprocessor(tmp_path)
-        processor.preprocess(subset_kenya=True, regrid=regrid_path)
+        processor.preprocess(subset_str='kenya', regrid=regrid_path)
 
         expected_out_path = tmp_path / 'interim/gleam_preprocessed/gleam_kenya.nc'
         assert expected_out_path.exists(), \
@@ -117,3 +117,28 @@ class TestGLEAMPreprocessor:
         out = GLEAMPreprocessor._swap_dims_and_filter(dataset)
 
         assert out.E.values.shape[1:] == (30, 20), f'Array axes not properly swapped!'
+
+    def test_alternative_region(self, tmp_path):
+        # make the dataset
+        (tmp_path / 'raw/gleam/monthly').mkdir(parents=True)
+        data_path = tmp_path / 'raw/gleam/monthly/testy_test.nc'
+        dataset = self._make_gleam_dataset(size=(100, 100))
+        dataset.to_netcdf(path=data_path)
+        ethiopia = get_ethiopia()
+
+        # regrid the datasets
+        regrid_dataset, _, _ = _make_dataset(
+            size=(20, 20), latmin=ethiopia.latmin,
+            latmax=ethiopia.latmax, lonmin=ethiopia.lonmin,
+            lonmax=ethiopia.lonmax
+        )
+        regrid_path = tmp_path / 'regridder.nc'
+        regrid_dataset.to_netcdf(regrid_path)
+
+        # build the Preprocessor object and subset with a different subset_str
+        processor = GLEAMPreprocessor(tmp_path)
+        processor.preprocess(subset_str='ethiopia', regrid=regrid_path)
+
+        expected_out_path = tmp_path / 'interim/gleam_preprocessed/gleam_ethiopia.nc'
+        assert expected_out_path.exists(), \
+            f'Expected processed file to be saved to {expected_out_path}'

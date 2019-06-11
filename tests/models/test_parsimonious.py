@@ -1,33 +1,24 @@
-import numpy as np
-
 from src.models.parsimonious import Persistence
-from src.models.base import ModelArrays
+
+from ..utils import _make_dataset
 
 
 class TestPersistence:
 
-    def test_predict(self, tmp_path, monkeypatch):
+    def test_predict(self, tmp_path):
 
-        batch_size, timesteps, vars = 5, 6, 2
+        x, _, _ = _make_dataset(size=(5, 5))
+        y = x.isel(time=[-1])
 
-        def mockreturn(self):
-            x = np.ones((batch_size, timesteps, vars))
-            print(x.shape)
-            x[:, -1, :] *= 2
+        test_features = tmp_path / 'features/test/hello'
+        test_features.mkdir(parents=True)
 
-            x_vars = ['VHI', 'precip']
-            y = np.ones((batch_size, 1))
-            y_var = 'VHI'
-
-            return {'hello': ModelArrays(x=x, x_vars=x_vars, y=y, y_var=y_var)}
-
-        monkeypatch.setattr(Persistence, 'load_test_arrays', mockreturn)
+        x.to_netcdf(test_features / 'x.nc')
+        y.to_netcdf(test_features / 'y.nc')
 
         predictor = Persistence(tmp_path)
 
         test_arrays, preds = predictor.predict()
 
-        assert preds['hello'].shape == (batch_size, 1), \
-            f'Wrong sized predictions! Got {preds["hello"].shape}, expected ({batch_size}, 1)'
-
-        assert (preds['hello'] == 2).all(), f'Expected all values to be 2!'
+        assert (test_arrays['hello']['y'] == preds['hello']).all(), \
+            f'Last timestep not correctly taken!'

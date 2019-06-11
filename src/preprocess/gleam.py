@@ -3,8 +3,7 @@ import xarray as xr
 from shutil import rmtree
 from typing import Optional
 
-from .base import BasePreProcessor, get_kenya
-from .utils import select_bounding_box
+from .base import BasePreProcessor
 
 
 class GLEAMPreprocessor(BasePreProcessor):
@@ -23,7 +22,7 @@ class GLEAMPreprocessor(BasePreProcessor):
         return ds.transpose(*expected_dims)
 
     def _preprocess_single(self, netcdf_filepath: Path,
-                           subset_kenya: bool = True,
+                           subset_str: Optional[str] = 'kenya',
                            regrid: Optional[xr.Dataset] = None) -> None:
         """Run the Preprocessing steps for the GLEAM data
 
@@ -42,9 +41,8 @@ class GLEAMPreprocessor(BasePreProcessor):
         ds = self._swap_dims_and_filter(ds)
 
         # 2. chop out EastAfrica
-        if subset_kenya:
-            kenya_region = get_kenya()
-            ds = select_bounding_box(ds, kenya_region, inverse_lat=True)
+        if subset_str is not None:
+            ds = self.chop_roi(ds, subset_str, inverse_lat=True)
 
         if regrid is not None:
             ds = self.regrid(ds, regrid)
@@ -55,7 +53,7 @@ class GLEAMPreprocessor(BasePreProcessor):
 
         filename = self.create_filename(
             netcdf_filepath.name,
-            subset_name='kenya' if subset_kenya else None
+            subset_name=subset_str if subset_str is not None else None
         )
         print(f"Saving to {self.interim}/{filename}")
         ds.to_netcdf(self.interim / filename)
@@ -77,7 +75,7 @@ class GLEAMPreprocessor(BasePreProcessor):
             new_filename = f'{filename_stem}.nc'
         return new_filename
 
-    def preprocess(self, subset_kenya: bool = True,
+    def preprocess(self, subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
@@ -87,7 +85,7 @@ class GLEAMPreprocessor(BasePreProcessor):
 
         Arguments
         ----------
-        subset_kenya: bool = True
+        subset_str: Optional[str] = 'kenya'
             Whether to subset Kenya when preprocessing
         regrid: Optional[Path] = None
             If a Path is passed, the CHIRPS files will be regridded to have the same
@@ -109,10 +107,10 @@ class GLEAMPreprocessor(BasePreProcessor):
             regrid = self.load_reference_grid(regrid)
 
         for file in nc_files:
-            self._preprocess_single(file, subset_kenya, regrid)
+            self._preprocess_single(file, subset_str, regrid)
 
         # merge all of the timesteps
-        self.merge_files(subset_kenya, resample_time, upsampling)
+        self.merge_files(subset_str, resample_time, upsampling)
 
         if cleanup:
             rmtree(self.interim)
