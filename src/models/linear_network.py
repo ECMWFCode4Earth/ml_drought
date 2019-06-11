@@ -8,6 +8,7 @@ from torch.nn import functional as F
 from typing import cast, Dict, List, Optional, Tuple, Union
 
 from .base import ModelBase
+from .utils import chunk_array
 from .data import DataLoader, train_val_mask
 
 
@@ -29,6 +30,7 @@ class LinearNetwork(ModelBase):
 
     def train(self, num_epochs: int = 1,
               early_stopping: Optional[int] = None,
+              batch_size: int = 256,
               learning_rate: float = 1e-3) -> None:
         print(f'Training {self.model_name}')
 
@@ -67,14 +69,14 @@ class LinearNetwork(ModelBase):
             train_rmse = []
             self.model.train()
             for x, y in train_dataloader:
-                # TODO: break x and y into more batches
-                optimizer.zero_grad()
-                pred = self.model(x)
-                loss = F.smooth_l1_loss(pred, y)
-                loss.backward()
-                optimizer.step()
+                for x_batch, y_batch in chunk_array(x, y, batch_size):
+                    optimizer.zero_grad()
+                    pred = self.model(x_batch)
+                    loss = F.smooth_l1_loss(pred, y_batch)
+                    loss.backward()
+                    optimizer.step()
 
-                train_rmse.append(loss.item())
+                    train_rmse.append(loss.item())
 
             if early_stopping is not None:
                 self.model.eval()
