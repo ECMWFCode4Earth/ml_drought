@@ -66,6 +66,7 @@ class Engineer:
         experiment: str = '1month_forecast'
             the experiment to be run. This can be {'1month_forecast', 'nowcast'}
         """
+        # read in all the data from interim/{var}_preprocessed
         data = self._make_dataset()
 
         if type(test_year) is int:
@@ -107,6 +108,7 @@ class Engineer:
 
         main_dataset = datasets[0]
         for dataset in datasets[1:]:
+            # ensure equal timesteps ('inner' join)
             main_dataset = main_dataset.merge(dataset, join='inner')
 
         return main_dataset
@@ -157,6 +159,7 @@ class Engineer:
         if xy_test is not None:
             output_test_arrays[years[0]][1] = xy_test
 
+        # each month in test_year produce an x,y pair for testing
         for year in years:
             for month in range(1, 13):
                 if year > years[0] or month > 1:
@@ -183,6 +186,8 @@ class Engineer:
         mx_year, mx_month, max_train_date = minus_months(year, target_month, diff_months=1)
         _, _, min_date = minus_months(mx_year, mx_month, diff_months=pred_months)
 
+        # `max_date` is the date to be predicted;
+        # `max_train_date` is one timestep before;
         min_date_np = np.datetime64(str(min_date))
         max_date_np = np.datetime64(str(max_date))
         max_train_date_np = np.datetime64(str(max_train_date))
@@ -190,9 +195,11 @@ class Engineer:
         print(f'Max date: {str(max_date)}, max input date: {str(max_train_date)}, '
               f'min input date: {str(min_date)}')
 
+        # boolean array indexing the timestamps to filter `ds`
         x = ((ds.time.values > min_date_np) & (ds.time.values <= max_train_date_np))
         y = ((ds.time.values > max_train_date_np) & (ds.time.values <= max_date_np))
 
+        # only expect ONE y timestamp
         if sum(y) != 1:
             print(f'Wrong number of y values! Expected 1, got {sum(y)}; returning None')
             return None, cast(date, max_train_date)
@@ -203,6 +210,7 @@ class Engineer:
 
                 return None, cast(date, max_train_date)
 
+        # filter the dataset
         x_dataset = ds.isel(time=x)
         y_dataset = ds.isel(time=y)[target_variable].to_dataset(name=target_variable)
 
