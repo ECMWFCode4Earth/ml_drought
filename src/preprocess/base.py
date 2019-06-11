@@ -147,7 +147,7 @@ class BasePreProcessor:
 
     @staticmethod
     def chop_roi(ds: xr.Dataset,
-                 subset_str: str = 'kenya',
+                 subset_str: Optional[str] = 'kenya',
                  inverse_lat: bool = False) -> xr.Dataset:
         """ lookup the region information from the dictionary in
         `src.utils.region_lookup` and subset the `ds` object based on that
@@ -159,7 +159,7 @@ class BasePreProcessor:
 
         return ds
 
-    def merge_files(self, subset_str: str = 'kenya',
+    def merge_files(self, subset_str: Optional[str] = 'kenya',
                     resample_time: Optional[str] = 'M',
                     upsampling: bool = False) -> None:
 
