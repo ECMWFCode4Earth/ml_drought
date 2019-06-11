@@ -106,6 +106,7 @@ class Engineer:
                     assert np.array_equal(datasets[idx][dim].values, coords[dim]), \
                         f'{dim} is different! Was this run using the preprocessor?'
 
+        # join all preprocessed datasets 
         main_dataset = datasets[0]
         for dataset in datasets[1:]:
             # ensure equal timesteps ('inner' join)
