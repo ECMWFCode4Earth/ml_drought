@@ -55,17 +55,17 @@ class TestOneMonthForecastEngineer(TestEngineer):
             assert len(x.time.values) == 11, 'Wrong number of months in the test x dataset'
             assert len(y.time.values) == 1, 'Wrong number of months in test y dataset'
 
-        check_folder(tmp_path / 'features/train/1999_12')
-        for month in range(1, 13):
-            check_folder(tmp_path / f'features/test/2001_{month}')
-            check_folder(tmp_path / f'features/train/2000_{month}')
+        check_folder(tmp_path / 'features/one_month_forecast/train/1999_12')
+        for month in range(1, 12):
+            check_folder(tmp_path / f'features/one_month_forecast/test/2001_{month}')
+            check_folder(tmp_path / f'features/one_month_forecast/train/2000_{month}')
 
-        assert len(list((tmp_path / 'features/train').glob('2001_*'))) == 0, \
+        assert len(list((tmp_path / 'features/one_month_forecast/train').glob('2001_*'))) == 0, \
             'Test data in the training data!'
 
-        assert (tmp_path / 'features/normalizing_dict.pkl').exists(), \
+        assert (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').exists(), \
             f'Normalizing dict not saved!'
-        with (tmp_path / 'features/normalizing_dict.pkl').open('rb') as f:
+        with (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').open('rb') as f:
             norm_dict = pickle.load(f)
 
         for key, val in norm_dict.items():
