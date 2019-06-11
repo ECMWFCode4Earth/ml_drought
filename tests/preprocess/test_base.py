@@ -82,11 +82,11 @@ class TestBase:
         to be different from original_shape: {original_shape}"
 
         assert (
-            (new_ds.lat.values.min() >= -11) &  (new_ds.lat.values.max() <= 23)
+            (new_ds.lat.values.min() >= -11) & (new_ds.lat.values.max() <= 23)
         ), f"Expected latitude to be in the range -11 : 23. Currently:\
         {new_ds.lat.values.min()} : {new_ds.lat.values.max()}"
 
         assert (
-            (new_ds.lon.values.min() >= 21) &  (new_ds.lon.values.max() <= 51.8)
+            (new_ds.lon.values.min() >= 21) & (new_ds.lon.values.max() <= 51.8)
         ), f"Expected longitude to be in the range 21 : 51.8. Currently:\
         {new_ds.lon.values.min()} : {new_ds.lon.values.max()}"
