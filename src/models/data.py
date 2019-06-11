@@ -222,7 +222,13 @@ class _TrainIter(_BaseIter):
                                               return_latlons=False, to_tensor=False)
                 if arrays.x.shape[0] == 0:
                     print(f'{subfolder} returns no values. Skipping')
+
+                    # remove the empty element from the list
+                    self.data_files.pop(self.idx)
+                    self.max_idx -= 1
+
                     cur_max_idx = min(cur_max_idx + 1, self.max_idx)
+
                 out_x.append(arrays.x)
                 out_y.append(arrays.y)
                 self.idx += 1
@@ -252,6 +258,9 @@ class _TestIter(_BaseIter):
                                               return_latlons=True, to_tensor=self.to_tensor)
                 if arrays.x.shape[0] == 0:
                     print(f'{subfolder} returns no values. Skipping')
+                    # remove the empty element from the list
+                    self.data_files.pop(self.idx)
+                    self.max_idx -= 1
                     cur_max_idx = min(cur_max_idx + 1, self.max_idx)
                 else:
                     out_dict[subfolder.parts[-1]] = arrays

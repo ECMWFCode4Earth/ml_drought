@@ -39,6 +39,6 @@ def linear_nn():
 
 
 if __name__ == '__main__':
-    # parsimonious()
-    # regression()
+    parsimonious()
+    regression()
     linear_nn()

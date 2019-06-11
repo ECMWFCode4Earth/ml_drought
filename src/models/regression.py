@@ -5,6 +5,7 @@ from sklearn.metrics import mean_squared_error
 from typing import Dict, Tuple, Optional
 
 from .base import ModelBase
+from .utils import chunk_array
 from .data import DataLoader, train_val_mask
 
 
@@ -13,7 +14,8 @@ class LinearRegression(ModelBase):
     model_name = 'linear_regression'
 
     def train(self, num_epochs: int = 1,
-              early_stopping: Optional[int] = None) -> None:
+              early_stopping: Optional[int] = None,
+              batch_size: int = 256) -> None:
         print(f'Training {self.model_name}')
 
         if early_stopping is not None:
@@ -38,11 +40,13 @@ class LinearRegression(ModelBase):
         for epoch in range(num_epochs):
             train_rmse = []
             for x, y in train_dataloader:
-                x = x.reshape(x.shape[0], x.shape[1] * x.shape[2])
-                self.model.partial_fit(x, y.ravel())
+                for batch_x, batch_y in chunk_array(x, y, batch_size):
+                    batch_x = batch_x.reshape(batch_x.shape[0],
+                                              batch_x.shape[1] * batch_x.shape[2])
+                    self.model.partial_fit(batch_x, batch_y.ravel())
 
-                train_pred_y = self.model.predict(x)
-                train_rmse.append(np.sqrt(mean_squared_error(y, train_pred_y)))
+                    train_pred_y = self.model.predict(batch_x)
+                    train_rmse.append(np.sqrt(mean_squared_error(batch_y, train_pred_y)))
             if early_stopping is not None:
                 val_rmse = []
                 for x, y in val_dataloader:
