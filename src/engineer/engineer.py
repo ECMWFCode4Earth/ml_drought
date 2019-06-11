@@ -158,10 +158,11 @@ class Engineer:
                           ) -> xr.Dataset:
         years.sort()
 
+        # for the first `year` Jan calculate the xy_test dictionary and min date
         xy_test, min_test_date = self.stratify_xy(ds, years[0], target_variable, 1,
                                                   pred_months, expected_length)
 
-        train_dates = ds.time.values <= np.datetime64(str(min_test_date))
+        train_dates = ds.time.values < np.datetime64(str(min_test_date))
         train_ds = ds.isel(time=train_dates)
 
         if xy_test is not None:
