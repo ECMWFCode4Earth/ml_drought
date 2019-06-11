@@ -19,12 +19,9 @@ from functools import partial
 
 from xarray import Dataset, DataArray
 
-from .base import (BasePreProcessor, get_kenya)
+from .base import BasePreProcessor
 
 from typing import Any, List, Optional, Tuple, Union
-
-
-from .utils import select_bounding_box
 
 
 class VHIPreprocessor(BasePreProcessor):
@@ -35,7 +32,7 @@ class VHIPreprocessor(BasePreProcessor):
     def _preprocess(self,
                     netcdf_filepath: str,
                     output_dir: str,
-                    subset_kenya: bool = True,
+                    subset_str: Optional[str] = 'kenya',
                     regrid: Optional[Dataset] = None) -> Path:
         """Run the Preprocessing steps for the NOAA VHI data
 
@@ -62,9 +59,8 @@ class VHIPreprocessor(BasePreProcessor):
         new_ds = self.create_new_dataset(ds, longitudes, latitudes, timestamp)
 
         # 5. chop out EastAfrica
-        if subset_kenya:
-            kenya_region = get_kenya()
-            new_ds = select_bounding_box(new_ds, kenya_region)
+        if subset_str is not None:
+            new_ds = self.chop_roi(new_ds, subset_str)
 
         if regrid is not None:
             new_ds = self.regrid(new_ds, regrid)
@@ -73,7 +69,7 @@ class VHIPreprocessor(BasePreProcessor):
         filename = self.create_filename(
             timestamp,
             netcdf_filepath,
-            subset_name='kenya' if subset_kenya else None
+            subset_name=subset_str if subset_str is not None else None
         )
         print(f'Saving to {output_dir}/{filename}')
         # TODO: change to pathlib.Path objects
@@ -85,7 +81,7 @@ class VHIPreprocessor(BasePreProcessor):
 
     def _preprocess_wrapper(self,
                             netcdf_filepath: str,
-                            subset_kenya: bool = True,
+                            subset_str: Optional[str] = 'kenya',
                             regrid: Optional[Dataset] = None
                             ) -> Union[Path, Tuple[Exception, str]]:
         """ function to be run in parallel & safely catch errors
@@ -101,14 +97,14 @@ class VHIPreprocessor(BasePreProcessor):
 
         try:
             return self._preprocess(
-                netcdf_filepath, self.interim.as_posix(), subset_kenya, regrid
+                netcdf_filepath, self.interim.as_posix(), subset_str, regrid
             )
         except Exception as e:
             print(f"### FAILED: {netcdf_filepath}")
             return e, netcdf_filepath
 
     def preprocess(self,
-                   subset_kenya: bool = True,
+                   subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
                    parallel: bool = True,
                    resample_time: Optional[str] = 'M',
@@ -121,8 +117,8 @@ class VHIPreprocessor(BasePreProcessor):
 
         Arguments
         ----------
-        subset_kenya: bool = True
-            Whether to subset Kenya when preprocessing
+        subset_str: Optional[str] = 'kenya'
+            Region to subset. Currently valid: {'kenya', 'ethiopia', 'east_africa'}
         regrid: Optional[Path] = None
             If a Path is passed, the VHI files will be regridded to have the same
             grid as the dataset at that Path. If None, no regridding happens
@@ -147,7 +143,7 @@ class VHIPreprocessor(BasePreProcessor):
         if parallel:
             pool = multiprocessing.Pool(processes=100)
             outputs = pool.map(partial(self._preprocess_wrapper,
-                                       subset_kenya=subset_kenya,
+                                       subset_str=subset_str,
                                        regrid=regrid), nc_files)
             errors = [o for o in outputs if not isinstance(o, Path)]
 
@@ -158,9 +154,9 @@ class VHIPreprocessor(BasePreProcessor):
             self.save_errors(errors)
         else:
             for file in nc_files:
-                self._preprocess_wrapper(str(file), subset_kenya=subset_kenya, regrid=regrid)
+                self._preprocess_wrapper(str(file), subset_str=subset_str, regrid=regrid)
 
-        self.merge_files(subset_kenya, resample_time=resample_time,
+        self.merge_files(subset_str=subset_str, resample_time=resample_time,
                          upsampling=upsampling)
         if cleanup:
             rmtree(self.interim)

@@ -5,10 +5,10 @@ import numpy as np
 
 from typing import List, Optional
 
-from ..utils import Region, get_kenya
+from ..utils import Region, region_lookup
+from .utils import select_bounding_box
 
-
-__all__ = ['BasePreProcessor', 'Region', 'get_kenya']
+__all__ = ['BasePreProcessor', 'Region']
 
 
 class BasePreProcessor:
@@ -145,7 +145,21 @@ class BasePreProcessor:
         else:
             return resampler.nearest()
 
-    def merge_files(self, subset_kenya: bool = True,
+    @staticmethod
+    def chop_roi(ds: xr.Dataset,
+                 subset_str: Optional[str] = 'kenya',
+                 inverse_lat: bool = False) -> xr.Dataset:
+        """ lookup the region information from the dictionary in
+        `src.utils.region_lookup` and subset the `ds` object based on that
+        region.
+        """
+        region = region_lookup[subset_str] if subset_str is not None else None
+        if region is not None:
+            ds = select_bounding_box(ds, region, inverse_lat=inverse_lat)
+
+        return ds
+
+    def merge_files(self, subset_str: Optional[str] = 'kenya',
                     resample_time: Optional[str] = 'M',
                     upsampling: bool = False) -> None:
 
@@ -154,6 +168,7 @@ class BasePreProcessor:
         if resample_time is not None:
             ds = self.resample_time(ds, resample_time, upsampling)
 
-        out = self.out_dir / f'{self.dataset}{"_kenya" if subset_kenya else ""}.nc'
+        out = self.out_dir / f'{self.dataset}\
+        {"_" + subset_str if subset_str is not None else ""}.nc'.replace(' ', '')
         ds.to_netcdf(out)
         print(f"\n**** {out} Created! ****\n")

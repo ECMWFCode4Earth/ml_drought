@@ -1,3 +1,8 @@
+"""
+See all the bounding boxes (NOTE COMMENTS OF ERRORS) in this gist
+    https://gist.github.com/graydon/11198540
+"""
+
 from collections import namedtuple
 import calendar
 from datetime import date
@@ -15,6 +20,16 @@ def get_kenya() -> Region:
     """
     return Region(name='kenya', lonmin=33.501, lonmax=42.283,
                   latmin=-5.202, latmax=6.002)
+
+
+def get_ethiopia() -> Region:
+    return Region(name='ethiopia', lonmin=32.9975838, lonmax=47.9823797,
+                  latmin=3.397448, latmax=14.8940537)
+
+
+def get_east_africa() -> Region:
+    return Region(name='east_africa', lonmin=21, lonmax=51.8,
+                  latmin=-11, latmax=23)
 
 
 def minus_months(cur_year: int, cur_month: int, diff_months: int,
@@ -38,3 +53,11 @@ def minus_months(cur_year: int, cur_month: int, diff_months: int,
     else:
         newdate = None
     return new_year, new_month, newdate
+
+
+# dictionary lookup of regions
+region_lookup = {
+    "kenya": get_kenya(),
+    "ethiopia": get_ethiopia(),
+    "east_africa": get_east_africa(),
+}

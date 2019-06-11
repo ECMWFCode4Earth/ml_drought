@@ -65,3 +65,28 @@ class TestBase:
         output = BasePreProcessor.load_reference_grid(tmp_path / 'regridder.nc')
 
         assert set(output.variables) == {'lat', 'lon'}, f'Got extra variables: {output.variables}'
+
+    def test_chop_roi(self, tmp_path):
+        size_original = (80, 80)
+        original_ds, _, _ = _make_dataset(size_original)
+
+        original_shape = original_ds.VHI.shape
+
+        processor = BasePreProcessor(tmp_path)
+        subset_str = 'east_africa'
+        new_ds = processor.chop_roi(ds=original_ds, subset_str=subset_str)
+        output_shape = new_ds.VHI.shape
+
+        assert original_shape != output_shape, f"The chop_roi should lead to\
+        smaller datasets than the original. Expected output_shape: {output_shape}\
+        to be different from original_shape: {original_shape}"
+
+        assert (
+            (new_ds.lat.values.min() >= -11) & (new_ds.lat.values.max() <= 23)
+        ), f"Expected latitude to be in the range -11 : 23. Currently:\
+        {new_ds.lat.values.min()} : {new_ds.lat.values.max()}"
+
+        assert (
+            (new_ds.lon.values.min() >= 21) & (new_ds.lon.values.max() <= 51.8)
+        ), f"Expected longitude to be in the range 21 : 51.8. Currently:\
+        {new_ds.lon.values.min()} : {new_ds.lon.values.max()}"
