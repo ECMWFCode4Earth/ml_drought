@@ -13,6 +13,8 @@ from .data import DataLoader, train_val_mask
 
 class LinearNetwork(ModelBase):
 
+    model_name = 'linear_network'
+
     def __init__(self, layer_sizes: Union[int, List[int]],
                  dropout: float = 0.25,
                  data_folder: Path = Path('data'),
