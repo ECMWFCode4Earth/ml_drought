@@ -5,6 +5,7 @@ from datetime import datetime, date
 from pathlib import Path
 import pickle
 import xarray as xr
+import warnings
 
 from typing import cast, DefaultDict, Dict, List, Optional, Union, Tuple
 
@@ -14,106 +15,33 @@ from .engineer import Engineer
 
 class Nowcast(Engineer):
     """Engineer the preprocessed `.nc` files into `/train`, `/test` `{x, y}.nc`
+    for the `nowcast` experiment.
 
+    This takes all non_target variables UP TO the target timestep and the
+    target variables for all previous timesteps (not the target timestep).
 
+    This produces a dataset:
+        t-3  t-2  t-1  t=0 |  y
+        ------------------------
+        P V  P V  P V  P   |  V
+                           |  V
+
+    Where P is the `non_target_variable` and V is the `target_variable`.
+    t=0 is the `target_timestep`.
     """
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
-        super().__init__(data_folder)
+        self.name: str = 'nowcast'
 
-        self.output_folder = data_folder / 'features' / 'nowcast'
-        if not self.output_folder.exists():
-            self.output_folder.mkdir()
+        super().__init__(self.name, data_folder)
 
-    def engineer(self,
-                 test_year: Union[int, List[int]],
-                 target_variable: str = 'VHI',
-                 pred_months: int = 11,
-                 expected_length: Optional[int] = 11,
-                 experiment: str = '1month_forecast',
-                 ):
-        # read in all the data from interim/{var}_preprocessed
-        data = self._make_dataset()
-
-        # ensure test_year is List[int]
-        if type(test_year) is int:
-            test_year = [cast(int, test_year)]
-
-        # save test data (x, y) and return the train_ds (subset of `data`)
-        train_ds = self._train_test_split(
-            data, cast(List, test_year), target_variable,
-            pred_months, expected_length
-        )
-
-        # train_ds into x, y for each year-month in trianing period
-        self._stratify_training_data(train_ds, target_variable, pred_months,
-                                     expected_length)
-
-        for var in self.normalization_values.keys():
-            self.normalization_values[var]['mean'] /= self.num_normalization_values
-            self.normalization_values[var]['std'] /= self.num_normalization_values
-
-        savepath = self.output_folder / 'normalizing_dict.pkl'
-        with savepath.open('wb') as f:
-            pickle.dump(self.normalization_values, f)
-
-
-        return
-
-    def _stratify_training_data(self, train_ds: xr.Dataset,
-                                target_variable: str,
-                                pred_months: int = 11,
-                                ) -> None:
-        """split `train_ds` into x, y and save the outputs to
-        self.output_folder (data/features) """
-        return
-
-    def _train_test_split(self, ds: xr.Dataset,
-                          years: List[int],
-                          target_variable: str,
-                          pred_months: int = 11,
-                          ) -> xr.Dataset:
-
-        years.sort()
-
-        # for the first `year` Jan calculate the xy_test dictionary and min date
-        xy_test, min_test_date = self.stratify_xy(
-            ds=ds, year=years[0], target_variable=target_variable,
-            target_month=1, pred_months=pred_months
-        )
-
-        # the train_ds MUST BE from before minimum test date
-        train_dates = ds.time.values < np.datetime64(str(min_test_date))
-        train_ds = ds.isel(time=train_dates)
-
-        # save the xy_test dictionary
-        if xy_test is not None:
-            self._save(xy_test, year=years[0], month=1,
-                       dataset_type='test')
-
-        # each month in test_year produce an x,y pair for testing
-        for year in years:
-            for month in range(1, 13):
-                if year > years[0] or month > 1:
-                    # prevents the initial test set from being recalculated
-                    xy_test, _ = self.stratify_xy(
-                        ds=ds, year=year, target_variable=target_variable,
-                        target_month=month, pred_months=pred_months,
-                    )
-                    if xy_test is not None:
-                        self._save(xy_test, year=year, month=month,
-                                   dataset_type='test')
-        return train_ds
-
-
-        return
-
-    @staticmethod
-    def stratify_xy(ds: xr.Dataset,
+    def stratify_xy(self,
+                    ds: xr.Dataset,
                     year: int,
                     target_variable: str,
                     target_month: int,
                     pred_months: int,
+                    expected_length: Optional[int] = None,
                     ) -> Tuple[Optional[Dict[str, xr.Dataset]], date]:
         """
         The nowcasting experiment has different lengths for the
@@ -129,6 +57,12 @@ class Nowcast(Engineer):
         timestep but the `target_variable` is an array of all `np.nan` for that
         target timestep. This prevents model leakage.
         """
+        if expected_length is not None:
+            warnings.warn('Expected length must be None' +
+            'for the `nowcast` experiment. Forcing to' +
+            'None')
+            expected_length = None
+
         print(f'Generating data for year: {year}, target month: {target_month}')
 
         # get the test datetime
@@ -158,7 +92,7 @@ class Nowcast(Engineer):
         )
 
         # only expect ONE y timestamp
-        if sum(y) != 1:
+        if sum(y_target) != 1:
             print(f'Wrong number of y values! Expected 1, got {sum(y)}; returning None')
             return None, cast(date, max_train_date)
 
@@ -167,7 +101,7 @@ class Nowcast(Engineer):
         x_non_target_dataset = ds.drop(target_variable).sel(time=x_non_target)
 
         # create the x_target_dataset with all nans at target time
-        nan_target_variable = make_nan_dataset(y_dataset)
+        nan_target_variable = self.make_nan_dataset(y_dataset)
         x_target_dataset = (
             ds[target_variable].isel(time=x_target).to_dataset(name=target_variable)
         )
@@ -176,11 +110,11 @@ class Nowcast(Engineer):
         # merge the x_non_target_dataset + x_target_dataset -> x_dataset
         x_dataset = x_non_target_dataset.merge(x_target_dataset)
 
-        return {'x': x_dataset, 'y': y_dataset}, cast(date, max_train_date)
+        if x_dataset.time.size != pred_months + 1:
+            # catch the errors as we get closer to the MINIMUM year
+            warnings.warn('For the `nowcast` experiment we expect the' +
+                          f' number of timesteps to be: {pred_months + 1}.' +
+                          f' Currently: {x_dataset.time.size}')
+            return None, cast(date, max_train_date)
 
-    @staticmethod
-    def make_nan_dataset(ds: Union[xr.Dataset, xr.DataArray],
-                        ) -> Union[xr.Dataset, xr.DataArray]:
-        nan_ds = xr.full_like(ds, np.nan)
-        return nan_ds
-#
+        return {'x': x_dataset, 'y': y_dataset}, cast(date, max_train_date)
