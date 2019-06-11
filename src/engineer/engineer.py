@@ -75,7 +75,7 @@ class Engineer:
         if type(test_year) is int:
             test_year = [cast(int, test_year)]
 
-        train_ds, test_dict = self._train_test_split(
+        train_ds = self._train_test_split(
             data, cast(List, test_year), target_variable,
             pred_months, expected_length
         )
@@ -128,6 +128,8 @@ class Engineer:
                                 pred_months: int = 11,
                                 expected_length: Optional[int] = 11
                                 ) -> None:
+        """split `train_ds` into x, y and save the outputs to
+        self.output_folder (data/features) """
 
         min_date = self.get_datetime(train_ds.time.values.min())
         max_date = self.get_datetime(train_ds.time.values.max())
