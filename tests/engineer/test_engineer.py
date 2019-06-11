@@ -1,9 +1,4 @@
-# import pytest
-# import pickle
-# import numpy as np
-# import xarray as xr
-
-from src.engineer import Engineer
+from src.engineer.engineer import Engineer
 
 from ..utils import _make_dataset
 

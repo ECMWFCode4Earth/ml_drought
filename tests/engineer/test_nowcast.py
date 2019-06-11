@@ -32,7 +32,8 @@ class TestNowcastEngineer(TestEngineer):
 
         engineer = NowcastEngineer(tmp_path)
         train = engineer._train_test_split(dataset, years=[2001],
-                                           target_variable='VHI')
+                                           target_variable='VHI',
+                                           expected_length=11)
 
         assert (train.time.values < np.datetime64('2001-01-01')).all(), \
             'Got years greater than the test year in the training set!'
@@ -42,7 +43,10 @@ class TestNowcastEngineer(TestEngineer):
         self._setup(tmp_path)
 
         engineer = NowcastEngineer(tmp_path)
-        engineer.engineer(test_year=2001, target_variable='a')
+        engineer.engineer(
+            test_year=2001, target_variable='a', pred_months=11,
+            expected_length=11
+        )
 
         def check_folder(folder_path):
             y = xr.open_dataset(folder_path / 'y.nc')

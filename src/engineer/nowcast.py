@@ -56,12 +56,6 @@ class NowcastEngineer(Engineer):
         timestep but the `target_variable` is an array of all `np.nan` for that
         target timestep. This prevents model leakage.
         """
-        if expected_length is not None:
-            warnings.warn("Expected length must be None\
-                          for the `nowcast` experiment. Forcing to\
-                          None")
-            expected_length = None
-
         print(f"Generating data for year: {year}, target month: {target_month}")
 
         # get the test datetime
@@ -109,12 +103,27 @@ class NowcastEngineer(Engineer):
         x_target_dataset = (
             ds[target_variable].isel(time=x_target).to_dataset(name=target_variable)
         )
+
+        if expected_length is not None:
+            # filter for missing values in timesteps!
+            if sum(x_target) != expected_length:
+                print(f"Wrong number of x values! Got {sum(x_target)} \
+                Returning None")
+
+                return None, cast(date, max_train_date)
+
+            if sum(x_non_target) != expected_length + 1:
+                print(f"Wrong number of x values! Got {sum(x_target)}\
+                Returning None")
+
+                return None, cast(date, max_train_date)
+
         x_target_dataset = x_target_dataset.merge(nan_target_variable)
 
         # merge the x_non_target_dataset + x_target_dataset -> x_dataset
         x_dataset = x_non_target_dataset.merge(x_target_dataset)
 
-        if x_dataset.time.size != pred_months + 1:
+        if x_dataset.time.size != expected_length + 1:
             # catch the errors as we get closer to the MINIMUM year
             warnings.warn("For the `nowcast` experiment we expect the\
                           number of timesteps to be: {pred_months + 1}.\
