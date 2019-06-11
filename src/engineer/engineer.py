@@ -1,5 +1,4 @@
 import numpy as np
-import calendar
 from collections import defaultdict
 from datetime import datetime, date
 from pathlib import Path
@@ -7,8 +6,6 @@ import pickle
 import xarray as xr
 
 from typing import cast, DefaultDict, Dict, List, Optional, Union, Tuple
-
-from ..utils import minus_months
 
 
 class Engineer:
@@ -36,7 +33,7 @@ class Engineer:
         # specific folder for that
         self.output_folder = data_folder / 'features' / name
         if not self.output_folder.exists():
-            self.output_folder.mkdir()
+            self.output_folder.mkdir(parents=True)
 
         self.num_normalization_values: int = 0
         self.normalization_values: DefaultDict[str, Dict[str, np.ndarray]] = defaultdict(dict)
@@ -247,7 +244,6 @@ class Engineer:
         self.num_normalization_values += 1
 
     @staticmethod
-    def make_nan_dataset(ds: Union[xr.Dataset, xr.DataArray],
-                        ) -> Union[xr.Dataset, xr.DataArray]:
+    def make_nan_dataset(ds: Union[xr.Dataset, xr.DataArray]) -> Union[xr.Dataset, xr.DataArray]:
         nan_ds = xr.full_like(ds, np.nan)
         return nan_ds
