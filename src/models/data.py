@@ -191,7 +191,7 @@ class _BaseIter:
             x_np, y_np = x_np[notnan_indices], y_np[notnan_indices]
 
         if to_tensor:
-            x_np, y_np = torch.from_numpy(x_np), torch.from_numpy(y_np)
+            x_np, y_np = torch.from_numpy(x_np).float(), torch.from_numpy(y_np).float()
 
         if return_latlons:
             lons, lats = np.meshgrid(x.lon.values, x.lat.values)
@@ -232,7 +232,7 @@ class _TrainIter(_BaseIter):
             if final_x.shape[0] == 0:
                 raise StopIteration()
             if self.to_tensor:
-                return torch.from_numpy(final_x), torch.from_numpy(final_y)
+                return torch.from_numpy(final_x).float(), torch.from_numpy(final_y).float()
             return final_x, final_y
         else:
             raise StopIteration()
