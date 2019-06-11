@@ -5,7 +5,7 @@ import numpy as np
 
 from src.engineer import Nowcast
 
-# from ..utils import _make_dataset
+from ..utils import _make_dataset
 from .test_engineer import TestEngineer
 
 
