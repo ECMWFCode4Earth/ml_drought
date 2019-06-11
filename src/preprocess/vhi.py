@@ -19,7 +19,7 @@ from functools import partial
 
 from xarray import Dataset, DataArray
 
-from .base import (BasePreProcessor,)
+from .base import BasePreProcessor
 
 from typing import Any, List, Optional, Tuple, Union
 
@@ -81,7 +81,7 @@ class VHIPreprocessor(BasePreProcessor):
 
     def _preprocess_wrapper(self,
                             netcdf_filepath: str,
-                            subset_str: str = 'kenya',
+                            subset_str: Optional[str] = 'kenya',
                             regrid: Optional[Dataset] = None
                             ) -> Union[Path, Tuple[Exception, str]]:
         """ function to be run in parallel & safely catch errors
@@ -104,7 +104,7 @@ class VHIPreprocessor(BasePreProcessor):
             return e, netcdf_filepath
 
     def preprocess(self,
-                   subset_str: str = 'kenya',
+                   subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
                    parallel: bool = True,
                    resample_time: Optional[str] = 'M',
@@ -117,7 +117,7 @@ class VHIPreprocessor(BasePreProcessor):
 
         Arguments
         ----------
-        subset_str: str = 'kenya'
+        subset_str: Optional[str] = 'kenya'
             Region to subset. Currently valid: {'kenya', 'ethiopia', 'east_africa'}
         regrid: Optional[Path] = None
             If a Path is passed, the VHI files will be regridded to have the same

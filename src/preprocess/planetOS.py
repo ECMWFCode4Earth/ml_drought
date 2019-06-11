@@ -67,7 +67,7 @@ class PlanetOSPreprocessor(BasePreProcessor):
         return f'{stem}.nc'
 
     def _preprocess_single(self, netcdf_filepath: Path,
-                           subset_str: str = 'kenya',
+                           subset_str: Optional[str] = 'kenya',
                            regrid: Optional[xr.Dataset] = None) -> None:
 
         print(f'Processing {netcdf_filepath.name}')
@@ -91,7 +91,7 @@ class PlanetOSPreprocessor(BasePreProcessor):
 
         print(f'Done for ERA5 Planet OS {netcdf_filepath.name}')
 
-    def preprocess(self, subset_str: str = 'kenya',
+    def preprocess(self, subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
@@ -102,7 +102,7 @@ class PlanetOSPreprocessor(BasePreProcessor):
 
         Arguments
         ----------
-        subset_str: str = 'kenya'
+        subset_str: Optional[str] = 'kenya'
             Whether to subset Kenya when preprocessing
         regrid: Optional[Path] = None
             If a Path is passed, the CHIRPS files will be regridded to have the same
