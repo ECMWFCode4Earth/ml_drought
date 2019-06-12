@@ -3,7 +3,6 @@ import calendar
 from datetime import date
 from pathlib import Path
 import xarray as xr
-import warnings
 
 from typing import cast, Dict, Optional, Tuple
 
