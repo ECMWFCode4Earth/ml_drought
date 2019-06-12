@@ -35,7 +35,7 @@ def get_east_africa() -> Region:
 def minus_months(cur_year: int, cur_month: int, diff_months: int,
                  to_endmonth_datetime: bool = True) -> Tuple[int, int, Optional[date]]:
     """Given a year-month pair (e.g. 2018, 1), and a number of months subtracted
-    from that (e.g. 2), return the new year-month pair (e.g. 2017, 11).
+    from that `diff_months` (e.g. 2), return the new year-month pair (e.g. 2017, 11).
 
     Optionally, a date object representing the end of that month can be returned too
     """
