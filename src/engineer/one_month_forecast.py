@@ -29,7 +29,7 @@ class OneMonthForecastEngineer(Engineer):
         """
         Note: expected_length should be the same as pred_months when the timesteps
         are monthly, but should be more if the timesteps are at shorter resolution
-        than monthly 
+        than monthly.
         """
 
         print(f"Generating data for year: {year}, target month: {target_month}")
