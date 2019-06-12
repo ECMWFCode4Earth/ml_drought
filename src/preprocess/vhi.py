@@ -60,7 +60,7 @@ class VHIPreprocessor(BasePreProcessor):
         )
 
         # test if the file already exists
-        if (output_dir / filename).exists():
+        if Path(f'{output_dir}/{filename}').exists():
             print(f'{output_dir}/{filename} Already exists!')
             return Path(f'{output_dir}/{filename}')
 
