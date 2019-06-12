@@ -23,9 +23,14 @@ class OneMonthForecastEngineer(Engineer):
         year: int,
         target_variable: str,
         target_month: int,
-        pred_months: int,
-        expected_length: Optional[int],
+        pred_months: int = 11,
+        expected_length: Optional[int] = 11,
     ) -> Tuple[Optional[Dict[str, xr.Dataset]], date]:
+        """
+        Note: expected_length should be the same as pred_months when the timesteps
+        are monthly, but should be more if the timesteps are at shorter resolution
+        than monthly 
+        """
 
         print(f"Generating data for year: {year}, target month: {target_month}")
 
@@ -65,7 +70,7 @@ class OneMonthForecastEngineer(Engineer):
         x_dataset = ds.isel(time=x)
         y_dataset = ds.isel(time=y)[target_variable].to_dataset(name=target_variable)
 
-        if x_dataset.time.size != pred_months:
+        if x_dataset.time.size != expected_length:
             # catch the errors as we get closer to the MINIMUM year
             warnings.warn(
                 "For the `nowcast` experiment we expect the\
