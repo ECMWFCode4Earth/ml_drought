@@ -4,6 +4,7 @@ from datetime import datetime, date
 from pathlib import Path
 import pickle
 import xarray as xr
+import warnings
 
 from typing import cast, DefaultDict, Dict, List, Optional, Union, Tuple
 
@@ -65,6 +66,9 @@ class Engineer:
             differs from pred_months if the preprocessors are run with a time granularity
             different from 'M'
         """
+        if expected_length is None:
+            warnings.warn('** `expected_length` is None. This means that \
+            missing data will not be skipped. Are you sure? **')
         # read in all the data from interim/{var}_preprocessed
         data = self._make_dataset()
 
