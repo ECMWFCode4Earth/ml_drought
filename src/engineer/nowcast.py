@@ -98,10 +98,13 @@ class NowcastEngineer(Engineer):
         )
         x_non_target_dataset = ds.drop(target_variable).sel(time=x_non_target)
 
-        # create the x_target_dataset with all nans at target time
-        nan_target_variable = self.make_nan_dataset(y_dataset)
+        # create the x_target_dataset with all -9999.0 at target time
+        # nan_target_variable = self.make_nan_dataset(y_dataset)
+        nan_target_variable = self.make_fill_value_dataset(y_dataset)
         x_target_dataset = (
-            ds[target_variable].isel(time=x_target).to_dataset(name=target_variable)
+            ds[target_variable]
+            .isel(time=x_target)
+            .to_dataset(name=target_variable)
         )
 
         if expected_length is not None:

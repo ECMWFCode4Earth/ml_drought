@@ -247,3 +247,10 @@ class Engineer:
     def make_nan_dataset(ds: Union[xr.Dataset, xr.DataArray]) -> Union[xr.Dataset, xr.DataArray]:
         nan_ds = xr.full_like(ds, np.nan)
         return nan_ds
+
+    @staticmethod
+    def make_fill_value_dataset(ds: Union[xr.Dataset, xr.DataArray],
+                                fill_value: Union[int, float] = -9999.0,
+                                ) -> Union[xr.Dataset, xr.DataArray]:
+        nan_ds = xr.full_like(ds, fill_value)
+        return nan_ds

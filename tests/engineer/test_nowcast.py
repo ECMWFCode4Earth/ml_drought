@@ -2,6 +2,7 @@ import pytest
 import pickle
 import numpy as np
 import xarray as xr
+import datetime as dt
 
 from src.engineer import NowcastEngineer
 
@@ -76,9 +77,64 @@ class TestNowcastEngineer(TestEngineer):
         for key, val in norm_dict.items():
             assert key in {'a', 'b'}, f'Unexpected key!'
             # TODO: fix how to test for the final (12th) value
-            assert (norm_dict[key]['mean'] == 1)[:-1].all(), \
-                f'Mean incorrectly calculated!'
+            if key == 'a':
+                assert (norm_dict[key]['mean'] == 1)[:-1].all(), \
+                    f'Mean incorrectly calculated!'
+                assert (norm_dict[key]['mean'][-1] == -9999), \
+                    f'Mean incorrectly calculated!'
+            else:
+                assert (norm_dict[key]['mean'] == 1).all(), \
+                    f'Mean incorrectly calculated!'
             assert len(norm_dict[key]['mean']) == 12,\
                 f'Mean should be of length 12'
             assert (norm_dict[key]['std'] == 0).all(), \
                 f'Std incorrectly calculated!'
+
+    def test_stratify(self, tmp_path):
+        self._setup(tmp_path)
+        engineer = NowcastEngineer(tmp_path)
+        ds_target, _, _ = _make_dataset(size=(20, 20))
+        ds_predictor, _, _ = _make_dataset(size=(20, 20))
+        ds_predictor = ds_predictor.rename({'VHI': 'predictor'})
+        ds = ds_predictor.merge(ds_target)
+
+        xy_dict, max_train_date = engineer.stratify_xy(
+            ds=ds,
+            year=2001,
+            target_variable='VHI',
+            target_month=1,
+            pred_months=4,
+            expected_length=4,
+        )
+
+        assert xy_dict['x'].time.size == 5, f'Nowcast experiment `x`\
+        should have 5 times (the final time is all -9999 for `target`)\
+        Got: {xy_dict["x"].time.size}'
+
+        assert (xy_dict['x'].VHI.isel(time=-1) == -9999).all().values, f'\
+        the final VHI timestep should ALL be -9999 (to avoid model leakage)'
+
+        assert max_train_date == dt.datetime(2000, 12, 31).date(), f'\
+        the max_train_date should be one month before the `target_month`,\
+        `year`'
+
+    def test_stratify_catches_not_equal_expected_length(self, tmp_path):
+        self._setup(tmp_path)
+        engineer = NowcastEngineer(tmp_path)
+
+        ds_target, _, _ = _make_dataset(size=(20, 20))
+        ds_predictor, _, _ = _make_dataset(size=(20, 20))
+        ds_predictor = ds_predictor.rename({'VHI': 'predictor'})
+        ds = ds_predictor.merge(ds_target)
+
+        xy_dict, max_train_date = engineer.stratify_xy(
+            ds=ds,
+            year=2001,
+            target_variable='VHI',
+            target_month=1,
+            pred_months=4,
+            expected_length=5,
+        )
+
+        assert xy_dict is None, f'xy_dict should be None because the number of\
+        expected timesteps is different from `expected_length`'
