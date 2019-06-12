@@ -19,8 +19,8 @@ class NowcastEngineer(Engineer):
     target variables for all previous timesteps (not the target timestep).
 
     This produces a dataset:
-        t-3  t-2  t-1  t=0 |  y
-        ------------------------
+        t-3  t-2  t-1  t=0 |  y (t=0)
+        -----------------------------
         P V  P V  P V  P   |  V
                            |  V
 
@@ -40,7 +40,7 @@ class NowcastEngineer(Engineer):
         target_variable: str,
         target_month: int,
         pred_months: int,
-        expected_length: Optional[int] = None,
+        expected_length: Optional[int] = 11,
     ) -> Tuple[Optional[Dict[str, xr.Dataset]], date]:
         """
         The nowcasting experiment has different lengths for the
@@ -126,11 +126,11 @@ class NowcastEngineer(Engineer):
         # merge the x_non_target_dataset + x_target_dataset -> x_dataset
         x_dataset = x_non_target_dataset.merge(x_target_dataset)
 
-        if x_dataset.time.size != expected_length + 1:
+        if x_dataset.time.size != cast(int, expected_length) + 1:
             # catch the errors as we get closer to the MINIMUM year
-            warnings.warn("For the `nowcast` experiment we expect the\
-                          number of timesteps to be: {pred_months + 1}.\
-                          Currently: {x_dataset.time.size}")
+            print("For the `nowcast` experiment we expect the\
+                  number of timesteps to be: {pred_months + 1}.\
+                  Currently: {x_dataset.time.size}")
             return None, cast(date, max_train_date)
 
         return {"x": x_dataset, "y": y_dataset}, cast(date, max_train_date)
