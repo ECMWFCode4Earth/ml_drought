@@ -40,7 +40,7 @@ class LinearRegression(ModelBase):
         for epoch in range(num_epochs):
             train_rmse = []
             for x, y in train_dataloader:
-                for batch_x, batch_y in chunk_array(x, y, batch_size):
+                for batch_x, batch_y in chunk_array(x, y, batch_size, shuffle=True):
                     batch_x, batch_y = cast(np.ndarray, batch_x), cast(np.ndarray, batch_y)
                     batch_x = batch_x.reshape(batch_x.shape[0],
                                               batch_x.shape[1] * batch_x.shape[2])

@@ -25,8 +25,28 @@ class LinearNetwork(ModelBase):
         if type(layer_sizes) is int:
             layer_sizes = cast(List[int], [layer_sizes])
 
+        # to initialize and save the model
         self.layer_sizes = layer_sizes
         self.dropout = dropout
+        self.input_size: Optional[int] = None
+
+        # for reproducibility
+        torch.manual_seed(42)
+
+    def save_model(self):
+
+        if self.model is None:
+            self.train()
+            self.model: LinearModel
+
+        model_dict = {
+            'state_dict': self.model.state_dict(),
+            'layer_sizes': self.layer_sizes,
+            'dropout': self.dropout,
+            'input_size': self.input_size
+        }
+
+        torch.save(model_dict, self.model_dir / 'model.pkl')
 
     def train(self, num_epochs: int = 1,
               early_stopping: Optional[int] = None,
@@ -56,9 +76,10 @@ class LinearNetwork(ModelBase):
                                           to_tensor=True)
 
         # initialize the model
-        x_ref, _ = next(iter(train_dataloader))
-        input_size = x_ref.contiguous().view(x_ref.shape[0], -1).shape
-        self.model: LinearModel = LinearModel(input_size=input_size[1],
+        if self.input_size is None:
+            x_ref, _ = next(iter(train_dataloader))
+            self.input_size = x_ref.contiguous().view(x_ref.shape[0], -1).shape[1]
+        self.model: LinearModel = LinearModel(input_size=self.input_size,
                                               layer_sizes=self.layer_sizes,
                                               dropout=self.dropout)
 
@@ -69,7 +90,7 @@ class LinearNetwork(ModelBase):
             train_rmse = []
             self.model.train()
             for x, y in train_dataloader:
-                for x_batch, y_batch in chunk_array(x, y, batch_size):
+                for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
                     optimizer.zero_grad()
                     pred = self.model(x_batch)
                     loss = F.smooth_l1_loss(pred, y_batch)
