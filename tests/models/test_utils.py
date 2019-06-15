@@ -19,3 +19,17 @@ class TestChunker:
 
         for x, y in chunk_array(test_array, test_array, 2, shuffle=True):
             assert ((x.shape == (2, 2, 1)) and (y.shape == (2, 2, 1)))
+
+    def test_shuffling_array(self):
+        test_x = np.arange(0, 10)
+        test_y = np.arange(0, 10)
+
+        for x, y in chunk_array(test_x, test_y, 2, shuffle=True):
+            assert (x == y).all()
+
+    def test_shuffling_tensor(self):
+        test_x = torch.arange(0, 10)
+        test_y = torch.arange(0, 10)
+
+        for x, y in chunk_array(test_x, test_y, 2, shuffle=True):
+            assert (x == y).all()

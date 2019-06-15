@@ -21,20 +21,19 @@ def _chunk_ndarray(x: np.ndarray, y: np.ndarray,
                    shuffle: bool) -> Iterable[Tuple[np.ndarray, np.ndarray]]:
 
     split_x, split_y = np.array_split(x, num_sections), np.array_split(y, num_sections)
+    return_arrays = list(zip(split_x, split_y))
 
     if shuffle:
-        shuffle_list(split_x)
-        shuffle_list(split_y)
-    return zip(split_x, split_y)
+        shuffle_list(return_arrays)
+    return return_arrays
 
 
 def _chunk_tensor(x: torch.Tensor, y: torch.Tensor,
                   num_sections: int,
                   shuffle: bool) -> Iterable[Tuple[torch.Tensor, torch.Tensor]]:
-    split_x = torch.chunk(x, num_sections)
-    split_y = torch.chunk(y, num_sections)
-    if shuffle:
-        shuffle_list(list(split_x))
-        shuffle_list(list(split_y))
+    split_x, split_y = torch.chunk(x, num_sections), torch.chunk(y, num_sections)
+    return_arrays = list(zip(split_x, split_y))
 
-    return zip(split_x, split_y)
+    if shuffle:
+        shuffle_list(return_arrays)
+    return return_arrays
