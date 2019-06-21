@@ -8,7 +8,7 @@ from src.models.linear_network import LinearModel
 from ..utils import _make_dataset
 
 
-class TestLinearRegression:
+class TestLinearNetwork:
 
     def test_save(self, tmp_path):
 
