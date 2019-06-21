@@ -64,7 +64,7 @@ class DataLoader:
         If not None, this list will be used to mask the input files. Useful for creating a train
         and validation set
     to_tensor: bool = False
-        Whehter to turn the np.ndarrays into torch.Tensors
+        Whether to turn the np.ndarrays into torch.Tensors
     """
     def __init__(self, data_path: Path = Path('data'), batch_file_size: int = 1,
                  mode: str = 'train', shuffle_data: bool = True,
