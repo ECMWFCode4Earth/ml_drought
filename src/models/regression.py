@@ -85,7 +85,10 @@ class LinearRegression(ModelBase):
             self.explainer: shap.LinearExplainer = shap.LinearExplainer(
                 self.model, (mean, None), feature_dependence='independent')
 
-        return self.explainer.shap_values(x)
+        batch, timesteps, dims = x.shape[0], x.shape[1], x.shape[2]
+        reshaped_x = x.reshape(batch, timesteps * dims)
+        explanations = self.explainer.shap_values(reshaped_x)
+        return explanations.reshape(batch, timesteps, dims)
 
     def save_model(self) -> None:
 
@@ -124,6 +127,7 @@ class LinearRegression(ModelBase):
         For now, we don't calculate the covariance matrix, since it wouldn't fit in
         memory either
         """
+        print('Calculating the mean of the training data')
         train_dataloader = DataLoader(data_path=self.data_path,
                                       batch_file_size=1,
                                       shuffle_data=False, mode='train')

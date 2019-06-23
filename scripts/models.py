@@ -3,6 +3,7 @@ sys.path.append('..')
 
 from pathlib import Path
 from src.models import Persistence, LinearRegression
+from src.models.data import DataLoader
 
 
 def parsimonious():
@@ -26,7 +27,14 @@ def regression():
     predictor = LinearRegression(data_path)
     predictor.evaluate(save_preds=True)
 
+    # mostly to test it works
+    test_arrays_loader = DataLoader(data_path=data_path, batch_file_size=1,
+                                    shuffle_data=False, mode='test')
+    key, val = list(next(iter(test_arrays_loader)).items())[0]
+    explanations = predictor.explain(val.x)
+    print(explanations.shape)
+
 
 if __name__ == '__main__':
-    parsimonious()
+    # parsimonious()
     regression()
