@@ -121,7 +121,7 @@ class LinearRegression(ModelBase):
         """
         Calculate the mean of the training data in batches.
 
-        For now, we don't calculate the covariance matric, since it wouldn't fit in
+        For now, we don't calculate the covariance matrix, since it wouldn't fit in
         memory either
         """
         train_dataloader = DataLoader(data_path=self.data_path,
