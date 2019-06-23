@@ -3,6 +3,7 @@ import pickle
 
 from sklearn import linear_model
 from src.models import LinearRegression
+from src.models.data import DataLoader
 
 from ..utils import _make_dataset
 
@@ -57,3 +58,36 @@ class TestLinearRegression:
 
         assert type(model.model) == linear_model.SGDRegressor, \
             f'Model attribute not a linear regression!'
+
+    def test_big_mean(self, tmp_path, monkeypatch):
+
+        def mockiter(self):
+            class MockIterator:
+                def __init__(self):
+                    self.idx = 0
+                    self.max_idx = 10
+
+                def __iter__(self):
+                    return self
+
+                def __next__(self):
+                    if self.idx < self.max_idx:
+                        # batch_size = 10, timesteps = 2, num_features = 1
+                        self.idx += 1
+                        return np.ones((10, 2, 1)), None
+                    else:
+                        raise StopIteration()
+            return MockIterator()
+
+        def do_nothing(self, data_path, batch_file_size, shuffle_data, mode):
+            pass
+
+        monkeypatch.setattr(DataLoader, '__iter__', mockiter)
+        monkeypatch.setattr(DataLoader, '__init__', do_nothing)
+
+        model = LinearRegression(tmp_path)
+        calculated_mean = model._calculate_big_mean()
+        expected_mean = np.ones(2 * 1)
+
+        # np.isclose because of rounding
+        assert np.isclose(calculated_mean, expected_mean).all()

@@ -3,7 +3,9 @@ from pathlib import Path
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error
 
-from typing import Dict, Tuple, Optional
+import shap
+
+from typing import Any, Dict, Tuple, Optional
 
 from .base import ModelBase
 from .data import DataLoader, train_val_mask
@@ -20,6 +22,7 @@ class LinearRegression(ModelBase):
 
         self.num_epochs = num_epochs
         self.early_stopping = early_stopping
+        self.explainer: Optional[shap.LinearExplainer] = None
 
     def train(self) -> None:
         print(f'Training {self.model_name}')
@@ -72,6 +75,18 @@ class LinearRegression(ModelBase):
                         print('Early stopping!')
                         return None
 
+    def explain(self, x: Any) -> np.ndarray:
+
+        if self.model is None:
+            self.train()
+
+        if self.explainer is None:
+            mean = self._calculate_big_mean()
+            self.explainer: shap.LinearExplainer = shap.LinearExplainer(
+                self.model, (mean, None), feature_dependence='independent')
+
+        return self.explainer.shap_values(x)
+
     def save_model(self) -> None:
 
         if self.model is None:
@@ -101,3 +116,25 @@ class LinearRegression(ModelBase):
                 test_arrays_dict[key] = {'y': val.y, 'latlons': val.latlons}
 
         return test_arrays_dict, preds_dict
+
+    def _calculate_big_mean(self) -> np.ndarray:
+        """
+        Calculate the mean of the training data in batches.
+
+        For now, we don't calculate the covariance matric, since it wouldn't fit in
+        memory either
+        """
+        train_dataloader = DataLoader(data_path=self.data_path,
+                                      batch_file_size=1,
+                                      shuffle_data=False, mode='train')
+
+        means, sizes = [], []
+        for x, _ in train_dataloader:
+            # first, flatten x
+            x = x.reshape(x.shape[0], x.shape[1] * x.shape[2])
+            sizes.append(x.shape[0])
+            means.append(x.mean(axis=0))
+
+        total_size = sum(sizes)
+        weighted_means = [mean * size / total_size for mean, size in zip(means, sizes)]
+        return sum(weighted_means)
