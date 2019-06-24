@@ -22,6 +22,10 @@ def chunk_array(x: Union[torch.Tensor, np.ndarray],
         The size of the batches to return
     shuffle: bool = False
         Whether to shuffle the returned tensors
+
+    Returns
+    ----------
+    An iterator returning tuples of batches (x, y)
     """
     num_sections = max(1, x.shape[0] // batch_size)
     if type(x) == np.ndarray:
