@@ -9,6 +9,20 @@ def chunk_array(x: Union[torch.Tensor, np.ndarray],
                 batch_size: int,
                 shuffle: bool = False) -> Iterable[Tuple[Union[torch.Tensor, np.ndarray],
                                                          Union[torch.Tensor, np.ndarray]]]:
+    """
+    Chunk an array into batches of batch size `batch_size`
+
+    Arguments
+    ----------
+    x: {torch.Tensor, np.ndarray}
+        The x tensor to chunk
+    y: {torch.Tensor, np.ndarray}
+        The y tensor to chunk. Must be the same type as x
+    batch_size: int
+        The size of the batches to return
+    shuffle: bool = False
+        Whether to shuffle the returned tensors
+    """
     num_sections = max(1, x.shape[0] // batch_size)
     if type(x) == np.ndarray:
         return _chunk_ndarray(x, y, num_sections, shuffle)
