@@ -8,6 +8,7 @@ from torch.nn import functional as F
 from typing import cast, Dict, List, Optional, Tuple, Union
 
 from .base import ModelBase
+from .utils import chunk_array
 from .data import DataLoader, train_val_mask
 
 
@@ -24,11 +25,32 @@ class LinearNetwork(ModelBase):
         if type(layer_sizes) is int:
             layer_sizes = cast(List[int], [layer_sizes])
 
+        # to initialize and save the model
         self.layer_sizes = layer_sizes
         self.dropout = dropout
+        self.input_size: Optional[int] = None
+
+        # for reproducibility
+        torch.manual_seed(42)
+
+    def save_model(self):
+
+        if self.model is None:
+            self.train()
+            self.model: LinearModel
+
+        model_dict = {
+            'state_dict': self.model.state_dict(),
+            'layer_sizes': self.layer_sizes,
+            'dropout': self.dropout,
+            'input_size': self.input_size
+        }
+
+        torch.save(model_dict, self.model_dir / 'model.pkl')
 
     def train(self, num_epochs: int = 1,
               early_stopping: Optional[int] = None,
+              batch_size: int = 256,
               learning_rate: float = 1e-3) -> None:
         print(f'Training {self.model_name}')
 
@@ -54,9 +76,10 @@ class LinearNetwork(ModelBase):
                                           to_tensor=True)
 
         # initialize the model
-        x_ref, _ = next(iter(train_dataloader))
-        input_size = x_ref.view(x_ref.shape[0], -1)
-        self.model: LinearModel = LinearModel(input_size=input_size[1],
+        if self.input_size is None:
+            x_ref, _ = next(iter(train_dataloader))
+            self.input_size = x_ref.contiguous().view(x_ref.shape[0], -1).shape[1]
+        self.model: LinearModel = LinearModel(input_size=self.input_size,
                                               layer_sizes=self.layer_sizes,
                                               dropout=self.dropout)
 
@@ -67,14 +90,14 @@ class LinearNetwork(ModelBase):
             train_rmse = []
             self.model.train()
             for x, y in train_dataloader:
-                # TODO: break x and y into more batches
-                optimizer.zero_grad()
-                pred = self.model(x)
-                loss = F.smooth_l1_loss(pred, y)
-                loss.backward()
-                optimizer.step()
+                for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
+                    optimizer.zero_grad()
+                    pred = self.model(x_batch)
+                    loss = F.smooth_l1_loss(pred, y_batch)
+                    loss.backward()
+                    optimizer.step()
 
-                train_rmse.append(loss.item())
+                    train_rmse.append(loss.item())
 
             if early_stopping is not None:
                 self.model.eval()
@@ -115,9 +138,9 @@ class LinearNetwork(ModelBase):
         with torch.no_grad():
             for dict in test_arrays_loader:
                 for key, val in dict.items():
-                    preds = self.model.predict(val.x)
-                    preds_dict[key] = preds.to_numpy()
-                    test_arrays_dict[key] = {'y': val.y.to_numpy(), 'latlons': val.latlons}
+                    preds = self.model(val.x)
+                    preds_dict[key] = preds.numpy()
+                    test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons}
 
         return test_arrays_dict, preds_dict
 
@@ -149,7 +172,7 @@ class LinearModel(nn.Module):
 
     def forward(self, x):
         # flatten
-        x = x.view(x.shape[0], -1)
+        x = x.contiguous().view(x.shape[0], -1)
         for layer in self.dense_layers:
             x = layer(x)
 

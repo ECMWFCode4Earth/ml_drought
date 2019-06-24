@@ -34,10 +34,11 @@ def linear_nn():
     else:
         data_path = Path('../data')
 
-    predictor = LinearNetwork(data_path)
+    predictor = LinearNetwork(layer_sizes=[100], data_folder=data_path)
     predictor.evaluate(save_preds=True)
 
 
 if __name__ == '__main__':
     parsimonious()
     regression()
+    linear_nn()
