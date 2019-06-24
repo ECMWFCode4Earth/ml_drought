@@ -51,4 +51,3 @@ def _chunk_tensor(x: torch.Tensor, y: torch.Tensor,
     if shuffle:
         shuffle_list(return_arrays)
     return return_arrays
-
