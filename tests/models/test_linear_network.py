@@ -10,18 +10,21 @@ from ..utils import _make_dataset
 
 class TestLinearNetwork:
 
-    def test_save(self, tmp_path):
+    def test_save(self, tmp_path, monkeypatch):
 
         layer_sizes = [10]
         input_size = 10
         dropout = 0.25
 
+        def mocktrain(self):
+            self.model = LinearModel(input_size, layer_sizes, dropout)
+            self.input_size = input_size
+
+        monkeypatch.setattr(LinearNetwork, 'train', mocktrain)
+
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
                               dropout=dropout)
-
-        model.model = LinearModel(input_size, layer_sizes, dropout)
-        model.input_size = input_size
-
+        model.train()
         model.save_model()
 
         assert (tmp_path / 'models/linear_network/model.pkl').exists(), f'Model not saved!'
@@ -92,6 +95,7 @@ class TestLinearNetwork:
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
                               dropout=dropout)
+        model.train()
         test_arrays_dict, pred_dict = model.predict()
 
         # the foldername "hello" is the only one which should be in the dictionaries

@@ -35,9 +35,7 @@ class LinearNetwork(ModelBase):
 
     def save_model(self):
 
-        if self.model is None:
-            self.train()
-            self.model: LinearModel
+        assert self.model is not None, 'Model must be trained before it can be saved!'
 
         model_dict = {
             'state_dict': self.model.state_dict(),
@@ -130,9 +128,7 @@ class LinearNetwork(ModelBase):
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
 
-        if self.model is None:
-            self.train()
-            self.model: LinearModel
+        assert self.model is not None, 'Model must be trained before predictions can be generated'
 
         self.model.eval()
         with torch.no_grad():

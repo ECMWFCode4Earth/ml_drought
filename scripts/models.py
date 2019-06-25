@@ -50,6 +50,7 @@ def linear_nn():
         data_path = Path('../data')
 
     predictor = LinearNetwork(layer_sizes=[100], data_folder=data_path)
+    predictor.train()
     predictor.evaluate(save_preds=True)
 
 
