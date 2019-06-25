@@ -1,3 +1,5 @@
+import torch
+import numpy as np
 import pytest
 
 from src.models.data import DataLoader, _BaseIter
@@ -25,8 +27,9 @@ class TestBaseIter:
             f'Got the same file in both train and val set!'
         assert len(train_paths) + len(val_paths) == 5, f'Not all files loaded!'
 
-    @pytest.mark.parametrize('normalize', [True, False])
-    def test_ds_to_np(self, tmp_path, normalize):
+    @pytest.mark.parametrize('normalize,to_tensor', [(True, True), (True, False),
+                                                     (False, True), (False, False)])
+    def test_ds_to_np(self, tmp_path, normalize, to_tensor):
 
         x, _, _ = _make_dataset(size=(5, 5))
         y = x.isel(time=[0])
@@ -49,12 +52,19 @@ class TestBaseIter:
                 self.clear_nans = None
                 self.data_files = []
                 self.normalizing_dict = norm_dict if normalize else None
+                self.to_tensor = None
 
         base_iterator = _BaseIter(MockLoader())
 
-        arrays = base_iterator.ds_folder_to_np(tmp_path, return_latlons=True)
+        arrays = base_iterator.ds_folder_to_np(tmp_path, return_latlons=True,
+                                               to_tensor=to_tensor)
 
         x_np, y_np, latlons = arrays.x, arrays.y, arrays.latlons
+
+        if to_tensor:
+            assert (type(x_np) == torch.Tensor) and (type(y_np) == torch.Tensor)
+        else:
+            assert (type(x_np) == np.ndarray) and (type(y_np) == np.ndarray)
 
         assert x_np.shape[0] == y_np.shape[0] == latlons.shape[0], \
             f'x, y and latlon data have a different number of instances! ' \
@@ -67,12 +77,13 @@ class TestBaseIter:
             for time in range(x_np.shape[1]):
                 target = x.isel(time=time).sel(lat=lat).sel(lon=lon).VHI.values
 
-                if not normalize:
+                if (not normalize) and (not to_tensor):
                     assert target == x_np[idx, time, 0], \
                         f'Got different x values for time idx: {time}, lat: {lat}, ' \
                         f'lon: {lon}.Expected {target}, got {x_np[idx, time, 0]}'
 
-            target_y = y.isel(time=0).sel(lat=lat).sel(lon=lon).VHI.values
-            assert target_y == y_np[idx, 0], \
-                f'Got y different values for lat: {lat}, ' \
-                f'lon: {lon}.Expected {target_y}, got {y_np[idx, 0]}'
+            if not to_tensor:
+                target_y = y.isel(time=0).sel(lat=lat).sel(lon=lon).VHI.values
+                assert target_y == y_np[idx, 0], \
+                    f'Got y different values for lat: {lat}, ' \
+                    f'lon: {lon}.Expected {target_y}, got {y_np[idx, 0]}'
