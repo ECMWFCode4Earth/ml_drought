@@ -5,9 +5,10 @@ from sklearn.metrics import mean_squared_error
 
 import shap
 
-from typing import Any, Dict, Tuple, Optional
+from typing import cast, Any, Dict, Tuple, Optional
 
 from .base import ModelBase
+from .utils import chunk_array
 from .data import DataLoader, train_val_mask
 
 
@@ -16,18 +17,17 @@ class LinearRegression(ModelBase):
     model_name = 'linear_regression'
 
     def __init__(self, data_folder: Path = Path('data'),
-                 batch_size: int = 1, num_epochs: int = 1,
-                 early_stopping: Optional[int] = None) -> None:
+                 batch_size: int = 1) -> None:
         super().__init__(data_folder, batch_size)
 
-        self.num_epochs = num_epochs
-        self.early_stopping = early_stopping
         self.explainer: Optional[shap.LinearExplainer] = None
 
-    def train(self) -> None:
+    def train(self, num_epochs: int = 1,
+              early_stopping: Optional[int] = None,
+              batch_size: int = 256) -> None:
         print(f'Training {self.model_name}')
 
-        if self.early_stopping is not None:
+        if early_stopping is not None:
             len_mask = len(DataLoader._load_datasets(self.data_path, mode='train',
                                                      shuffle_data=False))
             train_mask, val_mask = train_val_mask(len_mask, 0.3)
@@ -46,15 +46,18 @@ class LinearRegression(ModelBase):
                                           shuffle_data=True, mode='train')
         self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
 
-        for epoch in range(self.num_epochs):
+        for epoch in range(num_epochs):
             train_rmse = []
             for x, y in train_dataloader:
-                x = x.reshape(x.shape[0], x.shape[1] * x.shape[2])
-                self.model.partial_fit(x, y.ravel())
+                for batch_x, batch_y in chunk_array(x, y, batch_size, shuffle=True):
+                    batch_x, batch_y = cast(np.ndarray, batch_x), cast(np.ndarray, batch_y)
+                    batch_x = batch_x.reshape(batch_x.shape[0],
+                                              batch_x.shape[1] * batch_x.shape[2])
+                    self.model.partial_fit(batch_x, batch_y.ravel())
 
-                train_pred_y = self.model.predict(x)
-                train_rmse.append(np.sqrt(mean_squared_error(y, train_pred_y)))
-            if self.early_stopping is not None:
+                    train_pred_y = self.model.predict(batch_x)
+                    train_rmse.append(np.sqrt(mean_squared_error(batch_y, train_pred_y)))
+            if early_stopping is not None:
                 val_rmse = []
                 for x, y in val_dataloader:
                     x = x.reshape(x.shape[0], x.shape[1] * x.shape[2])
@@ -63,7 +66,7 @@ class LinearRegression(ModelBase):
 
             print(f'Epoch {epoch + 1}, train RMSE: {np.mean(train_rmse)}')
 
-            if self.early_stopping is not None:
+            if early_stopping is not None:
                 epoch_val_rmse = np.mean(val_rmse)
                 print(f'Val RMSE: {epoch_val_rmse}')
                 if epoch_val_rmse < best_val_score:
@@ -71,7 +74,7 @@ class LinearRegression(ModelBase):
                     best_val_score = epoch_val_rmse
                 else:
                     batches_without_improvement += 1
-                    if batches_without_improvement == self.early_stopping:
+                    if batches_without_improvement == early_stopping:
                         print('Early stopping!')
                         return None
 

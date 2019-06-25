@@ -36,9 +36,6 @@ class ModelBase:
         self.model: Any = None  # to be added by the model classes
         self.data_vars: Optional[List[str]] = None  # to be added by the train step
 
-    def train(self) -> None:
-        raise NotImplementedError
-
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         # This method should return the test arrays as loaded by
         # the test array dataloader, and the corresponding predictions
@@ -86,13 +83,13 @@ class ModelBase:
             true = vals['y']
             preds = preds_dict[key]
 
-            output_dict[key] = np.sqrt(mean_squared_error(true, preds))
+            output_dict[key] = np.sqrt(mean_squared_error(true, preds)).item()
 
             total_preds.append(preds)
             total_true.append(true)
 
         output_dict['total'] = np.sqrt(mean_squared_error(np.concatenate(total_true),
-                                                          np.concatenate(total_preds)))
+                                                          np.concatenate(total_preds))).item()
 
         print(f'RMSE: {output_dict["total"]}')
 
