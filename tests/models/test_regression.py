@@ -25,6 +25,7 @@ class TestLinearRegression:
         monkeypatch.setattr(LinearRegression, 'train', mocktrain)
 
         model = LinearRegression(tmp_path)
+        model.train()
         model.save_model()
 
         assert (tmp_path / 'models/linear_regression/model.npy').exists(), f'Model not saved!'

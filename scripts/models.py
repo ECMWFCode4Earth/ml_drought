@@ -2,6 +2,7 @@ import sys
 sys.path.append('..')
 
 from pathlib import Path
+import numpy as np
 
 from src.models import Persistence, LinearRegression, LinearNetwork
 from src.models.data import DataLoader
@@ -26,6 +27,7 @@ def regression():
         data_path = Path('../data')
 
     predictor = LinearRegression(data_path)
+    predictor.train()
     predictor.evaluate(save_preds=True)
 
     # mostly to test it works
@@ -34,6 +36,10 @@ def regression():
     key, val = list(next(iter(test_arrays_loader)).items())[0]
     explanations = predictor.explain(val.x)
     print(explanations.shape)
+    np.save('shap_regression.npy', explanations)
+
+    with open('variables.txt', 'w') as f:
+        f.write(str(val.x_vars))
 
 
 def linear_nn():
@@ -50,4 +56,4 @@ def linear_nn():
 if __name__ == '__main__':
     # parsimonious()
     regression()
-    linear_nn()
+    # linear_nn()

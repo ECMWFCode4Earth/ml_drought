@@ -80,8 +80,7 @@ class LinearRegression(ModelBase):
 
     def explain(self, x: Any) -> np.ndarray:
 
-        if self.model is None:
-            self.train()
+        assert self.model is not None, 'Model must be trained!'
 
         if self.explainer is None:
             mean = self._calculate_big_mean()
@@ -95,9 +94,7 @@ class LinearRegression(ModelBase):
 
     def save_model(self) -> None:
 
-        if self.model is None:
-            self.train()
-            self.model: linear_model.LinearRegression
+        assert self.model is not None, 'Model must be trained!'
 
         coefs = self.model.coef_
         np.save(self.model_dir / 'model.npy', coefs)
@@ -110,9 +107,7 @@ class LinearRegression(ModelBase):
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
 
-        if self.model is None:
-            self.train()
-            self.model: linear_model.SGDRegressor
+        assert self.model is not None, 'Model must be trained!'
 
         for dict in test_arrays_loader:
             for key, val in dict.items():
