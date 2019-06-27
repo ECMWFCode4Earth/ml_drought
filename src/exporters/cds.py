@@ -1,20 +1,14 @@
 import cdsapi
 from pathlib import Path
-import certifi
-import urllib3
 import warnings
 import itertools
 import re
 from pprint import pprint
+import multiprocessing
 
 from typing import Dict, Optional, List
 
 from .base import BaseExporter, Region, get_kenya
-
-http = urllib3.PoolManager(
-    cert_reqs='CERT_REQUIRED',
-    ca_certs=certifi.where()
-)
 
 
 class CDSExporter(BaseExporter):
@@ -41,6 +35,8 @@ class CDSExporter(BaseExporter):
         ----------
         area: str
             A string representing the region which can be passed to the CDS API
+
+        format = 'North/West/South/East'
         """
         x = [region.latmax, region.lonmin, region.latmin, region.lonmax]
 
@@ -84,16 +80,22 @@ class CDSExporter(BaseExporter):
 
     @staticmethod
     def _print_api_request(dataset: str,
-                           selection_request: Dict) -> None:
+                           selection_request: Dict,
+                           output_file: Path) -> None:
         print('------------------------')
         print(f'Dataset: {dataset}')
         print('Selection Request:')
         pprint(selection_request)
         print('------------------------')
+        print('Output Filename:')
+        print(output_file)
+        print('------------------------')
 
-    def _export(self, dataset: str,
+    def _export(self,
+                dataset: str,
                 selection_request: Dict,
-                show_api_request: bool = False) -> Path:
+                show_api_request: bool = False,
+                in_parallel: bool = False) -> Path:
         """Export CDS data
 
         Parameters
@@ -112,10 +114,16 @@ class CDSExporter(BaseExporter):
         output_file = self.make_filename(dataset, selection_request)
 
         if show_api_request:
-            self._print_api_request(dataset, selection_request)
+            self._print_api_request(dataset, selection_request, output_file)
 
         if not output_file.exists():
-            self.client.retrieve(dataset, selection_request, str(output_file))
+
+            if not in_parallel:
+                self.client.retrieve(dataset, selection_request, str(output_file))
+
+            else:  # in parallel create a new Client each time it's called
+                client = cdsapi.Client()
+                client.retrieve(dataset, selection_request, str(output_file))
 
         return output_file
 
@@ -241,7 +249,8 @@ class ERA5Exporter(CDSExporter):
                granularity: str = 'hourly',
                show_api_request: bool = True,
                selection_request: Optional[Dict] = None,
-               break_up: bool = True) -> List[Path]:
+               break_up: bool = True,
+               N_parallel_requests: int = 3) -> List[Path]:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
 
@@ -263,6 +272,11 @@ class ERA5Exporter(CDSExporter):
         break_up: bool, default = True
             The best way to download the data is by making many small calls to the CDS
             API. If true, the calls will be broken up into months
+        parallel: bool, default = True
+            Whether to download data in parallel
+        N_parallel_requests:
+            How many parallel requests to the CDSAPI to make
+
         Returns:
         -------
         output_files: List of pathlib.Paths
@@ -277,7 +291,13 @@ class ERA5Exporter(CDSExporter):
         if dataset is None:
             dataset = self.get_dataset(variable, granularity)
 
+        if N_parallel_requests < 1: N_parallel_requests = 1
+
+        # break up by month
         if break_up:
+            if N_parallel_requests > 1:  # Run in parallel
+                p = multiprocessing.Pool(int(N_parallel_requests))
+
             output_paths = []
             for year, month in itertools.product(processed_selection_request['year'],
                                                  processed_selection_request['month']):
@@ -285,8 +305,21 @@ class ERA5Exporter(CDSExporter):
                 updated_request['year'] = [year]
                 updated_request['month'] = [month]
 
-                output_paths.append(self._export(dataset, updated_request, show_api_request))
-
+                if N_parallel_requests > 1:  # Run in parallel
+                    # multiprocessing of the paths
+                    output_paths.append(
+                        p.apply_async(
+                            self._export,
+                            args=(dataset, updated_request, show_api_request, True)
+                        ).get()
+                    )
+                else:  # run sequentially
+                    output_paths.append(
+                        self._export(dataset, updated_request, show_api_request)
+                    )
+            if N_parallel_requests > 1:
+                p.close()
+                p.join()
             return output_paths
 
         return [self._export(dataset,

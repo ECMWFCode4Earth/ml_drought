@@ -11,81 +11,6 @@ from pathos.multiprocessing import ProcessingPool as Pool
 
 from .base import BaseExporter
 
-# ------------------------------------------------------------------------------
-# Parallel functions
-# ------------------------------------------------------------------------------
-
-
-def _parse_time_from_filename(filename) -> Tuple:
-    # regex pattern (4 digits after '.P')
-    year_pattern = re.compile(r'.P\d{4}')
-    # extract the week_number
-    week_num = year_pattern.split(filename)[-1].split('.')[0]
-    # extract the year from the filename
-    year = year_pattern.findall(filename)[0].split('.P')[-1]
-
-    return year, week_num
-
-
-def make_filename(raw_folder: Path, raw_filename: str, dataset: str = 'vhi',) -> Path:
-    # check that the string is a legitimate name
-    assert len(raw_filename.split('/')) == 1, f" \
-        filename cannot have subdirectories in it '/'. Must be the root \
-        filename. Currently: {raw_filename}\
-        "
-
-    # make the dataset folder ('VHI')
-    dataset_folder = raw_folder / dataset
-    if not dataset_folder.exists():
-        dataset_folder.mkdir()
-
-    # make the year folder
-    year = _parse_time_from_filename(raw_filename)[0]
-    assert isinstance(year, str), f"year must be a string! currently: < {year}, {type(year)} >"
-    year_folder = dataset_folder / year
-    if not year_folder.exists():
-        year_folder.mkdir()
-
-    # make the filename e.g. 'raw/vhi/1981/VHP.G04.C07.NC.P1981035.VH.nc'
-    filename = year_folder / raw_filename
-
-    return filename
-
-
-def download_file_from_ftp(ftp_instance: ftplib.FTP,
-                           filename: str,
-                           output_filename: Path) -> None:
-    # check if already exists
-    if output_filename.exists():
-        print(f"File already exists! {output_filename}")
-        return
-
-    # download to output_filename
-    with open(output_filename, 'wb') as out_f:
-        ftp_instance.retrbinary("RETR " + filename, out_f.write)
-
-    if output_filename.exists():
-        print(f"Successful Download! {output_filename}")
-    else:
-        print(f"Error Downloading file: {output_filename}")
-
-
-def batch_ftp_request(args: Dict, filenames: List) -> None:
-    # unpack multiple arguments
-    raw_folder = args['raw_folder']
-
-    # create one FTP connection for each batch
-    with ftplib.FTP('ftp.star.nesdis.noaa.gov') as ftp:
-        ftp.login()
-        ftp.cwd('/pub/corp/scsb/wguo/data/Blended_VH_4km/VH/')
-
-        # download each filename using this FTP object
-        for raw_filename in filenames:
-            output_filename = (
-                make_filename(raw_folder, raw_filename, dataset='vhi')
-            )
-            download_file_from_ftp(ftp, raw_filename, output_filename)
-
 
 class VHIExporter(BaseExporter):
     """Exports Vegetation Health Index from NASA site
@@ -134,17 +59,30 @@ class VHIExporter(BaseExporter):
         with open(self.raw_folder / 'vhi_export_errors.pkl', 'wb') as f:
             pickle.dump([error[-1] for error in outputs if error is not None], f)
 
-    def run_parallel(self,
-                     vhi_files: List,
-                     ) -> List:
-        pool = Pool(processes=100)
+    def _run_export(self,
+                    vhi_files: List,
+                    num_processes: int = 100
+                    ) -> List:
 
-        # split the filenames into batches of 100
-        batches = [batch for batch in self.chunks(vhi_files, 100)]
+        if num_processes > 1:
+            pool = Pool(processes=num_processes)
 
-        # run in parallel for multiple file downloads
-        args = dict(raw_folder=self.raw_folder)
-        outputs = pool.map(partial(batch_ftp_request, args), batches)
+            # split the filenames into batches of 100
+            batches = [batch for batch in self.chunks(vhi_files, 100)]
+
+            # run in parallel for multiple file downloads
+            args = dict(raw_folder=self.raw_folder)
+            outputs = pool.map(partial(batch_ftp_request, args), batches)
+        else:
+            outputs = []
+            batches = []
+            for vhi_file in vhi_files:
+                try:
+                    batch_ftp_request(args={'raw_folder': self.raw_folder},
+                                      filenames=[vhi_file])
+                    batches.append([vhi_file])
+                except Exception as e:
+                    outputs.append(e)
 
         # write the output (TODO: turn into logging behaviour)
         print("\n\n*************************")
@@ -209,13 +147,8 @@ class VHIExporter(BaseExporter):
 
         return missing_filepaths
 
-    def rerun_missing_files(self):
-        vhi_files = self.get_missing_filepaths()
-
-        batches = self.run_parallel(vhi_files)
-        return batches
-
-    def export(self, years: Optional[List] = None, repeats: int = 5) -> List:
+    def export(self, years: Optional[List] = None, repeats: int = 5,
+               num_processes: int = 100) -> List:
         """Export VHI data from the ftp server.
         By default write output to raw/vhi/{YEAR}/{filename}
 
@@ -224,6 +157,10 @@ class VHIExporter(BaseExporter):
         years : Optional[List] = None
             list of years that you want to download. If None, all years will
             be downloaded
+        repeats: int = 5
+            The number of times to retry downloads which failed
+        num_processes: int = 100
+            The number of processes to run. If 1, the download happens serially
 
         Returns:
         -------
@@ -241,11 +178,86 @@ class VHIExporter(BaseExporter):
         vhi_files = self.get_ftp_filenames(years)
 
         # run the download steps in parallel
-        batches = self.run_parallel(vhi_files)
+        batches = self._run_export(vhi_files, num_processes)
 
         for _ in range(repeats):
             missing_filepaths = self.get_missing_filepaths(vhi_files)
-            batches = self.run_parallel(missing_filepaths)
+            batches = self._run_export(missing_filepaths, num_processes)
             print(f'**{_} of {repeats} VHI Downloads completed **')
 
         return batches
+
+# ------------------------------------------------------------------------------
+# Parallel functions
+# ------------------------------------------------------------------------------
+
+
+def _parse_time_from_filename(filename) -> Tuple:
+    # regex pattern (4 digits after '.P')
+    year_pattern = re.compile(r'.P\d{4}')
+    # extract the week_number
+    week_num = year_pattern.split(filename)[-1].split('.')[0]
+    # extract the year from the filename
+    year = year_pattern.findall(filename)[0].split('.P')[-1]
+
+    return year, week_num
+
+
+def make_filename(raw_folder: Path, raw_filename: str, dataset: str = 'vhi',) -> Path:
+    # check that the string is a legitimate name
+    assert len(raw_filename.split('/')) == 1, f" \
+        filename cannot have subdirectories in it '/'. Must be the root \
+        filename. Currently: {raw_filename}\
+        "
+
+    # make the dataset folder ('VHI')
+    dataset_folder = raw_folder / dataset
+    if not dataset_folder.exists():
+        dataset_folder.mkdir()
+
+    # make the year folder
+    year = _parse_time_from_filename(raw_filename)[0]
+    assert isinstance(year, str), f"year must be a string! currently: < {year}, {type(year)} >"
+    year_folder = dataset_folder / year
+    if not year_folder.exists():
+        year_folder.mkdir()
+
+    # make the filename e.g. 'raw/vhi/1981/VHP.G04.C07.NC.P1981035.VH.nc'
+    filename = year_folder / raw_filename
+
+    return filename
+
+
+def download_file_from_ftp(ftp_instance: ftplib.FTP,
+                           filename: str,
+                           output_filename: Path) -> None:
+    # check if already exists
+    if output_filename.exists():
+        print(f"File already exists! {output_filename}")
+        return
+
+    # download to output_filename
+    with output_filename.open('wb') as out_f:
+        ftp_instance.retrbinary("RETR " + filename, out_f.write)
+
+    if output_filename.exists():
+        print(f"Successful Download! {output_filename}")
+    else:
+        print(f"Error Downloading file: {output_filename}")
+
+
+def batch_ftp_request(args: Dict, filenames: List) -> None:
+    # unpack multiple arguments
+    raw_folder = args['raw_folder']
+
+    # create one FTP connection for each batch
+    with ftplib.FTP('ftp.star.nesdis.noaa.gov') as ftp:
+        ftp.login()
+        ftp.cwd('/pub/corp/scsb/wguo/data/Blended_VH_4km/VH/')
+
+        # download each filename using this FTP object
+        for raw_filename in filenames:
+            output_filename = (
+                make_filename(raw_folder, raw_filename, dataset='vhi')
+            )
+            download_file_from_ftp(ftp, raw_filename, output_filename)
