@@ -16,11 +16,7 @@ class TestVHIExporter:
         if "tommylees" in Path('.').absolute().as_posix():
             if True:
                 return
-<<<<<<< HEAD
-                assert False, f"Switch to run this function (takes time)"
-=======
                 assert True, f"Switch to run this function (takes time)"
->>>>>>> 63d9d82ae5ae46995709cd48d35d1f297443f5ac
             fnames = VHIExporter.get_ftp_filenames(years=list(range(2000, 2020)))
 
             weeks = [int(_parse_time_from_filename(f)[-1]) for f in fnames]
