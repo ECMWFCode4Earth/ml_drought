@@ -12,7 +12,7 @@ def parsimonious():
     else:
         data_path = Path('../data')
 
-    predictor = Persistence(data_path)
+    predictor = Persistence(data_path, experiment='one_month_forecast')
     predictor.evaluate(save_preds=True)
 
 
@@ -23,7 +23,7 @@ def regression():
     else:
         data_path = Path('../data')
 
-    predictor = LinearRegression(data_path)
+    predictor = LinearRegression(data_path, experiment='one_month_forecast')
     predictor.evaluate(save_preds=True)
 
 
@@ -34,7 +34,7 @@ def linear_nn():
     else:
         data_path = Path('../data')
 
-    predictor = LinearNetwork(layer_sizes=[100], data_folder=data_path)
+    predictor = LinearNetwork(layer_sizes=[100], data_folder=data_path, experiment='one_month_forecast')
     predictor.evaluate(save_preds=True)
 
 

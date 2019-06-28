@@ -23,25 +23,27 @@ class TestLinearRegression:
 
         monkeypatch.setattr(LinearRegression, 'train', mocktrain)
 
-        model = LinearRegression(tmp_path)
+        model = LinearRegression(tmp_path, experiment='one_month_forecast')
         model.save_model()
 
-        assert (tmp_path / 'models/linear_regression/model.npy').exists(), f'Model not saved!'
+        assert (
+            tmp_path / 'models/one_month_forecast/linear_regression/model.npy'
+        ).exists(), f'Model not saved!'
 
-        saved_model = np.load(tmp_path / 'models/linear_regression/model.npy')
+        saved_model = np.load(tmp_path / 'models/one_month_forecast/linear_regression/model.npy')
         assert np.array_equal(model_array, saved_model), f'Different array saved!'
 
     def test_train(self, tmp_path, capsys):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        test_features = tmp_path / 'features/train/hello'
+        test_features = tmp_path / 'features/one_month_forecast/train/hello'
         test_features.mkdir(parents=True)
 
         norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
                              'std': np.ones(x.to_array().values.shape[:2])}
                      }
-        with (tmp_path / 'features/normalizing_dict.pkl').open('wb') as f:
+        with (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').open('wb') as f:
             pickle.dump(norm_dict, f)
 
         x.to_netcdf(test_features / 'x.nc')

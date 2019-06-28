@@ -18,13 +18,14 @@ class ModelBase:
     model_name: str  # to be added by the model classes
 
     def __init__(self, data_folder: Path = Path('data'),
-                 batch_size: int = 1) -> None:
+                 batch_size: int = 1,
+                 experiment: str = 'one_month_forecast') -> None:
 
         self.batch_size = batch_size
         self.data_path = data_folder
-        self.models_dir = data_folder / 'models'
+        self.models_dir = data_folder / 'models' / experiment
         if not self.models_dir.exists():
-            self.models_dir.mkdir()
+            self.models_dir.mkdir(parents=True, exist_ok=False)
 
         try:
             self.model_dir = self.models_dir / self.model_name

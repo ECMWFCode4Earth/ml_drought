@@ -14,12 +14,14 @@ class LinearRegression(ModelBase):
     model_name = 'linear_regression'
 
     def train(self, num_epochs: int = 1,
+              experiment: str = 'one_month_forecast',
               early_stopping: Optional[int] = None,
               batch_size: int = 256) -> None:
-        print(f'Training {self.model_name}')
+        print(f'Training {self.model_name} for experiment {experiment}')
 
         if early_stopping is not None:
             len_mask = len(DataLoader._load_datasets(self.data_path, mode='train',
+                                                     experiment=experiment,
                                                      shuffle_data=False))
             train_mask, val_mask = train_val_mask(len_mask, 0.3)
 
@@ -33,6 +35,7 @@ class LinearRegression(ModelBase):
             best_val_score = np.inf
         else:
             train_dataloader = DataLoader(data_path=self.data_path,
+                                          experiment=experiment,
                                           batch_file_size=self.batch_size,
                                           shuffle_data=True, mode='train')
         self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()

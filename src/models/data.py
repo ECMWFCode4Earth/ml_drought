@@ -69,6 +69,7 @@ class DataLoader:
     def __init__(self, data_path: Path = Path('data'), batch_file_size: int = 1,
                  mode: str = 'train', shuffle_data: bool = True,
                  clear_nans: bool = True, normalize: bool = True,
+                 experiment: str = 'one_month_forecast',
                  mask: Optional[List[bool]] = None,
                  to_tensor: bool = False) -> None:
 
@@ -76,11 +77,16 @@ class DataLoader:
         self.mode = mode
         self.shuffle = shuffle_data
         self.clear_nans = clear_nans
-        self.data_files = self._load_datasets(data_path, mode, shuffle_data, mask)
+        self.data_files = self._load_datasets(
+            data_path=data_path, mode=mode, shuffle_data=shuffle_data,
+            experiment=experiment, mask=mask
+        )
 
         self.normalizing_dict = None
         if normalize:
-            with (data_path / 'features/normalizing_dict.pkl').open('rb') as f:
+            with (
+                data_path / f'features/{experiment}/normalizing_dict.pkl'
+            ).open('rb') as f:
                 self.normalizing_dict = pickle.load(f)
 
         self.to_tensor = to_tensor
@@ -95,10 +101,11 @@ class DataLoader:
         return len(self.data_files) // self.batch_file_size
 
     @staticmethod
-    def _load_datasets(data_path: Path, mode: str, shuffle_data: bool,
+    def _load_datasets(data_path: Path, mode: str,
+                       shuffle_data: bool, experiment: str,
                        mask: Optional[List[bool]] = None) -> List[Path]:
 
-        data_folder = data_path / f'features/{mode}'
+        data_folder = data_path / f'features/{experiment}/{mode}'
         output_paths: List[Path] = []
 
         for subtrain in data_folder.iterdir():

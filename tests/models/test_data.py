@@ -12,16 +12,18 @@ class TestBaseIter:
     def test_mask(self, tmp_path):
 
         for i in range(5):
-            (tmp_path / f'features/train/{i}').mkdir(parents=True)
-            (tmp_path / f'features/train/{i}/x.nc').touch()
-            (tmp_path / f'features/train/{i}/y.nc').touch()
+            (tmp_path / f'features/one_month_forecast/train/{i}').mkdir(parents=True)
+            (tmp_path / f'features/one_month_forecast/train/{i}/x.nc').touch()
+            (tmp_path / f'features/one_month_forecast/train/{i}/y.nc').touch()
 
         mask_train = [True, True, False, True, False]
         mask_val = [False, False, True, False, True]
 
         train_paths = DataLoader._load_datasets(tmp_path, mode='train',
+                                                experiment='one_month_forecast',
                                                 shuffle_data=True, mask=mask_train)
         val_paths = DataLoader._load_datasets(tmp_path, mode='train',
+                                              experiment='one_month_forecast',
                                               shuffle_data=True, mask=mask_val)
         assert len(set(train_paths).intersection(set(val_paths))) == 0, \
             f'Got the same file in both train and val set!'

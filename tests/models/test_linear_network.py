@@ -17,14 +17,16 @@ class TestLinearNetwork:
         dropout = 0.25
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
-                              dropout=dropout)
+                              dropout=dropout, experiment='one_month_forecast')
 
         model.model = LinearModel(input_size, layer_sizes, dropout)
         model.input_size = input_size
 
         model.save_model()
 
-        assert (tmp_path / 'models/linear_network/model.pkl').exists(), f'Model not saved!'
+        assert (
+            tmp_path / 'models/one_month_forecast/linear_network/model.pkl'
+        ).exists(), f'Model not saved!'
 
         model_dict = torch.load(model.model_dir / 'model.pkl')
 
@@ -39,13 +41,13 @@ class TestLinearNetwork:
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        test_features = tmp_path / 'features/train/hello'
+        test_features = tmp_path / 'features/one_month_forecast/train/hello'
         test_features.mkdir(parents=True)
 
         norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
                              'std': np.ones(x.to_array().values.shape[:2])}
                      }
-        with (tmp_path / 'features/normalizing_dict.pkl').open('wb') as f:
+        with (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').open('wb') as f:
             pickle.dump(norm_dict, f)
 
         x.to_netcdf(test_features / 'x.nc')
@@ -55,7 +57,7 @@ class TestLinearNetwork:
         dropout = 0.25
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
-                              dropout=dropout)
+                              dropout=dropout, experiment='one_month_forecast')
         model.train()
 
         captured = capsys.readouterr()
@@ -69,16 +71,16 @@ class TestLinearNetwork:
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        train_features = tmp_path / 'features/train/hello'
+        train_features = tmp_path / 'features/one_month_forecast/train/hello'
         train_features.mkdir(parents=True)
 
-        test_features = tmp_path / 'features/test/hello'
+        test_features = tmp_path / 'features/one_month_forecast/test/hello'
         test_features.mkdir(parents=True)
 
         norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
                              'std': np.ones(x.to_array().values.shape[:2])}
                      }
-        with (tmp_path / 'features/normalizing_dict.pkl').open('wb') as f:
+        with (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').open('wb') as f:
             pickle.dump(norm_dict, f)
 
         x.to_netcdf(test_features / 'x.nc')
