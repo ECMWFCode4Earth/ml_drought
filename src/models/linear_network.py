@@ -22,6 +22,7 @@ class LinearNetwork(ModelBase):
                  experiment: str = 'one_month_forecast',
                  batch_size: int = 1) -> None:
         super().__init__(data_folder, batch_size, experiment=experiment)
+        self.experiment = experiment
 
         if type(layer_sizes) is int:
             layer_sizes = cast(List[int], [layer_sizes])
@@ -57,16 +58,21 @@ class LinearNetwork(ModelBase):
 
         if early_stopping is not None:
             len_mask = len(DataLoader._load_datasets(self.data_path, mode='train',
+                                                     experiment=self.experiment,
                                                      shuffle_data=False))
             train_mask, val_mask = train_val_mask(len_mask, 0.3)
 
             train_dataloader = DataLoader(data_path=self.data_path,
                                           batch_file_size=self.batch_size,
-                                          shuffle_data=True, mode='train', mask=train_mask,
+                                          shuffle_data=True, mode='train',
+                                          experiment=self.experiment,
+                                          mask=train_mask,
                                           to_tensor=True)
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
-                                        shuffle_data=False, mode='train', mask=val_mask,
+                                        shuffle_data=False, mode='train',
+                                        experiment=self.experiment,
+                                        mask=val_mask,
                                         to_tensor=True)
             batches_without_improvement = 0
             best_val_score = np.inf
@@ -74,6 +80,7 @@ class LinearNetwork(ModelBase):
             train_dataloader = DataLoader(data_path=self.data_path,
                                           batch_file_size=self.batch_size,
                                           shuffle_data=True, mode='train',
+                                          experiment=self.experiment,
                                           to_tensor=True)
 
         # initialize the model

@@ -65,6 +65,12 @@ class DataLoader:
         and validation set
     to_tensor: bool = False
         Whether to turn the np.ndarrays into torch.Tensors
+
+    Note:
+    the _load_datasets() function requires an `experiment` string defining
+    which experiment is to be run. The string must be the same as the
+    name of the experiment when creating the `x.npy` and `y.npy` `train`/`test`
+    splits in the `engineer` classes.
     """
     def __init__(self, data_path: Path = Path('data'), batch_file_size: int = 1,
                  mode: str = 'train', shuffle_data: bool = True,

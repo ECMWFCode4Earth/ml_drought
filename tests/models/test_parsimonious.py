@@ -18,7 +18,7 @@ class TestPersistence:
 
         predictor = Persistence(tmp_path)
 
-        test_arrays, preds = predictor.predict()
+        test_arrays, preds = predictor.predict(experiment='one_month_forecast')
 
         assert (test_arrays['hello']['y'] == preds['hello']).all(), \
             f'Last timestep not correctly taken!'

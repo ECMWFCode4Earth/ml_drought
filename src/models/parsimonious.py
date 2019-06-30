@@ -21,10 +21,15 @@ class Persistence(ModelBase):
     def save_model(self) -> None:
         print('Move on! Nothing to save here!')
 
-    def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
+    def predict(
+        self,
+        experiment: str = 'one_month_forecast'
+    ) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
 
-        test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=self.batch_size,
-                                        shuffle_data=False, mode='test', normalize=False)
+        test_arrays_loader = DataLoader(
+            data_path=self.data_path, batch_file_size=self.batch_size,
+            experiment=experiment, shuffle_data=False, mode='test', normalize=False
+        )
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
