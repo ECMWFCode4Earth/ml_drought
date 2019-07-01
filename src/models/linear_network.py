@@ -130,10 +130,12 @@ class LinearNetwork(ModelBase):
                 if epoch_val_rmse < best_val_score:
                     batches_without_improvement = 0
                     best_val_score = epoch_val_rmse
+                    best_model_dict = self.model.state_dict()
                 else:
                     batches_without_improvement += 1
                     if batches_without_improvement == early_stopping:
                         print('Early stopping!')
+                        self.model.load_state_dict(best_model_dict)
                         return None
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:

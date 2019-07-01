@@ -72,10 +72,14 @@ class LinearRegression(ModelBase):
                 if epoch_val_rmse < best_val_score:
                     batches_without_improvement = 0
                     best_val_score = epoch_val_rmse
+                    best_coef = self.model.coef_
+                    best_intercept = self.model.intercept_
                 else:
                     batches_without_improvement += 1
                     if batches_without_improvement == early_stopping:
                         print('Early stopping!')
+                        self.model.coef_ = best_coef
+                        self.model.intercept_ = best_intercept
                         return None
 
     def explain(self, x: Any) -> np.ndarray:
