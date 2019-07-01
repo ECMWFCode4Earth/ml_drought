@@ -169,7 +169,7 @@ class LinearNetwork(ModelBase):
         for x, _ in train_dataloader:
             while len(output_tensors) < sample_size:
                 for _ in range(samples_per_instance):
-                    idx = random.randint(0, x.shape[0])
+                    idx = random.randint(0, x.shape[0] - 1)
                     output_tensors.append(x[idx])
         return torch.stack(output_tensors)
 
