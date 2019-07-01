@@ -23,8 +23,10 @@ class EventDetector():
         self.ds = self.read_data(path_to_data)
 
     def read_data(self, path_to_data: Path) -> xr.Dataset:
+
         try:
             ds = xr.open_dataset(path_to_data)
+
         except ValueError:
             print(ValueError)
             warnings.warn("Having to decode_times=False because unsupported calendar")
@@ -32,6 +34,7 @@ class EventDetector():
             warnings.warn("Hardcoding MONTHLY data (CHIRPS example)")
             time = pd.date_range(start='1900-01-01', freq='M', periods=len(ds.time.values))
             ds['time'] = time
+
         print(f"{path_to_data.name} read!")
         ds = ds.sortby('time')
         # TODO: infer time frequency ?
@@ -50,11 +53,11 @@ class EventDetector():
             ["q90","q10","std","abs",]
         """
         if method == "q90":
-            warnings.warn('this method is currently super slow')
+            warnings.warn(f'this method ({method}) is currently super slow')
             thresh = ds.groupby(f'time.{time_period}').reduce(np.nanpercentile, dim='time', q=0.9)
 
         elif method == "q10":
-            warnings.warn('this method is currently super slow')
+            warnings.warn(f'this method ({method}) is currently super slow')
             thresh = ds.groupby(f'time.{time_period}').reduce(np.nanpercentile, dim='time', q=0.1)
 
         elif method == "std":
@@ -227,9 +230,9 @@ class EventDetector():
         _, _, exceed = self.calculate_threshold_exceedences(
             variable, time_period, hilo, method=method
         )
-        self.exceedences = self.reapply_mask_to_boolean_xarray(
-            variable, exceed
-        )
+        # self.exceedences = self.reapply_mask_to_boolean_xarray(
+            # variable, exceed
+        # )
         print(f"** exceedences calculated **")
 
     def reapply_mask_to_boolean_xarray(self,
@@ -249,6 +252,11 @@ class EventDetector():
             the boolean DataArray (for example `self.exceedences`) to reapply
             the mask to
 
+        Returns:
+        -------
+        xr.DataArray with dtype of `int`, because `bool` dtype doesn't store
+        masks / nan values very well.
+
         NOTE:
             1. Uses the input dataset for the mask - TODO: does this make
              sense?
@@ -257,7 +265,7 @@ class EventDetector():
         currrently works on boolean xr.Dataset objects only"
 
         mask = get_ds_mask(self.ds[variable_of_mask])
-        da = da.where(~mask).astype(bool)
+        da = da.astype(int).where(~mask)
 
         return da
 
