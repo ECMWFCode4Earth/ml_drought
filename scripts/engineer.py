@@ -13,7 +13,7 @@ def engineer():
         data_path = Path('../data')
 
     engineer = OneMonthForecastEngineer(data_path)
-    engineer.engineer(test_year=1994, target_variable='VHI')
+    engineer.engineer(test_year=2018, target_variable='VHI')
 
 
 if __name__ == '__main__':

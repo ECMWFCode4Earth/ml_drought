@@ -1,11 +1,14 @@
 import numpy as np
 from pathlib import Path
+import random
 
 import torch
 from torch import nn
 from torch.nn import functional as F
 
-from typing import cast, Dict, List, Optional, Tuple, Union
+import shap
+
+from typing import cast, Any, Dict, List, Optional, Tuple, Union
 
 from .base import ModelBase
 from .utils import chunk_array
@@ -33,11 +36,11 @@ class LinearNetwork(ModelBase):
         # for reproducibility
         torch.manual_seed(42)
 
+        self.explainer: Optional[shap.DeepExplainer] = None
+
     def save_model(self):
 
-        if self.model is None:
-            self.train()
-            self.model: LinearModel
+        assert self.model is not None, 'Model must be trained before it can be saved!'
 
         model_dict = {
             'state_dict': self.model.state_dict(),
@@ -47,6 +50,16 @@ class LinearNetwork(ModelBase):
         }
 
         torch.save(model_dict, self.model_dir / 'model.pkl')
+
+    def explain(self, x: Any) -> np.ndarray:
+        assert self.model is not None, 'Model must be trained!'
+
+        if self.explainer is None:
+            background_samples = self._get_background(sample_size=100)
+            self.explainer: shap.DeepExplainer = shap.DeepExplainer(
+                self.model, background_samples)
+
+        return self.explainer.shap_values(x)
 
     def train(self, num_epochs: int = 1,
               early_stopping: Optional[int] = None,
@@ -130,9 +143,7 @@ class LinearNetwork(ModelBase):
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
 
-        if self.model is None:
-            self.train()
-            self.model: LinearModel
+        assert self.model is not None, 'Model must be trained before predictions can be generated'
 
         self.model.eval()
         with torch.no_grad():
@@ -143,6 +154,24 @@ class LinearNetwork(ModelBase):
                     test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons}
 
         return test_arrays_dict, preds_dict
+
+    def _get_background(self, sample_size: int = 100) -> torch.Tensor:
+
+        print('Extracting a sample of the training data')
+
+        train_dataloader = DataLoader(data_path=self.data_path,
+                                      batch_file_size=self.batch_size,
+                                      shuffle_data=True, mode='train',
+                                      to_tensor=True)
+        output_tensors: List[torch.Tensor] = []
+        samples_per_instance = max(1, sample_size // len(train_dataloader))
+
+        for x, _ in train_dataloader:
+            while len(output_tensors) < sample_size:
+                for _ in range(samples_per_instance):
+                    idx = random.randint(0, x.shape[0] - 1)
+                    output_tensors.append(x[idx])
+        return torch.stack(output_tensors)
 
 
 class LinearModel(nn.Module):
