@@ -230,9 +230,8 @@ class EventDetector():
         _, _, exceed = self.calculate_threshold_exceedences(
             variable, time_period, hilo, method=method
         )
-        # self.exceedences = self.reapply_mask_to_boolean_xarray(
-            # variable, exceed
-        # )
+
+        # self.exceedences = self.reapply_mask_to_boolean_xarray(variable, exceed)
         self.exceedences = exceed
         print(f"** exceedences calculated **")
 

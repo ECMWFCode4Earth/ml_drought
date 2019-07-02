@@ -1,3 +1,6 @@
+import numpy as np
+import pandas as pd
+import xarray as xr
 from src.analysis import EventDetector
 
 from ..utils import _make_dataset
@@ -6,12 +9,12 @@ from ..utils import _make_dataset
 class TestEventDetector:
     @staticmethod
     def create_dummy_data(tmp_path):
-        data_dir = tmp_path / 'data' / 'interim'
+        data_dir = tmp_path / 'data' / 'interim' / 'chirps_preprocessed'
         if not data_dir.exists():
             data_dir.mkdir(parents=True, exist_ok=True)
 
-        precip, _, _ = _make_dataset((30,30), variable_name='precip')
-        precip.to_netcdf(data_dir / 'chirps_preprocessed' / 'chirps_kenya.nc')
+        precip, _, _ = _make_dataset((30, 30), variable_name='precip')
+        precip.to_netcdf(data_dir / 'chirps_kenya.nc')
 
     @staticmethod
     def create_test_consec_data(tmp_path):
@@ -19,17 +22,17 @@ class TestEventDetector:
         create an array of 20 timesteps with 2 events below 1STD of the series
         event from indices 3:7 & 10:13
         """
-        a = np.ones((400))*10
+        a = np.ones((400)) * 10
         a[3:7] = 0.2
         a[10:13] = 0.2
         p = np.repeat(a, 25).reshape(400, 5, 5)
 
-        lat = np.arange(0,5)
-        lon = np.arange(0,5)
+        lat = np.arange(0, 5)
+        lon = np.arange(0, 5)
         time = pd.date_range('2000-01-01', freq='M', periods=p.shape[0])
 
         d = xr.Dataset(
-            {'precip': (['time','lat','lon'], p)},
+            {'precip': (['time', 'lat', 'lon'], p)},
             coords={
                 'lon': lon,
                 'lat': lat,
@@ -37,29 +40,32 @@ class TestEventDetector:
             }
         )
 
-        data_dir = tmp_path / 'data' / 'interim'
+        data_dir = tmp_path / 'data' / 'interim' / 'chirps_preprocessed'
         if not data_dir.exists():
             data_dir.mkdir(parents=True, exist_ok=True)
 
-        out_path = data_dir / 'chirps_preprocessed' / 'chirps_kenya.nc'
+        out_path = data_dir / 'chirps_kenya.nc'
         d.to_netcdf(out_path)
         return out_path
 
     def test_initialise_event_detector(self, tmp_path):
-        create_dummy_data(tmp_path)
+        self.create_dummy_data(tmp_path)
 
-        data_dir = tmp_path / 'data'
+        data_dir = tmp_path / 'data' / 'interim'
         precip_dir = data_dir / 'chirps_preprocessed' / 'chirps_kenya.nc'
 
         e = EventDetector(precip_dir)
 
-        assert 'precip' in [v for v in e.ds.variables], f"Expected precip to be a variable.\
+        assert 'precip' in [v for v in e.ds.variables], f"\
+        Expected precip to be a variable.\
         Got: {[v for v in e.ds.variables]}"
 
-        assert e.ds.precip.shape == (36, 30, 30), f"Expected shape of EventDetector.ds to be\ {(36, 30, 30)}. Got: {e.ds.precip.shape}"
+        assert e.ds.precip.shape == (36, 30, 30), f"\
+        Expected shape of EventDetector.ds to be {(36, 30, 30)}.\
+        Got: {e.ds.precip.shape}"
 
     def test_number_of_consecutive_events(self, tmp_path):
-        in_path = create_test_consec_data(tmp_path)
+        in_path = self.create_test_consec_data(tmp_path)
 
         e = EventDetector(in_path)
         e.detect(
@@ -80,21 +86,21 @@ class TestEventDetector:
         Got: {runs.max().values}"
 
         # ensure they are of the correct time slice
-        max_run_time = runs.where(runs==runs.max(), drop=True).squeeze()
+        max_run_time = runs.where(runs == runs.max(), drop=True).squeeze()
         expected = pd.to_datetime('2000-04-30')
         got = pd.to_datetime(max_run_time.time.values)
         assert got == expected, f"Expected\
         the maximum time slice to be: {expected} Got: {got}"
 
         # ensure the second largest timeslice is
-        second_largest_run_time = runs.where(runs==3, drop=True).squeeze()
+        second_largest_run_time = runs.where(runs == 3, drop=True).squeeze()
         expected = pd.to_datetime('2000-11-30')
-        got = pd.to_datetime(max_run_time.time.values)
+        got = pd.to_datetime(second_largest_run_time.time.values)
         assert got == expected, f"Expected\
         the second largest time slice to be: {expected} Got: {got}"
 
     def test_q90(self, tmp_path):
-        in_path = create_test_consec_data(tmp_path)
+        in_path = self.create_test_consec_data(tmp_path)
 
         e = EventDetector(in_path)
         # ABOVE Q90
