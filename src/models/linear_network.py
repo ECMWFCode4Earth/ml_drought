@@ -1,6 +1,7 @@
 import numpy as np
 from pathlib import Path
 import random
+import math
 
 import torch
 from torch import nn
@@ -120,7 +121,7 @@ class LinearNetwork(ModelBase):
                         val_pred_y = self.model(x)
                         val_loss = F.mse_loss(val_pred_y, y)
 
-                        val_rmse.append(val_loss.item())
+                        val_rmse.append(math.sqrt(val_loss.item()))
 
             print(f'Epoch {epoch + 1}, train RMSE: {np.mean(train_rmse)}')
 
