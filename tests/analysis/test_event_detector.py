@@ -19,14 +19,14 @@ class TestEventDetector:
         create an array of 20 timesteps with 2 events below 1STD of the series
         event from indices 3:7 & 10:13
         """
-        a = np.ones((20))*10
+        a = np.ones((400))*10
         a[3:7] = 0.2
         a[10:13] = 0.2
-        p = np.repeat(a, 25).reshape(20, 5, 5)
+        p = np.repeat(a, 25).reshape(400, 5, 5)
 
         lat = np.arange(0,5)
         lon = np.arange(0,5)
-        time = pd.date_range('2000-01-01', freq='M', periods=20)
+        time = pd.date_range('2000-01-01', freq='M', periods=p.shape[0])
 
         d = xr.Dataset(
             {'precip': (['time','lat','lon'], p)},
@@ -66,4 +66,41 @@ class TestEventDetector:
             variable='precip', time_period='dayofyear', hilo='low', method='std'
         )
 
-        pass
+        # check boolean dtype
+        assert e.exceedences.dtype == np.dtype('bool'), f"Expected a\
+        boolean array but got: {e.exceedences.dtype}"
+
+        # check the threshold calculation
+        assert e.thresh.precip.max().values == 10, f"Expected max to be 10\
+        got: {e.thresh.precip.max().values}"
+
+        # test run size
+        runs = e.calculate_runs()
+        assert runs.max().values == 4, f"Expected max run length to be 4\
+        Got: {runs.max().values}"
+
+        # ensure they are of the correct time slice
+        max_run_time = runs.where(runs==runs.max(), drop=True).squeeze()
+        expected = pd.to_datetime('2000-04-30')
+        got = pd.to_datetime(max_run_time.time.values)
+        assert got == expected, f"Expected\
+        the maximum time slice to be: {expected} Got: {got}"
+
+        # ensure the second largest timeslice is
+        second_largest_run_time = runs.where(runs==3, drop=True).squeeze()
+        expected = pd.to_datetime('2000-11-30')
+        got = pd.to_datetime(max_run_time.time.values)
+        assert got == expected, f"Expected\
+        the second largest time slice to be: {expected} Got: {got}"
+
+    def test_q90(self, tmp_path):
+        in_path = create_test_consec_data(tmp_path)
+
+        e = EventDetector(in_path)
+        # ABOVE Q90
+        e.detect(
+            variable='precip', time_period='month', hilo='high', method='q90'
+        )
+
+        assert len(e.thresh.month) == 12, f"Expected the threshold \
+        calculation to be 12 (one for each month)"

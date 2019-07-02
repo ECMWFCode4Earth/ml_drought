@@ -233,6 +233,7 @@ class EventDetector():
         # self.exceedences = self.reapply_mask_to_boolean_xarray(
             # variable, exceed
         # )
+        self.exceedences = exceed
         print(f"** exceedences calculated **")
 
     def reapply_mask_to_boolean_xarray(self,
