@@ -3,18 +3,10 @@ import pandas as pd
 import xarray as xr
 from src.analysis import EventDetector
 
-from ..utils import _make_dataset
+from ..utils import _create_dummy_precip_data
 
 
 class TestEventDetector:
-    @staticmethod
-    def create_dummy_data(tmp_path):
-        data_dir = tmp_path / 'data' / 'interim' / 'chirps_preprocessed'
-        if not data_dir.exists():
-            data_dir.mkdir(parents=True, exist_ok=True)
-
-        precip, _, _ = _make_dataset((30, 30), variable_name='precip')
-        precip.to_netcdf(data_dir / 'chirps_kenya.nc')
 
     @staticmethod
     def create_test_consec_data(tmp_path):
@@ -49,7 +41,7 @@ class TestEventDetector:
         return out_path
 
     def test_initialise_event_detector(self, tmp_path):
-        self.create_dummy_data(tmp_path)
+        _create_dummy_precip_data(tmp_path)
 
         data_dir = tmp_path / 'data' / 'interim'
         precip_dir = data_dir / 'chirps_preprocessed' / 'chirps_kenya.nc'
