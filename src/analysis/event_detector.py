@@ -47,18 +47,28 @@ class EventDetector():
                             time_period: str,
                             variable: str,
                             hilo: Optional[str] = None,
-                            value: Optional[int] = None,) -> xr.DataArray:
+                            value: Optional[float] = None,) -> xr.DataArray:
         """Calculate the threshold based on the `method` argument
         method: str
             ["q90","q10","std","abs",]
         """
         if method == "q90":
             warnings.warn(f'this method ({method}) is currently super slow')
-            thresh = ds.groupby(f'time.{time_period}').reduce(np.nanpercentile, dim='time', q=0.9)
+            thresh = (
+                ds
+                .groupby(f'time.{time_period}')
+                # .quantile(q=0.9)  # updated v0.12.2
+                .reduce(np.nanpercentile, dim='time', q=90)
+            )
 
         elif method == "q10":
             warnings.warn(f'this method ({method}) is currently super slow')
-            thresh = ds.groupby(f'time.{time_period}').reduce(np.nanpercentile, dim='time', q=0.1)
+            thresh = (
+                ds
+                .groupby(f'time.{time_period}')
+                .reduce(np.nanpercentile, dim='time', q=10)
+                # .quantile(q=0.1)
+            )
 
         elif method == "std":
             assert hilo is not None, f"If you want to calculate the threshold as std \
@@ -67,7 +77,6 @@ class EventDetector():
             thresh = clim - std if hilo == 'low' else clim + std
 
         elif method == "abs":
-            assert False, "Not yet implemented the absolute value threshold"
             values = np.ones(ds[variable].shape) * value
             thresh = xr.Dataset(
                 {variable: (['time', 'lat', 'lon'], values)},
@@ -77,6 +86,7 @@ class EventDetector():
                     'time': ds.time,
                 }
             )
+            thresh = thresh.groupby(f'time.{time_period}').first()
 
         else:
             assert False, 'Only implemented threshold calculations for \
@@ -89,7 +99,8 @@ class EventDetector():
                                    time_period: str,
                                    variable: str,
                                    hilo: str = None,
-                                   method: str = 'std') -> Tuple[xr.Dataset, xr.Dataset]:
+                                   method: str = 'std',
+                                   value: Optional[float] = None) -> Tuple[xr.Dataset, xr.Dataset]:
         """Get the climatology and threshold xarray objects """
         # compute climatology (`mean` over `time_period`)
         clim = ds.groupby(f'time.{time_period}').mean(dim='time')
@@ -97,7 +108,7 @@ class EventDetector():
         # compute the threshold value based on `method`
         thresh = self.calculate_threshold(
             ds, clim, method=method, time_period=time_period,
-            hilo=hilo, variable=variable
+            hilo=hilo, variable=variable, value=value
         )
         print("Calculated threshold - `thresh`")
         return clim, thresh
@@ -162,7 +173,8 @@ class EventDetector():
                                         variable: str,
                                         time_period: str,
                                         hilo: str,
-                                        method: str = 'std') -> Tuple[Any, Any, Any]:
+                                        method: str = 'std',
+                                        value: Optional[float] = None) -> Tuple[Any, Any, Any]:
         """Flag the pixel-times that exceed a threshold defined via
         the `method` argument.
         """
@@ -171,7 +183,7 @@ class EventDetector():
         # calculate climatology and threshold
         clim, thresh = self.get_thresh_clim_dataarrays(
             ds, time_period, hilo=hilo, method=method,
-            variable=variable
+            variable=variable, value=value
         )
 
         # assign objects to object here because the copying
@@ -201,7 +213,8 @@ class EventDetector():
                variable: str,
                time_period: str,
                hilo: str,
-               method: str = 'std') -> None:
+               method: str = 'std',
+               value: Optional[float] = None) -> None:
         """
 
         Arguments:
@@ -228,7 +241,7 @@ class EventDetector():
          {method}. The threshold is unique for each {time_period}")
         self.variable = variable
         _, _, exceed = self.calculate_threshold_exceedences(
-            variable, time_period, hilo, method=method
+            variable, time_period, hilo, method=method, value=value
         )
 
         # self.exceedences = self.reapply_mask_to_boolean_xarray(variable, exceed)

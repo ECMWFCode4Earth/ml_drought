@@ -100,6 +100,7 @@ class TestEventDetector:
         the second largest time slice to be: {expected} Got: {got}"
 
     def test_q90(self, tmp_path):
+        # TEST the mean threshold
         in_path = self.create_test_consec_data(tmp_path)
 
         e = EventDetector(in_path)
@@ -110,3 +111,56 @@ class TestEventDetector:
 
         assert len(e.thresh.month) == 12, f"Expected the threshold \
         calculation to be 12 (one for each month)"
+
+        # all monthly thresholds should be 10
+        got = e.thresh.precip.mean(dim=['lat', 'lon']).values
+        assert all(got == 10), f"\
+        Expected all monthly threshold values in e.thresh to be 10. Got: {got}"
+
+        # longest run should be 0 (exceeding Q90)
+        runs = e.calculate_runs()
+        assert runs.max().values == 0, f"Expected the longest run to be 0 (exceeding q90)"
+
+    def test_q10(self, tmp_path):
+        # TEST the q10 threshold
+        in_path = self.create_test_consec_data(tmp_path)
+
+        e = EventDetector(in_path)
+        # BELOW Q10
+        e.detect(
+            variable='precip', time_period='month', hilo='low', method='q10'
+        )
+
+        assert len(e.thresh.month) == 12, f"Expected the threshold \
+        calculation to be 12 (one for each month)"
+
+        # all monthly thresholds should be 10
+        got = e.thresh.precip.mean(dim=['lat', 'lon']).values
+        assert all(got == 10), f"\
+        Expected all monthly threshold values in e.thresh to be 10. Got: {got}"
+
+        # longest run should be 0 (below Q10)
+        runs = e.calculate_runs()
+        assert runs.max().values == 4, f"Expected the longest run to be 4 (below q10)"
+
+    def test_abs(self, tmp_path):
+        # TEST the absolute threshold
+        in_path = self.create_test_consec_data(tmp_path)
+
+        e = EventDetector(in_path)
+        # BELOW Q10
+        e.detect(
+            variable='precip', time_period='month', hilo='low', method='abs', value=0.3
+        )
+
+        assert len(e.thresh.month) == 12, f"Expected the threshold \
+        calculation to be 12 (one for each month)"
+
+        # all monthly thresholds should be 10
+        got = e.thresh.precip.mean(dim=['lat', 'lon']).values
+        assert all(got == 0.3), f"\
+        Expected all monthly threshold values in e.thresh to be 0.3. Got: {got}"
+
+        # longest run should be 4 (below 0.3)
+        runs = e.calculate_runs()
+        assert runs.max().values == 4, f"Expected the longest run to be 4 (below 0.3)"
