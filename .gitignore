@@ -19,6 +19,8 @@ data/*.zip*
 *.nc
 *.grib
 *.idx
+scripts/*.png
+scripts/variables.txt
 
 .ipynb_checkpoints
 
@@ -26,4 +28,6 @@ data/*.zip*
 data/raw/*
 data/analysis/*
 data/interim/*
+data/features/*
+data/models/*
 Code

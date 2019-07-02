@@ -14,7 +14,7 @@ def process_precip_2018():
         data_path = Path('../data')
     processor = CHIRPSPreprocesser(data_path)
 
-    processor.preprocess(subset_kenya=True,
+    processor.preprocess(subset_str='kenya',
                          regrid=None,
                          parallel=False)
 
@@ -30,7 +30,7 @@ def process_vhi_2018():
 
     processor = VHIPreprocessor(data_path)
 
-    processor.preprocess(subset_kenya=True, regrid=regrid_path,
+    processor.preprocess(subset_str='kenya', regrid=regrid_path,
                          parallel=False, resample_time='M', upsampling=False)
 
 
@@ -45,7 +45,7 @@ def process_era5POS_2018():
 
     processor = PlanetOSPreprocessor(data_path)
 
-    processor.preprocess(subset_kenya=True, regrid=regrid_path,
+    processor.preprocess(subset_str='kenya', regrid=regrid_path,
                          parallel=False, resample_time='M', upsampling=False)
 
 
@@ -60,7 +60,7 @@ def process_gleam():
 
     processor = GLEAMPreprocessor(data_path)
 
-    processor.preprocess(subset_kenya=True, regrid=regrid_path,
+    processor.preprocess(subset_str='kenya', regrid=regrid_path,
                          resample_time='M', upsampling=False)
 
 
