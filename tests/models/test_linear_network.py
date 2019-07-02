@@ -111,7 +111,7 @@ class TestLinearNetwork:
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        train_features = tmp_path / 'features/train/hello'
+        train_features = tmp_path / 'features/one_month_forecast/train/hello'
         train_features.mkdir(parents=True)
 
         x.to_netcdf(train_features / 'x.nc')
@@ -120,7 +120,7 @@ class TestLinearNetwork:
         norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
                              'std': np.ones(x.to_array().values.shape[:2])}
                      }
-        with (tmp_path / 'features/normalizing_dict.pkl').open('wb') as f:
+        with (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').open('wb') as f:
             pickle.dump(norm_dict, f)
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=[100],

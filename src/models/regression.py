@@ -17,8 +17,9 @@ class LinearRegression(ModelBase):
     model_name = 'linear_regression'
 
     def __init__(self, data_folder: Path = Path('data'),
+                 experiment: str = 'one_month_forecast',
                  batch_size: int = 1) -> None:
-        super().__init__(data_folder, batch_size)
+        super().__init__(data_folder, batch_size, experiment=experiment)
 
         self.explainer: Optional[shap.LinearExplainer] = None
 
