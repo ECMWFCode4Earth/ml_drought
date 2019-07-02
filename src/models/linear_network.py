@@ -22,7 +22,6 @@ class LinearNetwork(ModelBase):
                  experiment: str = 'one_month_forecast',
                  batch_size: int = 1) -> None:
         super().__init__(data_folder, batch_size, experiment=experiment)
-        self.experiment = experiment
 
         if type(layer_sizes) is int:
             layer_sizes = cast(List[int], [layer_sizes])

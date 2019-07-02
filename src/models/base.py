@@ -23,7 +23,9 @@ class ModelBase:
 
         self.batch_size = batch_size
         self.data_path = data_folder
-        self.models_dir = data_folder / 'models' / experiment
+        self.experiment = experiment
+
+        self.models_dir = data_folder / 'models' / self.experiment
         if not self.models_dir.exists():
             self.models_dir.mkdir(parents=True, exist_ok=False)
 

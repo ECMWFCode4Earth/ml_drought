@@ -14,28 +14,31 @@ class LinearRegression(ModelBase):
     model_name = 'linear_regression'
 
     def train(self, num_epochs: int = 1,
-              experiment: str = 'one_month_forecast',
               early_stopping: Optional[int] = None,
               batch_size: int = 256) -> None:
-        print(f'Training {self.model_name} for experiment {experiment}')
+        print(f'Training {self.model_name} for experiment {self.experiment}')
 
         if early_stopping is not None:
-            len_mask = len(DataLoader._load_datasets(self.data_path, mode='train',
-                                                     experiment=experiment,
-                                                     shuffle_data=False))
+            len_mask = len(DataLoader._load_datasets(
+                self.data_path, mode='train',
+                experiment=self.experiment,
+                shuffle_data=False
+            ))
             train_mask, val_mask = train_val_mask(len_mask, 0.3)
 
             train_dataloader = DataLoader(data_path=self.data_path,
                                           batch_file_size=self.batch_size,
+                                          experiment=self.experiment,
                                           shuffle_data=True, mode='train', mask=train_mask)
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
+                                        experiment=self.experiment,
                                         shuffle_data=False, mode='train', mask=val_mask)
             batches_without_improvement = 0
             best_val_score = np.inf
         else:
             train_dataloader = DataLoader(data_path=self.data_path,
-                                          experiment=experiment,
+                                          experiment=self.experiment,
                                           batch_file_size=self.batch_size,
                                           shuffle_data=True, mode='train')
         self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
@@ -83,8 +86,10 @@ class LinearRegression(ModelBase):
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
 
-        test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=self.batch_size,
-                                        shuffle_data=False, mode='test')
+        test_arrays_loader = DataLoader(
+            data_path=self.data_path, batch_file_size=self.batch_size,
+            experiment=self.experiment, shuffle_data=False, mode='test'
+        )
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
