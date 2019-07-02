@@ -2,7 +2,7 @@ import sys
 sys.path.append('..')
 
 from pathlib import Path
-from src.engineer import Engineer
+from src.engineer import OneMonthForecastEngineer
 
 
 def engineer():
@@ -12,8 +12,8 @@ def engineer():
     else:
         data_path = Path('../data')
 
-    engineer = Engineer(data_path)
-    engineer.engineer(test_year=1994, target_variable='VHI')
+    engineer = OneMonthForecastEngineer(data_path)
+    engineer.engineer(test_year=2018, target_variable='VHI')
 
 
 if __name__ == '__main__':
