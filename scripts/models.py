@@ -11,31 +11,31 @@ from src.models import Persistence, LinearRegression, LinearNetwork
 from src.models.data import DataLoader
 
 
-def parsimonious():
+def parsimonious(experiment='one_month_forecast'):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
     else:
         data_path = Path('../data')
 
-    predictor = Persistence(data_path, experiment='one_month_forecast')
+    predictor = Persistence(data_path, experiment=experiment)
     predictor.evaluate(save_preds=True)
 
 
-def regression():
+def regression(experiment='one_month_forecast'):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
     else:
         data_path = Path('../data')
 
-    predictor = LinearRegression(data_path, experiment='one_month_forecast')
+    predictor = LinearRegression(data_path, experiment=experiment)
     predictor.train()
     predictor.evaluate(save_preds=True)
 
     # mostly to test it works
     test_arrays_loader = DataLoader(data_path=data_path, batch_file_size=1,
-                                    experiment='one_month_forecast',
+                                    experiment=experiment,
                                     shuffle_data=False, mode='test')
     key, val = list(next(iter(test_arrays_loader)).items())[0]
 
@@ -48,31 +48,31 @@ def regression():
         f.write(str(val.x_vars))
 
     # plot the variables
-    with (data_path / 'features/one_month_forecast/normalizing_dict.pkl').open('rb') as f:
+    with (data_path / f'features/{experiment}/normalizing_dict.pkl').open('rb') as f:
         normalizing_dict = pickle.load(f)
 
     for variable in val.x_vars:
         plt.clf()
         plot_shap_values(val.x[0], explanations[0], val.x_vars, normalizing_dict, variable,
                          normalize_shap_plots=True, show=False)
-        plt.savefig(f'{variable}_linear_regression.png', dpi=300, bbox_inches='tight')
+        plt.savefig(f'{variable}_{experiment}_linear_regression.png', dpi=300, bbox_inches='tight')
 
 
-def linear_nn():
+def linear_nn(experiment='one_month_forecast'):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
     else:
         data_path = Path('../data')
 
-    predictor = LinearNetwork(layer_sizes=[100], data_folder=data_path, experiment='one_month_forecast')
+    predictor = LinearNetwork(layer_sizes=[100], data_folder=data_path, experiment=experiment)
     predictor.train()
     predictor.evaluate(save_preds=True)
 
     # mostly to test it works
     test_arrays_loader = DataLoader(data_path=data_path, batch_file_size=1,
                                     shuffle_data=False, mode='test',
-                                    experiment='one_month_forecast',
+                                    experiment=experiment,
                                     to_tensor=True)
     key, val = list(next(iter(test_arrays_loader)).items())[0]
 
@@ -85,7 +85,7 @@ def linear_nn():
         f.write(str(val.x_vars))
 
     # plot the variables
-    with (data_path / 'features/one_month_forecast/normalizing_dict.pkl').open('rb') as f:
+    with (data_path / f'features/{experiment}/normalizing_dict.pkl').open('rb') as f:
         normalizing_dict = pickle.load(f)
 
     for variable in val.x_vars:
@@ -97,5 +97,5 @@ def linear_nn():
 
 if __name__ == '__main__':
     parsimonious()
-    regression()
+    regression(experiment='nowcast')
     linear_nn()
