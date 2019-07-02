@@ -35,6 +35,7 @@ def regression():
 
     # mostly to test it works
     test_arrays_loader = DataLoader(data_path=data_path, batch_file_size=1,
+                                    experiment='one_month_forecast',
                                     shuffle_data=False, mode='test')
     key, val = list(next(iter(test_arrays_loader)).items())[0]
 
@@ -47,7 +48,7 @@ def regression():
         f.write(str(val.x_vars))
 
     # plot the variables
-    with (data_path / 'features/normalizing_dict.pkl').open('rb') as f:
+    with (data_path / 'features/one_month_forecast/normalizing_dict.pkl').open('rb') as f:
         normalizing_dict = pickle.load(f)
 
     for variable in val.x_vars:
@@ -70,7 +71,9 @@ def linear_nn():
 
     # mostly to test it works
     test_arrays_loader = DataLoader(data_path=data_path, batch_file_size=1,
-                                    shuffle_data=False, mode='test', to_tensor=True)
+                                    shuffle_data=False, mode='test',
+                                    experiment='one_month_forecast',
+                                    to_tensor=True)
     key, val = list(next(iter(test_arrays_loader)).items())[0]
 
     explanations = predictor.explain(val.x[:3])
@@ -82,7 +85,7 @@ def linear_nn():
         f.write(str(val.x_vars))
 
     # plot the variables
-    with (data_path / 'features/normalizing_dict.pkl').open('rb') as f:
+    with (data_path / 'features/one_month_forecast/normalizing_dict.pkl').open('rb') as f:
         normalizing_dict = pickle.load(f)
 
     for variable in val.x_vars:
