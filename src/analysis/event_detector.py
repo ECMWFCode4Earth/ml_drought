@@ -4,22 +4,27 @@ from pathlib import Path
 from xclim.run_length import rle, longest_run  # , windowed_run_events
 from typing import Tuple, Optional, Any
 import warnings
-import pandas as pd
 from scripts.eng_utils import get_ds_mask
 
 
 class EventDetector():
-    def __init__(self,
-                 path_to_data: Path,
-                 data_folder: Path = Path('data')) -> None:
-        self.data_folder = data_folder
-        self.interim_folder = data_folder / "interim"
-        self.processed_folder = data_folder / "processed"
+    """A flexible method for detecting events and calculating the size of runs
+    in a timeseries of interest.
 
-        if not self.processed_folder.exists():
-            self.processed_folder.mkdir()
+    an EventDetector object calculates the climatology and threshold values
+    (per pixel) and then can compute another xr.Dataset of `runs` which
+    are consecutive periods of threshold exceedence (above/below).
+
+    >>> path_to_data = Path('data/interim/chirps_preprocessed/chirps_kenya.nc')
+    >>> e = EventDetector(path_to_data)
+    >>> e.detect(variable='precip', method='std', time_period='month', hilo='low')
+    >>> e.calculate_runs()
+    """
+    def __init__(self,
+                 path_to_data: Path) -> None:
 
         assert path_to_data.exists(), f"{path_to_data} does not point to an existing file!"
+        self.path_to_data = path_to_data
         self.ds = self.read_data(path_to_data)
 
     def read_data(self, path_to_data: Path) -> xr.Dataset:
@@ -30,10 +35,8 @@ class EventDetector():
         except ValueError:
             print(ValueError)
             warnings.warn("Having to decode_times=False because unsupported calendar")
+            warnings.warn("You will need to manually encode your timesteps in self.ds")
             ds = xr.open_dataset(path_to_data, decode_times=False)
-            warnings.warn("Hardcoding MONTHLY data (CHIRPS example)")
-            time = pd.date_range(start='1900-01-01', freq='M', periods=len(ds.time.values))
-            ds['time'] = time
 
         print(f"{path_to_data.name} read!")
         ds = ds.sortby('time')
@@ -48,9 +51,39 @@ class EventDetector():
                             variable: str,
                             hilo: Optional[str] = None,
                             value: Optional[float] = None,) -> xr.DataArray:
-        """Calculate the threshold based on the `method` argument
+        """Calculate the threshold using the method defined in `method`.
+        This calculates a threshold value above/below which a value is
+        defined as anomalous and therefore, set to true. Compared against
+        a reference climatology in methods ["q90","q10","std"]. Compared
+        against an absolute value in method ["abs"]
+
+        Arguments:
+        ----------
+        ds: xr.Dataset
+            dataset that you want to calculate the threshold for
+
+        clim: xr.Dataset
+            the climatology dataset
+
         method: str
-            ["q90","q10","std","abs",]
+            the method used to create the threshold values
+            {"q90","q10","std","abs",}
+
+        time_period: str
+            the time period to groupby
+            {'daysofyear', 'month', 'year', 'season'}
+
+        variable: str
+            the name of the variable in `ds`
+
+        hilo: Optional[str] = None
+            Whether we are calculating the value above or below the threshold.
+            REQUIRED for `method` == 'std'
+            {'high', 'low'}
+
+        value: Optional[float] = None
+            if the method is `abs` then also need to provide a value to
+            be used as the threshold value.
         """
         if method == "q90":
             warnings.warn(f'this method ({method}) is currently super slow')
@@ -307,6 +340,6 @@ class EventDetector():
 
     def calculate_longest_run(self,
                               resample_str: Optional[str] = None) -> xr.Dataset:
-        """ TODO: fix this argument to work with other resample_str """
-        longest_run(self.exceedences, dim='time').load()
-        return
+        """ Calculate the longest run in the dataset
+        TODO: fix this argument to work with other resample_str """
+        return longest_run(self.exceedences, dim='time').load()
