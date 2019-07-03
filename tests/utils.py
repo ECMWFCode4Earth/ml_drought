@@ -28,3 +28,14 @@ def _make_dataset(size, variable_name='VHI', lonmin=-180.0, lonmax=180.0,
     ds = xr.Dataset({variable_name: (dims, var)}, coords=coords)
 
     return ds, (lonmin, lonmax), (latmin, latmax)
+
+
+def _create_dummy_precip_data(tmp_path):
+    data_dir = tmp_path / 'data' / 'interim' / 'chirps_preprocessed'
+    if not data_dir.exists():
+        data_dir.mkdir(parents=True, exist_ok=True)
+
+    precip, _, _ = _make_dataset((30, 30), variable_name='precip')
+    precip.to_netcdf(data_dir / 'chirps_kenya.nc')
+
+    return data_dir

@@ -126,6 +126,8 @@ dependencies:
   - pickleshare=0.7.5
   - pillow=5.3.0
   - pip=19.1
+  # - pip:
+      # - xclim
   - pluggy=0.11.0
   - pox=0.2.5
   - ppft=1.6.4.9
@@ -180,7 +182,11 @@ dependencies:
   - wheel=0.33.1
   - wrapt=1.11.1
   - xarray=0.12.1
+<<<<<<< HEAD
   - xesmf=0.1.1
+=======
+  - xclim=0.9b0
+>>>>>>> 7cf872ce8fd56baac9ac20328334cb578c8cc2c3
   - xmltodict=0.12.0
   - xz=5.2.4
   - yaml=0.1.7
