@@ -340,7 +340,7 @@ class _TrainIter(_BaseIter):
                 subfolder = self.data_files[self.idx]
                 arrays = self.ds_folder_to_np(subfolder, clear_nans=self.clear_nans,
                                               return_latlons=False, to_tensor=False)
-                if arrays.x.shape[0] == 0:
+                if arrays.x.historical.shape[0] == 0:
                     print(f'{subfolder} returns no values. Skipping')
 
                     # remove the empty element from the list
@@ -349,11 +349,25 @@ class _TrainIter(_BaseIter):
 
                     cur_max_idx = min(cur_max_idx + 1, self.max_idx)
 
-                out_x.append(arrays.x)
+                out_x.append(arrays.x.historical)
+
+                if self.experiment == 'nowcast':
+                    # add a constant vector to the X train_data and append
+                    constant_vector = np.ones(arrays.x.current.shape)[:, :, :1]
+                    arrays.x.current = np.concatenate(
+                        [arrays.x.current, constant_vector], axis=-1
+                    )
+                    out_x.append(arrays.x.current)
+                    out_x = [arrays.x.historical, arrays.x.current]
+                    
                 out_y.append(arrays.y)
                 self.idx += 1
 
-            final_x = np.concatenate(out_x, axis=0)
+            if self.experiment == 'nowcast':
+                final_x = np.concatenate(out_x, axis=1)
+            else:
+                final_x = np.concatenate(out_x, axis=0)
+
             final_y = np.concatenate(out_y, axis=0)
             if final_x.shape[0] == 0:
                 raise StopIteration()
@@ -376,7 +390,7 @@ class _TestIter(_BaseIter):
                 subfolder = self.data_files[self.idx]
                 arrays = self.ds_folder_to_np(subfolder, clear_nans=self.clear_nans,
                                               return_latlons=True, to_tensor=self.to_tensor)
-                if arrays.x.shape[0] == 0:
+                if arrays.x.historical.shape[0] == 0:
                     print(f'{subfolder} returns no values. Skipping')
                     # remove the empty element from the list
                     self.data_files.pop(self.idx)
