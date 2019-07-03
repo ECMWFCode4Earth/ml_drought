@@ -55,34 +55,37 @@ class TestBaseIter:
                 self.data_files = []
                 self.normalizing_dict = norm_dict if normalize else None
                 self.to_tensor = None
+                self.experiment = 'one_month_forecast'
 
         base_iterator = _BaseIter(MockLoader())
 
         arrays = base_iterator.ds_folder_to_np(tmp_path, return_latlons=True,
                                                to_tensor=to_tensor)
 
-        x_np, y_np, latlons = arrays.x, arrays.y, arrays.latlons
+        x_train_data, y_np, latlons = arrays.x, arrays.y, arrays.latlons
 
         if to_tensor:
-            assert (type(x_np) == torch.Tensor) and (type(y_np) == torch.Tensor)
+            assert (type(x_train_data.historical) == torch.Tensor) and (type(y_np) == torch.Tensor)
+            assert (type(x_train_data.current) == torch.Tensor)
         else:
-            assert (type(x_np) == np.ndarray) and (type(y_np) == np.ndarray)
+            assert (type(x_train_data.historical) == np.ndarray) and (type(y_np) == np.ndarray)
+            assert (type(x_train_data.current) == np.ndarray)
 
-        assert x_np.shape[0] == y_np.shape[0] == latlons.shape[0], \
+        assert (x_train_data.historical.shape[0] == y_np.shape[0] == latlons.shape[0]), \
             f'x, y and latlon data have a different number of instances! ' \
-            f'x: {x_np.shape[0]}, y: {y_np.shape[0]}, latlons: {latlons.shape[0]}'
+            f'x: {x_train_data.shape[0]}, y: {y_np.shape[0]}, latlons: {latlons.shape[0]}'
 
         for idx in range(latlons.shape[0]):
 
             lat, lon = latlons[idx, 0], latlons[idx, 1]
 
-            for time in range(x_np.shape[1]):
+            for time in range(x_train_data.shape[1]):
                 target = x.isel(time=time).sel(lat=lat).sel(lon=lon).VHI.values
 
                 if (not normalize) and (not to_tensor):
-                    assert target == x_np[idx, time, 0], \
+                    assert target == x_train_data[idx, time, 0], \
                         f'Got different x values for time idx: {time}, lat: {lat}, ' \
-                        f'lon: {lon}.Expected {target}, got {x_np[idx, time, 0]}'
+                        f'lon: {lon}.Expected {target}, got {x_train_data[idx, time, 0]}'
 
             if not to_tensor:
                 target_y = y.isel(time=0).sel(lat=lat).sel(lon=lon).VHI.values

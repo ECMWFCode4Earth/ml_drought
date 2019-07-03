@@ -10,8 +10,14 @@ from typing import cast, Dict, Optional, Union, List, Tuple
 
 
 @dataclass
+class TrainData:
+    historical = Union[np.ndarray, torch.Tensor]
+    current = Union[np.ndarray, torch.Tensor, None]
+
+
+@dataclass
 class ModelArrays:
-    x: Union[np.ndarray, torch.Tensor]
+    x: TrainData
     y: Union[np.ndarray, torch.Tensor]
     x_vars: List[str]
     y_var: str
@@ -65,6 +71,9 @@ class DataLoader:
         and validation set
     to_tensor: bool = False
         Whether to turn the np.ndarrays into torch.Tensors
+    experiement: str = 'one_month_forecast'
+        the name of the experiment to run. Defaults to one_month_forecast
+        (train on only historical data and predict one month ahead)
 
     Note:
     the _load_datasets() function requires an `experiment` string defining
@@ -83,6 +92,7 @@ class DataLoader:
         self.mode = mode
         self.shuffle = shuffle_data
         self.clear_nans = clear_nans
+        self.experiment = experiment
         self.data_files = self._load_datasets(
             data_path=data_path, mode=mode, shuffle_data=shuffle_data,
             experiment=experiment, mask=mask
@@ -136,13 +146,15 @@ class _BaseIter:
         self.shuffle = loader.shuffle
         self.clear_nans = loader.clear_nans
         self.to_tensor = loader.to_tensor
+        self.experiment = loader.experiment
 
         if self.shuffle:
             # makes sure they are shuffled every epoch
             shuffle(self.data_files)
 
         self.normalizing_dict = loader.normalizing_dict
-        self.normalizing_array: Optional[Dict[str, np.ndarray]] = None
+        self.historical_normalizing_array: Optional[Dict[str, np.ndarray]] = None
+        self.current_normalizing_array: Optional[Dict[str, np.ndarray]] = None
 
         self.idx = 0
         self.max_idx = len(loader.data_files)
@@ -150,20 +162,57 @@ class _BaseIter:
     def __iter__(self):
         return self
 
-    def calculate_normalizing_array(self, data_vars: List[str]):
+    def calculate_normalizing_array(self, data_vars: List[str], target_var: str):
         # If we've made it here, normalizing_dict is definitely not None
         self.normalizing_dict = cast(Dict[str, Dict[str, np.ndarray]], self.normalizing_dict)
 
-        mean, std = [], []
-        for var in data_vars:
-            mean.append(self.normalizing_dict[var]['mean'])
-            std.append(self.normalizing_dict[var]['std'])
+        if self.experiment == 'nowcast':
+            historical_mean, historical_std = [], []
+            current_mean, current_std = [], []
+            for var in data_vars:
+                # historical_mean = all times up to current time
+                historical_mean.append(self.normalizing_dict[var]['mean'][:-1])
+                historical_std.append(self.normalizing_dict[var]['std'][:-1])
 
-        self.normalizing_array = cast(Dict[str, np.ndarray], {
-            # swapaxes so that its [timesteps, features], not [features, timesteps]
-            'mean': np.vstack(mean).swapaxes(0, 1),
-            'std': np.vstack(std).swapaxes(0, 1)
-        })
+                # current_mean = the current times for all EXCEPT for target_var
+                if var != target_var:
+                    current_mean.append(self.normalizing_dict[var]['mean'][-1])
+                    current_std.append(self.normalizing_dict[var]['std'][-1])
+
+            self.current_normalizing_array = cast(Dict[str, np.ndarray], {
+                # swapaxes so that its [timesteps, features], not [features, timesteps]
+                'mean': np.vstack(current_mean).swapaxes(0, 1),
+                'std': np.vstack(current_std).swapaxes(0, 1)
+            })
+
+            self.historical_normalizing_array = cast(Dict[str, np.ndarray], {
+                # swapaxes so that its [timesteps, features], not [features, timesteps]
+                'mean': np.vstack(historical_mean).swapaxes(0, 1),
+                'std': np.vstack(historical_std).swapaxes(0, 1)
+            })
+
+            assert self.current_normalizing_array['mean'].shape[0] == 1, f"Current timestep can only be one for `self.current_normalizing_array`. Currently\
+            {self.current_normalizing_array['mean'].shape}"
+
+            expected = self.historical_normalizing_array['mean'].shape[-1]
+            got = self.current_normalizing_array['mean'].shape[-1]
+            assert got == (expected - 1), f"There should be one less variable in \
+            `self.current_normalizing_array` compared to `self.current_normalizing_array`\
+            historical: {self.historical_normalizing_array['mean'].shape}\
+            current: {self.current_normalizing_array['mean'].shape}"
+
+        else:
+            mean, std = [], []
+            for var in data_vars:
+                mean.append(self.normalizing_dict[var]['mean'])
+                std.append(self.normalizing_dict[var]['std'])
+
+            self.current_normalizing_array = None
+            self.historical_normalizing_array = cast(Dict[str, np.ndarray], {
+                # swapaxes so that its [timesteps, features], not [features, timesteps]
+                'mean': np.vstack(mean).swapaxes(0, 1),
+                'std': np.vstack(std).swapaxes(0, 1)
+            })
 
     def ds_folder_to_np(self,
                         folder: Path,
@@ -172,12 +221,18 @@ class _BaseIter:
                         to_tensor: bool = False
                         ) -> ModelArrays:
 
+        train_data = TrainData()
+
         x, y = xr.open_dataset(folder / 'x.nc'), xr.open_dataset(folder / 'y.nc')
         assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable!'
+
+        coords = [c for c in y.coords]
+        target_var = [y for y in y.variables if y not in coords][0]
+
         x_np, y_np = x.to_array().values, y.to_array().values
 
-        if (self.normalizing_dict is not None) and (self.normalizing_array is None):
-            self.calculate_normalizing_array(list(x.data_vars))
+        if (self.normalizing_dict is not None) and (self.historical_normalizing_array is None):
+            self.calculate_normalizing_array(list(x.data_vars), target_var=target_var)
 
         # first, x
         x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
@@ -186,25 +241,76 @@ class _BaseIter:
         y_np = y_np.reshape(y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
         y_np = np.moveaxis(y_np, -1, 0).reshape(-1, 1)
 
-        if self.normalizing_array is not None:
-            x_np = (x_np - self.normalizing_array['mean']) / (self.normalizing_array['std'])
+        if self.experiment == 'nowcast':
+            # if nowcast then we have a TrainData.current
+            historical = x_np[:, :-1, :]  # all timesteps except the final
+            current = x_np[:, -1, :-1]  # final axis is all nan (target var)
+
+            # add 1 axis for timesteps
+            current = current.reshape(x_np.shape[0], 1, current.shape[-1])
+            train_data.current = current
+            train_data.historical = historical
+        else:
+            train_data.current = None
+            train_data.historical = x_np
+
+        if self.historical_normalizing_array is not None:
+            if self.experiment == 'nowcast':
+                # normalize the historical X data (all vars including target variable)
+                train_data.historical = (
+                    train_data.historical - self.historical_normalizing_array['mean']
+                ) / (self.historical_normalizing_array['std'])
+
+                # normalize the current X data (no target variable)
+                train_data.current = (
+                    train_data.current - self.current_normalizing_array['mean']
+                ) / (self.current_normalizing_array['std'])
+            else:
+                # only historical variables for non-nowcast experiments
+                train_data.historical = (
+                    train_data.historical - self.historical_normalizing_array['mean']
+                ) / (self.historical_normalizing_array['std'])
 
         assert y_np.shape[0] == x_np.shape[0], f'x and y data have a different ' \
             f'number of instances! x: {x_np.shape[0]}, y: {y_np.shape[0]}'
 
         if clear_nans:
             # remove nans if they are in the x or y data
-            x_nans, y_nans = np.isnan(x_np), np.isnan(y_np)
+            historical_nans, y_nans = np.isnan(train_data.historical), np.isnan(y_np)
 
-            x_nans_summed = x_nans.reshape(x_nans.shape[0],
-                                           x_nans.shape[1] * x_nans.shape[2]).sum(axis=-1)
+            historical_nans_summed = historical_nans.reshape(
+                historical_nans.shape[0], historical_nans.shape[1] * historical_nans.shape[2]
+            ).sum(axis=-1)
             y_nans_summed = y_nans.sum(axis=-1)
 
-            notnan_indices = np.where((x_nans_summed == 0) & (y_nans_summed == 0))[0]
-            x_np, y_np = x_np[notnan_indices], y_np[notnan_indices]
+            notnan_indices = np.where((historical_nans_summed == 0) & (y_nans_summed == 0))[0]
+
+            if self.experiment == 'nowcast':
+                current_nans = np.isnan(train_data.current)
+                current_nans_summed = current_nans.reshape(
+                    current_nans.shape[0], current_nans.shape[1] * current_nans.shape[2]
+                ).sum(axis=-1)
+                notnan_indices = np.where(
+                    (
+                        historical_nans_summed == 0
+                    ) & (y_nans_summed == 0) & (
+                        current_nans_summed == 0
+                    )
+                )[0]
+                train_data.current = train_data.current[notnan_indices]
+
+            train_data.historical, y_np = (
+                train_data.historical[notnan_indices], y_np[notnan_indices]
+            )
 
         if to_tensor:
-            x_np, y_np = torch.from_numpy(x_np).float(), torch.from_numpy(y_np).float()
+            train_data.historical, y_np = (
+                torch.from_numpy(train_data.historical).float(),
+                torch.from_numpy(y_np).float()
+            )
+
+            if self.experiment == 'nowcast':
+                train_data.current = torch.from_numpy(train_data.current).float()
 
         if return_latlons:
             lons, lats = np.meshgrid(x.lon.values, x.lat.values)
@@ -213,10 +319,11 @@ class _BaseIter:
 
             if clear_nans:
                 latlons = latlons[notnan_indices]
-            return ModelArrays(x=x_np, y=y_np, x_vars=list(x.data_vars),
+
+            return ModelArrays(x=train_data, y=y_np, x_vars=list(x.data_vars),
                                y_var=list(y.data_vars)[0], latlons=latlons)
 
-        return ModelArrays(x=x_np, y=y_np, x_vars=list(x.data_vars),
+        return ModelArrays(x=train_data, y=y_np, x_vars=list(x.data_vars),
                            y_var=list(y.data_vars)[0])
 
 
