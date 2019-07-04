@@ -41,6 +41,23 @@ class ModelBase:
         # the test array dataloader, and the corresponding predictions
         raise NotImplementedError
 
+    def explain(self, x: Any) -> np.ndarray:
+        """
+        Explain the predictions of the trained model on the input data x
+
+        Arguments
+        ----------
+        x: Any
+            An input array / tensor
+
+        Returns
+        ----------
+        explanations: np.ndarray
+            A shap value for each of the input values. The sum of the shap
+            values is equal to the prediction of the model for x
+        """
+        raise NotImplementedError
+
     def save_model(self) -> None:
         raise NotImplementedError
 
