@@ -359,7 +359,7 @@ class _TrainIter(_BaseIter):
                     )
                     out_x.append(arrays.x.current)
                     out_x = [arrays.x.historical, arrays.x.current]
-                    
+
                 out_y.append(arrays.y)
                 self.idx += 1
 
