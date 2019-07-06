@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 import numpy as np
 from random import shuffle
 from pathlib import Path
@@ -10,8 +11,14 @@ from typing import cast, Dict, Optional, Union, List, Tuple
 
 
 @dataclass
+class TrainData:
+    historical: Union[np.ndarray, torch.Tensor]
+    additional: Union[np.ndarray, torch.Tensor]
+
+
+@dataclass
 class ModelArrays:
-    x: Union[np.ndarray, torch.Tensor]
+    x: TrainData
     y: Union[np.ndarray, torch.Tensor]
     x_vars: List[str]
     y_var: str
@@ -160,7 +167,8 @@ class _BaseIter:
                         ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / 'x.nc'), xr.open_dataset(folder / 'y.nc')
-        assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable!'
+        assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable! ' \
+            f'Got {len(list(y.data_vars))}'
         x_np, y_np = x.to_array().values, y.to_array().values
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
@@ -169,6 +177,10 @@ class _BaseIter:
         # first, x
         x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
         x_np = np.moveaxis(np.moveaxis(x_np, 0, 1), -1, 0)
+        # then, the x month
+        assert len(y.time) == 1, f'Expected y to only have 1 timestamp! Got {len(y.time)}'
+        target_month = datetime.strptime(str(y.time.values[0])[:-3], '%Y-%m-%dT%H:%M:%S.%f').month
+        x_months = np.array([target_month] * x_np.shape[0])
         # then, y
         y_np = y_np.reshape(y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
         y_np = np.moveaxis(y_np, -1, 0).reshape(-1, 1)
@@ -189,6 +201,7 @@ class _BaseIter:
 
             notnan_indices = np.where((x_nans_summed == 0) & (y_nans_summed == 0))[0]
             x_np, y_np = x_np[notnan_indices], y_np[notnan_indices]
+            x_months = x_months[notnan_indices]
 
         if to_tensor:
             x_np, y_np = torch.from_numpy(x_np).float(), torch.from_numpy(y_np).float()
@@ -200,10 +213,13 @@ class _BaseIter:
 
             if clear_nans:
                 latlons = latlons[notnan_indices]
-            return ModelArrays(x=x_np, y=y_np, x_vars=list(x.data_vars),
+
+            x_data = TrainData(historical=x_np, additional=x_months)
+            return ModelArrays(x=x_data, y=y_np, x_vars=list(x.data_vars),
                                y_var=list(y.data_vars)[0], latlons=latlons)
 
-        return ModelArrays(x=x_np, y=y_np, x_vars=list(x.data_vars),
+        x_data = TrainData(historical=x_np, additional=x_months)
+        return ModelArrays(x=x_data, y=y_np, x_vars=list(x.data_vars),
                            y_var=list(y.data_vars)[0])
 
 
@@ -220,7 +236,7 @@ class _TrainIter(_BaseIter):
                 subfolder = self.data_files[self.idx]
                 arrays = self.ds_folder_to_np(subfolder, clear_nans=self.clear_nans,
                                               return_latlons=False, to_tensor=False)
-                if arrays.x.shape[0] == 0:
+                if arrays.x.historical.shape[0] == 0:
                     print(f'{subfolder} returns no values. Skipping')
 
                     # remove the empty element from the list
@@ -229,7 +245,7 @@ class _TrainIter(_BaseIter):
 
                     cur_max_idx = min(cur_max_idx + 1, self.max_idx)
 
-                out_x.append(arrays.x)
+                out_x.append(arrays.x.historical)
                 out_y.append(arrays.y)
                 self.idx += 1
 
@@ -256,7 +272,7 @@ class _TestIter(_BaseIter):
                 subfolder = self.data_files[self.idx]
                 arrays = self.ds_folder_to_np(subfolder, clear_nans=self.clear_nans,
                                               return_latlons=True, to_tensor=self.to_tensor)
-                if arrays.x.shape[0] == 0:
+                if arrays.x.historical.shape[0] == 0:
                     print(f'{subfolder} returns no values. Skipping')
                     # remove the empty element from the list
                     self.data_files.pop(self.idx)

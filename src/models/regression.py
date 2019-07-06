@@ -115,8 +115,9 @@ class LinearRegression(ModelBase):
 
         for dict in test_arrays_loader:
             for key, val in dict.items():
-                preds = self.model.predict(val.x.reshape(val.x.shape[0],
-                                                         val.x.shape[1] * val.x.shape[2]))
+                x = val.x.historical
+                preds = self.model.predict(val.x.reshape(x.shape[0],
+                                                         x.shape[1] * x.shape[2]))
                 preds_dict[key] = preds
                 test_arrays_dict[key] = {'y': val.y, 'latlons': val.latlons}
 

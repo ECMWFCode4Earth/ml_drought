@@ -152,7 +152,7 @@ class LinearNetwork(ModelBase):
         with torch.no_grad():
             for dict in test_arrays_loader:
                 for key, val in dict.items():
-                    preds = self.model(val.x)
+                    preds = self.model(val.x.historical)
                     preds_dict[key] = preds.numpy()
                     test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons}
 
