@@ -70,7 +70,7 @@ class S5Preprocessor(BasePreProcessor):
 
     def _preprocess(filepath: Path,
                     ouce_server: bool = False) -> List[Path]:
-        """preprocess a single s5 dataset (may have many variables)"""
+        """preprocess a single s5 dataset (each variable separately)"""
         if ouce_server:
             # undoes the preprocessing so that both are consistent
             # 1. read nc file
@@ -88,6 +88,45 @@ class S5Preprocessor(BasePreProcessor):
             ds_one_var = ds[var].to_dataset(name=var)
             output_paths.append(_preprocess_one_var(ds_one_var, var, filepath))
 
+        return output_paths
+
+
+    def _preprocess(filepath: Path,
+                    ouce_server: bool = False) -> List[Path]:
+        """preprocess a single s5 dataset (multi-variables per `.nc` file)"""
+        if ouce_server:
+            # undoes the preprocessing so that both are consistent
+            # 1. read nc file
+            ds = OuceS5Data.read_ouce_s5_data(filepath)
+        else: # downloaded from CDSAPI as .grib
+            # 1. read grib file
+            ds = read_grib_file(filepath)
+
+        # find all variables (sometimes download multiple)
+        coords = [c for c in ds.coords]
+        vars = [v for v in ds.variables if v not in coords]
+        variable = '-'.join(vars)
+
+        # 2. subset ROI
+        if subset_str is not None:
+            ds = self.chop_roi(ds, subset_str)
+
+        # 3. regrid
+        if regrid is not None:
+            ds = self.regrid(ds, regrid)
+
+        # 4. create the filepath and save to that location
+        output_path = self.create_filename(
+            netcdf_filepath,
+            self.output_dir,
+            variable,
+            subset_name=subset_str if subset_str is not None else None
+        )
+        assert output_path.name[-3:] == '.nc', \
+        f'filepath name should be a .nc file. Currently: {netcdf_filepath.name}'
+
+        # 5. save ds to output_path
+        ds.to_netcdf(output_path)
         return output_paths
 
     def merge_and_resample(self,
