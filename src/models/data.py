@@ -205,6 +205,7 @@ class _BaseIter:
 
         if to_tensor:
             x_np, y_np = torch.from_numpy(x_np).float(), torch.from_numpy(y_np).float()
+            x_months = torch.from_numpy(x_months).float()
 
         if return_latlons:
             lons, lats = np.meshgrid(x.lon.values, x.lat.values)
