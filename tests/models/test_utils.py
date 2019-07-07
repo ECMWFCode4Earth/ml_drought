@@ -40,3 +40,12 @@ class TestChunker:
 
         for x, y in chunk_array((test_x, ), test_y, 2, shuffle=True):
             assert (x[0] == y).all()
+
+    def test_chunk_multiple(self):
+        test_x_1 = torch.arange(0, 10)
+        test_x_2 = torch.arange(0, 10)
+        test_y = torch.arange(0, 10)
+
+        for x, y in chunk_array((test_x_1, test_x_2), test_y, 2, shuffle=True):
+            assert (x[0] == x[1] == y).all()
+
