@@ -47,5 +47,5 @@ class TestChunker:
         test_y = torch.arange(0, 10)
 
         for x, y in chunk_array((test_x_1, test_x_2), test_y, 2, shuffle=True):
-            assert (x[0] == x[1] == y).all()
-
+            assert (x[0] == x[1]).all()
+            assert (x[0] == y).all()
