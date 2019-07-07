@@ -133,7 +133,6 @@ class BasePreProcessor:
     @staticmethod
     def resample_time(ds: xr.Dataset,
                       resample_length: str = 'M',
-                      method: str = 'mean',
                       upsampling: bool = False) -> xr.Dataset:
 
         # TODO: would be nice to programmatically get upsampling / not

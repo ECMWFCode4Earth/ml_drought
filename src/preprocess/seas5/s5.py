@@ -1,23 +1,22 @@
 from pathlib import Path
-from functools import partial
 import xarray as xr
-import multiprocessing
-from shutil import rmtree
-from typing import Optional, List
+# from functools import partial
+# import multiprocessing
+# from shutil import rmtree
+from typing import Optional, List, Tuple
 
 from ..base import BasePreProcessor
-from .fcast_horizon import FH
 from .ouce_s5 import OuceS5Data
 
-class S5Preprocessor(BasePreProcessor):
 
-    dataset = 's5'
+class S5Preprocessor(BasePreProcessor):
+    dataset: str = 's5'
 
     def __init__(self, data_folder: Path = Path('data'),
                  ouce_server: bool = False) -> None:
         super().__init__(data_folder)
         self.ouce_server = ouce_server
-    #
+
     def get_filepaths(self, folder: str = 'raw') -> List[Path]:
         """ because reading .grib files have to rewrite get_filepaths"""
         if folder == 'raw':
@@ -28,23 +27,30 @@ class S5Preprocessor(BasePreProcessor):
         outfiles.sort()
         return outfiles
 
+    @staticmethod
     def read_grib_file(filepath: Path) -> xr.Dataset:
-        assert filepath.suffix = '.grib', f"This method is for `.grib` files\
+        assert filepath.suffix == '.grib', f"This method is for `.grib` files\
         Not for {filepath.as_posix()}"
         ds = xr.open_dataset(filepath, engine='cfgrib')
         return ds
 
-    def create_filename(netcdf_filepath: Path,
+    @staticmethod
+    def create_filename(filepath: Path,
                         output_dir: Path,
                         variable: str,
-                        filepath: Path) -> Path:
+                        regrid: Optional[xr.Dataset] = None,
+                        subset_name: Optional[str] = None) -> Path:
         # TODO: do we want each variable in separate folders / .nc files?
-        filename = netcdf_filepath.stem + variable + '.nc'
+        subset_name = ('_' + subset_name) if subset_name is not None else None
+        filename = filepath.stem + f'{variable}{subset_name}.nc'
         output_path = output_dir / variable / filename
         return output_path
 
-    def _preprocess_one_var(ds: xr.Dataset,
-                            variable: str,) -> Path:
+    def _preprocess_one_var(self, ds: xr.Dataset,
+                            variable: str,
+                            filepath: Path,
+                            subset_str: Optional[str],
+                            regrid: Optional[bool] = None) -> Path:
         # 2. subset ROI
         if subset_str is not None:
             ds = self.chop_roi(ds, subset_str)
@@ -55,29 +61,34 @@ class S5Preprocessor(BasePreProcessor):
 
         # 4. create the filepath and save to that location
         output_path = self.create_filename(
-            netcdf_filepath,
-            self.output_dir,
-            variable,
+            filepath=filepath,
+            output_dir=self.out_dir,
+            variable=variable,
             subset_name=subset_str if subset_str is not None else None
         )
-        assert output_path.name[-3:] == '.nc', \
-        f'filepath name should be a .nc file. Currently: {netcdf_filepath.name}'
+        assert output_path.name[-3:] == '.nc', f'\
+        filepath name should be a .nc file. Currently: {filepath.name}'
 
         # 5. save ds to output_path
         ds.to_netcdf(output_path)
 
         return output_path
 
-    def _preprocess(filepath: Path,
-                    ouce_server: bool = False) -> List[Path]:
+    def _preprocess_vars_separately(self,
+                                    filepath: Path,
+                                    ouce_server: bool = False,
+                                    regrid: Optional[xr.Dataset] = None,
+                                    subset_str: Optional[str] = None,
+                                    ) -> List[Path]:
         """preprocess a single s5 dataset (each variable separately)"""
         if ouce_server:
             # undoes the preprocessing so that both are consistent
             # 1. read nc file
-            ds = OuceS5Data.read_ouce_s5_data(filepath)
-        else: # downloaded from CDSAPI as .grib
+            o = OuceS5Data()
+            ds = o.read_ouce_s5_data(filepath)
+        else:  # downloaded from CDSAPI as .grib
             # 1. read grib file
-            ds = read_grib_file(filepath)
+            ds = self.read_grib_file(filepath)
 
         # find all variables (sometimes download multiple)
         coords = [c for c in ds.coords]
@@ -86,21 +97,26 @@ class S5Preprocessor(BasePreProcessor):
         output_paths = []
         for var in vars:
             ds_one_var = ds[var].to_dataset(name=var)
-            output_paths.append(_preprocess_one_var(ds_one_var, var, filepath))
+            output_paths.append(self._preprocess_one_var(
+                ds=ds_one_var, variable=var, filepath=filepath,
+                subset_str=subset_str, regrid=regrid
+            ))
 
         return output_paths
 
-
-    def _preprocess(filepath: Path,
-                    ouce_server: bool = False) -> List[Path]:
+    def _preprocess(self,
+                    filepath: Path,
+                    ouce_server: bool = False,
+                    subset_str: Optional[str] = None,
+                    regrid: Optional[xr.Dataset] = None) -> Tuple[Path, str]:
         """preprocess a single s5 dataset (multi-variables per `.nc` file)"""
         if ouce_server:
             # undoes the preprocessing so that both are consistent
             # 1. read nc file
-            ds = OuceS5Data.read_ouce_s5_data(filepath)
-        else: # downloaded from CDSAPI as .grib
+            ds = OuceS5Data().read_ouce_s5_data(filepath)
+        else:  # downloaded from CDSAPI as .grib
             # 1. read grib file
-            ds = read_grib_file(filepath)
+            ds = self.read_grib_file(filepath)
 
         # find all variables (sometimes download multiple)
         coords = [c for c in ds.coords]
@@ -117,22 +133,23 @@ class S5Preprocessor(BasePreProcessor):
 
         # 4. create the filepath and save to that location
         output_path = self.create_filename(
-            netcdf_filepath,
-            self.output_dir,
+            filepath,
+            self.out_dir,
             variable,
             subset_name=subset_str if subset_str is not None else None
         )
-        assert output_path.name[-3:] == '.nc', \
-        f'filepath name should be a .nc file. Currently: {netcdf_filepath.name}'
+        assert output_path.name[-3:] == '.nc', f'\
+        filepath name should be a .nc file. Currently: {filepath.name}'
 
         # 5. save ds to output_path
         ds.to_netcdf(output_path)
-        return output_paths
+        return output_path, variable
 
     def merge_and_resample(self,
                            variable: str,
                            resample_length: Optional[str] = 'M',
-                           upsampling: bool = False,) -> Path:
+                           upsampling: bool = False,
+                           subset_str: Optional[str] = None) -> Path:
         # open all interim processed files (all variables?)
         ds = xr.open_mfdataset(self.interim / "*.nc")
 
@@ -150,15 +167,56 @@ class S5Preprocessor(BasePreProcessor):
                    regrid: Optional[Path] = None,
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
-                   parallel: bool = False,) -> None:
+                   parallel: bool = False,
+                   variable: Optional[str] = None) -> None:
+        """Preprocesses
+
+        Argument:
+        ---------
+        subset_str: Optional[str] = 'kenya'
+            whether to subset the data to a particular region
+
+        regrid: Optional[Path] = None
+            whether to regrid to the same lat/lon grid as the `regrid` ds
+
+        resample_time: Optional[str] = 'M'
+            whether to resample the timesteps to a given `frequency`
+
+        upsampling: bool = False
+            are you upsampling the time frequency (e.g. monthly -> daily)
+
+        parallel: bool = False
+            whether to run in parallel
+
+        variable: Optional[str] = None
+            if self.ouce_server then require a variable string to build
+            the filepath to the data to preprocess
+
+        """
         if self.ouce_server:
             # data already in netcdf but needs other preprocessing
+            assert variable is not None, f"Must pass a variable argument when\
+            preprocessing the S5 data on the OUCE servers"
             os = OuceS5Data()
-            filepaths = os.get_ouce_filepaths(variable=???)
+            filepaths = os.get_ouce_filepaths(variable=variable)
         else:
-            filepaths = get_filepaths()
+            filepaths = self.get_filepaths()
 
-        self._preprocess(filepath, self.ouce_server)
-        self.merge_and_resample()
+        if not parallel:
+            out_paths = []
+            variables = []
+            for filepath in filepaths:
+                output_path, variable = self._preprocess(
+                    filepath, self.ouce_server, subset_str, regrid
+                )
+                out_paths.append(output_path)
+                variables.append(variable)
+        else:
+            # Not implemented parallel yet
+            pass
 
-        pass
+        # merge all of the timesteps for S5 data
+        for variable in variables:
+            self.merge_and_resample(
+                variable, resample_time, upsampling, subset_str
+            )
