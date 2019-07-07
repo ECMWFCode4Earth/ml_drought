@@ -109,6 +109,8 @@ class S5Preprocessor(BasePreProcessor):
                     subset_str: Optional[str] = None,
                     regrid: Optional[xr.Dataset] = None) -> Tuple[Path, str]:
         """preprocess a single s5 dataset (multi-variables per `.nc` file)"""
+        print(f"working on {filepath.name}")
+
         if self.ouce_server:
             # undoes the preprocessing so that both are consistent
             # 1. read nc file
@@ -122,12 +124,18 @@ class S5Preprocessor(BasePreProcessor):
         vars = [v for v in ds.variables if v not in coords]
         variable = '-'.join(vars)
 
+        if 'latitude' in coords:
+            ds = ds.rename({'latitude': 'lat'})
+        if 'longitude' in coords:
+            ds = ds.rename({'longitude': 'lon'})
+
         # 2. subset ROI
         if subset_str is not None:
             ds = self.chop_roi(ds, subset_str)
 
         # 3. regrid
         if regrid is not None:
+            assert
             ds = self.regrid(ds, regrid)
 
         # 4. create the filepath and save to that location
