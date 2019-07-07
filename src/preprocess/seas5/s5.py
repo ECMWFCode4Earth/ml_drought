@@ -43,7 +43,7 @@ class S5Preprocessor(BasePreProcessor):
                         subset_name: Optional[str] = None) -> Path:
         # TODO: do we want each variable in separate folders / .nc files?
         subset_name = ('_' + subset_name) if subset_name is not None else ''
-        filename = filepath.stem + f'{variable}{subset_name}.nc'
+        filename = filepath.stem + f'_{variable}{subset_name}.nc'
         output_path = output_dir / filename
         return output_path
 
