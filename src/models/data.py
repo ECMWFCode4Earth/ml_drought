@@ -226,11 +226,12 @@ class _BaseIter:
 
 class _TrainIter(_BaseIter):
 
-    def __next__(self) -> Tuple[Union[np.ndarray, torch.Tensor],
+    def __next__(self) -> Tuple[Tuple[Union[np.ndarray, torch.Tensor],
+                                      Union[np.ndarray, torch.Tensor]],
                                 Union[np.ndarray, torch.Tensor]]:
 
         if self.idx < self.max_idx:
-            out_x, out_y = [], []
+            out_x, out_x_add, out_y = [], [], []
 
             cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
             while self.idx < cur_max_idx:
@@ -247,16 +248,19 @@ class _TrainIter(_BaseIter):
                     cur_max_idx = min(cur_max_idx + 1, self.max_idx)
 
                 out_x.append(arrays.x.historical)
+                out_x_add.append(arrays.x.additional)
                 out_y.append(arrays.y)
                 self.idx += 1
 
             final_x = np.concatenate(out_x, axis=0)
+            final_x_add = np.concatenate(out_x_add, axis=0)
             final_y = np.concatenate(out_y, axis=0)
             if final_x.shape[0] == 0:
                 raise StopIteration()
             if self.to_tensor:
-                return torch.from_numpy(final_x).float(), torch.from_numpy(final_y).float()
-            return final_x, final_y
+                return (torch.from_numpy(final_x).float(),
+                        torch.from_numpy(final_x_add).float()), torch.from_numpy(final_y).float()
+            return (final_x, final_x_add), final_y
         else:
             raise StopIteration()
 

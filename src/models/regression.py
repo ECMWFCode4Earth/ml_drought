@@ -50,9 +50,9 @@ class LinearRegression(ModelBase):
             train_rmse = []
             for x, y in train_dataloader:
                 for batch_x, batch_y in chunk_array(x, y, batch_size, shuffle=True):
-                    batch_x, batch_y = cast(np.ndarray, batch_x), cast(np.ndarray, batch_y)
-                    batch_x = batch_x.reshape(batch_x.shape[0],
-                                              batch_x.shape[1] * batch_x.shape[2])
+                    batch_x, batch_y = cast(np.ndarray, batch_x[0]), cast(np.ndarray, batch_y)
+                    batch_x = batch_x.reshape(batch_x.shape[0],  # type: ignore
+                                              batch_x.shape[1] * batch_x.shape[2])  # type: ignore
                     self.model.partial_fit(batch_x, batch_y.ravel())
 
                     train_pred_y = self.model.predict(batch_x)
@@ -60,7 +60,7 @@ class LinearRegression(ModelBase):
             if early_stopping is not None:
                 val_rmse = []
                 for x, y in val_dataloader:
-                    x = x.reshape(x.shape[0], x.shape[1] * x.shape[2])
+                    x = x[0].reshape(x[0].shape[0], x[0].shape[1] * x[0].shape[2])
                     val_pred_y = self.model.predict(x)
                     val_rmse.append(np.sqrt(mean_squared_error(y, val_pred_y)))
 

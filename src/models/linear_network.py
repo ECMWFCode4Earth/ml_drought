@@ -92,7 +92,7 @@ class LinearNetwork(ModelBase):
         # initialize the model
         if self.input_size is None:
             x_ref, _ = next(iter(train_dataloader))
-            self.input_size = x_ref.contiguous().view(x_ref.shape[0], -1).shape[1]
+            self.input_size = x_ref[0].contiguous().view(x_ref[0].shape[0], -1).shape[1]
         self.model: LinearModel = LinearModel(input_size=self.input_size,
                                               layer_sizes=self.layer_sizes,
                                               dropout=self.dropout)
@@ -106,7 +106,7 @@ class LinearNetwork(ModelBase):
             for x, y in train_dataloader:
                 for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
                     optimizer.zero_grad()
-                    pred = self.model(x_batch)
+                    pred = self.model(x_batch[0])
                     loss = F.smooth_l1_loss(pred, y_batch)
                     loss.backward()
                     optimizer.step()
@@ -118,7 +118,7 @@ class LinearNetwork(ModelBase):
                 val_rmse = []
                 with torch.no_grad():
                     for x, y in val_dataloader:
-                        val_pred_y = self.model(x)
+                        val_pred_y = self.model(x[0])
                         val_loss = F.mse_loss(val_pred_y, y)
 
                         val_rmse.append(math.sqrt(val_loss.item()))
@@ -172,8 +172,8 @@ class LinearNetwork(ModelBase):
         for x, _ in train_dataloader:
             while len(output_tensors) < sample_size:
                 for _ in range(samples_per_instance):
-                    idx = random.randint(0, x.shape[0] - 1)
-                    output_tensors.append(x[idx])
+                    idx = random.randint(0, x[0].shape[0] - 1)
+                    output_tensors.append(x[0][idx])
         return torch.stack(output_tensors)
 
 
