@@ -43,7 +43,7 @@ class S5Preprocessor(BasePreProcessor):
         # TODO: do we want each variable in separate folders / .nc files?
         subset_name = ('_' + subset_name) if subset_name is not None else None
         filename = filepath.stem + f'{variable}{subset_name}.nc'
-        output_path = output_dir / variable / filename
+        output_path = output_dir / filename
         return output_path
 
     def _preprocess_one_var(self, ds: xr.Dataset,
