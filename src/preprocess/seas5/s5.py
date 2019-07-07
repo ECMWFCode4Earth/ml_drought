@@ -1,3 +1,4 @@
+import numpy as np
 from pathlib import Path
 import xarray as xr
 # from functools import partial
