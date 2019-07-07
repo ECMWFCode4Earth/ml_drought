@@ -106,11 +106,10 @@ class S5Preprocessor(BasePreProcessor):
 
     def _preprocess(self,
                     filepath: Path,
-                    ouce_server: bool = False,
                     subset_str: Optional[str] = None,
                     regrid: Optional[xr.Dataset] = None) -> Tuple[Path, str]:
         """preprocess a single s5 dataset (multi-variables per `.nc` file)"""
-        if ouce_server:
+        if self.ouce_server:
             # undoes the preprocessing so that both are consistent
             # 1. read nc file
             ds = OuceS5Data().read_ouce_s5_data(filepath)
