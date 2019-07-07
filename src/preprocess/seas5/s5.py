@@ -135,7 +135,8 @@ class S5Preprocessor(BasePreProcessor):
 
         # 3. regrid
         if regrid is not None:
-            assert
+            assert all(np.isin(['lat', 'lon'], [c for c in ds.coords])), f"\
+            Expecting `lat` `lon` to be in ds. dims : {[c for c in ds.coords]}"
             ds = self.regrid(ds, regrid)
 
         # 4. create the filepath and save to that location
