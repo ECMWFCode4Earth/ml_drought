@@ -143,7 +143,7 @@ class S5Preprocessor(BasePreProcessor):
         # 4. create the filepath and save to that location
         output_path = self.create_filename(
             filepath,
-            self.out_dir,
+            self.interim,
             variable,
             subset_name=subset_str if subset_str is not None else None
         )
@@ -161,6 +161,7 @@ class S5Preprocessor(BasePreProcessor):
                            subset_str: Optional[str] = None) -> Path:
         # open all interim processed files (all variables?)
         ds = xr.open_mfdataset(self.interim / "*.nc")
+        ds = ds.sortby('initialisation_date')
 
         # resample
         if resample_length is not None:
