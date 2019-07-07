@@ -41,7 +41,7 @@ class S5Preprocessor(BasePreProcessor):
                         regrid: Optional[xr.Dataset] = None,
                         subset_name: Optional[str] = None) -> Path:
         # TODO: do we want each variable in separate folders / .nc files?
-        subset_name = ('_' + subset_name) if subset_name is not None else None
+        subset_name = ('_' + subset_name) if subset_name is not None else ''
         filename = filepath.stem + f'{variable}{subset_name}.nc'
         output_path = output_dir / filename
         return output_path
@@ -168,7 +168,7 @@ class S5Preprocessor(BasePreProcessor):
                    upsampling: bool = False,
                    parallel: bool = False,
                    variable: Optional[str] = None) -> None:
-        """Preprocesses
+        """Preprocesses the S5 data for all variables in the 'ds' file at once
 
         Argument:
         ---------
