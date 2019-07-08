@@ -148,11 +148,15 @@ class S5Preprocessor(BasePreProcessor):
             except:
                 ds = self.chop_roi(ds, subset_str, inverse_lat=True)
 
-        # 3. regrid
+        # 3. regrid (one variable at a time)
         if regrid is not None:
             assert all(np.isin(['lat', 'lon'], [c for c in ds.coords])), f"\
             Expecting `lat` `lon` to be in ds. dims : {[c for c in ds.coords]}"
-            ds = self.regrid(ds, regrid)
+            all_vars = []
+            for var in vars:
+                d_ = self.regrid(ds[var].to_dataset(var), regrid)
+                all_vars.append(d_)
+            ds = xr.merge(all_vars)
 
         # 4. create the filepath and save to that location
         output_path = self.create_filename(
@@ -179,7 +183,7 @@ class S5Preprocessor(BasePreProcessor):
 
         # resample
         if resample_str is not None:
-            ds.resample_time(resample_str, upsampling)
+            ds = self.resample_time(ds, resample_str, upsampling)
 
         # save to preprocessed netcdf
         out_path = self.out_dir / f"{self.dataset}_{variable}_{subset_str}.nc"
