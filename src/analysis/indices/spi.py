@@ -13,7 +13,9 @@ from .base import BaseIndices
 
 
 class SPI(BaseIndices):
-    """https://climatedataguide.ucar.edu/climate-data/standardized-precipitation-index-spi"""
+    """https://climatedataguide.ucar.edu/climate-data/standardized-precipitation-index-spi
+
+    """
     name = 'spi'
 
     # SPI should be monthly so hardcoding this to avoid confusion
@@ -116,7 +118,7 @@ class SPI(BaseIndices):
             calibration_year_final: Optional[int] = None,
             periodicity: Optional[str] = 'monthly',) -> None:
         """fit the index to self.ds writing to new self.index `xr.Dataset`
-        
+
         Arguments:
         ---------
         variable: str
