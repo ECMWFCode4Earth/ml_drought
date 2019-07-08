@@ -97,8 +97,13 @@ class BasePreProcessor:
 
         # The weight file should be deleted by regridder.clean_weight_files(), but in case
         # something goes wrong and its not, lets use a descriptive filename
-        filename = f'{method}_{shape_in[0]}x{shape_in[1]}_\
-        {shape_out[0]}x{shape_out[1]}_{uid}.nc'.replace(' ', '')
+        if reuse_weights:
+            # if not running in parallel can save time by reusing weights
+            filename = f'{method}_{shape_in[0]}x{shape_in[1]}_\
+            {shape_out[0]}x{shape_out[1]}.nc'.replace(' ', '')
+        else:
+            filename = f'{method}_{shape_in[0]}x{shape_in[1]}_\
+            {shape_out[0]}x{shape_out[1]}_{uid}.nc'.replace(' ', '')
         savedir = self.preprocessed_folder / filename
 
         regridder = xe.Regridder(ds, ds_out, method,

@@ -4,7 +4,7 @@ import xarray as xr
 # from functools import partial
 # import multiprocessing
 from shutil import rmtree
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, cast
 
 from ..base import BasePreProcessor
 from .ouce_s5 import OuceS5Data
@@ -266,9 +266,10 @@ class S5Preprocessor(BasePreProcessor):
             pass
 
         # merge all of the timesteps for S5 data
-        for variable in np.unique(variables):
+        for var in np.unique(variables):
+            cast(str, var)
             self.merge_and_resample(
-                variable, resample_time, upsampling, subset_str
+                var, resample_time, upsampling, subset_str
             )
 
         if cleanup:
