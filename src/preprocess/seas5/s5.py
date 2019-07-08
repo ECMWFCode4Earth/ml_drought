@@ -30,9 +30,17 @@ class S5Preprocessor(BasePreProcessor):
 
     @staticmethod
     def read_grib_file(filepath: Path) -> xr.Dataset:
-        assert filepath.suffix == '.grib', f"This method is for `.grib` files\
-        Not for {filepath.as_posix()}"
+        assert filepath.suffix in ['.grib', '.grb'], f"This method is for \
+        `grib` files. Not for {filepath.as_posix()}"
         ds = xr.open_dataset(filepath, engine='cfgrib')
+
+        ds = ds.rename({
+            'time': 'initialisation_date', 'step':'forecast_horizon',
+            'valid_time':'time'
+        })
+        if ds.surface.values.size == 1:
+            ds = ds.drop('surface')
+
         return ds
 
     @staticmethod
@@ -54,8 +62,10 @@ class S5Preprocessor(BasePreProcessor):
                             regrid: Optional[bool] = None) -> Path:
         # 2. subset ROI
         if subset_str is not None:
-            ds = self.chop_roi(ds, subset_str)
-
+            try:
+                ds = self.chop_roi(ds, subset_str)
+            except:
+                ds = self.chop_roi(ds, subset_str, inverse_lat=True)
         # 3. regrid
         if regrid is not None:
             ds = self.regrid(ds, regrid)
@@ -125,6 +135,7 @@ class S5Preprocessor(BasePreProcessor):
         vars = [v for v in ds.variables if v not in coords]
         variable = '-'.join(vars)
 
+        # rename coords
         if 'latitude' in coords:
             ds = ds.rename({'latitude': 'lat'})
         if 'longitude' in coords:
@@ -132,7 +143,10 @@ class S5Preprocessor(BasePreProcessor):
 
         # 2. subset ROI
         if subset_str is not None:
-            ds = self.chop_roi(ds, subset_str)
+            try:
+                ds = self.chop_roi(ds, subset_str)
+            except:
+                ds = self.chop_roi(ds, subset_str, inverse_lat=True)
 
         # 3. regrid
         if regrid is not None:
@@ -156,16 +170,16 @@ class S5Preprocessor(BasePreProcessor):
 
     def merge_and_resample(self,
                            variable: str,
-                           resample_length: Optional[str] = 'M',
+                           resample_str: Optional[str] = 'M',
                            upsampling: bool = False,
                            subset_str: Optional[str] = None) -> Path:
         # open all interim processed files (all variables?)
-        ds = xr.open_mfdataset(self.interim / "*.nc")
+        ds = xr.open_mfdataset(self.interim.as_posix() + "/*.nc")
         ds = ds.sortby('initialisation_date')
 
         # resample
-        if resample_length is not None:
-            ds.resample_time(resample_length, upsampling)
+        if resample_str is not None:
+            ds.resample_time(resample_str, upsampling)
 
         # save to preprocessed netcdf
         out_path = self.out_dir / f"{self.dataset}_{variable}_{subset_str}.nc"

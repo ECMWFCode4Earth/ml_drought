@@ -12,7 +12,7 @@ class OuceS5Data:
 
     @staticmethod
     def add_initialisation_date(ds: xr.Dataset, fname: Path) -> xr.Dataset:
-        date_from_fname = pd.to_datetime(fname.stem.split('_')[-1], format='%Y%M')
+        date_from_fname = pd.to_datetime(fname.stem.split('_')[-1], format='%Y%m')
         date_from_fname -= pd.to_timedelta('1 minute')
         return ds.expand_dims(
             {'initialisation_date': [date_from_fname]}
