@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import pytest
 import torch
 
 from src.models import LinearNetwork
@@ -40,7 +41,8 @@ class TestLinearNetwork:
         assert model_dict['input_size'] == input_size
         assert model_dict['include_pred_month'] == include_pred_month
 
-    def test_train(self, tmp_path, capsys):
+    @pytest.mark.parametrize('use_pred_months', [True, False])
+    def test_train(self, tmp_path, capsys, use_pred_months):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -60,7 +62,7 @@ class TestLinearNetwork:
         dropout = 0.25
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
-                              dropout=dropout)
+                              dropout=dropout, include_pred_month=use_pred_months)
         model.train()
 
         captured = capsys.readouterr()
@@ -70,7 +72,8 @@ class TestLinearNetwork:
         assert type(model.model) == LinearModel, \
             f'Model attribute not a linear regression!'
 
-    def test_predict(self, tmp_path):
+    @pytest.mark.parametrize('use_pred_months', [True, False])
+    def test_predict(self, tmp_path, use_pred_months):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -96,7 +99,7 @@ class TestLinearNetwork:
         dropout = 0.25
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
-                              dropout=dropout)
+                              dropout=dropout, include_pred_month=use_pred_months)
         model.train()
         test_arrays_dict, pred_dict = model.predict()
 
