@@ -139,7 +139,7 @@ class BasePreProcessor:
         # TODO: would be nice to programmatically get upsampling / not
         ds = ds.sortby(time_coord)
 
-        resampler = ds.resample(time=resample_length)
+        resampler = ds.resample({time_coord:resample_length})
 
         if not upsampling:
             return resampler.mean()
