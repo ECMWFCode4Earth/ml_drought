@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import pytest
 import torch
 
 from src.models import LinearNetwork
@@ -15,15 +16,16 @@ class TestLinearNetwork:
         layer_sizes = [10]
         input_size = 10
         dropout = 0.25
+        include_pred_month = True
 
         def mocktrain(self):
-            self.model = LinearModel(input_size, layer_sizes, dropout)
+            self.model = LinearModel(input_size, layer_sizes, dropout, include_pred_month)
             self.input_size = input_size
 
         monkeypatch.setattr(LinearNetwork, 'train', mocktrain)
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
-                              dropout=dropout)
+                              dropout=dropout, include_pred_month=include_pred_month)
         model.train()
         model.save_model()
 
@@ -37,8 +39,10 @@ class TestLinearNetwork:
         assert model_dict['dropout'] == dropout
         assert model_dict['layer_sizes'] == layer_sizes
         assert model_dict['input_size'] == input_size
+        assert model_dict['include_pred_month'] == include_pred_month
 
-    def test_train(self, tmp_path, capsys):
+    @pytest.mark.parametrize('use_pred_months', [True, False])
+    def test_train(self, tmp_path, capsys, use_pred_months):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -58,7 +62,7 @@ class TestLinearNetwork:
         dropout = 0.25
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
-                              dropout=dropout)
+                              dropout=dropout, include_pred_month=use_pred_months)
         model.train()
 
         captured = capsys.readouterr()
@@ -68,7 +72,8 @@ class TestLinearNetwork:
         assert type(model.model) == LinearModel, \
             f'Model attribute not a linear regression!'
 
-    def test_predict(self, tmp_path):
+    @pytest.mark.parametrize('use_pred_months', [True, False])
+    def test_predict(self, tmp_path, use_pred_months):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -94,7 +99,7 @@ class TestLinearNetwork:
         dropout = 0.25
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
-                              dropout=dropout)
+                              dropout=dropout, include_pred_month=use_pred_months)
         model.train()
         test_arrays_dict, pred_dict = model.predict()
 
@@ -122,6 +127,11 @@ class TestLinearNetwork:
             pickle.dump(norm_dict, f)
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=[100],
-                              dropout=0.25)
+                              dropout=0.25, include_pred_month=True)
         background = model._get_background(sample_size=3)
-        assert background.shape[0] == 3, f'Got {background.shape[0]} samples back, expected 3'
+        assert background[0].shape[0] == 3, \
+            f'Got {background[0].shape[0]} samples back, expected 3'
+        assert background[1].shape[0] == 3, \
+            f'Got {background[1].shape[0]} samples back, expected 3'
+        assert len(background[1].shape) == 2, \
+            f'Expected 2 dimensions, got {len(background[1].shape)}'

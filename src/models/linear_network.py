@@ -23,8 +23,9 @@ class LinearNetwork(ModelBase):
     def __init__(self, layer_sizes: Union[int, List[int]],
                  dropout: float = 0.25,
                  data_folder: Path = Path('data'),
-                 batch_size: int = 1) -> None:
-        super().__init__(data_folder, batch_size)
+                 batch_size: int = 1,
+                 include_pred_month: bool = True) -> None:
+        super().__init__(data_folder, batch_size, include_pred_month)
 
         if type(layer_sizes) is int:
             layer_sizes = cast(List[int], [layer_sizes])
@@ -47,7 +48,8 @@ class LinearNetwork(ModelBase):
             'state_dict': self.model.state_dict(),
             'layer_sizes': self.layer_sizes,
             'dropout': self.dropout,
-            'input_size': self.input_size
+            'input_size': self.input_size,
+            'include_pred_month': self.include_pred_month
         }
 
         torch.save(model_dict, self.model_dir / 'model.pkl')
@@ -59,6 +61,11 @@ class LinearNetwork(ModelBase):
             background_samples = self._get_background(sample_size=100)
             self.explainer: shap.DeepExplainer = shap.DeepExplainer(
                 self.model, background_samples)
+        if self.include_pred_month:
+            assert type(x) == list, \
+                'include_pred_month is True, so this model expects a list of tensors as input'
+            if len(x[1].shape) == 1:
+                x[1] = self._one_hot_months(x[1])
 
         return self.explainer.shap_values(x)
 
@@ -92,10 +99,11 @@ class LinearNetwork(ModelBase):
         # initialize the model
         if self.input_size is None:
             x_ref, _ = next(iter(train_dataloader))
-            self.input_size = x_ref.contiguous().view(x_ref.shape[0], -1).shape[1]
+            self.input_size = x_ref[0].contiguous().view(x_ref[0].shape[0], -1).shape[1]
         self.model: LinearModel = LinearModel(input_size=self.input_size,
                                               layer_sizes=self.layer_sizes,
-                                              dropout=self.dropout)
+                                              dropout=self.dropout,
+                                              include_pred_month=self.include_pred_month)
 
         optimizer = torch.optim.Adam([pam for pam in self.model.parameters()],
                                      lr=learning_rate)
@@ -106,7 +114,7 @@ class LinearNetwork(ModelBase):
             for x, y in train_dataloader:
                 for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
                     optimizer.zero_grad()
-                    pred = self.model(x_batch)
+                    pred = self.model(x_batch[0], self._one_hot_months(x_batch[1]))
                     loss = F.smooth_l1_loss(pred, y_batch)
                     loss.backward()
                     optimizer.step()
@@ -118,7 +126,7 @@ class LinearNetwork(ModelBase):
                 val_rmse = []
                 with torch.no_grad():
                     for x, y in val_dataloader:
-                        val_pred_y = self.model(x)
+                        val_pred_y = self.model(x[0], self._one_hot_months(x[1]))
                         val_loss = F.mse_loss(val_pred_y, y)
 
                         val_rmse.append(math.sqrt(val_loss.item()))
@@ -152,13 +160,14 @@ class LinearNetwork(ModelBase):
         with torch.no_grad():
             for dict in test_arrays_loader:
                 for key, val in dict.items():
-                    preds = self.model(val.x)
+                    preds = self.model(val.x.historical, self._one_hot_months(val.x.pred_months))
                     preds_dict[key] = preds.numpy()
                     test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons}
 
         return test_arrays_dict, preds_dict
 
-    def _get_background(self, sample_size: int = 100) -> torch.Tensor:
+    def _get_background(self, sample_size: int = 100) -> Union[torch.Tensor,
+                                                               List[torch.Tensor]]:
 
         print('Extracting a sample of the training data')
 
@@ -167,20 +176,35 @@ class LinearNetwork(ModelBase):
                                       shuffle_data=True, mode='train',
                                       to_tensor=True)
         output_tensors: List[torch.Tensor] = []
+        if self.include_pred_month:
+            output_pred_months: List[torch.Tensor] = []
         samples_per_instance = max(1, sample_size // len(train_dataloader))
 
         for x, _ in train_dataloader:
             while len(output_tensors) < sample_size:
                 for _ in range(samples_per_instance):
-                    idx = random.randint(0, x.shape[0] - 1)
-                    output_tensors.append(x[idx])
-        return torch.stack(output_tensors)
+                    idx = random.randint(0, x[0].shape[0] - 1)
+                    output_tensors.append(x[0][idx])
+                    if self.include_pred_month:
+                        output_pred_months.append(self._one_hot_months(x[1][idx: idx + 1]))
+        if self.include_pred_month:
+            return [torch.stack(output_tensors), torch.cat(output_pred_months, dim=0)]
+        else:
+            return torch.stack(output_tensors)
+
+    @staticmethod
+    def _one_hot_months(indices: torch.Tensor) -> torch.Tensor:
+        return torch.eye(14)[indices.long()][:, 1:-1]
 
 
 class LinearModel(nn.Module):
 
-    def __init__(self, input_size, layer_sizes, dropout):
+    def __init__(self, input_size, layer_sizes, dropout, include_pred_month):
         super().__init__()
+
+        self.include_pred_month = include_pred_month
+        if self.include_pred_month:
+            input_size += 12
         layer_sizes.insert(0, input_size)
 
         self.dense_layers = nn.ModuleList([
@@ -202,9 +226,11 @@ class LinearModel(nn.Module):
         # see: Initializing the biases
         nn.init.constant_(self.final_dense.bias.data, 0)
 
-    def forward(self, x):
+    def forward(self, x, pred_month=None):
         # flatten
         x = x.contiguous().view(x.shape[0], -1)
+        if self.include_pred_month:
+            x = torch.cat((x, pred_month), dim=-1)
         for layer in self.dense_layers:
             x = layer(x)
 

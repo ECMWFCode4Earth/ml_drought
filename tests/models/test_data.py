@@ -59,7 +59,7 @@ class TestBaseIter:
         arrays = base_iterator.ds_folder_to_np(tmp_path, return_latlons=True,
                                                to_tensor=to_tensor)
 
-        x_np, y_np, latlons = arrays.x, arrays.y, arrays.latlons
+        x_np, y_np, latlons = arrays.x.historical, arrays.y, arrays.latlons
 
         if to_tensor:
             assert (type(x_np) == torch.Tensor) and (type(y_np) == torch.Tensor)
