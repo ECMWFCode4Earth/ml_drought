@@ -54,8 +54,8 @@ def regression():
 
     for variable in val.x_vars:
         plt.clf()
-        plot_shap_values(val.x[0], explain_hist[0], val.x_vars, normalizing_dict, variable,
-                         normalize_shap_plots=True, show=False)
+        plot_shap_values(val.x.historical[0], explain_hist[0], val.x_vars, normalizing_dict,
+                         variable, normalize_shap_plots=True, show=False)
         plt.savefig(f'{variable}_linear_regression.png', dpi=300, bbox_inches='tight')
 
 

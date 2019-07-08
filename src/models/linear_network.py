@@ -186,7 +186,7 @@ class LinearNetwork(ModelBase):
                     idx = random.randint(0, x[0].shape[0] - 1)
                     output_tensors.append(x[0][idx])
                     if self.include_pred_month:
-                        output_pred_months.append(self._one_hot_months(x[1][idx]))
+                        output_pred_months.append(self._one_hot_months(x[1][idx: idx + 1]))
         if self.include_pred_month:
             return [torch.stack(output_tensors), torch.stack(output_pred_months)]
         else:

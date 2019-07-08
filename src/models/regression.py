@@ -112,7 +112,7 @@ class LinearRegression(ModelBase):
         batch, timesteps, dims = x.shape[0], x.shape[1], x.shape[2]
         reshaped_x = x.reshape(batch, timesteps * dims)
         if self.include_pred_month:
-            reshaped_x = np.concatenate(reshaped_x, pred_months)
+            reshaped_x = np.concatenate((reshaped_x, pred_months), axis=-1)
         explanations = self.explainer.shap_values(reshaped_x)
 
         if not self.include_pred_month:
@@ -171,9 +171,15 @@ class LinearRegression(ModelBase):
         means, sizes = [], []
         for x, _ in train_dataloader:
             # first, flatten x
-            x = x.reshape(x.shape[0], x.shape[1] * x.shape[2])
-            sizes.append(x.shape[0])
-            means.append(x.mean(axis=0))
+            x_in = x[0].reshape(x[0].shape[0], x[0].shape[1] * x[0].shape[2])
+            if self.include_pred_month:
+                pred_months = x[1]
+                # one hot encoding, should be num_classes + 1, but
+                # for us its + 2, since 0 is not a class either
+                pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
+                x_in = np.concatenate((x_in, pred_months_onehot), axis=-1)
+            sizes.append(x_in.shape[0])
+            means.append(x_in.mean(axis=0))
 
         total_size = sum(sizes)
         weighted_means = [mean * size / total_size for mean, size in zip(means, sizes)]

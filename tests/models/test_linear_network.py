@@ -127,6 +127,9 @@ class TestLinearNetwork:
             pickle.dump(norm_dict, f)
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=[100],
-                              dropout=0.25, include_pred_month=False)
+                              dropout=0.25, include_pred_month=True)
         background = model._get_background(sample_size=3)
-        assert background.shape[0] == 3, f'Got {background.shape[0]} samples back, expected 3'
+        assert background[0].shape[0] == 3, \
+            f'Got {background[0].shape[0]} samples back, expected 3'
+        assert background[1].shape[0] == 3, \
+            f'Got {background[1].shape[0]} samples back, expected 3'
