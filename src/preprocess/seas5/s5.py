@@ -120,7 +120,7 @@ class S5Preprocessor(BasePreProcessor):
                     subset_str: Optional[str] = None,
                     regrid: Optional[xr.Dataset] = None) -> Tuple[Path, str]:
         """preprocess a single s5 dataset (multi-variables per `.nc` file)"""
-        print(f"working on {filepath.name}")
+        print(f"\nWorking on {filepath.name}")
 
         if self.ouce_server:
             # undoes the preprocessing so that both are consistent
@@ -135,30 +135,7 @@ class S5Preprocessor(BasePreProcessor):
         vars = [v for v in ds.variables if v not in coords]
         variable = '-'.join(vars)
 
-        # rename coords
-        if 'latitude' in coords:
-            ds = ds.rename({'latitude': 'lat'})
-        if 'longitude' in coords:
-            ds = ds.rename({'longitude': 'lon'})
-
-        # 2. subset ROI
-        if subset_str is not None:
-            try:
-                ds = self.chop_roi(ds, subset_str)
-            except:
-                ds = self.chop_roi(ds, subset_str, inverse_lat=True)
-
-        # 3. regrid (one variable at a time)
-        if regrid is not None:
-            assert all(np.isin(['lat', 'lon'], [c for c in ds.coords])), f"\
-            Expecting `lat` `lon` to be in ds. dims : {[c for c in ds.coords]}"
-            all_vars = []
-            for var in vars:
-                d_ = self.regrid(ds[var].to_dataset(name=var), regrid)
-                all_vars.append(d_)
-            ds = xr.merge(all_vars)
-
-        # 4. create the filepath and save to that location
+        # 2. create the filepath and save to that location
         output_path = self.create_filename(
             filepath,
             self.interim,
@@ -168,7 +145,39 @@ class S5Preprocessor(BasePreProcessor):
         assert output_path.name[-3:] == '.nc', f'\
         filepath name should be a .nc file. Currently: {filepath.name}'
 
-        # 5. save ds to output_path
+        # IF THE FILE ALREADY EXISTS SKIP
+        if output_path.exists():
+            return output_path, variable
+
+        # 3. rename coords
+        if 'latitude' in coords:
+            ds = ds.rename({'latitude': 'lat'})
+        if 'longitude' in coords:
+            ds = ds.rename({'longitude': 'lon'})
+
+        # 4. subset ROI
+        if subset_str is not None:
+            try:
+                ds = self.chop_roi(ds, subset_str)
+            except:
+                ds = self.chop_roi(ds, subset_str, inverse_lat=True)
+
+        # 5. regrid (one variable at a time)
+        if regrid is not None:
+            assert all(np.isin(['lat', 'lon'], [c for c in ds.coords])), f"\
+            Expecting `lat` `lon` to be in ds. dims : {[c for c in ds.coords]}"
+
+            # regrid each variable individually
+            all_vars = []
+            for var in vars:
+                d_ = self.regrid(
+                    ds[var].to_dataset(name=var), regrid, clean=False
+                )
+                all_vars.append(d_)
+            # merge the variables into one dataset
+            ds = xr.merge(all_vars).sortby('initialisation_date')
+
+        # 6. save ds to output_path
         ds.to_netcdf(output_path)
         return output_path, variable
 

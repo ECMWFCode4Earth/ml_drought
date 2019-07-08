@@ -60,7 +60,8 @@ class BasePreProcessor:
     def regrid(self,
                ds: xr.Dataset,
                reference_ds: xr.Dataset,
-               method: str = "nearest_s2d") -> xr.Dataset:
+               method: str = "nearest_s2d",
+               clean: bool = True) -> xr.Dataset:
         """ Use xEMSF package to regrid ds to the same grid as reference_ds
 
         Arguments:
@@ -113,7 +114,8 @@ class BasePreProcessor:
         print(f'Regridded from {(regridder.Ny_in, regridder.Nx_in)} '
               f'to {(regridder.Ny_out, regridder.Nx_out)}')
 
-        regridder.clean_weight_file()
+        if clean:
+            regridder.clean_weight_file()
 
         return ds
 
