@@ -154,7 +154,7 @@ class S5Preprocessor(BasePreProcessor):
             Expecting `lat` `lon` to be in ds. dims : {[c for c in ds.coords]}"
             all_vars = []
             for var in vars:
-                d_ = self.regrid(ds[var].to_dataset(var), regrid)
+                d_ = self.regrid(ds[var].to_dataset(name=var), regrid)
                 all_vars.append(d_)
             ds = xr.merge(all_vars)
 
