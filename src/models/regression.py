@@ -5,7 +5,7 @@ from sklearn.metrics import mean_squared_error
 
 import shap
 
-from typing import cast, Any, Dict, Tuple, Optional
+from typing import cast, Any, Dict, Tuple, Optional, Union
 
 from .base import ModelBase
 from .utils import chunk_array
@@ -96,7 +96,7 @@ class LinearRegression(ModelBase):
                         self.model.intercept_ = best_intercept
                         return None
 
-    def explain(self, x: Any) -> np.ndarray:
+    def explain(self, x: Any) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
 
         assert self.model is not None, 'Model must be trained!'
 
@@ -114,7 +114,14 @@ class LinearRegression(ModelBase):
         if self.include_pred_month:
             reshaped_x = np.concatenate(reshaped_x, pred_months)
         explanations = self.explainer.shap_values(reshaped_x)
-        return explanations.reshape(batch, timesteps, dims)
+
+        if not self.include_pred_month:
+            return explanations.reshape(batch, timesteps, dims)
+
+        historical = explanations[:, :timesteps * dims]
+        additional = explanations[:, timesteps * dims:]
+
+        return historical.reshape(batch, timesteps, dims), additional
 
     def save_model(self) -> None:
 
@@ -136,8 +143,14 @@ class LinearRegression(ModelBase):
         for dict in test_arrays_loader:
             for key, val in dict.items():
                 x = val.x.historical
-                preds = self.model.predict(val.x.reshape(x.shape[0],
-                                                         x.shape[1] * x.shape[2]))
+                x = x.reshape(x.shape[0], x.shape[1] * x.shape[2])
+                if self.include_pred_month:
+                    pred_months = val.x.additional
+                    # one hot encoding, should be num_classes + 1, but
+                    # for us its + 2, since 0 is not a class either
+                    pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
+                    x = np.concatenate((x, pred_months_onehot), axis=-1)
+                preds = self.model.predict(x)
                 preds_dict[key] = preds
                 test_arrays_dict[key] = {'y': val.y, 'latlons': val.latlons}
 
