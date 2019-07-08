@@ -145,7 +145,7 @@ class LinearRegression(ModelBase):
                 x = val.x.historical
                 x = x.reshape(x.shape[0], x.shape[1] * x.shape[2])
                 if self.include_pred_month:
-                    pred_months = val.x.additional
+                    pred_months = val.x.pred_months
                     # one hot encoding, should be num_classes + 1, but
                     # for us its + 2, since 0 is not a class either
                     pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]

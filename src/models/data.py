@@ -13,7 +13,7 @@ from typing import cast, Dict, Optional, Union, List, Tuple
 @dataclass
 class TrainData:
     historical: Union[np.ndarray, torch.Tensor]
-    additional: Union[np.ndarray, torch.Tensor]
+    pred_months: Union[np.ndarray, torch.Tensor]
 
 
 @dataclass
@@ -215,11 +215,11 @@ class _BaseIter:
             if clear_nans:
                 latlons = latlons[notnan_indices]
 
-            x_data = TrainData(historical=x_np, additional=x_months)
+            x_data = TrainData(historical=x_np, pred_months=x_months)
             return ModelArrays(x=x_data, y=y_np, x_vars=list(x.data_vars),
                                y_var=list(y.data_vars)[0], latlons=latlons)
 
-        x_data = TrainData(historical=x_np, additional=x_months)
+        x_data = TrainData(historical=x_np, pred_months=x_months)
         return ModelArrays(x=x_data, y=y_np, x_vars=list(x.data_vars),
                            y_var=list(y.data_vars)[0])
 
@@ -248,7 +248,7 @@ class _TrainIter(_BaseIter):
                     cur_max_idx = min(cur_max_idx + 1, self.max_idx)
 
                 out_x.append(arrays.x.historical)
-                out_x_add.append(arrays.x.additional)
+                out_x_add.append(arrays.x.pred_months)
                 out_y.append(arrays.y)
                 self.idx += 1
 

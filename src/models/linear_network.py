@@ -160,7 +160,7 @@ class LinearNetwork(ModelBase):
         with torch.no_grad():
             for dict in test_arrays_loader:
                 for key, val in dict.items():
-                    preds = self.model(val.x.historical, self._one_hot_months(val.x.additional))
+                    preds = self.model(val.x.historical, self._one_hot_months(val.x.pred_months))
                     preds_dict[key] = preds.numpy()
                     test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons}
 
@@ -188,7 +188,7 @@ class LinearNetwork(ModelBase):
                     if self.include_pred_month:
                         output_pred_months.append(self._one_hot_months(x[1][idx: idx + 1]))
         if self.include_pred_month:
-            return [torch.stack(output_tensors), torch.stack(output_pred_months)]
+            return [torch.stack(output_tensors), torch.cat(output_pred_months, dim=0)]
         else:
             return torch.stack(output_tensors)
 

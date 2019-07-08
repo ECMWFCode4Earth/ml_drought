@@ -133,3 +133,5 @@ class TestLinearNetwork:
             f'Got {background[0].shape[0]} samples back, expected 3'
         assert background[1].shape[0] == 3, \
             f'Got {background[1].shape[0]} samples back, expected 3'
+        assert len(background[1].shape) == 2, \
+            f'Expected 2 dimensions, got {len(background[1].shape)}'
