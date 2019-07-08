@@ -3,7 +3,7 @@ from pathlib import Path
 import xarray as xr
 # from functools import partial
 # import multiprocessing
-# from shutil import rmtree
+from shutil import rmtree
 from typing import Optional, List, Tuple
 
 from ..base import BasePreProcessor
@@ -199,7 +199,8 @@ class S5Preprocessor(BasePreProcessor):
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
                    parallel: bool = False,
-                   variable: Optional[str] = None) -> None:
+                   variable: Optional[str] = None,
+                   cleanup: bool = False) -> None:
         """Preprocesses the S5 data for all variables in the 'ds' file at once
 
         Argument:
@@ -223,6 +224,8 @@ class S5Preprocessor(BasePreProcessor):
             if self.ouce_server then require a variable string to build
             the filepath to the data to preprocess
 
+        cleanup: bool = False
+            Whether to cleanup the self.interim directory
         """
         if self.ouce_server:
             # data already in netcdf but needs other preprocessing
@@ -238,7 +241,7 @@ class S5Preprocessor(BasePreProcessor):
             variables = []
             for filepath in filepaths:
                 output_path, variable = self._preprocess(
-                    filepath, self.ouce_server, subset_str, regrid
+                    filepath, subset_str, regrid
                 )
                 out_paths.append(output_path)
                 variables.append(variable)
@@ -247,7 +250,10 @@ class S5Preprocessor(BasePreProcessor):
             pass
 
         # merge all of the timesteps for S5 data
-        for variable in variables:
+        for variable in np.unique(variables):
             self.merge_and_resample(
                 variable, resample_time, upsampling, subset_str
             )
+
+        if cleanup:
+            rmtree(self.interim)
