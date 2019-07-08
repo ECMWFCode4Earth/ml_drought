@@ -14,9 +14,11 @@ class S5Preprocessor(BasePreProcessor):
     dataset: str = 's5'
 
     def __init__(self, data_folder: Path = Path('data'),
-                 ouce_server: bool = False) -> None:
+                 ouce_server: bool = False,
+                 parallel: bool = False) -> None:
         super().__init__(data_folder)
         self.ouce_server = ouce_server
+        self.parallel = parallel
 
     def get_filepaths(self, folder: str = 'raw') -> List[Path]:
         """ because reading .grib files have to rewrite get_filepaths"""
@@ -207,7 +209,6 @@ class S5Preprocessor(BasePreProcessor):
                    regrid: Optional[Path] = None,
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
-                   parallel: bool = False,
                    variable: Optional[str] = None,
                    cleanup: bool = False) -> None:
         """Preprocesses the S5 data for all variables in the 'ds' file at once
@@ -226,9 +227,6 @@ class S5Preprocessor(BasePreProcessor):
         upsampling: bool = False
             are you upsampling the time frequency (e.g. monthly -> daily)
 
-        parallel: bool = False
-            whether to run in parallel
-
         variable: Optional[str] = None
             if self.ouce_server then require a variable string to build
             the filepath to the data to preprocess
@@ -245,7 +243,7 @@ class S5Preprocessor(BasePreProcessor):
         else:
             filepaths = self.get_filepaths()
 
-        if not parallel:
+        if not self.parallel:
             out_paths = []
             variables = []
             for filepath in filepaths:
