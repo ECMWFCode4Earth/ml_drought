@@ -183,7 +183,10 @@ class S5Preprocessor(BasePreProcessor):
 
         # resample
         if resample_str is not None:
-            ds = self.resample_time(ds, resample_str, upsampling)
+            ds = self.resample_time(
+                ds, resample_str, upsampling,
+                time_coord='initialisation_date'
+            )
 
         # save to preprocessed netcdf
         out_path = self.out_dir / f"{self.dataset}_{variable}_{subset_str}.nc"

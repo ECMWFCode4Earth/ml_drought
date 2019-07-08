@@ -133,10 +133,11 @@ class BasePreProcessor:
     @staticmethod
     def resample_time(ds: xr.Dataset,
                       resample_length: str = 'M',
-                      upsampling: bool = False) -> xr.Dataset:
+                      upsampling: bool = False,
+                      time_coord: str = 'time') -> xr.Dataset:
 
         # TODO: would be nice to programmatically get upsampling / not
-        ds = ds.sortby('time')
+        ds = ds.sortby(time_coord)
 
         resampler = ds.resample(time=resample_length)
 
