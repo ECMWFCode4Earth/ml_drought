@@ -15,15 +15,16 @@ class TestLinearNetwork:
         layer_sizes = [10]
         input_size = 10
         dropout = 0.25
+        include_pred_month = True
 
         def mocktrain(self):
-            self.model = LinearModel(input_size, layer_sizes, dropout)
+            self.model = LinearModel(input_size, layer_sizes, dropout, include_pred_month)
             self.input_size = input_size
 
         monkeypatch.setattr(LinearNetwork, 'train', mocktrain)
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
-                              dropout=dropout)
+                              dropout=dropout, include_pred_month=include_pred_month)
         model.train()
         model.save_model()
 
@@ -37,6 +38,7 @@ class TestLinearNetwork:
         assert model_dict['dropout'] == dropout
         assert model_dict['layer_sizes'] == layer_sizes
         assert model_dict['input_size'] == input_size
+        assert model_dict['include_pred_month'] == include_pred_month
 
     def test_train(self, tmp_path, capsys):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
@@ -122,6 +124,6 @@ class TestLinearNetwork:
             pickle.dump(norm_dict, f)
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=[100],
-                              dropout=0.25)
+                              dropout=0.25, include_pred_month=False)
         background = model._get_background(sample_size=3)
         assert background.shape[0] == 3, f'Got {background.shape[0]} samples back, expected 3'
