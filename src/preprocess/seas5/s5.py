@@ -1,8 +1,8 @@
 import numpy as np
 from pathlib import Path
 import xarray as xr
-# from functools import partial
-# import multiprocessing
+from functools import partial
+import multiprocessing
 from shutil import rmtree
 from typing import Optional, List, Tuple, cast
 
@@ -203,6 +203,12 @@ class S5Preprocessor(BasePreProcessor):
                 variables.append(variable)
         else:
             # Not implemented parallel yet
+            pool = multiprocessing.Pool(processes=100)
+            outputs = pool.map(
+                partial(self._preprocess,
+                        subset_str=subset_str,
+                        regrid=regrid),
+                filepaths)
             pass
 
         # merge all of the timesteps for S5 data
