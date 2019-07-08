@@ -17,8 +17,9 @@ class LinearRegression(ModelBase):
     model_name = 'linear_regression'
 
     def __init__(self, data_folder: Path = Path('data'),
-                 batch_size: int = 1) -> None:
-        super().__init__(data_folder, batch_size)
+                 batch_size: int = 1,
+                 include_pred_month: bool = True) -> None:
+        super().__init__(data_folder, batch_size, include_pred_month)
 
         self.explainer: Optional[shap.LinearExplainer] = None
 
@@ -54,6 +55,12 @@ class LinearRegression(ModelBase):
                     x_in = batch_x[0].reshape(
                         batch_x[0].shape[0],
                         batch_x[0].shape[1] * batch_x[0].shape[2])
+                    if self.include_pred_month:
+                        pred_months = batch_x[1]
+                        # one hot encoding, should be num_classes + 1, but
+                        # for us its + 2, since 0 is not a class either
+                        pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
+                        x_in = np.concatenate((x_in, pred_months_onehot), axis=-1)
                     self.model.partial_fit(x_in, batch_y.ravel())
 
                     train_pred_y = self.model.predict(x_in)
@@ -61,8 +68,14 @@ class LinearRegression(ModelBase):
             if early_stopping is not None:
                 val_rmse = []
                 for x, y in val_dataloader:
-                    x = x[0].reshape(x[0].shape[0], x[0].shape[1] * x[0].shape[2])
-                    val_pred_y = self.model.predict(x)
+                    x_in = x[0].reshape(x[0].shape[0], x[0].shape[1] * x[0].shape[2])
+                    if self.include_pred_month:
+                        pred_months = x[1]
+                        # one hot encoding, should be num_classes + 1, but
+                        # for us its + 2, since 0 is not a class either
+                        pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
+                        x_in = np.concatenate((x_in, pred_months_onehot), axis=-1)
+                    val_pred_y = self.model.predict(x_in)
                     val_rmse.append(np.sqrt(mean_squared_error(y, val_pred_y)))
 
             print(f'Epoch {epoch + 1}, train RMSE: {np.mean(train_rmse)}')
@@ -92,8 +105,14 @@ class LinearRegression(ModelBase):
             self.explainer: shap.LinearExplainer = shap.LinearExplainer(
                 self.model, (mean, None), feature_dependence='independent')
 
+        if self.include_pred_month:
+            assert type(x) in (tuple, list), f'Input x must be a tuple or list! Got {type(x)}'
+            x, pred_months = x
+            pred_months = np.eye(14)[pred_months][:, 1:-1]
         batch, timesteps, dims = x.shape[0], x.shape[1], x.shape[2]
         reshaped_x = x.reshape(batch, timesteps * dims)
+        if self.include_pred_month:
+            reshaped_x = np.concatenate(reshaped_x, pred_months)
         explanations = self.explainer.shap_values(reshaped_x)
         return explanations.reshape(batch, timesteps, dims)
 
