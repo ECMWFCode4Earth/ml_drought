@@ -38,12 +38,12 @@ def regression():
                                     shuffle_data=False, mode='test')
     key, val = list(next(iter(test_arrays_loader)).items())[0]
 
-    explain_hist, explain_add = predictor.explain([val.x.historical, val.x.additional])
+    explain_hist, explain_add = predictor.explain([val.x.historical, val.x.pred_months])
     print(explain_hist.shape)
     np.save('shap_regression_historical.npy', explain_hist)
     np.save('shap_regression_add.npy', explain_add)
     np.save('shap_x_hist.npy', val.x.historical)
-    np.save('shap_x_add.npy', val.x.additional)
+    np.save('shap_x_add.npy', val.x.pred_months)
 
     with open('variables.txt', 'w') as f:
         f.write(str(val.x_vars))
@@ -75,13 +75,13 @@ def linear_nn():
                                     shuffle_data=False, mode='test', to_tensor=True)
     key, val = list(next(iter(test_arrays_loader)).items())[0]
 
-    explain_hist, explain_add = predictor.explain([val.x.historical[:3], val.x.additional[:3]])
+    explain_hist, explain_add = predictor.explain([val.x.historical[:3], val.x.pred_months[:3]])
     print(explain_hist.shape)
     np.save('shap_linear_network_hist.npy', explain_hist)
     np.save('shap_linear_network_add.npy', explain_add)
 
     np.save('shap_x_linear_network_hist.npy', val.x.historical[:3])
-    np.save('shap_x_linear_network_add.npy', val.x.additional[:3])
+    np.save('shap_x_linear_network_add.npy', val.x.pred_months[:3])
 
     with open('variables_linear_network.txt', 'w') as f:
         f.write(str(val.x_vars))
