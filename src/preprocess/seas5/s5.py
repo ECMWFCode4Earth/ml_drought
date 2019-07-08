@@ -149,6 +149,7 @@ class S5Preprocessor(BasePreProcessor):
 
         # IF THE FILE ALREADY EXISTS SKIP
         if output_path.exists():
+            print(f"{output_path.name} already exists! Skipping.")
             return output_path, variable
 
         # 3. rename coords
@@ -172,9 +173,17 @@ class S5Preprocessor(BasePreProcessor):
             # regrid each variable individually
             all_vars = []
             for var in vars:
-                d_ = self.regrid(
-                    ds[var].to_dataset(name=var), regrid, clean=False
-                )
+                if self.parallel:
+                    # if parallel need to recreate new file each time
+                    d_ = self.regrid(
+                        ds[var].to_dataset(name=var), regrid,
+                        clean=True, reuse_weights=False
+                    )
+                else:
+                    d_ = self.regrid(
+                        ds[var].to_dataset(name=var), regrid,
+                        clean=False, reuse_weights=True,
+                    )
                 all_vars.append(d_)
             # merge the variables into one dataset
             ds = xr.merge(all_vars).sortby('initialisation_date')
