@@ -1,13 +1,12 @@
 import xarray as xr
 from pathlib import Path
-import pandas as pd
-import numpy as np
 # import mapclassify as mc
-from typing import List, Dict, Optional
+from typing import Optional
+
 
 class BaseIndices:
 
-    name: str  # implemented by child classes
+    name: str  # implemented by child classes
     index: xr.Dataset
     ds: xr.Dataset
     resample: bool = False
@@ -36,16 +35,13 @@ class BaseIndices:
 
     def resample_ds_mean(self) -> xr.Dataset:
         lookup = {
-            'month':'M',
-            'year':'Y',
-            'season':'Q-DEC',
-            'daysofyear':'D',
+            'month': 'M',
+            'year': 'Y',
+            'season': 'Q-DEC',
+            'daysofyear': 'D',
             None: None,
         }
         return self.ds.resample(time=f'{lookup[self.resample_str]}').mean()
-
-    def fit(self):
-        raise NotImplementedError
 
     def save(self):
         """save the self.index to netcdf"""

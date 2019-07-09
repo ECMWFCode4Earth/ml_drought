@@ -1,5 +1,5 @@
 import xarray as xr
-from typing import Dict
+from typing import Dict, Any
 import numpy as np
 
 
@@ -20,10 +20,11 @@ def apply_over_period(da: xr.Dataset,
                       in_variable: str,
                       out_variable: str,
                       time_str: str = 'month',
-                      **kwargs: Dict) -> xr.Dataset:
+                      **kwargs: Dict[Any, Any]) -> xr.Dataset:
+    kwargs['dim'] = 'time'
     return (
         da.groupby(f'time.{time_str}')
-        .apply(func, args=('time',), **kwargs)
+        .apply(func, args=(), **kwargs)
         .rename({in_variable: out_variable})
     )
 
@@ -34,6 +35,7 @@ def create_shape_aligned_climatology(ds: xr.Dataset,
                                      time_period: str = 'month') -> xr.Dataset:
     """match the time dimension of `clim` to the shape of `ds` so that can
     perform simple calculations / arithmetic on the values of clim
+
     Arguments:
     ---------
     ds : xr.Dataset

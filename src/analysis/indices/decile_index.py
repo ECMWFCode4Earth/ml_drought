@@ -1,23 +1,27 @@
 import xarray as xr
-import pandas as pd
-from pathlib import Path
 import numpy as np
-
-from typing import List, Dict, Optional, Union, Tuple
 
 from .base import BaseIndices
 from .utils import (
     rolling_cumsum,
-    apply_over_period,
-    create_shape_aligned_climatology
+    apply_over_period
 )
+
 
 class DecileIndex(BaseIndices):
     """https://bit.ly/2NGxIN1
 
     Calculation:
     -----------
-    Monthly precipitation totals from a long-term record are first ranked from highest to lowest to construct a cumulative frequency distribution. The distribution is then split into 10 parts (tenths of distribution or deciles). The first decile is the precipitation value not exceeded by the lowest 10% of all precipitation values in a record. The second decile is between the lowest 10 and 20% etc. Comparing the amount of precipitation in a month (or during a period of several months) with the long-term cumulative distribution of precipitation amounts in that period, the severity of drought can be assessed.
+    Monthly precipitation totals from a long-term record are first ranked from
+    highest to lowest to construct a cumulative frequency distribution. The
+    distribution is then split into 10 parts (tenths of distribution or
+    deciles). The first decile is the precipitation value not exceeded by the
+    lowest 10% of all precipitation values in a record. The second decile is
+    between the lowest 10 and 20% etc. Comparing the amount of precipitation in
+    a month (or during a period of several months) with the long-term
+    cumulative distribution of precipitation amounts in that period, the
+    severity of drought can be assessed.
 
     Used in Australian drought policy:
         growers and producers are advised to only seek exceptional drought
@@ -27,17 +31,24 @@ class DecileIndex(BaseIndices):
 
     ## References
 
-    Gibbs, W.J. and J.V. Maher. 1967. Rainfall deciles as drought indicators. Bureau of Meteorology, Bulletin No. 48, Melbourne.
+    Gibbs, W.J. and J.V. Maher. 1967. Rainfall deciles as drought indicators.
+     Bureau of Meteorology, Bulletin No. 48, Melbourne.
 
-    Hayes, M.J. 2000. Drought indices. National Drought Mitigation Center, University of Nebraska, Lincoln, Nebraska.
+    Hayes, M.J. 2000. Drought indices. National Drought Mitigation Center,
+     University of Nebraska, Lincoln, Nebraska.
 
-    Smith, D.I., M.F. Hutchinson, and R.J. McArthur. 1993. Australian climatic and agricultural drought: Payments and policy. Drought Network News 5(3):11-12.
+    Smith, D.I., M.F. Hutchinson, and R.J. McArthur. 1993. Australian climatic
+     and agricultural drought: Payments and policy. Drought Network News
+     5(3):11-12.
 
-    White, D.H. and B. O'Meagher. 1995. Coping with exceptional circumstances: Droughts in Australia. Drought Network News 7:13–17.
+    White, D.H. and B. O'Meagher. 1995. Coping with exceptional circumstances:
+     Droughts in Australia. Drought Network News 7:13–17.
     """
+    name = 'decile_index'
+
     @staticmethod
     def bin_to_quintiles(da: xr.DataArray,
-                          new_variable_name: str = 'quintile') -> xr.Dataset:
+                         new_variable_name: str = 'quintile') -> xr.Dataset:
         """use the numpy `np.digitize` function to bin the
         variables to quintile labels
         https://stackoverflow.com/a/56514582/9940782
@@ -69,7 +80,6 @@ class DecileIndex(BaseIndices):
     def rank_norm(ds, dim='time'):
         return (ds.rank(dim=dim) - 1) / (ds.sizes[dim] - 1) * 100
 
-
     def fit(self, variable: str,
             time_period: str = 'month',
             rolling_window: int = 3,) -> None:
@@ -80,7 +90,7 @@ class DecileIndex(BaseIndices):
         # 2. calculate the normalised rank (of each month) for the variable
         out_variable = 'rank_norm'
         normalised_rank = apply_over_period(
-            ds_window, self.rank_norm, 'precip',
+            ds_window, self.rank_norm, variable,
             out_variable=out_variable,
             time_str=time_period,
         )
@@ -97,7 +107,7 @@ class DecileIndex(BaseIndices):
         ds_window = (
             ds_window
             .merge(quintile.to_dataset(name='quintile'))
-            .rename({'precip': 'precip_cumsum'})
+            .rename({variable: f'{variable}_cumsum'})
         )
 
         self.index = ds_window

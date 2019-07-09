@@ -1,13 +1,9 @@
 import xarray as xr
-import pandas as pd
-from pathlib import Path
-
-from typing import List, Dict, Optional, Union, Tuple
+from typing import List, Optional
 
 from .base import BaseIndices
 from .utils import (
     rolling_cumsum,
-    apply_over_period,
     create_shape_aligned_climatology
 )
 
@@ -18,23 +14,47 @@ class PercentNormalIndex(BaseIndices):
 
     Calculation:
     -----------
-    calculated by simply dividing actual precipitation by normal (30-year mean) precipitation and multiplying the result by 100.
+    calculated by simply dividing actual precipitation by normal (30-year mean)
+     precipitation and multiplying the result by 100.
 
-    This approach of PNI (McKee et al. 1993) has value in its simplicity and transparency, especially because all sectors tend to “know what it means,” and it is noteworthy that this approach has strong support in countries such as Indonesia. A downside of this approach is that it does not necessarily detect the extremes in drought conditions, and this can be a problem in very arid areas.
+    This approach of PNI (McKee et al. 1993) has value in its simplicity and
+    transparency, especially because all sectors tend to “know what it means,
+    ” and it is noteworthy that this approach has strong support in countries
+    such as Indonesia. A downside of this approach is that it does not
+    necessarily detect the extremes in drought conditions, and this can be a
+    problem in very arid areas.
 
-    This approach also requires a good knowledge of local conditions to make it useful. Hayes (2000 and 2006) suggests analyses using percent of normal are most effective when used for a single region or a single season. Conversely, percent of normal may be misunderstood and provide different indications of conditions, depending on the location and season.
+    This approach also requires a good knowledge of local conditions to make it
+    useful. Hayes (2000 and 2006) suggests analyses using percent of normal are
+    most effective when used for a single region or a single season.
+    Conversely, percent of normal may be misunderstood and provide different
+    indications of conditions, depending on the location and season.
 
-    Hayes (2000) points out that one of the disadvantages of using the percent of normal precipitation is that the mean, or average, precipitation may differ considerably from the median precipitation (which is the value exceeded by 50% of the precipitation occurrences in a long-term climate record) in many world regions, especially those with high year-to-year rainfall variability. Thus, use of the percent of normal comparison requires a normal distribution in rainfall, where the mean and median are considered to be the same.
+    Hayes (2000) points out that one of the disadvantages of using the percent
+    of normal precipitation is that the mean, or average, precipitation may
+    differ considerably from the median precipitation (which is the value
+    exceeded by 50% of the precipitation occurrences in a long-term climate
+    record) in many world regions, especially those with high year-to-year
+    rainfall variability. Thus, use of the percent of normal comparison
+    requires a normal distribution in rainfall, where the mean and median are
+    considered to be the same.
 
     ## References
 
-    Hayes, M.J. 2000. Drought indices. National Drought Mitigation Center, University of Nebraska, Lincoln, Nebraska.
+    Hayes, M.J. 2000. Drought indices. National Drought Mitigation Center,
+    University of Nebraska, Lincoln, Nebraska.
 
-    Hayes, M.J., 2006: Drought Indices. Van Nostrand’s Scientific Encyclopedia, John Wiley & Sons, Inc. DOI: 10.1002/0471743984.vse8593.
+    Hayes, M.J., 2006: Drought Indices. Van Nostrand’s Scientific Encyclopedia,
+    John Wiley & Sons, Inc. DOI: 10.1002/0471743984.vse8593.
 
-    McKee, T.B., N.J. Doesken, and J. Kieist. 1993. The relationship of drought frequency and duration of time scales. Pages 179-184 in Proceedings of the 8th Conference on Applied Climatology. Anaheim, California. American Meteorological Society, Boston.
+    McKee, T.B., N.J. Doesken, and J. Kieist. 1993. The relationship of drought
+    frequency and duration of time scales. Pages 179-184 in Proceedings of the
+    8th Conference on Applied Climatology. Anaheim, California. American
+    Meteorological Society, Boston.
 
-    Morid, S., Smakhtin, V., Moghaddasi, M., 2006. Comparison of seven meteorological indices for drought monitoring in Iran. Int. J. Climatol. 26, 971–985.
+    Morid, S., Smakhtin, V., Moghaddasi, M., 2006. Comparison of seven
+    meteorological indices for drought monitoring in Iran. Int. J. Climatol.
+    26, 971–985.
     """
     name = 'percent_normal_index'
 
@@ -90,7 +110,6 @@ class PercentNormalIndex(BaseIndices):
 
         return PNI, clim
 
-
     def fit(self, variable: str,
             rolling_window: int = 3,
             time_str: str = 'month') -> None:
@@ -102,11 +121,10 @@ class PercentNormalIndex(BaseIndices):
 
         print(f"Fitting PNI for variable: {variable}")
         PNI, clim = self.calculatePNI(self.ds,
-                         variable=variable,
-                         time_period=time_str,
-                         rolling_window=rolling_window,
-                         clim_period=None,
-        )
+                                      variable=variable,
+                                      time_period=time_str,
+                                      rolling_window=rolling_window,
+                                      clim_period=None,)
 
         self.index = PNI
         self.climatology = clim

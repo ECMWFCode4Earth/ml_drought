@@ -1,20 +1,18 @@
 import xarray as xr
-import pandas as pd
 from pathlib import Path
 
-from typing import List, Dict, Optional, Union, Tuple
+from typing import Optional, Tuple
 from enum import Enum
 
 import climate_indices
 from climate_indices import indices
-from climate_indices.__main__ import _spi
 
 from .base import BaseIndices
 
 
 class SPI(BaseIndices):
-    """https://climatedataguide.ucar.edu/climate-data/standardized-precipitation-index-spi
-
+    """https://climatedataguide.ucar.edu/climate-data/
+    standardized-precipitation-index-spi
     """
     name = 'spi'
 
@@ -23,7 +21,6 @@ class SPI(BaseIndices):
     resample_str = 'month'
 
     def __init__(self, data_path: Path) -> None:
-
         super().__init__(data_path, resample_str=self.resample_str)
 
     @staticmethod
@@ -100,7 +97,12 @@ class SPI(BaseIndices):
         # distribution must be a climate_indices enum type
         dist = self.init_distribution(distribution)
         self.data_start_year = self.init_start_year(data_start_year)
-        self.calibration_year_initial, self.calibration_year_final = self.init_calib_year(calibration_year_initial, calibration_year_final)
+        self.calibration_year_initial, self.calibration_year_final = (
+            self.init_calib_year(
+                calibration_year_initial,
+                calibration_year_final
+            )
+        )
         # period must be a climate_indices enum type
         period = self.init_periodicity(periodicity)
 
