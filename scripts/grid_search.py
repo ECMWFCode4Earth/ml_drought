@@ -26,7 +26,7 @@ def linear_nn_grid_search():
     results_dict = defaultdict(lambda: defaultdict(float))
     for layer_sizes in layer_sizes_list:
         for pred_months in add_pred_months:
-
+            print(f'Testing with {str(layer_sizes)} and pred months {pred_months}')
             rmse = linear_nn(layer_sizes, include_pred_month=pred_months)
 
             results_dict[str(layer_sizes)][str(pred_months)] = rmse
