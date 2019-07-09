@@ -23,9 +23,11 @@ class TestBase:
         monkeypatch.setattr(ModelBase, 'predict', mockreturn)
 
         base = ModelBase(tmp_path)
-        base.evaluate(save_results=False, save_preds=False)
+        test_rmse = base.evaluate(save_results=False, save_preds=False,
+                                  return_total_rmse=True)
 
         captured = capsys.readouterr()
         expected_stdout = 'RMSE: 0.0'
         assert expected_stdout in captured.out, \
             f'Expected stdout to be {expected_stdout}, got {captured.out}'
+        assert test_rmse == 0, f'Expected test_rmse to be 0, got {test_rmse}'

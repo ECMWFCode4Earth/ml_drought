@@ -68,7 +68,8 @@ class ModelBase:
     def save_model(self) -> None:
         raise NotImplementedError
 
-    def evaluate(self, save_results: bool = True, save_preds: bool = False) -> None:
+    def evaluate(self, save_results: bool = True, save_preds: bool = False,
+                 return_total_rmse: bool = False) -> Optional[float]:
         """
         Evaluate the trained model
 
@@ -80,6 +81,8 @@ class ModelBase:
         save_preds: bool = False
             Whether to save the model predictions. If true, they are saved in
             self.model_dir / {year}_{month}.nc
+        return_total_rmse: bool = False
+            Whether to return the test RMSE, averaged over the entire test dataset
         """
         test_arrays_dict, preds_dict = self.predict()
 
@@ -117,3 +120,8 @@ class ModelBase:
                     'lon': latlons[:, 1]}).set_index(['lat', 'lon']).to_xarray()
 
                 preds_xr.to_netcdf(self.model_dir / f'preds_{key}.nc')
+
+        if return_total_rmse:
+            return output_dict['total']
+
+        return None  # without this mypy whines
