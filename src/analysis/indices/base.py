@@ -43,10 +43,8 @@ class BaseIndices:
         }
         return self.ds.resample(time=f'{lookup[self.resample_str]}').mean()
 
-    def save(self):
+    def save(self, data_dir: Path = Path('data')):
         """save the self.index to netcdf"""
+        # data_dir / self.name + '.nc'
+        # self.index.to_netcdf()
         raise NotImplementedError
-
-    @staticmethod
-    def rolling_cumsum(ds: xr.Dataset, rolling_window=3):
-        pass

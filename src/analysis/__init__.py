@@ -1,7 +1,7 @@
 from .event_detector import EventDetector
 from .plot_shap import plot_shap_values
 from .indices import (
-    SPI
+    SPI,
     ZScoreIndex,
     PercentNormalIndex,
     DroughtSeverityIndex,
@@ -10,7 +10,8 @@ from .indices import (
     AnomalyIndex,
 )
 
-__all__ = ['plot_shap_values', 'EventDetector', 'SPI', 'ZScoreIndex',
+__all__ = [
+    'plot_shap_values', 'EventDetector', 'SPI', 'ZScoreIndex',
     'PercentNormalIndex', 'DroughtSeverityIndex',
     'ChinaZIndex', 'DecileIndex', 'AnomalyIndex',
 ]

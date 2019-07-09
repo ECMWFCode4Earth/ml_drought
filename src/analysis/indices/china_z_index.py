@@ -39,6 +39,8 @@ class ChinaZIndex(BaseIndices):
      standardized precipitation index, the china-Zindex and the statistical
      Z-Score. Int. J. Climatol.21, 745–758. http://dx.doi.org/10.1002/joc.658.
     """
+    name = 'china_z_index'
+
     @staticmethod
     def MCZI(da: xr.DataArray,
              dim: str = 'time',

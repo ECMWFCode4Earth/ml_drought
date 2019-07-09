@@ -13,6 +13,43 @@ from .base import BaseIndices
 class SPI(BaseIndices):
     """https://climatedataguide.ucar.edu/climate-data/
     standardized-precipitation-index-spi
+
+    Number of standard deviations that the observed value would deviate from
+    the long-term mean, for a normally distributed random variable.
+
+    Comparing the precipitation total for the chosen interval against a
+    cumulative probability distribution for the precipitation data (for the
+    identical interval). For example, what is statistical interpretation of the
+    one-month precipitation total (e.g., 29 mm), compared to all known
+    one -month totals? It is necessary to view the drought according to
+    the climatological norms for the location and season.
+
+    Calculation:
+    -----------
+    a long-term time series of precipitation accumulations over the desired
+    time scale are used to estimate an appropriate probability density
+    function.
+    Since precipitation is not normally distributed, a transformation is first
+    applied so that the transformed precipitation values follow a normal
+    distribution.
+    This normal distribution can then be used to understand the divergence
+    from normal (mean) conditions in terms of standard deviation / probability.
+
+    ## References
+    World Meteorological Organization, (2012) Standardized Precipitation Index
+    User Guide (M. Svoboda, M. Hayes and D. Wood). (WMO-No. 1090), Geneva.
+
+    Guttman, N. B., 1999: Accepting the Standardized Precipitation Index:
+    A calculation algorithm. J. Amer. Water Resour. Assoc.., 35(2), 311-322.
+
+    McKee, T. B., N. J. Doesken, and J. Kliest, 1993: The relationship of
+    drought frequency and duration to time scales. In Proceedings of the 8th
+    Conference of Applied Climatology, 17-22 January, Anaheim, CA. American
+    Meteorological Society, Boston, MA. 179-184.
+
+    Vicente-Serrano, Sergio M., Santiago Beguería, Juan I. López-Moreno, 2010:
+    A Multiscalar Drought Index Sensitive to Global Warming: The Standardized
+    Precipitation Evapotranspiration Index. J. Climate, 23, 1696–1718.
     """
     name = 'spi'
 
@@ -184,6 +221,6 @@ class SPI(BaseIndices):
             self.calibration_year_final, period
         )
 
-        self.index = index.unstack('point')
+        self.index = index.unstack('point').to_dataset(name='SPI')
 
         print("Fitted")
