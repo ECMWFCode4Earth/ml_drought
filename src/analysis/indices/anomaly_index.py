@@ -121,7 +121,7 @@ class AnomalyIndex(BaseIndices):
         kwargs = {'variable': variable}
         cast(Dict[Any, Any], kwargs)
 
-        rai = apply_over_period(
+        rai = apply_over_period(  # type: ignore
             ds_window, func=self.RAI,
             in_variable=variable,
             out_variable=out_variable,

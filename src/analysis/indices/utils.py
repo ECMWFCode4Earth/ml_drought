@@ -21,7 +21,7 @@ def apply_over_period(da: xr.Dataset,
                       out_variable: str,
                       time_str: str = 'month',
                       **kwargs: Dict[Any, Any]) -> xr.Dataset:
-    kwargs['dim'] = 'time'
+    kwargs['dim'] = 'time'  # type: ignore
     return (
         da.groupby(f'time.{time_str}')
         .apply(func, args=(), **kwargs)

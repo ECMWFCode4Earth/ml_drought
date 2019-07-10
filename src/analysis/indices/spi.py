@@ -143,7 +143,7 @@ class SPI(BaseIndices):
         # period must be a climate_indices enum type
         period = self.init_periodicity(periodicity)
 
-        return (
+        return (  # type: ignore
             self.scale, dist, self.data_start_year, self.calibration_year_initial,
             self.calibration_year_final, self.init_calib_year, period
         )
