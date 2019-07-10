@@ -61,7 +61,7 @@ dependencies:
   - gst-plugins-base=1.14.5
   - gstreamer=1.14.5
   - hdf4=4.2.13
-  - hdf5=1.10.5
+  - hdf5=1.10.4
   - heapdict=1.0.0
   - icu=58.2
   - idna=2.8
@@ -116,7 +116,7 @@ dependencies:
   - multiprocess=0.70.7
   - mypy=0.701
   - mypy_extensions=0.4.1
-  - nco=4.8.1
+  - nco=4.7.9
   - ncurses=6.1
   - netcdf-fortran=4.4.5
   - netcdf4=1.5.1.2
