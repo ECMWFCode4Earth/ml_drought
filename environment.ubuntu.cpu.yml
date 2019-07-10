@@ -116,7 +116,7 @@ dependencies:
   - multiprocess=0.70.7
   - mypy=0.701
   - mypy_extensions=0.4.1
-  - nco  # =4.7.9
+  # - nco=1.0.0
   - ncurses=6.1
   - netcdf-fortran=4.4.5
   - netcdf4=1.5.1.2
@@ -141,6 +141,7 @@ dependencies:
   - pip=19.1.1
   - pip:
       - climate-indices
+      - nco
   - pluggy=0.11.0
   - pox=0.2.5
   - ppft=1.6.4.9
