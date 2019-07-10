@@ -1,17 +1,25 @@
 from dataclasses import dataclass
+from datetime import datetime
 import numpy as np
 from random import shuffle
 from pathlib import Path
 import pickle
+import torch
 import xarray as xr
 
-from typing import cast, Dict, Optional, List, Tuple
+from typing import cast, Dict, Optional, Union, List, Tuple
+
+
+@dataclass
+class TrainData:
+    historical: Union[np.ndarray, torch.Tensor]
+    pred_months: Union[np.ndarray, torch.Tensor]
 
 
 @dataclass
 class ModelArrays:
-    x: np.ndarray
-    y: np.ndarray
+    x: TrainData
+    y: Union[np.ndarray, torch.Tensor]
     x_vars: List[str]
     y_var: str
     latlons: Optional[np.ndarray] = None
@@ -59,11 +67,17 @@ class DataLoader:
     normalize: bool = True
         Whether to normalize the data. This assumes a normalizing_dict.pkl was saved by the
         engineer
+    mask: Optional[List[bool]] = None
+        If not None, this list will be used to mask the input files. Useful for creating a train
+        and validation set
+    to_tensor: bool = False
+        Whether to turn the np.ndarrays into torch.Tensors
     """
     def __init__(self, data_path: Path = Path('data'), batch_file_size: int = 1,
                  mode: str = 'train', shuffle_data: bool = True,
                  clear_nans: bool = True, normalize: bool = True,
-                 mask: Optional[List[bool]] = None) -> None:
+                 mask: Optional[List[bool]] = None,
+                 to_tensor: bool = False) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
@@ -75,6 +89,8 @@ class DataLoader:
         if normalize:
             with (data_path / 'features/normalizing_dict.pkl').open('rb') as f:
                 self.normalizing_dict = pickle.load(f)
+
+        self.to_tensor = to_tensor
 
     def __iter__(self):
         if self.mode == 'train':
@@ -113,6 +129,7 @@ class _BaseIter:
         self.batch_file_size = loader.batch_file_size
         self.shuffle = loader.shuffle
         self.clear_nans = loader.clear_nans
+        self.to_tensor = loader.to_tensor
 
         if self.shuffle:
             # makes sure they are shuffled every epoch
@@ -146,10 +163,12 @@ class _BaseIter:
                         folder: Path,
                         clear_nans: bool = True,
                         return_latlons: bool = False,
+                        to_tensor: bool = False
                         ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / 'x.nc'), xr.open_dataset(folder / 'y.nc')
-        assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable!'
+        assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable! ' \
+            f'Got {len(list(y.data_vars))}'
         x_np, y_np = x.to_array().values, y.to_array().values
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
@@ -158,6 +177,10 @@ class _BaseIter:
         # first, x
         x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
         x_np = np.moveaxis(np.moveaxis(x_np, 0, 1), -1, 0)
+        # then, the x month
+        assert len(y.time) == 1, f'Expected y to only have 1 timestamp! Got {len(y.time)}'
+        target_month = datetime.strptime(str(y.time.values[0])[:-3], '%Y-%m-%dT%H:%M:%S.%f').month
+        x_months = np.array([target_month] * x_np.shape[0])
         # then, y
         y_np = y_np.reshape(y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
         y_np = np.moveaxis(y_np, -1, 0).reshape(-1, 1)
@@ -178,6 +201,11 @@ class _BaseIter:
 
             notnan_indices = np.where((x_nans_summed == 0) & (y_nans_summed == 0))[0]
             x_np, y_np = x_np[notnan_indices], y_np[notnan_indices]
+            x_months = x_months[notnan_indices]
+
+        if to_tensor:
+            x_np, y_np = torch.from_numpy(x_np).float(), torch.from_numpy(y_np).float()
+            x_months = torch.from_numpy(x_months).float()
 
         if return_latlons:
             lons, lats = np.meshgrid(x.lon.values, x.lat.values)
@@ -186,37 +214,53 @@ class _BaseIter:
 
             if clear_nans:
                 latlons = latlons[notnan_indices]
-            return ModelArrays(x=x_np, y=y_np, x_vars=list(x.data_vars),
+
+            x_data = TrainData(historical=x_np, pred_months=x_months)
+            return ModelArrays(x=x_data, y=y_np, x_vars=list(x.data_vars),
                                y_var=list(y.data_vars)[0], latlons=latlons)
 
-        return ModelArrays(x=x_np, y=y_np, x_vars=list(x.data_vars),
+        x_data = TrainData(historical=x_np, pred_months=x_months)
+        return ModelArrays(x=x_data, y=y_np, x_vars=list(x.data_vars),
                            y_var=list(y.data_vars)[0])
 
 
 class _TrainIter(_BaseIter):
 
-    def __next__(self) -> Tuple[np.ndarray, np.ndarray]:
+    def __next__(self) -> Tuple[Tuple[Union[np.ndarray, torch.Tensor],
+                                      Union[np.ndarray, torch.Tensor]],
+                                Union[np.ndarray, torch.Tensor]]:
 
         if self.idx < self.max_idx:
-            out_x, out_y = [], []
+            out_x, out_x_add, out_y = [], [], []
 
             cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
             while self.idx < cur_max_idx:
                 subfolder = self.data_files[self.idx]
                 arrays = self.ds_folder_to_np(subfolder, clear_nans=self.clear_nans,
-                                              return_latlons=False)
-                if arrays.x.shape[0] == 0:
+                                              return_latlons=False, to_tensor=False)
+                if arrays.x.historical.shape[0] == 0:
                     print(f'{subfolder} returns no values. Skipping')
+
+                    # remove the empty element from the list
+                    self.data_files.pop(self.idx)
+                    self.max_idx -= 1
+
                     cur_max_idx = min(cur_max_idx + 1, self.max_idx)
-                out_x.append(arrays.x)
+
+                out_x.append(arrays.x.historical)
+                out_x_add.append(arrays.x.pred_months)
                 out_y.append(arrays.y)
                 self.idx += 1
 
             final_x = np.concatenate(out_x, axis=0)
+            final_x_add = np.concatenate(out_x_add, axis=0)
             final_y = np.concatenate(out_y, axis=0)
             if final_x.shape[0] == 0:
                 raise StopIteration()
-            return final_x, final_y
+            if self.to_tensor:
+                return (torch.from_numpy(final_x).float(),
+                        torch.from_numpy(final_x_add).float()), torch.from_numpy(final_y).float()
+            return (final_x, final_x_add), final_y
         else:
             raise StopIteration()
 
@@ -232,9 +276,12 @@ class _TestIter(_BaseIter):
             while self.idx < cur_max_idx:
                 subfolder = self.data_files[self.idx]
                 arrays = self.ds_folder_to_np(subfolder, clear_nans=self.clear_nans,
-                                              return_latlons=True)
-                if arrays.x.shape[0] == 0:
+                                              return_latlons=True, to_tensor=self.to_tensor)
+                if arrays.x.historical.shape[0] == 0:
                     print(f'{subfolder} returns no values. Skipping')
+                    # remove the empty element from the list
+                    self.data_files.pop(self.idx)
+                    self.max_idx -= 1
                     cur_max_idx = min(cur_max_idx + 1, self.max_idx)
                 else:
                     out_dict[subfolder.parts[-1]] = arrays

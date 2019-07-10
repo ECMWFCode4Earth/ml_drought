@@ -11,16 +11,23 @@ class ModelBase:
     """Base for all machine learning models.
     Attributes:
     ----------
-    data: pathlib.Path
+    data: pathlib.Path = Path('data')
         The location of the data folder.
+    batch_size: int 1
+        The number of files to load at once. These will be chunked and shuffled, so
+        a higher value will lead to better shuffling (but will require more memory)
+    include_pred_month: bool = True
+        Whether to include the prediction month to the model's training data
     """
 
     model_name: str  # to be added by the model classes
 
     def __init__(self, data_folder: Path = Path('data'),
-                 batch_size: int = 1) -> None:
+                 batch_size: int = 1,
+                 include_pred_month: bool = True) -> None:
 
         self.batch_size = batch_size
+        self.include_pred_month = include_pred_month
         self.data_path = data_folder
         self.models_dir = data_folder / 'models'
         if not self.models_dir.exists():
@@ -36,12 +43,26 @@ class ModelBase:
         self.model: Any = None  # to be added by the model classes
         self.data_vars: Optional[List[str]] = None  # to be added by the train step
 
-    def train(self) -> None:
-        raise NotImplementedError
-
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         # This method should return the test arrays as loaded by
         # the test array dataloader, and the corresponding predictions
+        raise NotImplementedError
+
+    def explain(self, x: Any) -> np.ndarray:
+        """
+        Explain the predictions of the trained model on the input data x
+
+        Arguments
+        ----------
+        x: Any
+            An input array / tensor
+
+        Returns
+        ----------
+        explanations: np.ndarray
+            A shap value for each of the input values. The sum of the shap
+            values is equal to the prediction of the model for x
+        """
         raise NotImplementedError
 
     def save_model(self) -> None:
@@ -69,13 +90,13 @@ class ModelBase:
             true = vals['y']
             preds = preds_dict[key]
 
-            output_dict[key] = np.sqrt(mean_squared_error(true, preds))
+            output_dict[key] = np.sqrt(mean_squared_error(true, preds)).item()
 
             total_preds.append(preds)
             total_true.append(true)
 
         output_dict['total'] = np.sqrt(mean_squared_error(np.concatenate(total_true),
-                                                          np.concatenate(total_preds)))
+                                                          np.concatenate(total_preds))).item()
 
         print(f'RMSE: {output_dict["total"]}')
 
