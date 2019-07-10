@@ -209,7 +209,7 @@ class S5Preprocessor(BasePreProcessor):
                         subset_str=subset_str,
                         regrid=regrid),
                 filepaths)
-            pass
+            print("\nOutputs (errors):\n\t", outputs)
 
         # merge all of the timesteps for S5 data
         for var in np.unique(variables):

@@ -96,7 +96,7 @@ class S5Exporter(CDSExporter):
         n_parallel_requests: int = 3,
         show_api_request: bool = True,
         break_up: bool = True,
-    ):
+    ) -> List[Path]:
         """
         Arguments
         --------
