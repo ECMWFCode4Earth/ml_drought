@@ -259,7 +259,7 @@ class _BaseIter:
             train_data = TrainData(
                 current=current,
                 historical=historical,
-                pred_months=x_months  # @GABI do we want to include this ?
+                pred_months=x_months
             )
         else:
             train_data = TrainData(
@@ -368,14 +368,6 @@ class _TrainIter(_BaseIter):
                     cur_max_idx = min(cur_max_idx + 1, self.max_idx)
 
                 out_x.append(arrays.x.historical)
-
-                # @GABI we don't want this do we ? it adds a column of constants
-                if self.experiment == 'nowcast':
-                    # add a constant vector to the X train_data and append
-                    constant_vector = np.ones(arrays.x.current.shape)[:, :, :1]  # type: ignore
-                    arrays.x.current = np.concatenate(
-                        [arrays.x.current, constant_vector], axis=-1
-                    )
 
                 out_x_add.append(arrays.x.current)
                 out_x_add.append(arrays.x.pred_months)
