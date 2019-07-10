@@ -6,7 +6,7 @@ import re
 from pprint import pprint
 import multiprocessing
 
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, cast
 
 from .base import BaseExporter, Region, get_kenya
 
@@ -314,13 +314,13 @@ class ERA5Exporter(CDSExporter):
                         )
                     )
                 else:  # run sequentially
-                    output_paths.append(
+                    output_paths.append(  # type: ignore
                         self._export(dataset, updated_request, show_api_request)
                     )
             if n_parallel_requests > 1:
                 p.close()
                 p.join()
-            return output_paths
+            return cast(List[Path], output_paths)
 
         return [self._export(dataset,
                              processed_selection_request,
