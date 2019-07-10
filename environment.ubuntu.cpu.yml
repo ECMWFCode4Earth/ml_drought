@@ -116,7 +116,7 @@ dependencies:
   - multiprocess=0.70.7
   - mypy=0.701
   - mypy_extensions=0.4.1
-  - nco=4.7.9
+  - nco  # =4.7.9
   - ncurses=6.1
   - netcdf-fortran=4.4.5
   - netcdf4=1.5.1.2
