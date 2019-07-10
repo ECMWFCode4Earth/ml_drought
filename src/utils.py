@@ -54,6 +54,19 @@ def minus_months(cur_year: int, cur_month: int, diff_months: int,
         newdate = None
     return new_year, new_month, newdate
 
+def get_ds_mask(ds: xr.Dataset) -> xr.Dataset:
+    """ Return a boolean Dataset which is a mask of the first timestep in `ds`
+
+    NOTE:
+        assumes that all of the null values from `ds` are valid null values (e.g.
+        water bodies). Could also be invalid nulls due to poor data processing /
+        lack of satellite input data for a pixel!
+    """
+    mask = ds.isnull().isel(time=0).drop('time')
+    mask.name = 'mask'
+
+    return mask
+
 
 # dictionary lookup of regions
 region_lookup = {
