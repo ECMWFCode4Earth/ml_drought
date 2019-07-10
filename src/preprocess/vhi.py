@@ -52,25 +52,32 @@ class VHIPreprocessor(BasePreProcessor):
         # 2. extract the timestamp for that file (from the filepath)
         timestamp = self.extract_timestamp(ds, netcdf_filepath, use_filepath=True)
 
-        # 3. extract the lat/lon vectors
+        # 3. create the filepath
+        filename = self.create_filename(
+            timestamp,
+            netcdf_filepath,
+            subset_name=subset_str,
+        )
+
+        # test if the file already exists
+        if Path(f'{output_dir}/{filename}').exists():
+            print(f'{output_dir}/{filename} Already exists!')
+            return Path(f'{output_dir}/{filename}')
+
+        # 4. extract the lat/lon vectors
         longitudes, latitudes = self.create_lat_lon_vectors(ds)
 
-        # 4. create new dataset with these dimensions
+        # 5. create new dataset with these dimensions
         new_ds = self.create_new_dataset(ds, longitudes, latitudes, timestamp)
 
-        # 5. chop out EastAfrica
+        # 6. chop out EastAfrica
         if subset_str is not None:
             new_ds = self.chop_roi(new_ds, subset_str)
 
         if regrid is not None:
             new_ds = self.regrid(new_ds, regrid)
 
-        # 6. create the filepath and save to that location
-        filename = self.create_filename(
-            timestamp,
-            netcdf_filepath,
-            subset_name=subset_str if subset_str is not None else None
-        )
+        # 7. save to filepath location
         print(f'Saving to {output_dir}/{filename}')
         # TODO: change to pathlib.Path objects
         new_ds.to_netcdf(f'{output_dir}/{filename}')
