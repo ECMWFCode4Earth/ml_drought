@@ -224,7 +224,8 @@ class _BaseIter:
                         ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / 'x.nc'), xr.open_dataset(folder / 'y.nc')
-        assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable!'
+        assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable! ' \
+            f'Got {len(list(y.data_vars))}'
 
         coords = [c for c in y.coords]
         target_var = [y for y in y.variables if y not in coords][0]
@@ -346,7 +347,8 @@ class _BaseIter:
 
 class _TrainIter(_BaseIter):
 
-    def __next__(self) -> Tuple[Union[np.ndarray, torch.Tensor],
+    def __next__(self) -> Tuple[Tuple[Union[np.ndarray, torch.Tensor],
+                                      Union[np.ndarray, torch.Tensor]],
                                 Union[np.ndarray, torch.Tensor]]:
 
         if self.idx < self.max_idx:
@@ -386,6 +388,7 @@ class _TrainIter(_BaseIter):
 
             final_x_add = np.concatenate(out_x_add, axis=0)
             final_x = np.concatenate(out_x, axis=0)
+            final_x_add = np.concatenate(out_x_add, axis=0)
             final_y = np.concatenate(out_y, axis=0)
 
             if final_x.shape[0] == 0:

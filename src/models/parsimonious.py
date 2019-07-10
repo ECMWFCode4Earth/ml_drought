@@ -40,7 +40,7 @@ class Persistence(ModelBase):
                     print('Target variable not in prediction data!')
                     raise e
 
-                preds_dict[key] = val.x[:, -1, [target_idx]]
+                preds_dict[key] = val.x.historical[:, -1, [target_idx]]
                 test_arrays_dict[key] = {'y': val.y, 'latlons': val.latlons}
 
         return test_arrays_dict, preds_dict
