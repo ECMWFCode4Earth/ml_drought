@@ -12,7 +12,9 @@ class TestBaseIter:
     def test_mask(self, tmp_path):
 
         for i in range(5):
-            (tmp_path / f'features/one_month_forecast/train/{i}').mkdir(parents=True)
+            (
+                tmp_path / f'features/one_month_forecast/train/{i}'
+            ).mkdir(parents=True)
             (tmp_path / f'features/one_month_forecast/train/{i}/x.nc').touch()
             (tmp_path / f'features/one_month_forecast/train/{i}/y.nc').touch()
 
@@ -21,7 +23,8 @@ class TestBaseIter:
 
         train_paths = DataLoader._load_datasets(tmp_path, mode='train',
                                                 experiment='one_month_forecast',
-                                                shuffle_data=True, mask=mask_train)
+                                                shuffle_data=True,
+                                                mask=mask_train)
         val_paths = DataLoader._load_datasets(tmp_path, mode='train',
                                               experiment='one_month_forecast',
                                               shuffle_data=True, mask=mask_val)
@@ -29,8 +32,10 @@ class TestBaseIter:
             f'Got the same file in both train and val set!'
         assert len(train_paths) + len(val_paths) == 5, f'Not all files loaded!'
 
-    @pytest.mark.parametrize('normalize,to_tensor', [(True, True), (True, False),
-                                                     (False, True), (False, False)])
+    @pytest.mark.parametrize('normalize,to_tensor', [(True, True),
+                                                     (True, False),
+                                                     (False, True),
+                                                     (False, False)])
     def test_ds_to_np(self, tmp_path, normalize, to_tensor):
 
         x, _, _ = _make_dataset(size=(5, 5))
@@ -62,18 +67,27 @@ class TestBaseIter:
         arrays = base_iterator.ds_folder_to_np(tmp_path, return_latlons=True,
                                                to_tensor=to_tensor)
 
-        x_train_data, y_np, latlons = arrays.x, arrays.y, arrays.latlons
+        x_train_data, y_np, latlons = (
+            arrays.x.historical, arrays.y, arrays.latlons
+        )
 
         if to_tensor:
-            assert (type(x_train_data.historical) == torch.Tensor) and (type(y_np) == torch.Tensor)
+            assert (
+                type(x_train_data.historical) == torch.Tensor
+            ) and (type(y_np) == torch.Tensor)
             assert (type(x_train_data.current) == torch.Tensor)
         else:
-            assert (type(x_train_data.historical) == np.ndarray) and (type(y_np) == np.ndarray)
+            assert (
+                type(x_train_data.historical) == np.ndarray
+            ) and (type(y_np) == np.ndarray)
             assert (type(x_train_data.current) == np.ndarray)
 
-        assert (x_train_data.historical.shape[0] == y_np.shape[0] == latlons.shape[0]), \
-            f'x, y and latlon data have a different number of instances! ' \
-            f'x: {x_train_data.shape[0]}, y: {y_np.shape[0]}, latlons: {latlons.shape[0]}'
+        assert (
+            x_train_data.historical.shape[0] == (
+                y_np.shape[0] == latlons.shape[0]
+            )), f'x, y and latlon data have a different number of instances! ' \
+                f'x: {x_train_data.shape[0]}, y: {y_np.shape[0]}, latlons:'\
+                f'{latlons.shape[0]}'
 
         for idx in range(latlons.shape[0]):
 

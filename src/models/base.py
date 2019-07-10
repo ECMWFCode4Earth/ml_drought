@@ -11,17 +11,24 @@ class ModelBase:
     """Base for all machine learning models.
     Attributes:
     ----------
-    data: pathlib.Path
+    data: pathlib.Path = Path('data')
         The location of the data folder.
+    batch_size: int 1
+        The number of files to load at once. These will be chunked and shuffled, so
+        a higher value will lead to better shuffling (but will require more memory)
+    include_pred_month: bool = True
+        Whether to include the prediction month to the model's training data
     """
 
     model_name: str  # to be added by the model classes
 
     def __init__(self, data_folder: Path = Path('data'),
                  batch_size: int = 1,
-                 experiment: str = 'one_month_forecast') -> None:
+                 experiment: str = 'one_month_forecast',
+                 include_pred_month: bool = True) -> None:
 
         self.batch_size = batch_size
+        self.include_pred_month = include_pred_month
         self.data_path = data_folder
         self.experiment = experiment
 
@@ -64,7 +71,8 @@ class ModelBase:
     def save_model(self) -> None:
         raise NotImplementedError
 
-    def evaluate(self, save_results: bool = True, save_preds: bool = False) -> None:
+    def evaluate(self, save_results: bool = True,
+                 save_preds: bool = False) -> None:
         """
         Evaluate the trained model
 

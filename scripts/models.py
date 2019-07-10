@@ -39,10 +39,13 @@ def regression(experiment='one_month_forecast'):
                                     shuffle_data=False, mode='test')
     key, val = list(next(iter(test_arrays_loader)).items())[0]
 
-    explanations = predictor.explain(val.x)
-    print(explanations.shape)
-    np.save('shap_regression.npy', explanations)
-    np.save('shap_x.npy', val.x)
+    explain_hist, explain_add = predictor.explain([val.x.historical, val.x.pred_months])
+
+    print(explain_hist.shape)
+    np.save('shap_regression_historical.npy', explain_hist)
+    np.save('shap_regression_add.npy', explain_add)
+    np.save('shap_x_hist.npy', val.x.historical)
+    np.save('shap_x_add.npy', val.x.pred_months)
 
     with open('variables.txt', 'w') as f:
         f.write(str(val.x_vars))
@@ -53,9 +56,12 @@ def regression(experiment='one_month_forecast'):
 
     for variable in val.x_vars:
         plt.clf()
-        plot_shap_values(val.x[0], explanations[0], val.x_vars, normalizing_dict, variable,
-                         normalize_shap_plots=True, show=False)
-        plt.savefig(f'{variable}_{experiment}_linear_regression.png', dpi=300, bbox_inches='tight')
+        plot_shap_values(
+            val.x.historical[0], explain_hist[0], val.x_vars,
+            normalizing_dict, variable, normalize_shap_plots=True,
+            show=False
+        )
+        plt.savefig(f'{variable}_linear_regression.png', dpi=300, bbox_inches='tight')
 
 
 def linear_nn(experiment='one_month_forecast'):
@@ -76,22 +82,31 @@ def linear_nn(experiment='one_month_forecast'):
                                     to_tensor=True)
     key, val = list(next(iter(test_arrays_loader)).items())[0]
 
-    explanations = predictor.explain(val.x[:3])
-    print(explanations.shape)
-    np.save('shap_linear_network.npy', explanations)
-    np.save('shap_x_linear_network.npy', val.x[:3])
+    explain_hist, explain_add = predictor.explain([val.x.historical[:3], val.x.pred_months[:3]])
+
+    print(explain_hist.shape)
+    np.save('shap_linear_network_hist.npy', explain_hist)
+    np.save('shap_linear_network_add.npy', explain_add)
+
+    np.save('shap_x_linear_network_hist.npy', val.x.historical[:3])
+    np.save('shap_x_linear_network_add.npy', val.x.pred_months[:3])
 
     with open('variables_linear_network.txt', 'w') as f:
         f.write(str(val.x_vars))
 
     # plot the variables
-    with (data_path / f'features/{experiment}/normalizing_dict.pkl').open('rb') as f:
+    with (
+        data_path / f'features/{experiment}/normalizing_dict.pkl'
+    ).open('rb') as f:
         normalizing_dict = pickle.load(f)
 
     for variable in val.x_vars:
         plt.clf()
-        plot_shap_values(val.x[0].numpy(), explanations[0], val.x_vars, normalizing_dict, variable,
-                         normalize_shap_plots=True, show=False)
+        plot_shap_values(
+            val.x[0].numpy(), explain_hist[0], val.x_vars,
+            normalizing_dict, variable, normalize_shap_plots=True,
+            show=False
+        )
         plt.savefig(f'{variable}_linear_network.png', dpi=300, bbox_inches='tight')
 
 
