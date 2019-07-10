@@ -10,27 +10,33 @@ from src.preprocess import S5Preprocessor
 
 def make_dummy_seas5_data(date_str: str) -> xr.Dataset:
     initialisation_date = pd.date_range(start=date_str, periods=1, freq='M')
-    number = [i for i in range(0, 51)] # corresponds to model number (ensemble of model runs)
+    number = [i for i in range(0, 51)]  # corresponds to ensemble number
     lat = np.linspace(-5.175003, -5.202, 36)
     lon = np.linspace(33.5, 42.25, 45)
     forecast_horizon = np.array(
-        [ 2419200000000000,  2592000000000000,  2678400000000000,
-          5097600000000000,  5270400000000000,  5356800000000000,
-          7689600000000000,  7776000000000000,  7862400000000000,
-          7948800000000000, 10368000000000000, 10454400000000000,
-          10540800000000000, 10627200000000000, 12960000000000000,
-          13046400000000000, 13219200000000000, 15638400000000000,
-          15724800000000000, 15811200000000000, 15897600000000000,
-          18316800000000000, 18489600000000000, 18576000000000000 ],
-          dtype='timedelta64[ns]'
+        [2419200000000000, 2592000000000000, 2678400000000000,
+         5097600000000000, 5270400000000000, 5356800000000000,
+         7689600000000000, 7776000000000000, 7862400000000000,
+         7948800000000000, 10368000000000000, 10454400000000000,
+         10540800000000000, 10627200000000000, 12960000000000000,
+         13046400000000000, 13219200000000000, 15638400000000000,
+         15724800000000000, 15811200000000000, 15897600000000000,
+         18316800000000000, 18489600000000000, 18576000000000000],
+        dtype='timedelta64[ns]'
     )
     valid_time = initialisation_date[:, np.newaxis] + forecast_horizon
     precip = np.random.normal(
-        0, 1, size=(len(number), len(initialisation_date), len(forecast_horizon), len(lat), len(lon))
+        0, 1, size=(
+            len(number), len(initialisation_date),
+            len(forecast_horizon), len(lat), len(lon)
+        )
     )
 
     ds = xr.Dataset(
-        {'precip': (['number', 'initialisation_date', 'forecast_horizon', 'lat', 'lon'], precip)},
+        {'precip': (
+            ['number', 'initialisation_date', 'forecast_horizon', 'lat', 'lon'],
+            precip
+        )},
         coords={
             'lon': lon,
             'lat': lat,
@@ -75,3 +81,4 @@ class TestS5Preprocessor:
             data_dir.mkdir(exist_ok=True, parents=True)
 
         S5Preprocessor(data_dir)
+        OuceS5Data()
