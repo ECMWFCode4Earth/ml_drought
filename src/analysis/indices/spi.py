@@ -206,7 +206,7 @@ class SPI(BaseIndices):
 
         print(
             "\n---------------\n",
-            "Fitting SPI index\n",
+            f"Fitting SPI{scale} index\n",
             f"distribution: {self.distribution}\n",
             f"data_start_year: {self.data_start_year}\n",
             f"calibration_year_initial: {self.calibration_year_initial}\n",
@@ -221,6 +221,6 @@ class SPI(BaseIndices):
             self.calibration_year_final, period
         )
 
-        self.index = index.unstack('point').to_dataset(name='SPI')
+        self.index = index.unstack('point').to_dataset(name=f'SPI{scale}')
 
         print("Fitted")
