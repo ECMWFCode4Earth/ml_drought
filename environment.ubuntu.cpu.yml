@@ -61,7 +61,7 @@ dependencies:
   - gst-plugins-base=1.14.5
   - gstreamer=1.14.5
   - hdf4=4.2.13
-  - hdf5=1.10.4
+  - hdf5=1.10.5
   - heapdict=1.0.0
   - icu=58.2
   - idna=2.8
