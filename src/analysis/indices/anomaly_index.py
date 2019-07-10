@@ -10,7 +10,7 @@ from .utils import (
 
 
 class AnomalyIndex(BaseIndices):
-    """
+    """ The Rainfall Anomaly Index
     Calculation:
     -----------
     incorporates a ranking procedure to assign magnitudes to
