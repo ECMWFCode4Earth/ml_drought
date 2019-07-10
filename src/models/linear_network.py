@@ -244,6 +244,8 @@ class LinearModel(nn.Module):
         # flatten
         x = x.contiguous().view(x.shape[0], -1)
         if self.include_pred_month:
+            # @gabrieltseng HELP!
+            pred_month = pred_month.contiguous().view(x.shape[0], -1)
             x = torch.cat((x, pred_month), dim=-1)
         for layer in self.dense_layers:
             x = layer(x)

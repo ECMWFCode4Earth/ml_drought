@@ -69,7 +69,7 @@ class TestLinearNetwork:
         dropout = 0.25
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
-                              dropout=dropout,  experiment='one_month_forecast',
+                              dropout=dropout, experiment='one_month_forecast',
                               include_pred_month=use_pred_months)
         model.train()
 
@@ -115,8 +115,8 @@ class TestLinearNetwork:
         test_arrays_dict, pred_dict = model.predict()
 
         # the foldername "hello" is the only one which should be in the dictionaries
-        assert (
-            'hello' in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1
+        assert ('hello' in test_arrays_dict.keys()) and (
+            len(test_arrays_dict) == 1
         )
         assert ('hello' in pred_dict.keys()) and (len(pred_dict) == 1)
 

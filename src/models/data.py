@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 import numpy as np
 from random import shuffle
 from pathlib import Path
@@ -11,8 +12,9 @@ from typing import cast, Dict, Optional, Union, List, Tuple
 
 @dataclass
 class TrainData:
-    historical = Union[np.ndarray, torch.Tensor]
-    current = Union[np.ndarray, torch.Tensor, None]
+    historical: Union[np.ndarray, torch.Tensor]
+    current: Union[np.ndarray, torch.Tensor, None]
+    pred_months: Union[np.ndarray, torch.Tensor, None]
 
 
 @dataclass
@@ -221,8 +223,6 @@ class _BaseIter:
                         to_tensor: bool = False
                         ) -> ModelArrays:
 
-        train_data = TrainData()
-
         x, y = xr.open_dataset(folder / 'x.nc'), xr.open_dataset(folder / 'y.nc')
         assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable!'
 
@@ -237,6 +237,15 @@ class _BaseIter:
         # first, x
         x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
         x_np = np.moveaxis(np.moveaxis(x_np, 0, 1), -1, 0)
+
+        # then, the x month
+        assert len(y.time) == 1, 'Expected y to only have 1 timestamp!'\
+            f'Got {len(y.time)}'
+        target_month = datetime.strptime(
+            str(y.time.values[0])[:-3], '%Y-%m-%dT%H:%M:%S.%f'
+        ).month
+        x_months = np.array([target_month] * x_np.shape[0])
+
         # then, y
         y_np = y_np.reshape(y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
         y_np = np.moveaxis(y_np, -1, 0).reshape(-1, 1)
@@ -248,11 +257,17 @@ class _BaseIter:
 
             # add 1 axis for timesteps
             current = current.reshape(x_np.shape[0], 1, current.shape[-1])
-            train_data.current = current
-            train_data.historical = historical
+            train_data = TrainData(
+                current=current,
+                historical=historical,
+                pred_months=x_months  # @GABI do we want to include this ?
+            )
         else:
-            train_data.current = None
-            train_data.historical = x_np
+            train_data = TrainData(
+                current=None,
+                historical=x_np,
+                pred_months=x_months
+            )
 
         if self.historical_normalizing_array is not None:
             if self.experiment == 'nowcast':
@@ -302,12 +317,14 @@ class _BaseIter:
             train_data.historical, y_np = (
                 train_data.historical[notnan_indices], y_np[notnan_indices]
             )
+            train_data.pred_months = train_data.pred_months[notnan_indices]
 
         if to_tensor:
             train_data.historical, y_np = (
                 torch.from_numpy(train_data.historical).float(),
                 torch.from_numpy(y_np).float()
             )
+            train_data.pred_months = torch.from_numpy(train_data.pred_months).float()
 
             if self.experiment == 'nowcast':
                 train_data.current = torch.from_numpy(train_data.current).float()
@@ -333,13 +350,15 @@ class _TrainIter(_BaseIter):
                                 Union[np.ndarray, torch.Tensor]]:
 
         if self.idx < self.max_idx:
-            out_x, out_y = [], []
+            out_x, out_x_add, out_y = [], [], []
 
             cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
             while self.idx < cur_max_idx:
                 subfolder = self.data_files[self.idx]
-                arrays = self.ds_folder_to_np(subfolder, clear_nans=self.clear_nans,
-                                              return_latlons=False, to_tensor=False)
+                arrays = self.ds_folder_to_np(
+                    subfolder, clear_nans=self.clear_nans,
+                    return_latlons=False, to_tensor=False
+                )
                 if arrays.x.historical.shape[0] == 0:
                     print(f'{subfolder} returns no values. Skipping')
 
@@ -351,29 +370,30 @@ class _TrainIter(_BaseIter):
 
                 out_x.append(arrays.x.historical)
 
+                # @GABI we don't want this do we ? it adds a column of constants
                 if self.experiment == 'nowcast':
                     # add a constant vector to the X train_data and append
                     constant_vector = np.ones(arrays.x.current.shape)[:, :, :1]
                     arrays.x.current = np.concatenate(
                         [arrays.x.current, constant_vector], axis=-1
                     )
-                    out_x.append(arrays.x.current)
-                    out_x = [arrays.x.historical, arrays.x.current]
 
+                out_x_add.append(arrays.x.current)
+                out_x_add.append(arrays.x.pred_months)
+                out_x_add = [x_add for x_add in out_x_add if x_add is not None]
                 out_y.append(arrays.y)
                 self.idx += 1
 
-            if self.experiment == 'nowcast':
-                final_x = np.concatenate(out_x, axis=1)
-            else:
-                final_x = np.concatenate(out_x, axis=0)
-
+            final_x_add = np.concatenate(out_x_add, axis=0)
+            final_x = np.concatenate(out_x, axis=0)
             final_y = np.concatenate(out_y, axis=0)
+
             if final_x.shape[0] == 0:
                 raise StopIteration()
             if self.to_tensor:
-                return torch.from_numpy(final_x).float(), torch.from_numpy(final_y).float()
-            return final_x, final_y
+                return (torch.from_numpy(final_x).float(),
+                        torch.from_numpy(final_x_add).float()), torch.from_numpy(final_y).float()
+            return (final_x, final_x_add), final_y
         else:
             raise StopIteration()
 

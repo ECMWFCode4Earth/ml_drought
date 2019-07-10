@@ -68,38 +68,36 @@ class TestBaseIter:
                                                to_tensor=to_tensor)
 
         x_train_data, y_np, latlons = (
-            arrays.x.historical, arrays.y, arrays.latlons
+            arrays.x, arrays.y, arrays.latlons
         )
 
         if to_tensor:
             assert (
                 type(x_train_data.historical) == torch.Tensor
             ) and (type(y_np) == torch.Tensor)
-            assert (type(x_train_data.current) == torch.Tensor)
         else:
             assert (
                 type(x_train_data.historical) == np.ndarray
             ) and (type(y_np) == np.ndarray)
-            assert (type(x_train_data.current) == np.ndarray)
 
         assert (
-            x_train_data.historical.shape[0] == (
-                y_np.shape[0] == latlons.shape[0]
-            )), f'x, y and latlon data have a different number of instances! ' \
-                f'x: {x_train_data.shape[0]}, y: {y_np.shape[0]}, latlons:'\
-                f'{latlons.shape[0]}'
+            x_train_data.historical.shape[0] == y_np.shape[0] == latlons.shape[0]), '' \
+            'x, y and latlon data have a different number of instances! ' \
+            f'x: {x_train_data.historical.shape[0]}, y: {y_np.shape[0]}, '\
+            f'latlons: {latlons.shape[0]}'
 
         for idx in range(latlons.shape[0]):
 
             lat, lon = latlons[idx, 0], latlons[idx, 1]
 
-            for time in range(x_train_data.shape[1]):
+            for time in range(x_train_data.historical.shape[1]):
                 target = x.isel(time=time).sel(lat=lat).sel(lon=lon).VHI.values
 
                 if (not normalize) and (not to_tensor):
-                    assert target == x_train_data[idx, time, 0], \
-                        f'Got different x values for time idx: {time}, lat: {lat}, ' \
-                        f'lon: {lon}.Expected {target}, got {x_train_data[idx, time, 0]}'
+                    assert target == x_train_data.historical[idx, time, 0], \
+                        'Got different x values for time idx:'\
+                        f'{time}, lat: {lat}, lon: {lon} Expected {target}, '\
+                        f'got {x_train_data.historical[idx, time, 0]}'
 
             if not to_tensor:
                 target_y = y.isel(time=0).sel(lat=lat).sel(lon=lon).VHI.values
