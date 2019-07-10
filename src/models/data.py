@@ -256,8 +256,6 @@ class _BaseIter:
             historical = x_np[:, :-1, :]  # all timesteps except the final
             current = x_np[:, -1, :-1]  # final axis is all nan (target var)
 
-            # add 1 axis for timesteps
-            current = current.reshape(x_np.shape[0], 1, current.shape[-1])
             train_data = TrainData(
                 current=current,
                 historical=historical,
@@ -278,9 +276,10 @@ class _BaseIter:
                 ) / (self.historical_normalizing_array['std'])
 
                 # normalize the current X data (no target variable)
-                train_data.current = (
-                    train_data.current - self.current_normalizing_array['mean']
-                ) / (self.current_normalizing_array['std'])
+                if self.current_normalizing_array is not None:
+                    train_data.current = (
+                        train_data.current - self.current_normalizing_array['mean']
+                    ) / (self.current_normalizing_array['std'])
             else:
                 # only historical variables for non-nowcast experiments
                 train_data.historical = (
@@ -303,9 +302,7 @@ class _BaseIter:
 
             if self.experiment == 'nowcast':
                 current_nans = np.isnan(train_data.current)
-                current_nans_summed = current_nans.reshape(
-                    current_nans.shape[0], current_nans.shape[1] * current_nans.shape[2]
-                ).sum(axis=-1)
+                current_nans_summed = current_nans.sum(axis=-1)
                 notnan_indices = np.where(
                     (
                         historical_nans_summed == 0
@@ -313,12 +310,12 @@ class _BaseIter:
                         current_nans_summed == 0
                     )
                 )[0]
-                train_data.current = train_data.current[notnan_indices]
+                train_data.current = train_data.current[notnan_indices]  # type: ignore
 
             train_data.historical, y_np = (
                 train_data.historical[notnan_indices], y_np[notnan_indices]
             )
-            train_data.pred_months = train_data.pred_months[notnan_indices]
+            train_data.pred_months = train_data.pred_months[notnan_indices]  # type: ignore
 
         if to_tensor:
             train_data.historical, y_np = (
@@ -375,7 +372,7 @@ class _TrainIter(_BaseIter):
                 # @GABI we don't want this do we ? it adds a column of constants
                 if self.experiment == 'nowcast':
                     # add a constant vector to the X train_data and append
-                    constant_vector = np.ones(arrays.x.current.shape)[:, :, :1]
+                    constant_vector = np.ones(arrays.x.current.shape)[:, :, :1]  # type: ignore
                     arrays.x.current = np.concatenate(
                         [arrays.x.current, constant_vector], axis=-1
                     )
