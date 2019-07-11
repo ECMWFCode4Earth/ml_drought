@@ -1,4 +1,5 @@
 import numpy as np
+import xarray as xr
 import pickle
 import pytest
 
@@ -36,24 +37,41 @@ class TestLinearRegression:
         saved_model = np.load(tmp_path / 'models/one_month_forecast/linear_regression/model.npy')
         assert np.array_equal(model_array, saved_model), f'Different array saved!'
 
-    @pytest.mark.parametrize('use_pred_months', [True, False])
-    def test_train(self, tmp_path, capsys, use_pred_months):
+    @pytest.mark.parametrize('use_pred_months,experiment',
+                             [(True, 'one_month_forecast'),
+                              (True, 'nowcast'),
+                              (False, 'one_month_forecast'),
+                              (False, 'nowcast')])
+    def test_train(self, tmp_path, capsys, use_pred_months, experiment):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        test_features = tmp_path / 'features/one_month_forecast/train/hello'
+        test_features = tmp_path / f'features/{experiment}/train/hello'
         test_features.mkdir(parents=True)
 
-        norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
-                             'std': np.ones(x.to_array().values.shape[:2])}
-                     }
-        with (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').open('wb') as f:
+        if experiment == 'nowcast':
+            x_add, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='precip')
+            x = xr.merge([x, x_add])
+
+            norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                                 'std': np.ones((1, x.to_array().values.shape[1]))},
+                         'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                                    'std': np.ones((1, x.to_array().values.shape[1]))}}
+        else:
+            norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
+                                 'std': np.ones(x.to_array().values.shape[:2])}}
+
+        with (
+            tmp_path / f'features/{experiment}/normalizing_dict.pkl'
+        ).open('wb') as f:
             pickle.dump(norm_dict, f)
 
         x.to_netcdf(test_features / 'x.nc')
         y.to_netcdf(test_features / 'y.nc')
 
-        model = LinearRegression(tmp_path, include_pred_month=use_pred_months)
+        model = LinearRegression(
+            tmp_path, include_pred_month=use_pred_months, experiment=experiment
+        )
         model.train()
 
         captured = capsys.readouterr()
