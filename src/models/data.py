@@ -248,7 +248,7 @@ class _BaseIter:
             # if nowcast then we have a TrainData.current
             # @GABI how do we know which variable is the target_var
             historical = x_np[:, :-1, :]  # all timesteps except the final
-            current = x_np[:, -1, -1]  # only select the NON-TARGET variables
+            current = x_np[:, -1, :-1]  # only select the NON-TARGET variables
 
             train_data = TrainData(
                 current=current,
