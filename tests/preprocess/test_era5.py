@@ -22,9 +22,9 @@ class TestPlanetOSPreprocessor:
         longitudes = np.linspace(lonmin, lonmax, lon_len)
         latitudes = np.linspace(latmin, latmax, lat_len)
 
-        dims = ['lon', 'lat']
-        coords = {'lat': latitudes,
-                  'lon': longitudes}
+        dims = ['longitude', 'latitude']
+        coords = {'latitude': latitudes,
+                  'longitude': longitudes}
 
         if add_times:
             size = (2, size[0], size[1])

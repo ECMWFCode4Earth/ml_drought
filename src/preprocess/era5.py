@@ -32,7 +32,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 
         print(f'Processing {netcdf_filepath.name}')
         # 1. read in the dataset
-        ds = xr.open_dataset(netcdf_filepath)
+        ds = xr.open_dataset(netcdf_filepath).rename({'longitude': 'lon', 'latitude': 'lat'})
 
         # 2. chop out EastAfrica
         if subset_str is not None:
