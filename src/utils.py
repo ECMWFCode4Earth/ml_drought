@@ -6,6 +6,7 @@ See all the bounding boxes (NOTE COMMENTS OF ERRORS) in this gist
 from collections import namedtuple
 import calendar
 from datetime import date
+import xarray as xr
 
 from typing import Optional, Tuple
 
@@ -55,7 +56,7 @@ def minus_months(cur_year: int, cur_month: int, diff_months: int,
     return new_year, new_month, newdate
 
 
-def get_ds_mask(ds):
+def get_ds_mask(ds: xr.Dataset) -> xr.Dataset:
     """
     NOTE:
         assumes that all of the null values from `ds` are valid null values (e.g.

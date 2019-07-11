@@ -355,7 +355,10 @@ class _TrainIter(_BaseIter):
 
             final_x = np.concatenate(out_x, axis=0)
             if out_x_curr != []:
-                final_x_add = np.concatenate([out_x_add, out_x_curr], axis=0)
+                # join the current / additional arrays (values, 1) -> (values, 2)
+                _x_curr = np.concatenate(out_x_curr, axis=0)
+                _x_add = np.concatenate(out_x_add, axis=0)[:, np.newaxis]
+                final_x_add = np.concatenate([_x_add, _x_curr], axis=1)
             else:
                 final_x_add = np.concatenate(out_x_add, axis=0)
             final_y = np.concatenate(out_y, axis=0)
