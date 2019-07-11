@@ -7,7 +7,7 @@ from src.exporters import (ERA5Exporter, VHIExporter,
                            GLEAMExporter)
 
 
-def export_precip_2018():
+def export_era5():
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
@@ -15,15 +15,8 @@ def export_precip_2018():
         data_path = Path('../data')
     exporter = ERA5Exporter(data_path)
 
-    selection_request = {
-        'year': ['2018'],
-        'month': ['01'],
-        'day': ['01'],
-        'time': ['00:00']
-    }
-
-    exporter.export(variable='total_precipitation',
-                    selection_request=selection_request)
+    exporter.export(variable='soil_temperature_level_1', granularity='monthly',
+                    selection_request={'time': '00:00'})
 
 
 def export_vhi():
@@ -71,6 +64,7 @@ def export_gleam():
 
 
 if __name__ == '__main__':
+    export_era5()
     export_vhi()
     export_chirps()
     export_era5POS()
