@@ -5,7 +5,7 @@ from sklearn.metrics import mean_squared_error
 
 import shap
 
-from typing import cast, Any, Dict, Tuple, Optional, Union
+from typing import cast, Any, Dict, List, Tuple, Optional, Union
 
 from .base import ModelBase
 from .utils import chunk_array
@@ -18,8 +18,9 @@ class LinearRegression(ModelBase):
 
     def __init__(self, data_folder: Path = Path('data'),
                  batch_size: int = 1,
+                 pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True) -> None:
-        super().__init__(data_folder, batch_size, include_pred_month)
+        super().__init__(data_folder, batch_size, pred_months, include_pred_month)
 
         self.explainer: Optional[shap.LinearExplainer] = None
 
@@ -35,15 +36,18 @@ class LinearRegression(ModelBase):
 
             train_dataloader = DataLoader(data_path=self.data_path,
                                           batch_file_size=self.batch_size,
+                                          pred_months=self.pred_months,
                                           shuffle_data=True, mode='train', mask=train_mask)
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
+                                        pred_months=self.pred_months,
                                         shuffle_data=False, mode='train', mask=val_mask)
             batches_without_improvement = 0
             best_val_score = np.inf
         else:
             train_dataloader = DataLoader(data_path=self.data_path,
                                           batch_file_size=self.batch_size,
+                                          pred_months=self.pred_months,
                                           shuffle_data=True, mode='train')
         self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
 
@@ -133,7 +137,8 @@ class LinearRegression(ModelBase):
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
 
         test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=self.batch_size,
-                                        shuffle_data=False, mode='test')
+                                        shuffle_data=False, pred_months=self.pred_months,
+                                        mode='test')
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -166,6 +171,7 @@ class LinearRegression(ModelBase):
         print('Calculating the mean of the training data')
         train_dataloader = DataLoader(data_path=self.data_path,
                                       batch_file_size=1,
+                                      pred_months=self.pred_months,
                                       shuffle_data=False, mode='train')
 
         means, sizes = [], []

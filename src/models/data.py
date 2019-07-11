@@ -70,6 +70,8 @@ class DataLoader:
     mask: Optional[List[bool]] = None
         If not None, this list will be used to mask the input files. Useful for creating a train
         and validation set
+    pred_months: Optional[List[int]] = None
+        The months the model should predict. If None, all months are predicted
     to_tensor: bool = False
         Whether to turn the np.ndarrays into torch.Tensors
     """
@@ -77,13 +79,15 @@ class DataLoader:
                  mode: str = 'train', shuffle_data: bool = True,
                  clear_nans: bool = True, normalize: bool = True,
                  mask: Optional[List[bool]] = None,
+                 pred_months: Optional[List[int]] = None,
                  to_tensor: bool = False) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
         self.shuffle = shuffle_data
         self.clear_nans = clear_nans
-        self.data_files = self._load_datasets(data_path, mode, shuffle_data, mask)
+        self.data_files = self._load_datasets(data_path, mode, shuffle_data, mask,
+                                              pred_months)
 
         self.normalizing_dict = None
         if normalize:
@@ -103,14 +107,21 @@ class DataLoader:
 
     @staticmethod
     def _load_datasets(data_path: Path, mode: str, shuffle_data: bool,
-                       mask: Optional[List[bool]] = None) -> List[Path]:
+                       mask: Optional[List[bool]] = None,
+                       pred_months: Optional[List[int]] = None) -> List[Path]:
 
         data_folder = data_path / f'features/{mode}'
         output_paths: List[Path] = []
 
         for subtrain in data_folder.iterdir():
             if (subtrain / 'x.nc').exists() and (subtrain / 'y.nc').exists():
-                output_paths.append(subtrain)
+                if pred_months is None:
+                    output_paths.append(subtrain)
+                else:
+                    month = int(str(subtrain.parts[-1])[5:])
+                    if month in pred_months:
+                        output_paths.append(subtrain)
+
         if mask is not None:
             output_paths.sort()
             assert len(output_paths) == len(mask), \

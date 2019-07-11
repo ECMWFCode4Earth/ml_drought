@@ -24,8 +24,9 @@ class LinearNetwork(ModelBase):
                  dropout: float = 0.25,
                  data_folder: Path = Path('data'),
                  batch_size: int = 1,
+                 pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True) -> None:
-        super().__init__(data_folder, batch_size, include_pred_month)
+        super().__init__(data_folder, batch_size, pred_months, include_pred_month)
 
         if type(layer_sizes) is int:
             layer_sizes = cast(List[int], [layer_sizes])
@@ -77,24 +78,25 @@ class LinearNetwork(ModelBase):
 
         if early_stopping is not None:
             len_mask = len(DataLoader._load_datasets(self.data_path, mode='train',
-                                                     shuffle_data=False))
+                                                     shuffle_data=False,
+                                                     pred_months=self.pred_months))
             train_mask, val_mask = train_val_mask(len_mask, 0.3)
 
             train_dataloader = DataLoader(data_path=self.data_path,
                                           batch_file_size=self.batch_size,
                                           shuffle_data=True, mode='train', mask=train_mask,
-                                          to_tensor=True)
+                                          pred_months=self.pred_months, to_tensor=True)
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
                                         shuffle_data=False, mode='train', mask=val_mask,
-                                        to_tensor=True)
+                                        pred_months=self.pred_months, to_tensor=True)
             batches_without_improvement = 0
             best_val_score = np.inf
         else:
             train_dataloader = DataLoader(data_path=self.data_path,
                                           batch_file_size=self.batch_size,
                                           shuffle_data=True, mode='train',
-                                          to_tensor=True)
+                                          pred_months=self.pred_months, to_tensor=True)
 
         # initialize the model
         if self.input_size is None:
@@ -149,7 +151,8 @@ class LinearNetwork(ModelBase):
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=self.batch_size,
-                                        shuffle_data=False, mode='test', to_tensor=True)
+                                        shuffle_data=False, mode='test',
+                                        pred_months=self.pred_months, to_tensor=True)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -174,6 +177,7 @@ class LinearNetwork(ModelBase):
         train_dataloader = DataLoader(data_path=self.data_path,
                                       batch_file_size=self.batch_size,
                                       shuffle_data=True, mode='train',
+                                      pred_months=self.pred_months,
                                       to_tensor=True)
         output_tensors: List[torch.Tensor] = []
         if self.include_pred_month:
