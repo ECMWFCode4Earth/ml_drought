@@ -99,8 +99,10 @@ class ModelBase:
             total_preds.append(preds)
             total_true.append(true)
 
-        output_dict['total'] = np.sqrt(mean_squared_error(np.concatenate(total_true),
-                                                          np.concatenate(total_preds))).item()
+        output_dict['total'] = np.sqrt(
+            mean_squared_error(np.concatenate(total_true),
+                               np.concatenate(total_preds))
+        ).item()
 
         print(f'RMSE: {output_dict["total"]}')
 

@@ -180,6 +180,32 @@ class _BaseIter:
             'std': np.vstack(std).swapaxes(0, 1)
         })
 
+    @staticmethod
+    def move_target_var_to_end_of_dataset(x: xr.Dataset, y: xr.Dataset) -> xr.Dataset:
+        # @GABI is this a sensible way to ensure we always have the `target` last?
+        # get the x_vars and target_var
+        coords = [c for c in y.coords]
+        target_var = [y for y in y.variables if y not in coords][0]
+        all_vars = [v for v in x.variables if v not in coords]
+        x_vars = [
+            x_var
+            for x_var in x.variables
+            if x_var not in coords
+            if x_var != target_var
+        ]
+
+        # reorganise so that target is always last
+        new_x = x[x_vars]
+        x = xr.merge([new_x, x[target_var]])
+        new_x_vars = [x_var for x_var in x.variables if x_var not in coords]
+        target_var_index = int(
+            np.argwhere(np.isin(new_x_vars, [target_var]))
+        )
+        assert target_var_index == len(all_vars) - 1, f"Expect the target variable" \
+            " to be the final variable in the `x` dataset"
+
+        return x
+
     def ds_folder_to_np(self,
                         folder: Path,
                         clear_nans: bool = True,
@@ -190,9 +216,6 @@ class _BaseIter:
         x, y = xr.open_dataset(folder / 'x.nc'), xr.open_dataset(folder / 'y.nc')
         assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable! ' \
             f'Got {len(list(y.data_vars))}'
-
-        coords = [c for c in y.coords]
-        target_var = [y for y in y.variables if y not in coords][0]
 
         x_np, y_np = x.to_array().values, y.to_array().values
 
@@ -221,9 +244,11 @@ class _BaseIter:
             x_np = (x_np - self.normalizing_array['mean']) / (self.normalizing_array['std'])
 
         if self.experiment == 'nowcast':
+            x = self.move_target_var_to_end_of_dataset(x=x, y=y)
             # if nowcast then we have a TrainData.current
+            # @GABI how do we know which variable is the target_var
             historical = x_np[:, :-1, :]  # all timesteps except the final
-            current = x_np[:, -1, :-1]  # final axis is all nan (target var)
+            current = x_np[:, -1, -1]  # only select the NON-TARGET variables
 
             train_data = TrainData(
                 current=current,
@@ -331,7 +356,6 @@ class _TrainIter(_BaseIter):
             final_x = np.concatenate(out_x, axis=0)
             if out_x_curr != []:
                 final_x_add = np.concatenate([out_x_add, out_x_curr], axis=0)
-                assert False
             else:
                 final_x_add = np.concatenate(out_x_add, axis=0)
             final_y = np.concatenate(out_y, axis=0)

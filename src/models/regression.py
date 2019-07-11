@@ -70,7 +70,8 @@ class LinearRegression(ModelBase):
                         batch_x[0].shape[0],
                         batch_x[0].shape[1] * batch_x[0].shape[2])
                     if self.include_pred_month:
-                        pred_months = batch_x[1]
+                        # @GABI does this do what you mean it to?
+                        pred_months = batch_x[1].astype(int)
                         # one hot encoding, should be num_classes + 1, but
                         # for us its + 2, since 0 is not a class either
                         pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
