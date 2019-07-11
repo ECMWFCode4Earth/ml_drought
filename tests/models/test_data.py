@@ -106,19 +106,26 @@ class TestBaseIter:
                     f'Got y different values for lat: {lat}, ' \
                     f'lon: {lon}.Expected {target_y}, got {y_np[idx, 0]}'
 
-    @pytest.mark.parametrize('normalize,to_tensor', [(True, True),
-                                                     (True, False),
-                                                     (False, True),
-                                                     (False, False)])
-    def test_ds_to_np_nowcast(self, tmp_path, normalize, to_tensor):
+    @pytest.mark.parametrize(
+        'normalize,to_tensor,experiment',
+        [(True, True, 'one_month_forecast'),
+         (True, False, 'one_month_forecast'),
+         (False, True, 'one_month_forecast'),
+         (False, False, 'one_month_forecast'),
+         (True, True, 'nowcast'),
+         (True, False, 'nowcast'),
+         (False, True, 'nowcast'),
+         (False, False, 'nowcast')]
+)
+    def test_ds_to_np_nowcast(self, tmp_path, normalize, to_tensor, experiment):
 
         x_pred, _, _ = _make_dataset(size=(5, 5))
         x_coeff, _, _ = _make_dataset(size=(5, 5), variable_name='precip')
         x = xr.merge([x_pred, x_coeff])
         y = x_pred.isel(time=[0])
 
-        x.to_netcdf(tmp_path / 'x.nc')
-        y.to_netcdf(tmp_path / 'y.nc')
+        x.to_netcdf(tmp_path / experiment / 'x.nc')
+        y.to_netcdf(tmp_path / experiment / 'y.nc')
 
         norm_dict = {}
         for var in x.data_vars:
