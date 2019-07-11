@@ -261,15 +261,8 @@ class _BaseIter:
                 historical=historical,
                 pred_months=x_months
             )
-        else:
-            train_data = TrainData(
-                current=None,
-                historical=x_np,
-                pred_months=x_months
-            )
 
-        if self.historical_normalizing_array is not None:
-            if self.experiment == 'nowcast':
+            if self.historical_normalizing_array is not None:
                 # normalize the historical X data (all vars including target variable)
                 train_data.historical = (
                     train_data.historical - self.historical_normalizing_array['mean']
@@ -280,7 +273,14 @@ class _BaseIter:
                     train_data.current = (
                         train_data.current - self.current_normalizing_array['mean']
                     ) / (self.current_normalizing_array['std'])
-            else:
+
+        else:
+            train_data = TrainData(
+                current=None,
+                historical=x_np,
+                pred_months=x_months
+            )
+            if self.historical_normalizing_array is not None:
                 # only historical variables for non-nowcast experiments
                 train_data.historical = (
                     train_data.historical - self.historical_normalizing_array['mean']
