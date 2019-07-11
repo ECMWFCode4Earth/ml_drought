@@ -5,7 +5,7 @@ from sklearn.metrics import mean_squared_error
 
 import shap
 
-from typing import cast, Any, Dict, Tuple, Optional, Union
+from typing import cast, Any, Dict, List, Tuple, Optional, Union
 
 from .base import ModelBase
 from .utils import chunk_array
@@ -18,8 +18,9 @@ class LinearRegression(ModelBase):
 
     def __init__(self, data_folder: Path = Path('data'),
                  batch_size: int = 1,
+                 pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True) -> None:
-        super().__init__(data_folder, batch_size, include_pred_month)
+        super().__init__(data_folder, batch_size, pred_months, include_pred_month)
 
         self.explainer: Optional[shap.LinearExplainer] = None
 

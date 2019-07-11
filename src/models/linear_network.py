@@ -24,8 +24,9 @@ class LinearNetwork(ModelBase):
                  dropout: float = 0.25,
                  data_folder: Path = Path('data'),
                  batch_size: int = 1,
+                 pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True) -> None:
-        super().__init__(data_folder, batch_size, include_pred_month)
+        super().__init__(data_folder, batch_size, pred_months, include_pred_month)
 
         if type(layer_sizes) is int:
             layer_sizes = cast(List[int], [layer_sizes])
