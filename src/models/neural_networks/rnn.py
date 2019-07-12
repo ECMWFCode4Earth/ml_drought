@@ -42,8 +42,8 @@ class RecurrentNetwork(NNBase):
         torch.save(model_dict, self.model_dir / 'model.pkl')
 
     def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> nn.Module:
-        self.input_size = x_ref[0].shape[-1]
-        return RNN(features_per_month=self.input_size,
+        self.features_per_month = x_ref[0].shape[-1]
+        return RNN(features_per_month=self.features_per_month,
                    dense_features=self.dense_features,
                    hidden_size=self.hidden_size,
                    rnn_dropout=self.rnn_dropout,
