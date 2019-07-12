@@ -89,6 +89,15 @@ class TestBaseIter:
         if not to_tensor:
             assert isinstance(y_np, np.ndarray)
 
+        if to_tensor:
+            assert (
+                type(x_train_data.historical) == torch.Tensor
+            ) and (type(y_np) == torch.Tensor)
+        else:
+            assert (
+                type(x_train_data.historical) == np.ndarray
+            ) and (type(y_np) == np.ndarray)
+
         if (not normalize) and (experiment == 'nowcast') and (not to_tensor):
             assert (
                 x_train_data.historical.shape[0] == x_train_data.current.shape[0]
