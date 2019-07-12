@@ -69,15 +69,26 @@ class LinearRegression(ModelBase):
                     x_in = batch_x[0].reshape(
                         batch_x[0].shape[0],
                         batch_x[0].shape[1] * batch_x[0].shape[2])
+
+                    # one-hot encoded pred_months
                     if self.include_pred_month:
-                        # @GABI does this do what you mean it to?
                         pred_months = batch_x[1].astype(int)
                         # one hot encoding, should be num_classes + 1, but
                         # for us its + 2, since 0 is not a class either
-                        pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
+                        if len(batch_x[1].shape) == 1:
+                            pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
+                        else:  # HOW to work with multidimensional
+                            pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
                         x_in = np.concatenate(
                             (x_in, pred_months_onehot), axis=-1
                         )
+
+                    if self.experiment == 'nowcast':
+                        current_time_data = batch_x[2]
+                        x_in = np.concatenate(
+                            (x_in, current_time_data), axis=1
+                        )
+
                     self.model.partial_fit(x_in, batch_y.ravel())
 
                     train_pred_y = self.model.predict(x_in)
@@ -101,7 +112,7 @@ class LinearRegression(ModelBase):
                     val_pred_y = self.model.predict(x_in)
                     val_rmse.append(np.sqrt(mean_squared_error(y, val_pred_y)))
 
-            print(f'Epoch {epoch + 1}, train RMSE: {np.mean(train_rmse)}')
+            print(f'Epoch {epoch + 1}, train RMSE: {np.mean(train_rmse):.2f}')
 
             if early_stopping is not None:
                 epoch_val_rmse = np.mean(val_rmse)

@@ -354,22 +354,30 @@ class _TrainIter(_BaseIter):
                 self.idx += 1
 
             final_x = np.concatenate(out_x, axis=0)
-            if out_x_curr != []:
-                # join the current / additional arrays (values, 1) -> (values, 2)
-                _x_curr = np.concatenate(out_x_curr, axis=0)
-                _x_add = np.concatenate(out_x_add, axis=0)[:, np.newaxis]
-                final_x_add = np.concatenate([_x_add, _x_curr], axis=1)
-            else:
-                final_x_add = np.concatenate(out_x_add, axis=0)
+            final_x_curr = np.concatenate(out_x_curr, axis=0) if out_x_curr != [] else None
+            final_x_add = np.concatenate(out_x_add, axis=0) if out_x_add != [] else None
             final_y = np.concatenate(out_y, axis=0)
+
+            if self.to_tensor:
+                # x matrix
+                final_x = torch.from_numpy(final_x).float()
+                # pred_months data
+                final_x_add = torch.from_numpy(
+                    final_x_add
+                ).float() if final_x_add is not None else None
+                # current timestep data
+                final_x_curr = torch.from_numpy(
+                    final_x_curr
+                ).float() if final_x_curr is not None else None
+                # y (target) data
+                final_y = torch.from_numpy(final_y).float()
 
             if final_x.shape[0] == 0:
                 raise StopIteration()
-            if self.to_tensor:
-                return (torch.from_numpy(final_x).float(),
-                        torch.from_numpy(final_x_add).float()), torch.from_numpy(final_y).float()
-            return (final_x, final_x_add), final_y
-        else:
+
+            return (final_x, final_x_add, final_x_curr), final_y
+
+        else:  # final_x_curr >= self.max_idx
             raise StopIteration()
 
 

@@ -32,7 +32,6 @@ def chunk_array(x: Union[Tuple[Union[torch.Tensor, np.ndarray], ...],
     if type(x) is not tuple:
         x = (x, )
     x = cast(Tuple[Union[torch.Tensor, np.ndarray]], x)
-
     num_sections = max(1, x[0].shape[0] // batch_size)
     if type(x[0]) == np.ndarray:
         return _chunk_ndarray(x, y, num_sections, shuffle)
@@ -44,7 +43,7 @@ def _chunk_ndarray(x: Tuple[np.ndarray, ...], y: np.ndarray,
                    num_sections: int,
                    shuffle: bool) -> Iterable[Tuple[Tuple[np.ndarray, ...], np.ndarray]]:
 
-    split_x = [np.array_split(x_section, num_sections) for x_section in x]
+    split_x = [np.array_split(x_section, num_sections) for x_section in x if x_section is not None]
     split_y = np.array_split(y, num_sections)
     return_arrays = list(zip(*split_x, split_y))
 
@@ -56,7 +55,7 @@ def _chunk_ndarray(x: Tuple[np.ndarray, ...], y: np.ndarray,
 def _chunk_tensor(x: Tuple[torch.Tensor, ...], y: torch.Tensor,
                   num_sections: int,
                   shuffle: bool) -> Iterable[Tuple[Tuple[torch.Tensor, ...], torch.Tensor]]:
-    split_x = [torch.chunk(x_section, num_sections) for x_section in x]
+    split_x = [torch.chunk(x_section, num_sections) for x_section in x if x_section is not None]
     split_y = torch.chunk(y, num_sections)
     return_arrays = list(zip(*split_x, split_y))
 

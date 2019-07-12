@@ -33,17 +33,31 @@ class TestBaseIter:
             f'Got the same file in both train and val set!'
         assert len(train_paths) + len(val_paths) == 5, f'Not all files loaded!'
 
-    @pytest.mark.parametrize('normalize,to_tensor', [(True, True),
-                                                     (True, False),
-                                                     (False, True),
-                                                     (False, False)])
-    def test_ds_to_np(self, tmp_path, normalize, to_tensor):
+    @pytest.mark.parametrize(
+        'normalize,to_tensor,experiment',
+        [(True, True, 'one_month_forecast'),
+         (True, False, 'one_month_forecast'),
+         (False, True, 'one_month_forecast'),
+         (False, False, 'one_month_forecast'),
+         (True, True, 'nowcast'),
+         (True, False, 'nowcast'),
+         (False, True, 'nowcast'),
+         (False, False, 'nowcast')]
+    )
+    def test_ds_to_np(self, tmp_path, normalize, to_tensor, experiment):
 
         x, _, _ = _make_dataset(size=(5, 5))
         y = x.isel(time=[0])
 
-        x.to_netcdf(tmp_path / 'x.nc')
-        y.to_netcdf(tmp_path / 'y.nc')
+        if experiment == 'nowcast':
+            x_add, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='precip')
+            x = xr.merge([x, x_add])
+
+        data_dir = tmp_path / experiment
+        if not data_dir.exists():
+            data_dir.mkdir(parents=True, exist_ok=True)
+        x.to_netcdf(data_dir / 'x.nc')
+        y.to_netcdf(data_dir / 'y.nc')
 
         norm_dict = {}
         for var in x.data_vars:
@@ -61,11 +75,11 @@ class TestBaseIter:
                 self.data_files = []
                 self.normalizing_dict = norm_dict if normalize else None
                 self.to_tensor = None
-                self.experiment = 'one_month_forecast'
+                self.experiment = experiment
 
         base_iterator = _BaseIter(MockLoader())
 
-        arrays = base_iterator.ds_folder_to_np(tmp_path, return_latlons=True,
+        arrays = base_iterator.ds_folder_to_np(data_dir, return_latlons=True,
                                                to_tensor=to_tensor)
 
         x_train_data, y_np, latlons = (
@@ -80,6 +94,11 @@ class TestBaseIter:
             assert (
                 type(x_train_data.historical) == np.ndarray
             ) and (type(y_np) == np.ndarray)
+
+        if experiment == 'nowcast':
+            assert(
+                x_train_data.current is not None
+            )
 
         assert (
             x_train_data.historical.shape[0] == y_np.shape[0] == latlons.shape[0]), '' \
@@ -116,7 +135,7 @@ class TestBaseIter:
          (True, False, 'nowcast'),
          (False, True, 'nowcast'),
          (False, False, 'nowcast')]
-)
+    )
     def test_ds_to_np_nowcast(self, tmp_path, normalize, to_tensor, experiment):
 
         x_pred, _, _ = _make_dataset(size=(5, 5))
@@ -124,8 +143,12 @@ class TestBaseIter:
         x = xr.merge([x_pred, x_coeff])
         y = x_pred.isel(time=[0])
 
-        x.to_netcdf(tmp_path / experiment / 'x.nc')
-        y.to_netcdf(tmp_path / experiment / 'y.nc')
+        data_dir = (tmp_path / experiment)
+        if not data_dir.exists():
+            data_dir.mkdir(parents=True, exist_ok=True)
+
+        x.to_netcdf(data_dir / 'x.nc')
+        y.to_netcdf(data_dir / 'y.nc')
 
         norm_dict = {}
         for var in x.data_vars:
@@ -147,7 +170,7 @@ class TestBaseIter:
 
         base_iterator = _BaseIter(MockLoader())
 
-        arrays = base_iterator.ds_folder_to_np(tmp_path, return_latlons=True,
+        arrays = base_iterator.ds_folder_to_np(data_dir, return_latlons=True,
                                                to_tensor=to_tensor)
 
         x_train_data, y_np, latlons = (

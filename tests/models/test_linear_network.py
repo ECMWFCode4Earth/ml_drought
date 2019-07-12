@@ -2,6 +2,7 @@ import numpy as np
 import pickle
 import pytest
 import torch
+import xarray as xr
 
 from src.models import LinearNetwork
 from src.models.linear_network import LinearModel
@@ -46,19 +47,37 @@ class TestLinearNetwork:
         assert model_dict['input_size'] == input_size
         assert model_dict['include_pred_month'] == include_pred_month
 
-    @pytest.mark.parametrize('use_pred_months', [True, False])
-    def test_train(self, tmp_path, capsys, use_pred_months):
+    @pytest.mark.parametrize(
+        'use_pred_months,experiment',
+        [(True, 'one_month_forecast'),
+         (True, 'one_month_forecast'),
+         (False, 'nowcast'),
+         (False, 'nowcast')]
+    )
+    def test_train(self, tmp_path, capsys, use_pred_months, experiment):
+        # make the x, y data (5*5 latlons, 36 timesteps, 1 feature)
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        test_features = tmp_path / 'features/one_month_forecast/train/hello'
-        test_features.mkdir(parents=True)
+        test_features = tmp_path / f'features/{experiment}/train/hello'
+        test_features.mkdir(parents=True, exist_ok=True)
 
-        norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
-                             'std': np.ones(x.to_array().values.shape[:2])}
-                     }
+        # if nowcast we need another x feature
+        if experiment == 'nowcast':
+            x_add, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='precip')
+            x = xr.merge([x, x_add])
+
+            norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                                 'std': np.ones((1, x.to_array().values.shape[1]))},
+                         'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                                    'std': np.ones((1, x.to_array().values.shape[1]))}}
+        else:
+            norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
+                                 'std': np.ones(x.to_array().values.shape[:2])}
+                         }
+        # make the normalising dictionary
         with (
-            tmp_path / 'features/one_month_forecast/normalizing_dict.pkl'
+            tmp_path / f'features/{experiment}/normalizing_dict.pkl'
         ).open('wb') as f:
             pickle.dump(norm_dict, f)
 
@@ -69,7 +88,7 @@ class TestLinearNetwork:
         dropout = 0.25
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
-                              dropout=dropout, experiment='one_month_forecast',
+                              dropout=dropout, experiment=experiment,
                               include_pred_month=use_pred_months)
         model.train()
 
@@ -80,22 +99,39 @@ class TestLinearNetwork:
         assert type(model.model) == LinearModel, \
             f'Model attribute not a linear regression!'
 
-    @pytest.mark.parametrize('use_pred_months', [True, False])
-    def test_predict(self, tmp_path, use_pred_months):
+    @pytest.mark.parametrize(
+        'use_pred_months,experiment',
+        [(True, 'one_month_forecast'),
+         (True, 'one_month_forecast'),
+         (False, 'nowcast'),
+         (False, 'nowcast')]
+    )
+    def test_predict(self, tmp_path, use_pred_months, experiment):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        train_features = tmp_path / 'features/one_month_forecast/train/hello'
+        train_features = tmp_path / f'features/{experiment}/train/hello'
         train_features.mkdir(parents=True)
 
-        test_features = tmp_path / 'features/one_month_forecast/test/hello'
+        test_features = tmp_path / f'features/{experiment}/test/hello'
         test_features.mkdir(parents=True)
 
-        norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
-                             'std': np.ones(x.to_array().values.shape[:2])}
-                     }
+        # if nowcast we need another x feature
+        if experiment == 'nowcast':
+            x_add, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='precip')
+            x = xr.merge([x, x_add])
+
+            norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                                 'std': np.ones((1, x.to_array().values.shape[1]))},
+                         'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                                    'std': np.ones((1, x.to_array().values.shape[1]))}}
+        else:
+            norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
+                                 'std': np.ones(x.to_array().values.shape[:2])}
+                         }
+
         with (
-            tmp_path / 'features/one_month_forecast/normalizing_dict.pkl'
+            tmp_path / f'features/{experiment}/normalizing_dict.pkl'
         ).open('wb') as f:
             pickle.dump(norm_dict, f)
 
@@ -108,8 +144,10 @@ class TestLinearNetwork:
         layer_sizes = [10]
         dropout = 0.25
 
-        model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
+        model = LinearNetwork(data_folder=tmp_path,
+                              layer_sizes=layer_sizes,
                               dropout=dropout,
+                              experiment=experiment,
                               include_pred_month=use_pred_months)
         model.train()
         test_arrays_dict, pred_dict = model.predict()

@@ -161,8 +161,11 @@ class LinearNetwork(ModelBase):
                         return None
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
-        test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=self.batch_size,
-                                        shuffle_data=False, mode='test', to_tensor=True)
+        test_arrays_loader = DataLoader(
+            data_path=self.data_path, batch_file_size=self.batch_size,
+            shuffle_data=False, mode='test', to_tensor=True,
+            experiment=self.experiment
+        )
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
