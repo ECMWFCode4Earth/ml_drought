@@ -11,6 +11,8 @@ from .base import NNBase
 
 class RecurrentNetwork(NNBase):
 
+    model_name = 'rnn'
+
     def __init__(self, hidden_size: int,
                  dense_features: List[int],
                  rnn_dropout: float = 0.25,
