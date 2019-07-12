@@ -6,7 +6,7 @@ import torch
 from src.models import LinearNetwork
 from src.models.neural_networks.linear_network import LinearModel
 
-from ..utils import _make_dataset
+from tests.utils import _make_dataset
 
 
 class TestLinearNetwork:
