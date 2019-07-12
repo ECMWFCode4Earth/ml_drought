@@ -53,6 +53,7 @@ We have a **set of notebooks and scripts** that are very rough but represent the
 For updates follow [@tommylees112](https://twitter.com/tommylees112) on twitter or look out for our blog posts!
 
 - [Blog 1: Great News!](https://tommylees112.github.io/posts/2019/1/esowc_kick_off)
+- [Blog 2: The Pipeline](https://medium.com/@gabrieltseng/a-machine-learning-pipeline-for-climate-research-ebf83b2b349a)
 
 ## Pipeline <a name="pipeline"></a>
 The main entrypoint into the pipeline is [run.py](run.py). The configuration of the pipeline can be defined using a
