@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import pytest
 import xarray as xr
+import pandas as pd
 
 from src.models.data import DataLoader, _BaseIter, TrainData
 
@@ -50,7 +51,7 @@ class TestBaseIter:
         y = x.isel(time=[0])
 
         if experiment == 'nowcast':
-            x_add, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='precip')
+            x_add, _, _ = _make_dataset(size=(5, 5), variable_name='precip')
             x = xr.merge([x, x_add])
 
         data_dir = tmp_path / experiment
@@ -166,7 +167,7 @@ class TestBaseIter:
                 self.data_files = []
                 self.normalizing_dict = norm_dict if normalize else None
                 self.to_tensor = None
-                self.experiment = 'nowcast'
+                self.experiment = experiment
 
         base_iterator = _BaseIter(MockLoader())
 
@@ -180,6 +181,29 @@ class TestBaseIter:
         if not to_tensor:
             assert isinstance(y_np, np.ndarray)
 
+        if (not normalize) and (experiment == 'nowcast') and (not to_tensor):
+            assert (
+                x_train_data.historical.shape[0] == x_train_data.current.shape[0]
+            ), "The 0th dimension (latlons) should be equal in the " \
+                f"historical ({x_train_data.historical.shape[0]}) and " \
+                f"current ({x_train_data.current.shape[0]}) arrays."
+
+            expected = (
+                x.precip
+                .sel(time=y.time)
+                .stack(dims=['lat', 'lon'])
+                .values.T
+            )
+            got = x_train_data.current
+            assert expected.shape == got.shape, "should have stacked latlon" \
+                " vars as the first dimension in the current array."
+
+            assert all(expected == got), "" \
+                "Expected to find the target timesetep of `precip` values"\
+                "(the non-target variable for the target timestep: ." \
+                f"{pd.to_datetime(y.time.values).strftime('%Y-%m-%d')[0]})." \
+                f"Expected: {expected[:5]}. Got: {got[:5]}"
+
         for idx in range(latlons.shape[0]):
             lat, lon = latlons[idx, 0], latlons[idx, 1]
             for time in range(x_train_data.historical.shape[1]):
@@ -190,3 +214,6 @@ class TestBaseIter:
                         'Got different x values for time idx:'\
                         f'{time}, lat: {lat}, lon: {lon} Expected {target}, '\
                         f'got {x_train_data.historical[idx, time, 0]}'
+
+                if (not normalize) and (experiment == 'nowcast'):
+                    assert True
