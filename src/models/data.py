@@ -186,11 +186,19 @@ class _BaseIter:
     ) -> np.ndarray:
         # get the target variable
         target_var = [y for y in y.data_vars][0]
+        target_time = y.time
 
-        relevant_indices = [idx for idx, feat in enumerate(x.data_vars) if feat != target_var]
+        relevant_indices = [feat for feat in x.data_vars if feat != target_var]
         # (latlon, time, data_var)
-        current = x_np[:, -1, relevant_indices]
+        current = (
+            x[relevant_indices]   # all vars except target_var
+            .sel(time=target_time)  # select the target_time
+            .stack(dims=['lat','lon'])  # stack lat,lon so shape = (lat*lon, time, dims)
+            .to_array().values[0].T  # extract numpy array, transpose and drop first dim
+        )
 
+        assert len(current.shape) == 2, "Expected array: (lat*lon, time, dims)" \
+            f"Got:{current.shape}"
         return current
 
     def ds_folder_to_np(self,

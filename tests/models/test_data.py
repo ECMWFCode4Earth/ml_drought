@@ -117,8 +117,8 @@ class TestBaseIter:
 
             assert all(expected == got), "" \
                 "Expected to find the target timesetep of `precip` values"\
-                "(the non-target variable for the target timestep: ." \
-                f"{pd.to_datetime(y.time.values).strftime('%Y-%m-%d')[0]})." \
+                "(the non-target variable for the target timestep: " \
+                f"({pd.to_datetime(y.time.values).strftime('%Y-%m-%d')[0]})." \
                 f"Expected: {expected[:5]}. Got: {got[:5]}"
 
         for idx in range(latlons.shape[0]):
