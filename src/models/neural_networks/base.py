@@ -50,14 +50,15 @@ class NNBase(ModelBase):
     def train(self, num_epochs: int = 1,
               early_stopping: Optional[int] = None,
               batch_size: int = 256,
-              learning_rate: float = 1e-3) -> None:
+              learning_rate: float = 1e-3,
+              val_split: float = 0.1) -> None:
         print(f'Training {self.model_name}')
 
         if early_stopping is not None:
             len_mask = len(DataLoader._load_datasets(self.data_path, mode='train',
                                                      shuffle_data=False,
                                                      pred_months=self.pred_months))
-            train_mask, val_mask = train_val_mask(len_mask, 0.3)
+            train_mask, val_mask = train_val_mask(len_mask, val_split)
 
             train_dataloader = DataLoader(data_path=self.data_path,
                                           batch_file_size=self.batch_size,
