@@ -193,7 +193,7 @@ class _BaseIter:
         current = (
             x[relevant_indices]   # all vars except target_var
             .sel(time=target_time)  # select the target_time
-            .stack(dims=['lat','lon'])  # stack lat,lon so shape = (lat*lon, time, dims)
+            .stack(dims=['lat', 'lon'])  # stack lat,lon so shape = (lat*lon, time, dims)
             .to_array().values[0].T  # extract numpy array, transpose and drop first dim
         )
 
