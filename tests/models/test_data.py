@@ -131,3 +131,54 @@ class TestBaseIter:
                         'Got different x values for time idx:'\
                         f'{time}, lat: {lat}, lon: {lon} Expected {target}, '\
                         f'got {x_train_data.historical[idx, time, 0]}'
+
+    def test_ds_to_np_multi_vars(self, tmp_path):
+        normalize, to_tensor, experiment = True, False, 'nowcast'
+
+        x_pred, _, _ = _make_dataset(size=(5, 5))
+        x_coeff1, _, _ = _make_dataset(size=(5, 5), variable_name='precip')
+        x_coeff2, _, _ = _make_dataset(size=(5, 5), variable_name='soil_moisture')
+        x_coeff3, _, _ = _make_dataset(size=(5, 5), variable_name='temp')
+        x = xr.merge([x_pred, x_coeff1, x_coeff2, x_coeff3])
+        y = x_pred.isel(time=[0])
+
+        data_dir = (tmp_path / experiment)
+        if not data_dir.exists():
+            data_dir.mkdir(parents=True, exist_ok=True)
+
+        x.to_netcdf(data_dir / 'x.nc')
+        y.to_netcdf(data_dir / 'y.nc')
+
+        norm_dict = {}
+        for var in x.data_vars:
+            norm_dict[var] = {
+                'mean': x[var].mean(dim=['lat', 'lon'], skipna=True).values,
+                'std': x[var].std(dim=['lat', 'lon'], skipna=True).values
+            }
+
+        class MockLoader:
+            def __init__(self):
+                self.batch_file_size = None
+                self.mode = None
+                self.shuffle = None
+                self.clear_nans = None
+                self.data_files = []
+                self.normalizing_dict = norm_dict if normalize else None
+                self.to_tensor = None
+                self.experiment = experiment
+
+        base_iterator = _BaseIter(MockLoader())
+
+        arrays = base_iterator.ds_folder_to_np(data_dir, return_latlons=True,
+                                               to_tensor=to_tensor)
+
+        x_train_data, y_np, latlons = (
+            arrays.x, arrays.y, arrays.latlons
+        )
+        assert x_train_data.historical.shape[-1] == 4, "There should be" \
+            "4 historical variables (the final dimension):" \
+            f"{x_train_data.historical.shape}"
+
+        assert x_train_data.current.shape == (25, 3), "Expecting multiple vars" \
+            "in the current timestep"
+        assert False

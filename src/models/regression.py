@@ -72,7 +72,7 @@ class LinearRegression(ModelBase):
 
                     # one-hot encoded pred_months
                     if self.include_pred_month:
-                        pred_months = batch_x[1].astype(int)
+                        pred_months = batch_x[1]  # .astype(int)
                         # one hot encoding, should be num_classes + 1, but
                         # for us its + 2, since 0 is not a class either
                         if len(batch_x[1].shape) == 1:
