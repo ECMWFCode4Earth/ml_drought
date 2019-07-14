@@ -167,9 +167,13 @@ class _BaseIter:
         self.normalizing_dict = cast(Dict[str, Dict[str, np.ndarray]], self.normalizing_dict)
 
         mean, std = [], []
+        normalizing_dict_keys = self.normalizing_dict.keys()
         for var in data_vars:
-            mean.append(self.normalizing_dict[var]['mean'])
-            std.append(self.normalizing_dict[var]['std'])
+            for norm_var in normalizing_dict_keys:
+                if var.endswith(norm_var):
+                    mean.append(self.normalizing_dict[norm_var]['mean'])
+                    std.append(self.normalizing_dict[norm_var]['std'])
+                    continue
 
         self.normalizing_array = cast(Dict[str, np.ndarray], {
             # swapaxes so that its [timesteps, features], not [features, timesteps]

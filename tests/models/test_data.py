@@ -72,7 +72,7 @@ class TestBaseIter:
                 self.data_files = []
                 self.normalizing_dict = norm_dict if normalize else None
                 self.to_tensor = None
-                self.surrounding_pixels = None
+                self.surrounding_pixels = 1
 
         base_iterator = _BaseIter(MockLoader())
 
