@@ -52,7 +52,8 @@ class LinearNetwork(ModelBase):
             'layer_sizes': self.layer_sizes,
             'dropout': self.dropout,
             'input_size': self.input_size,
-            'include_pred_month': self.include_pred_month
+            'include_pred_month': self.include_pred_month,
+            'surrounding_pixels': self.surrounding_pixels
         }
 
         torch.save(model_dict, self.model_dir / 'model.pkl')
