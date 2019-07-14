@@ -174,12 +174,15 @@ class _BaseIter:
                         folder: Path,
                         clear_nans: bool = True,
                         return_latlons: bool = False,
-                        to_tensor: bool = False
+                        to_tensor: bool = False,
+                        surrounding_pixels: Optional[int] = None,
                         ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / 'x.nc'), xr.open_dataset(folder / 'y.nc')
         assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable! ' \
             f'Got {len(list(y.data_vars))}'
+        if surrounding_pixels is not None:
+            x = self._add_surrounding(x, surrounding_pixels)
         x_np, y_np = x.to_array().values, y.to_array().values
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
@@ -233,6 +236,18 @@ class _BaseIter:
         x_data = TrainData(historical=x_np, pred_months=x_months)
         return ModelArrays(x=x_data, y=y_np, x_vars=list(x.data_vars),
                            y_var=list(y.data_vars)[0])
+
+    @staticmethod
+    def _add_surrounding(x: xr.Dataset, surrounding_pixels: int) -> xr.Dataset:
+
+        lat_shifts = lon_shifts = range(-surrounding_pixels, surrounding_pixels + 1)
+        for var in x.data_vars:
+            for lat_shift in lat_shifts:
+                for lon_shift in lon_shifts:
+                    if lat_shift == lon_shift == 0: continue
+                    shifted_varname = f'lat_{lat_shift}_lon_{lon_shift}_{var}'
+                    x[shifted_varname] = x[var].shift(lat=lat_shift, lon=lon_shift)
+        return x
 
 
 class _TrainIter(_BaseIter):
