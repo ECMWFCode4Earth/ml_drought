@@ -74,13 +74,18 @@ class DataLoader:
         The months the model should predict. If None, all months are predicted
     to_tensor: bool = False
         Whether to turn the np.ndarrays into torch.Tensors
+    surrounding_pixels: Optional[int] = None
+        How many surrounding pixels to add to the input data. e.g. if the input is 1, then in
+        addition to the pixels on the prediction point, the neighbouring (spatial) pixels will
+        be included too, up to a distance of one pixel away
     """
     def __init__(self, data_path: Path = Path('data'), batch_file_size: int = 1,
                  mode: str = 'train', shuffle_data: bool = True,
                  clear_nans: bool = True, normalize: bool = True,
                  mask: Optional[List[bool]] = None,
                  pred_months: Optional[List[int]] = None,
-                 to_tensor: bool = False) -> None:
+                 to_tensor: bool = False,
+                 surrounding_pixels: Optional[int] = None) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
@@ -94,6 +99,7 @@ class DataLoader:
             with (data_path / 'features/normalizing_dict.pkl').open('rb') as f:
                 self.normalizing_dict = pickle.load(f)
 
+        self.surrounding_pixels = surrounding_pixels
         self.to_tensor = to_tensor
 
     def __iter__(self):
@@ -140,6 +146,7 @@ class _BaseIter:
         self.batch_file_size = loader.batch_file_size
         self.shuffle = loader.shuffle
         self.clear_nans = loader.clear_nans
+        self.surrounding_pixels = loader.surrounding_pixels
         self.to_tensor = loader.to_tensor
 
         if self.shuffle:
@@ -174,15 +181,14 @@ class _BaseIter:
                         folder: Path,
                         clear_nans: bool = True,
                         return_latlons: bool = False,
-                        to_tensor: bool = False,
-                        surrounding_pixels: Optional[int] = None,
+                        to_tensor: bool = False
                         ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / 'x.nc'), xr.open_dataset(folder / 'y.nc')
         assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable! ' \
             f'Got {len(list(y.data_vars))}'
-        if surrounding_pixels is not None:
-            x = self._add_surrounding(x, surrounding_pixels)
+        if self.surrounding_pixels is not None:
+            x = self._add_surrounding(x, self.surrounding_pixels)
         x_np, y_np = x.to_array().values, y.to_array().values
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
