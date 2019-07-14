@@ -27,12 +27,14 @@ class ModelBase:
     def __init__(self, data_folder: Path = Path('data'),
                  batch_size: int = 1,
                  pred_months: Optional[List[int]] = None,
-                 include_pred_month: bool = True) -> None:
+                 include_pred_month: bool = True,
+                 surrounding_pixels: Optional[int] = None) -> None:
 
         self.batch_size = batch_size
         self.include_pred_month = include_pred_month
         self.data_path = data_folder
         self.pred_months = pred_months
+        self.surrounding_pixels = surrounding_pixels
 
         self.models_dir = data_folder / 'models'
         if not self.models_dir.exists():
