@@ -50,9 +50,9 @@ class TestLinearNetwork:
     @pytest.mark.parametrize(
         'use_pred_months,experiment',
         [(True, 'one_month_forecast'),
-         (True, 'one_month_forecast'),
+         (False, 'one_month_forecast'),
          (False, 'nowcast'),
-         (False, 'nowcast')]
+         (True, 'nowcast')]
     )
     def test_train(self, tmp_path, capsys, use_pred_months, experiment):
         # make the x, y data (5*5 latlons, 36 timesteps, 1 feature)
@@ -100,18 +100,16 @@ class TestLinearNetwork:
         n_input_features = [
             p for p in model.model.dense_layers.parameters()
         ][0].shape[-1]
-        # n_input_features = [
-        #     m for m in self.model.dense_layers.modules()
-        # ][0].state_dict()['0.linear.weight'].shape
 
+        # Expect to have 12 more features if use_pred_months
         if experiment == 'nowcast':
-            expected = 105 if use_pred_months else 117
+            n_expected = 119 if use_pred_months else 107
         else:
-            expected = 48 if use_pred_months else 117
+            n_expected = 48 if use_pred_months else 36
 
-            assert n_input_features == expected, "Expected the number" \
-                f"of input features to be: {expected}" \
-                f"Got: {n_input_features}"
+        assert n_input_features == n_expected, "Expected the number" \
+            f"of input features to be: {n_expected}" \
+            f"Got: {n_input_features}"
 
         captured = capsys.readouterr()
         expected_stdout = 'Epoch 1, train RMSE: 0.'

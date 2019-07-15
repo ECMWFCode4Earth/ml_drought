@@ -65,14 +65,12 @@ class LinearNetwork(ModelBase):
             background_samples = self._get_background(sample_size=100)
             self.explainer: shap.DeepExplainer = shap.DeepExplainer(
                 self.model, background_samples)
+
         if self.include_pred_month:
             assert type(x) == list, \
                 'include_pred_month is True, so this model expects a list of tensors as input'
             if len(x[1].shape) == 1:
                 x[1] = self._one_hot_months(x[1])
-        # if self.experiment == 'nowcast':
-        #     # @Gabi need help with getting the explainer to work for the
-        #     assert False
 
         return self.explainer.shap_values(x)
 
@@ -110,17 +108,22 @@ class LinearNetwork(ModelBase):
                                           to_tensor=True)
 
         # initialize the model
-        # @GABI is this where to change for the nowcaster
         if self.input_size is None:
             x_ref, _ = next(iter(train_dataloader))
             self.input_size = x_ref[0].contiguous().view(
                 x_ref[0].shape[0], -1
             ).shape[1]
 
+        current = None
+        if self.experiment == 'nowcast':
+            current = x_ref[2]
+
         self.model: LinearModel = LinearModel(input_size=self.input_size,
                                               layer_sizes=self.layer_sizes,
                                               dropout=self.dropout,
-                                              include_pred_month=self.include_pred_month)
+                                              include_pred_month=self.include_pred_month,
+                                              experiment=self.experiment,
+                                              current=current)
 
         optimizer = torch.optim.Adam([pam for pam in self.model.parameters()],
                                      lr=learning_rate)
@@ -132,12 +135,11 @@ class LinearNetwork(ModelBase):
                 for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
                     optimizer.zero_grad()
                     if self.experiment == 'nowcast':
-                        current = x_batch[2].unsqueeze(1)
-                        x_data = torch.cat([x_batch[0], current])
-                        assert False
+                        current = x_batch[2]
                         pred = self.model(
-                            x_data,
+                            x_batch[0],
                             self._one_hot_months(x_batch[1]),
+                            current
                         )
                     else:
                         pred = self.model(
@@ -193,7 +195,8 @@ class LinearNetwork(ModelBase):
             for dict in test_arrays_loader:
                 for key, val in dict.items():
                     preds = self.model(
-                        val.x.historical, self._one_hot_months(val.x.pred_months)
+                        val.x.historical, self._one_hot_months(val.x.pred_months),
+                        val.x.current
                     )
                     preds_dict[key] = preds.numpy()
                     test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons}
@@ -235,22 +238,36 @@ class LinearNetwork(ModelBase):
 class LinearModel(nn.Module):
 
     def __init__(
-        self, input_size, layer_sizes, dropout, include_pred_month
+        self, input_size, layer_sizes, dropout, include_pred_month,
+        current=None, experiment='one_month_forecast'
     ):
         super().__init__()
 
         self.include_pred_month = include_pred_month
-        # @GABI do we need to put the current data into the input_sizes too
+        self.experiment = experiment
+
+        # change the size of inputs if include_pred_month
         if self.include_pred_month:
             input_size += 12
+
+        # change the size of inputs if experiment == `nowcast`
+        if self.experiment == 'nowcast':
+            assert current is not None, "`current` argument must not be none" \
+                "when the experiment is `nowcast` because we need the " \
+                "target timestep non-target feature data"
+            input_size += current.shape[-1]
+
+        # first layer is the input layer
         layer_sizes.insert(0, input_size)
 
+        # dense layers from 2nd (1) -> penultimate (-2)
         self.dense_layers = nn.ModuleList([
             LinearBlock(in_features=layer_sizes[i - 1],
                         out_features=layer_sizes[i], dropout=dropout) for
             i in range(1, len(layer_sizes))
         ])
 
+        # final layer is producing a scalar
         self.final_dense = nn.Linear(in_features=layer_sizes[-1], out_features=1)
 
         self.init_weights()
@@ -264,16 +281,27 @@ class LinearModel(nn.Module):
         # see: Initializing the biases
         nn.init.constant_(self.final_dense.bias.data, 0)
 
-    def forward(self, x, pred_month=None):
-        # flatten
+    def forward(self, x, pred_month=None, current=None):
+        # flatten the final 2 dimensions (time / feature)
         x = x.contiguous().view(x.shape[0], -1)
-        # @GABI do we need to put the current data in here too?
+
+        # concatenate the one_hot_month matrix onto X
         if self.include_pred_month:
+            # flatten the array
             pred_month = pred_month.contiguous().view(x.shape[0], -1)
             x = torch.cat((x, pred_month), dim=-1)
+
+        # concatenate the non-target variables onto X
+        if self.experiment == 'nowcast':
+            assert current is not None
+            current = current.contiguous().view(x.shape[0], -1)
+            x = torch.cat((x, current), dim=-1)
+
+        # pass the inputs through the layers
         for layer in self.dense_layers:
             x = layer(x)
 
+        # pass through the final layer for a scalar prediction
         return self.final_dense(x)
 
 
