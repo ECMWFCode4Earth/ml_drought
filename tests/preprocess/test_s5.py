@@ -6,11 +6,13 @@ import cfgrib
 
 from src.preprocess.seas5.ouce_s5 import OuceS5Data
 from src.preprocess import S5Preprocessor
+from src.utils import get_kenya
+from ..utils import _make_dataset
 
 
 def make_dummy_seas5_data(date_str: str) -> xr.Dataset:
     initialisation_date = pd.date_range(start=date_str, periods=1, freq='M')
-    number = [i for i in range(0, 51)]  # corresponds to ensemble number
+    number = [i for i in range(0, 26)]  # corresponds to ensemble number (51)
     lat = np.linspace(-5.175003, -5.202, 36)
     lon = np.linspace(33.5, 42.25, 45)
     forecast_horizon = np.array(
@@ -25,8 +27,8 @@ def make_dummy_seas5_data(date_str: str) -> xr.Dataset:
         dtype='timedelta64[ns]'
     )
     valid_time = initialisation_date[:, np.newaxis] + forecast_horizon
-    precip = np.random.normal(
-        0, 1, size=(
+    precip = np.ones(
+        shape=(
             len(number), len(initialisation_date),
             len(forecast_horizon), len(lat), len(lon)
         )
@@ -49,6 +51,39 @@ def make_dummy_seas5_data(date_str: str) -> xr.Dataset:
     return ds
 
 
+def make_dummy_ouce_s5_data(tmp_path: Path) -> Path:
+    number = [i for i in range(0, 2)]  # corresponds to ensemble number (26)
+    latitude = np.linspace(0, 180, 180)
+    longitude = np.linspace(0, 360, 360)
+    time = pd.date_range('2008-02-01', periods=10, freq='6H')
+
+    t2m = np.ones(
+        shape=(
+            len(time), len(number),
+            len(latitude), len(longitude)
+        )
+    )
+    coords = {
+        'longitude': longitude, 'latitude': latitude,
+        'time': time, 'number': number
+    }
+    dims = ['time', 'number', 'latitude', 'longitude']
+    ds = xr.Dataset(
+        {'t2m': (dims, t2m)},
+        coords=coords
+    )
+
+    out_dir = Path('seas5/1.0x1.0/6-hourly')
+    out_dir = out_dir / '2m_temperature/nc'
+    if not out_dir.exists():
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+    path = out_dir / 'seas5_6-hourly_2m_temperature_200802.nc'
+    ds.to_netcdf(path)
+
+    return path
+
+
 def save_dummy_seas5(tmp_path,
                      date_str,
                      to_grib=False,
@@ -60,13 +95,16 @@ def save_dummy_seas5(tmp_path,
     """
     year = pd.to_datetime(date_str).year
     month = pd.to_datetime(date_str).month
-    out_dir = tmp_path / 'data' / 'raw' / dataset / variable / year
+    out_dir = tmp_path / 'data' / 'raw' / 's5' / dataset / variable / str(year)
     if not out_dir.exists():
         out_dir.mkdir(exist_ok=True, parents=True)
 
     ds = make_dummy_seas5_data(date_str)
     if to_grib:
-        cfgrib.to_grib(ds, out_dir / f'{month:02}.grib')
+        cfgrib.to_grib(
+            ds, out_dir / f'{month:02}.grib',
+            grib_keys={'edition': 2, 'gridType': 'regular_ll'}
+        )
     else:
         ds.to_netcdf(out_dir / f'{month:02}.nc')
 
@@ -81,4 +119,72 @@ class TestS5Preprocessor:
             data_dir.mkdir(exist_ok=True, parents=True)
 
         S5Preprocessor(data_dir)
-        OuceS5Data()
+        assert (data_dir / 'interim' / 's5_preprocessed').exists()
+        assert (data_dir / 'interim' / 's5_interim').exists()
+
+    def test_preprocess_ouce_data(self, tmp_path):
+        ouce_data_path = make_dummy_ouce_s5_data(tmp_path)
+        o = OuceS5Data()
+        ds = o.read_ouce_s5_data(ouce_data_path, infer=True)
+        assert 'forecast_horizon' in [v for v in ds.coords]
+        assert 'initialisation_date' in [v for v in ds.coords]
+        assert len(ds.time.values.shape), "Expect a 2D `time` coordinate"
+
+    def test_preprocess(self, tmp_path):
+
+        _ = save_dummy_seas5(tmp_path,
+                             '2018-01-01',
+                             to_grib=True,
+                             dataset='seasonal-monthly-pressure-levels',
+                             variable='temperature')
+        out_dir = tmp_path / 'data' / 'raw' / 's5' / 'seasonal-monthly-pressure-levels'
+        out_dir = out_dir / 'temperature' / '2018'
+        assert (out_dir / '01.grib').exists()
+        # assert False
+        # xr.open_dataset(out_dir / '01.grib', engine='cfgrib')
+
+        ouce_dir = make_dummy_ouce_s5_data(tmp_path)
+        kenya = get_kenya()
+        regrid_dataset, _, _ = _make_dataset(size=(20, 20),
+                                             latmin=kenya.latmin, latmax=kenya.latmax,
+                                             lonmin=kenya.lonmin, lonmax=kenya.lonmax)
+
+        regrid_path = tmp_path / 'regridder.nc'
+        regrid_dataset.to_netcdf(regrid_path)
+
+        processor = S5Preprocessor(tmp_path / 'data', ouce_server=True)
+
+        processor.preprocess(subset_str='kenya', regrid=regrid_path, ouce_dir=ouce_dir, variable='2m_temperature')
+
+        assert False
+
+        fpaths = processor.get_filepaths(grib=False, target_folder=processor.raw_folder)
+        assert fpaths[0].name == '01.nc', f'unable to find the created dataset' \
+            'at data/raw/s5/seasonal-monthly-pressure-levels'
+
+        # expected_out_path = tmp_path / 'interim/reanalysis-era5-single-levels-monthly-' \
+        #                                'means_preprocessed/reanalysis-era5-single-levels-' \
+        #                                'monthly-means_kenya.nc'
+        # assert expected_out_path.exists(), \
+        #     f'Expected processed file to be saved to {expected_out_path}'
+        #
+        # # check the subsetting happened correctly
+        # out_data = xr.open_dataset(expected_out_path)
+        # expected_dims = ['lat', 'lon', 'time']
+        # assert len(list(out_data.dims)) == len(expected_dims)
+        # for dim in expected_dims:
+        #     assert dim in list(out_data.dims), \
+        #         f'Expected {dim} to be in the processed dataset dims'
+        #
+        # lons = out_data.lon.values
+        # assert (lons.min() >= kenya.lonmin) and (lons.max() <= kenya.lonmax), \
+        #     'Longitudes not correctly subset'
+        #
+        # lats = out_data.lat.values
+        # assert (lats.min() >= kenya.latmin) and (lats.max() <= kenya.latmax), \
+        #     'Latitudes not correctly subset'
+        #
+        # assert out_data.t2m.values.shape[1:] == (20, 20)
+        #
+        # assert not processor.interim.exists(), \
+        #     f'Interim era5 folder should have been deleted'

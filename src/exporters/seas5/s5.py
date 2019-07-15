@@ -54,6 +54,7 @@ class S5Exporter(CDSExporter):
         makes decisions for the user based on their preferences in the args
         `pressure_level` and `granularity`.
         - these are constant for one download
+        - Outfile: 'data' / 'raw' / 's5' / 'temperature' / '2018' / '01.nc'
         """
         super().__init__(data_folder)
 

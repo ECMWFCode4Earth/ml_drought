@@ -20,20 +20,23 @@ class S5Preprocessor(BasePreProcessor):
         self.ouce_server = ouce_server
         self.parallel = parallel
 
-    def get_filepaths(self, folder: str = 'raw') -> List[Path]:
-        """ because reading .grib files have to rewrite get_filepaths"""
-        if folder == 'raw':
+    def get_filepaths(self, target_folder: Path,
+                      grib: bool = True) -> List[Path]:
+        """ because reading .grib files have to rewrite get_filepaths """
+        if target_folder.name == 'raw':
             target_folder = self.raw_folder / self.dataset
-        else:
-            target_folder = self.interim
-        outfiles = list(target_folder.glob('**/*.grib'))
+
+        pattern = '*/*/*/*.grib' if grib else '*/*/*/*.nc'
+        # get all files in */*/*
+        outfiles = [f for f in target_folder.glob(pattern)]
+
         outfiles.sort()
         return outfiles
 
     @staticmethod
     def read_grib_file(filepath: Path) -> xr.Dataset:
         assert filepath.suffix in ['.grib', '.grb'], f"This method is for \
-        `grib` files. Not for {filepath.as_posix()}"
+        `grib` files. Not for {filepath.name}"
         ds = xr.open_dataset(filepath, engine='cfgrib')
 
         ds = ds.rename({
@@ -159,7 +162,8 @@ class S5Preprocessor(BasePreProcessor):
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
                    variable: Optional[str] = None,
-                   cleanup: bool = False) -> None:
+                   cleanup: bool = False,
+                   ouce_dir: Path = Path('/lustre/soge1/data/incoming/seas5/1.0x1.0/6-hourly')) -> None:
         """Preprocesses the S5 data for all variables in the 'ds' file at once
 
         Argument:
@@ -182,15 +186,19 @@ class S5Preprocessor(BasePreProcessor):
 
         cleanup: bool = False
             Whether to cleanup the self.interim directory
+
+        ouce_dir: Path = Path('/lustre/soge1/data/incoming/seas5/1.0x1.0/6-hourly')
+            the parent directory to look for nc data on the ouce_server
+            NOTE: we recommend leaving this alone. Mostly for testing purposes
         """
         if self.ouce_server:
             # data already in netcdf but needs other preprocessing
             assert variable is not None, f"Must pass a variable argument when\
             preprocessing the S5 data on the OUCE servers"
             os = OuceS5Data()
-            filepaths = os.get_ouce_filepaths(variable=variable)
+            filepaths = os.get_ouce_filepaths(variable=variable, parent_dir=ouce_dir)
         else:
-            filepaths = self.get_filepaths()
+            filepaths = self.get_filepaths(target_folder=self.raw_folder)
 
         if not self.parallel:
             out_paths = []
@@ -201,6 +209,7 @@ class S5Preprocessor(BasePreProcessor):
                 )
                 out_paths.append(output_path)
                 variables.append(variable)
+
         else:
             # Not implemented parallel yet
             pool = multiprocessing.Pool(processes=100)

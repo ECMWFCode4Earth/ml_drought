@@ -14,7 +14,8 @@ class TestVHIPreprocessor:
         # build dummy .nc object
         height = list(range(0, 3616))
         width = list(range(0, 10000))
-        vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
+        # vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
+        vci = tci = vhi = np.ones(shape=(3616, 10000))
 
         ds = xr.Dataset(
             {'VCI': (['HEIGHT', 'WIDTH'], vci),
@@ -73,7 +74,8 @@ class TestVHIPreprocessor:
         # build dummy .nc object
         height = list(range(0, 3616))
         width = list(range(0, 10000))
-        vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
+        # vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
+        vci = tci = vhi = np.ones(shape=(3616, 10000))
 
         raw_ds = xr.Dataset(
             {'VCI': (['HEIGHT', 'WIDTH'], vci),
@@ -126,7 +128,8 @@ class TestVHIPreprocessor:
         # build dummy .nc object
         height = list(range(0, 3616))
         width = list(range(0, 10000))
-        vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
+        # vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
+        vci = tci = vhi = np.ones(shape=(3616, 10000))
 
         ds = xr.Dataset(
             {'VCI': (['HEIGHT', 'WIDTH'], vci),
@@ -182,7 +185,8 @@ class TestVHIPreprocessor:
         # build dummy .nc object
         height = list(range(0, 3616))
         width = list(range(0, 10000))
-        vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
+        # vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
+        vci = tci = vhi = np.ones(shape=(3616, 10000))
 
         raw_ds = xr.Dataset(
             {'VCI': (['HEIGHT', 'WIDTH'], vci),
