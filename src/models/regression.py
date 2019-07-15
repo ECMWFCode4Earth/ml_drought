@@ -83,14 +83,16 @@ class LinearRegression(ModelBase):
                             (x_in, pred_months_onehot), axis=-1
                         )
 
+                    # target timestep (non-target variables)
                     if self.experiment == 'nowcast':
                         current_time_data = batch_x[2]
                         x_in = np.concatenate(
-                            (x_in, current_time_data), axis=1
+                            (x_in, current_time_data), axis=-1
                         )
 
+                    # fit the model
                     self.model.partial_fit(x_in, batch_y.ravel())
-
+                    # evaluate the fit
                     train_pred_y = self.model.predict(x_in)
                     train_rmse.append(
                         np.sqrt(mean_squared_error(batch_y, train_pred_y))
@@ -109,6 +111,13 @@ class LinearRegression(ModelBase):
                         x_in = np.concatenate(
                             (x_in, pred_months_onehot), axis=-1
                         )
+
+                    if self.experiment == 'nowcast':
+                        current_time_data = batch_x[2]
+                        x_in = np.concatenate(
+                            (x_in, current_time_data), axis=-1
+                        )
+
                     val_pred_y = self.model.predict(x_in)
                     val_rmse.append(np.sqrt(mean_squared_error(y, val_pred_y)))
 
@@ -189,6 +198,12 @@ class LinearRegression(ModelBase):
                     # for us its + 2, since 0 is not a class either
                     pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
                     x = np.concatenate((x, pred_months_onehot), axis=-1)
+
+                if self.experiment == 'nowcast':
+                    # target_month data for non-target variables
+                    current_data = val.x.current
+                    x = np.concatenate((x, current_data), axis=-1)
+
                 preds = self.model.predict(x)
                 preds_dict[key] = preds
                 test_arrays_dict[key] = {'y': val.y, 'latlons': val.latlons}
