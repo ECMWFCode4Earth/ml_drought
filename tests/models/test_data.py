@@ -136,8 +136,9 @@ class TestBaseIter:
                         f'{time}, lat: {lat}, lon: {lon} Expected {target}, '\
                         f'got {x_train_data.historical[idx, time, 0]}'
 
-    def test_ds_to_np_multi_vars(self, tmp_path):
-        normalize, to_tensor, experiment = True, False, 'nowcast'
+    @pytest.mark.parametrize('normalize', [True, False])
+    def test_ds_to_np_multi_vars(self, tmp_path, normalize):
+        to_tensor, experiment = False, 'nowcast'
 
         x_pred, _, _ = _make_dataset(size=(5, 5))
         x_coeff1, _, _ = _make_dataset(size=(5, 5), variable_name='precip')
@@ -189,3 +190,7 @@ class TestBaseIter:
 
         assert latlons.shape == (25, 2), "The shape of latlons should not change"\
             f"Got: {latlons.shape}. Expecting: (25, 2)"
+
+        if not normalize:
+            x_train_data.current
+            assert False
