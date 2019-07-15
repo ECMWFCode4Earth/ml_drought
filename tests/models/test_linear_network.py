@@ -64,13 +64,16 @@ class TestLinearNetwork:
 
         # if nowcast we need another x feature
         if experiment == 'nowcast':
-            x_add, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='precip')
-            x = xr.merge([x, x_add])
+            x_add1, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='precip')
+            x_add2, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='temp')
+            x = xr.merge([x, x_add1, x_add2])
 
             norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
                                  'std': np.ones((1, x.to_array().values.shape[1]))},
                          'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                    'std': np.ones((1, x.to_array().values.shape[1]))}}
+                                    'std': np.ones((1, x.to_array().values.shape[1]))},
+                         'temp': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                                  'std': np.ones((1, x.to_array().values.shape[1]))}}
         else:
             norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
                                  'std': np.ones(x.to_array().values.shape[:2])}
@@ -90,7 +93,25 @@ class TestLinearNetwork:
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
                               dropout=dropout, experiment=experiment,
                               include_pred_month=use_pred_months)
+
         model.train()
+
+        # check the number of input features is properly initialised
+        n_input_features = [
+            p for p in model.model.dense_layers.parameters()
+        ][0].shape[-1]
+        # n_input_features = [
+        #     m for m in self.model.dense_layers.modules()
+        # ][0].state_dict()['0.linear.weight'].shape
+
+        if experiment == 'nowcast':
+            expected = 105 if use_pred_months else 117
+        else:
+            expected = 48 if use_pred_months else 117
+
+            assert n_input_features == expected, "Expected the number" \
+                f"of input features to be: {expected}" \
+                f"Got: {n_input_features}"
 
         captured = capsys.readouterr()
         expected_stdout = 'Epoch 1, train RMSE: 0.'
@@ -118,13 +139,16 @@ class TestLinearNetwork:
 
         # if nowcast we need another x feature
         if experiment == 'nowcast':
-            x_add, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='precip')
-            x = xr.merge([x, x_add])
+            x_add1, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='precip')
+            x_add2, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='temp')
+            x = xr.merge([x, x_add1, x_add2])
 
             norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
                                  'std': np.ones((1, x.to_array().values.shape[1]))},
                          'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                    'std': np.ones((1, x.to_array().values.shape[1]))}}
+                                    'std': np.ones((1, x.to_array().values.shape[1]))},
+                         'temp': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                                  'std': np.ones((1, x.to_array().values.shape[1]))}}
         else:
             norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
                                  'std': np.ones(x.to_array().values.shape[:2])}

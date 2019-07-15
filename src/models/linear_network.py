@@ -70,6 +70,9 @@ class LinearNetwork(ModelBase):
                 'include_pred_month is True, so this model expects a list of tensors as input'
             if len(x[1].shape) == 1:
                 x[1] = self._one_hot_months(x[1])
+        # if self.experiment == 'nowcast':
+        #     # @Gabi need help with getting the explainer to work for the
+        #     assert False
 
         return self.explainer.shap_values(x)
 
@@ -107,6 +110,7 @@ class LinearNetwork(ModelBase):
                                           to_tensor=True)
 
         # initialize the model
+        # @GABI is this where to change for the nowcaster
         if self.input_size is None:
             x_ref, _ = next(iter(train_dataloader))
             self.input_size = x_ref[0].contiguous().view(
@@ -127,7 +131,19 @@ class LinearNetwork(ModelBase):
             for x, y in train_dataloader:
                 for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
                     optimizer.zero_grad()
-                    pred = self.model(x_batch[0], self._one_hot_months(x_batch[1]))
+                    if self.experiment == 'nowcast':
+                        current = x_batch[2].unsqueeze(1)
+                        x_data = torch.cat([x_batch[0], current])
+                        assert False
+                        pred = self.model(
+                            x_data,
+                            self._one_hot_months(x_batch[1]),
+                        )
+                    else:
+                        pred = self.model(
+                            x_batch[0],
+                            self._one_hot_months(x_batch[1])
+                        )
                     loss = F.smooth_l1_loss(pred, y_batch)
                     loss.backward()
                     optimizer.step()
@@ -176,7 +192,9 @@ class LinearNetwork(ModelBase):
         with torch.no_grad():
             for dict in test_arrays_loader:
                 for key, val in dict.items():
-                    preds = self.model(val.x.historical, self._one_hot_months(val.x.pred_months))
+                    preds = self.model(
+                        val.x.historical, self._one_hot_months(val.x.pred_months)
+                    )
                     preds_dict[key] = preds.numpy()
                     test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons}
 
@@ -216,10 +234,13 @@ class LinearNetwork(ModelBase):
 
 class LinearModel(nn.Module):
 
-    def __init__(self, input_size, layer_sizes, dropout, include_pred_month):
+    def __init__(
+        self, input_size, layer_sizes, dropout, include_pred_month
+    ):
         super().__init__()
 
         self.include_pred_month = include_pred_month
+        # @GABI do we need to put the current data into the input_sizes too
         if self.include_pred_month:
             input_size += 12
         layer_sizes.insert(0, input_size)
@@ -246,8 +267,8 @@ class LinearModel(nn.Module):
     def forward(self, x, pred_month=None):
         # flatten
         x = x.contiguous().view(x.shape[0], -1)
+        # @GABI do we need to put the current data in here too?
         if self.include_pred_month:
-            # @gabrieltseng HELP!
             pred_month = pred_month.contiguous().view(x.shape[0], -1)
             x = torch.cat((x, pred_month), dim=-1)
         for layer in self.dense_layers:
@@ -264,8 +285,8 @@ class LinearBlock(nn.Module):
     def __init__(self, in_features, out_features, dropout=0.25):
         super().__init__()
         self.linear = nn.Linear(in_features=in_features, out_features=out_features, bias=False)
-        self.relu = nn.LeakyReLU(negative_slope=0.1, inplace=True)
         self.batchnorm = nn.BatchNorm1d(num_features=out_features)
+        self.relu = nn.LeakyReLU(negative_slope=0.1, inplace=True)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
