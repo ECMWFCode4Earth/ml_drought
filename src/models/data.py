@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 import numpy as np
+import pandas as pd
 from random import shuffle
 from pathlib import Path
 import pickle
@@ -186,16 +187,24 @@ class _BaseIter:
     ) -> np.ndarray:
         # get the target variable
         target_var = [y for y in y.data_vars][0]
-        target_time = y.time
 
-        relevant_indices = [feat for feat in x.data_vars if feat != target_var]
+        # get the target time and target_time index
+        target_time = y.time
+        x_datetimes = [pd.to_datetime(time) for time in x.time.values]
+        y_datetime = pd.to_datetime(target_time.values[0])
+        time_ix = [
+            ix for ix, time in enumerate(x_datetimes)
+            if time == y_datetime
+        ][0]
+
+        # get the X features and X feature indices
+        relevant_indices = [
+            idx for idx, feat in enumerate(x.data_vars)
+            if feat != target_var
+        ]
+
         # (latlon, time, data_var)
-        current = (
-            x[relevant_indices]   # all vars except target_var
-            .sel(time=target_time)  # select the target_time
-            .stack(dims=['lat', 'lon'])  # stack lat,lon so shape = (lat*lon, time, dims)
-            .to_array().values[:, 0, :].T  # extract numpy array, transpose and drop dim
-        )
+        current = x_np[:, time_ix, relevant_indices]
 
         assert len(current.shape) == 2, "Expected array: (lat*lon, time, dims)" \
             f"Got:{current.shape}"
@@ -239,7 +248,6 @@ class _BaseIter:
 
         if self.experiment == 'nowcast':
             # if nowcast then we have a TrainData.current
-            # @GABI how do we know which variable is the target_var
             historical = x_np[:, :-1, :]  # all timesteps except the final
             current = self.get_current_array(  # only select NON-TARGET vars
                 x=x, y=y, x_np=x_np
@@ -317,7 +325,7 @@ class _BaseIter:
 class _TrainIter(_BaseIter):
 
     def __next__(self) -> Tuple[Tuple[Union[np.ndarray, torch.Tensor],
-                                      Union[np.ndarray, torch.Tensor]],
+                                      ...],
                                 Union[np.ndarray, torch.Tensor]]:
 
         if self.idx < self.max_idx:

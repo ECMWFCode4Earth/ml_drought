@@ -121,6 +121,10 @@ class TestBaseIter:
                 f"({pd.to_datetime(y.time.values).strftime('%Y-%m-%d')[0]})." \
                 f"Expected: {expected[:5]}. Got: {got[:5]}"
 
+        if normalize and (experiment == 'nowcast') and (not to_tensor):
+            assert x_train_data.current.max() < 6, f"The current data should be" \
+                f" normalized. Currently: {x_train_data.current.flatten()}"
+
         for idx in range(latlons.shape[0]):
             lat, lon = latlons[idx, 0], latlons[idx, 1]
             for time in range(x_train_data.historical.shape[1]):
@@ -172,7 +176,7 @@ class TestBaseIter:
         arrays = base_iterator.ds_folder_to_np(data_dir, return_latlons=True,
                                                to_tensor=to_tensor)
 
-        x_train_data, y_np, latlons = (
+        x_train_data, _, latlons = (
             arrays.x, arrays.y, arrays.latlons
         )
         assert x_train_data.historical.shape[-1] == 4, "There should be" \
@@ -180,5 +184,8 @@ class TestBaseIter:
             f"{x_train_data.historical.shape}"
 
         assert x_train_data.current.shape == (25, 3), "Expecting multiple vars" \
-            "in the current timestep"
-        assert False
+            "in the current timestep. Expect: (25, 3) "\
+            f"Got: {x_train_data.current.shape}"
+
+        assert latlons.shape == (25, 2), "The shape of latlons should not change"\
+            f"Got: {latlons.shape}. Expecting: (25, 2)"
