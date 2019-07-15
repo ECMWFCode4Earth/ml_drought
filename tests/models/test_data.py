@@ -192,5 +192,15 @@ class TestBaseIter:
             f"Got: {latlons.shape}. Expecting: (25, 2)"
 
         if not normalize:
-            x_train_data.current
-            assert False
+            # test that we are getting the right `current` data
+            relevant_features = ['precip', 'soil_moisture', 'temp']
+            target_time = y.time
+            expected = (
+                x[relevant_features]   # all vars except target_var
+                .sel(time=target_time)  # select the target_time
+                .stack(dims=['lat', 'lon'])  # stack lat,lon so shape = (lat*lon, time, dims)
+                .to_array().values[:, 0, :].T  # extract numpy array, transpose and drop dim
+            )
+
+            assert np.all(x_train_data.current == expected), f"Expected to " \
+                "find the target_time data for the non target variables"
