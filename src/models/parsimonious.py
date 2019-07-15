@@ -24,7 +24,8 @@ class Persistence(ModelBase):
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
 
         test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=self.batch_size,
-                                        shuffle_data=False, mode='test', normalize=False)
+                                        shuffle_data=False, mode='test', normalize=False,
+                                        pred_months=self.pred_months)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -36,7 +37,7 @@ class Persistence(ModelBase):
                     print('Target variable not in prediction data!')
                     raise e
 
-                preds_dict[key] = val.x[:, -1, [target_idx]]
+                preds_dict[key] = val.x.historical[:, -1, [target_idx]]
                 test_arrays_dict[key] = {'y': val.y, 'latlons': val.latlons}
 
         return test_arrays_dict, preds_dict

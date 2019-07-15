@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import pytest
 
 from sklearn import linear_model
 from src.models import LinearRegression
@@ -33,7 +34,8 @@ class TestLinearRegression:
         saved_model = np.load(tmp_path / 'models/linear_regression/model.npy')
         assert np.array_equal(model_array, saved_model), f'Different array saved!'
 
-    def test_train(self, tmp_path, capsys):
+    @pytest.mark.parametrize('use_pred_months', [True, False])
+    def test_train(self, tmp_path, capsys, use_pred_months):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -49,7 +51,7 @@ class TestLinearRegression:
         x.to_netcdf(test_features / 'x.nc')
         y.to_netcdf(test_features / 'y.nc')
 
-        model = LinearRegression(tmp_path)
+        model = LinearRegression(tmp_path, include_pred_month=use_pred_months)
         model.train()
 
         captured = capsys.readouterr()
@@ -75,12 +77,12 @@ class TestLinearRegression:
                     if self.idx < self.max_idx:
                         # batch_size = 10, timesteps = 2, num_features = 1
                         self.idx += 1
-                        return np.ones((10, 2, 1)), None
+                        return (np.ones((10, 2, 1)), np.ones((10, ), dtype=np.int8)), None
                     else:
                         raise StopIteration()
             return MockIterator()
 
-        def do_nothing(self, data_path, batch_file_size, shuffle_data, mode):
+        def do_nothing(self, data_path, batch_file_size, shuffle_data, mode, pred_months):
             pass
 
         monkeypatch.setattr(DataLoader, '__iter__', mockiter)
@@ -88,7 +90,9 @@ class TestLinearRegression:
 
         model = LinearRegression(tmp_path)
         calculated_mean = model._calculate_big_mean()
-        expected_mean = np.ones(2 * 1)
+
+        # 1 for the 2 features and for the first month, 0 for the rest
+        expected_mean = np.array([1., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
 
         # np.isclose because of rounding
         assert np.isclose(calculated_mean, expected_mean).all()

@@ -11,17 +11,29 @@ class ModelBase:
     """Base for all machine learning models.
     Attributes:
     ----------
-    data: pathlib.Path
+    data: pathlib.Path = Path('data')
         The location of the data folder.
+    batch_size: int 1
+        The number of files to load at once. These will be chunked and shuffled, so
+        a higher value will lead to better shuffling (but will require more memory)
+    pred_months: Optional[List[int]] = None
+        The months the model should predict. If None, all months are predicted
+    include_pred_month: bool = True
+        Whether to include the prediction month to the model's training data
     """
 
     model_name: str  # to be added by the model classes
 
     def __init__(self, data_folder: Path = Path('data'),
-                 batch_size: int = 1) -> None:
+                 batch_size: int = 1,
+                 pred_months: Optional[List[int]] = None,
+                 include_pred_month: bool = True) -> None:
 
         self.batch_size = batch_size
+        self.include_pred_month = include_pred_month
         self.data_path = data_folder
+        self.pred_months = pred_months
+
         self.models_dir = data_folder / 'models'
         if not self.models_dir.exists():
             self.models_dir.mkdir()
