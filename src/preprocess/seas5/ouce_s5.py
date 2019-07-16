@@ -11,30 +11,31 @@ class OuceS5Data:
     Example file:
 
     ```
-        netcdf seas5_6-hourly_2m_temperature_200802 {
-        dimensions:
-        	longitude = 360 ;
-        	latitude = 181 ;
-        	number = 25 ;
-        	time = 860 ;
-        variables:
-        	float longitude(longitude) ;
-        		longitude:units = "degrees_east" ;
-        		longitude:long_name = "longitude" ;
-        	float latitude(latitude) ;
-        		latitude:units = "degrees_north" ;
-        		latitude:long_name = "latitude" ;
-        	int number(number) ;
-        		number:long_name = "ensemble_member" ;
-        	int time(time) ;
-        		time:units = "hours since 1900-01-01 00:00:0.0" ;
-        		time:long_name = "time" ;
-        		time:calendar = "gregorian" ;
-        	float t2m(time, number, latitude, longitude) ;
-        		t2m:_FillValue = 9.96921e+36f ;
-        		t2m:missing_value = 9.96921e+36f ;
-        		t2m:units = "K" ;
-        		t2m:long_name = "2 metre temperature" ;
+    netcdf seas5_6-hourly_2m_temperature_200802 {
+    dimensions:
+        longitude = 360 ;
+        latitude = 181 ;
+        number = 25 ;
+        time = 860 ;
+    variables:
+        float longitude(longitude) ;
+            longitude:units = "degrees_east" ;
+            longitude:long_name = "longitude" ;
+        float latitude(latitude) ;
+            latitude:units = "degrees_north" ;
+            latitude:long_name = "latitude" ;
+        int number(number) ;
+            number:long_name = "ensemble_member" ;
+        int time(time) ;
+            time:units = "hours since 1900-01-01 00:00:0.0" ;
+            time:long_name = "time" ;
+            time:calendar = "gregorian" ;
+        float t2m(time, number, latitude, longitude) ;
+            t2m:_FillValue = 9.96921e+36f ;
+            t2m:missing_value = 9.96921e+36f ;
+            t2m:units = "K" ;
+            t2m:long_name = "2 metre temperature" ;
+    }
     ```
     """
     hourly_s5_dir = Path('/lustre/soge1/data/incoming/seas5/1.0x1.0/6-hourly')

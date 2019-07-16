@@ -63,14 +63,16 @@ class S5Preprocessor(BasePreProcessor):
     def _preprocess(self,
                     filepath: Path,
                     subset_str: Optional[str] = None,
-                    regrid: Optional[xr.Dataset] = None) -> Tuple[Path, str]:
+                    regrid: Optional[xr.Dataset] = None,
+                    **kwargs) -> Tuple[Path, str]:
         """preprocess a single s5 dataset (multi-variables per `.nc` file)"""
         print(f"\nWorking on {filepath.name}")
 
         if self.ouce_server:
             # undoes the preprocessing so that both are consistent
+            infer = kwargs.pop('infer') if 'infer' in kwargs.keys() else False
             # 1. read nc file
-            ds = OuceS5Data().read_ouce_s5_data(filepath)
+            ds = OuceS5Data().read_ouce_s5_data(filepath, infer=infer)
         else:  # downloaded from CDSAPI as .grib
             # 1. read grib file
             ds = self.read_grib_file(filepath)
@@ -163,7 +165,7 @@ class S5Preprocessor(BasePreProcessor):
                    upsampling: bool = False,
                    variable: Optional[str] = None,
                    cleanup: bool = False,
-                   ouce_dir: Path = Path('/lustre/soge1/data/incoming/seas5/1.0x1.0/6-hourly')) -> None:
+                   **kwargs,) -> None:
         """Preprocesses the S5 data for all variables in the 'ds' file at once
 
         Argument:
@@ -196,16 +198,26 @@ class S5Preprocessor(BasePreProcessor):
             assert variable is not None, f"Must pass a variable argument when\
             preprocessing the S5 data on the OUCE servers"
             os = OuceS5Data()
-            filepaths = os.get_ouce_filepaths(variable=variable, parent_dir=ouce_dir)
+
+            # get kwargs
+            ouce_dir = kwargs.pop('ouce_dir') if 'ouce_dir' in kwargs.keys() else None
+
+            filepaths = os.get_ouce_filepaths(
+                variable=variable, parent_dir=ouce_dir
+            )
         else:
             filepaths = self.get_filepaths(target_folder=self.raw_folder)
+
+        # argument needs the regrid file
+        if regrid is not None:
+            regrid_ds = xr.open_dataset(regrid)
 
         if not self.parallel:
             out_paths = []
             variables = []
             for filepath in filepaths:
                 output_path, variable = self._preprocess(
-                    filepath, subset_str, regrid
+                    filepath, subset_str, regrid_ds, **kwargs
                 )
                 out_paths.append(output_path)
                 variables.append(variable)

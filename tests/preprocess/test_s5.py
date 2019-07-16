@@ -154,7 +154,10 @@ class TestS5Preprocessor:
 
         processor = S5Preprocessor(tmp_path / 'data', ouce_server=True)
 
-        processor.preprocess(subset_str='kenya', regrid=regrid_path, ouce_dir=ouce_dir, variable='2m_temperature')
+        processor.preprocess(
+            subset_str='kenya', regrid=regrid_path,
+            variable='2m_temperature', **dict(ouce_dir=ouce_dir.parents[2], infer=True)
+        )
 
         assert False
 
