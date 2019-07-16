@@ -22,7 +22,7 @@ class TestRecurrentNetwork:
 
         def mocktrain(self):
             self.model = RNN(features_per_month, dense_features, hidden_size,
-                             rnn_dropout, include_pred_month)
+                             rnn_dropout, include_pred_month, experiment='one_month_forecast')
             self.features_per_month = features_per_month
 
         monkeypatch.setattr(RecurrentNetwork, 'train', mocktrain)

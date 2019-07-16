@@ -35,7 +35,8 @@ class LinearRegression(ModelBase):
 
         if early_stopping is not None:
             len_mask = len(DataLoader._load_datasets(self.data_path, mode='train',
-                                                     shuffle_data=False))
+                                                     shuffle_data=False,
+                                                     experiment=self.experiment))
             train_mask, val_mask = train_val_mask(len_mask, val_split)
 
             train_dataloader = DataLoader(data_path=self.data_path,
