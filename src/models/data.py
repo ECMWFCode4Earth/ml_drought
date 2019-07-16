@@ -173,7 +173,7 @@ class _BaseIter:
                 if var.endswith(norm_var):
                     mean.append(self.normalizing_dict[norm_var]['mean'])
                     std.append(self.normalizing_dict[norm_var]['std'])
-                    continue
+                    break
 
         self.normalizing_array = cast(Dict[str, np.ndarray], {
             # swapaxes so that its [timesteps, features], not [features, timesteps]
