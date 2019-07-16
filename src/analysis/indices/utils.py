@@ -1,6 +1,7 @@
 import xarray as xr
 from typing import Dict, Any
 import numpy as np
+from pathlib import Path
 
 
 def rolling_cumsum(ds: xr.Dataset,
@@ -75,3 +76,49 @@ def create_shape_aligned_climatology(ds: xr.Dataset,
         }
     )
     return new_clim
+
+
+def fit_all_indices(data_path: Path) -> xr.Dataset:
+    """ fit all indices and return one `xr.Dataset`
+
+    Note:
+    - This is a utility method that fits all the indices
+        using default parameters.
+    """
+    from src.analysis.indices import (
+        ZScoreIndex,
+        PercentNormalIndex,
+        DroughtSeverityIndex,
+        ChinaZIndex,
+        DecileIndex,
+        AnomalyIndex,
+        SPI
+    )
+
+    indices = (
+        ZScoreIndex,
+        PercentNormalIndex,
+        DroughtSeverityIndex,
+        ChinaZIndex,
+        DecileIndex,
+        AnomalyIndex,
+        SPI
+    )
+
+    # fit each index
+    out = {}
+    for index in indices:
+        i = index(data_path)
+        i.fit(variable='precip')
+        out[index.name] = i  # type: ignore
+    print([k for k in out.keys()])
+
+    # join all indices -> 1 dataset
+    print("Joining all variables into one `xr.dataset`")
+    ds_objs = [index.index
+        for index in out.values()
+    ]
+    ds = xr.merge(ds_objs)
+    ds = ds.drop(['month', 'precip_cumsum']).isel(time=slice(2,-1))
+
+    return ds
