@@ -130,8 +130,8 @@ class TestS5Preprocessor:
         assert 'initialisation_date' in [v for v in ds.coords]
         assert len(ds.time.values.shape), "Expect a 2D `time` coordinate"
 
-    def test_preprocess(self, tmp_path):
-
+    def test_find_grib_file(self, tmp_path):
+        # create grib file to test if it can be found by s5 preprocessor
         _ = save_dummy_seas5(tmp_path,
                              '2018-01-01',
                              to_grib=True,
@@ -140,54 +140,77 @@ class TestS5Preprocessor:
         out_dir = tmp_path / 'data' / 'raw' / 's5' / 'seasonal-monthly-pressure-levels'
         out_dir = out_dir / 'temperature' / '2018'
         assert (out_dir / '01.grib').exists()
-        # assert False
-        # xr.open_dataset(out_dir / '01.grib', engine='cfgrib')
 
+        processor = S5Preprocessor(tmp_path / 'data')
+
+        # check the preprocessor can find the grib file created
+        fpaths = processor.get_filepaths(grib=True, target_folder=processor.raw_folder)
+        assert fpaths[0].name == '01.grib', f'unable to find the created dataset' \
+            'at data/raw/s5/seasonal-monthly-pressure-levels'
+
+    def test_preprocess(self, tmp_path):
+        out_dir = tmp_path / 'data' / 'raw' / 's5'
+        out_dir = out_dir / 'seasonal-monthly-pressure-levels' / '2m_temperature' / str(2018)
+        if not out_dir.exists():
+            out_dir.mkdir(exist_ok=True, parents=True)
+
+        # preprocessor working with pretend ouce data (because writing to .grib is failing)
         ouce_dir = make_dummy_ouce_s5_data(tmp_path)
         kenya = get_kenya()
         regrid_dataset, _, _ = _make_dataset(size=(20, 20),
                                              latmin=kenya.latmin, latmax=kenya.latmax,
                                              lonmin=kenya.lonmin, lonmax=kenya.lonmax)
 
+        # the reference dataset to regrid to
         regrid_path = tmp_path / 'regridder.nc'
         regrid_dataset.to_netcdf(regrid_path)
 
+        # run the preprocessing
         processor = S5Preprocessor(tmp_path / 'data', ouce_server=True)
 
         processor.preprocess(
             subset_str='kenya', regrid=regrid_path,
-            variable='2m_temperature', **dict(ouce_dir=ouce_dir.parents[2], infer=True)
+            variable='2m_temperature', cleanup=True,
+            **dict(ouce_dir=ouce_dir.parents[2], infer=True)
         )
 
-        assert False
+        # check preprocessed file exists
+        assert (
+            processor.preprocessed_folder / 's5_preprocessed' / 's5_t2m_kenya.nc'
+        ).exists(), "Expecting to find the kenyan_subset netcdf file" \
+            "at the preprocessed / s5_preprocessed / s5_{variable}_{subset_str}.nc"
 
-        fpaths = processor.get_filepaths(grib=False, target_folder=processor.raw_folder)
-        assert fpaths[0].name == '01.nc', f'unable to find the created dataset' \
-            'at data/raw/s5/seasonal-monthly-pressure-levels'
+        # open the data
+        out_data = xr.open_dataset(
+            processor.preprocessed_folder / 's5_preprocessed' / 's5_t2m_kenya.nc'
+        )
 
-        # expected_out_path = tmp_path / 'interim/reanalysis-era5-single-levels-monthly-' \
-        #                                'means_preprocessed/reanalysis-era5-single-levels-' \
-        #                                'monthly-means_kenya.nc'
-        # assert expected_out_path.exists(), \
-        #     f'Expected processed file to be saved to {expected_out_path}'
-        #
-        # # check the subsetting happened correctly
-        # out_data = xr.open_dataset(expected_out_path)
-        # expected_dims = ['lat', 'lon', 'time']
-        # assert len(list(out_data.dims)) == len(expected_dims)
-        # for dim in expected_dims:
-        #     assert dim in list(out_data.dims), \
-        #         f'Expected {dim} to be in the processed dataset dims'
-        #
-        # lons = out_data.lon.values
-        # assert (lons.min() >= kenya.lonmin) and (lons.max() <= kenya.lonmax), \
-        #     'Longitudes not correctly subset'
-        #
-        # lats = out_data.lat.values
-        # assert (lats.min() >= kenya.latmin) and (lats.max() <= kenya.latmax), \
-        #     'Latitudes not correctly subset'
-        #
-        # assert out_data.t2m.values.shape[1:] == (20, 20)
-        #
-        # assert not processor.interim.exists(), \
-        #     f'Interim era5 folder should have been deleted'
+        # check the subsetting happened properly
+        expected_dims = [
+            'lat', 'lon', 'initialisation_date', 'forecast_horizon', 'number'
+        ]
+        assert len(list(out_data.dims)) == len(expected_dims)
+        for dim in expected_dims:
+            assert dim in list(out_data.dims), \
+                f'Expected {dim} to be in the processed dataset dims'
+
+        lons = out_data.lon.values
+        assert (lons.min() >= kenya.lonmin) and (lons.max() <= kenya.lonmax), \
+            'Longitudes not correctly subset'
+
+        lats = out_data.lat.values
+        assert (lats.min() >= kenya.latmin) and (lats.max() <= kenya.latmax), \
+            'Latitudes not correctly subset'
+
+        # check the lat/lon is the correct shape
+        assert out_data.t2m.values.shape[-2:] == (20, 20)
+
+        # test the stacking to select the forecast time
+        # NOTE: this is how you select data from the S5 data
+        stacked = out_data.stack(time=('initialisation_date', 'forecast_horizon'))
+        assert stacked.time.shape == (10,), "should be a 1D vector"
+        stacked.time.sel(time='200')
+
+        # check the cleanup has worked
+        assert not processor.interim.exists(), \
+            f'Interim era5 folder should have been deleted'

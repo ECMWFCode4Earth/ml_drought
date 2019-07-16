@@ -165,7 +165,7 @@ class S5Preprocessor(BasePreProcessor):
                    upsampling: bool = False,
                    variable: Optional[str] = None,
                    cleanup: bool = False,
-                   **kwargs,) -> None:
+                   **kwargs) -> None:
         """Preprocesses the S5 data for all variables in the 'ds' file at once
 
         Argument:
@@ -189,9 +189,11 @@ class S5Preprocessor(BasePreProcessor):
         cleanup: bool = False
             Whether to cleanup the self.interim directory
 
-        ouce_dir: Path = Path('/lustre/soge1/data/incoming/seas5/1.0x1.0/6-hourly')
-            the parent directory to look for nc data on the ouce_server
-            NOTE: we recommend leaving this alone. Mostly for testing purposes
+        kwargs: dict
+            keyword arguments (mostly for pytest!)
+            'ouce_dir' : Path - the test directory to use for reading .nc files
+            'infer' : bool - whether to infer the frequency when creating
+                the forecast horizon for ouce_data.
         """
         if self.ouce_server:
             # data already in netcdf but needs other preprocessing
