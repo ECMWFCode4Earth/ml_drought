@@ -43,7 +43,8 @@ class TestBaseIter:
         pred_months = [4, 5, 6]
 
         train_paths = DataLoader._load_datasets(tmp_path, mode='train',
-                                                shuffle_data=True, pred_months=pred_months)
+                                                shuffle_data=True, pred_months=pred_months,
+                                                experiment='one_month_forecast')
 
         assert len(train_paths) == len(pred_months), \
             f'Got {len(train_paths)} filepaths back, expected {len(pred_months)}'
