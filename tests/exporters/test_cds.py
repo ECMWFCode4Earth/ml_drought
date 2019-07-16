@@ -134,7 +134,7 @@ class TestCDSExporter:
                                        granularity='hourly',
                                        selection_request=user_defined_arguments,
                                        break_up=True,
-                                       N_parallel_requests=1)
+                                       n_parallel_requests=1)
 
         raw_folder = tmp_path / 'raw'
         expected_paths = [
