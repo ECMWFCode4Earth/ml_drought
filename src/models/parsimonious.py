@@ -27,7 +27,8 @@ class Persistence(ModelBase):
 
         test_arrays_loader = DataLoader(
             data_path=self.data_path, batch_file_size=self.batch_size,
-            experiment=self.experiment, shuffle_data=False, mode='test', normalize=False
+            experiment=self.experiment, shuffle_data=False, mode='test', normalize=False,
+            pred_months=self.pred_months
         )
 
         preds_dict: Dict[str, np.ndarray] = {}

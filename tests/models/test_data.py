@@ -34,6 +34,25 @@ class TestBaseIter:
             f'Got the same file in both train and val set!'
         assert len(train_paths) + len(val_paths) == 5, f'Not all files loaded!'
 
+    def test_pred_months(self, tmp_path):
+        for i in range(1, 13):
+            (tmp_path / f'features/train/2018_{i}').mkdir(parents=True)
+            (tmp_path / f'features/train/2018_{i}/x.nc').touch()
+            (tmp_path / f'features/train/2018_{i}/y.nc').touch()
+
+        pred_months = [4, 5, 6]
+
+        train_paths = DataLoader._load_datasets(tmp_path, mode='train',
+                                                shuffle_data=True, pred_months=pred_months)
+
+        assert len(train_paths) == len(pred_months), \
+            f'Got {len(train_paths)} filepaths back, expected {len(pred_months)}'
+
+        for return_file in train_paths:
+            subfolder = return_file.parts[-1]
+            month = int(str(subfolder)[5:])
+            assert month in pred_months, f'{month} not in {pred_months}, got {return_file}'
+
     @pytest.mark.parametrize(
         'normalize,to_tensor,experiment',
         [(True, True, 'one_month_forecast'),

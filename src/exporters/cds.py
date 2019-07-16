@@ -220,8 +220,9 @@ class ERA5Exporter(CDSExporter):
                                  selection_request: Optional[Dict] = None,
                                  granularity: str = 'hourly',) -> Dict:
         # setup the default selection request
+        product_type = f'{"monthly_averaged_" if granularity == "monthly" else ""}reanalysis'
         processed_selection_request = {
-            'product_type': 'reanalysis',
+            'product_type': product_type,
             'format': 'netcdf',
             'variable': [variable]
         }
@@ -249,7 +250,7 @@ class ERA5Exporter(CDSExporter):
                granularity: str = 'hourly',
                show_api_request: bool = True,
                selection_request: Optional[Dict] = None,
-               break_up: bool = True,
+               break_up: bool = False,
                N_parallel_requests: int = 3) -> List[Path]:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
