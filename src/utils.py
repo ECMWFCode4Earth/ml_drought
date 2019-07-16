@@ -6,6 +6,7 @@ See all the bounding boxes (NOTE COMMENTS OF ERRORS) in this gist
 from collections import namedtuple
 import calendar
 from datetime import date
+import xarray as xr
 
 from typing import Optional, Tuple
 
