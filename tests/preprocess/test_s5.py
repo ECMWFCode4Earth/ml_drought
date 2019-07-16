@@ -206,11 +206,17 @@ class TestS5Preprocessor:
         assert out_data.t2m.values.shape[-2:] == (20, 20)
 
         # test the stacking to select the forecast time
-        # NOTE: this is how you select data from the S5 data
+        # NOTE: this is how you select data from the S5 data for the `real time`
+        out_data['valid_time'] = out_data.initialisation_date + out_data.forecast_horizon
         stacked = out_data.stack(time=('initialisation_date', 'forecast_horizon'))
         assert stacked.time.shape == (10,), "should be a 1D vector"
-        stacked.time.sel(time='200')
+        selected = stacked.swap_dims({'time': 'valid_time'}).sel(valid_time='2008-03')
+
+        assert selected.time.size == 6, "Should have only selected 6 timesteps" \
+            " for the month 2008-03. The calculation of valid_time is " \
+            "complicated but it should select the forecasts that enter into" \
+            "the month of interest."
 
         # check the cleanup has worked
         assert not processor.interim.exists(), \
-            f'Interim era5 folder should have been deleted'
+            f'Interim S5 folder should have been deleted'
