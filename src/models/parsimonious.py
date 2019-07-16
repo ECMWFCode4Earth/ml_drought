@@ -8,7 +8,6 @@ from .data import DataLoader
 
 class Persistence(ModelBase):
     """A parsimonious persistence model.
-
     This "model" predicts the previous time-value of data. For example, its prediction
     for VHI in March 2018 will be VHI for February 2018 (assuming monthly time-granularity).
     """
@@ -27,7 +26,8 @@ class Persistence(ModelBase):
 
         test_arrays_loader = DataLoader(
             data_path=self.data_path, batch_file_size=self.batch_size,
-            experiment=self.experiment, shuffle_data=False, mode='test', normalize=False
+            experiment=self.experiment, shuffle_data=False, mode='test', normalize=False,
+            pred_months=self.pred_months
         )
 
         preds_dict: Dict[str, np.ndarray] = {}

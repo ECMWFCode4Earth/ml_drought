@@ -29,7 +29,6 @@ class ModelArrays:
 
 def train_val_mask(mask_len: int, val_ratio: float = 0.3) -> Tuple[List[bool], List[bool]]:
     """Makes a trainining and validation mask which can be passed to the dataloader
-
     Arguments
     ----------
     mask_len: int
@@ -37,7 +36,6 @@ def train_val_mask(mask_len: int, val_ratio: float = 0.3) -> Tuple[List[bool], L
     val_ratio: float = 0.3
         The ratio of instances which should be True for the val mask and False for the train
         mask
-
     Returns
     ----------
     The train mask and the val mask, both as lists
@@ -51,7 +49,6 @@ def train_val_mask(mask_len: int, val_ratio: float = 0.3) -> Tuple[List[bool], L
 
 class DataLoader:
     """Dataloader; lazily load the training and test data
-
     Attributes:
     ----------
     data_path: Path = Path('data')
@@ -72,12 +69,13 @@ class DataLoader:
     mask: Optional[List[bool]] = None
         If not None, this list will be used to mask the input files. Useful for creating a train
         and validation set
+    pred_months: Optional[List[int]] = None
+        The months the model should predict. If None, all months are predicted
     to_tensor: bool = False
         Whether to turn the np.ndarrays into torch.Tensors
     experiement: str = 'one_month_forecast'
         the name of the experiment to run. Defaults to one_month_forecast
         (train on only historical data and predict one month ahead)
-
     Note:
     the _load_datasets() function requires an `experiment` string defining
     which experiment is to be run. The string must be the same as the
@@ -89,6 +87,7 @@ class DataLoader:
                  clear_nans: bool = True, normalize: bool = True,
                  experiment: str = 'one_month_forecast',
                  mask: Optional[List[bool]] = None,
+                 pred_months: Optional[List[int]] = None,
                  to_tensor: bool = False) -> None:
 
         self.batch_file_size = batch_file_size
@@ -98,7 +97,7 @@ class DataLoader:
         self.experiment = experiment
         self.data_files = self._load_datasets(
             data_path=data_path, mode=mode, shuffle_data=shuffle_data,
-            experiment=experiment, mask=mask
+            experiment=experiment, mask=mask, pred_months=pred_months
         )
 
         self.normalizing_dict = None
@@ -122,14 +121,21 @@ class DataLoader:
     @staticmethod
     def _load_datasets(data_path: Path, mode: str,
                        shuffle_data: bool, experiment: str,
-                       mask: Optional[List[bool]] = None) -> List[Path]:
+                       mask: Optional[List[bool]] = None,
+                       pred_months: Optional[List[int]] = None) -> List[Path]:
 
         data_folder = data_path / f'features/{experiment}/{mode}'
         output_paths: List[Path] = []
 
         for subtrain in data_folder.iterdir():
             if (subtrain / 'x.nc').exists() and (subtrain / 'y.nc').exists():
-                output_paths.append(subtrain)
+                if pred_months is None:
+                    output_paths.append(subtrain)
+                else:
+                    month = int(str(subtrain.parts[-1])[5:])
+                    if month in pred_months:
+                        output_paths.append(subtrain)
+
         if mask is not None:
             output_paths.sort()
             assert len(output_paths) == len(mask), \
