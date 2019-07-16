@@ -4,7 +4,7 @@ import xarray as xr
 
 
 def _make_dataset(size, variable_name='VHI', lonmin=-180.0, lonmax=180.0,
-                  latmin=-55.152, latmax=75.024, add_times=True):
+                  latmin=-55.152, latmax=75.024, add_times=True, const=False):
 
     lat_len, lon_len = size
     # create the vector
@@ -21,7 +21,21 @@ def _make_dataset(size, variable_name='VHI', lonmin=-180.0, lonmax=180.0,
         dims.insert(0, 'time')
         coords['time'] = times
     var = np.random.randint(100, size=size)
+    if const:
+        var *= 0
+        var += 1
 
     ds = xr.Dataset({variable_name: (dims, var)}, coords=coords)
 
     return ds, (lonmin, lonmax), (latmin, latmax)
+
+
+def _create_dummy_precip_data(tmp_path):
+    data_dir = tmp_path / 'data' / 'interim' / 'chirps_preprocessed'
+    if not data_dir.exists():
+        data_dir.mkdir(parents=True, exist_ok=True)
+
+    precip, _, _ = _make_dataset((30, 30), variable_name='precip')
+    precip.to_netcdf(data_dir / 'chirps_kenya.nc')
+
+    return data_dir

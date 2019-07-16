@@ -2,7 +2,21 @@ language: python
 services:
   - docker
 
+# https://docs.travis-ci.com/user/languages/c/
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+
 before_install:
+  - eval "${MATRIX_EVAL}"
   - docker build -t ml_drought .
   - docker run ml_drought /bin/bash -c "source activate esowc-drought; pytest; mypy src"
   # https://github.com/travis-ci/travis-ci/issues/7940
