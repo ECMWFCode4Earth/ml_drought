@@ -21,8 +21,10 @@ class NNBase(ModelBase):
                  data_folder: Path = Path('data'),
                  batch_size: int = 1,
                  pred_months: Optional[List[int]] = None,
-                 include_pred_month: bool = True) -> None:
-        super().__init__(data_folder, batch_size, pred_months, include_pred_month)
+                 include_pred_month: bool = True,
+                 surrounding_pixels: Optional[int] = None) -> None:
+        super().__init__(data_folder, batch_size, pred_months, include_pred_month,
+                         surrounding_pixels)
 
         # for reproducibility
         torch.manual_seed(42)
@@ -63,18 +65,21 @@ class NNBase(ModelBase):
             train_dataloader = DataLoader(data_path=self.data_path,
                                           batch_file_size=self.batch_size,
                                           shuffle_data=True, mode='train', mask=train_mask,
-                                          pred_months=self.pred_months, to_tensor=True)
+                                          pred_months=self.pred_months, to_tensor=True,
+                                          surrounding_pixels=self.surrounding_pixels)
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
                                         shuffle_data=False, mode='train', mask=val_mask,
-                                        pred_months=self.pred_months, to_tensor=True)
+                                        pred_months=self.pred_months, to_tensor=True,
+                                        surrounding_pixels=self.surrounding_pixels)
             batches_without_improvement = 0
             best_val_score = np.inf
         else:
             train_dataloader = DataLoader(data_path=self.data_path,
                                           batch_file_size=self.batch_size,
                                           shuffle_data=True, mode='train',
-                                          pred_months=self.pred_months, to_tensor=True)
+                                          pred_months=self.pred_months, to_tensor=True,
+                                          surrounding_pixels=self.surrounding_pixels)
 
         # initialize the model
         if self.model is None:
@@ -127,7 +132,8 @@ class NNBase(ModelBase):
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=self.batch_size,
                                         shuffle_data=False, mode='test',
-                                        pred_months=self.pred_months, to_tensor=True)
+                                        pred_months=self.pred_months, to_tensor=True,
+                                        surrounding_pixels=self.surrounding_pixels)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -153,7 +159,8 @@ class NNBase(ModelBase):
                                       batch_file_size=self.batch_size,
                                       shuffle_data=True, mode='train',
                                       pred_months=self.pred_months,
-                                      to_tensor=True)
+                                      to_tensor=True,
+                                      surrounding_pixels=self.surrounding_pixels)
         output_tensors: List[torch.Tensor] = []
         if self.include_pred_month:
             output_pred_months: List[torch.Tensor] = []

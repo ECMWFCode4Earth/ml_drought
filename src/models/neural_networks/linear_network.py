@@ -16,8 +16,10 @@ class LinearNetwork(NNBase):
                  data_folder: Path = Path('data'),
                  batch_size: int = 1,
                  pred_months: Optional[List[int]] = None,
-                 include_pred_month: bool = True) -> None:
-        super().__init__(data_folder, batch_size, pred_months, include_pred_month)
+                 include_pred_month: bool = True,
+                 surrounding_pixels: Optional[int] = None) -> None:
+        super().__init__(data_folder, batch_size, pred_months, include_pred_month,
+                         surrounding_pixels)
 
         if type(layer_sizes) is int:
             layer_sizes = cast(List[int], [layer_sizes])
@@ -36,7 +38,8 @@ class LinearNetwork(NNBase):
             'layer_sizes': self.layer_sizes,
             'dropout': self.dropout,
             'input_size': self.input_size,
-            'include_pred_month': self.include_pred_month
+            'include_pred_month': self.include_pred_month,
+            'surrounding_pixels': self.surrounding_pixels
         }
 
         torch.save(model_dict, self.model_dir / 'model.pkl')

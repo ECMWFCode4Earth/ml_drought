@@ -72,6 +72,7 @@ class TestBaseIter:
                 self.data_files = []
                 self.normalizing_dict = norm_dict if normalize else None
                 self.to_tensor = None
+                self.surrounding_pixels = 1
 
         base_iterator = _BaseIter(MockLoader())
 
@@ -106,3 +107,28 @@ class TestBaseIter:
                 assert target_y == y_np[idx, 0], \
                     f'Got y different values for lat: {lat}, ' \
                     f'lon: {lon}.Expected {target_y}, got {y_np[idx, 0]}'
+
+    def test_surrounding_pixels(self):
+        x, _, _ = _make_dataset(size=(10, 10))
+        org_vars = list(x.data_vars)
+
+        x_with_more = _BaseIter._add_surrounding(x, 1)
+        shifted_vars = x_with_more.data_vars
+
+        for data_var in org_vars:
+            for lat in [-1, 0, 1]:
+                for lon in [-1, 0, 1]:
+                    if lat == lon == 0:
+                        assert f'lat_{lat}_lon_{lon}_{data_var}' not in shifted_vars, \
+                            f'lat_{lat}_lon_{lon}_{data_var} should not ' \
+                            f'be in the shifted variables'
+                    else:
+                        shifted_var_name = f'lat_{lat}_lon_{lon}_{data_var}'
+                        assert shifted_var_name in shifted_vars, \
+                            f'{shifted_var_name} is not in the shifted variables'
+
+                        org = x_with_more.VHI.isel(time=0, lon=5, lat=5).values
+                        shifted = x_with_more[shifted_var_name].isel(time=0,
+                                                                     lon=5 + lon,
+                                                                     lat=5 + lat).values
+                        assert org == shifted, f"Shifted values don't match!"

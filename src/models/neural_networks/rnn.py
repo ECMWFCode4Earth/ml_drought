@@ -19,8 +19,10 @@ class RecurrentNetwork(NNBase):
                  data_folder: Path = Path('data'),
                  batch_size: int = 1,
                  pred_months: Optional[List[int]] = None,
-                 include_pred_month: bool = True) -> None:
-        super().__init__(data_folder, batch_size, pred_months, include_pred_month)
+                 include_pred_month: bool = True,
+                 surrounding_pixels: Optional[int] = None) -> None:
+        super().__init__(data_folder, batch_size, pred_months, include_pred_month,
+                         surrounding_pixels)
 
         # to initialize and save the model
         self.hidden_size = hidden_size
@@ -38,7 +40,8 @@ class RecurrentNetwork(NNBase):
             'hidden_size': self.hidden_size,
             'rnn_dropout': self.rnn_dropout,
             'dense_features': self.dense_features,
-            'include_pred_month': self.include_pred_month
+            'include_pred_month': self.include_pred_month,
+            'surrounding_pixels': self.surrounding_pixels
         }
 
         torch.save(model_dict, self.model_dir / 'model.pkl')

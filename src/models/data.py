@@ -74,13 +74,18 @@ class DataLoader:
         The months the model should predict. If None, all months are predicted
     to_tensor: bool = False
         Whether to turn the np.ndarrays into torch.Tensors
+    surrounding_pixels: Optional[int] = None
+        How many surrounding pixels to add to the input data. e.g. if the input is 1, then in
+        addition to the pixels on the prediction point, the neighbouring (spatial) pixels will
+        be included too, up to a distance of one pixel away
     """
     def __init__(self, data_path: Path = Path('data'), batch_file_size: int = 1,
                  mode: str = 'train', shuffle_data: bool = True,
                  clear_nans: bool = True, normalize: bool = True,
                  mask: Optional[List[bool]] = None,
                  pred_months: Optional[List[int]] = None,
-                 to_tensor: bool = False) -> None:
+                 to_tensor: bool = False,
+                 surrounding_pixels: Optional[int] = None) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
@@ -94,6 +99,7 @@ class DataLoader:
             with (data_path / 'features/normalizing_dict.pkl').open('rb') as f:
                 self.normalizing_dict = pickle.load(f)
 
+        self.surrounding_pixels = surrounding_pixels
         self.to_tensor = to_tensor
 
     def __iter__(self):
@@ -140,6 +146,7 @@ class _BaseIter:
         self.batch_file_size = loader.batch_file_size
         self.shuffle = loader.shuffle
         self.clear_nans = loader.clear_nans
+        self.surrounding_pixels = loader.surrounding_pixels
         self.to_tensor = loader.to_tensor
 
         if self.shuffle:
@@ -160,9 +167,13 @@ class _BaseIter:
         self.normalizing_dict = cast(Dict[str, Dict[str, np.ndarray]], self.normalizing_dict)
 
         mean, std = [], []
+        normalizing_dict_keys = self.normalizing_dict.keys()
         for var in data_vars:
-            mean.append(self.normalizing_dict[var]['mean'])
-            std.append(self.normalizing_dict[var]['std'])
+            for norm_var in normalizing_dict_keys:
+                if var.endswith(norm_var):
+                    mean.append(self.normalizing_dict[norm_var]['mean'])
+                    std.append(self.normalizing_dict[norm_var]['std'])
+                    break
 
         self.normalizing_array = cast(Dict[str, np.ndarray], {
             # swapaxes so that its [timesteps, features], not [features, timesteps]
@@ -180,6 +191,8 @@ class _BaseIter:
         x, y = xr.open_dataset(folder / 'x.nc'), xr.open_dataset(folder / 'y.nc')
         assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable! ' \
             f'Got {len(list(y.data_vars))}'
+        if self.surrounding_pixels is not None:
+            x = self._add_surrounding(x, self.surrounding_pixels)
         x_np, y_np = x.to_array().values, y.to_array().values
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
@@ -233,6 +246,18 @@ class _BaseIter:
         x_data = TrainData(historical=x_np, pred_months=x_months)
         return ModelArrays(x=x_data, y=y_np, x_vars=list(x.data_vars),
                            y_var=list(y.data_vars)[0])
+
+    @staticmethod
+    def _add_surrounding(x: xr.Dataset, surrounding_pixels: int) -> xr.Dataset:
+
+        lat_shifts = lon_shifts = range(-surrounding_pixels, surrounding_pixels + 1)
+        for var in x.data_vars:
+            for lat_shift in lat_shifts:
+                for lon_shift in lon_shifts:
+                    if lat_shift == lon_shift == 0: continue
+                    shifted_varname = f'lat_{lat_shift}_lon_{lon_shift}_{var}'
+                    x[shifted_varname] = x[var].shift(lat=lat_shift, lon=lon_shift)
+        return x
 
 
 class _TrainIter(_BaseIter):
