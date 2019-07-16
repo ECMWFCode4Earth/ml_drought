@@ -4,7 +4,7 @@ from pathlib import Path
 from xclim.run_length import rle, longest_run  # , windowed_run_events
 from typing import Tuple, Optional, Any
 import warnings
-from scripts.eng_utils import get_ds_mask
+from ..utils import get_ds_mask
 
 
 class EventDetector():
