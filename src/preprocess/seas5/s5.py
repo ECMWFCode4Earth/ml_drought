@@ -20,9 +20,8 @@ class S5Preprocessor(BasePreProcessor):
         self.ouce_server = ouce_server
         self.parallel = parallel
 
-    def get_filepaths(self, target_folder: Path,
+    def get_filepaths(self, target_folder: Path,  # type: ignore
                       grib: bool = True) -> List[Path]:
-        """ because reading .grib files have to rewrite get_filepaths """
         if target_folder.name == 'raw':
             target_folder = self.raw_folder / self.dataset
 
