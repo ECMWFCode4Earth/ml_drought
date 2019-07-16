@@ -5,9 +5,9 @@ import torch
 import xarray as xr
 
 from src.models import LinearNetwork
-from src.models.linear_network import LinearModel
+from src.models.neural_networks.linear_network import LinearModel
 
-from ..utils import _make_dataset
+from tests.utils import _make_dataset
 
 
 class TestLinearNetwork:
@@ -18,6 +18,7 @@ class TestLinearNetwork:
         input_size = 10
         dropout = 0.25
         include_pred_month = True
+        surrounding_pixels = 1
 
         def mocktrain(self):
             self.model = LinearModel(
@@ -29,7 +30,8 @@ class TestLinearNetwork:
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
                               dropout=dropout, experiment='one_month_forecast',
-                              include_pred_month=include_pred_month)
+                              include_pred_month=include_pred_month,
+                              surrounding_pixels=surrounding_pixels)
         model.train()
         model.save_model()
 
@@ -46,6 +48,7 @@ class TestLinearNetwork:
         assert model_dict['layer_sizes'] == layer_sizes
         assert model_dict['input_size'] == input_size
         assert model_dict['include_pred_month'] == include_pred_month
+        assert model_dict['surrounding_pixels'] == surrounding_pixels
 
     @pytest.mark.parametrize(
         'use_pred_months,experiment',

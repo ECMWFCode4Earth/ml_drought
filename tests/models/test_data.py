@@ -55,17 +55,17 @@ class TestBaseIter:
             assert month in pred_months, f'{month} not in {pred_months}, got {return_file}'
 
     @pytest.mark.parametrize(
-        'normalize,to_tensor,experiment',
-        [(True, True, 'one_month_forecast'),
-         (True, False, 'one_month_forecast'),
-         (False, True, 'one_month_forecast'),
-         (False, False, 'one_month_forecast'),
-         (True, True, 'nowcast'),
-         (True, False, 'nowcast'),
-         (False, True, 'nowcast'),
-         (False, False, 'nowcast')]
+        'normalize,to_tensor,experiment,surrounding_pixels',
+        [(True, True, 'one_month_forecast', 1),
+         (True, False, 'one_month_forecast', None),
+         (False, True, 'one_month_forecast', 1),
+         (False, False, 'one_month_forecast', None),
+         (True, True, 'nowcast', 1),
+         (True, False, 'nowcast', None),
+         (False, True, 'nowcast', 1),
+         (False, False, 'nowcast', None)]
     )
-    def test_ds_to_np(self, tmp_path, normalize, to_tensor, experiment):
+    def test_ds_to_np(self, tmp_path, normalize, to_tensor, experiment, surrounding_pixels):
 
         x_pred, _, _ = _make_dataset(size=(5, 5))
         x_coeff, _, _ = _make_dataset(size=(5, 5), variable_name='precip')
@@ -96,6 +96,7 @@ class TestBaseIter:
                 self.normalizing_dict = norm_dict if normalize else None
                 self.to_tensor = None
                 self.experiment = experiment
+                self.surrounding_pixels = surrounding_pixels
 
         base_iterator = _BaseIter(MockLoader())
 
@@ -132,14 +133,15 @@ class TestBaseIter:
                 .values.T
             )
             got = x_train_data.current
-            assert expected.shape == got.shape, "should have stacked latlon" \
-                " vars as the first dimension in the current array."
+            if surrounding_pixels is None:
+                assert expected.shape == got.shape, "should have stacked latlon" \
+                    " vars as the first dimension in the current array."
 
-            assert all(expected == got), "" \
-                "Expected to find the target timesetep of `precip` values"\
-                "(the non-target variable for the target timestep: " \
-                f"({pd.to_datetime(y.time.values).strftime('%Y-%m-%d')[0]})." \
-                f"Expected: {expected[:5]}. Got: {got[:5]}"
+                assert all(expected == got), "" \
+                    "Expected to find the target timesetep of `precip` values"\
+                    "(the non-target variable for the target timestep: " \
+                    f"({pd.to_datetime(y.time.values).strftime('%Y-%m-%d')[0]})." \
+                    f"Expected: {expected[:5]}. Got: {got[:5]}"
 
         if normalize and (experiment == 'nowcast') and (not to_tensor):
             assert x_train_data.current.max() < 6, f"The current data should be" \
@@ -191,6 +193,7 @@ class TestBaseIter:
                 self.normalizing_dict = norm_dict if normalize else None
                 self.to_tensor = None
                 self.experiment = experiment
+                self.surrounding_pixels = None
 
         base_iterator = _BaseIter(MockLoader())
 
@@ -224,3 +227,28 @@ class TestBaseIter:
 
             assert np.all(x_train_data.current == expected), f"Expected to " \
                 "find the target_time data for the non target variables"
+
+    def test_surrounding_pixels(self):
+        x, _, _ = _make_dataset(size=(10, 10))
+        org_vars = list(x.data_vars)
+
+        x_with_more = _BaseIter._add_surrounding(x, 1)
+        shifted_vars = x_with_more.data_vars
+
+        for data_var in org_vars:
+            for lat in [-1, 0, 1]:
+                for lon in [-1, 0, 1]:
+                    if lat == lon == 0:
+                        assert f'lat_{lat}_lon_{lon}_{data_var}' not in shifted_vars, \
+                            f'lat_{lat}_lon_{lon}_{data_var} should not ' \
+                            f'be in the shifted variables'
+                    else:
+                        shifted_var_name = f'lat_{lat}_lon_{lon}_{data_var}'
+                        assert shifted_var_name in shifted_vars, \
+                            f'{shifted_var_name} is not in the shifted variables'
+
+                        org = x_with_more.VHI.isel(time=0, lon=5, lat=5).values
+                        shifted = x_with_more[shifted_var_name].isel(time=0,
+                                                                     lon=5 + lon,
+                                                                     lat=5 + lat).values
+                        assert org == shifted, f"Shifted values don't match!"

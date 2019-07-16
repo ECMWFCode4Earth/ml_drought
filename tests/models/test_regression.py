@@ -127,7 +127,8 @@ class TestLinearRegression:
                         raise StopIteration()
             return MockIterator()
 
-        def do_nothing(self, data_path, batch_file_size, shuffle_data, mode, pred_months):
+        def do_nothing(self, data_path, batch_file_size, shuffle_data, mode, pred_months,
+                       surrounding_pixels):
             pass
 
         monkeypatch.setattr(DataLoader, '__iter__', mockiter)
