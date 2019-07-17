@@ -20,10 +20,11 @@ class NNBase(ModelBase):
     def __init__(self,
                  data_folder: Path = Path('data'),
                  batch_size: int = 1,
+                 experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
-        super().__init__(data_folder, batch_size, pred_months, include_pred_month,
+        super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
                          surrounding_pixels)
 
         # for reproducibility
@@ -38,6 +39,7 @@ class NNBase(ModelBase):
             background_samples = self._get_background(sample_size=100)
             self.explainer: shap.DeepExplainer = shap.DeepExplainer(
                 self.model, background_samples)
+
         if self.include_pred_month:
             assert type(x) == list, \
                 'include_pred_month is True, so this model expects a list of tensors as input'
@@ -58,29 +60,37 @@ class NNBase(ModelBase):
 
         if early_stopping is not None:
             len_mask = len(DataLoader._load_datasets(self.data_path, mode='train',
+                                                     experiment=self.experiment,
                                                      shuffle_data=False,
                                                      pred_months=self.pred_months))
             train_mask, val_mask = train_val_mask(len_mask, val_split)
 
             train_dataloader = DataLoader(data_path=self.data_path,
                                           batch_file_size=self.batch_size,
-                                          shuffle_data=True, mode='train', mask=train_mask,
-                                          pred_months=self.pred_months, to_tensor=True,
+                                          shuffle_data=True, mode='train',
+                                          experiment=self.experiment,
+                                          mask=train_mask,
+                                          to_tensor=True,
+                                          pred_months=self.pred_months,
                                           surrounding_pixels=self.surrounding_pixels)
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
-                                        shuffle_data=False, mode='train', mask=val_mask,
-                                        pred_months=self.pred_months, to_tensor=True,
-                                        surrounding_pixels=self.surrounding_pixels)
+                                        shuffle_data=False, mode='train',
+                                        experiment=self.experiment,
+                                        mask=val_mask,
+                                        to_tensor=True,
+                                        pred_months=self.pred_months)
+
             batches_without_improvement = 0
             best_val_score = np.inf
         else:
             train_dataloader = DataLoader(data_path=self.data_path,
                                           batch_file_size=self.batch_size,
                                           shuffle_data=True, mode='train',
-                                          pred_months=self.pred_months, to_tensor=True,
+                                          experiment=self.experiment,
+                                          to_tensor=True,
+                                          pred_months=self.pred_months,
                                           surrounding_pixels=self.surrounding_pixels)
-
         # initialize the model
         if self.model is None:
             x_ref, _ = next(iter(train_dataloader))
@@ -96,7 +106,18 @@ class NNBase(ModelBase):
             for x, y in train_dataloader:
                 for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
                     optimizer.zero_grad()
-                    pred = self.model(x_batch[0], self._one_hot_months(x_batch[1]))
+                    if self.experiment == 'nowcast':
+                        current = x_batch[2]
+                        pred = self.model(
+                            x_batch[0],
+                            self._one_hot_months(x_batch[1]),
+                            current
+                        )
+                    else:
+                        pred = self.model(
+                            x_batch[0],
+                            self._one_hot_months(x_batch[1])
+                        )
                     loss = F.smooth_l1_loss(pred, y_batch)
                     loss.backward()
                     optimizer.step()
@@ -130,8 +151,10 @@ class NNBase(ModelBase):
                         return None
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
+
         test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=self.batch_size,
                                         shuffle_data=False, mode='test',
+                                        experiment=self.experiment,
                                         pred_months=self.pred_months, to_tensor=True,
                                         surrounding_pixels=self.surrounding_pixels)
 
@@ -144,14 +167,18 @@ class NNBase(ModelBase):
         with torch.no_grad():
             for dict in test_arrays_loader:
                 for key, val in dict.items():
-                    preds = self.model(val.x.historical, self._one_hot_months(val.x.pred_months))
+                    preds = self.model(
+                        val.x.historical, self._one_hot_months(val.x.pred_months),
+                        val.x.current
+                    )
                     preds_dict[key] = preds.numpy()
                     test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons}
 
         return test_arrays_dict, preds_dict
 
-    def _get_background(self, sample_size: int = 100) -> Union[torch.Tensor,
-                                                               List[torch.Tensor]]:
+    def _get_background(self,
+                        sample_size: int = 100) -> Union[torch.Tensor,
+                                                         List[torch.Tensor]]:
 
         print('Extracting a sample of the training data')
 
@@ -163,7 +190,7 @@ class NNBase(ModelBase):
                                       surrounding_pixels=self.surrounding_pixels)
         output_tensors: List[torch.Tensor] = []
         if self.include_pred_month:
-            output_pred_months: List[torch.Tensor] = []
+            output_pred_months: List[Optional[torch.Tensor]] = []
         samples_per_instance = max(1, sample_size // len(train_dataloader))
 
         for x, _ in train_dataloader:
@@ -174,10 +201,13 @@ class NNBase(ModelBase):
                     if self.include_pred_month:
                         output_pred_months.append(self._one_hot_months(x[1][idx: idx + 1]))
         if self.include_pred_month:
-            return [torch.stack(output_tensors), torch.cat(output_pred_months, dim=0)]
+            return [torch.stack(output_tensors),
+                    torch.cat(output_pred_months, dim=0)]  # type: ignore
         else:
             return torch.stack(output_tensors)
 
-    @staticmethod
-    def _one_hot_months(indices: torch.Tensor) -> torch.Tensor:
-        return torch.eye(14)[indices.long()][:, 1:-1]
+    def _one_hot_months(self, indices: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
+        if self.include_pred_month:
+            assert indices is not None, f"Years can't be None if include pred months is True"
+            return torch.eye(14)[indices.long()][:, 1:-1]
+        return None

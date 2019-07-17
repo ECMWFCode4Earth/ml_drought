@@ -22,7 +22,7 @@ class TestRecurrentNetwork:
 
         def mocktrain(self):
             self.model = RNN(features_per_month, dense_features, hidden_size,
-                             rnn_dropout, include_pred_month)
+                             rnn_dropout, include_pred_month, experiment='one_month_forecast')
             self.features_per_month = features_per_month
 
         monkeypatch.setattr(RecurrentNetwork, 'train', mocktrain)
@@ -32,7 +32,8 @@ class TestRecurrentNetwork:
         model.train()
         model.save_model()
 
-        assert (tmp_path / 'models/rnn/model.pkl').exists(), f'Model not saved!'
+        assert (tmp_path / 'models/one_month_forecast/rnn/model.pkl').exists(), \
+            f'Model not saved!'
 
         model_dict = torch.load(model.model_dir / 'model.pkl')
 
@@ -44,19 +45,20 @@ class TestRecurrentNetwork:
         assert model_dict['rnn_dropout'] == rnn_dropout
         assert model_dict['dense_features'] == dense_features
         assert model_dict['include_pred_month'] == include_pred_month
+        assert model_dict['experiment'] == 'one_month_forecast'
 
     @pytest.mark.parametrize('use_pred_months', [True, False])
     def test_train(self, tmp_path, capsys, use_pred_months):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        test_features = tmp_path / 'features/train/hello'
+        test_features = tmp_path / 'features/one_month_forecast/train/hello'
         test_features.mkdir(parents=True)
 
         norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
                              'std': np.ones(x.to_array().values.shape[:2])}
                      }
-        with (tmp_path / 'features/normalizing_dict.pkl').open('wb') as f:
+        with (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').open('wb') as f:
             pickle.dump(norm_dict, f)
 
         x.to_netcdf(test_features / 'x.nc')
@@ -82,16 +84,16 @@ class TestRecurrentNetwork:
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        train_features = tmp_path / 'features/train/hello'
+        train_features = tmp_path / 'features/one_month_forecast/train/hello'
         train_features.mkdir(parents=True)
 
-        test_features = tmp_path / 'features/test/hello'
+        test_features = tmp_path / 'features/one_month_forecast/test/hello'
         test_features.mkdir(parents=True)
 
         norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
                              'std': np.ones(x.to_array().values.shape[:2])}
                      }
-        with (tmp_path / 'features/normalizing_dict.pkl').open('wb') as f:
+        with (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').open('wb') as f:
             pickle.dump(norm_dict, f)
 
         x.to_netcdf(test_features / 'x.nc')

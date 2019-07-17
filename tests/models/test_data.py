@@ -1,8 +1,10 @@
 import torch
 import numpy as np
 import pytest
+import xarray as xr
+import pandas as pd
 
-from src.models.data import DataLoader, _BaseIter
+from src.models.data import DataLoader, _BaseIter, TrainData
 
 from ..utils import _make_dataset
 
@@ -12,16 +14,21 @@ class TestBaseIter:
     def test_mask(self, tmp_path):
 
         for i in range(5):
-            (tmp_path / f'features/train/{i}').mkdir(parents=True)
-            (tmp_path / f'features/train/{i}/x.nc').touch()
-            (tmp_path / f'features/train/{i}/y.nc').touch()
+            (
+                tmp_path / f'features/one_month_forecast/train/{i}'
+            ).mkdir(parents=True)
+            (tmp_path / f'features/one_month_forecast/train/{i}/x.nc').touch()
+            (tmp_path / f'features/one_month_forecast/train/{i}/y.nc').touch()
 
         mask_train = [True, True, False, True, False]
         mask_val = [False, False, True, False, True]
 
         train_paths = DataLoader._load_datasets(tmp_path, mode='train',
-                                                shuffle_data=True, mask=mask_train)
+                                                experiment='one_month_forecast',
+                                                shuffle_data=True,
+                                                mask=mask_train)
         val_paths = DataLoader._load_datasets(tmp_path, mode='train',
+                                              experiment='one_month_forecast',
                                               shuffle_data=True, mask=mask_val)
         assert len(set(train_paths).intersection(set(val_paths))) == 0, \
             f'Got the same file in both train and val set!'
@@ -29,14 +36,15 @@ class TestBaseIter:
 
     def test_pred_months(self, tmp_path):
         for i in range(1, 13):
-            (tmp_path / f'features/train/2018_{i}').mkdir(parents=True)
-            (tmp_path / f'features/train/2018_{i}/x.nc').touch()
-            (tmp_path / f'features/train/2018_{i}/y.nc').touch()
+            (tmp_path / f'features/one_month_forecast/train/2018_{i}').mkdir(parents=True)
+            (tmp_path / f'features/one_month_forecast/train/2018_{i}/x.nc').touch()
+            (tmp_path / f'features/one_month_forecast/train/2018_{i}/y.nc').touch()
 
         pred_months = [4, 5, 6]
 
         train_paths = DataLoader._load_datasets(tmp_path, mode='train',
-                                                shuffle_data=True, pred_months=pred_months)
+                                                shuffle_data=True, pred_months=pred_months,
+                                                experiment='one_month_forecast')
 
         assert len(train_paths) == len(pred_months), \
             f'Got {len(train_paths)} filepaths back, expected {len(pred_months)}'
@@ -46,15 +54,33 @@ class TestBaseIter:
             month = int(str(subfolder)[5:])
             assert month in pred_months, f'{month} not in {pred_months}, got {return_file}'
 
-    @pytest.mark.parametrize('normalize,to_tensor', [(True, True), (True, False),
-                                                     (False, True), (False, False)])
-    def test_ds_to_np(self, tmp_path, normalize, to_tensor):
+    @pytest.mark.parametrize(
+        'normalize,to_tensor,experiment,surrounding_pixels',
+        [(True, True, 'one_month_forecast', 1),
+         (True, False, 'one_month_forecast', None),
+         (False, True, 'one_month_forecast', 1),
+         (False, False, 'one_month_forecast', None),
+         (True, True, 'nowcast', 1),
+         (True, False, 'nowcast', None),
+         (False, True, 'nowcast', 1),
+         (False, False, 'nowcast', None)]
+    )
+    def test_ds_to_np(self, tmp_path, normalize, to_tensor, experiment, surrounding_pixels):
 
-        x, _, _ = _make_dataset(size=(5, 5))
-        y = x.isel(time=[0])
+        x_pred, _, _ = _make_dataset(size=(5, 5))
+        x_coeff1, _, _ = _make_dataset(size=(5, 5), variable_name='precip')
+        x_coeff2, _, _ = _make_dataset(size=(5, 5), variable_name='soil_moisture')
+        x_coeff3, _, _ = _make_dataset(size=(5, 5), variable_name='temp')
 
-        x.to_netcdf(tmp_path / 'x.nc')
-        y.to_netcdf(tmp_path / 'y.nc')
+        x = xr.merge([x_pred, x_coeff1, x_coeff2, x_coeff3])
+        y = x_pred.isel(time=[0])
+
+        data_dir = (tmp_path / experiment)
+        if not data_dir.exists():
+            data_dir.mkdir(parents=True, exist_ok=True)
+
+        x.to_netcdf(data_dir / 'x.nc')
+        y.to_netcdf(data_dir / 'y.nc')
 
         norm_dict = {}
         for var in x.data_vars:
@@ -72,41 +98,101 @@ class TestBaseIter:
                 self.data_files = []
                 self.normalizing_dict = norm_dict if normalize else None
                 self.to_tensor = None
-                self.surrounding_pixels = 1
+                self.experiment = experiment
+                self.surrounding_pixels = surrounding_pixels
 
         base_iterator = _BaseIter(MockLoader())
 
-        arrays = base_iterator.ds_folder_to_np(tmp_path, return_latlons=True,
+        arrays = base_iterator.ds_folder_to_np(data_dir, return_latlons=True,
                                                to_tensor=to_tensor)
 
-        x_np, y_np, latlons = arrays.x.historical, arrays.y, arrays.latlons
+        x_train_data, y_np, latlons = (
+            arrays.x, arrays.y, arrays.latlons
+        )
+        assert isinstance(x_train_data, TrainData)
+        if not to_tensor:
+            assert isinstance(y_np, np.ndarray)
+
+        expected_features = 4 if surrounding_pixels is None else 4 * 9
+        assert x_train_data.historical.shape[-1] == expected_features, "" \
+            "There should be" \
+            "4 historical variables (the final dimension):" \
+            f"{x_train_data.historical.shape}"
+
+        if experiment == 'nowcast':
+            expected_shape = (25, 3) if surrounding_pixels is None else (9, 3 * 9)
+            assert x_train_data.current.shape == expected_shape, "" \
+                "Expecting multiple vars" \
+                "in the current timestep. Expect: (25, 3) "\
+                f"Got: {x_train_data.current.shape}"
+
+        expected_latlons = 25 if surrounding_pixels is None else 9
+        assert latlons.shape == (expected_latlons, 2), "The shape of "\
+            "latlons should not change"\
+            f"Got: {latlons.shape}. Expecting: (25, 2)"
+
+        if normalize and (experiment == 'nowcast') and (not to_tensor):
+            assert x_train_data.current.max() < 6, f"The current data should be" \
+                f" normalized. Currently: {x_train_data.current.flatten()}"
 
         if to_tensor:
-            assert (type(x_np) == torch.Tensor) and (type(y_np) == torch.Tensor)
+            assert (
+                type(x_train_data.historical) == torch.Tensor
+            ) and (type(y_np) == torch.Tensor)
         else:
-            assert (type(x_np) == np.ndarray) and (type(y_np) == np.ndarray)
+            assert (
+                type(x_train_data.historical) == np.ndarray
+            ) and (type(y_np) == np.ndarray)
 
-        assert x_np.shape[0] == y_np.shape[0] == latlons.shape[0], \
-            f'x, y and latlon data have a different number of instances! ' \
-            f'x: {x_np.shape[0]}, y: {y_np.shape[0]}, latlons: {latlons.shape[0]}'
+        if (not normalize) and (experiment == 'nowcast') and (not to_tensor):
+            assert (
+                x_train_data.historical.shape[0] == x_train_data.current.shape[0]
+            ), "The 0th dimension (latlons) should be equal in the " \
+                f"historical ({x_train_data.historical.shape[0]}) and " \
+                f"current ({x_train_data.current.shape[0]}) arrays."
+
+            expected = (
+                x[['precip', 'soil_moisture', 'temp']]
+                .sel(time=y.time)
+                .stack(dims=['lat', 'lon'])
+                .to_array().values.T[:, 0, :]
+            )
+            got = x_train_data.current
+
+            if surrounding_pixels is None:
+                assert expected.shape == got.shape, "should have stacked latlon" \
+                    " vars as the first dimension in the current array."
+
+                assert (expected == got).all(), "" \
+                    "Expected to find the target timesetep of `precip` values"\
+                    "(the non-target variable for the target timestep: " \
+                    f"({pd.to_datetime(y.time.values).strftime('%Y-%m-%d')[0]})." \
+                    f"Expected: {expected[:5]}. \nGot: {got[:5]}"
 
         for idx in range(latlons.shape[0]):
-
             lat, lon = latlons[idx, 0], latlons[idx, 1]
-
-            for time in range(x_np.shape[1]):
+            for time in range(x_train_data.historical.shape[1]):
                 target = x.isel(time=time).sel(lat=lat).sel(lon=lon).VHI.values
 
                 if (not normalize) and (not to_tensor):
-                    assert target == x_np[idx, time, 0], \
-                        f'Got different x values for time idx: {time}, lat: {lat}, ' \
-                        f'lon: {lon}.Expected {target}, got {x_np[idx, time, 0]}'
+                    assert target == x_train_data.historical[idx, time, 0], \
+                        'Got different x values for time idx:'\
+                        f'{time}, lat: {lat}, lon: {lon} Expected {target}, '\
+                        f'got {x_train_data.historical[idx, time, 0]}'
 
-            if not to_tensor:
-                target_y = y.isel(time=0).sel(lat=lat).sel(lon=lon).VHI.values
-                assert target_y == y_np[idx, 0], \
-                    f'Got y different values for lat: {lat}, ' \
-                    f'lon: {lon}.Expected {target_y}, got {y_np[idx, 0]}'
+        if (not normalize) and (experiment == 'nowcast') and (surrounding_pixels is None):
+            # test that we are getting the right `current` data
+            relevant_features = ['precip', 'soil_moisture', 'temp']
+            target_time = y.time
+            expected = (
+                x[relevant_features]   # all vars except target_var
+                .sel(time=target_time)  # select the target_time
+                .stack(dims=['lat', 'lon'])  # stack lat,lon so shape = (lat*lon, time, dims)
+                .to_array().values[:, 0, :].T  # extract numpy array, transpose and drop dim
+            )
+
+            assert np.all(x_train_data.current == expected), f"Expected to " \
+                "find the target_time data for the non target variables"
 
     def test_surrounding_pixels(self):
         x, _, _ = _make_dataset(size=(10, 10))

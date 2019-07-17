@@ -10,7 +10,7 @@ class TestPersistence:
         x, _, _ = _make_dataset(size=(5, 5))
         y = x.isel(time=[-1])
 
-        test_features = tmp_path / 'features/test/hello'
+        test_features = tmp_path / 'features/one_month_forecast/test/hello'
         test_features.mkdir(parents=True)
 
         x.to_netcdf(test_features / 'x.nc')

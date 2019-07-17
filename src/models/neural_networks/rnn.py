@@ -18,10 +18,11 @@ class RecurrentNetwork(NNBase):
                  rnn_dropout: float = 0.25,
                  data_folder: Path = Path('data'),
                  batch_size: int = 1,
+                 experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
-        super().__init__(data_folder, batch_size, pred_months, include_pred_month,
+        super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
                          surrounding_pixels)
 
         # to initialize and save the model
@@ -29,6 +30,7 @@ class RecurrentNetwork(NNBase):
         self.rnn_dropout = rnn_dropout
         self.dense_features = dense_features
         self.features_per_month: Optional[int] = None
+        self.current_size: Optional[int] = None
 
     def save_model(self):
 
@@ -41,25 +43,32 @@ class RecurrentNetwork(NNBase):
             'rnn_dropout': self.rnn_dropout,
             'dense_features': self.dense_features,
             'include_pred_month': self.include_pred_month,
-            'surrounding_pixels': self.surrounding_pixels
+            'surrounding_pixels': self.surrounding_pixels,
+            'experiment': self.experiment
         }
 
         torch.save(model_dict, self.model_dir / 'model.pkl')
 
     def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> nn.Module:
         self.features_per_month = x_ref[0].shape[-1]
+        if self.experiment == 'nowcast':
+            self.current_size = x_ref[2].shape[-1]
+
         return RNN(features_per_month=self.features_per_month,
                    dense_features=self.dense_features,
                    hidden_size=self.hidden_size,
                    rnn_dropout=self.rnn_dropout,
-                   include_pred_month=self.include_pred_month)
+                   include_pred_month=self.include_pred_month,
+                   experiment=self.experiment,
+                   current_size=self.current_size)
 
 
 class RNN(nn.Module):
     def __init__(self, features_per_month, dense_features, hidden_size,
-                 rnn_dropout, include_pred_month):
+                 rnn_dropout, include_pred_month, experiment, current_size=None):
         super().__init__()
 
+        self.experiment = experiment
         self.include_pred_month = include_pred_month
 
         self.dropout = nn.Dropout(rnn_dropout)
@@ -71,6 +80,9 @@ class RNN(nn.Module):
         dense_input_size = hidden_size
         if include_pred_month:
             dense_input_size += 12
+        if experiment == 'nowcast':
+            assert current_size is not None
+            dense_input_size += current_size
         dense_features.insert(0, dense_input_size)
         if dense_features[-1] != 1:
             dense_features.append(1)
@@ -94,7 +106,7 @@ class RNN(nn.Module):
             nn.init.kaiming_uniform_(dense_layer.weight.data)
             nn.init.constant_(dense_layer.bias.data, 0)
 
-    def forward(self, x, pred_month=None):
+    def forward(self, x, pred_month=None, current=None):
 
         sequence_length = x.shape[1]
 
@@ -115,6 +127,10 @@ class RNN(nn.Module):
             hidden_state = self.dropout(hidden_state)
 
         x = hidden_state.squeeze(0)
+
+        if self.experiment == 'nowcast':
+            assert current is not None
+            x = torch.cat((x, current), dim=-1)
 
         if self.include_pred_month:
             x = torch.cat((x, pred_month), dim=-1)

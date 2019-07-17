@@ -1,4 +1,5 @@
 import numpy as np
+import xarray as xr
 import pickle
 import pytest
 
@@ -25,33 +26,55 @@ class TestLinearRegression:
 
         monkeypatch.setattr(LinearRegression, 'train', mocktrain)
 
-        model = LinearRegression(tmp_path)
+        model = LinearRegression(tmp_path, experiment='one_month_forecast')
         model.train()
         model.save_model()
 
-        assert (tmp_path / 'models/linear_regression/model.npy').exists(), f'Model not saved!'
+        assert (
+            tmp_path / 'models/one_month_forecast/linear_regression/model.npy'
+        ).exists(), f'Model not saved!'
 
-        saved_model = np.load(tmp_path / 'models/linear_regression/model.npy')
+        saved_model = np.load(tmp_path / 'models/one_month_forecast/linear_regression/model.npy')
         assert np.array_equal(model_array, saved_model), f'Different array saved!'
 
-    @pytest.mark.parametrize('use_pred_months', [True, False])
-    def test_train(self, tmp_path, capsys, use_pred_months):
+    @pytest.mark.parametrize('use_pred_months,experiment',
+                             [(True, 'one_month_forecast'),
+                              (True, 'nowcast'),
+                              (False, 'one_month_forecast'),
+                              (False, 'nowcast')])
+    def test_train(self, tmp_path, capsys, use_pred_months, experiment):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        test_features = tmp_path / 'features/train/hello'
-        test_features.mkdir(parents=True)
+        x_add1, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='precip')
+        x_add2, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='temp')
+        x = xr.merge([x, x_add1, x_add2])
 
-        norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
-                             'std': np.ones(x.to_array().values.shape[:2])}
-                     }
-        with (tmp_path / 'features/normalizing_dict.pkl').open('wb') as f:
+        norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                             'std': np.ones((1, x.to_array().values.shape[1]))},
+                     'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                                'std': np.ones((1, x.to_array().values.shape[1]))},
+                     'temp': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                              'std': np.ones((1, x.to_array().values.shape[1]))}}
+
+        test_features = tmp_path / f'features/{experiment}/train/hello'
+        test_features.mkdir(parents=True)
+        pred_features = tmp_path / f'features/{experiment}/test/hello'
+        pred_features.mkdir(parents=True)
+
+        with (
+            tmp_path / f'features/{experiment}/normalizing_dict.pkl'
+        ).open('wb') as f:
             pickle.dump(norm_dict, f)
 
         x.to_netcdf(test_features / 'x.nc')
+        x.to_netcdf(pred_features / 'x.nc')
         y.to_netcdf(test_features / 'y.nc')
+        y.to_netcdf(pred_features / 'y.nc')
 
-        model = LinearRegression(tmp_path, include_pred_month=use_pred_months)
+        model = LinearRegression(
+            tmp_path, include_pred_month=use_pred_months, experiment=experiment
+        )
         model.train()
 
         captured = capsys.readouterr()
@@ -61,6 +84,24 @@ class TestLinearRegression:
 
         assert type(model.model) == linear_model.SGDRegressor, \
             f'Model attribute not a linear regression!'
+
+        if (experiment != 'nowcast') and (use_pred_months):
+            assert model.model.coef_.size == 120, "Expecting 120 coefficients" \
+                "(3 historical vars * 36 months) + 12 pred_months one_hot encoded"
+
+        # Test Predictions / Evaluations
+        test_arrays_dict, preds_dict = model.predict()
+        if experiment == 'nowcast':
+            assert (
+                test_arrays_dict['hello']['y'].size == preds_dict['hello'].shape[0]
+            ), "Expected length of test arrays to be the same as the predictions"
+
+            if use_pred_months:
+                assert model.model.coef_.size == 119, "Expect to have 119 coefficients" \
+                    " (35 tstep x 3 historical) + 12 pred_months_one_hot + 2 current"
+            else:
+                assert model.model.coef_.size == 107, "Expect to have 107 coefficients" \
+                    " (35 tstep x 3 historical) + 2 current"
 
     def test_big_mean(self, tmp_path, monkeypatch):
 

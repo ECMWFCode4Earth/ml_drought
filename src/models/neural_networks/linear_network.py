@@ -15,10 +15,11 @@ class LinearNetwork(NNBase):
                  dropout: float = 0.25,
                  data_folder: Path = Path('data'),
                  batch_size: int = 1,
+                 experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
-        super().__init__(data_folder, batch_size, pred_months, include_pred_month,
+        super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
                          surrounding_pixels)
 
         if type(layer_sizes) is int:
@@ -39,35 +40,49 @@ class LinearNetwork(NNBase):
             'dropout': self.dropout,
             'input_size': self.input_size,
             'include_pred_month': self.include_pred_month,
-            'surrounding_pixels': self.surrounding_pixels
+            'surrounding_pixels': self.surrounding_pixels,
+            'experiment': self.experiment
         }
 
         torch.save(model_dict, self.model_dir / 'model.pkl')
 
     def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> nn.Module:
-        self.input_size = x_ref[0].view(x_ref[0].shape[0], -1).shape[1]
+        input_size = x_ref[0].view(x_ref[0].shape[0], -1).shape[1]
+        if self.experiment == 'nowcast':
+            current_tensor = x_ref[2]
+            input_size += current_tensor.shape[-1]
+        self.input_size = input_size
         return LinearModel(input_size=self.input_size,
                            layer_sizes=self.layer_sizes,
                            dropout=self.dropout,
-                           include_pred_month=self.include_pred_month)
+                           include_pred_month=self.include_pred_month,
+                           experiment=self.experiment)
 
 
 class LinearModel(nn.Module):
 
-    def __init__(self, input_size, layer_sizes, dropout, include_pred_month):
+    def __init__(self, input_size, layer_sizes, dropout, include_pred_month,
+                 experiment='one_month_forecast'):
         super().__init__()
 
         self.include_pred_month = include_pred_month
+        self.experiment = experiment
+
+        # change the size of inputs if include_pred_month
         if self.include_pred_month:
             input_size += 12
+
+        # first layer is the input layer
         layer_sizes.insert(0, input_size)
 
+        # dense layers from 2nd (1) -> penultimate (-2)
         self.dense_layers = nn.ModuleList([
             LinearBlock(in_features=layer_sizes[i - 1],
                         out_features=layer_sizes[i], dropout=dropout) for
             i in range(1, len(layer_sizes))
         ])
 
+        # final layer is producing a scalar
         self.final_dense = nn.Linear(in_features=layer_sizes[-1], out_features=1)
 
         self.init_weights()
@@ -81,14 +96,26 @@ class LinearModel(nn.Module):
         # see: Initializing the biases
         nn.init.constant_(self.final_dense.bias.data, 0)
 
-    def forward(self, x, pred_month=None):
-        # flatten
+    def forward(self, x, pred_month=None, current=None):
+        # flatten the final 2 dimensions (time / feature)
         x = x.contiguous().view(x.shape[0], -1)
+
+        # concatenate the one_hot_month matrix onto X
         if self.include_pred_month:
+            # flatten the array
+            pred_month = pred_month.contiguous().view(x.shape[0], -1)
             x = torch.cat((x, pred_month), dim=-1)
+
+        # concatenate the non-target variables onto X
+        if self.experiment == 'nowcast':
+            assert current is not None
+            x = torch.cat((x, current), dim=-1)
+
+        # pass the inputs through the layers
         for layer in self.dense_layers:
             x = layer(x)
 
+        # pass through the final layer for a scalar prediction
         return self.final_dense(x)
 
 

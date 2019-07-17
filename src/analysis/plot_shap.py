@@ -50,7 +50,7 @@ def plot_shap_values(x: np.ndarray,
 
     shap_val = shap_values[:, idx]
 
-    months = list(range(1, 12))
+    months = list(range(1, len(x_val) + 1))
 
     host = host_subplot(111, axes_class=AA.Axes)
     plt.subplots_adjust(right=0.75)

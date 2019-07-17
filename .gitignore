@@ -31,3 +31,4 @@ data/interim/*
 data/features/*
 data/models/*
 Code
+scripts/variables*.txt

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 import numpy as np
+import pandas as pd
 from random import shuffle
 from pathlib import Path
 import pickle
@@ -13,6 +14,7 @@ from typing import cast, Dict, Optional, Union, List, Tuple
 @dataclass
 class TrainData:
     historical: Union[np.ndarray, torch.Tensor]
+    current: Union[np.ndarray, torch.Tensor, None]
     pred_months: Union[np.ndarray, torch.Tensor]
 
 
@@ -27,7 +29,6 @@ class ModelArrays:
 
 def train_val_mask(mask_len: int, val_ratio: float = 0.3) -> Tuple[List[bool], List[bool]]:
     """Makes a trainining and validation mask which can be passed to the dataloader
-
     Arguments
     ----------
     mask_len: int
@@ -35,7 +36,6 @@ def train_val_mask(mask_len: int, val_ratio: float = 0.3) -> Tuple[List[bool], L
     val_ratio: float = 0.3
         The ratio of instances which should be True for the val mask and False for the train
         mask
-
     Returns
     ----------
     The train mask and the val mask, both as lists
@@ -49,7 +49,6 @@ def train_val_mask(mask_len: int, val_ratio: float = 0.3) -> Tuple[List[bool], L
 
 class DataLoader:
     """Dataloader; lazily load the training and test data
-
     Attributes:
     ----------
     data_path: Path = Path('data')
@@ -64,6 +63,9 @@ class DataLoader:
         Whether or not to shuffle data
     clear_nans: bool = True
         Whether to remove nan values
+    experiment: str = 'one_month_forecast'
+        the name of the experiment to run. Defaults to one_month_forecast
+        (train on only historical data and predict one month ahead)
     normalize: bool = True
         Whether to normalize the data. This assumes a normalizing_dict.pkl was saved by the
         engineer
@@ -82,6 +84,7 @@ class DataLoader:
     def __init__(self, data_path: Path = Path('data'), batch_file_size: int = 1,
                  mode: str = 'train', shuffle_data: bool = True,
                  clear_nans: bool = True, normalize: bool = True,
+                 experiment: str = 'one_month_forecast',
                  mask: Optional[List[bool]] = None,
                  pred_months: Optional[List[int]] = None,
                  to_tensor: bool = False,
@@ -91,12 +94,17 @@ class DataLoader:
         self.mode = mode
         self.shuffle = shuffle_data
         self.clear_nans = clear_nans
-        self.data_files = self._load_datasets(data_path, mode, shuffle_data, mask,
-                                              pred_months)
+        self.experiment = experiment
+        self.data_files = self._load_datasets(
+            data_path=data_path, mode=mode, shuffle_data=shuffle_data,
+            experiment=experiment, mask=mask, pred_months=pred_months
+        )
 
         self.normalizing_dict = None
         if normalize:
-            with (data_path / 'features/normalizing_dict.pkl').open('rb') as f:
+            with (
+                data_path / f'features/{experiment}/normalizing_dict.pkl'
+            ).open('rb') as f:
                 self.normalizing_dict = pickle.load(f)
 
         self.surrounding_pixels = surrounding_pixels
@@ -112,11 +120,12 @@ class DataLoader:
         return len(self.data_files) // self.batch_file_size
 
     @staticmethod
-    def _load_datasets(data_path: Path, mode: str, shuffle_data: bool,
+    def _load_datasets(data_path: Path, mode: str,
+                       shuffle_data: bool, experiment: str,
                        mask: Optional[List[bool]] = None,
                        pred_months: Optional[List[int]] = None) -> List[Path]:
 
-        data_folder = data_path / f'features/{mode}'
+        data_folder = data_path / f'features/{experiment}/{mode}'
         output_paths: List[Path] = []
 
         for subtrain in data_folder.iterdir():
@@ -148,6 +157,7 @@ class _BaseIter:
         self.clear_nans = loader.clear_nans
         self.surrounding_pixels = loader.surrounding_pixels
         self.to_tensor = loader.to_tensor
+        self.experiment = loader.experiment
 
         if self.shuffle:
             # makes sure they are shuffled every epoch
@@ -194,17 +204,21 @@ class _BaseIter:
         if self.surrounding_pixels is not None:
             x = self._add_surrounding(x, self.surrounding_pixels)
         x_np, y_np = x.to_array().values, y.to_array().values
-
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
             self.calculate_normalizing_array(list(x.data_vars))
 
         # first, x
         x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
         x_np = np.moveaxis(np.moveaxis(x_np, 0, 1), -1, 0)
+
         # then, the x month
-        assert len(y.time) == 1, f'Expected y to only have 1 timestamp! Got {len(y.time)}'
-        target_month = datetime.strptime(str(y.time.values[0])[:-3], '%Y-%m-%dT%H:%M:%S.%f').month
+        assert len(y.time) == 1, 'Expected y to only have 1 timestamp!'\
+            f'Got {len(y.time)}'
+        target_month = datetime.strptime(
+            str(y.time.values[0])[:-3], '%Y-%m-%dT%H:%M:%S.%f'
+        ).month
         x_months = np.array([target_month] * x_np.shape[0])
+
         # then, y
         y_np = y_np.reshape(y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
         y_np = np.moveaxis(y_np, -1, 0).reshape(-1, 1)
@@ -212,24 +226,66 @@ class _BaseIter:
         if self.normalizing_array is not None:
             x_np = (x_np - self.normalizing_array['mean']) / (self.normalizing_array['std'])
 
+        if self.experiment == 'nowcast':
+            # if nowcast then we have a TrainData.current
+            historical = x_np[:, :-1, :]  # all timesteps except the final
+            current = self.get_current_array(  # only select NON-TARGET vars
+                x=x, y=y, x_np=x_np
+            )
+
+            train_data = TrainData(
+                current=current,
+                historical=historical,
+                pred_months=x_months
+            )
+
+        else:
+            train_data = TrainData(
+                current=None,
+                historical=x_np,
+                pred_months=x_months
+            )
+
         assert y_np.shape[0] == x_np.shape[0], f'x and y data have a different ' \
             f'number of instances! x: {x_np.shape[0]}, y: {y_np.shape[0]}'
 
         if clear_nans:
             # remove nans if they are in the x or y data
-            x_nans, y_nans = np.isnan(x_np), np.isnan(y_np)
+            historical_nans, y_nans = np.isnan(train_data.historical), np.isnan(y_np)
 
-            x_nans_summed = x_nans.reshape(x_nans.shape[0],
-                                           x_nans.shape[1] * x_nans.shape[2]).sum(axis=-1)
+            historical_nans_summed = historical_nans.reshape(
+                historical_nans.shape[0], historical_nans.shape[1] * historical_nans.shape[2]
+            ).sum(axis=-1)
             y_nans_summed = y_nans.sum(axis=-1)
 
-            notnan_indices = np.where((x_nans_summed == 0) & (y_nans_summed == 0))[0]
-            x_np, y_np = x_np[notnan_indices], y_np[notnan_indices]
-            x_months = x_months[notnan_indices]
+            notnan_indices = np.where((historical_nans_summed == 0) & (y_nans_summed == 0))[0]
+
+            if self.experiment == 'nowcast':
+                current_nans = np.isnan(train_data.current)
+                current_nans_summed = current_nans.sum(axis=-1)
+                notnan_indices = np.where(
+                    (
+                        historical_nans_summed == 0
+                    ) & (y_nans_summed == 0) & (
+                        current_nans_summed == 0
+                    )
+                )[0]
+                train_data.current = train_data.current[notnan_indices]  # type: ignore
+
+            train_data.historical, y_np = (
+                train_data.historical[notnan_indices], y_np[notnan_indices]
+            )
+            train_data.pred_months = train_data.pred_months[notnan_indices]  # type: ignore
 
         if to_tensor:
-            x_np, y_np = torch.from_numpy(x_np).float(), torch.from_numpy(y_np).float()
-            x_months = torch.from_numpy(x_months).float()
+            train_data.historical, y_np = (
+                torch.from_numpy(train_data.historical).float(),
+                torch.from_numpy(y_np).float()
+            )
+            train_data.pred_months = torch.from_numpy(train_data.pred_months).float()
+
+            if self.experiment == 'nowcast':
+                train_data.current = torch.from_numpy(train_data.current).float()
 
         if return_latlons:
             lons, lats = np.meshgrid(x.lon.values, x.lat.values)
@@ -239,12 +295,10 @@ class _BaseIter:
             if clear_nans:
                 latlons = latlons[notnan_indices]
 
-            x_data = TrainData(historical=x_np, pred_months=x_months)
-            return ModelArrays(x=x_data, y=y_np, x_vars=list(x.data_vars),
+            return ModelArrays(x=train_data, y=y_np, x_vars=list(x.data_vars),
                                y_var=list(y.data_vars)[0], latlons=latlons)
 
-        x_data = TrainData(historical=x_np, pred_months=x_months)
-        return ModelArrays(x=x_data, y=y_np, x_vars=list(x.data_vars),
+        return ModelArrays(x=train_data, y=y_np, x_vars=list(x.data_vars),
                            y_var=list(y.data_vars)[0])
 
     @staticmethod
@@ -259,21 +313,50 @@ class _BaseIter:
                     x[shifted_varname] = x[var].shift(lat=lat_shift, lon=lon_shift)
         return x
 
+    @staticmethod
+    def get_current_array(x: xr.Dataset, y: xr.Dataset, x_np: np.ndarray) -> np.ndarray:
+        # get the target variable
+        target_var = [y for y in y.data_vars][0]
+
+        # get the target time and target_time index
+        target_time = y.time
+        x_datetimes = [pd.to_datetime(time) for time in x.time.values]
+        y_datetime = pd.to_datetime(target_time.values[0])
+        time_ix = [
+            ix for ix, time in enumerate(x_datetimes)
+            if time == y_datetime
+        ][0]
+
+        # get the X features and X feature indices
+        relevant_indices = [
+            idx for idx, feat in enumerate(x.data_vars)
+            if not feat.endswith(target_var)
+        ]
+
+        # (latlon, time, data_var)
+        current = x_np[:, time_ix, relevant_indices]
+
+        assert len(current.shape) == 2, "Expected array: (lat*lon, time, dims)" \
+            f"Got:{current.shape}"
+        return current
+
 
 class _TrainIter(_BaseIter):
 
     def __next__(self) -> Tuple[Tuple[Union[np.ndarray, torch.Tensor],
-                                      Union[np.ndarray, torch.Tensor]],
+                                      ...],
                                 Union[np.ndarray, torch.Tensor]]:
 
         if self.idx < self.max_idx:
-            out_x, out_x_add, out_y = [], [], []
+            out_x, out_x_add, out_y, out_x_curr = [], [], [], []
 
             cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
             while self.idx < cur_max_idx:
                 subfolder = self.data_files[self.idx]
-                arrays = self.ds_folder_to_np(subfolder, clear_nans=self.clear_nans,
-                                              return_latlons=False, to_tensor=False)
+                arrays = self.ds_folder_to_np(
+                    subfolder, clear_nans=self.clear_nans,
+                    return_latlons=False, to_tensor=False
+                )
                 if arrays.x.historical.shape[0] == 0:
                     print(f'{subfolder} returns no values. Skipping')
 
@@ -284,20 +367,35 @@ class _TrainIter(_BaseIter):
                     cur_max_idx = min(cur_max_idx + 1, self.max_idx)
 
                 out_x.append(arrays.x.historical)
+                if arrays.x.current is not None:
+                    out_x_curr.append(arrays.x.current)
                 out_x_add.append(arrays.x.pred_months)
                 out_y.append(arrays.y)
                 self.idx += 1
 
             final_x = np.concatenate(out_x, axis=0)
+            final_x_curr = np.concatenate(out_x_curr, axis=0) if out_x_curr != [] else None
             final_x_add = np.concatenate(out_x_add, axis=0)
             final_y = np.concatenate(out_y, axis=0)
+
+            if self.to_tensor:
+                # x matrix
+                final_x = torch.from_numpy(final_x).float()
+                # pred_months data
+                final_x_add = torch.from_numpy(final_x_add).float()
+                # current timestep data
+                final_x_curr = torch.from_numpy(
+                    final_x_curr
+                ).float() if final_x_curr is not None else None
+                # y (target) data
+                final_y = torch.from_numpy(final_y).float()
+
             if final_x.shape[0] == 0:
                 raise StopIteration()
-            if self.to_tensor:
-                return (torch.from_numpy(final_x).float(),
-                        torch.from_numpy(final_x_add).float()), torch.from_numpy(final_y).float()
-            return (final_x, final_x_add), final_y
-        else:
+
+            return (final_x, final_x_add, final_x_curr), final_y
+
+        else:  # final_x_curr >= self.max_idx
             raise StopIteration()
 
 
