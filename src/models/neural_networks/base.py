@@ -1,64 +1,36 @@
 import numpy as np
-from pathlib import Path
 import random
+from pathlib import Path
 import math
 
 import torch
-from torch import nn
 from torch.nn import functional as F
 
 import shap
 
-from typing import cast, Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from .base import ModelBase
-from .utils import chunk_array
-from .data import DataLoader, train_val_mask
+from ..base import ModelBase
+from ..utils import chunk_array
+from ..data import DataLoader, train_val_mask
 
 
-class LinearNetwork(ModelBase):
+class NNBase(ModelBase):
 
-    model_name = 'linear_network'
-
-    def __init__(self, layer_sizes: Union[int, List[int]],
-                 dropout: float = 0.25,
+    def __init__(self,
                  data_folder: Path = Path('data'),
-                 experiment: str = 'one_month_forecast',
                  batch_size: int = 1,
+                 experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
-                 include_pred_month: bool = True) -> None:
-        super().__init__(
-            data_folder, batch_size, experiment=experiment,
-            include_pred_month=include_pred_month,
-            pred_months=pred_months
-        )
-
-        if type(layer_sizes) is int:
-            layer_sizes = cast(List[int], [layer_sizes])
-
-        # to initialize and save the model
-        self.layer_sizes = layer_sizes
-        self.dropout = dropout
-        self.input_size: Optional[int] = None
+                 include_pred_month: bool = True,
+                 surrounding_pixels: Optional[int] = None) -> None:
+        super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
+                         surrounding_pixels)
 
         # for reproducibility
         torch.manual_seed(42)
 
         self.explainer: Optional[shap.DeepExplainer] = None
-
-    def save_model(self):
-
-        assert self.model is not None, 'Model must be trained before it can be saved!'
-
-        model_dict = {
-            'state_dict': self.model.state_dict(),
-            'layer_sizes': self.layer_sizes,
-            'dropout': self.dropout,
-            'input_size': self.input_size,
-            'include_pred_month': self.include_pred_month
-        }
-
-        torch.save(model_dict, self.model_dir / 'model.pkl')
 
     def explain(self, x: Any) -> np.ndarray:
         assert self.model is not None, 'Model must be trained!'
@@ -76,10 +48,14 @@ class LinearNetwork(ModelBase):
 
         return self.explainer.shap_values(x)
 
+    def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> torch.nn.Module:
+        raise NotImplementedError
+
     def train(self, num_epochs: int = 1,
               early_stopping: Optional[int] = None,
               batch_size: int = 256,
-              learning_rate: float = 1e-3) -> None:
+              learning_rate: float = 1e-3,
+              val_split: float = 0.1) -> None:
         print(f'Training {self.model_name}')
 
         if early_stopping is not None:
@@ -87,7 +63,7 @@ class LinearNetwork(ModelBase):
                                                      experiment=self.experiment,
                                                      shuffle_data=False,
                                                      pred_months=self.pred_months))
-            train_mask, val_mask = train_val_mask(len_mask, 0.3)
+            train_mask, val_mask = train_val_mask(len_mask, val_split)
 
             train_dataloader = DataLoader(data_path=self.data_path,
                                           batch_file_size=self.batch_size,
@@ -95,7 +71,8 @@ class LinearNetwork(ModelBase):
                                           experiment=self.experiment,
                                           mask=train_mask,
                                           to_tensor=True,
-                                          pred_months=self.pred_months)
+                                          pred_months=self.pred_months,
+                                          surrounding_pixels=self.surrounding_pixels)
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
                                         shuffle_data=False, mode='train',
@@ -103,6 +80,7 @@ class LinearNetwork(ModelBase):
                                         mask=val_mask,
                                         to_tensor=True,
                                         pred_months=self.pred_months)
+
             batches_without_improvement = 0
             best_val_score = np.inf
         else:
@@ -111,25 +89,13 @@ class LinearNetwork(ModelBase):
                                           shuffle_data=True, mode='train',
                                           experiment=self.experiment,
                                           to_tensor=True,
-                                          pred_months=self.pred_months)
-
+                                          pred_months=self.pred_months,
+                                          surrounding_pixels=self.surrounding_pixels)
         # initialize the model
-        if self.input_size is None:
+        if self.model is None:
             x_ref, _ = next(iter(train_dataloader))
-            self.input_size = x_ref[0].contiguous().view(
-                x_ref[0].shape[0], -1
-            ).shape[1]
-
-        current = None
-        if self.experiment == 'nowcast':
-            current = x_ref[2]
-
-        self.model: LinearModel = LinearModel(input_size=self.input_size,
-                                              layer_sizes=self.layer_sizes,
-                                              dropout=self.dropout,
-                                              include_pred_month=self.include_pred_month,
-                                              experiment=self.experiment,
-                                              current=current)
+            model = self._initialize_model(x_ref)
+            self.model = model
 
         optimizer = torch.optim.Adam([pam for pam in self.model.parameters()],
                                      lr=learning_rate)
@@ -185,11 +151,12 @@ class LinearNetwork(ModelBase):
                         return None
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
-        test_arrays_loader = DataLoader(
-            data_path=self.data_path, batch_file_size=self.batch_size,
-            shuffle_data=False, mode='test', to_tensor=True,
-            experiment=self.experiment, pred_months=self.pred_months
-        )
+
+        test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=self.batch_size,
+                                        shuffle_data=False, mode='test',
+                                        experiment=self.experiment,
+                                        pred_months=self.pred_months, to_tensor=True,
+                                        surrounding_pixels=self.surrounding_pixels)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -219,7 +186,8 @@ class LinearNetwork(ModelBase):
                                       batch_file_size=self.batch_size,
                                       shuffle_data=True, mode='train',
                                       pred_months=self.pred_months,
-                                      to_tensor=True)
+                                      to_tensor=True,
+                                      surrounding_pixels=self.surrounding_pixels)
         output_tensors: List[torch.Tensor] = []
         if self.include_pred_month:
             output_pred_months: List[torch.Tensor] = []
@@ -240,89 +208,3 @@ class LinearNetwork(ModelBase):
     @staticmethod
     def _one_hot_months(indices: torch.Tensor) -> torch.Tensor:
         return torch.eye(14)[indices.long()][:, 1:-1]
-
-
-class LinearModel(nn.Module):
-
-    def __init__(
-        self, input_size, layer_sizes, dropout, include_pred_month,
-        current=None, experiment='one_month_forecast'
-    ):
-        super().__init__()
-
-        self.include_pred_month = include_pred_month
-        self.experiment = experiment
-
-        # change the size of inputs if include_pred_month
-        if self.include_pred_month:
-            input_size += 12
-
-        # change the size of inputs if experiment == `nowcast`
-        if self.experiment == 'nowcast':
-            assert current is not None, "`current` argument must not be none" \
-                "when the experiment is `nowcast` because we need the " \
-                "target timestep non-target feature data"
-            input_size += current.shape[-1]
-
-        # first layer is the input layer
-        layer_sizes.insert(0, input_size)
-
-        # dense layers from 2nd (1) -> penultimate (-2)
-        self.dense_layers = nn.ModuleList([
-            LinearBlock(in_features=layer_sizes[i - 1],
-                        out_features=layer_sizes[i], dropout=dropout) for
-            i in range(1, len(layer_sizes))
-        ])
-
-        # final layer is producing a scalar
-        self.final_dense = nn.Linear(in_features=layer_sizes[-1], out_features=1)
-
-        self.init_weights()
-
-    def init_weights(self):
-        for dense_layer in self.dense_layers:
-            nn.init.kaiming_uniform_(dense_layer.linear.weight.data)
-
-        nn.init.kaiming_uniform_(self.final_dense.weight.data)
-        # http://cs231n.github.io/neural-networks-2/#init
-        # see: Initializing the biases
-        nn.init.constant_(self.final_dense.bias.data, 0)
-
-    def forward(self, x, pred_month=None, current=None):
-        # flatten the final 2 dimensions (time / feature)
-        x = x.contiguous().view(x.shape[0], -1)
-
-        # concatenate the one_hot_month matrix onto X
-        if self.include_pred_month:
-            # flatten the array
-            pred_month = pred_month.contiguous().view(x.shape[0], -1)
-            x = torch.cat((x, pred_month), dim=-1)
-
-        # concatenate the non-target variables onto X
-        if self.experiment == 'nowcast':
-            assert current is not None
-            x = torch.cat((x, current), dim=-1)
-
-        # pass the inputs through the layers
-        for layer in self.dense_layers:
-            x = layer(x)
-
-        # pass through the final layer for a scalar prediction
-        return self.final_dense(x)
-
-
-class LinearBlock(nn.Module):
-    """
-    A linear layer followed by batchnorm, a ReLU activation, and dropout
-    """
-
-    def __init__(self, in_features, out_features, dropout=0.25):
-        super().__init__()
-        self.linear = nn.Linear(in_features=in_features, out_features=out_features, bias=False)
-        self.batchnorm = nn.BatchNorm1d(num_features=out_features)
-        self.relu = nn.LeakyReLU(negative_slope=0.1, inplace=True)
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, x):
-        x = self.relu(self.batchnorm(self.linear(x)))
-        return self.dropout(x)

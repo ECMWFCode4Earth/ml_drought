@@ -34,7 +34,8 @@ class TestNowcastEngineer(TestEngineer):
         engineer = NowcastEngineer(tmp_path)
         train = engineer._train_test_split(dataset, years=[2001],
                                            target_variable='VHI',
-                                           expected_length=11)
+                                           expected_length=11,
+                                           pred_months=11)
 
         assert (train.time.values < np.datetime64('2001-01-01')).all(), \
             'Got years greater than the test year in the training set!'

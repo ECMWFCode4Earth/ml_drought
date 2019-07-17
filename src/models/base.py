@@ -28,7 +28,8 @@ class ModelBase:
                  batch_size: int = 1,
                  experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
-                 include_pred_month: bool = True) -> None:
+                 include_pred_month: bool = True,
+                 surrounding_pixels: Optional[int] = None) -> None:
 
         self.batch_size = batch_size
         self.include_pred_month = include_pred_month
@@ -36,6 +37,8 @@ class ModelBase:
         self.experiment = experiment
         self.pred_months = pred_months
         self.models_dir = data_folder / 'models' / self.experiment
+        self.surrounding_pixels = surrounding_pixels
+
         if not self.models_dir.exists():
             self.models_dir.mkdir(parents=True, exist_ok=False)
 

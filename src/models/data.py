@@ -63,6 +63,9 @@ class DataLoader:
         Whether or not to shuffle data
     clear_nans: bool = True
         Whether to remove nan values
+    experiment: str = 'one_month_forecast'
+        the name of the experiment to run. Defaults to one_month_forecast
+        (train on only historical data and predict one month ahead)
     normalize: bool = True
         Whether to normalize the data. This assumes a normalizing_dict.pkl was saved by the
         engineer
@@ -73,14 +76,10 @@ class DataLoader:
         The months the model should predict. If None, all months are predicted
     to_tensor: bool = False
         Whether to turn the np.ndarrays into torch.Tensors
-    experiement: str = 'one_month_forecast'
-        the name of the experiment to run. Defaults to one_month_forecast
-        (train on only historical data and predict one month ahead)
-    Note:
-    the _load_datasets() function requires an `experiment` string defining
-    which experiment is to be run. The string must be the same as the
-    name of the experiment when creating the `x.npy` and `y.npy` `train`/`test`
-    splits in the `engineer` classes.
+    surrounding_pixels: Optional[int] = None
+        How many surrounding pixels to add to the input data. e.g. if the input is 1, then in
+        addition to the pixels on the prediction point, the neighbouring (spatial) pixels will
+        be included too, up to a distance of one pixel away
     """
     def __init__(self, data_path: Path = Path('data'), batch_file_size: int = 1,
                  mode: str = 'train', shuffle_data: bool = True,
@@ -88,7 +87,8 @@ class DataLoader:
                  experiment: str = 'one_month_forecast',
                  mask: Optional[List[bool]] = None,
                  pred_months: Optional[List[int]] = None,
-                 to_tensor: bool = False) -> None:
+                 to_tensor: bool = False,
+                 surrounding_pixels: Optional[int] = None) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
@@ -107,6 +107,7 @@ class DataLoader:
             ).open('rb') as f:
                 self.normalizing_dict = pickle.load(f)
 
+        self.surrounding_pixels = surrounding_pixels
         self.to_tensor = to_tensor
 
     def __iter__(self):
@@ -154,6 +155,7 @@ class _BaseIter:
         self.batch_file_size = loader.batch_file_size
         self.shuffle = loader.shuffle
         self.clear_nans = loader.clear_nans
+        self.surrounding_pixels = loader.surrounding_pixels
         self.to_tensor = loader.to_tensor
         self.experiment = loader.experiment
 
@@ -175,44 +177,19 @@ class _BaseIter:
         self.normalizing_dict = cast(Dict[str, Dict[str, np.ndarray]], self.normalizing_dict)
 
         mean, std = [], []
+        normalizing_dict_keys = self.normalizing_dict.keys()
         for var in data_vars:
-            mean.append(self.normalizing_dict[var]['mean'])
-            std.append(self.normalizing_dict[var]['std'])
+            for norm_var in normalizing_dict_keys:
+                if var.endswith(norm_var):
+                    mean.append(self.normalizing_dict[norm_var]['mean'])
+                    std.append(self.normalizing_dict[norm_var]['std'])
+                    break
 
         self.normalizing_array = cast(Dict[str, np.ndarray], {
             # swapaxes so that its [timesteps, features], not [features, timesteps]
             'mean': np.vstack(mean).swapaxes(0, 1),
             'std': np.vstack(std).swapaxes(0, 1)
         })
-
-    @staticmethod
-    def get_current_array(
-        x: xr.Dataset, y: xr.Dataset, x_np: np.ndarray
-    ) -> np.ndarray:
-        # get the target variable
-        target_var = [y for y in y.data_vars][0]
-
-        # get the target time and target_time index
-        target_time = y.time
-        x_datetimes = [pd.to_datetime(time) for time in x.time.values]
-        y_datetime = pd.to_datetime(target_time.values[0])
-        time_ix = [
-            ix for ix, time in enumerate(x_datetimes)
-            if time == y_datetime
-        ][0]
-
-        # get the X features and X feature indices
-        relevant_indices = [
-            idx for idx, feat in enumerate(x.data_vars)
-            if feat != target_var
-        ]
-
-        # (latlon, time, data_var)
-        current = x_np[:, time_ix, relevant_indices]
-
-        assert len(current.shape) == 2, "Expected array: (lat*lon, time, dims)" \
-            f"Got:{current.shape}"
-        return current
 
     def ds_folder_to_np(self,
                         folder: Path,
@@ -224,7 +201,8 @@ class _BaseIter:
         x, y = xr.open_dataset(folder / 'x.nc'), xr.open_dataset(folder / 'y.nc')
         assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable! ' \
             f'Got {len(list(y.data_vars))}'
-
+        if self.surrounding_pixels is not None:
+            x = self._add_surrounding(x, self.surrounding_pixels)
         x_np, y_np = x.to_array().values, y.to_array().values
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
             self.calculate_normalizing_array(list(x.data_vars))
@@ -245,8 +223,6 @@ class _BaseIter:
         y_np = y_np.reshape(y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
         y_np = np.moveaxis(y_np, -1, 0).reshape(-1, 1)
 
-        # normalize everything
-        # @GABI should we normalize the y data too?
         if self.normalizing_array is not None:
             x_np = (x_np - self.normalizing_array['mean']) / (self.normalizing_array['std'])
 
@@ -324,6 +300,45 @@ class _BaseIter:
 
         return ModelArrays(x=train_data, y=y_np, x_vars=list(x.data_vars),
                            y_var=list(y.data_vars)[0])
+
+    @staticmethod
+    def _add_surrounding(x: xr.Dataset, surrounding_pixels: int) -> xr.Dataset:
+
+        lat_shifts = lon_shifts = range(-surrounding_pixels, surrounding_pixels + 1)
+        for var in x.data_vars:
+            for lat_shift in lat_shifts:
+                for lon_shift in lon_shifts:
+                    if lat_shift == lon_shift == 0: continue
+                    shifted_varname = f'lat_{lat_shift}_lon_{lon_shift}_{var}'
+                    x[shifted_varname] = x[var].shift(lat=lat_shift, lon=lon_shift)
+        return x
+
+    @staticmethod
+    def get_current_array(x: xr.Dataset, y: xr.Dataset, x_np: np.ndarray) -> np.ndarray:
+        # get the target variable
+        target_var = [y for y in y.data_vars][0]
+
+        # get the target time and target_time index
+        target_time = y.time
+        x_datetimes = [pd.to_datetime(time) for time in x.time.values]
+        y_datetime = pd.to_datetime(target_time.values[0])
+        time_ix = [
+            ix for ix, time in enumerate(x_datetimes)
+            if time == y_datetime
+        ][0]
+
+        # get the X features and X feature indices
+        relevant_indices = [
+            idx for idx, feat in enumerate(x.data_vars)
+            if not feat.endswith(target_var)
+        ]
+
+        # (latlon, time, data_var)
+        current = x_np[:, time_ix, relevant_indices]
+
+        assert len(current.shape) == 2, "Expected array: (lat*lon, time, dims)" \
+            f"Got:{current.shape}"
+        return current
 
 
 class _TrainIter(_BaseIter):

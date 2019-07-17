@@ -20,40 +20,38 @@ class LinearRegression(ModelBase):
                  experiment: str = 'one_month_forecast',
                  batch_size: int = 1,
                  pred_months: Optional[List[int]] = None,
-                 include_pred_month: bool = True) -> None:
-        super().__init__(
-            data_folder, batch_size, experiment=experiment,
-            include_pred_month=include_pred_month, pred_months=pred_months
-        )
+                 include_pred_month: bool = True,
+                 surrounding_pixels: Optional[int] = None) -> None:
+        super().__init__(data_folder, batch_size, experiment, pred_months,
+                         include_pred_month, surrounding_pixels)
 
         self.explainer: Optional[shap.LinearExplainer] = None
 
     def train(self, num_epochs: int = 1,
               early_stopping: Optional[int] = None,
-              batch_size: int = 256) -> None:
+              batch_size: int = 256,
+              val_split: float = 0.1) -> None:
         print(f'Training {self.model_name} for experiment {self.experiment}')
 
         if early_stopping is not None:
-            len_mask = len(DataLoader._load_datasets(
-                self.data_path, mode='train',
-                experiment=self.experiment,
-                shuffle_data=False
-            ))
-            train_mask, val_mask = train_val_mask(len_mask, 0.3)
+            len_mask = len(DataLoader._load_datasets(self.data_path, mode='train',
+                                                     shuffle_data=False,
+                                                     experiment=self.experiment))
+            train_mask, val_mask = train_val_mask(len_mask, val_split)
 
             train_dataloader = DataLoader(data_path=self.data_path,
                                           batch_file_size=self.batch_size,
                                           experiment=self.experiment,
                                           shuffle_data=True, mode='train',
                                           pred_months=self.pred_months,
-                                          mask=train_mask)
+                                          mask=train_mask,
+                                          surrounding_pixels=self.surrounding_pixels)
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
                                         experiment=self.experiment,
                                         shuffle_data=False, mode='train',
-                                        pred_months=self.pred_months,
-                                        mask=val_mask)
-
+                                        pred_months=self.pred_months, mask=val_mask,
+                                        surrounding_pixels=self.surrounding_pixels)
             batches_without_improvement = 0
             best_val_score = np.inf
         else:
@@ -61,7 +59,8 @@ class LinearRegression(ModelBase):
                                           experiment=self.experiment,
                                           batch_file_size=self.batch_size,
                                           pred_months=self.pred_months,
-                                          shuffle_data=True, mode='train')
+                                          shuffle_data=True, mode='train',
+                                          surrounding_pixels=self.surrounding_pixels)
         self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
 
         for epoch in range(num_epochs):
@@ -80,10 +79,7 @@ class LinearRegression(ModelBase):
                         pred_months = batch_x[1]  # .astype(int)
                         # one hot encoding, should be num_classes + 1, but
                         # for us its + 2, since 0 is not a class either
-                        if len(batch_x[1].shape) == 1:
-                            pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
-                        else:  # HOW to work with multidimensional
-                            pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
+                        pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
                         x_in = np.concatenate(
                             (x_in, pred_months_onehot), axis=-1
                         )
@@ -118,7 +114,7 @@ class LinearRegression(ModelBase):
                         )
 
                     if self.experiment == 'nowcast':
-                        current_time_data = batch_x[2]
+                        current_time_data = x[2]
                         x_in = np.concatenate(
                             (x_in, current_time_data), axis=-1
                         )
@@ -182,12 +178,10 @@ class LinearRegression(ModelBase):
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]],
                                Dict[str, np.ndarray]]:
-
         test_arrays_loader = DataLoader(
             data_path=self.data_path, batch_file_size=self.batch_size,
             experiment=self.experiment, shuffle_data=False, mode='test',
-            pred_months=self.pred_months
-        )
+            pred_months=self.pred_months, surrounding_pixels=self.surrounding_pixels)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -226,7 +220,8 @@ class LinearRegression(ModelBase):
         train_dataloader = DataLoader(data_path=self.data_path,
                                       batch_file_size=1,
                                       pred_months=self.pred_months,
-                                      shuffle_data=False, mode='train')
+                                      shuffle_data=False, mode='train',
+                                      surrounding_pixels=self.surrounding_pixels)
 
         means, sizes = [], []
         for x, _ in train_dataloader:
