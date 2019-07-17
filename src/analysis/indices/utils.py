@@ -122,6 +122,7 @@ def fit_all_indices(data_path: Path,
             i.fit(variable=variable)
             out[index.name] = i  # type: ignore
             # fit modifiedCZI
+            i = index(data_path)
             i.fit(variable=variable, modified=True)
             out[index.name + '_modified'] = i  # type: ignore
         else:
