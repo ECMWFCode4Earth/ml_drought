@@ -115,10 +115,11 @@ def fit_all_indices(data_path: Path) -> xr.Dataset:
 
     # join all indices -> 1 dataset
     print("Joining all variables into one `xr.dataset`")
-    ds_objs = [index.index
+    ds_objs = [
+        index.index
         for index in out.values()
     ]
     ds = xr.merge(ds_objs)
-    ds = ds.drop(['month', 'precip_cumsum']).isel(time=slice(2,-1))
+    ds = ds.drop(['month', 'precip_cumsum']).isel(time=slice(2, -1))
 
     return ds
