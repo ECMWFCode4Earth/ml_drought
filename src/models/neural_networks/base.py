@@ -190,7 +190,7 @@ class NNBase(ModelBase):
                                       surrounding_pixels=self.surrounding_pixels)
         output_tensors: List[torch.Tensor] = []
         if self.include_pred_month:
-            output_pred_months: List[torch.Tensor] = []
+            output_pred_months: List[Optional[torch.Tensor]] = []
         samples_per_instance = max(1, sample_size // len(train_dataloader))
 
         for x, _ in train_dataloader:
@@ -201,10 +201,13 @@ class NNBase(ModelBase):
                     if self.include_pred_month:
                         output_pred_months.append(self._one_hot_months(x[1][idx: idx + 1]))
         if self.include_pred_month:
-            return [torch.stack(output_tensors), torch.cat(output_pred_months, dim=0)]
+            return [torch.stack(output_tensors),
+                    torch.cat(output_pred_months, dim=0)]  # type: ignore
         else:
             return torch.stack(output_tensors)
 
-    @staticmethod
-    def _one_hot_months(indices: torch.Tensor) -> torch.Tensor:
-        return torch.eye(14)[indices.long()][:, 1:-1]
+    def _one_hot_months(self, indices: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
+        if self.include_pred_month:
+            assert indices is not None, f"Years can't be None if include pred months is True"
+            return torch.eye(14)[indices.long()][:, 1:-1]
+        return None

@@ -31,7 +31,9 @@ def chunk_array(x: Union[Tuple[Union[torch.Tensor, np.ndarray, None], ...],
     """
     if type(x) is not tuple:
         x = (x, )
-    x = cast(Tuple[Union[torch.Tensor, np.ndarray]], x)
+    x = cast(Tuple[Union[torch.Tensor, np.ndarray, None], ...], x)
+
+    assert x[0] is not None, f'x[0] should be historical data, and therefore should not be None'
     num_sections = max(1, x[0].shape[0] // batch_size)
 
     if type(x[0]) == np.ndarray:
@@ -68,7 +70,7 @@ def _chunk_tensor(x: Tuple[Optional[torch.Tensor], ...], y: torch.Tensor,
         if x_section is not None:
             split_x.append(torch.chunk(x_section, num_sections))
         else:
-            split_x.append([None] * num_sections)
+            split_x.append([None] * num_sections)  # type: ignore
     split_y = torch.chunk(y, num_sections)
     return_arrays = list(zip(*split_x, split_y))
 

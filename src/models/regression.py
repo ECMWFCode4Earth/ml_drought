@@ -70,6 +70,8 @@ class LinearRegression(ModelBase):
                                                     batch_size,
                                                     shuffle=True):
                     batch_y = cast(np.ndarray, batch_y)
+                    assert batch_x[0] is not None, \
+                        f'x[0] should be historical data, and therefore should not be None'
                     x_in = batch_x[0].reshape(
                         batch_x[0].shape[0],
                         batch_x[0].shape[1] * batch_x[0].shape[2])
