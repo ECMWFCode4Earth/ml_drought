@@ -46,25 +46,21 @@ class TestLinearRegression:
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
+        x_add1, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='precip')
+        x_add2, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='temp')
+        x = xr.merge([x, x_add1, x_add2])
+
+        norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                             'std': np.ones((1, x.to_array().values.shape[1]))},
+                     'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                                'std': np.ones((1, x.to_array().values.shape[1]))},
+                     'temp': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                              'std': np.ones((1, x.to_array().values.shape[1]))}}
+
         test_features = tmp_path / f'features/{experiment}/train/hello'
         test_features.mkdir(parents=True)
         pred_features = tmp_path / f'features/{experiment}/test/hello'
         pred_features.mkdir(parents=True)
-
-        if experiment == 'nowcast':
-            x_add1, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='precip')
-            x_add2, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='temp')
-            x = xr.merge([x, x_add1, x_add2])
-
-            norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                 'std': np.ones((1, x.to_array().values.shape[1]))},
-                         'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                    'std': np.ones((1, x.to_array().values.shape[1]))},
-                         'temp': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                  'std': np.ones((1, x.to_array().values.shape[1]))}}
-        else:
-            norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
-                                 'std': np.ones(x.to_array().values.shape[:2])}}
 
         with (
             tmp_path / f'features/{experiment}/normalizing_dict.pkl'
@@ -90,8 +86,8 @@ class TestLinearRegression:
             f'Model attribute not a linear regression!'
 
         if (experiment != 'nowcast') and (use_pred_months):
-            assert model.model.coef_.size == 48, "Expecting 48 coefficients" \
-                "(3 historical vars * 12 months) + 12 pred_months one_hot encoded"
+            assert model.model.coef_.size == 120, "Expecting 120 coefficients" \
+                "(3 historical vars * 36 months) + 12 pred_months one_hot encoded"
 
         # Test Predictions / Evaluations
         test_arrays_dict, preds_dict = model.predict()

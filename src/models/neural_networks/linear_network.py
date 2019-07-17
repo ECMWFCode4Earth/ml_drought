@@ -109,7 +109,6 @@ class LinearModel(nn.Module):
         # concatenate the non-target variables onto X
         if self.experiment == 'nowcast':
             assert current is not None
-            current = current.contiguous().view(x.shape[0], -1)
             x = torch.cat((x, current), dim=-1)
 
         # pass the inputs through the layers

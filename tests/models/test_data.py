@@ -68,8 +68,11 @@ class TestBaseIter:
     def test_ds_to_np(self, tmp_path, normalize, to_tensor, experiment, surrounding_pixels):
 
         x_pred, _, _ = _make_dataset(size=(5, 5))
-        x_coeff, _, _ = _make_dataset(size=(5, 5), variable_name='precip')
-        x = xr.merge([x_pred, x_coeff])
+        x_coeff1, _, _ = _make_dataset(size=(5, 5), variable_name='precip')
+        x_coeff2, _, _ = _make_dataset(size=(5, 5), variable_name='soil_moisture')
+        x_coeff3, _, _ = _make_dataset(size=(5, 5), variable_name='temp')
+
+        x = xr.merge([x_pred, x_coeff1, x_coeff2, x_coeff3])
         y = x_pred.isel(time=[0])
 
         data_dir = (tmp_path / experiment)
@@ -110,6 +113,28 @@ class TestBaseIter:
         if not to_tensor:
             assert isinstance(y_np, np.ndarray)
 
+        expected_features = 4 if surrounding_pixels is None else 4 * 9
+        assert x_train_data.historical.shape[-1] == expected_features, "" \
+            "There should be" \
+            "4 historical variables (the final dimension):" \
+            f"{x_train_data.historical.shape}"
+
+        if experiment == 'nowcast':
+            expected_shape = (25, 3) if surrounding_pixels is None else (9, 3 * 9)
+            assert x_train_data.current.shape == expected_shape, "" \
+                "Expecting multiple vars" \
+                "in the current timestep. Expect: (25, 3) "\
+                f"Got: {x_train_data.current.shape}"
+
+        expected_latlons = 25 if surrounding_pixels is None else 9
+        assert latlons.shape == (expected_latlons, 2), "The shape of "\
+            "latlons should not change"\
+            f"Got: {latlons.shape}. Expecting: (25, 2)"
+
+        if normalize and (experiment == 'nowcast') and (not to_tensor):
+            assert x_train_data.current.max() < 6, f"The current data should be" \
+                f" normalized. Currently: {x_train_data.current.flatten()}"
+
         if to_tensor:
             assert (
                 type(x_train_data.historical) == torch.Tensor
@@ -127,25 +152,22 @@ class TestBaseIter:
                 f"current ({x_train_data.current.shape[0]}) arrays."
 
             expected = (
-                x.precip
+                x[['precip', 'soil_moisture', 'temp']]
                 .sel(time=y.time)
                 .stack(dims=['lat', 'lon'])
-                .values.T
+                .to_array().values.T[:, 0, :]
             )
             got = x_train_data.current
+
             if surrounding_pixels is None:
                 assert expected.shape == got.shape, "should have stacked latlon" \
                     " vars as the first dimension in the current array."
 
-                assert all(expected == got), "" \
+                assert (expected == got).all(), "" \
                     "Expected to find the target timesetep of `precip` values"\
                     "(the non-target variable for the target timestep: " \
                     f"({pd.to_datetime(y.time.values).strftime('%Y-%m-%d')[0]})." \
-                    f"Expected: {expected[:5]}. Got: {got[:5]}"
-
-        if normalize and (experiment == 'nowcast') and (not to_tensor):
-            assert x_train_data.current.max() < 6, f"The current data should be" \
-                f" normalized. Currently: {x_train_data.current.flatten()}"
+                    f"Expected: {expected[:5]}. \nGot: {got[:5]}"
 
         for idx in range(latlons.shape[0]):
             lat, lon = latlons[idx, 0], latlons[idx, 1]
@@ -158,63 +180,7 @@ class TestBaseIter:
                         f'{time}, lat: {lat}, lon: {lon} Expected {target}, '\
                         f'got {x_train_data.historical[idx, time, 0]}'
 
-    @pytest.mark.parametrize('normalize', [True, False])
-    def test_ds_to_np_multi_vars(self, tmp_path, normalize):
-        to_tensor, experiment = False, 'nowcast'
-
-        x_pred, _, _ = _make_dataset(size=(5, 5))
-        x_coeff1, _, _ = _make_dataset(size=(5, 5), variable_name='precip')
-        x_coeff2, _, _ = _make_dataset(size=(5, 5), variable_name='soil_moisture')
-        x_coeff3, _, _ = _make_dataset(size=(5, 5), variable_name='temp')
-        x = xr.merge([x_pred, x_coeff1, x_coeff2, x_coeff3])
-        y = x_pred.isel(time=[0])
-
-        data_dir = (tmp_path / experiment)
-        if not data_dir.exists():
-            data_dir.mkdir(parents=True, exist_ok=True)
-
-        x.to_netcdf(data_dir / 'x.nc')
-        y.to_netcdf(data_dir / 'y.nc')
-
-        norm_dict = {}
-        for var in x.data_vars:
-            norm_dict[var] = {
-                'mean': x[var].mean(dim=['lat', 'lon'], skipna=True).values,
-                'std': x[var].std(dim=['lat', 'lon'], skipna=True).values
-            }
-
-        class MockLoader:
-            def __init__(self):
-                self.batch_file_size = None
-                self.mode = None
-                self.shuffle = None
-                self.clear_nans = None
-                self.data_files = []
-                self.normalizing_dict = norm_dict if normalize else None
-                self.to_tensor = None
-                self.experiment = experiment
-                self.surrounding_pixels = None
-
-        base_iterator = _BaseIter(MockLoader())
-
-        arrays = base_iterator.ds_folder_to_np(data_dir, return_latlons=True,
-                                               to_tensor=to_tensor)
-
-        x_train_data, _, latlons = (
-            arrays.x, arrays.y, arrays.latlons
-        )
-        assert x_train_data.historical.shape[-1] == 4, "There should be" \
-            "4 historical variables (the final dimension):" \
-            f"{x_train_data.historical.shape}"
-
-        assert x_train_data.current.shape == (25, 3), "Expecting multiple vars" \
-            "in the current timestep. Expect: (25, 3) "\
-            f"Got: {x_train_data.current.shape}"
-
-        assert latlons.shape == (25, 2), "The shape of latlons should not change"\
-            f"Got: {latlons.shape}. Expecting: (25, 2)"
-
-        if not normalize:
+        if (not normalize) and (experiment == 'nowcast') and (surrounding_pixels is None):
             # test that we are getting the right `current` data
             relevant_features = ['precip', 'soil_moisture', 'temp']
             target_time = y.time

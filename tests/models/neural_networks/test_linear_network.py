@@ -58,29 +58,24 @@ class TestLinearNetwork:
          (True, 'nowcast')]
     )
     def test_train(self, tmp_path, capsys, use_pred_months, experiment):
-        # make the x, y data (5*5 latlons, 36 timesteps, 1 feature)
+        # make the x, y data (5*5 latlons, 36 timesteps, 3 features)
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
+
+        x_add1, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='precip')
+        x_add2, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='temp')
+        x = xr.merge([x, x_add1, x_add2])
+
+        norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                             'std': np.ones((1, x.to_array().values.shape[1]))},
+                     'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                                'std': np.ones((1, x.to_array().values.shape[1]))},
+                     'temp': {'mean': np.zeros((1, x.to_array().values.shape[1])),
+                              'std': np.ones((1, x.to_array().values.shape[1]))}}
 
         test_features = tmp_path / f'features/{experiment}/train/hello'
         test_features.mkdir(parents=True, exist_ok=True)
 
-        # if nowcast we need another x feature
-        if experiment == 'nowcast':
-            x_add1, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='precip')
-            x_add2, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='temp')
-            x = xr.merge([x, x_add1, x_add2])
-
-            norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                 'std': np.ones((1, x.to_array().values.shape[1]))},
-                         'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                    'std': np.ones((1, x.to_array().values.shape[1]))},
-                         'temp': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                  'std': np.ones((1, x.to_array().values.shape[1]))}}
-        else:
-            norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
-                                 'std': np.ones(x.to_array().values.shape[:2])}
-                         }
         # make the normalising dictionary
         with (
             tmp_path / f'features/{experiment}/normalizing_dict.pkl'
@@ -108,7 +103,9 @@ class TestLinearNetwork:
         if experiment == 'nowcast':
             n_expected = 119 if use_pred_months else 107
         else:
-            n_expected = 48 if use_pred_months else 36
+            # NOTE: data hasn't been through `src.Engineer` therefore including
+            #  current data (hence why more features than `nowcast`)
+            n_expected = 120 if use_pred_months else 108
 
         assert n_input_features == n_expected, "Expected the number" \
             f"of input features to be: {n_expected}" \
