@@ -15,7 +15,7 @@ from typing import cast, Dict, Optional, Union, List, Tuple
 class TrainData:
     historical: Union[np.ndarray, torch.Tensor]
     current: Union[np.ndarray, torch.Tensor, None]
-    pred_months: Union[np.ndarray, torch.Tensor, None]
+    pred_months: Union[np.ndarray, torch.Tensor]
 
 
 @dataclass
@@ -369,23 +369,20 @@ class _TrainIter(_BaseIter):
                 out_x.append(arrays.x.historical)
                 if arrays.x.current is not None:
                     out_x_curr.append(arrays.x.current)
-                if arrays.x.pred_months is not None:
-                    out_x_add.append(arrays.x.pred_months)
+                out_x_add.append(arrays.x.pred_months)
                 out_y.append(arrays.y)
                 self.idx += 1
 
             final_x = np.concatenate(out_x, axis=0)
             final_x_curr = np.concatenate(out_x_curr, axis=0) if out_x_curr != [] else None
-            final_x_add = np.concatenate(out_x_add, axis=0) if out_x_add != [] else None
+            final_x_add = np.concatenate(out_x_add, axis=0)
             final_y = np.concatenate(out_y, axis=0)
 
             if self.to_tensor:
                 # x matrix
                 final_x = torch.from_numpy(final_x).float()
                 # pred_months data
-                final_x_add = torch.from_numpy(
-                    final_x_add
-                ).float() if final_x_add is not None else None
+                final_x_add = torch.from_numpy(final_x_add).float()
                 # current timestep data
                 final_x_curr = torch.from_numpy(
                     final_x_curr
