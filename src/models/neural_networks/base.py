@@ -129,7 +129,15 @@ class NNBase(ModelBase):
                 val_rmse = []
                 with torch.no_grad():
                     for x, y in val_dataloader:
-                        val_pred_y = self.model(x[0], self._one_hot_months(x[1]))
+                        if self.experiment == 'nowcast':
+                            current = x[2]
+                            val_pred_y = self.model(
+                                x[0], self._one_hot_months(x[1]), current
+                            )
+                        else:
+                            val_pred_y = self.model(
+                                x[0], self._one_hot_months(x[1])
+                            )
                         val_loss = F.mse_loss(val_pred_y, y)
 
                         val_rmse.append(math.sqrt(val_loss.item()))
