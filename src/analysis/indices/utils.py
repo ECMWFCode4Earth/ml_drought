@@ -78,8 +78,17 @@ def create_shape_aligned_climatology(ds: xr.Dataset,
     return new_clim
 
 
-def fit_all_indices(data_path: Path) -> xr.Dataset:
+def fit_all_indices(data_path: Path,
+                    variable: str = 'precip') -> xr.Dataset:
     """ fit all indices and return one `xr.Dataset`
+
+    Arguments:
+    ---------
+    data_path: Path
+        path to netcdf folder to fit indices to
+
+    variable: str = 'precip'
+        the name of the variable in `data_path`
 
     Note:
     - This is a utility method that fits all the indices
@@ -109,8 +118,15 @@ def fit_all_indices(data_path: Path) -> xr.Dataset:
     out = {}
     for index in indices:
         i = index(data_path)
-        i.fit(variable='precip')
-        out[index.name] = i  # type: ignore
+        if i.name == 'china_z_index':
+            i.fit(variable=variable)
+            out[index.name] = i  # type: ignore
+            # fit modifiedCZI
+            i.fit(variable=variable, modified=True)
+            out[index.name + '_modified'] = i  # type: ignore
+        else:
+            i.fit(variable=variable)
+            out[index.name] = i  # type: ignore
     print([k for k in out.keys()])
 
     # join all indices -> 1 dataset

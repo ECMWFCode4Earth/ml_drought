@@ -100,7 +100,7 @@ class DecileIndex(BaseIndices):
         )
 
         # bin the normalised_rank into quintiles
-        new_variable_name = 'quintile'
+        new_variable_name = 'DecileIndex'
         quintile = self.bin_to_quintiles(
             ds_window[variable], new_variable_name
         )
