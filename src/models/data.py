@@ -163,7 +163,6 @@ class _BaseIter:
 
         self.normalizing_dict = loader.normalizing_dict
         self.normalizing_array: Optional[Dict[str, np.ndarray]] = None
-        self.current_normalizing_array: Optional[Dict[str, np.ndarray]] = None
 
         self.idx = 0
         self.max_idx = len(loader.data_files)
@@ -180,7 +179,6 @@ class _BaseIter:
             mean.append(self.normalizing_dict[var]['mean'])
             std.append(self.normalizing_dict[var]['std'])
 
-        self.current_normalizing_array = None
         self.normalizing_array = cast(Dict[str, np.ndarray], {
             # swapaxes so that its [timesteps, features], not [features, timesteps]
             'mean': np.vstack(mean).swapaxes(0, 1),
@@ -354,11 +352,10 @@ class _TrainIter(_BaseIter):
                     cur_max_idx = min(cur_max_idx + 1, self.max_idx)
 
                 out_x.append(arrays.x.historical)
-
-                out_x_curr.append(arrays.x.current)
-                out_x_add.append(arrays.x.pred_months)
-                out_x_add = [x_add for x_add in out_x_add if x_add is not None]
-                out_x_curr = [x_curr for x_curr in out_x_curr if x_curr is not None]
+                if arrays.x.current is not None:
+                    out_x_curr.append(arrays.x.current)
+                if arrays.x.pred_months is not None:
+                    out_x_add.append(arrays.x.pred_months)
                 out_y.append(arrays.y)
                 self.idx += 1
 
