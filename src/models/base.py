@@ -20,6 +20,12 @@ class ModelBase:
         The months the model should predict. If None, all months are predicted
     include_pred_month: bool = True
         Whether to include the prediction month to the model's training data
+    surrounding_pixels: Optional[int] = None
+        How many surrounding pixels to add to the input data. e.g. if the input is 1, then in
+        addition to the pixels on the prediction point, the neighbouring (spatial) pixels will
+        be included too, up to a distance of one pixel away
+    ignore_vars: Optional[List[str]] = None
+        A list of variables to ignore. If None, all variables in the data_path will be included
     """
 
     model_name: str  # to be added by the model classes
@@ -29,7 +35,8 @@ class ModelBase:
                  experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
-                 surrounding_pixels: Optional[int] = None) -> None:
+                 surrounding_pixels: Optional[int] = None,
+                 ignore_vars: Optional[List[str]] = None) -> None:
 
         self.batch_size = batch_size
         self.include_pred_month = include_pred_month
@@ -38,6 +45,7 @@ class ModelBase:
         self.pred_months = pred_months
         self.models_dir = data_folder / 'models' / self.experiment
         self.surrounding_pixels = surrounding_pixels
+        self.ignore_vars = ignore_vars
 
         if not self.models_dir.exists():
             self.models_dir.mkdir(parents=True, exist_ok=False)

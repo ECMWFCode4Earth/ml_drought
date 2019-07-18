@@ -21,9 +21,10 @@ class LinearRegression(ModelBase):
                  batch_size: int = 1,
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
-                 surrounding_pixels: Optional[int] = None) -> None:
+                 surrounding_pixels: Optional[int] = None,
+                 ignore_vars: Optional[List[str]] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months,
-                         include_pred_month, surrounding_pixels)
+                         include_pred_month, surrounding_pixels, ignore_vars)
 
         self.explainer: Optional[shap.LinearExplainer] = None
 
@@ -45,13 +46,15 @@ class LinearRegression(ModelBase):
                                           shuffle_data=True, mode='train',
                                           pred_months=self.pred_months,
                                           mask=train_mask,
-                                          surrounding_pixels=self.surrounding_pixels)
+                                          surrounding_pixels=self.surrounding_pixels,
+                                          ignore_vars=self.ignore_vars)
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
                                         experiment=self.experiment,
                                         shuffle_data=False, mode='train',
                                         pred_months=self.pred_months, mask=val_mask,
-                                        surrounding_pixels=self.surrounding_pixels)
+                                        surrounding_pixels=self.surrounding_pixels,
+                                        ignore_vars=self.ignore_vars)
             batches_without_improvement = 0
             best_val_score = np.inf
         else:
@@ -60,7 +63,8 @@ class LinearRegression(ModelBase):
                                           batch_file_size=self.batch_size,
                                           pred_months=self.pred_months,
                                           shuffle_data=True, mode='train',
-                                          surrounding_pixels=self.surrounding_pixels)
+                                          surrounding_pixels=self.surrounding_pixels,
+                                          ignore_vars=self.ignore_vars)
         self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
 
         for epoch in range(num_epochs):
@@ -183,7 +187,8 @@ class LinearRegression(ModelBase):
         test_arrays_loader = DataLoader(
             data_path=self.data_path, batch_file_size=self.batch_size,
             experiment=self.experiment, shuffle_data=False, mode='test',
-            pred_months=self.pred_months, surrounding_pixels=self.surrounding_pixels)
+            pred_months=self.pred_months, surrounding_pixels=self.surrounding_pixels,
+            ignore_vars=self.ignore_vars)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -223,7 +228,8 @@ class LinearRegression(ModelBase):
                                       batch_file_size=1,
                                       pred_months=self.pred_months,
                                       shuffle_data=False, mode='train',
-                                      surrounding_pixels=self.surrounding_pixels)
+                                      surrounding_pixels=self.surrounding_pixels,
+                                      ignore_vars=self.ignore_vars)
 
         means, sizes = [], []
         for x, _ in train_dataloader:

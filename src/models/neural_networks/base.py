@@ -23,9 +23,10 @@ class NNBase(ModelBase):
                  experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
-                 surrounding_pixels: Optional[int] = None) -> None:
+                 surrounding_pixels: Optional[int] = None,
+                 ignore_vars: Optional[List[str]] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
-                         surrounding_pixels)
+                         surrounding_pixels, ignore_vars)
 
         # for reproducibility
         torch.manual_seed(42)
@@ -72,14 +73,16 @@ class NNBase(ModelBase):
                                           mask=train_mask,
                                           to_tensor=True,
                                           pred_months=self.pred_months,
-                                          surrounding_pixels=self.surrounding_pixels)
+                                          surrounding_pixels=self.surrounding_pixels,
+                                          ignore_vars=self.ignore_vars)
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
                                         shuffle_data=False, mode='train',
                                         experiment=self.experiment,
                                         mask=val_mask,
                                         to_tensor=True,
-                                        pred_months=self.pred_months)
+                                        pred_months=self.pred_months,
+                                        surrounding_pixels=self.surrounding_pixels)
 
             batches_without_improvement = 0
             best_val_score = np.inf
