@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from typing import cast, List, Optional, Tuple, Union
 
-from .base import NNBase
+from .base import NNBase, LinearBlock
 
 
 class LinearNetwork(NNBase):
@@ -117,20 +117,3 @@ class LinearModel(nn.Module):
 
         # pass through the final layer for a scalar prediction
         return self.final_dense(x)
-
-
-class LinearBlock(nn.Module):
-    """
-    A linear layer followed by batchnorm, a ReLU activation, and dropout
-    """
-
-    def __init__(self, in_features, out_features, dropout=0.25):
-        super().__init__()
-        self.linear = nn.Linear(in_features=in_features, out_features=out_features, bias=False)
-        self.relu = nn.LeakyReLU(negative_slope=0.1, inplace=True)
-        self.batchnorm = nn.BatchNorm1d(num_features=out_features)
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, x):
-        x = self.relu(self.batchnorm(self.linear(x)))
-        return self.dropout(x)

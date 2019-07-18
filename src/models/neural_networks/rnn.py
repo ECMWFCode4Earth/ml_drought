@@ -6,7 +6,7 @@ from torch import nn
 
 from typing import List, Optional, Tuple
 
-from .base import NNBase
+from .base import NNBase, LinearBlock
 
 
 class RecurrentNetwork(NNBase):
@@ -16,6 +16,7 @@ class RecurrentNetwork(NNBase):
     def __init__(self, hidden_size: int,
                  dense_features: List[int],
                  rnn_dropout: float = 0.25,
+                 dense_dropout: float = 0.25,
                  data_folder: Path = Path('data'),
                  batch_size: int = 1,
                  experiment: str = 'one_month_forecast',
@@ -28,6 +29,7 @@ class RecurrentNetwork(NNBase):
         # to initialize and save the model
         self.hidden_size = hidden_size
         self.rnn_dropout = rnn_dropout
+        self.dense_dropout = dense_dropout
         self.dense_features = dense_features
         self.features_per_month: Optional[int] = None
         self.current_size: Optional[int] = None
@@ -41,6 +43,7 @@ class RecurrentNetwork(NNBase):
             'features_per_month': self.features_per_month,
             'hidden_size': self.hidden_size,
             'rnn_dropout': self.rnn_dropout,
+            'dense_dropout': self.dense_dropout,
             'dense_features': self.dense_features,
             'include_pred_month': self.include_pred_month,
             'surrounding_pixels': self.surrounding_pixels,
@@ -58,6 +61,7 @@ class RecurrentNetwork(NNBase):
                    dense_features=self.dense_features,
                    hidden_size=self.hidden_size,
                    rnn_dropout=self.rnn_dropout,
+                   dense_dropout=self.dense_dropout,
                    include_pred_month=self.include_pred_month,
                    experiment=self.experiment,
                    current_size=self.current_size)
@@ -65,7 +69,8 @@ class RecurrentNetwork(NNBase):
 
 class RNN(nn.Module):
     def __init__(self, features_per_month, dense_features, hidden_size,
-                 rnn_dropout, include_pred_month, experiment, current_size=None):
+                 rnn_dropout, dense_dropout, include_pred_month, experiment,
+                 current_size=None):
         super().__init__()
 
         self.experiment = experiment
@@ -84,14 +89,15 @@ class RNN(nn.Module):
             assert current_size is not None
             dense_input_size += current_size
         dense_features.insert(0, dense_input_size)
-        if dense_features[-1] != 1:
-            dense_features.append(1)
 
         self.dense_layers = nn.ModuleList([
-            nn.Linear(in_features=dense_features[i - 1],
-                      out_features=dense_features[i])
+            LinearBlock(in_features=dense_features[i - 1],
+                        out_features=dense_features[i],
+                        dropout=dense_dropout)
             for i in range(1, len(dense_features))
         ])
+
+        self.final_dense = nn.Linear(in_features=dense_features[-1], out_features=1)
 
         self.initialize_weights()
 
@@ -103,8 +109,10 @@ class RNN(nn.Module):
                 nn.init.uniform_(pam.data, -sqrt_k, sqrt_k)
 
         for dense_layer in self.dense_layers:
-            nn.init.kaiming_uniform_(dense_layer.weight.data)
-            nn.init.constant_(dense_layer.bias.data, 0)
+            nn.init.kaiming_uniform_(dense_layer.linear.weight.data)
+
+        nn.init.kaiming_uniform_(self.final_dense.weight.data)
+        nn.init.constant_(self.final_dense.bias.data, 0)
 
     def forward(self, x, pred_month=None, current=None):
 
