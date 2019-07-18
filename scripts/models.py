@@ -115,14 +115,14 @@ def rnn():
     predictor = RecurrentNetwork(hidden_size=128,
                                  dense_features=[100],
                                  data_folder=data_path)
-    predictor.train()
+    predictor.train(num_epochs=5, early_stopping=2)
     predictor.evaluate(save_preds=True)
 
     # See above; we need to update the shap version before this can be explained
 
 
 if __name__ == '__main__':
-    parsimonious()
-    regression(experiment='nowcast')
-    linear_nn()
+    # parsimonious()
+    # regression(experiment='nowcast')
+    # linear_nn()
     rnn()

@@ -57,7 +57,7 @@ class NNBase(ModelBase):
               batch_size: int = 256,
               learning_rate: float = 1e-3,
               val_split: float = 0.1) -> None:
-        print(f'Training {self.model_name}')
+        print(f'Training {self.model_name} for experiment {self.experiment}')
 
         if early_stopping is not None:
             len_mask = len(DataLoader._load_datasets(self.data_path, mode='train',

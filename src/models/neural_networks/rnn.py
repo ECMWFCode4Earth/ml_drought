@@ -144,7 +144,7 @@ class RNN(nn.Module):
             x = torch.cat((x, pred_month), dim=-1)
         for layer_number, dense_layer in enumerate(self.dense_layers):
             x = dense_layer(x)
-        return x
+        return self.final_dense(x)
 
 
 class UnrolledRNN(nn.Module):
