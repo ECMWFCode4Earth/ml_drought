@@ -51,10 +51,10 @@ class TestCDSExporter:
 
     def test_selection_dict_granularity(self):
 
-        selection_dict_monthly = ERA5Exporter.get_era5_times(granularity='monthly')
+        selection_dict_monthly = ERA5Exporter.get_default_era5_times(granularity='monthly')
         assert 'day' not in selection_dict_monthly, 'Got day values in monthly the selection dict!'
 
-        selection_dict_hourly = ERA5Exporter.get_era5_times(granularity='hourly')
+        selection_dict_hourly = ERA5Exporter.get_default_era5_times(granularity='hourly')
         assert 'day' in selection_dict_hourly, 'Day values not in hourly selection dict!'
 
     def test_area(self):
