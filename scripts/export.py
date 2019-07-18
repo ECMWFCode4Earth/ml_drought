@@ -26,9 +26,9 @@ def export_era5_land():
         data_path = Path('../data')
     exporter = ERA5LandExporter(data_path)
 
-    exporter.export(variable='snowmelt',
-                    selection_request={'time': '00:00'},
-                    break_up='monthly')
+    exporter.export(variable='2m_temperature',
+                    selection_request={'year': [2010], 'month': [1]},
+                    break_up='yearly')
 
 
 def export_vhi():
@@ -81,3 +81,4 @@ if __name__ == '__main__':
     export_chirps()
     export_era5POS()
     export_gleam()
+    export_era5_land()
