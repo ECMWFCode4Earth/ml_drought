@@ -100,6 +100,7 @@ class TestBaseIter:
                 self.to_tensor = None
                 self.experiment = experiment
                 self.surrounding_pixels = surrounding_pixels
+                self.ignore_vars = ['precip']
 
         base_iterator = _BaseIter(MockLoader())
 
@@ -113,27 +114,25 @@ class TestBaseIter:
         if not to_tensor:
             assert isinstance(y_np, np.ndarray)
 
-        expected_features = 4 if surrounding_pixels is None else 4 * 9
-        assert x_train_data.historical.shape[-1] == expected_features, "" \
-            "There should be" \
-            "4 historical variables (the final dimension):" \
-            f"{x_train_data.historical.shape}"
+        expected_features = 3 if surrounding_pixels is None else 3 * 9
+        assert x_train_data.historical.shape[-1] == expected_features, \
+            f'There should be 4 historical variables ' \
+            f'(the final dimension): {x_train_data.historical.shape}'
 
         if experiment == 'nowcast':
-            expected_shape = (25, 3) if surrounding_pixels is None else (9, 3 * 9)
-            assert x_train_data.current.shape == expected_shape, "" \
-                "Expecting multiple vars" \
-                "in the current timestep. Expect: (25, 3) "\
-                f"Got: {x_train_data.current.shape}"
+            expected_shape = (25, 2) if surrounding_pixels is None else (9, 2 * 9)
+            assert x_train_data.current.shape == expected_shape, \
+                f'Expecting multiple vars in the current timestep. ' \
+                f'Expect: (25, 3) Got: {x_train_data.current.shape}'
 
         expected_latlons = 25 if surrounding_pixels is None else 9
-        assert latlons.shape == (expected_latlons, 2), "The shape of "\
-            "latlons should not change"\
-            f"Got: {latlons.shape}. Expecting: (25, 2)"
+        assert latlons.shape == (expected_latlons, 2), \
+            f'The shape of latlons should not change. ' \
+            f'Got: {latlons.shape}. Expecting: (25, 2)'
 
         if normalize and (experiment == 'nowcast') and (not to_tensor):
-            assert x_train_data.current.max() < 6, f"The current data should be" \
-                f" normalized. Currently: {x_train_data.current.flatten()}"
+            assert x_train_data.current.max() < 6, f'The current data should be' \
+                f' normalized. Currently: {x_train_data.current.flatten()}'
 
         if to_tensor:
             assert (
@@ -152,7 +151,7 @@ class TestBaseIter:
                 f"current ({x_train_data.current.shape[0]}) arrays."
 
             expected = (
-                x[['precip', 'soil_moisture', 'temp']]
+                x[['soil_moisture', 'temp']]
                 .sel(time=y.time)
                 .stack(dims=['lat', 'lon'])
                 .to_array().values.T[:, 0, :]
@@ -182,10 +181,10 @@ class TestBaseIter:
 
         if (not normalize) and (experiment == 'nowcast') and (surrounding_pixels is None):
             # test that we are getting the right `current` data
-            relevant_features = ['precip', 'soil_moisture', 'temp']
+            relevant_features = ['soil_moisture', 'temp']
             target_time = y.time
             expected = (
-                x[relevant_features]   # all vars except target_var
+                x[relevant_features]   # all vars except target_var and the ignored var
                 .sel(time=target_time)  # select the target_time
                 .stack(dims=['lat', 'lon'])  # stack lat,lon so shape = (lat*lon, time, dims)
                 .to_array().values[:, 0, :].T  # extract numpy array, transpose and drop dim
@@ -217,4 +216,4 @@ class TestBaseIter:
                         shifted = x_with_more[shifted_var_name].isel(time=0,
                                                                      lon=5 + lon,
                                                                      lat=5 + lat).values
-                        assert org == shifted, f"Shifted values don't match!"
+                        assert org == shifted, "Shifted values don't match!"

@@ -80,6 +80,8 @@ class DataLoader:
         How many surrounding pixels to add to the input data. e.g. if the input is 1, then in
         addition to the pixels on the prediction point, the neighbouring (spatial) pixels will
         be included too, up to a distance of one pixel away
+    ignore_vars: Optional[List[str]] = None
+        A list of variables to ignore. If None, all variables in the data_path will be included
     """
     def __init__(self, data_path: Path = Path('data'), batch_file_size: int = 1,
                  mode: str = 'train', shuffle_data: bool = True,
@@ -88,7 +90,8 @@ class DataLoader:
                  mask: Optional[List[bool]] = None,
                  pred_months: Optional[List[int]] = None,
                  to_tensor: bool = False,
-                 surrounding_pixels: Optional[int] = None) -> None:
+                 surrounding_pixels: Optional[int] = None,
+                 ignore_vars: Optional[List[str]] = None) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
@@ -109,6 +112,7 @@ class DataLoader:
 
         self.surrounding_pixels = surrounding_pixels
         self.to_tensor = to_tensor
+        self.ignore_vars = ignore_vars
 
     def __iter__(self):
         if self.mode == 'train':
@@ -158,6 +162,7 @@ class _BaseIter:
         self.surrounding_pixels = loader.surrounding_pixels
         self.to_tensor = loader.to_tensor
         self.experiment = loader.experiment
+        self.ignore_vars = loader.ignore_vars
 
         if self.shuffle:
             # makes sure they are shuffled every epoch
@@ -201,6 +206,10 @@ class _BaseIter:
         x, y = xr.open_dataset(folder / 'x.nc'), xr.open_dataset(folder / 'y.nc')
         assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable! ' \
             f'Got {len(list(y.data_vars))}'
+
+        if self.ignore_vars is not None:
+            x = x.drop(self.ignore_vars)
+
         if self.surrounding_pixels is not None:
             x = self._add_surrounding(x, self.surrounding_pixels)
         x_np, y_np = x.to_array().values, y.to_array().values
