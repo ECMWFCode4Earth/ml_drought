@@ -79,7 +79,8 @@ class NNBase(ModelBase):
                                         experiment=self.experiment,
                                         mask=val_mask,
                                         to_tensor=True,
-                                        pred_months=self.pred_months)
+                                        pred_months=self.pred_months,
+                                        surrounding_pixels=self.surrounding_pixels)
 
             batches_without_improvement = 0
             best_val_score = np.inf
