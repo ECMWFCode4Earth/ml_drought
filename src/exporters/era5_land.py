@@ -5,7 +5,7 @@ import multiprocessing
 import itertools
 
 from .cds import CDSExporter
-from .base import Region, get_kenya
+from .base import get_kenya
 
 VALID_ERA5_LAND_VARS = [
     '10m_u_component_of_wind', '10m_v_component_of_wind',
@@ -26,7 +26,8 @@ VALID_ERA5_LAND_VARS = [
     'soil_temperature_level_4', 'sub_surface_runoff',
     'surface_latent_heat_flux', 'surface_net_solar_radiation',
     'surface_net_thermal_radiation', 'surface_pressure', 'surface_runoff',
-    'surface_sensible_heat_flux', 'surface_solar_radiation_downwards', 'surface_thermal_radiation_downwards', 'temperature_of_snow_layer',
+    'surface_sensible_heat_flux', 'surface_solar_radiation_downwards',
+    'surface_thermal_radiation_downwards', 'temperature_of_snow_layer',
     'total_precipitation', 'volumetric_soil_water_layer_1',
     'volumetric_soil_water_layer_2', 'volumetric_soil_water_layer_3',
     'volumetric_soil_water_layer_4'
@@ -46,7 +47,6 @@ class ERA5LandExporter(CDSExporter):
                                  selection_request: Optional[Dict] = None,
                                  granularity: str = 'hourly',) -> Dict:
         # setup the default selection request
-        product_type = 'reanalysis-era5-land'
         assert variable in VALID_ERA5_LAND_VARS, "Need to select a variable " \
             f"from {VALID_ERA5_LAND_VARS}"
 
@@ -71,7 +71,6 @@ class ERA5LandExporter(CDSExporter):
                 val = self._check_iterable(val, key)
                 processed_selection_request[key] = [self._correct_input(x, key) for x in val]
         return processed_selection_request
-
 
     def export(self,
                variable: str,
@@ -173,7 +172,6 @@ class ERA5LandExporter(CDSExporter):
                 p.close()
                 p.join()
             return cast(List[Path], output_paths)
-
 
         return [self._export(dataset,
                              processed_selection_request,
