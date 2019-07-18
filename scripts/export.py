@@ -4,7 +4,7 @@ import sys
 sys.path.append('..')
 from src.exporters import (ERA5Exporter, VHIExporter,
                            CHIRPSExporter, ERA5ExporterPOS,
-                           GLEAMExporter)
+                           GLEAMExporter, ERA5LandExporter)
 
 
 def export_era5():
@@ -17,6 +17,18 @@ def export_era5():
 
     exporter.export(variable='soil_temperature_level_1', granularity='monthly',
                     selection_request={'time': '00:00'})
+
+def export_era5_land():
+    # if the working directory is alread ml_drought don't need ../data
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+    exporter = ERA5LandExporter(data_path)
+
+    exporter.export(variable='snowmelt',
+                    selection_request={'time': '00:00'},
+                    break_up='monthly')
 
 
 def export_vhi():
