@@ -1,4 +1,5 @@
 import math
+import pickle
 from pathlib import Path
 
 import torch
@@ -50,7 +51,8 @@ class RecurrentNetwork(NNBase):
             'experiment': self.experiment
         }
 
-        torch.save(model_dict, self.model_dir / 'model.pkl')
+        with (self.model_dir / 'model.pkl').open('wb') as f:
+            pickle.dump(model_dict, f)
 
     def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> nn.Module:
         self.features_per_month = x_ref[0].shape[-1]
