@@ -41,7 +41,10 @@ class TestLinearRegression:
 
         with (tmp_path / 'models/one_month_forecast/linear_regression/model.pkl').open('rb') as f:
             model_dict = pickle.load(f)
-        assert np.array_equal(coef_array, model_dict['coef']), f'Different array saved!'
+        assert np.array_equal(coef_array, model_dict['coef']), 'Different coef array saved!'
+        assert np.array_equal(intercept_array, model_dict['intercept']), \
+            'Different intercept array saved!'
+        assert model_dict['experiment'] == 'one_month_forecast', 'Different experiment saved!'
 
     @pytest.mark.parametrize('use_pred_months,experiment',
                              [(True, 'one_month_forecast'),
