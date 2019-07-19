@@ -46,7 +46,7 @@ class TestLinearNetwork:
 
         assert model_dict['dropout'] == dropout
         assert model_dict['layer_sizes'] == layer_sizes
-        assert model_dict['input_size'] == input_size
+        assert model_dict['model']['input_size'] == input_size
         assert model_dict['include_pred_month'] == include_pred_month
         assert model_dict['surrounding_pixels'] == surrounding_pixels
 

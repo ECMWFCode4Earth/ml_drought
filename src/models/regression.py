@@ -189,6 +189,11 @@ class LinearRegression(ModelBase):
         with (self.model_dir / 'model.pkl').open('wb') as f:
             pickle.dump(model_data, f)
 
+    def load(self, coef: np.ndarray, intercept: np.ndarray) -> None:
+        self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
+        self.model.coef_ = coef
+        self.model.intercept_ = intercept
+
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]],
                                Dict[str, np.ndarray]]:
         test_arrays_loader = DataLoader(
