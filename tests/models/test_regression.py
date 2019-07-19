@@ -14,13 +14,18 @@ class TestLinearRegression:
 
     def test_save(self, tmp_path, monkeypatch):
 
-        model_array = np.array([1, 1, 1, 1, 1])
+        coef_array = np.array([1, 1, 1, 1, 1])
+        intercept_array = np.array([2])
 
         def mocktrain(self):
             class MockModel:
                 @property
                 def coef_(self):
-                    return model_array
+                    return coef_array
+
+                @property
+                def intercept_(self):
+                    return intercept_array
 
             self.model = MockModel()
 
@@ -31,11 +36,12 @@ class TestLinearRegression:
         model.save_model()
 
         assert (
-            tmp_path / 'models/one_month_forecast/linear_regression/model.npy'
+            tmp_path / 'models/one_month_forecast/linear_regression/model.pkl'
         ).exists(), f'Model not saved!'
 
-        saved_model = np.load(tmp_path / 'models/one_month_forecast/linear_regression/model.npy')
-        assert np.array_equal(model_array, saved_model), f'Different array saved!'
+        with (tmp_path / 'models/one_month_forecast/linear_regression/model.pkl').open('rb') as f:
+            model_dict = pickle.load(f)
+        assert np.array_equal(coef_array, model_dict['coef']), f'Different array saved!'
 
     @pytest.mark.parametrize('use_pred_months,experiment',
                              [(True, 'one_month_forecast'),

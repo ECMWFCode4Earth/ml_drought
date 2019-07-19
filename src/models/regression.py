@@ -2,6 +2,7 @@ import numpy as np
 from pathlib import Path
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error
+import pickle
 
 import shap
 
@@ -175,8 +176,17 @@ class LinearRegression(ModelBase):
 
         assert self.model is not None, 'Model must be trained!'
 
-        coefs = self.model.coef_
-        np.save(self.model_dir / 'model.npy', coefs)
+        model_data = {
+            'coef': self.model.coef_,
+            'intercept': self.model.intercept_,
+            'experiment': self.experiment,
+            'pred_months': self.pred_months,
+            'include_pred_month': self.include_pred_month,
+            'surrounding_pixels': self.surrounding_pixels
+        }
+
+        with (self.model_dir / 'model.pkl').open('wb') as f:
+            pickle.dump(model_data, f)
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]],
                                Dict[str, np.ndarray]]:
