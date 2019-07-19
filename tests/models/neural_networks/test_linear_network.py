@@ -19,6 +19,7 @@ class TestLinearNetwork:
         dropout = 0.25
         include_pred_month = True
         surrounding_pixels = 1
+        ignore_vars = ['precip']
 
         def mocktrain(self):
             self.model = LinearModel(
@@ -31,7 +32,8 @@ class TestLinearNetwork:
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
                               dropout=dropout, experiment='one_month_forecast',
                               include_pred_month=include_pred_month,
-                              surrounding_pixels=surrounding_pixels)
+                              surrounding_pixels=surrounding_pixels,
+                              ignore_vars=ignore_vars)
         model.train()
         model.save_model()
 
@@ -49,6 +51,7 @@ class TestLinearNetwork:
         assert model_dict['input_size'] == input_size
         assert model_dict['include_pred_month'] == include_pred_month
         assert model_dict['surrounding_pixels'] == surrounding_pixels
+        assert model_dict['ignore_vars'] == ignore_vars
 
     @pytest.mark.parametrize(
         'use_pred_months,experiment',

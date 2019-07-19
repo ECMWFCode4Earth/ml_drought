@@ -21,9 +21,10 @@ class RecurrentNetwork(NNBase):
                  experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
-                 surrounding_pixels: Optional[int] = None) -> None:
+                 surrounding_pixels: Optional[int] = None,
+                 ignore_vars: Optional[List[str]] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
-                         surrounding_pixels)
+                         surrounding_pixels, ignore_vars)
 
         # to initialize and save the model
         self.hidden_size = hidden_size
@@ -44,7 +45,8 @@ class RecurrentNetwork(NNBase):
             'dense_features': self.dense_features,
             'include_pred_month': self.include_pred_month,
             'surrounding_pixels': self.surrounding_pixels,
-            'experiment': self.experiment
+            'experiment': self.experiment,
+            'ignore_vars': self.ignore_vars
         }
 
         torch.save(model_dict, self.model_dir / 'model.pkl')
