@@ -40,7 +40,7 @@ class TestRecurrentNetwork:
         with (model.model_dir / 'model.pkl').open('rb') as f:
             model_dict = pickle.load(f)
 
-        for key, val in model_dict['state_dict'].items():
+        for key, val in model_dict['model']['state_dict'].items():
             assert (model.model.state_dict()[key] == val).all()
 
         assert model_dict['features_per_month'] == features_per_month

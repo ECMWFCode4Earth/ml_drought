@@ -41,8 +41,9 @@ class TestLinearRegression:
 
         with (tmp_path / 'models/one_month_forecast/linear_regression/model.pkl').open('rb') as f:
             model_dict = pickle.load(f)
-        assert np.array_equal(coef_array, model_dict['coef']), 'Different coef array saved!'
-        assert np.array_equal(intercept_array, model_dict['intercept']), \
+        assert np.array_equal(coef_array, model_dict['model']['coef']), \
+            'Different coef array saved!'
+        assert np.array_equal(intercept_array, model_dict['model']['intercept']), \
             'Different intercept array saved!'
         assert model_dict['experiment'] == 'one_month_forecast', 'Different experiment saved!'
 

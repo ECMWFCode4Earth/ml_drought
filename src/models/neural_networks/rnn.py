@@ -40,7 +40,8 @@ class RecurrentNetwork(NNBase):
         assert self.model is not None, 'Model must be trained before it can be saved!'
 
         model_dict = {
-            'state_dict': self.model.state_dict(),
+            'model': {'state_dict': self.model.state_dict()},
+            'batch_size': self.batch_size,
             'features_per_month': self.features_per_month,
             'hidden_size': self.hidden_size,
             'rnn_dropout': self.rnn_dropout,

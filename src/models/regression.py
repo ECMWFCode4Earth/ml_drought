@@ -177,12 +177,13 @@ class LinearRegression(ModelBase):
         assert self.model is not None, 'Model must be trained!'
 
         model_data = {
-            'coef': self.model.coef_,
-            'intercept': self.model.intercept_,
+            'model': {'coef': self.model.coef_,
+                      'intercept': self.model.intercept_},
             'experiment': self.experiment,
             'pred_months': self.pred_months,
             'include_pred_month': self.include_pred_month,
-            'surrounding_pixels': self.surrounding_pixels
+            'surrounding_pixels': self.surrounding_pixels,
+            'batch_size': self.batch_size
         }
 
         with (self.model_dir / 'model.pkl').open('wb') as f:

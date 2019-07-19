@@ -36,7 +36,8 @@ class LinearNetwork(NNBase):
         assert self.model is not None, 'Model must be trained before it can be saved!'
 
         model_dict = {
-            'state_dict': self.model.state_dict(),
+            'batch_size': self.batch_size,
+            'model': {'state_dict': self.model.state_dict()},
             'layer_sizes': self.layer_sizes,
             'dropout': self.dropout,
             'input_size': self.input_size,
