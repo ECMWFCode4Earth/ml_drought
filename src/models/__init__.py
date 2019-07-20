@@ -1,21 +1,21 @@
 from pathlib import Path
 import pickle
 
-from typing import cast, Optional
+from typing import cast, Optional, Union
 
 from .parsimonious import Persistence
 from .regression import LinearRegression
 from .neural_networks.linear_network import LinearNetwork
 from .neural_networks.rnn import RecurrentNetwork
 
-from .base import ModelBase
-
 __all__ = ['Persistence', 'LinearRegression', 'LinearNetwork',
            'RecurrentNetwork']
 
 
 def load_model(model_path: Path, data_path: Optional[Path] = None,
-               model_type: Optional[str] = None) -> ModelBase:
+               model_type: Optional[str] = None) -> Union[RecurrentNetwork,
+                                                          LinearNetwork,
+                                                          LinearRegression]:
     """
     Given a path to a saved model, try and load it. If none is given,
     the function tries to infer it from the model path
