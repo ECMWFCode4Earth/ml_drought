@@ -143,14 +143,14 @@ def rnn(
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels
     )
-    predictor.train()
+    predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
 
     # See above; we need to update the shap version before this can be explained
 
 
 if __name__ == '__main__':
-    parsimonious()
-    regression(experiment='nowcast')
-    linear_nn()
+    # parsimonious()
+    # regression(experiment='nowcast')
+    # linear_nn()
     rnn()

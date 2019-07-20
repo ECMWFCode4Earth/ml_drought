@@ -4,6 +4,7 @@ from pathlib import Path
 import math
 
 import torch
+from torch import nn
 from torch.nn import functional as F
 
 import shap
@@ -56,7 +57,7 @@ class NNBase(ModelBase):
               batch_size: int = 256,
               learning_rate: float = 1e-3,
               val_split: float = 0.1) -> None:
-        print(f'Training {self.model_name}')
+        print(f'Training {self.model_name} for experiment {self.experiment}')
 
         if early_stopping is not None:
             len_mask = len(DataLoader._load_datasets(self.data_path, mode='train',
@@ -79,7 +80,8 @@ class NNBase(ModelBase):
                                         experiment=self.experiment,
                                         mask=val_mask,
                                         to_tensor=True,
-                                        pred_months=self.pred_months)
+                                        pred_months=self.pred_months,
+                                        surrounding_pixels=self.surrounding_pixels)
 
             batches_without_improvement = 0
             best_val_score = np.inf
@@ -219,3 +221,20 @@ class NNBase(ModelBase):
             assert indices is not None, f"Years can't be None if include pred months is True"
             return torch.eye(14)[indices.long()][:, 1:-1]
         return None
+
+
+class LinearBlock(nn.Module):
+    """
+    A linear layer followed by batchnorm, a ReLU activation, and dropout
+    """
+
+    def __init__(self, in_features, out_features, dropout=0.25):
+        super().__init__()
+        self.linear = nn.Linear(in_features=in_features, out_features=out_features, bias=False)
+        self.relu = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        self.batchnorm = nn.BatchNorm1d(num_features=out_features)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        x = self.relu(self.batchnorm(self.linear(x)))
+        return self.dropout(x)
