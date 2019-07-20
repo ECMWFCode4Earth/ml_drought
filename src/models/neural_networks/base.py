@@ -104,6 +104,7 @@ class NNBase(ModelBase):
 
         for epoch in range(num_epochs):
             train_rmse = []
+            train_l1 = []
             self.model.train()
             for x, y in train_dataloader:
                 for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
@@ -124,7 +125,11 @@ class NNBase(ModelBase):
                     loss.backward()
                     optimizer.step()
 
-                    train_rmse.append(loss.item())
+                    with torch.no_grad():
+                        rmse = F.mse_loss(pred, y_batch)
+                        train_rmse.append(math.sqrt(rmse.item()))
+
+                    train_l1.append(loss.item())
 
             if early_stopping is not None:
                 self.model.eval()
@@ -136,7 +141,8 @@ class NNBase(ModelBase):
 
                         val_rmse.append(math.sqrt(val_loss.item()))
 
-            print(f'Epoch {epoch + 1}, train RMSE: {np.mean(train_rmse)}')
+            print(f'Epoch {epoch + 1}, train smooth L1: {np.mean(train_l1)}, '
+                  f'RMSE: {np.mean(train_rmse)}')
 
             if early_stopping is not None:
                 epoch_val_rmse = np.mean(val_rmse)
