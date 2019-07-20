@@ -17,8 +17,24 @@ def load_model(model_path: Path, data_path: Optional[Path] = None,
                                                           LinearNetwork,
                                                           LinearRegression]:
     """
-    Given a path to a saved model, try and load it. If none is given,
-    the function tries to infer it from the model path
+    This function loads models from the output `.pkl` files generated when
+    calling model.save()
+
+    Arguments
+    ----------
+    model_path: Path
+        The path to the model
+    data_path: Optional[Path] = None
+        The path to the data folder. If None, the function infers this from the
+        model_path (assuming it was saved as part of the pipeline)
+    model_type: Optional[str] = None
+        The type of model to load. If None, the function infers this from the
+        model_path (assuming it was saved as part of the pipeline)
+
+    Returns
+    ----------
+    model: Union[RecurrentNetwork, LinearNetwork, LinearRegression]
+        A model object loaded from the model_path
     """
 
     str_to_model = {
