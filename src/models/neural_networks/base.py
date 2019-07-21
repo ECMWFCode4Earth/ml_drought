@@ -186,6 +186,8 @@ class NNBase(ModelBase):
         output_tensors: List[torch.Tensor] = []
         if self.include_pred_month:
             output_pred_months: List[Optional[torch.Tensor]] = []
+        if self.experiment == 'nowcast':
+            output_current: List[Optional[torch.Tensor]] = []
         samples_per_instance = max(1, sample_size // len(train_dataloader))
 
         for x, _ in train_dataloader:
@@ -195,6 +197,8 @@ class NNBase(ModelBase):
                     output_tensors.append(x[0][idx])
                     if self.include_pred_month:
                         output_pred_months.append(self._one_hot_months(x[1][idx: idx + 1]))
+                    if self.experiment == 'nowcast':
+                        output_current.append(x[2])
         if self.include_pred_month:
             return [torch.stack(output_tensors),
                     torch.cat(output_pred_months, dim=0)]  # type: ignore
