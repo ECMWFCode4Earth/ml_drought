@@ -108,18 +108,9 @@ class NNBase(ModelBase):
             for x, y in train_dataloader:
                 for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
                     optimizer.zero_grad()
-                    if self.experiment == 'nowcast':
-                        current = x_batch[2]
-                        pred = self.model(
-                            x_batch[0],
-                            self._one_hot_months(x_batch[1]),
-                            current
-                        )
-                    else:
-                        pred = self.model(
-                            x_batch[0],
-                            self._one_hot_months(x_batch[1])
-                        )
+                    pred = self.model(x_batch[0],
+                                      self._one_hot_months(x_batch[1]),
+                                      x_batch[2])
                     loss = F.smooth_l1_loss(pred, y_batch)
                     loss.backward()
                     optimizer.step()
@@ -131,15 +122,9 @@ class NNBase(ModelBase):
                 val_rmse = []
                 with torch.no_grad():
                     for x, y in val_dataloader:
-                        if self.experiment == 'nowcast':
-                            current = x[2]
-                            val_pred_y = self.model(
-                                x[0], self._one_hot_months(x[1]), current
-                            )
-                        else:
-                            val_pred_y = self.model(
-                                x[0], self._one_hot_months(x[1])
-                            )
+                        val_pred_y = self.model(x[0],
+                                                self._one_hot_months(x[1]),
+                                                x[2])
                         val_loss = F.mse_loss(val_pred_y, y)
 
                         val_rmse.append(math.sqrt(val_loss.item()))
