@@ -79,8 +79,6 @@ class S5Preprocessor(BasePreProcessor):
         else:  # downloaded from CDSAPI as .grib
             # 1. read grib file
             ds = self.read_grib_file(filepath)
-            # add initialisation_date as a dimension
-            ds = ds.expand_dims(dim='initialisation_date')
 
         # find all variables (sometimes download multiple)
         coords = [c for c in ds.coords]
@@ -121,7 +119,6 @@ class S5Preprocessor(BasePreProcessor):
             Expecting `lat` `lon` to be in ds. dims : {[c for c in ds.coords]}"
 
             # regrid each variable individually
-            assert False
             all_vars = []
             for var in vars:
                 if self.parallel:
@@ -138,6 +135,10 @@ class S5Preprocessor(BasePreProcessor):
                 all_vars.append(d_)
             # merge the variables into one dataset
             ds = xr.merge(all_vars).sortby('initialisation_date')
+
+        if not self.ouce_server:
+            # add initialisation_date as a dimension
+            ds = ds.expand_dims(dim='initialisation_date')
 
         # 6. save ds to output_path
         ds.to_netcdf(output_path)
