@@ -111,9 +111,9 @@ class S5Preprocessor(BasePreProcessor):
             try:
                 ds = self.chop_roi(ds, subset_str)
             except AssertionError:
+                print('Retrying regridder with latitudes inverted')
                 ds = self.chop_roi(ds, subset_str, inverse_lat=True)
 
-        assert False
         # 5. regrid (one variable at a time)
         if regrid is not None:
             assert all(np.isin(['lat', 'lon'], [c for c in ds.coords])), f"\
