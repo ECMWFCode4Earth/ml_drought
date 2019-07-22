@@ -1,0 +1,86 @@
+src.analysis.indices package
+============================
+
+Submodules
+----------
+
+src.analysis.indices.anomaly\_index module
+------------------------------------------
+
+.. automodule:: src.analysis.indices.anomaly_index
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.analysis.indices.base module
+--------------------------------
+
+.. automodule:: src.analysis.indices.base
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.analysis.indices.china\_z\_index module
+-------------------------------------------
+
+.. automodule:: src.analysis.indices.china_z_index
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.analysis.indices.decile\_index module
+-----------------------------------------
+
+.. automodule:: src.analysis.indices.decile_index
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.analysis.indices.drought\_severity\_index module
+----------------------------------------------------
+
+.. automodule:: src.analysis.indices.drought_severity_index
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.analysis.indices.percent\_normal\_index module
+--------------------------------------------------
+
+.. automodule:: src.analysis.indices.percent_normal_index
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.analysis.indices.spi module
+-------------------------------
+
+.. automodule:: src.analysis.indices.spi
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.analysis.indices.utils module
+---------------------------------
+
+.. automodule:: src.analysis.indices.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.analysis.indices.z\_score module
+------------------------------------
+
+.. automodule:: src.analysis.indices.z_score
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: src.analysis.indices
+   :members:
+   :undoc-members:
+   :show-inheritance:

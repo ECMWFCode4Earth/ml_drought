@@ -1,0 +1,70 @@
+src.preprocess package
+======================
+
+Submodules
+----------
+
+src.preprocess.base module
+--------------------------
+
+.. automodule:: src.preprocess.base
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.preprocess.chirps module
+----------------------------
+
+.. automodule:: src.preprocess.chirps
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.preprocess.era5 module
+--------------------------
+
+.. automodule:: src.preprocess.era5
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.preprocess.gleam module
+---------------------------
+
+.. automodule:: src.preprocess.gleam
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.preprocess.planetOS module
+------------------------------
+
+.. automodule:: src.preprocess.planetOS
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.preprocess.utils module
+---------------------------
+
+.. automodule:: src.preprocess.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.preprocess.vhi module
+-------------------------
+
+.. automodule:: src.preprocess.vhi
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: src.preprocess
+   :members:
+   :undoc-members:
+   :show-inheritance:

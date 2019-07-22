@@ -1,0 +1,38 @@
+src.engineer package
+====================
+
+Submodules
+----------
+
+src.engineer.engineer module
+----------------------------
+
+.. automodule:: src.engineer.engineer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.engineer.nowcast module
+---------------------------
+
+.. automodule:: src.engineer.nowcast
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.engineer.one\_month\_forecast module
+----------------------------------------
+
+.. automodule:: src.engineer.one_month_forecast
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: src.engineer
+   :members:
+   :undoc-members:
+   :show-inheritance:

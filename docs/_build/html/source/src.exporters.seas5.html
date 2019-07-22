@@ -1,0 +1,281 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>src.exporters.seas5 package &#8212; ml_drought  documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="src-exporters-seas5-package">
+<h1>src.exporters.seas5 package<a class="headerlink" href="#src-exporters-seas5-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-src.exporters.seas5.all_valid_s5">
+<span id="src-exporters-seas5-all-valid-s5-module"></span><h2>src.exporters.seas5.all_valid_s5 module<a class="headerlink" href="#module-src.exporters.seas5.all_valid_s5" title="Permalink to this headline">¶</a></h2>
+<p>Define the VALID SEAS5 requests from the cdsapi.</p>
+<div class="section" id="note">
+<h3>Note:<a class="headerlink" href="#note" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul>
+<li><dl class="simple">
+<dt>in our schema <cite>hourly</cite> datasets refer to the <cite>original</cite> datasets</dt><dd><p>[<cite>seasonal-original-single-levels</cite>, <cite>seasonal-original-pressure-levels</cite>]</p>
+</dd>
+</dl>
+</li>
+<li><p><cite>monthly</cite> datasets have forecast resolution of months</p></li>
+<li><dl class="simple">
+<dt><cite>seasonal-original-single-levels</cite> has leadtime resolution of 6 hours,</dt><dd><p>whereas, <cite>seasonal-original-pressure-levels</cite> leadtime resolution = 12 hours</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>monthly</cite> datasets require a <cite>‘product_type’</cite> variable whereas <cite>hourly</cite></dt><dd><p>datasets (12hr/6hr) do not</p>
+</dd>
+</dl>
+</li>
+<li><p>all datasets have fixed [format, originating_centre, system, day] variables</p></li>
+<li><dl>
+<dt>all datasets require:</dt><dd><dl class="simple">
+<dt>[</dt><dd><p>format, originating_centre, system, day,
+variable, month, year</p>
+</dd>
+</dl>
+<p>]</p>
+</dd>
+</dl>
+</li>
+<li><p><cite>monthly</cite> datasets have extra: [product_type, leadtime_month]</p></li>
+<li><p><cite>hourly</cite> datasets have extra: [leadtime_hour]</p></li>
+<li><dl>
+<dt><cite>monthly</cite> product_type depend on whether looking at single_level or pressure_level</dt><dd><dl class="simple">
+<dt>single_level = [‘ensemble_mean’, ‘hindcast_climate_mean’,</dt><dd><p>‘monthly_maximum’, ‘monthly_mean’,
+‘monthly_minimum’, ‘monthly_standard_deviation’]</p>
+</dd>
+</dl>
+<p>pressure_level = [‘ensemble_mean’, ‘hindcast_climate_mean’, ‘monthly_mean’]</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="module-src.exporters.seas5.s5">
+<span id="src-exporters-seas5-s5-module"></span><h2>src.exporters.seas5.s5 module<a class="headerlink" href="#module-src.exporters.seas5.s5" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="src.exporters.seas5.s5.S5Exporter">
+<em class="property">class </em><code class="sig-prename descclassname">src.exporters.seas5.s5.</code><code class="sig-name descname">S5Exporter</code><span class="sig-paren">(</span><em class="sig-param">pressure_level: bool</em>, <em class="sig-param">granularity: str = 'monthly'</em>, <em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em>, <em class="sig-param">product_type: Optional[str] = None</em>, <em class="sig-param">dataset: Optional[str] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.exporters.seas5.s5.S5Exporter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="src.exporters.html#src.exporters.cds.CDSExporter" title="src.exporters.cds.CDSExporter"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.exporters.cds.CDSExporter</span></code></a></p>
+<dl class="method">
+<dt id="src.exporters.seas5.s5.S5Exporter.create_selection_request">
+<code class="sig-name descname">create_selection_request</code><span class="sig-paren">(</span><em class="sig-param">variable: str</em>, <em class="sig-param">max_leadtime: int</em>, <em class="sig-param">min_year: int = 1993</em>, <em class="sig-param">max_year: int = 2019</em>, <em class="sig-param">min_month: int = 1</em>, <em class="sig-param">max_month: int = 12</em><span class="sig-paren">)</span> &#x2192; Dict<a class="headerlink" href="#src.exporters.seas5.s5.S5Exporter.create_selection_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build up the selection_request dictionary with defaults</p>
+<dl class="simple">
+<dt>selection_dict: dict</dt><dd><p>A dictionary with all the time-related arguments of the
+selection dict filled out</p>
+</dd>
+</dl>
+<ul class="simple">
+<li><p>This is a FULL version of the dictionary that is returned. Will likely</p></li>
+</ul>
+<blockquote>
+<div><p>lead to errors if you don’t chunk the data (e.g. by month) before
+sending the requests to cdsapi</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Some attributes are used to create the default arguments</dt><dd><p>(self.product_type, self.granularity, self.dataset, self.pressure_level)</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.exporters.seas5.s5.S5Exporter.export">
+<code class="sig-name descname">export</code><span class="sig-paren">(</span><em class="sig-param">variable: str</em>, <em class="sig-param">min_year: int = 1993</em>, <em class="sig-param">max_year: int = 2019</em>, <em class="sig-param">min_month: int = 1</em>, <em class="sig-param">max_month: int = 12</em>, <em class="sig-param">max_leadtime: Optional[int] = None</em>, <em class="sig-param">pressure_levels: Optional[List[int]] = None</em>, <em class="sig-param">n_parallel_requests: int = 3</em>, <em class="sig-param">show_api_request: bool = True</em>, <em class="sig-param">break_up: bool = True</em><span class="sig-paren">)</span><a class="headerlink" href="#src.exporters.seas5.s5.S5Exporter.export" title="Permalink to this definition">¶</a></dt>
+<dd><dl>
+<dt>variable: str</dt><dd><p>the variable that you want to download</p>
+</dd>
+<dt>min_year: Optional[int] default = 2017</dt><dd><p>the minimum year of your request</p>
+</dd>
+<dt>max_year: Optional[int] default = 2018</dt><dd><p>the maximum year of your request</p>
+</dd>
+<dt>min_month: Optional[int] default = 1</dt><dd><p>the minimum month of your request</p>
+</dd>
+<dt>max_month: Optional[int] default = 12</dt><dd><p>the maximum month of your request</p>
+</dd>
+<dt>max_leadtime: Optional[int]</dt><dd><dl class="simple">
+<dt>the maximum leadtime of your request</dt><dd><p>(if granularity is <cite>hourly</cite> then provide in days)
+(elif granularity is <cite>monthly</cite> then provide in months)</p>
+</dd>
+</dl>
+<p>defaults to ~3 months (90 days)</p>
+</dd>
+<dt>pressure_levels: Optional[int]</dt><dd><p>Pressure levels to download data at</p>
+</dd>
+<dt>n_parallel_requests: int</dt><dd><p>the number of parallel requests to initialise</p>
+</dd>
+<dt>show_api_request: bool</dt><dd><p>do you want to print the api request to view it?</p>
+</dd>
+<dt>break_up: bool - default: True</dt><dd><p>whether to break up requests into parallel</p>
+</dd>
+</dl>
+<ul class="simple">
+<li><p>All parameters that are assigned to class attributes are fixed for one download</p></li>
+<li><p>these are required to initialise the object [granularity, pressure_level]</p></li>
+<li><p>Only time will be chunked (by months) to send separate calls to the cdsapi</p></li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.exporters.seas5.s5.S5Exporter.get_6hrly_leadtimes">
+<em class="property">static </em><code class="sig-name descname">get_6hrly_leadtimes</code><span class="sig-paren">(</span><em class="sig-param">max_leadtime: int</em><span class="sig-paren">)</span> &#x2192; List[int]<a class="headerlink" href="#src.exporters.seas5.s5.S5Exporter.get_6hrly_leadtimes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.exporters.seas5.s5.S5Exporter.get_dataset">
+<em class="property">static </em><code class="sig-name descname">get_dataset</code><span class="sig-paren">(</span><em class="sig-param">granularity: str</em>, <em class="sig-param">pressure_level: bool</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#src.exporters.seas5.s5.S5Exporter.get_dataset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.exporters.seas5.s5.S5Exporter.get_pressure_levels">
+<code class="sig-name descname">get_pressure_levels</code><span class="sig-paren">(</span><em class="sig-param">pressure_levels: Optional[List[int]] = None</em><span class="sig-paren">)</span> &#x2192; Optional[Dict]<a class="headerlink" href="#src.exporters.seas5.s5.S5Exporter.get_pressure_levels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.exporters.seas5.s5.S5Exporter.get_product_type">
+<code class="sig-name descname">get_product_type</code><span class="sig-paren">(</span><em class="sig-param">product_type: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; Optional[str]<a class="headerlink" href="#src.exporters.seas5.s5.S5Exporter.get_product_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>By default download the ‘monthly_mean’ product for monthly data</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.exporters.seas5.s5.S5Exporter.get_s5_initialisation_times">
+<em class="property">static </em><code class="sig-name descname">get_s5_initialisation_times</code><span class="sig-paren">(</span><em class="sig-param">granularity: str</em>, <em class="sig-param">min_year: int = 1993</em>, <em class="sig-param">max_year: int = 2019</em>, <em class="sig-param">min_month: int = 1</em>, <em class="sig-param">max_month: int = 12</em><span class="sig-paren">)</span> &#x2192; Dict<a class="headerlink" href="#src.exporters.seas5.s5.S5Exporter.get_s5_initialisation_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the SEAS5 initialisation times
+for the hourly or monthly data</p>
+<dl class="simple">
+<dt>NOTE: these depend on the dataset and the naming convention is after</dt><dd><p>the cdsapi monthly = <cite>seasonal-monthly-single-levels</cite> vs.
+hourly = <cite>seasonal-original-single-levels</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.exporters.seas5.s5.S5Exporter.get_s5_leadtimes">
+<code class="sig-name descname">get_s5_leadtimes</code><span class="sig-paren">(</span><em class="sig-param">max_leadtime: int</em><span class="sig-paren">)</span> &#x2192; Dict<a class="headerlink" href="#src.exporters.seas5.s5.S5Exporter.get_s5_leadtimes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the leadtimes for monthly or hourly data</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.exporters.seas5.s5.S5Exporter.get_valid_variables">
+<em class="property">property </em><code class="sig-name descname">get_valid_variables</code><a class="headerlink" href="#src.exporters.seas5.s5.S5Exporter.get_valid_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>get <cite>valid_variables</cite> for this S5Exporter object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.exporters.seas5.s5.S5Exporter.make_filename">
+<code class="sig-name descname">make_filename</code><span class="sig-paren">(</span><em class="sig-param">dataset: str</em>, <em class="sig-param">selection_request: Dict</em><span class="sig-paren">)</span> &#x2192; pathlib.Path<a class="headerlink" href="#src.exporters.seas5.s5.S5Exporter.make_filename" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>data/raw/seasonal-monthly-single-levels</dt><dd><p>/total_precipitation/2017/M01-Vmonthly_mean-P.grib</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-src.exporters.seas5">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src.exporters.seas5" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">ml_drought</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Tommy Lees, Gabriel Tseng.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/source/src.exporters.seas5.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

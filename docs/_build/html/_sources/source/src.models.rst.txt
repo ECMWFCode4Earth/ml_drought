@@ -1,0 +1,61 @@
+src.models package
+==================
+
+Subpackages
+-----------
+
+.. toctree::
+
+   src.models.neural_networks
+
+Submodules
+----------
+
+src.models.base module
+----------------------
+
+.. automodule:: src.models.base
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.models.data module
+----------------------
+
+.. automodule:: src.models.data
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.models.parsimonious module
+------------------------------
+
+.. automodule:: src.models.parsimonious
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.models.regression module
+----------------------------
+
+.. automodule:: src.models.regression
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.models.utils module
+-----------------------
+
+.. automodule:: src.models.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: src.models
+   :members:
+   :undoc-members:
+   :show-inheritance:

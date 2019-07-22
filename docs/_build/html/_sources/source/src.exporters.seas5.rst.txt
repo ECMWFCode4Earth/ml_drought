@@ -1,0 +1,30 @@
+src.exporters.seas5 package
+===========================
+
+Submodules
+----------
+
+src.exporters.seas5.all\_valid\_s5 module
+-----------------------------------------
+
+.. automodule:: src.exporters.seas5.all_valid_s5
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.exporters.seas5.s5 module
+-----------------------------
+
+.. automodule:: src.exporters.seas5.s5
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: src.exporters.seas5
+   :members:
+   :undoc-members:
+   :show-inheritance:

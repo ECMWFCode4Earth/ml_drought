@@ -1,0 +1,463 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>src.models package &#8212; ml_drought  documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="src-models-package">
+<h1>src.models package<a class="headerlink" href="#src-models-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="src.models.neural_networks.html">src.models.neural_networks package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.models.neural_networks.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.neural_networks.html#module-src.models.neural_networks.base">src.models.neural_networks.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.neural_networks.html#module-src.models.neural_networks.linear_network">src.models.neural_networks.linear_network module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.neural_networks.html#module-src.models.neural_networks.rnn">src.models.neural_networks.rnn module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.neural_networks.html#module-src.models.neural_networks">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-src.models.base">
+<span id="src-models-base-module"></span><h2>src.models.base module<a class="headerlink" href="#module-src.models.base" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="src.models.base.ModelBase">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.base.</code><code class="sig-name descname">ModelBase</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em>, <em class="sig-param">batch_size: int = 1</em>, <em class="sig-param">experiment: str = 'one_month_forecast'</em>, <em class="sig-param">pred_months: Optional[List[int]] = None</em>, <em class="sig-param">include_pred_month: bool = True</em>, <em class="sig-param">surrounding_pixels: Optional[int] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.base.ModelBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base for all machine learning models.
+Attributes:
+———-
+data: pathlib.Path = Path(‘data’)</p>
+<blockquote>
+<div><p>The location of the data folder.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>batch_size: int 1</dt><dd><p>The number of files to load at once. These will be chunked and shuffled, so
+a higher value will lead to better shuffling (but will require more memory)</p>
+</dd>
+<dt>pred_months: Optional[List[int]] = None</dt><dd><p>The months the model should predict. If None, all months are predicted</p>
+</dd>
+<dt>include_pred_month: bool = True</dt><dd><p>Whether to include the prediction month to the model’s training data</p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="src.models.base.ModelBase.evaluate">
+<code class="sig-name descname">evaluate</code><span class="sig-paren">(</span><em class="sig-param">save_results: bool = True</em>, <em class="sig-param">save_preds: bool = False</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.models.base.ModelBase.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the trained model</p>
+<dl class="simple">
+<dt>save_results: bool = True</dt><dd><p>Whether to save the results of the evaluation. If true, they are
+saved in self.model_dir / results.json</p>
+</dd>
+<dt>save_preds: bool = False</dt><dd><p>Whether to save the model predictions. If true, they are saved in
+self.model_dir / {year}_{month}.nc</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.models.base.ModelBase.explain">
+<code class="sig-name descname">explain</code><span class="sig-paren">(</span><em class="sig-param">x: Any</em><span class="sig-paren">)</span> &#x2192; numpy.ndarray<a class="headerlink" href="#src.models.base.ModelBase.explain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Explain the predictions of the trained model on the input data x</p>
+<dl class="simple">
+<dt>x: Any</dt><dd><p>An input array / tensor</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>explanations: np.ndarray</dt><dd><p>A shap value for each of the input values. The sum of the shap
+values is equal to the prediction of the model for x</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.models.base.ModelBase.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Tuple[Dict[str, Dict[str, numpy.ndarray]], Dict[str, numpy.ndarray]]<a class="headerlink" href="#src.models.base.ModelBase.predict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.base.ModelBase.save_model">
+<code class="sig-name descname">save_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.models.base.ModelBase.save_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-src.models.data">
+<span id="src-models-data-module"></span><h2>src.models.data module<a class="headerlink" href="#module-src.models.data" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="src.models.data.DataLoader">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.data.</code><code class="sig-name descname">DataLoader</code><span class="sig-paren">(</span><em class="sig-param">data_path: pathlib.Path = PosixPath('data')</em>, <em class="sig-param">batch_file_size: int = 1</em>, <em class="sig-param">mode: str = 'train'</em>, <em class="sig-param">shuffle_data: bool = True</em>, <em class="sig-param">clear_nans: bool = True</em>, <em class="sig-param">normalize: bool = True</em>, <em class="sig-param">experiment: str = 'one_month_forecast'</em>, <em class="sig-param">mask: Optional[List[bool]] = None</em>, <em class="sig-param">pred_months: Optional[List[int]] = None</em>, <em class="sig-param">to_tensor: bool = False</em>, <em class="sig-param">surrounding_pixels: Optional[int] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.data.DataLoader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Dataloader; lazily load the training and test data
+Attributes:
+———-
+data_path: Path = Path(‘data’)</p>
+<blockquote>
+<div><p>Location of the data folder</p>
+</div></blockquote>
+<dl class="simple">
+<dt>batch_file_size: int = 1</dt><dd><p>The number of files to load at a time</p>
+</dd>
+<dt>mode: str {‘test’, ‘train’} = ‘train’</dt><dd><p>Whether to load testing or training data. This also affects the way the data is
+returned; for train, it is a concatenated array, but for test it is a dict with dates
+so that the netcdf file can easily be reconstructed</p>
+</dd>
+<dt>shuffle_data: bool = True</dt><dd><p>Whether or not to shuffle data</p>
+</dd>
+<dt>clear_nans: bool = True</dt><dd><p>Whether to remove nan values</p>
+</dd>
+<dt>experiment: str = ‘one_month_forecast’</dt><dd><p>the name of the experiment to run. Defaults to one_month_forecast
+(train on only historical data and predict one month ahead)</p>
+</dd>
+<dt>normalize: bool = True</dt><dd><p>Whether to normalize the data. This assumes a normalizing_dict.pkl was saved by the
+engineer</p>
+</dd>
+<dt>mask: Optional[List[bool]] = None</dt><dd><p>If not None, this list will be used to mask the input files. Useful for creating a train
+and validation set</p>
+</dd>
+<dt>pred_months: Optional[List[int]] = None</dt><dd><p>The months the model should predict. If None, all months are predicted</p>
+</dd>
+<dt>to_tensor: bool = False</dt><dd><p>Whether to turn the np.ndarrays into torch.Tensors</p>
+</dd>
+<dt>surrounding_pixels: Optional[int] = None</dt><dd><p>How many surrounding pixels to add to the input data. e.g. if the input is 1, then in
+addition to the pixels on the prediction point, the neighbouring (spatial) pixels will
+be included too, up to a distance of one pixel away</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="src.models.data.ModelArrays">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.data.</code><code class="sig-name descname">ModelArrays</code><span class="sig-paren">(</span><em class="sig-param">x: src.models.data.TrainData, y: Union[numpy.ndarray, torch.Tensor], x_vars: List[str], y_var: str, latlons: Union[numpy.ndarray, NoneType] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.data.ModelArrays" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="src.models.data.ModelArrays.latlons">
+<code class="sig-name descname">latlons</code><em class="property"> = None</em><a class="headerlink" href="#src.models.data.ModelArrays.latlons" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.models.data.TrainData">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.data.</code><code class="sig-name descname">TrainData</code><span class="sig-paren">(</span><em class="sig-param">historical: Union[numpy.ndarray, torch.Tensor], current: Union[numpy.ndarray, torch.Tensor, NoneType], pred_months: Union[numpy.ndarray, torch.Tensor]</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.data.TrainData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.models.data.train_val_mask">
+<code class="sig-prename descclassname">src.models.data.</code><code class="sig-name descname">train_val_mask</code><span class="sig-paren">(</span><em class="sig-param">mask_len: int</em>, <em class="sig-param">val_ratio: float = 0.3</em><span class="sig-paren">)</span> &#x2192; Tuple[List[bool], List[bool]]<a class="headerlink" href="#src.models.data.train_val_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes a trainining and validation mask which can be passed to the dataloader
+Arguments
+———-
+mask_len: int</p>
+<blockquote>
+<div><p>The length of the mask to be created</p>
+</div></blockquote>
+<dl class="simple">
+<dt>val_ratio: float = 0.3</dt><dd><p>The ratio of instances which should be True for the val mask and False for the train
+mask</p>
+</dd>
+</dl>
+<p>The train mask and the val mask, both as lists</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-src.models.parsimonious">
+<span id="src-models-parsimonious-module"></span><h2>src.models.parsimonious module<a class="headerlink" href="#module-src.models.parsimonious" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="src.models.parsimonious.Persistence">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.parsimonious.</code><code class="sig-name descname">Persistence</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em>, <em class="sig-param">batch_size: int = 1</em>, <em class="sig-param">experiment: str = 'one_month_forecast'</em>, <em class="sig-param">pred_months: Optional[List[int]] = None</em>, <em class="sig-param">include_pred_month: bool = True</em>, <em class="sig-param">surrounding_pixels: Optional[int] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.parsimonious.Persistence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.models.base.ModelBase" title="src.models.base.ModelBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.models.base.ModelBase</span></code></a></p>
+<p>A parsimonious persistence model.
+This “model” predicts the previous time-value of data. For example, its prediction
+for VHI in March 2018 will be VHI for February 2018 (assuming monthly time-granularity).</p>
+<dl class="attribute">
+<dt id="src.models.parsimonious.Persistence.model_name">
+<code class="sig-name descname">model_name</code><em class="property"> = 'previous_month'</em><a class="headerlink" href="#src.models.parsimonious.Persistence.model_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.parsimonious.Persistence.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Tuple[Dict[str, Dict[str, numpy.ndarray]], Dict[str, numpy.ndarray]]<a class="headerlink" href="#src.models.parsimonious.Persistence.predict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.parsimonious.Persistence.save_model">
+<code class="sig-name descname">save_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.models.parsimonious.Persistence.save_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.parsimonious.Persistence.train">
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.models.parsimonious.Persistence.train" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-src.models.regression">
+<span id="src-models-regression-module"></span><h2>src.models.regression module<a class="headerlink" href="#module-src.models.regression" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="src.models.regression.LinearRegression">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.regression.</code><code class="sig-name descname">LinearRegression</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em>, <em class="sig-param">experiment: str = 'one_month_forecast'</em>, <em class="sig-param">batch_size: int = 1</em>, <em class="sig-param">pred_months: Optional[List[int]] = None</em>, <em class="sig-param">include_pred_month: bool = True</em>, <em class="sig-param">surrounding_pixels: Optional[int] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.regression.LinearRegression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.models.base.ModelBase" title="src.models.base.ModelBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.models.base.ModelBase</span></code></a></p>
+<dl class="method">
+<dt id="src.models.regression.LinearRegression.explain">
+<code class="sig-name descname">explain</code><span class="sig-paren">(</span><em class="sig-param">x: Any</em><span class="sig-paren">)</span> &#x2192; Union[numpy.ndarray, Tuple[numpy.ndarray, numpy.ndarray]]<a class="headerlink" href="#src.models.regression.LinearRegression.explain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Explain the predictions of the trained model on the input data x</p>
+<dl class="simple">
+<dt>x: Any</dt><dd><p>An input array / tensor</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>explanations: np.ndarray</dt><dd><p>A shap value for each of the input values. The sum of the shap
+values is equal to the prediction of the model for x</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="src.models.regression.LinearRegression.model_name">
+<code class="sig-name descname">model_name</code><em class="property"> = 'linear_regression'</em><a class="headerlink" href="#src.models.regression.LinearRegression.model_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.regression.LinearRegression.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Tuple[Dict[str, Dict[str, numpy.ndarray]], Dict[str, numpy.ndarray]]<a class="headerlink" href="#src.models.regression.LinearRegression.predict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.regression.LinearRegression.save_model">
+<code class="sig-name descname">save_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.models.regression.LinearRegression.save_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.regression.LinearRegression.train">
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param">num_epochs: int = 1</em>, <em class="sig-param">early_stopping: Optional[int] = None</em>, <em class="sig-param">batch_size: int = 256</em>, <em class="sig-param">val_split: float = 0.1</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.models.regression.LinearRegression.train" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-src.models.utils">
+<span id="src-models-utils-module"></span><h2>src.models.utils module<a class="headerlink" href="#module-src.models.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="src.models.utils.chunk_array">
+<code class="sig-prename descclassname">src.models.utils.</code><code class="sig-name descname">chunk_array</code><span class="sig-paren">(</span><em class="sig-param">x: Union[Tuple[Union[torch.Tensor, numpy.ndarray, None], ...], torch.Tensor, numpy.ndarray], y: Union[torch.Tensor, numpy.ndarray], batch_size: int, shuffle: bool = False</em><span class="sig-paren">)</span> &#x2192; Iterable[Tuple[Tuple[Union[torch.Tensor, numpy.ndarray, None], ...], Union[torch.Tensor, numpy.ndarray]]]<a class="headerlink" href="#src.models.utils.chunk_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Chunk an array into batches of batch size <cite>batch_size</cite></p>
+<dl class="simple">
+<dt>x: ({torch.Tensor, np.ndarray})</dt><dd><p>The x tensors to chunk</p>
+</dd>
+<dt>y: {torch.Tensor, np.ndarray}</dt><dd><p>The y tensor to chunk. Must be the same type as x</p>
+</dd>
+<dt>batch_size: int</dt><dd><p>The size of the batches to return</p>
+</dd>
+<dt>shuffle: bool = False</dt><dd><p>Whether to shuffle the returned tensors</p>
+</dd>
+</dl>
+<p>An iterator returning tuples of batches (x, y)</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-src.models">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src.models" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="src.models.Persistence">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.</code><code class="sig-name descname">Persistence</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em>, <em class="sig-param">batch_size: int = 1</em>, <em class="sig-param">experiment: str = 'one_month_forecast'</em>, <em class="sig-param">pred_months: Optional[List[int]] = None</em>, <em class="sig-param">include_pred_month: bool = True</em>, <em class="sig-param">surrounding_pixels: Optional[int] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.Persistence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.models.base.ModelBase" title="src.models.base.ModelBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.models.base.ModelBase</span></code></a></p>
+<p>A parsimonious persistence model.
+This “model” predicts the previous time-value of data. For example, its prediction
+for VHI in March 2018 will be VHI for February 2018 (assuming monthly time-granularity).</p>
+<dl class="attribute">
+<dt id="src.models.Persistence.model_name">
+<code class="sig-name descname">model_name</code><em class="property"> = 'previous_month'</em><a class="headerlink" href="#src.models.Persistence.model_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.Persistence.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Tuple[Dict[str, Dict[str, numpy.ndarray]], Dict[str, numpy.ndarray]]<a class="headerlink" href="#src.models.Persistence.predict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.Persistence.save_model">
+<code class="sig-name descname">save_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.models.Persistence.save_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.Persistence.train">
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.models.Persistence.train" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.models.LinearRegression">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.</code><code class="sig-name descname">LinearRegression</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em>, <em class="sig-param">experiment: str = 'one_month_forecast'</em>, <em class="sig-param">batch_size: int = 1</em>, <em class="sig-param">pred_months: Optional[List[int]] = None</em>, <em class="sig-param">include_pred_month: bool = True</em>, <em class="sig-param">surrounding_pixels: Optional[int] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.LinearRegression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.models.base.ModelBase" title="src.models.base.ModelBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.models.base.ModelBase</span></code></a></p>
+<dl class="method">
+<dt id="src.models.LinearRegression.explain">
+<code class="sig-name descname">explain</code><span class="sig-paren">(</span><em class="sig-param">x: Any</em><span class="sig-paren">)</span> &#x2192; Union[numpy.ndarray, Tuple[numpy.ndarray, numpy.ndarray]]<a class="headerlink" href="#src.models.LinearRegression.explain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Explain the predictions of the trained model on the input data x</p>
+<dl class="simple">
+<dt>x: Any</dt><dd><p>An input array / tensor</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>explanations: np.ndarray</dt><dd><p>A shap value for each of the input values. The sum of the shap
+values is equal to the prediction of the model for x</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="src.models.LinearRegression.model_name">
+<code class="sig-name descname">model_name</code><em class="property"> = 'linear_regression'</em><a class="headerlink" href="#src.models.LinearRegression.model_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.LinearRegression.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Tuple[Dict[str, Dict[str, numpy.ndarray]], Dict[str, numpy.ndarray]]<a class="headerlink" href="#src.models.LinearRegression.predict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.LinearRegression.save_model">
+<code class="sig-name descname">save_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.models.LinearRegression.save_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.LinearRegression.train">
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param">num_epochs: int = 1</em>, <em class="sig-param">early_stopping: Optional[int] = None</em>, <em class="sig-param">batch_size: int = 256</em>, <em class="sig-param">val_split: float = 0.1</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.models.LinearRegression.train" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.models.LinearNetwork">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.</code><code class="sig-name descname">LinearNetwork</code><span class="sig-paren">(</span><em class="sig-param">layer_sizes: Union[int, List[int]], dropout: float = 0.25, data_folder: pathlib.Path = PosixPath('data'), batch_size: int = 1, experiment: str = 'one_month_forecast', pred_months: Optional[List[int]] = None, include_pred_month: bool = True, surrounding_pixels: Optional[int] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.LinearNetwork" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="src.models.neural_networks.html#src.models.neural_networks.base.NNBase" title="src.models.neural_networks.base.NNBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.models.neural_networks.base.NNBase</span></code></a></p>
+<dl class="attribute">
+<dt id="src.models.LinearNetwork.model_name">
+<code class="sig-name descname">model_name</code><em class="property"> = 'linear_network'</em><a class="headerlink" href="#src.models.LinearNetwork.model_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.LinearNetwork.save_model">
+<code class="sig-name descname">save_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.models.LinearNetwork.save_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.models.RecurrentNetwork">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.</code><code class="sig-name descname">RecurrentNetwork</code><span class="sig-paren">(</span><em class="sig-param">hidden_size: int, dense_features: List[int], rnn_dropout: float = 0.25, dense_dropout: float = 0.25, data_folder: pathlib.Path = PosixPath('data'), batch_size: int = 1, experiment: str = 'one_month_forecast', pred_months: Optional[List[int]] = None, include_pred_month: bool = True, surrounding_pixels: Optional[int] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.RecurrentNetwork" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="src.models.neural_networks.html#src.models.neural_networks.base.NNBase" title="src.models.neural_networks.base.NNBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.models.neural_networks.base.NNBase</span></code></a></p>
+<dl class="attribute">
+<dt id="src.models.RecurrentNetwork.model_name">
+<code class="sig-name descname">model_name</code><em class="property"> = 'rnn'</em><a class="headerlink" href="#src.models.RecurrentNetwork.model_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.RecurrentNetwork.save_model">
+<code class="sig-name descname">save_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.models.RecurrentNetwork.save_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">ml_drought</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Tommy Lees, Gabriel Tseng.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/source/src.models.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

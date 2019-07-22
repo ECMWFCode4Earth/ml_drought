@@ -1,0 +1,271 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>src.models.neural_networks package &#8212; ml_drought  documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="src-models-neural-networks-package">
+<h1>src.models.neural_networks package<a class="headerlink" href="#src-models-neural-networks-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-src.models.neural_networks.base">
+<span id="src-models-neural-networks-base-module"></span><h2>src.models.neural_networks.base module<a class="headerlink" href="#module-src.models.neural_networks.base" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="src.models.neural_networks.base.LinearBlock">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.neural_networks.base.</code><code class="sig-name descname">LinearBlock</code><span class="sig-paren">(</span><em class="sig-param">in_features</em>, <em class="sig-param">out_features</em>, <em class="sig-param">dropout=0.25</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.neural_networks.base.LinearBlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<p>A linear layer followed by batchnorm, a ReLU activation, and dropout</p>
+<dl class="method">
+<dt id="src.models.neural_networks.base.LinearBlock.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.neural_networks.base.LinearBlock.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.models.neural_networks.base.NNBase">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.neural_networks.base.</code><code class="sig-name descname">NNBase</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em>, <em class="sig-param">batch_size: int = 1</em>, <em class="sig-param">experiment: str = 'one_month_forecast'</em>, <em class="sig-param">pred_months: Optional[List[int]] = None</em>, <em class="sig-param">include_pred_month: bool = True</em>, <em class="sig-param">surrounding_pixels: Optional[int] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.neural_networks.base.NNBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="src.models.html#src.models.base.ModelBase" title="src.models.base.ModelBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.models.base.ModelBase</span></code></a></p>
+<dl class="method">
+<dt id="src.models.neural_networks.base.NNBase.explain">
+<code class="sig-name descname">explain</code><span class="sig-paren">(</span><em class="sig-param">x: Any</em><span class="sig-paren">)</span> &#x2192; numpy.ndarray<a class="headerlink" href="#src.models.neural_networks.base.NNBase.explain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Explain the predictions of the trained model on the input data x</p>
+<dl class="simple">
+<dt>x: Any</dt><dd><p>An input array / tensor</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>explanations: np.ndarray</dt><dd><p>A shap value for each of the input values. The sum of the shap
+values is equal to the prediction of the model for x</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.models.neural_networks.base.NNBase.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Tuple[Dict[str, Dict[str, numpy.ndarray]], Dict[str, numpy.ndarray]]<a class="headerlink" href="#src.models.neural_networks.base.NNBase.predict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.neural_networks.base.NNBase.train">
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param">num_epochs: int = 1</em>, <em class="sig-param">early_stopping: Optional[int] = None</em>, <em class="sig-param">batch_size: int = 256</em>, <em class="sig-param">learning_rate: float = 0.001</em>, <em class="sig-param">val_split: float = 0.1</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.models.neural_networks.base.NNBase.train" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-src.models.neural_networks.linear_network">
+<span id="src-models-neural-networks-linear-network-module"></span><h2>src.models.neural_networks.linear_network module<a class="headerlink" href="#module-src.models.neural_networks.linear_network" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="src.models.neural_networks.linear_network.LinearModel">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.neural_networks.linear_network.</code><code class="sig-name descname">LinearModel</code><span class="sig-paren">(</span><em class="sig-param">input_size</em>, <em class="sig-param">layer_sizes</em>, <em class="sig-param">dropout</em>, <em class="sig-param">include_pred_month</em>, <em class="sig-param">experiment='one_month_forecast'</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.neural_networks.linear_network.LinearModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="method">
+<dt id="src.models.neural_networks.linear_network.LinearModel.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">pred_month=None</em>, <em class="sig-param">current=None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.neural_networks.linear_network.LinearModel.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.models.neural_networks.linear_network.LinearModel.init_weights">
+<code class="sig-name descname">init_weights</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.models.neural_networks.linear_network.LinearModel.init_weights" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.models.neural_networks.linear_network.LinearNetwork">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.neural_networks.linear_network.</code><code class="sig-name descname">LinearNetwork</code><span class="sig-paren">(</span><em class="sig-param">layer_sizes: Union[int, List[int]], dropout: float = 0.25, data_folder: pathlib.Path = PosixPath('data'), batch_size: int = 1, experiment: str = 'one_month_forecast', pred_months: Optional[List[int]] = None, include_pred_month: bool = True, surrounding_pixels: Optional[int] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.neural_networks.linear_network.LinearNetwork" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.models.neural_networks.base.NNBase" title="src.models.neural_networks.base.NNBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.models.neural_networks.base.NNBase</span></code></a></p>
+<dl class="attribute">
+<dt id="src.models.neural_networks.linear_network.LinearNetwork.model_name">
+<code class="sig-name descname">model_name</code><em class="property"> = 'linear_network'</em><a class="headerlink" href="#src.models.neural_networks.linear_network.LinearNetwork.model_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.neural_networks.linear_network.LinearNetwork.save_model">
+<code class="sig-name descname">save_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.models.neural_networks.linear_network.LinearNetwork.save_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-src.models.neural_networks.rnn">
+<span id="src-models-neural-networks-rnn-module"></span><h2>src.models.neural_networks.rnn module<a class="headerlink" href="#module-src.models.neural_networks.rnn" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="src.models.neural_networks.rnn.RNN">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.neural_networks.rnn.</code><code class="sig-name descname">RNN</code><span class="sig-paren">(</span><em class="sig-param">features_per_month</em>, <em class="sig-param">dense_features</em>, <em class="sig-param">hidden_size</em>, <em class="sig-param">rnn_dropout</em>, <em class="sig-param">dense_dropout</em>, <em class="sig-param">include_pred_month</em>, <em class="sig-param">experiment</em>, <em class="sig-param">current_size=None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.neural_networks.rnn.RNN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="method">
+<dt id="src.models.neural_networks.rnn.RNN.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">pred_month=None</em>, <em class="sig-param">current=None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.neural_networks.rnn.RNN.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.models.neural_networks.rnn.RNN.initialize_weights">
+<code class="sig-name descname">initialize_weights</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.models.neural_networks.rnn.RNN.initialize_weights" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.models.neural_networks.rnn.RecurrentNetwork">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.neural_networks.rnn.</code><code class="sig-name descname">RecurrentNetwork</code><span class="sig-paren">(</span><em class="sig-param">hidden_size: int, dense_features: List[int], rnn_dropout: float = 0.25, dense_dropout: float = 0.25, data_folder: pathlib.Path = PosixPath('data'), batch_size: int = 1, experiment: str = 'one_month_forecast', pred_months: Optional[List[int]] = None, include_pred_month: bool = True, surrounding_pixels: Optional[int] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.neural_networks.rnn.RecurrentNetwork" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.models.neural_networks.base.NNBase" title="src.models.neural_networks.base.NNBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.models.neural_networks.base.NNBase</span></code></a></p>
+<dl class="attribute">
+<dt id="src.models.neural_networks.rnn.RecurrentNetwork.model_name">
+<code class="sig-name descname">model_name</code><em class="property"> = 'rnn'</em><a class="headerlink" href="#src.models.neural_networks.rnn.RecurrentNetwork.model_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.models.neural_networks.rnn.RecurrentNetwork.save_model">
+<code class="sig-name descname">save_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.models.neural_networks.rnn.RecurrentNetwork.save_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.models.neural_networks.rnn.UnrolledRNN">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.neural_networks.rnn.</code><code class="sig-name descname">UnrolledRNN</code><span class="sig-paren">(</span><em class="sig-param">input_size</em>, <em class="sig-param">hidden_size</em>, <em class="sig-param">batch_first=True</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.neural_networks.rnn.UnrolledRNN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<p>An unrolled RNN. The motivation for this is mainly so that we can explain this model using
+the shap deep explainer, but also because we unroll the RNN anyway to apply dropout.</p>
+<dl class="method">
+<dt id="src.models.neural_networks.rnn.UnrolledRNN.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">state</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.neural_networks.rnn.UnrolledRNN.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-src.models.neural_networks">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src.models.neural_networks" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">ml_drought</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Tommy Lees, Gabriel Tseng.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/source/src.models.neural_networks.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
