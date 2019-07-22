@@ -22,10 +22,10 @@ class S5Preprocessor(BasePreProcessor):
 
     def get_filepaths(self, target_folder: Path,  # type: ignore
                       grib: bool = True) -> List[Path]:
-        if target_folder.name == 'raw':
-            target_folder = self.raw_folder / self.dataset
+        # if target_folder.name == 'raw':
+        #     target_folder = self.raw_folder
 
-        pattern = '*/*/*/*.grib' if grib else '*/*/*/*.nc'
+        pattern = 'seasonal*/*/*/*.grib' if grib else '*/*/*/*.nc'
         # get all files in */*/*
         outfiles = [f for f in target_folder.glob(pattern)]
 
