@@ -21,11 +21,12 @@ class S5Preprocessor(BasePreProcessor):
         self.parallel = parallel
 
     def get_filepaths(self, target_folder: Path,  # type: ignore
+                      variable: str,
                       grib: bool = True) -> List[Path]:
         # if target_folder.name == 'raw':
         #     target_folder = self.raw_folder
 
-        pattern = 'seasonal*/*/*/*.grib' if grib else '*/*/*/*.nc'
+        pattern = f'seasonal*/{variable}/*/*.grib' if grib else f'*/{variable}/*/*.nc'
         # get all files in */*/*
         outfiles = [f for f in target_folder.glob(pattern)]
 
@@ -56,7 +57,9 @@ class S5Preprocessor(BasePreProcessor):
         # TODO: do we want each variable in separate folders / .nc files?
         subset_name = ('_' + subset_name) if subset_name is not None else ''
         filename = filepath.stem + f'_{variable}{subset_name}.nc'
-        output_path = output_dir / filename
+        output_path = output_dir / variable / filename
+        if not output_path.parents[0].exists():
+            (output_path.parents[0]).mkdir(exist_ok=True, parents=True)
         return output_path
 
     def _preprocess(self,
@@ -158,11 +161,11 @@ class S5Preprocessor(BasePreProcessor):
 
         return out_path
 
-    def preprocess(self, subset_str: Optional[str] = 'kenya',
+    def preprocess(self, variable: str,
                    regrid: Optional[Path] = None,
+                   subset_str: Optional[str] = 'kenya',
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
-                   variable: Optional[str] = None,
                    cleanup: bool = False,
                    **kwargs) -> None:
         """Preprocesses the S5 data for all variables in the 'ds' file at once
@@ -181,9 +184,12 @@ class S5Preprocessor(BasePreProcessor):
         upsampling: bool = False
             are you upsampling the time frequency (e.g. monthly -> daily)
 
-        variable: Optional[str] = None
-            if self.ouce_server then require a variable string to build
-            the filepath to the data to preprocess
+        variable: str
+            Which variable do we want to process? [NOTE: each call
+            to `obj.preprocess()` preprocesses ONE variable]
+
+            if self.ouce_server then also require a variable string
+            to build the filepath to the data to preprocess
 
         cleanup: bool = False
             Whether to cleanup the self.interim directory
@@ -207,7 +213,9 @@ class S5Preprocessor(BasePreProcessor):
                 variable=variable, parent_dir=ouce_dir
             )
         else:
-            filepaths = self.get_filepaths(target_folder=self.raw_folder)
+            filepaths = self.get_filepaths(
+                target_folder=self.raw_folder, variable=variable
+            )
 
         # argument needs the regrid file
         if regrid is not None:

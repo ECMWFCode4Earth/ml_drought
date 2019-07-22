@@ -144,7 +144,10 @@ class TestS5Preprocessor:
         processor = S5Preprocessor(tmp_path / 'data')
 
         # check the preprocessor can find the grib file created
-        fpaths = processor.get_filepaths(grib=True, target_folder=processor.raw_folder)
+        fpaths = processor.get_filepaths(
+            grib=True, target_folder=processor.raw_folder,
+            variable='temperature'
+        )
         assert fpaths[0].name == '01.grib', f'unable to find the created dataset' \
             'at data/raw/s5/seasonal-monthly-pressure-levels'
 

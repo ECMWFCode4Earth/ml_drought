@@ -477,9 +477,9 @@ class S5Exporter(CDSExporter):
         if self.pressure_level:
             plevels = selection_request["pressure_level"]
             plevels = "_".join(plevels)
-            fname = f"M{months}-P{plevels}.grib"
+            fname = f"Y{years}_M{months}-P{plevels}.grib"
         else:
-            fname = f"M{months}.grib"
+            fname = f"Y{years}_M{months}.grib"
         output_filename = years_folder / fname
 
         return output_filename
