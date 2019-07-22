@@ -64,6 +64,7 @@ class S5Preprocessor(BasePreProcessor):
 
     def _preprocess(self,
                     filepath: Path,
+                    ouce_server: bool = False,
                     subset_str: Optional[str] = None,
                     regrid: Optional[xr.Dataset] = None,
                     **kwargs) -> Tuple[Path, str]:
@@ -78,6 +79,8 @@ class S5Preprocessor(BasePreProcessor):
         else:  # downloaded from CDSAPI as .grib
             # 1. read grib file
             ds = self.read_grib_file(filepath)
+            # add initialisation_date as a dimension
+            ds = ds.expand_dims(dim='initialisation_date')
 
         # find all variables (sometimes download multiple)
         coords = [c for c in ds.coords]
@@ -147,7 +150,6 @@ class S5Preprocessor(BasePreProcessor):
         # open all interim processed files (all variables?)
         ds = xr.open_mfdataset((self.interim / variable).as_posix() + "/*.nc")
         ds = ds.sortby('initialisation_date')
-        ds = ds.expand_dims(dim='initialisation_date')
 
         # resample
         if resample_str is not None:
@@ -229,7 +231,7 @@ class S5Preprocessor(BasePreProcessor):
             variables = []
             for filepath in filepaths:
                 output_path, variable = self._preprocess(
-                    filepath, subset_str, regrid_ds, **kwargs
+                    filepath, subset_str, regrid_ds, self.ouce_server, **kwargs
                 )
                 out_paths.append(output_path)
                 variables.append(variable)
@@ -240,7 +242,8 @@ class S5Preprocessor(BasePreProcessor):
             outputs = pool.map(
                 partial(self._preprocess,
                         subset_str=subset_str,
-                        regrid=regrid),
+                        regrid=regrid,
+                        ouce_server=self.ouce_server),
                 filepaths)
             print("\nOutputs (errors):\n\t", outputs)
 
