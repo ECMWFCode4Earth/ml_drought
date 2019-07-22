@@ -241,9 +241,9 @@ class S5Preprocessor(BasePreProcessor):
             pool = multiprocessing.Pool(processes=100)
             outputs = pool.map(
                 partial(self._preprocess,
+                        ouce_server=self.ouce_server,
                         subset_str=subset_str,
-                        regrid=regrid,
-                        ouce_server=self.ouce_server),
+                        regrid=regrid),
                 filepaths)
             print("\nOutputs (errors):\n\t", outputs)
 
