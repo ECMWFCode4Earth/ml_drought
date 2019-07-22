@@ -367,6 +367,7 @@ class _TrainIter(_BaseIter):
                     # remove the empty element from the list
                     self.data_files.pop(self.idx)
                     self.max_idx -= 1
+                    self.idx -= 1  # we're going to add one later
 
                     cur_max_idx = min(cur_max_idx + 1, self.max_idx)
 
