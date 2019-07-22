@@ -449,7 +449,7 @@ class S5Exporter(CDSExporter):
             )
 
     def make_filename(self, dataset: str, selection_request: Dict) -> Path:
-        """
+        """Called from the super class (CDSExporter)
         data/raw/seasonal-monthly-single-levels
          /total_precipitation/2017/M01-Vmonthly_mean-P.grib
         """

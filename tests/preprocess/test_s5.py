@@ -95,7 +95,7 @@ def save_dummy_seas5(tmp_path,
     """
     year = pd.to_datetime(date_str).year
     month = pd.to_datetime(date_str).month
-    out_dir = tmp_path / 'data' / 'raw' / 's5' / dataset / variable / str(year)
+    out_dir = tmp_path / 'data' / 'raw' / dataset / variable / str(year)
     if not out_dir.exists():
         out_dir.mkdir(exist_ok=True, parents=True)
 
@@ -137,7 +137,7 @@ class TestS5Preprocessor:
                              to_grib=True,
                              dataset='seasonal-monthly-pressure-levels',
                              variable='temperature')
-        out_dir = tmp_path / 'data' / 'raw' / 's5' / 'seasonal-monthly-pressure-levels'
+        out_dir = tmp_path / 'data' / 'raw' / 'seasonal-monthly-pressure-levels'
         out_dir = out_dir / 'temperature' / '2018'
         assert (out_dir / '01.grib').exists()
 
