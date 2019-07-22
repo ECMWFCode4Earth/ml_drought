@@ -38,16 +38,16 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="src.analysis.indices.html">src.analysis.indices package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#src-analysis-indices-anomaly-index-module">src.analysis.indices.anomaly_index module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#src-analysis-indices-base-module">src.analysis.indices.base module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#src-analysis-indices-china-z-index-module">src.analysis.indices.china_z_index module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#src-analysis-indices-decile-index-module">src.analysis.indices.decile_index module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#src-analysis-indices-drought-severity-index-module">src.analysis.indices.drought_severity_index module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#src-analysis-indices-percent-normal-index-module">src.analysis.indices.percent_normal_index module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#src-analysis-indices-spi-module">src.analysis.indices.spi module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#src-analysis-indices-utils-module">src.analysis.indices.utils module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#src-analysis-indices-z-score-module">src.analysis.indices.z_score module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#module-src.analysis.indices.anomaly_index">src.analysis.indices.anomaly_index module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#module-src.analysis.indices.base">src.analysis.indices.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#module-src.analysis.indices.china_z_index">src.analysis.indices.china_z_index module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#module-src.analysis.indices.decile_index">src.analysis.indices.decile_index module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#module-src.analysis.indices.drought_severity_index">src.analysis.indices.drought_severity_index module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#module-src.analysis.indices.percent_normal_index">src.analysis.indices.percent_normal_index module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#module-src.analysis.indices.spi">src.analysis.indices.spi module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#module-src.analysis.indices.utils">src.analysis.indices.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#module-src.analysis.indices.z_score">src.analysis.indices.z_score module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.analysis.indices.html#module-src.analysis.indices">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -56,8 +56,8 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="src-analysis-evaluation-module">
-<h2>src.analysis.evaluation module<a class="headerlink" href="#src-analysis-evaluation-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-src.analysis.evaluation">
+<span id="src-analysis-evaluation-module"></span><h2>src.analysis.evaluation module<a class="headerlink" href="#module-src.analysis.evaluation" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-src.analysis.event_detector">
 <span id="src-analysis-event-detector-module"></span><h2>src.analysis.event_detector module<a class="headerlink" href="#module-src.analysis.event_detector" title="Permalink to this headline">¶</a></h2>
@@ -235,8 +235,628 @@ variable plots (on an instance specific basis).</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-src.analysis">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src.analysis" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="src.analysis.plot_shap_values">
+<code class="sig-prename descclassname">src.analysis.</code><code class="sig-name descname">plot_shap_values</code><span class="sig-paren">(</span><em class="sig-param">x: numpy.ndarray, shap_values: numpy.ndarray, val_list: List[str], normalizing_dict: Dict[str, Dict[str, float]], value_to_plot: str, normalize_shap_plots: bool = True, show: bool = False</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.analysis.plot_shap_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the denormalized values against their shap values, so that
+variations in the input features to the model can be compared to their effect
+on the model. For example plots, see notebooks/08_gt_recurrent_model.ipynb.
+Parameters:
+———-
+x: np.array</p>
+<blockquote>
+<div><p>The input to a model for a single data instance</p>
+</div></blockquote>
+<dl class="simple">
+<dt>shap_values: np.array</dt><dd><p>The corresponding shap values (to x)</p>
+</dd>
+<dt>val_list: list</dt><dd><p>A list of the variable names, for axis labels</p>
+</dd>
+<dt>normalizing_dict: dict</dt><dd><p>The normalizing dict saved by the <cite>Engineer</cite>, so that the x array can be
+denormalized</p>
+</dd>
+<dt>value_to_plot: str</dt><dd><p>The specific input variable to plot. Must be in val_list</p>
+</dd>
+<dt>normalize_shap_plots: bool = True</dt><dd><p>If True, then the scale of the shap plots will be uniform across all
+variable plots (on an instance specific basis).</p>
+</dd>
+<dt>show: bool = False</dt><dd><p>If True, a plot of the variable <cite>value_to_plot</cite> against its shap values will be plotted.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="src.analysis.EventDetector">
+<em class="property">class </em><code class="sig-prename descclassname">src.analysis.</code><code class="sig-name descname">EventDetector</code><span class="sig-paren">(</span><em class="sig-param">path_to_data: pathlib.Path</em><span class="sig-paren">)</span><a class="headerlink" href="#src.analysis.EventDetector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A flexible method for detecting events and calculating the size of runs
+in a timeseries of interest.</p>
+<p>an EventDetector object calculates the climatology and threshold values
+(per pixel) and then can compute another xr.Dataset of <cite>runs</cite> which
+are consecutive periods of threshold exceedence (above/below).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">path_to_data</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;data/interim/chirps_preprocessed/chirps_kenya.nc&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e</span> <span class="o">=</span> <span class="n">EventDetector</span><span class="p">(</span><span class="n">path_to_data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e</span><span class="o">.</span><span class="n">detect</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;precip&#39;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;std&#39;</span><span class="p">,</span> <span class="n">time_period</span><span class="o">=</span><span class="s1">&#39;month&#39;</span><span class="p">,</span> <span class="n">hilo</span><span class="o">=</span><span class="s1">&#39;low&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e</span><span class="o">.</span><span class="n">calculate_runs</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="src.analysis.EventDetector.calculate_longest_run">
+<code class="sig-name descname">calculate_longest_run</code><span class="sig-paren">(</span><em class="sig-param">resample_str: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="headerlink" href="#src.analysis.EventDetector.calculate_longest_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the longest run in the dataset
+TODO: fix this argument to work with other resample_str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.EventDetector.calculate_runs">
+<code class="sig-name descname">calculate_runs</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="headerlink" href="#src.analysis.EventDetector.calculate_runs" title="Permalink to this definition">¶</a></dt>
+<dd><p>use xclim to calculate the number of consecutive exceedences.
+For each pixel-time calculate the <cite>run</cite> of exceedences at the
+current timestep.</p>
+<dl>
+<dt>e.g.</dt><dd><p>[True, True, False, True, False, True, True, True] =&gt;
+[1, 2, 0, 1, 0, 1, 2, 3]</p>
+<p>TODO: want to make this general enough to work with subset data too</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.EventDetector.calculate_threshold">
+<em class="property">static </em><code class="sig-name descname">calculate_threshold</code><span class="sig-paren">(</span><em class="sig-param">ds: xarray.core.dataset.Dataset</em>, <em class="sig-param">clim: xarray.core.dataset.Dataset</em>, <em class="sig-param">method: str</em>, <em class="sig-param">time_period: str</em>, <em class="sig-param">variable: str</em>, <em class="sig-param">hilo: Optional[str] = None</em>, <em class="sig-param">value: Optional[float] = None</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="headerlink" href="#src.analysis.EventDetector.calculate_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the threshold using the method defined in <cite>method</cite>.
+This calculates a threshold value above/below which a value is
+defined as anomalous and therefore, set to true. Compared against
+a reference climatology in methods [“q90”,”q10”,”std”]. Compared
+against an absolute value in method [“abs”]</p>
+<dl class="simple">
+<dt>ds: xr.Dataset</dt><dd><p>dataset that you want to calculate the threshold for</p>
+</dd>
+<dt>clim: xr.Dataset</dt><dd><p>the climatology dataset</p>
+</dd>
+<dt>method: str</dt><dd><p>the method used to create the threshold values
+{“q90”,”q10”,”std”,”abs”,}</p>
+</dd>
+<dt>time_period: str</dt><dd><p>the time period to groupby
+{‘daysofyear’, ‘month’, ‘year’, ‘season’}</p>
+</dd>
+<dt>variable: str</dt><dd><p>the name of the variable in <cite>ds</cite></p>
+</dd>
+<dt>hilo: Optional[str] = None</dt><dd><p>Whether we are calculating the value above or below the threshold.
+REQUIRED for <cite>method</cite> == ‘std’
+{‘high’, ‘low’}</p>
+</dd>
+<dt>value: Optional[float] = None</dt><dd><p>if the method is <cite>abs</cite> then also need to provide a value to
+be used as the threshold value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.EventDetector.calculate_threshold_exceedences">
+<code class="sig-name descname">calculate_threshold_exceedences</code><span class="sig-paren">(</span><em class="sig-param">variable: str</em>, <em class="sig-param">time_period: str</em>, <em class="sig-param">hilo: str</em>, <em class="sig-param">method: str = 'std'</em>, <em class="sig-param">value: Optional[float] = None</em><span class="sig-paren">)</span> &#x2192; Tuple[Any, Any, Any]<a class="headerlink" href="#src.analysis.EventDetector.calculate_threshold_exceedences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flag the pixel-times that exceed a threshold defined via
+the <cite>method</cite> argument.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.EventDetector.detect">
+<code class="sig-name descname">detect</code><span class="sig-paren">(</span><em class="sig-param">variable: str</em>, <em class="sig-param">time_period: str</em>, <em class="sig-param">hilo: str</em>, <em class="sig-param">method: str = 'std'</em>, <em class="sig-param">value: Optional[float] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.analysis.EventDetector.detect" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>variable: str</dt><dd><p>name of the variable that you are comparing to the climatology</p>
+</dd>
+<dt>time_period: str</dt><dd><dl class="simple">
+<dt>the period string used to calculate the climatology and define</dt><dd><p>the time
+time_period = {‘dayofyear’, ‘season’, ‘month’}</p>
+</dd>
+</dl>
+</dd>
+<dt>hilo: str</dt><dd><dl class="simple">
+<dt>are you looking for exceedences above a threshold = ‘high’</dt><dd><p>or below a threshold = ‘low’.
+Valid values: {‘high’,’low’}.</p>
+</dd>
+</dl>
+</dd>
+<dt>method: str</dt><dd><dl class="simple">
+<dt>How you want to calculate the threshold to flag exceedences</dt><dd><p>Valid values: {‘q90’, ‘q10’, ‘std’, ‘abs’,}</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.EventDetector.get_thresh_clim_dataarrays">
+<code class="sig-name descname">get_thresh_clim_dataarrays</code><span class="sig-paren">(</span><em class="sig-param">ds: xarray.core.dataset.Dataset</em>, <em class="sig-param">time_period: str</em>, <em class="sig-param">variable: str</em>, <em class="sig-param">hilo: str = None</em>, <em class="sig-param">method: str = 'std'</em>, <em class="sig-param">value: Optional[float] = None</em><span class="sig-paren">)</span> &#x2192; Tuple[xarray.core.dataset.Dataset, xarray.core.dataset.Dataset]<a class="headerlink" href="#src.analysis.EventDetector.get_thresh_clim_dataarrays" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the climatology and threshold xarray objects</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.EventDetector.read_data">
+<code class="sig-name descname">read_data</code><span class="sig-paren">(</span><em class="sig-param">path_to_data: pathlib.Path</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="headerlink" href="#src.analysis.EventDetector.read_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.EventDetector.reapply_mask_to_boolean_xarray">
+<code class="sig-name descname">reapply_mask_to_boolean_xarray</code><span class="sig-paren">(</span><em class="sig-param">variable_of_mask: str</em>, <em class="sig-param">da: xarray.core.dataarray.DataArray</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="headerlink" href="#src.analysis.EventDetector.reapply_mask_to_boolean_xarray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Because boolean comparisons in xarray return False for nan values
+we need to reapply the mask from the original <cite>da</cite> to mask out the sea
+or invalid values (for example).</p>
+<dl class="simple">
+<dt>variable_of_mask: str</dt><dd><p>the variable that you want to use in <cite>self.ds</cite> as the mask.
+The <cite>np.nan</cite> values in <cite>self.ds[variable]</cite> will be marked as <cite>True</cite></p>
+</dd>
+<dt>da: xr.DataArray</dt><dd><p>the boolean DataArray (for example <cite>self.exceedences</cite>) to reapply
+the mask to</p>
+</dd>
+</dl>
+<p>xr.DataArray with dtype of <cite>int</cite>, because <cite>bool</cite> dtype doesn’t store
+masks / nan values very well.</p>
+<dl>
+<dt>NOTE:</dt><dd><ol class="arabic simple">
+<li><p>Uses the input dataset for the mask - TODO: does this make</p></li>
+</ol>
+<blockquote>
+<div><p>sense?</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.analysis.SPI">
+<em class="property">class </em><code class="sig-prename descclassname">src.analysis.</code><code class="sig-name descname">SPI</code><span class="sig-paren">(</span><em class="sig-param">data_path: pathlib.Path</em><span class="sig-paren">)</span><a class="headerlink" href="#src.analysis.SPI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="src.analysis.indices.html#src.analysis.indices.base.BaseIndices" title="src.analysis.indices.base.BaseIndices"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.analysis.indices.base.BaseIndices</span></code></a></p>
+<p><a class="reference external" href="https://climatedataguide.ucar.edu/climate-data/">https://climatedataguide.ucar.edu/climate-data/</a>
+standardized-precipitation-index-spi</p>
+<p>Number of standard deviations that the observed value would deviate from
+the long-term mean, for a normally distributed random variable.</p>
+<p>Comparing the precipitation total for the chosen interval against a
+cumulative probability distribution for the precipitation data (for the
+identical interval). For example, what is statistical interpretation of the
+one-month precipitation total (e.g., 29 mm), compared to all known
+one -month totals? It is necessary to view the drought according to
+the climatological norms for the location and season.</p>
+<p>a long-term time series of precipitation accumulations over the desired
+time scale are used to estimate an appropriate probability density
+function.
+Since precipitation is not normally distributed, a transformation is first
+applied so that the transformed precipitation values follow a normal
+distribution.
+This normal distribution can then be used to understand the divergence
+from normal (mean) conditions in terms of standard deviation / probability.</p>
+<p>## References
+World Meteorological Organization, (2012) Standardized Precipitation Index
+User Guide (M. Svoboda, M. Hayes and D. Wood). (WMO-No. 1090), Geneva.</p>
+<p>Guttman, N. B., 1999: Accepting the Standardized Precipitation Index:
+A calculation algorithm. J. Amer. Water Resour. Assoc.., 35(2), 311-322.</p>
+<p>McKee, T. B., N. J. Doesken, and J. Kliest, 1993: The relationship of
+drought frequency and duration to time scales. In Proceedings of the 8th
+Conference of Applied Climatology, 17-22 January, Anaheim, CA. American
+Meteorological Society, Boston, MA. 179-184.</p>
+<p>Vicente-Serrano, Sergio M., Santiago Beguería, Juan I. López-Moreno, 2010:
+A Multiscalar Drought Index Sensitive to Global Warming: The Standardized
+Precipitation Evapotranspiration Index. J. Climate, 23, 1696–1718.</p>
+<dl class="method">
+<dt id="src.analysis.SPI.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">variable: str</em>, <em class="sig-param">scale: int = 3</em>, <em class="sig-param">distribution: str = 'gamma'</em>, <em class="sig-param">data_start_year: Optional[int] = None</em>, <em class="sig-param">calibration_year_initial: Optional[int] = None</em>, <em class="sig-param">calibration_year_final: Optional[int] = None</em>, <em class="sig-param">periodicity: Optional[str] = 'monthly'</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.analysis.SPI.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>fit the index to self.ds writing to new self.index <cite>xr.Dataset</cite></p>
+<dl class="simple">
+<dt>variable: str</dt><dd><p>the name of the variable in the self.ds (xr.Dataset) -&gt; required to convert
+to a xr.DataArray for fitting the SPI</p>
+</dd>
+<dt>scale: int = 3</dt><dd><p>the window to calculate cumulative anomalies. Shorter term droughts will
+have smaller scales.</p>
+</dd>
+<dt>distribution: str = ‘gamma’</dt><dd><p>the distribution used to fit to the raw precipitation data.
+{‘gamma’, ‘pearson’}</p>
+</dd>
+<dt>data_start_year: Optional[int] = None</dt><dd><p>the starting year of the data series. Defaults to using the MINIMUM in the
+time series.
+<a href="#id1"><span class="problematic" id="id2">**</span></a>(we recommend leaving this parameter alone).</p>
+</dd>
+<dt>calibration_year_initial: Optional[int] = None</dt><dd><p>the first year of the calibration period (). Defaults to using the MINIMUM
+year in the time series.</p>
+</dd>
+<dt>calibration_year_final: Optional[int] = None</dt><dd><p>the final year of the calibration period. Defaults to the year before
+the final year. This would be changed to reflect that you don’t want to include
+the year you’re testing for how anomalous it was in your calibration period.</p>
+</dd>
+<dt>periodicity: Optional[str] = ‘monthly’ -&gt; None</dt><dd><p>the periodicity of your data.
+{‘monthly’, ‘daily’}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.SPI.init_calib_year">
+<code class="sig-name descname">init_calib_year</code><span class="sig-paren">(</span><em class="sig-param">initial_yr: Optional[int], final_yr: Optional[int]</em><span class="sig-paren">)</span> &#x2192; Tuple[int, int]<a class="headerlink" href="#src.analysis.SPI.init_calib_year" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.SPI.init_distribution">
+<code class="sig-name descname">init_distribution</code><span class="sig-paren">(</span><em class="sig-param">distribution: str</em><span class="sig-paren">)</span> &#x2192; enum.Enum<a class="headerlink" href="#src.analysis.SPI.init_distribution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.SPI.init_periodicity">
+<code class="sig-name descname">init_periodicity</code><span class="sig-paren">(</span><em class="sig-param">periodicity: Optional[str]</em><span class="sig-paren">)</span> &#x2192; enum.Enum<a class="headerlink" href="#src.analysis.SPI.init_periodicity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.SPI.init_start_year">
+<code class="sig-name descname">init_start_year</code><span class="sig-paren">(</span><em class="sig-param">data_start_year: Optional[int] = None</em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#src.analysis.SPI.init_start_year" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.SPI.initialise_params">
+<code class="sig-name descname">initialise_params</code><span class="sig-paren">(</span><em class="sig-param">scale: int, distribution: str, data_start_year: Optional[int], calibration_year_initial: Optional[int], calibration_year_final: Optional[int], periodicity: Optional[str]</em><span class="sig-paren">)</span> &#x2192; Tuple[int, enum.Enum, int, int, int, int, enum.Enum]<a class="headerlink" href="#src.analysis.SPI.initialise_params" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="src.analysis.SPI.name">
+<code class="sig-name descname">name</code><em class="property"> = 'spi'</em><a class="headerlink" href="#src.analysis.SPI.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="src.analysis.SPI.resample">
+<code class="sig-name descname">resample</code><em class="property"> = True</em><a class="headerlink" href="#src.analysis.SPI.resample" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="src.analysis.SPI.resample_str">
+<code class="sig-name descname">resample_str</code><em class="property"> = 'month'</em><a class="headerlink" href="#src.analysis.SPI.resample_str" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.SPI.stack_pixels">
+<em class="property">static </em><code class="sig-name descname">stack_pixels</code><span class="sig-paren">(</span><em class="sig-param">da: xarray.core.dataarray.DataArray</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="headerlink" href="#src.analysis.SPI.stack_pixels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.analysis.ZScoreIndex">
+<em class="property">class </em><code class="sig-prename descclassname">src.analysis.</code><code class="sig-name descname">ZScoreIndex</code><span class="sig-paren">(</span><em class="sig-param">file_path: pathlib.Path</em>, <em class="sig-param">resample_str: Optional[str] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.analysis.ZScoreIndex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="src.analysis.indices.html#src.analysis.indices.base.BaseIndices" title="src.analysis.indices.base.BaseIndices"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.analysis.indices.base.BaseIndices</span></code></a></p>
+<p><a class="reference external" href="https://bit.ly/2xze9vg">https://bit.ly/2xze9vg</a></p>
+<p>Calculated by subtracting the long term mean from an individual rainfall
+value and then dividing the difference by the standard deviation.</p>
+<p>## References</p>
+<p>Akhtari, R., Morid, S., Mahdian, M.H., Smakhtin, V., 2009. Assessment of
+areal interpolation methods for spatial analysis of SPI and EDI drought
+indices. Int. J. Climatol. 29, 135–145.</p>
+<p>Dogan, S., Berktay, A., Singh, V.P., 2012. Comparison of multi-monthly
+rainfall-based drought severity indices, with application to semi-arid Konya
+closed basin, Turkey. J. Hydrol. 470–471, 255–268.</p>
+<p>Edwards, D.C., Mckee, T.B., 1997. Characteristics of 20th century drought in
+the United States at multiple time scales. Atmos. Sci. Pap. 63, 1–30.</p>
+<p>Komuscu, A.U., 1999. Using the SPI to analyze spatial and temporal patterns
+of drought in Turkey. Drought Network News (1994-2001). Paper 49. pp. 7–13.</p>
+<p>Morid, S., Smakhtin, V., Moghaddasi, M., 2006. Comparison of seven
+meteorological indices for drought monitoring in Iran. Int. J. Climatol. 26,
+971–985.</p>
+<p>Patel, N.R., Chopra, P., Dadhwal, V.K., 2007. Analyzing spatial patterns of
+meteorological drought using standardized precipitation index. Meteorol.
+Appl. 14, 329–336.</p>
+<p>Tsakiris, G., Vangelis, H., 2004. Towards a drought watch system based on
+spatial SPI. Water Resour. Manag. 18, 1–12.</p>
+<p>Wu, H., Hayes, M.J., Weiss, A., Hu, Q.I., 2001. An evaluation of the
+standardized precipitation index, the china-Zindex and the statistical
+Z-Score. Int. J. Climatol.21, 745–758. <a class="reference external" href="http://dx.doi.org/10.1002/joc.658">http://dx.doi.org/10.1002/joc.658</a>.</p>
+<dl class="method">
+<dt id="src.analysis.ZScoreIndex.ZSI">
+<em class="property">static </em><code class="sig-name descname">ZSI</code><span class="sig-paren">(</span><em class="sig-param">da: xarray.core.dataarray.DataArray</em>, <em class="sig-param">dim: str = 'time'</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="headerlink" href="#src.analysis.ZScoreIndex.ZSI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.ZScoreIndex.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">variable: str</em>, <em class="sig-param">rolling_window: int = 3</em>, <em class="sig-param">time_str: str = 'month'</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.analysis.ZScoreIndex.fit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="src.analysis.ZScoreIndex.name">
+<code class="sig-name descname">name</code><em class="property"> = 'z_score_index'</em><a class="headerlink" href="#src.analysis.ZScoreIndex.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.analysis.PercentNormalIndex">
+<em class="property">class </em><code class="sig-prename descclassname">src.analysis.</code><code class="sig-name descname">PercentNormalIndex</code><span class="sig-paren">(</span><em class="sig-param">file_path: pathlib.Path</em>, <em class="sig-param">resample_str: Optional[str] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.analysis.PercentNormalIndex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="src.analysis.indices.html#src.analysis.indices.base.BaseIndices" title="src.analysis.indices.base.BaseIndices"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.analysis.indices.base.BaseIndices</span></code></a></p>
+<p><a class="reference external" href="https://bit.ly/2XAYXIK">https://bit.ly/2XAYXIK</a></p>
+<dl class="simple">
+<dt>calculated by simply dividing actual precipitation by normal (30-year mean)</dt><dd><p>precipitation and multiplying the result by 100.</p>
+</dd>
+</dl>
+<p>This approach of PNI (McKee et al. 1993) has value in its simplicity and
+transparency, especially because all sectors tend to “know what it means,
+” and it is noteworthy that this approach has strong support in countries
+such as Indonesia. A downside of this approach is that it does not
+necessarily detect the extremes in drought conditions, and this can be a
+problem in very arid areas.</p>
+<p>This approach also requires a good knowledge of local conditions to make it
+useful. Hayes (2000 and 2006) suggests analyses using percent of normal are
+most effective when used for a single region or a single season.
+Conversely, percent of normal may be misunderstood and provide different
+indications of conditions, depending on the location and season.</p>
+<p>Hayes (2000) points out that one of the disadvantages of using the percent
+of normal precipitation is that the mean, or average, precipitation may
+differ considerably from the median precipitation (which is the value
+exceeded by 50% of the precipitation occurrences in a long-term climate
+record) in many world regions, especially those with high year-to-year
+rainfall variability. Thus, use of the percent of normal comparison
+requires a normal distribution in rainfall, where the mean and median are
+considered to be the same.</p>
+<p>## References</p>
+<p>Hayes, M.J. 2000. Drought indices. National Drought Mitigation Center,
+University of Nebraska, Lincoln, Nebraska.</p>
+<p>Hayes, M.J., 2006: Drought Indices. Van Nostrand’s Scientific Encyclopedia,
+John Wiley &amp; Sons, Inc. DOI: 10.1002/0471743984.vse8593.</p>
+<p>McKee, T.B., N.J. Doesken, and J. Kieist. 1993. The relationship of drought
+frequency and duration of time scales. Pages 179-184 in Proceedings of the
+8th Conference on Applied Climatology. Anaheim, California. American
+Meteorological Society, Boston.</p>
+<p>Morid, S., Smakhtin, V., Moghaddasi, M., 2006. Comparison of seven
+meteorological indices for drought monitoring in Iran. Int. J. Climatol.
+26, 971–985.</p>
+<dl class="method">
+<dt id="src.analysis.PercentNormalIndex.calculatePNI">
+<em class="property">static </em><code class="sig-name descname">calculatePNI</code><span class="sig-paren">(</span><em class="sig-param">ds: xarray.core.dataset.Dataset</em>, <em class="sig-param">variable: str</em>, <em class="sig-param">time_period: str</em>, <em class="sig-param">rolling_window: int = 3</em>, <em class="sig-param">clim_period: Optional[List[str]] = None</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="headerlink" href="#src.analysis.PercentNormalIndex.calculatePNI" title="Permalink to this definition">¶</a></dt>
+<dd><p>calculate Percent of Normal Index (PNI)</p>
+<dl class="simple">
+<dt>ds<span class="classifier">xr.Dataset</span></dt><dd><p>the dataset with the raw values that you are comparing to climatology</p>
+</dd>
+<dt>variable: str</dt><dd><p>name of the variable that you are comparing to the climatology</p>
+</dd>
+<dt>time_period: str</dt><dd><dl class="simple">
+<dt>the period string used to calculate the climatology</dt><dd><p>time_period = {‘dayofyear’, ‘season’, ‘month’}</p>
+</dd>
+</dl>
+</dd>
+<dt>rolling_window: int Default = 3</dt><dd><p>the size of the cumsum window (in timesteps)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.PercentNormalIndex.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">variable: str</em>, <em class="sig-param">rolling_window: int = 3</em>, <em class="sig-param">time_str: str = 'month'</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.analysis.PercentNormalIndex.fit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="src.analysis.PercentNormalIndex.name">
+<code class="sig-name descname">name</code><em class="property"> = 'percent_normal_index'</em><a class="headerlink" href="#src.analysis.PercentNormalIndex.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.analysis.DroughtSeverityIndex">
+<em class="property">class </em><code class="sig-prename descclassname">src.analysis.</code><code class="sig-name descname">DroughtSeverityIndex</code><span class="sig-paren">(</span><em class="sig-param">file_path: pathlib.Path</em>, <em class="sig-param">resample_str: Optional[str] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.analysis.DroughtSeverityIndex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="src.analysis.indices.html#src.analysis.indices.base.BaseIndices" title="src.analysis.indices.base.BaseIndices"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.analysis.indices.base.BaseIndices</span></code></a></p>
+<p>the raw monthly rainfall totals are integrated to rolling n-monthly totals
+which are then ranked into percentiles by month and this is rescaled to
+range between -4 and +4 in keeping with the range of the Palmer Index.</p>
+<p>The default threshold at -1 which is at 3/8ths or 37.5th percentile.</p>
+<p>## References</p>
+<p>Smith, D. I, Hutchinson, M. F, &amp; McArthur, R. J. (1992) Climatic and
+Agricultural Drought: Payments and Policy. (Centre for Resource and
+Environmental Studies, Australian National University, Canberra, Australia).</p>
+<p>Hanigan, IC. 2012. The Hutchinson Drought Index Algorithm
+[Computer Software].</p>
+<blockquote>
+<div><p><a class="reference external" href="https://github.com/ivanhanigan/HutchinsonDroughtIndex">https://github.com/ivanhanigan/HutchinsonDroughtIndex</a></p>
+</div></blockquote>
+<p>Sivakumar, M. V. K., Stone, R., Sentelhas, P. C., Svoboda, M.,Omondi, P.,
+Sarkar, J., and Wardlow, B.: Agricultural Drought Indices: summary and
+recommendations, in: Agricultural Drought Indices, Proceedings of the WMO
+/UNISDR Expert Group Meeting on Agricultural Drought Indices,
+edited by: Sivakumar, M. V.K., Motha, R. P., Wilhite, D. A., and Wood, D. A.,
+2–4 June 2010,AGM-11, WMO/TD No. 1572, WAOB-2011, World Meteorological Organisation,
+Murcia, Spain, Geneva, Switzerland,182 pp.,2010.</p>
+<dl class="method">
+<dt id="src.analysis.DroughtSeverityIndex.DSI">
+<em class="property">static </em><code class="sig-name descname">DSI</code><span class="sig-paren">(</span><em class="sig-param">da: xarray.core.dataarray.DataArray</em>, <em class="sig-param">dim: str = 'time'</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="headerlink" href="#src.analysis.DroughtSeverityIndex.DSI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.DroughtSeverityIndex.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">variable: str</em>, <em class="sig-param">time_period: str = 'month'</em>, <em class="sig-param">rolling_window: int = 3</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.analysis.DroughtSeverityIndex.fit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="src.analysis.DroughtSeverityIndex.name">
+<code class="sig-name descname">name</code><em class="property"> = 'drought_severity_index'</em><a class="headerlink" href="#src.analysis.DroughtSeverityIndex.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.analysis.ChinaZIndex">
+<em class="property">class </em><code class="sig-prename descclassname">src.analysis.</code><code class="sig-name descname">ChinaZIndex</code><span class="sig-paren">(</span><em class="sig-param">file_path: pathlib.Path</em>, <em class="sig-param">resample_str: Optional[str] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.analysis.ChinaZIndex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="src.analysis.indices.html#src.analysis.indices.base.BaseIndices" title="src.analysis.indices.base.BaseIndices"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.analysis.indices.base.BaseIndices</span></code></a></p>
+<p>used by National Climate Centre (NCC) of China to monitor drought</p>
+<p>CZI assumes that precipitation data follow the Pearson Type III
+distribution and is related to Wilson–Hilferty cube-root transformation
+(Wilson and Hilferty, 1931) from chi-square variable to the Z-scale
+(Kendall and Stuart, 1977).</p>
+<p>## References</p>
+<dl class="simple">
+<dt>Dogan, S., Berktay, A., Singh, V.P., 2012. Comparison of multi-monthly</dt><dd><dl class="simple">
+<dt>rainfall-based drought severity indices, with application to semi-arid Konya</dt><dd><p>closed basin, Turkey. J. Hydrol. 470–471, 255–268.</p>
+</dd>
+</dl>
+</dd>
+<dt>Kendall, M.G.; Stuart, A. The Advanced Theory of Statistics; Charles Griffin</dt><dd><p>&amp; Company-High Wycombe: London, UK, 1997; pp. 400–401.</p>
+</dd>
+<dt>Morid, S., Smakhtin, V., Moghaddasi, M., 2006. Comparison of seven</dt><dd><p>meteorological indices for drought monitoring in Iran. Int. J. Climatol.
+26, 971–985.</p>
+</dd>
+<dt>Wilson, E.B., Hilferty, M.M., 1931. The Distribution of Chi-Square. Proc.</dt><dd><p>Natl. Acad. Sci. USA 17, 684–688.</p>
+</dd>
+<dt>Wu, H., Hayes, M.J., Weiss, A., Hu, Q.I., 2001. An evaluation of the</dt><dd><p>standardized precipitation index, the china-Zindex and the statistical
+Z-Score. Int. J. Climatol.21, 745–758. <a class="reference external" href="http://dx.doi.org/10.1002/joc.658">http://dx.doi.org/10.1002/joc.658</a>.</p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="src.analysis.ChinaZIndex.CZI">
+<em class="property">static </em><code class="sig-name descname">CZI</code><span class="sig-paren">(</span><em class="sig-param">da: xarray.core.dataarray.DataArray</em>, <em class="sig-param">dim: str = 'time'</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="headerlink" href="#src.analysis.ChinaZIndex.CZI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.ChinaZIndex.MCZI">
+<em class="property">static </em><code class="sig-name descname">MCZI</code><span class="sig-paren">(</span><em class="sig-param">da: xarray.core.dataarray.DataArray</em>, <em class="sig-param">dim: str = 'time'</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="headerlink" href="#src.analysis.ChinaZIndex.MCZI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.ChinaZIndex.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">variable: str</em>, <em class="sig-param">time_period: str = 'month'</em>, <em class="sig-param">rolling_window: int = 3</em>, <em class="sig-param">modified: bool = False</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.analysis.ChinaZIndex.fit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="src.analysis.ChinaZIndex.name">
+<code class="sig-name descname">name</code><em class="property"> = 'china_z_index'</em><a class="headerlink" href="#src.analysis.ChinaZIndex.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.analysis.DecileIndex">
+<em class="property">class </em><code class="sig-prename descclassname">src.analysis.</code><code class="sig-name descname">DecileIndex</code><span class="sig-paren">(</span><em class="sig-param">file_path: pathlib.Path</em>, <em class="sig-param">resample_str: Optional[str] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.analysis.DecileIndex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="src.analysis.indices.html#src.analysis.indices.base.BaseIndices" title="src.analysis.indices.base.BaseIndices"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.analysis.indices.base.BaseIndices</span></code></a></p>
+<p><a class="reference external" href="https://bit.ly/2NGxIN1">https://bit.ly/2NGxIN1</a></p>
+<p>Monthly precipitation totals from a long-term record are first ranked from
+highest to lowest to construct a cumulative frequency distribution. The
+distribution is then split into 10 parts (tenths of distribution or
+deciles). The first decile is the precipitation value not exceeded by the
+lowest 10% of all precipitation values in a record. The second decile is
+between the lowest 10 and 20% etc. Comparing the amount of precipitation in
+a month (or during a period of several months) with the long-term
+cumulative distribution of precipitation amounts in that period, the
+severity of drought can be assessed.</p>
+<dl class="simple">
+<dt>Used in Australian drought policy:</dt><dd><p>growers and producers are advised to only seek exceptional drought
+assistance if the drought is shown to be an event that occurs only once
+in 20-25 years (deciles 1 and 2 over a 100-year record) and has lasted
+longer than 12 months (White and O’Meagher 1995, Hayes 2000).</p>
+</dd>
+</dl>
+<p>## References</p>
+<dl class="simple">
+<dt>Gibbs, W.J. and J.V. Maher. 1967. Rainfall deciles as drought indicators.</dt><dd><p>Bureau of Meteorology, Bulletin No. 48, Melbourne.</p>
+</dd>
+<dt>Hayes, M.J. 2000. Drought indices. National Drought Mitigation Center,</dt><dd><p>University of Nebraska, Lincoln, Nebraska.</p>
+</dd>
+<dt>Smith, D.I., M.F. Hutchinson, and R.J. McArthur. 1993. Australian climatic</dt><dd><p>and agricultural drought: Payments and policy. Drought Network News
+5(3):11-12.</p>
+</dd>
+<dt>White, D.H. and B. O’Meagher. 1995. Coping with exceptional circumstances:</dt><dd><p>Droughts in Australia. Drought Network News 7:13–17.</p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="src.analysis.DecileIndex.bin_to_quintiles">
+<em class="property">static </em><code class="sig-name descname">bin_to_quintiles</code><span class="sig-paren">(</span><em class="sig-param">da: xarray.core.dataarray.DataArray</em>, <em class="sig-param">new_variable_name: str = 'quintile'</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="headerlink" href="#src.analysis.DecileIndex.bin_to_quintiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>use the numpy <cite>np.digitize</cite> function to bin the
+variables to quintile labels
+<a class="reference external" href="https://stackoverflow.com/a/56514582/9940782">https://stackoverflow.com/a/56514582/9940782</a></p>
+<dl class="simple">
+<dt>da<span class="classifier">xr.DataArray</span></dt><dd><p>variable that you want to bin into quintiles</p>
+</dd>
+<dt>new_variable_name: str</dt><dd><dl class="simple">
+<dt>the <cite>variable_name</cite> in the output <cite>xr.Dataset</cite></dt><dd><p>which corresponds to the quintile labels</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>xr.Dataset</p>
+<dl class="simple">
+<dt>Note:</dt><dd><dl class="simple">
+<dt>labels = [1, 2, 3, 4, 5] correspond to</dt><dd><p>[(0, 20) (20,40) (40,60) (60,80) (80,100)]</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.DecileIndex.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">variable: str</em>, <em class="sig-param">time_period: str = 'month'</em>, <em class="sig-param">rolling_window: int = 3</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.analysis.DecileIndex.fit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="src.analysis.DecileIndex.name">
+<code class="sig-name descname">name</code><em class="property"> = 'decile_index'</em><a class="headerlink" href="#src.analysis.DecileIndex.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.DecileIndex.rank_norm">
+<em class="property">static </em><code class="sig-name descname">rank_norm</code><span class="sig-paren">(</span><em class="sig-param">ds</em>, <em class="sig-param">dim='time'</em><span class="sig-paren">)</span><a class="headerlink" href="#src.analysis.DecileIndex.rank_norm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.analysis.AnomalyIndex">
+<em class="property">class </em><code class="sig-prename descclassname">src.analysis.</code><code class="sig-name descname">AnomalyIndex</code><span class="sig-paren">(</span><em class="sig-param">file_path: pathlib.Path</em>, <em class="sig-param">resample_str: Optional[str] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.analysis.AnomalyIndex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="src.analysis.indices.html#src.analysis.indices.base.BaseIndices" title="src.analysis.indices.base.BaseIndices"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.analysis.indices.base.BaseIndices</span></code></a></p>
+<p>The Rainfall Anomaly Index</p>
+<dl class="simple">
+<dt>incorporates a ranking procedure to assign magnitudes to</dt><dd><p>positive and negative anomalies.</p>
+</dd>
+<dt>two phases, positive precipitation anomalies and</dt><dd><p>negative precipitation anomalies.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Variations within the year need to be small compared to</dt><dd><p>temporal variations.</p>
+</dd>
+</dl>
+<p>Calculating RAI requires a serially complete dataset with estimates of missing values.</p>
+<p>## References</p>
+<dl class="simple">
+<dt>Rooy, M.P.V., 1965. A rainfall anomaly index independent of time and space.</dt><dd><p>Weather Bureau of South Africa 14, 43-48.</p>
+</dd>
+<dt>Freitas, M.A.S., 2004. A Previsão de Secas e a Gestão Hidroenergética: O</dt><dd><dl class="simple">
+<dt>Caso da Bacia do Rio Parnaíba no Nordeste do Brasil. Seminário</dt><dd><p>Internacional sobre Represas y Operación de Embalses, Puerto Iguazú.</p>
+</dd>
+</dl>
+</dd>
+<dt>Kraus, E.B., 1977: Subtropical droughts and cross-equatorial energy</dt><dd><p>transports. Monthly Weather Review, 105(8): 1009-1018. DOI:
+10.1175/1520-0493(1977)105&lt;1009:SDACEE&gt;2.0.CO;2.</p>
+</dd>
+<dt>van Rooy, M.P., 1965: A Rainfall Anomaly Index independent of time and</dt><dd><p>space. Notos, 14: 43–48.</p>
+</dd>
+</dl>
+<p><a class="reference external" href="http://www.droughtmanagement.info/rainfall-anomaly-index-rai/">http://www.droughtmanagement.info/rainfall-anomaly-index-rai/</a></p>
+<dl class="method">
+<dt id="src.analysis.AnomalyIndex.RAI">
+<code class="sig-name descname">RAI</code><span class="sig-paren">(</span><em class="sig-param">da: xarray.core.dataarray.DataArray</em>, <em class="sig-param">variable: str</em>, <em class="sig-param">dim: str = 'time'</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="headerlink" href="#src.analysis.AnomalyIndex.RAI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rainfall Anomaly Index</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.AnomalyIndex.assign_magnitudes">
+<em class="property">static </em><code class="sig-name descname">assign_magnitudes</code><span class="sig-paren">(</span><em class="sig-param">y: xarray.core.dataset.Dataset</em>, <em class="sig-param">anom: xarray.core.dataarray.DataArray</em>, <em class="sig-param">rai_plus: xarray.core.dataarray.DataArray</em>, <em class="sig-param">rai_minus: xarray.core.dataarray.DataArray</em>, <em class="sig-param">variable: str</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="headerlink" href="#src.analysis.AnomalyIndex.assign_magnitudes" title="Permalink to this definition">¶</a></dt>
+<dd><p>assign magnitudes to positive and negative anomalies</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.AnomalyIndex.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">variable: str</em>, <em class="sig-param">time_period: str = 'month'</em>, <em class="sig-param">rolling_window: int = 3</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.analysis.AnomalyIndex.fit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="src.analysis.AnomalyIndex.name">
+<code class="sig-name descname">name</code><em class="property"> = 'rainfall_anomaly_index'</em><a class="headerlink" href="#src.analysis.AnomalyIndex.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 
