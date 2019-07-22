@@ -212,6 +212,8 @@ class S5Preprocessor(BasePreProcessor):
         # argument needs the regrid file
         if regrid is not None:
             regrid_ds = xr.open_dataset(regrid)
+        else:
+            regrid_ds = None
 
         if not self.parallel:
             out_paths = []
