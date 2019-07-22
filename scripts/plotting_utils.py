@@ -40,14 +40,14 @@ from scripts.eng_utils import select_pixel, turn_tuple_to_point
 # Histograms (Marginal Distributions)
 # ------------------------------------------------------------------------------
 
-def plot_marginal_distribution(DataArray, color, ax=None, title='', xlabel='DEFAULT', summary=False, **kwargs):
+def plot_marginal_distribution(dataArray, color, ax=None, title='', xlabel='DEFAULT', summary=False, **kwargs):
     """ """
     # if no ax create one
     if ax is None:
         fig, ax = plt.subplots(figsize=(12,8))
 
-    # flatten the DataArray
-    da_flat = drop_nans_and_flatten(DataArray)
+    # flatten the dataArray
+    da_flat = drop_nans_and_flatten(dataArray)
     if summary:
         min, max, mean, median = da_flat.min(), da_flat.max(), da_flat.mean(), np.median(da_flat)
 
@@ -57,14 +57,14 @@ def plot_marginal_distribution(DataArray, color, ax=None, title='', xlabel='DEFA
 
     if title == '':
         if summary:
-            title= f'Density Plot of {DataArray.name} [mm day-1]\nmin: {min:.2f} max: {max:.2f} mean: {mean:.2f} median: {median:.2f} '
+            title= f'Density Plot of {dataArray.name} \nmin: {min:.2f} max: {max:.2f} mean: {mean:.2f} median: {median:.2f} '
         else:
-            title= f'Density Plot of {DataArray.name} [mm day-1]'
+            title= f'Density Plot of {dataArray.name}'
 
     ax.set_title(title)
 
     if xlabel == 'DEFAULT':
-        xlabel = f'Mean Monthly {DataArray.name} [mm day-1]'
+        xlabel = f'Mean Monthly {dataArray.name} [mm day-1]'
 
     ax.set_xlabel(xlabel)
 
@@ -229,8 +229,6 @@ def plot_mean_and_std(mean_ds, std_ds, ax):
 
 
     return ax
-
-
 
 
 def plot_seasonality(ds, ax=None, ylabel=None, double_year=False, variance=False):
@@ -406,7 +404,7 @@ def plot_xarray_on_map(da, borders=True, coastlines=True, ax=None, **kwargs):
     # get the center points for the maps
     mid_lat = np.mean(da.lat.values)
     mid_lon = np.mean(da.lon.values)
-    
+
     # create the base layer
     if ax is None:
         fig = plt.figure(figsize=(12, 8))
