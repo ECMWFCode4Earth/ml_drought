@@ -22,9 +22,10 @@ class RecurrentNetwork(NNBase):
                  experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
+                 include_latlons: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
-                         surrounding_pixels)
+                         include_latlons, surrounding_pixels)
 
         # to initialize and save the model
         self.hidden_size = hidden_size
@@ -46,6 +47,7 @@ class RecurrentNetwork(NNBase):
             'dense_dropout': self.dense_dropout,
             'dense_features': self.dense_features,
             'include_pred_month': self.include_pred_month,
+            'include_latlons': self.include_latlons,
             'surrounding_pixels': self.surrounding_pixels,
             'experiment': self.experiment
         }
@@ -63,18 +65,20 @@ class RecurrentNetwork(NNBase):
                    rnn_dropout=self.rnn_dropout,
                    dense_dropout=self.dense_dropout,
                    include_pred_month=self.include_pred_month,
+                   include_latlons=self.include_latlons,
                    experiment=self.experiment,
                    current_size=self.current_size)
 
 
 class RNN(nn.Module):
     def __init__(self, features_per_month, dense_features, hidden_size,
-                 rnn_dropout, dense_dropout, include_pred_month, experiment,
-                 current_size=None):
+                 rnn_dropout, dense_dropout, include_pred_month,
+                 include_latlons, experiment, current_size=None):
         super().__init__()
 
         self.experiment = experiment
         self.include_pred_month = include_pred_month
+        self.include_latlons = include_latlons
 
         self.dropout = nn.Dropout(rnn_dropout)
         self.rnn = UnrolledRNN(input_size=features_per_month,
@@ -85,6 +89,8 @@ class RNN(nn.Module):
         dense_input_size = hidden_size
         if include_pred_month:
             dense_input_size += 12
+        if include_latlons:
+            dense_input_size += 2
         if experiment == 'nowcast':
             assert current_size is not None
             dense_input_size += current_size
@@ -114,7 +120,7 @@ class RNN(nn.Module):
         nn.init.kaiming_uniform_(self.final_dense.weight.data)
         nn.init.constant_(self.final_dense.bias.data, 0)
 
-    def forward(self, x, pred_month=None, current=None):
+    def forward(self, x, pred_month=None, latlons=None, current=None):
 
         sequence_length = x.shape[1]
 
@@ -136,12 +142,14 @@ class RNN(nn.Module):
 
         x = hidden_state.squeeze(0)
 
+        if self.include_pred_month:
+            x = torch.cat((x, pred_month), dim=-1)
+        if self.include_latlons:
+            x = torch.cat((x, latlons), dim=-1)
         if self.experiment == 'nowcast':
             assert current is not None
             x = torch.cat((x, current), dim=-1)
 
-        if self.include_pred_month:
-            x = torch.cat((x, pred_month), dim=-1)
         for layer_number, dense_layer in enumerate(self.dense_layers):
             x = dense_layer(x)
         return self.final_dense(x)

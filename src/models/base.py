@@ -20,6 +20,9 @@ class ModelBase:
         The months the model should predict. If None, all months are predicted
     include_pred_month: bool = True
         Whether to include the prediction month to the model's training data
+    include_latlons: bool = True
+        Whether to include prediction pixel latitudes and longitudes in the model's
+        training data
     """
 
     model_name: str  # to be added by the model classes
@@ -29,10 +32,12 @@ class ModelBase:
                  experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
+                 include_latlons: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
 
         self.batch_size = batch_size
         self.include_pred_month = include_pred_month
+        self.include_latlons = include_latlons
         self.data_path = data_folder
         self.experiment = experiment
         self.pred_months = pred_months

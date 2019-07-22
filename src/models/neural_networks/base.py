@@ -24,16 +24,18 @@ class NNBase(ModelBase):
                  experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
+                 include_latlons: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
-                         surrounding_pixels)
+                         include_latlons, surrounding_pixels)
 
         # for reproducibility
         torch.manual_seed(42)
 
         self.explainer: Optional[shap.DeepExplainer] = None
 
-    def explain(self, x: Any) -> np.ndarray:
+    def explain(self, x: Any) -> Union[np.ndarray,
+                                       Tuple[np.ndarray, ...]]:
         assert self.model is not None, 'Model must be trained!'
 
         if self.explainer is None:
@@ -111,7 +113,8 @@ class NNBase(ModelBase):
                     optimizer.zero_grad()
                     pred = self.model(x_batch[0],
                                       self._one_hot_months(x_batch[1]),
-                                      x_batch[2])
+                                      x_batch[2],
+                                      x_batch[3])
                     loss = F.smooth_l1_loss(pred, y_batch)
                     loss.backward()
                     optimizer.step()
@@ -129,7 +132,8 @@ class NNBase(ModelBase):
                     for x, y in val_dataloader:
                         val_pred_y = self.model(x[0],
                                                 self._one_hot_months(x[1]),
-                                                x[2])
+                                                x[2],
+                                                x[3])
                         val_loss = F.mse_loss(val_pred_y, y)
 
                         val_rmse.append(math.sqrt(val_loss.item()))
@@ -170,7 +174,7 @@ class NNBase(ModelBase):
                 for key, val in dict.items():
                     preds = self.model(
                         val.x.historical, self._one_hot_months(val.x.pred_months),
-                        val.x.current
+                        val.x.latlons, val.x.current
                     )
                     preds_dict[key] = preds.numpy()
                     test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons}
@@ -178,8 +182,7 @@ class NNBase(ModelBase):
         return test_arrays_dict, preds_dict
 
     def _get_background(self,
-                        sample_size: int = 100) -> Union[torch.Tensor,
-                                                         List[torch.Tensor]]:
+                        sample_size: int = 100) -> List[torch.Tensor]:
 
         print('Extracting a sample of the training data')
 
@@ -190,10 +193,10 @@ class NNBase(ModelBase):
                                       to_tensor=True,
                                       surrounding_pixels=self.surrounding_pixels)
         output_tensors: List[torch.Tensor] = []
-        if self.include_pred_month:
-            output_pred_months: List[Optional[torch.Tensor]] = []
-        if self.experiment == 'nowcast':
-            output_current: List[Optional[torch.Tensor]] = []
+        output_pm: List[torch.Tensor] = []
+        output_ll: List[torch.Tensor] = []
+        output_cur: List[torch.Tensor] = []
+
         samples_per_instance = max(1, sample_size // len(train_dataloader))
 
         for x, _ in train_dataloader:
@@ -202,14 +205,19 @@ class NNBase(ModelBase):
                     idx = random.randint(0, x[0].shape[0] - 1)
                     output_tensors.append(x[0][idx])
                     if self.include_pred_month:
-                        output_pred_months.append(self._one_hot_months(x[1][idx: idx + 1]))
+                        one_hot_months = self._one_hot_months(x[1][idx: idx + 1])
+                        assert one_hot_months is not None
+                        output_pm.append(one_hot_months)
+                    if self.include_latlons:
+                        assert x[2] is not None
+                        output_ll.append(x[2])
                     if self.experiment == 'nowcast':
-                        output_current.append(x[2])
-        if self.include_pred_month:
-            return [torch.stack(output_tensors),
-                    torch.cat(output_pred_months, dim=0)]  # type: ignore
-        else:
-            return torch.stack(output_tensors)
+                        assert x[3] is not None
+                        output_cur.append(x[3])
+        return [torch.stack(output_tensors),  # type: ignore
+                torch.cat(output_pm, dim=0) if len(output_pm) > 0 else None,
+                torch.cat(output_ll, dim=0) if len(output_ll) > 0 else None,
+                torch.cat(output_cur, dim=0) if len(output_cur) > 0 else None]
 
     def _one_hot_months(self, indices: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
         if self.include_pred_month:

@@ -20,16 +20,20 @@ class TestRecurrentNetwork:
         rnn_dropout = 0.25
         dense_dropout = 0.25
         include_pred_month = True
+        include_latlons = True
 
         def mocktrain(self):
             self.model = RNN(features_per_month, dense_features, hidden_size,
                              rnn_dropout, dense_dropout,
-                             include_pred_month, experiment='one_month_forecast')
+                             include_pred_month, include_latlons,
+                             experiment='one_month_forecast')
             self.features_per_month = features_per_month
 
         monkeypatch.setattr(RecurrentNetwork, 'train', mocktrain)
 
         model = RecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
+                                 include_pred_month=include_pred_month,
+                                 include_latlons=include_latlons,
                                  rnn_dropout=rnn_dropout, data_folder=tmp_path)
         model.train()
         model.save_model()
@@ -48,6 +52,7 @@ class TestRecurrentNetwork:
         assert model_dict['dense_dropout'] == dense_dropout
         assert model_dict['dense_features'] == dense_features
         assert model_dict['include_pred_month'] == include_pred_month
+        assert model_dict['include_latlons'] == include_latlons
         assert model_dict['experiment'] == 'one_month_forecast'
 
     @pytest.mark.parametrize('use_pred_months', [True, False])

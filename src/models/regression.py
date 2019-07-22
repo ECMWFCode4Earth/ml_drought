@@ -5,11 +5,11 @@ from sklearn.metrics import mean_squared_error
 
 import shap
 
-from typing import cast, Any, Dict, List, Tuple, Optional, Union
+from typing import cast, Dict, List, Tuple, Optional
 
 from .base import ModelBase
 from .utils import chunk_array
-from .data import DataLoader, train_val_mask
+from .data import DataLoader, train_val_mask, TrainData
 
 
 class LinearRegression(ModelBase):
@@ -21,9 +21,10 @@ class LinearRegression(ModelBase):
                  batch_size: int = 1,
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
+                 include_latlons: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months,
-                         include_pred_month, surrounding_pixels)
+                         include_pred_month, include_latlons, surrounding_pixels)
 
         self.explainer: Optional[shap.LinearExplainer] = None
 
@@ -45,6 +46,7 @@ class LinearRegression(ModelBase):
                                           shuffle_data=True, mode='train',
                                           pred_months=self.pred_months,
                                           mask=train_mask,
+
                                           surrounding_pixels=self.surrounding_pixels)
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
@@ -85,10 +87,10 @@ class LinearRegression(ModelBase):
                         x_in = np.concatenate(
                             (x_in, pred_months_onehot), axis=-1
                         )
-
-                    # target timestep (non-target variables)
+                    if self.include_latlons:
+                        x_in = np.concatenate((x_in, batch_x[2]), axis=-1)
                     if self.experiment == 'nowcast':
-                        current_time_data = batch_x[2]
+                        current_time_data = batch_x[3]
                         x_in = np.concatenate(
                             (x_in, current_time_data), axis=-1
                         )
@@ -114,9 +116,10 @@ class LinearRegression(ModelBase):
                         x_in = np.concatenate(
                             (x_in, pred_months_onehot), axis=-1
                         )
-
+                    if self.include_latlons:
+                        x_in = np.concatenate((x_in, x[2]), axis=-1)
                     if self.experiment == 'nowcast':
-                        current_time_data = x[2]
+                        current_time_data = x[3]
                         x_in = np.concatenate(
                             (x_in, current_time_data), axis=-1
                         )
@@ -142,8 +145,7 @@ class LinearRegression(ModelBase):
                         self.model.intercept_ = best_intercept
                         return None
 
-    def explain(self, x: Any) -> Union[np.ndarray,
-                                       Tuple[np.ndarray, np.ndarray]]:
+    def explain(self, data: TrainData) -> Tuple[np.ndarray, ...]:
 
         assert self.model is not None, 'Model must be trained!'
 
@@ -152,22 +154,27 @@ class LinearRegression(ModelBase):
             self.explainer: shap.LinearExplainer = shap.LinearExplainer(
                 self.model, (mean, None), feature_dependence='independent')
 
-        if self.include_pred_month:
-            assert type(x) in (tuple, list), 'Input x must be a tuple or list'\
-                f'Got {type(x)}'
-            x, pred_months = x
-            pred_months = np.eye(14)[pred_months][:, 1:-1]
+        x = data.historical
         batch, timesteps, dims = x.shape[0], x.shape[1], x.shape[2]
         reshaped_x = x.reshape(batch, timesteps * dims)
-        if self.include_pred_month:
-            reshaped_x = np.concatenate((reshaped_x, pred_months), axis=-1)
-        explanations = self.explainer.shap_values(reshaped_x)
 
-        if not self.include_pred_month:
-            return explanations.reshape(batch, timesteps, dims)
+        if self.include_pred_month:
+            pred_months = data.pred_months
+            pred_months = np.eye(14)[pred_months][:, 1:-1]
+            reshaped_x = np.concatenate((reshaped_x, pred_months), axis=-1)
+        if self.include_latlons:
+            latlons = data.latlons
+            reshaped_x = np.concatenate((reshaped_x, latlons), axis=-1)
+        if self.experiment == 'nowcast':
+            current = data.current
+            reshaped_x = np.concatenate((reshaped_x, current), axis=-1)
+
+        explanations = self.explainer.shap_values(reshaped_x)
 
         historical = explanations[:, :timesteps * dims]
         additional = explanations[:, timesteps * dims:]
+
+        # TODO: properly split the additional arrays
 
         return historical.reshape(batch, timesteps, dims), additional
 
@@ -200,7 +207,8 @@ class LinearRegression(ModelBase):
                     # for us its + 2, since 0 is not a class either
                     pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
                     x = np.concatenate((x, pred_months_onehot), axis=-1)
-
+                if self.include_latlons:
+                    x = np.concatenate((x, val.x.latlons), axis=-1)
                 if self.experiment == 'nowcast':
                     # target_month data for non-target variables
                     current_data = val.x.current
