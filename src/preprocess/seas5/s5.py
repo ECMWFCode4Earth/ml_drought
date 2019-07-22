@@ -64,9 +64,9 @@ class S5Preprocessor(BasePreProcessor):
 
     def _preprocess(self,
                     filepath: Path,
-                    ouce_server: bool = False,
                     subset_str: Optional[str] = None,
                     regrid: Optional[xr.Dataset] = None,
+                    ouce_server: bool = False,
                     **kwargs) -> Tuple[Path, str]:
         """preprocess a single s5 dataset (multi-variables per `.nc` file)"""
         print(f"\nWorking on {filepath.name}")
@@ -231,7 +231,8 @@ class S5Preprocessor(BasePreProcessor):
             variables = []
             for filepath in filepaths:
                 output_path, variable = self._preprocess(
-                    filepath, subset_str, regrid_ds, self.ouce_server, **kwargs
+                    filepath=filepath, subset_str=subset_str, regrid=regrid_ds,
+                    ouce_server=self.ouce_server, **kwargs
                 )
                 out_paths.append(output_path)
                 variables.append(variable)
