@@ -49,3 +49,23 @@ class TestChunker:
         for x, y in chunk_array((test_x_1, test_x_2), test_y, 2, shuffle=True):
             assert (x[0] == x[1]).all()
             assert (x[0] == y).all()
+
+    def test_tensor_with_nones(self):
+        test_x_1 = torch.arange(0, 10)
+        test_x_2 = None
+        test_x_3 = torch.arange(0, 10)
+        test_y = torch.arange(0, 10)
+
+        for x, y in chunk_array((test_x_1, test_x_2, test_x_3), test_y, 2, shuffle=True):
+            assert (x[0] == x[2]).all()
+            assert (x[0] == y).all()
+
+    def test_numpy_with_nones(self):
+        test_x_1 = np.arange(0, 10)
+        test_x_2 = None
+        test_x_3 = np.arange(0, 10)
+        test_y = np.arange(0, 10)
+
+        for x, y in chunk_array((test_x_1, test_x_2, test_x_3), test_y, 2, shuffle=True):
+            assert (x[0] == x[2]).all()
+            assert (x[0] == y).all()

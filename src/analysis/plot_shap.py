@@ -42,12 +42,15 @@ def plot_shap_values(x: np.ndarray,
     x_val = x[:, idx]
 
     # we also want to denormalize
-    x_val = (x_val * normalizing_dict[value_to_plot]['std']) + \
-        normalizing_dict[value_to_plot]['mean']
+    for norm_var in normalizing_dict.keys():
+        if value_to_plot.endswith(norm_var):
+            x_val = (x_val * normalizing_dict[norm_var]['std']) + \
+                normalizing_dict[norm_var]['mean']
+            break
 
     shap_val = shap_values[:, idx]
 
-    months = list(range(1, 12))
+    months = list(range(1, len(x_val) + 1))
 
     host = host_subplot(111, axes_class=AA.Axes)
     plt.subplots_adjust(right=0.75)
