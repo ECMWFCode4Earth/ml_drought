@@ -147,6 +147,7 @@ class S5Preprocessor(BasePreProcessor):
         # open all interim processed files (all variables?)
         ds = xr.open_mfdataset((self.interim / variable).as_posix() + "/*.nc")
         ds = ds.sortby('initialisation_date')
+        ds = ds.expand_dims(dim='initialisation_date')
 
         # resample
         if resample_str is not None:
