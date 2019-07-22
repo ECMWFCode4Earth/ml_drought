@@ -235,6 +235,9 @@ class LinearRegression(ModelBase):
                 # for us its + 2, since 0 is not a class either
                 pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
                 x_in = np.concatenate((x_in, pred_months_onehot), axis=-1)
+            if self.experiment == 'nowcast':
+                current = x[2]
+                x_in = np.concatenate((x_in, current), axis=-1)
             sizes.append(x_in.shape[0])
             means.append(x_in.mean(axis=0))
 
