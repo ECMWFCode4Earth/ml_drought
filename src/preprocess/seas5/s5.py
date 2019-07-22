@@ -121,6 +121,7 @@ class S5Preprocessor(BasePreProcessor):
             Expecting `lat` `lon` to be in ds. dims : {[c for c in ds.coords]}"
 
             # regrid each variable individually
+            assert False
             all_vars = []
             for var in vars:
                 if self.parallel:
