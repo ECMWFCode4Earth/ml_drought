@@ -78,7 +78,7 @@ class TestRecurrentNetwork:
         model.train()
 
         captured = capsys.readouterr()
-        expected_stdout = 'Epoch 1, train RMSE: 0.'
+        expected_stdout = 'Epoch 1, train smooth L1: 0.'
         assert expected_stdout in captured.out
 
         assert type(model.model) == RNN, \
