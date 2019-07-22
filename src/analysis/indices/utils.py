@@ -1,5 +1,5 @@
 import xarray as xr
-from typing import Dict, Any
+from typing import Any
 import numpy as np
 from pathlib import Path
 
@@ -21,8 +21,8 @@ def apply_over_period(da: xr.Dataset,
                       in_variable: str,
                       out_variable: str,
                       time_str: str = 'month',
-                      **kwargs: Dict[Any, Any]) -> xr.Dataset:
-    kwargs['dim'] = 'time'  # type: ignore
+                      **kwargs: Any) -> xr.Dataset:
+    kwargs['dim'] = 'time'
     return (
         da.groupby(f'time.{time_str}')
         .apply(func, args=(), **kwargs)

@@ -1,6 +1,5 @@
 import xarray as xr
 import numpy as np
-from typing import cast, Dict, Any
 
 from .base import BaseIndices
 from .utils import (
