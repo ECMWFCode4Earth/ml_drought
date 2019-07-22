@@ -129,4 +129,4 @@ class PercentNormalIndex(BaseIndices):
         self.index = PNI
         self.climatology = clim
 
-        print("Fitted PNI and saved at `obj.index`")
+        print("Fitted PNI and stored at `obj.index`")

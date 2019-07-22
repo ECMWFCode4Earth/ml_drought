@@ -119,15 +119,13 @@ class AnomalyIndex(BaseIndices):
         ds_window = rolling_cumsum(self.ds, rolling_window)
 
         out_variable = 'RAI'
-        kwargs = {'variable': variable}
-        cast(Dict[Any, Any], kwargs)
 
         rai = apply_over_period(  # type: ignore
             ds_window, func=self.RAI,
             in_variable=variable,
             out_variable=out_variable,
             time_str=time_period,
-            **kwargs
+            **{'variable': variable}
         )
         rai = rai.drop('month')
         ds_window = (
@@ -137,4 +135,4 @@ class AnomalyIndex(BaseIndices):
         )
 
         self.index = ds_window
-        print(f"Fitted Rainfall Anomaly Index and saved at `obj.index`")
+        print(f"Fitted Rainfall Anomaly Index and stored at `obj.index`")

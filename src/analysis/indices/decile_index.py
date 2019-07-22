@@ -111,12 +111,4 @@ class DecileIndex(BaseIndices):
         )
 
         self.index = ds_window
-        print("Fitted DI and saved at `obj.index`")
-
-    # def plot():
-    #     fig, ax = plt.subplots()
-    #     self.ds.isel(lat=0,lon=100).rank_norm.plot(ax=ax)
-    #     ax.axhline(80, linestyle='--', color='g')
-    #     ax.axhline(60, linestyle='--', color='lime')
-    #     ax.axhline(40, linestyle='--', color='orange')
-    #     ax.axhline(20, linestyle='--', color='r')
+        print("Fitted DI and stored at `obj.index`")

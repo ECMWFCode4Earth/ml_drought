@@ -39,8 +39,7 @@ class DroughtSeverityIndex(BaseIndices):
 
     @staticmethod
     def DSI(da: xr.DataArray,
-            dim: str = 'time',
-            **kwargs) -> xr.DataArray:
+            dim: str = 'time') -> xr.DataArray:
         y = (da.rank(dim=dim) - 1.0) / (da.sizes[dim] - 1.0)
         z = 8.0 * (y - 0.5)
         return z
@@ -65,4 +64,4 @@ class DroughtSeverityIndex(BaseIndices):
         )
 
         self.index = ds_window
-        print("Fitted Drought Severity Index and saved at `obj.index`")
+        print("Fitted Drought Severity Index and stored at `obj.index`")

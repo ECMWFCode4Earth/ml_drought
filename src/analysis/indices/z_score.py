@@ -78,4 +78,4 @@ class ZScoreIndex(BaseIndices):
         )
 
         self.index = ds_window
-        print("Fitted ZSI and saved at `obj.index`")
+        print("Fitted ZSI and stored at `obj.index`")

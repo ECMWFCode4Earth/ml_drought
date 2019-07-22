@@ -1,6 +1,5 @@
 import xarray as xr
 from pathlib import Path
-# import mapclassify as mc
 from typing import Optional
 
 
@@ -12,21 +11,23 @@ class BaseIndices:
     resample: bool = False
 
     def __init__(self,
-                 data_path: Path,
+                 file_path: Path,
                  resample_str: Optional[str] = None) -> None:
         """
         Arguments:
         ---------
-        data_path: Path
+        file_path: Path
+            Path to the `.nc` file that you want to use for calculating
+             indices from.
 
         resample_str: Optional[str]
             One of {'daysofyear', 'month', 'year', 'season', None}
         """
-        self.data_path = data_path
-        assert self.data_path.exists(), f"{self.data_path} does not exist.\
+        self.file_path = file_path
+        assert self.file_path.exists(), f"{self.file_path} does not exist.\
         Must be directed to an existing .nc file!"
 
-        self.ds = xr.open_dataset(data_path)
+        self.ds = xr.open_dataset(file_path)
 
         if resample_str is not None:
             self.resample = True
@@ -45,6 +46,10 @@ class BaseIndices:
 
     def save(self, data_dir: Path = Path('data')):
         """save the self.index to netcdf"""
-        # data_dir / self.name + '.nc'
-        # self.index.to_netcdf()
-        raise NotImplementedError
+        analysis_dir = data_dir / 'analysis' / 'indices'
+        if not analysis_dir.exists():
+            analysis_dir.mkdir(parents=True, exist_ok=True)
+
+        file_path = analysis_dir / (self.name + '.nc')
+        self.index.to_netcdf(file_path)
+        print(f'Saved {self.name} to {file_path.as_posix()}')

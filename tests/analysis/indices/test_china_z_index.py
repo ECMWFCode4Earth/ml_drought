@@ -1,7 +1,5 @@
 import numpy as np
 import pytest
-# import pandas as pd
-# import xarray as xr
 
 from src.analysis.indices import ChinaZIndex
 from tests.utils import _create_dummy_precip_data

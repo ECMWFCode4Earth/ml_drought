@@ -1,6 +1,3 @@
-# import numpy as np
-# import pandas as pd
-# import xarray as xr
 import pytest
 
 from src.analysis.indices import AnomalyIndex

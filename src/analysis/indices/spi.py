@@ -223,4 +223,4 @@ class SPI(BaseIndices):
 
         self.index = index.unstack('point').to_dataset(name=f'SPI{scale}')
 
-        print("Fitted")
+        print("Fitted SPI and stored at `obj.index`")

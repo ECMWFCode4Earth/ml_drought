@@ -43,8 +43,7 @@ class ChinaZIndex(BaseIndices):
 
     @staticmethod
     def MCZI(da: xr.DataArray,
-             dim: str = 'time',
-             **kwargs) -> xr.DataArray:
+             dim: str = 'time') -> xr.DataArray:
         zsi = (da - da.median(dim=dim)) / da.std(dim=dim)
         cs = np.power(zsi, 3) / da.sizes[dim]
         mczi = (
@@ -56,8 +55,7 @@ class ChinaZIndex(BaseIndices):
 
     @staticmethod
     def CZI(da: xr.DataArray,
-            dim: str = 'time',
-            **kwargs) -> xr.DataArray:
+            dim: str = 'time') -> xr.DataArray:
         zsi = (da - da.mean(dim=dim)) / da.std(dim=dim)
         cs = np.power(zsi, 3) / da.sizes[dim]
         czi = (
@@ -95,4 +93,4 @@ class ChinaZIndex(BaseIndices):
         )
 
         self.index = ds_window
-        print(f"Fitted China Z-Score Index and saved at `obj.index`")
+        print(f"Fitted China Z-Score Index and stored at `obj.index`")
