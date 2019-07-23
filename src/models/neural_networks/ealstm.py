@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 
-class EALSTM(nn.Module):
+class EALSTMCell(nn.Module):
     """Implementation of the Entity-Aware-LSTM (EA-LSTM)
 
     This code was copied from
