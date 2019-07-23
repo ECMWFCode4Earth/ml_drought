@@ -6,7 +6,7 @@ import re
 from src.exporters.vhi import (
     VHIExporter,
     _parse_time_from_filename,
-    make_filename,
+    _make_filename,
 )
 
 
@@ -17,7 +17,7 @@ class TestVHIExporter:
             if True:
                 return
                 assert True, f"Switch to run this function (takes time)"
-            fnames = VHIExporter.get_ftp_filenames(years=list(range(2000, 2020)))
+            fnames = VHIExporter._get_ftp_filenames(years=list(range(2000, 2020)))
 
             weeks = [int(_parse_time_from_filename(f)[-1]) for f in fnames]
             years = [int(_parse_time_from_filename(f)[0]) for f in fnames]
@@ -43,7 +43,7 @@ class TestVHIExporter:
 
     def test_filename_illegitimate(self, tmp_path):
         with pytest.raises(Exception) as e:
-            make_filename(
+            _make_filename(
                 raw_folder=tmp_path / "data",
                 raw_filename='this/should/fail.nc',
                 dataset='vhi',
@@ -62,7 +62,7 @@ class TestVHIExporter:
 
     @patch('ftplib.FTP', autospec=True)
     def test_ftp_called(self, mock_ftp):
-        _ = VHIExporter.get_ftp_filenames(years=list(range(1981, 2020)))
+        _ = VHIExporter._get_ftp_filenames(years=list(range(1981, 2020)))
         mock_ftp.assert_called_once_with('ftp.star.nesdis.noaa.gov')
 
     def test_dir_structure_create(self, tmp_path):
@@ -71,7 +71,7 @@ class TestVHIExporter:
         raw_filename = 'VHP.G04.C07.NC.P1981035.VH.nc'
 
         expected_path = raw_folder / 'vhi/1981/VHP.G04.C07.NC.P1981035.VH.nc'
-        filename = make_filename(raw_folder, raw_filename, 'vhi')
+        filename = _make_filename(raw_folder, raw_filename, 'vhi')
 
         assert expected_path == filename, f"Got {filename}, expected {expected_path}"
         assert raw_folder.exists(), f"`raw` directory should exist"

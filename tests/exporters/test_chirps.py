@@ -25,7 +25,7 @@ class TestCHIRPSExporter:
         test_filename = 'testy_test.nc'
         (tmp_path / f'raw/chirps/global/{test_filename}').touch()
 
-        exporter.wget_file(test_filename)
+        exporter._wget_file(test_filename)
         captured = capsys.readouterr()
 
         expected_stdout = f'{test_filename} already exists! Skipping\n'
@@ -36,11 +36,11 @@ class TestCHIRPSExporter:
     def test_get_url(self, tmp_path):
         exporter = CHIRPSExporter(tmp_path)
 
-        assert exporter.get_url('africa', 'pentad') == self.africa_url, \
-            f'Expected Africa URL to be {self.africa_url}, got {exporter.get_url("africa")}'
+        assert exporter._get_url('africa', 'pentad') == self.africa_url, \
+            f'Expected Africa URL to be {self.africa_url}, got {exporter._get_url("africa")}'
 
-        assert exporter.get_url('global', 'pentad') == self.global_url, \
-            f'Expected Africa URL to be {self.global_url}, got {exporter.get_url("global")}'
+        assert exporter._get_url('global', 'pentad') == self.global_url, \
+            f'Expected Africa URL to be {self.global_url}, got {exporter._get_url("global")}'
 
     @patch('urllib.request.Request', autospec=True)
     def test_get_filenames(self, request_patch, monkeypatch, tmp_path):
@@ -82,7 +82,7 @@ class TestCHIRPSExporter:
         monkeypatch.setattr(urllib.request, 'urlopen', mockreturn)
 
         exporter = CHIRPSExporter(tmp_path)
-        filenames = exporter.get_chirps_filenames(region='africa', period='pentad')
+        filenames = exporter._get_chirps_filenames(region='africa', period='pentad')
 
         assert filenames == expected_filenames
 

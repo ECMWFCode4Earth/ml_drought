@@ -15,7 +15,7 @@ class Engineer:
     access to the same data.
 
     :param data_folder: The location of the data folder.
-    :param experiment: One of 'one_month_forecast' or 'nowcast', defines the experiment for which
+    :param experiment: One of `{'one_month_forecast', 'nowcast'}, defines the experiment for which
         the dataset is created
     """
 
@@ -50,6 +50,6 @@ class Engineer:
         :param expected_length: The expected length of the x data along its time-dimension.
             If this is not None and an x array has a different time dimension size, the array
             is ignored. This differs from pred_months if the preprocessors are run with a
-            time granularity different from 'M'
+            time granularity different from `'M'`
         """
         self.engineer_class.engineer(test_year, target_variable, pred_months, expected_length)

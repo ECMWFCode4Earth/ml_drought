@@ -1,11 +1,7 @@
 from pathlib import Path
 
-from ..utils import Region, get_kenya
 
-__all__ = ['BaseExporter', 'Region', 'get_kenya']
-
-
-class BaseExporter:
+class _BaseExporter:
     """Base for all exporter classes
 
     Attributes:

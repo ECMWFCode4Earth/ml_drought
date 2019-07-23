@@ -8,11 +8,12 @@ import multiprocessing
 
 from typing import Dict, Optional, List, cast
 
-from .base import BaseExporter, Region, get_kenya
+from .base import _BaseExporter
+from ..utils import Region, get_kenya
 
 
-class CDSExporter(BaseExporter):
-    """Exports for the Climate Data Store
+class _CDSExporter(_BaseExporter):
+    """Base for exports from the Climate Data Store
 
     cds.climate.copernicus.eu
     """
@@ -53,7 +54,7 @@ class CDSExporter(BaseExporter):
             time_array_str = str(time_array[0])
         return time_array_str
 
-    def make_filename(self, dataset: str, selection_request: Dict) -> Path:
+    def _make_filename(self, dataset: str, selection_request: Dict) -> Path:
         """Makes the appropriate filename for a CDS export.
         If necessary, intermediate folders are also made.
 
@@ -111,7 +112,7 @@ class CDSExporter(BaseExporter):
             The location of the exported data
         """
 
-        output_file = self.make_filename(dataset, selection_request)
+        output_file = self._make_filename(dataset, selection_request)
 
         if show_api_request:
             self._print_api_request(dataset, selection_request, output_file)
@@ -128,13 +129,15 @@ class CDSExporter(BaseExporter):
         return output_file
 
 
-class ERA5Exporter(CDSExporter):
+class ERA5Exporter(_CDSExporter):
     """Exports ERA5 data from the Climate Data Store
 
     cds.climate.copernicus.eu
+
+    :param data_folder: The location of the data folder.
     """
     @staticmethod
-    def get_era5_times(granularity: str = 'hourly') -> Dict:
+    def _get_era5_times(granularity: str = 'hourly') -> Dict:
         """Returns the era5 selection request arguments
         for the hourly or monthly data
 
@@ -164,7 +167,7 @@ class ERA5Exporter(CDSExporter):
         return selection_dict
 
     @staticmethod
-    def get_dataset(variable: str, granularity: str = 'hourly') -> str:
+    def _get_dataset(variable: str, granularity: str = 'hourly') -> str:
         pressure_level_variables = {
             'divergence', 'fraction_of_cloud_cover', 'geopotential',
             'ozone_mass_mixing_ratio', 'potential_vorticity', 'relative_humidity',
@@ -215,10 +218,10 @@ class ERA5Exporter(CDSExporter):
             value = [value]
         return value
 
-    def create_selection_request(self,
-                                 variable: str,
-                                 selection_request: Optional[Dict] = None,
-                                 granularity: str = 'hourly',) -> Dict:
+    def _create_selection_request(self,
+                                  variable: str,
+                                  selection_request: Optional[Dict] = None,
+                                  granularity: str = 'hourly',) -> Dict:
         # setup the default selection request
         product_type = f'{"monthly_averaged_" if granularity == "monthly" else ""}reanalysis'
         processed_selection_request = {
@@ -226,7 +229,7 @@ class ERA5Exporter(CDSExporter):
             'format': 'netcdf',
             'variable': [variable]
         }
-        for key, val in self.get_era5_times(granularity).items():
+        for key, val in self._get_era5_times(granularity).items():
             processed_selection_request[key] = val
 
         # by default, we investigate Kenya
@@ -252,45 +255,36 @@ class ERA5Exporter(CDSExporter):
                selection_request: Optional[Dict] = None,
                break_up: bool = False,
                n_parallel_requests: int = 3) -> List[Path]:
-        """ Export functionality to prepare the API request and to send it to
+        r""" Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
 
         Arguments:
         ---------
-        variable: str
-            The variable to be exported
-        dataset: Optional[str], default = None
-            The dataset from which to pull the variable from. If None, this
-            is inferred from the dataset and its granularity
-        granularity: str: {'hourly', 'monthly'}, default = 'hourly'
-            The temporal resolution of the data to be pulled
-        show_api_request: bool = True
-            Whether to print the selection dictionary before making the API request
-        selection_request: Optional[Dict], default = None
-            Selection request arguments to be merged with the defaults. If both a key is
-            defined in both the selection_request and the defaults, the value in the
+        :param variable: The variable to be exported
+        :param dataset:  The dataset from which to pull the variable from. If None, this
+            is inferred from the variable and its granularity
+        :param granularity: The temporal resolution of the data to be pulled. Can be one
+            of `{'hourly', 'monthly'}`
+        :param show_api_request: Whether to print the selection dictionary before making the
+            API request
+        :param selection_request: Selection request arguments to be merged with the defaults.
+            If a key is defined in both the selection_request and the defaults, the value in the
             selection_request takes precedence.
-        break_up: bool, default = True
-            The best way to download the data is by making many small calls to the CDS
-            API. If true, the calls will be broken up into months
-        parallel: bool, default = True
-            Whether to download data in parallel
-        n_parallel_requests:
-            How many parallel requests to the CDSAPI to make
+        :param break_up:  If True, requests to the CDS API will be broken up into months.
+        :param n_parallel_requests: How many parallel requests to the CDSAPI to make
 
         Returns:
         -------
-        output_files: List of pathlib.Paths
-            paths to the downloaded data
+        :returns: Paths to the downloaded data
         """
 
         # create the default template for the selection request
-        processed_selection_request = self.create_selection_request(variable,
-                                                                    selection_request,
-                                                                    granularity)
+        processed_selection_request = self._create_selection_request(variable,
+                                                                     selection_request,
+                                                                     granularity)
 
         if dataset is None:
-            dataset = self.get_dataset(variable, granularity)
+            dataset = self._get_dataset(variable, granularity)
 
         if n_parallel_requests < 1: n_parallel_requests = 1
 

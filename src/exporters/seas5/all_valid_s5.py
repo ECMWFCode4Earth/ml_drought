@@ -1,39 +1,3 @@
-"""
-Define the VALID SEAS5 requests from the cdsapi.
-
-Note:
------
-
-    • in our schema `hourly` datasets refer to the `original` datasets
-        [`seasonal-original-single-levels`, `seasonal-original-pressure-levels`]
-
-    • `monthly` datasets have forecast resolution of months
-
-    • `seasonal-original-single-levels` has leadtime resolution of 6 hours,
-        whereas, `seasonal-original-pressure-levels` leadtime resolution = 12 hours
-
-    • `monthly` datasets require a `'product_type'` variable whereas `hourly`
-        datasets (12hr/6hr) do not
-
-    • all datasets have fixed [format, originating_centre, system, day] variables
-
-    • all datasets require:
-        [
-            format, originating_centre, system, day,
-            variable, month, year
-        ]
-
-    • `monthly` datasets have extra: [product_type, leadtime_month]
-
-    • `hourly` datasets have extra: [leadtime_hour]
-
-    • `monthly` product_type depend on whether looking at single_level or pressure_level
-        single_level = ['ensemble_mean', 'hindcast_climate_mean',
-                        'monthly_maximum', 'monthly_mean',
-                        'monthly_minimum', 'monthly_standard_deviation']
-        pressure_level = ['ensemble_mean', 'hindcast_climate_mean', 'monthly_mean']
-"""
-
 import numpy as np
 from typing import Dict, List
 

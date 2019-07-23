@@ -3,14 +3,16 @@ from pathlib import Path
 
 from typing import cast, List, Union, Tuple
 
-from .base import BaseExporter
+from .base import _BaseExporter
 
 
-class GLEAMExporter(BaseExporter):
+class GLEAMExporter(_BaseExporter):
     """Download data from the Global Land Evaporation Amsterdam Model
     (gleam.eu)
 
     Access information can be found at gleam.eu
+
+    :param data_folder: The location of the data folder.
     """
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
@@ -31,10 +33,15 @@ class GLEAMExporter(BaseExporter):
         self.base_sftp_path: str = '/data/v3.3a/'
 
     def get_granularities(self) -> List[str]:
+        """
+        Get the accepted GLEAM granularities
+
+        :return: A list of accepted granularities
+        """
         self.sftp.chdir(self.base_sftp_path)
         return self.sftp.listdir()
 
-    def get_datasets(self, granularity: str = 'monthly') -> List[str]:
+    def _get_datasets(self, granularity: str = 'monthly') -> List[str]:
         granularity_path = f'{self.base_sftp_path}/{granularity}'
         self.sftp.chdir(granularity_path)
 
@@ -54,7 +61,7 @@ class GLEAMExporter(BaseExporter):
         return datasets
 
     @staticmethod
-    def variable_to_filename(variable: str, datasets: List[str]) -> List[str]:
+    def _variable_to_filename(variable: str, datasets: List[str]) -> List[str]:
         output_datasets: List[str] = []
 
         for filepath in datasets:
@@ -65,7 +72,7 @@ class GLEAMExporter(BaseExporter):
 
         return output_datasets
 
-    def sftppath_to_localpath(self, sftppath: str) -> Tuple[Path, str]:
+    def _sftppath_to_localpath(self, sftppath: str) -> Tuple[Path, str]:
 
         stem = sftppath[len(self.base_sftp_path):]
         filename = sftppath.split('/')[-1]
@@ -74,6 +81,12 @@ class GLEAMExporter(BaseExporter):
     def export(self,
                variables: Union[str, List[str]],
                granularity: str) -> None:
+        """
+        Export GLEAM data
+
+        :param variables: A string or list of string variables to download
+        :param granularity: The granularity of the data to download
+        """
 
         acceptable_granularities = set(self.get_granularities())
         assert granularity in acceptable_granularities, \
@@ -84,13 +97,13 @@ class GLEAMExporter(BaseExporter):
             variables = cast(List[str], [variables])
 
         for variable in variables:
-            relevant_datasets = self.variable_to_filename(variable,
-                                                          self.get_datasets(granularity))
+            relevant_datasets = self._variable_to_filename(variable,
+                                                           self._get_datasets(granularity))
             if len(relevant_datasets) == 0:
                 print('No files found! Check your variable names')
 
             for dataset in relevant_datasets:
-                localpath, filename = self.sftppath_to_localpath(dataset)
+                localpath, filename = self._sftppath_to_localpath(dataset)
                 print(f'Downloading {dataset} to {localpath}')
                 localpath.mkdir(parents=True, exist_ok=True)
                 self.sftp.get(dataset, str(localpath / filename))

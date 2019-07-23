@@ -13,13 +13,13 @@ class TestS5Exporter:
         s5 = S5Exporter(pressure_level=True, data_folder=tmp_path)
 
         with pytest.raises(AssertionError) as e:
-            s5.get_s5_initialisation_times("daily")
+            s5._get_s5_initialisation_times("daily")
             e.match(r"Invalid granularity*")
 
     @patch('cdsapi.Client')
     def test_initialisation_times_produces_correct_keys(self, tmp_path):
         s5 = S5Exporter(pressure_level=True, data_folder=tmp_path)
-        selection_request = s5.get_s5_initialisation_times(
+        selection_request = s5._get_s5_initialisation_times(
             "hourly", min_year=2017, max_year=2018, min_month=1, max_month=1
         )
 
@@ -41,7 +41,7 @@ class TestS5Exporter:
 
         # 5 days because hourly data
         max_leadtime = 5
-        selection_request = s5.get_s5_leadtimes(max_leadtime)
+        selection_request = s5._get_s5_leadtimes(max_leadtime)
 
         # assert returning correct leadtime
         expected_keys = ["leadtime_hour"]
@@ -73,7 +73,7 @@ class TestS5Exporter:
 
         # 5 months because monthly data
         max_leadtime = 5
-        selection_request = s5.get_s5_leadtimes(max_leadtime)
+        selection_request = s5._get_s5_leadtimes(max_leadtime)
 
         # assert returning correct keys
         expected_keys = ["leadtime_month"]
@@ -111,17 +111,17 @@ class TestS5Exporter:
         getting the expected_dataset_reference"
 
     @patch('cdsapi.Client')
-    def test_None_product_type_for_original_single_levels(self, tmp_path):
+    def test_none_product_type_for_original_single_levels(self, tmp_path):
         granularity = "hourly"
         pressure_level = False
         s5 = S5Exporter(
             data_folder=tmp_path, granularity=granularity, pressure_level=pressure_level
         )
         assert (
-            s5.get_product_type() is None
+            s5._get_product_type() is None
         ), f"Expected the product_type for\
         seasonal-original-single-levels dataset to be None. Got:\
-        {s5.get_product_type()}"
+        {s5._get_product_type()}"
 
     @patch('cdsapi.Client')
     def test_product_type_single_levels_monthly(self, tmp_path):
@@ -133,21 +133,21 @@ class TestS5Exporter:
 
         # monthly_mean is the product_type
         assert (
-            s5.get_product_type() == "monthly_mean"
+            s5._get_product_type() == "monthly_mean"
         ), f"\
         Expecting `product_type` for `seasonal-original-single-levels` \
-        dataset to be 'monthly_mean'. Returned: {s5.get_product_type(None)}"
+        dataset to be 'monthly_mean'. Returned: {s5._get_product_type(None)}"
 
         # hindcast_climate_mean is a valid product type
         assert (
-            s5.get_product_type("hindcast_climate_mean") == "hindcast_climate_mean"
+            s5._get_product_type("hindcast_climate_mean") == "hindcast_climate_mean"
         ), f"\
         Expecting `product_type` for `seasonal-original-single-levels`\
-        dataset to be 'hindcast_climate_mean' Got: {s5.get_product_type('hindcast_climate_mean')}"
+        dataset to be 'hindcast_climate_mean' Got: {s5._get_product_type('hindcast_climate_mean')}"
 
         # assert erroneous product_type
         with pytest.raises(AssertionError) as e:
-            s5.get_product_type("dsgdfgdfh")
+            s5._get_product_type("dsgdfgdfh")
             e.match(r"Invalid `product_type`*")
 
     @patch('cdsapi.Client')
@@ -166,7 +166,7 @@ class TestS5Exporter:
         min_month = 1
         max_month = 12
 
-        processed_selection_request = s5.create_selection_request(
+        processed_selection_request = s5._create_selection_request(
             variable=variable,
             max_leadtime=max_leadtime,
             min_year=min_year,
@@ -228,7 +228,7 @@ class TestS5Exporter:
         min_month = 1
         max_month = 12
 
-        processed_selection_request = s5.create_selection_request(
+        processed_selection_request = s5._create_selection_request(
             variable=variable,
             max_leadtime=max_leadtime,
             min_year=min_year,
@@ -237,7 +237,7 @@ class TestS5Exporter:
             max_month=max_month,
         )
 
-        filepath = s5.make_filename(
+        filepath = s5._make_filename(
             dataset=s5.dataset, selection_request=processed_selection_request
         )
 

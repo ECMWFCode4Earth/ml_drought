@@ -5,11 +5,32 @@ from pathos.pools import _ThreadPool as pool
 
 from typing import cast, Dict, Optional, List
 from .all_valid_s5 import datasets as dataset_reference
-from ..base import get_kenya
-from ..cds import CDSExporter
+from ...utils import get_kenya
+from ..cds import _CDSExporter
 
 
-class S5Exporter(CDSExporter):
+class S5Exporter(_CDSExporter):
+    """
+    An exporter for S5 data from the Climate Data Store
+
+    :param data_folder: path to the data folder (where data will be stored)
+    :param variable: the variable that you want to download.
+    :param pressure_level:  Do you want data at different atmospheric heights?
+        If `True`, data is downloaded from all pressure levels. If `False, only
+        single level data is used
+    :param granularity: The granularity of data being pulled.
+        'hourly'/'pressure_level' data has a forecast for every 12hrs (12, 24, 36 ...)
+        'hourly'/'single_level' data has a forecast for every 6hrs (6, 12, 18, 24 ...)
+        'monthly' data has a forecast for every month {1 ... 6}
+    :param product_type: The product type is only valid for monthly datasets. It corresponds
+        to the post-processing of the monthly forecasts. If None is given, Defaults to
+        `'monthly_mean'`.
+        It can be one of  `{'ensemble_mean', 'hindcast_climate_mean', 'monthly_mean'}`. If
+        `pressure_level` is `False`, it can additionally be
+        `{'monthly_standard_deviation', 'monthly_maximum', 'monthly_minimum'}`
+    :param dataset: The dataset to pull the data from. If none is passed, this is inferred from
+        all the other information
+    """
     def __init__(
         self,
         pressure_level: bool,
@@ -18,43 +39,6 @@ class S5Exporter(CDSExporter):
         product_type: Optional[str] = None,
         dataset: Optional[str] = None,
     ) -> None:
-        """
-        Arguments
-        --------
-        data_folder: Path
-            path to the data folder (where data will be stored)
-
-        variable: str
-            the variable that you want to download.
-
-        pressure_level: bool
-            Do you want data at different atmospheric heights?
-            True = yes want data at different `pressure-levels`
-            False = no want only `single-level` data
-
-        granularity: str, {'monthly', 'hourly'}, default: 'monthly'
-            The granularity of data being pulled.
-            'hourly'/'pressure_level' data has a forecast for every 12hrs (12, 24, 36 ...)
-            'hourly'/'single_level' data has a forecast for every 6hrs (6, 12, 18, 24 ...)
-            'monthly' data has a forecast for every month {1 ... 6}
-
-        product_type : str
-            The product type is only valid for monthly datasets. It corresponds
-            to the post-processing of the monthly forecasts
-            Defaults to 'monthly_mean' if no product_type is given
-                if pressure_level == True:
-                 {'ensemble_mean', 'hindcast_climate_mean', 'monthly_mean'}
-                else
-                 {'ensemble_mean', 'hindcast_climate_mean', 'monthly_mean',
-                  'monthly_standard_deviation', 'monthly_maximum', 'monthly_minimum'}
-
-        Notes:
-        -----
-        - because the `dataset` argument is not intuitive, the s5 downloader
-        makes decisions for the user based on their preferences in the args
-        `pressure_level` and `granularity`.
-        - these are constant for one download
-        """
         super().__init__(data_folder)
 
         # initialise attributes for this export
@@ -66,7 +50,7 @@ class S5Exporter(CDSExporter):
         granularity: {granularity} and pressure_level: {pressure_level}"
 
         if dataset is None:
-            self.dataset = self.get_dataset(self.granularity, self.pressure_level)
+            self.dataset = self._get_dataset(self.granularity, self.pressure_level)
         else:
             self.dataset = dataset
 
@@ -74,7 +58,7 @@ class S5Exporter(CDSExporter):
         self.dataset_reference = dataset_reference[self.dataset]
 
         # get the product type if it exists
-        self.product_type = self.get_product_type(product_type)
+        self.product_type = self._get_product_type(product_type)
 
         # check the product_type is valid for this dataset
         if self.dataset_reference["product_type"] is not None:
@@ -98,46 +82,20 @@ class S5Exporter(CDSExporter):
         break_up: bool = True,
     ):
         """
-        Arguments
-        --------
-        variable: str
-            the variable that you want to download
+        Export S5 data from the Climate Data Store
 
-        min_year: Optional[int] default = 2017
-            the minimum year of your request
-
-        max_year: Optional[int] default = 2018
-            the maximum year of your request
-
-        min_month: Optional[int] default = 1
-            the minimum month of your request
-
-        max_month: Optional[int] default = 12
-            the maximum month of your request
-
-        max_leadtime: Optional[int]
-            the maximum leadtime of your request
-                (if granularity is `hourly` then provide in days)
-                (elif granularity is `monthly` then provide in months)
-            defaults to ~3 months (90 days)
-
-        pressure_levels: Optional[int]
-            Pressure levels to download data at
-
-        n_parallel_requests: int
-            the number of parallel requests to initialise
-
-        show_api_request: bool
-            do you want to print the api request to view it?
-
-        break_up: bool - default: True
-            whether to break up requests into parallel
-
-        Note:
-        ----
-        - All parameters that are assigned to class attributes are fixed for one download
-        - these are required to initialise the object [granularity, pressure_level]
-        - Only time will be chunked (by months) to send separate calls to the cdsapi
+        :param variable: the variable that you want to download
+        :param min_year: The minimum year of your request
+        :param max_year: The maximum year of your request
+        :param min_month: The minimum month of your request
+        :param max_month: The maximum month of your request
+        :param max_leadtime: The maximum leadtime of your request.
+            If granularity is `hourly` then provide in days. If granularity is `monthly`
+            then provide in months. If None is passed, defaults to 3 months / 90 days
+        :param pressure_levels: Pressure levels to download data at
+        :param n_parallel_requests: The number of parallel requests to initialise
+        :param show_api_request: Whether to print the API request
+        :param break_up: bool: Whether to break up requests
         """
         # n_parallel_requests can only be a MINIMUM of 1
         if n_parallel_requests < 1:
@@ -152,7 +110,7 @@ class S5Exporter(CDSExporter):
             # set the pressure_levels to ['200', '500', '925'] as default
             pressure_levels = [200, 500, 925] if self.pressure_level else None
 
-        processed_selection_request = self.create_selection_request(
+        processed_selection_request = self._create_selection_request(
             variable=variable,
             max_leadtime=max_leadtime,
             min_year=min_year,
@@ -162,7 +120,7 @@ class S5Exporter(CDSExporter):
         )
 
         if self.pressure_level:  # if we are using the pressure_level dataset
-            pressure_levels_dict = self.get_pressure_levels(pressure_levels)
+            pressure_levels_dict = self._get_pressure_levels(pressure_levels)
 
             if pressure_levels_dict is not None:
                 processed_selection_request.update(cast(Dict, pressure_levels_dict))
@@ -220,7 +178,7 @@ class S5Exporter(CDSExporter):
         return output_paths
 
     @staticmethod
-    def get_s5_initialisation_times(
+    def _get_s5_initialisation_times(
         granularity: str,
         min_year: int = 1993,
         max_year: int = 2019,
@@ -263,7 +221,7 @@ class S5Exporter(CDSExporter):
         return selection_dict
 
     @staticmethod
-    def get_6hrly_leadtimes(max_leadtime: int) -> List[int]:
+    def _get_6hrly_leadtimes(max_leadtime: int) -> np.ndarray:
         # every 6hours up to the max number of days
         hrly_6 = np.array([6, 12, 18, 24])
         all_hrs = np.array(
@@ -274,7 +232,7 @@ class S5Exporter(CDSExporter):
 
         return leadtime_times
 
-    def get_s5_leadtimes(self, max_leadtime: int) -> Dict:
+    def _get_s5_leadtimes(self, max_leadtime: int) -> Dict:
         """Get the leadtimes for monthly or hourly data"""
         if self.granularity == "monthly":
             assert (
@@ -294,7 +252,7 @@ class S5Exporter(CDSExporter):
             if self.pressure_level:
                 leadtime_times = [day * 24 for day in range(1, 215 + 1)]
             else:
-                leadtime_times = list(self.get_6hrly_leadtimes(max_leadtime))
+                leadtime_times = list(self._get_6hrly_leadtimes(max_leadtime))
 
             assert (
                 max(leadtime_times) <= 5160
@@ -314,7 +272,7 @@ class S5Exporter(CDSExporter):
 
         return selection_dict
 
-    def get_product_type(self, product_type: Optional[str] = None) -> Optional[str]:
+    def _get_product_type(self, product_type: Optional[str] = None) -> Optional[str]:
         """By default download the 'monthly_mean' product for monthly data """
         valid_product_types = self.dataset_reference["product_type"]
 
@@ -335,7 +293,7 @@ class S5Exporter(CDSExporter):
 
         return product_type
 
-    def get_pressure_levels(
+    def _get_pressure_levels(
         self, pressure_levels: Optional[List[int]] = None
     ) -> Optional[Dict]:
         if self.pressure_level:
@@ -360,11 +318,11 @@ class S5Exporter(CDSExporter):
             return None
 
     @property
-    def get_valid_variables(self) -> List:
+    def _get_valid_variables(self) -> List:
         """ get `valid_variables` for this S5Exporter object """
         return self.dataset_reference["variable"]
 
-    def create_selection_request(
+    def _create_selection_request(
         self,
         variable: str,
         max_leadtime: int,
@@ -406,7 +364,7 @@ class S5Exporter(CDSExporter):
         if self.product_type is not None:
             processed_selection_request.update({"product_type": [self.product_type]})
 
-        init_times_dict = self.get_s5_initialisation_times(
+        init_times_dict = self._get_s5_initialisation_times(
             self.granularity, min_year=min_year, max_year=max_year,
             min_month=min_month, max_month=max_month
         )
@@ -415,7 +373,7 @@ class S5Exporter(CDSExporter):
             processed_selection_request[key] = val
 
         # get the leadtime information
-        leadtimes_dict = self.get_s5_leadtimes(max_leadtime)
+        leadtimes_dict = self._get_s5_leadtimes(max_leadtime)
         for key, val in leadtimes_dict.items():
             processed_selection_request[key] = val
 
@@ -433,7 +391,7 @@ class S5Exporter(CDSExporter):
         return processed_selection_request
 
     @staticmethod
-    def get_dataset(granularity: str, pressure_level: bool) -> str:
+    def _get_dataset(granularity: str, pressure_level: bool) -> str:
         if granularity == "monthly":
             return (
                 "seasonal-monthly-pressure-levels"
@@ -447,7 +405,7 @@ class S5Exporter(CDSExporter):
                 else "seasonal-original-single-levels"
             )
 
-    def make_filename(self, dataset: str, selection_request: Dict) -> Path:
+    def _make_filename(self, dataset: str, selection_request: Dict) -> Path:
         """
         data/raw/seasonal-monthly-single-levels
          /total_precipitation/2017/M01-Vmonthly_mean-P.grib

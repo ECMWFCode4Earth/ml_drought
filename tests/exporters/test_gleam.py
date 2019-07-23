@@ -72,7 +72,7 @@ class TestGLEAMExporter:
 
         for key, val in expected.items():
 
-            datasets = exporter.get_datasets(granularity=key)
+            datasets = exporter._get_datasets(granularity=key)
             assert len(datasets) == 1, 'Only expected one output filename'
             output_file = datasets[0].split('/')[-1]
             assert output_file == val, f'Expected {val}, got {output_file}'
@@ -95,7 +95,7 @@ class TestGLEAMExporter:
         path = '/base/interim1/interim2'
         input_filenames = [f'{path}/{filename}' for filename in real_files]
 
-        var_path = GLEAMExporter.variable_to_filename('SMroot', input_filenames)
+        var_path = GLEAMExporter._variable_to_filename('SMroot', input_filenames)
 
         assert len(var_path) == 1, 'Only expected one output filename'
         expected_filename = f'{path}/SMroot_1980_2018_GLEAM_v3.3a_MO.nc'
@@ -111,7 +111,7 @@ class TestGLEAMExporter:
         exporter = GLEAMExporter(data_folder=tmp_path)
 
         sftppath = '/data/v3.3a/yearly/Eb_1980_2018_GLEAM_v3.3a_MO.nc'
-        localpath, filename = exporter.sftppath_to_localpath(sftppath)
+        localpath, filename = exporter._sftppath_to_localpath(sftppath)
 
         assert localpath == tmp_path / 'raw/gleam/yearly'
         assert filename == 'Eb_1980_2018_GLEAM_v3.3a_MO.nc'

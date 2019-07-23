@@ -1,8 +1,8 @@
 from pathlib import Path
 from unittest.mock import patch, Mock
 
-from src.exporters.cds import CDSExporter, ERA5Exporter
-from src.exporters.base import get_kenya
+from src.exporters.cds import _CDSExporter as CDSExporter, ERA5Exporter
+from src.utils import get_kenya
 
 
 class TestCDSExporter:
@@ -19,7 +19,7 @@ class TestCDSExporter:
             'month': [10, 11, 12]
         }
 
-        filename = exporter.make_filename(dataset, selection_request)
+        filename = exporter._make_filename(dataset, selection_request)
         # first, we check the filename is right
         constructed_filepath = Path('raw/megadodo-publications/towel/1978_1980/10_12.nc')
         expected = tmp_path / constructed_filepath
@@ -40,7 +40,7 @@ class TestCDSExporter:
             'month': [10]
         }
 
-        filename = exporter.make_filename(dataset, selection_request)
+        filename = exporter._make_filename(dataset, selection_request)
         # first, we check the filename is right
         constructed_filepath = Path('raw/megadodo-publications/towel/1979/10.nc')
         expected = tmp_path / constructed_filepath
@@ -51,10 +51,10 @@ class TestCDSExporter:
 
     def test_selection_dict_granularity(self):
 
-        selection_dict_monthly = ERA5Exporter.get_era5_times(granularity='monthly')
+        selection_dict_monthly = ERA5Exporter._get_era5_times(granularity='monthly')
         assert 'day' not in selection_dict_monthly, 'Got day values in monthly the selection dict!'
 
-        selection_dict_hourly = ERA5Exporter.get_era5_times(granularity='hourly')
+        selection_dict_hourly = ERA5Exporter._get_era5_times(granularity='hourly')
         assert 'day' in selection_dict_hourly, 'Day values not in hourly selection dict!'
 
     def test_area(self):
@@ -69,7 +69,7 @@ class TestCDSExporter:
     def test_default_selection_request(self, cdsapi_mock, tmp_path):
         cdsapi_mock.return_value = Mock()
         exporter = ERA5Exporter(tmp_path)
-        default_selection_request = exporter.create_selection_request('precipitation')
+        default_selection_request = exporter._create_selection_request('precipitation')
         expected_selection_request = {
             'product_type': 'reanalysis',
             'format': 'netcdf',
@@ -102,8 +102,8 @@ class TestCDSExporter:
             'month': [1],
             'time': [0]
         }
-        default_selection_request = exporter.create_selection_request('precipitation',
-                                                                      user_defined_arguments)
+        default_selection_request = exporter._create_selection_request('precipitation',
+                                                                       user_defined_arguments)
         expected_selection_request = {
             'product_type': 'reanalysis',
             'format': 'netcdf',

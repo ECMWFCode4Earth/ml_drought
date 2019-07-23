@@ -54,7 +54,7 @@ class TestERA5ExporterPOS:
             )
 
         exporter = ERA5ExporterPOS(tmp_path)
-        returned_variables = exporter.get_variables(2008, 1)
+        returned_variables = exporter._get_variables(2008, 1)
 
         assert len(returned_variables) == len(expected_variables), \
             f'Expected {len(expected_variables)} to be returned, got {len(returned_variables)}'

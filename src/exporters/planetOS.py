@@ -8,13 +8,15 @@ import warnings
 
 from typing import List, Optional
 
-from .base import BaseExporter
+from .base import _BaseExporter
 
 
-class ERA5ExporterPOS(BaseExporter):
-    """Download ERA5 data from Planet OS's S3 bucket
+class ERA5ExporterPOS(_BaseExporter):
+    r"""Download ERA5 data from Planet OS's S3 bucket
 
     https://github.com/planet-os/notebooks/blob/master/aws/era5-pds.md
+
+    :param data_folder: The location of the data folder.
     """
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
@@ -27,7 +29,7 @@ class ERA5ExporterPOS(BaseExporter):
         self.era5_bucket = 'era5-pds'
         self.client = boto3.client('s3', config=Config(signature_version=botocore.UNSIGNED))
 
-    def get_variables(self, year: int, month: int) -> List[str]:
+    def _get_variables(self, year: int, month: int) -> List[str]:
         target_prefix = f'{year}/{month:02d}/data'
 
         files = self.client.list_objects_v2(
@@ -71,19 +73,11 @@ class ERA5ExporterPOS(BaseExporter):
                months: Optional[List[int]] = None) -> List[Path]:
         """Export data from Planet OS's S3 bucket
 
-        Arguments
-        ----------
-        variable: str
-            The variable to download
-        years: list of ints or None, default = None
-            The years of data to download
-        months: list of ints, or None, default = None
-            The months of data to download
+        :param variable: The variable to download
+        :param years: The years of data to download
+        :param months: The months of data to download
 
-        Returns
-        ----------
-        output_files: list of pathlib.Paths
-            The locations of the saved files
+        :returns: The locations of the saved files
         """
 
         if years is None:
@@ -112,7 +106,7 @@ class ERA5ExporterPOS(BaseExporter):
                 print(f'Exported {target_key} to {target_folder}')
             except botocore.exceptions.ClientError as e:
                 if e.response['Error']['Code'] == "404":
-                    possible_variables = self.get_variables(year, month)
+                    possible_variables = self._get_variables(year, month)
                     possible_variables_str = '\n'.join(possible_variables)
                     warnings.warn(f'Key does not exist! '
                                   f'Possible variables are: {possible_variables_str}')
