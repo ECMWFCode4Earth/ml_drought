@@ -1,10 +1,11 @@
 import math
+import pickle
 from pathlib import Path
 
 import torch
 from torch import nn
 
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from .base import NNBase, LinearBlock
 
@@ -39,8 +40,10 @@ class RecurrentNetwork(NNBase):
         assert self.model is not None, 'Model must be trained before it can be saved!'
 
         model_dict = {
-            'state_dict': self.model.state_dict(),
-            'features_per_month': self.features_per_month,
+            'model': {'state_dict': self.model.state_dict(),
+                      'features_per_month': self.features_per_month,
+                      'current_size': self.current_size},
+            'batch_size': self.batch_size,
             'hidden_size': self.hidden_size,
             'rnn_dropout': self.rnn_dropout,
             'dense_dropout': self.dense_dropout,
@@ -50,12 +53,33 @@ class RecurrentNetwork(NNBase):
             'experiment': self.experiment
         }
 
-        torch.save(model_dict, self.model_dir / 'model.pkl')
+        with (self.model_dir / 'model.pkl').open('wb') as f:
+            pickle.dump(model_dict, f)
 
-    def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> nn.Module:
-        self.features_per_month = x_ref[0].shape[-1]
+    def load(self, state_dict: Dict, features_per_month: int, current_size: int) -> None:
+        self.features_per_month = features_per_month
+        self.current_size = current_size
+
+        self.model: RNN = RNN(features_per_month=self.features_per_month,
+                              dense_features=self.dense_features,
+                              hidden_size=self.hidden_size,
+                              rnn_dropout=self.rnn_dropout,
+                              dense_dropout=self.dense_dropout,
+                              include_pred_month=self.include_pred_month,
+                              experiment=self.experiment,
+                              current_size=self.current_size)
+        self.model.load_state_dict(state_dict)
+
+    def _initialize_model(self, x_ref: Optional[Tuple[torch.Tensor, ...]]) -> nn.Module:
+        if self.features_per_month is None:
+            assert x_ref is not None, \
+                f"x_ref can't be None if features_per_month or current_size is not defined"
+            self.features_per_month = x_ref[0].shape[-1]
         if self.experiment == 'nowcast':
-            self.current_size = x_ref[2].shape[-1]
+            if self.current_size is None:
+                assert x_ref is not None, \
+                    f"x_ref can't be None if features_per_month or current_size is not defined"
+                self.current_size = x_ref[2].shape[-1]
 
         return RNN(features_per_month=self.features_per_month,
                    dense_features=self.dense_features,

@@ -37,12 +37,13 @@ class TestRecurrentNetwork:
         assert (tmp_path / 'models/one_month_forecast/rnn/model.pkl').exists(), \
             f'Model not saved!'
 
-        model_dict = torch.load(model.model_dir / 'model.pkl')
+        with (model.model_dir / 'model.pkl').open('rb') as f:
+            model_dict = pickle.load(f)
 
-        for key, val in model_dict['state_dict'].items():
+        for key, val in model_dict['model']['state_dict'].items():
             assert (model.model.state_dict()[key] == val).all()
 
-        assert model_dict['features_per_month'] == features_per_month
+        assert model_dict['model']['features_per_month'] == features_per_month
         assert model_dict['hidden_size'] == hidden_size
         assert model_dict['rnn_dropout'] == rnn_dropout
         assert model_dict['dense_dropout'] == dense_dropout

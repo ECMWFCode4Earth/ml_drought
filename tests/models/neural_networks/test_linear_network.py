@@ -1,7 +1,6 @@
 import numpy as np
 import pickle
 import pytest
-import torch
 import xarray as xr
 
 from src.models import LinearNetwork
@@ -39,14 +38,15 @@ class TestLinearNetwork:
             tmp_path / 'models/one_month_forecast/linear_network/model.pkl'
         ).exists(), f'Model not saved!'
 
-        model_dict = torch.load(model.model_dir / 'model.pkl')
+        with (model.model_dir / 'model.pkl').open('rb') as f:
+            model_dict = pickle.load(f)
 
-        for key, val in model_dict['state_dict'].items():
+        for key, val in model_dict['model']['state_dict'].items():
             assert (model.model.state_dict()[key] == val).all()
 
         assert model_dict['dropout'] == dropout
         assert model_dict['layer_sizes'] == layer_sizes
-        assert model_dict['input_size'] == input_size
+        assert model_dict['model']['input_size'] == input_size
         assert model_dict['include_pred_month'] == include_pred_month
         assert model_dict['surrounding_pixels'] == surrounding_pixels
 

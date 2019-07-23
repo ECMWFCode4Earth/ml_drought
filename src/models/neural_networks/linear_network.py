@@ -1,8 +1,9 @@
 from pathlib import Path
+import pickle
 
 import torch
 from torch import nn
-from typing import cast, List, Optional, Tuple, Union
+from typing import cast, Dict, List, Optional, Tuple, Union
 
 from .base import NNBase, LinearBlock
 
@@ -35,23 +36,37 @@ class LinearNetwork(NNBase):
         assert self.model is not None, 'Model must be trained before it can be saved!'
 
         model_dict = {
-            'state_dict': self.model.state_dict(),
+            'batch_size': self.batch_size,
+            'model': {'state_dict': self.model.state_dict(),
+                      'input_size': self.input_size},
             'layer_sizes': self.layer_sizes,
             'dropout': self.dropout,
-            'input_size': self.input_size,
             'include_pred_month': self.include_pred_month,
             'surrounding_pixels': self.surrounding_pixels,
             'experiment': self.experiment
         }
 
-        torch.save(model_dict, self.model_dir / 'model.pkl')
+        with (self.model_dir / 'model.pkl').open('wb') as f:
+            pickle.dump(model_dict, f)
 
-    def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> nn.Module:
-        input_size = x_ref[0].view(x_ref[0].shape[0], -1).shape[1]
-        if self.experiment == 'nowcast':
-            current_tensor = x_ref[2]
-            input_size += current_tensor.shape[-1]
+    def load(self, state_dict: Dict, input_size: int) -> None:
+
         self.input_size = input_size
+        self.model: LinearModel = LinearModel(input_size=self.input_size,
+                                              layer_sizes=self.layer_sizes,
+                                              dropout=self.dropout,
+                                              include_pred_month=self.include_pred_month,
+                                              experiment=self.experiment)
+        self.model.load_state_dict(state_dict)
+
+    def _initialize_model(self, x_ref: Optional[Tuple[torch.Tensor, ...]]) -> nn.Module:
+        if self.input_size is None:
+            assert x_ref is not None, "x_ref can't be None if no input size is defined!"
+            input_size = x_ref[0].view(x_ref[0].shape[0], -1).shape[1]
+            if self.experiment == 'nowcast':
+                current_tensor = x_ref[2]
+                input_size += current_tensor.shape[-1]
+            self.input_size = input_size
         return LinearModel(input_size=self.input_size,
                            layer_sizes=self.layer_sizes,
                            dropout=self.dropout,
