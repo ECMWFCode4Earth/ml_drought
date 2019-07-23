@@ -4,8 +4,10 @@ from .chirps import CHIRPSExporter
 from .planetOS import ERA5ExporterPOS
 from .seas5.s5 import S5Exporter
 from .gleam import GLEAMExporter
+from .ndvi import NDVIExporter
 
 __all__ = [
     'ERA5Exporter', 'VHIExporter', 'ERA5ExporterPOS',
-    'CHIRPSExporter', 'S5Exporter', 'GLEAMExporter'
+    'CHIRPSExporter', 'S5Exporter', 'GLEAMExporter',
+    'NDVIExporter',
 ]

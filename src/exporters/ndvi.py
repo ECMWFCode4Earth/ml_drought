@@ -54,7 +54,7 @@ class NDVIExporter(BaseExporter):
 
         # filter for selected_years
         if selected_years is not None:
-            years = [y for y in years if y in selected_years]
+            years = [y for y in years if int(y) in selected_years]
 
         # build the year urls
         year_urls = [
