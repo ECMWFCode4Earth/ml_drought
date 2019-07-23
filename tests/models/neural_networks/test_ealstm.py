@@ -8,7 +8,7 @@ from src.models import EARecurrentNetwork
 from tests.utils import _make_dataset
 
 
-class TestRecurrentNetwork:
+class TestEARecurrentNetwork:
 
     def test_save(self, tmp_path, monkeypatch):
 
