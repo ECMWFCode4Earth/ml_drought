@@ -1,6 +1,7 @@
 from pathlib import Path
 import xarray as xr
-from typing import Optional
+import pandas as pd
+from typing import Optional, List
 
 from .base import BasePreProcessor
 
@@ -9,17 +10,96 @@ class ESACCIPreprocessor(BasePreProcessor):
     """ Preprocesses the ESA CCI Landcover data """
     dataset = 'esa_cci_landcover'
 
-    def create_filename():
-        pass
+    @staticmethod
+    def create_filename(netcdf_filepath: str,
+                        subset_name: Optional[str] = None) -> str:
+        """
+        ESACCI-LC-L4-LCCS-Map-300m-P1Y-1992-v2.0.7b.nc
+            =>
+        ESACCI-LC-L4-LCCS-Map-300m-P1Y-1992-v2.0.7b_kenya.nc
+        """
+        if netcdf_filepath[-3:] == '.nc':
+            filename_stem = netcdf_filepath[:-3]
+        else:
+            filename_stem = netcdf_filepath
 
-    def merge_and_resample():
-        pass
+        year = filename_stem.split('-')[-2]
+
+        if subset_name is not None:
+            new_filename = f"{year}_{filename_stem}_{subset_name}.nc"
+        else:
+            new_filename = f"{year}_{filename_stem}.nc"
+        return new_filename
+
+
+    def merge_files(self, subset_str: Optional[str] = 'kenya',
+                    resample_time: Optional[str] = 'M',
+                    upsampling: bool = False) -> None:
+
+        ds = xr.open_mfdataset(self.get_filepaths('interim'))
+
+        if resample_time is not None:
+            ds = self.resample_time(ds, resample_time, upsampling)
+
+        out = self.out_dir / f'{self.dataset}\
+        {"_" + subset_str if subset_str is not None else ""}.nc'.replace(' ', '')
+        ds.to_netcdf(out)
+        print(f"\n**** {out} Created! ****\n")
+
+    def _preprocess_single(self, netcdf_filepath: Path,
+                           subset_str: Optional[str] = 'kenya',
+                           regrid: Optional[xr.Dataset] = None) -> None:
+        """ Preprocess a single netcdf file (run in parallel if
+        `parallel_processes` arg > 1)
+
+        Process:
+        -------
+        * chop region of interset (ROI)
+        * regrid to same spatial grid as a reference dataset (`regrid`)
+        * create new dataset with these dimensions
+        * assign time stamp
+        * Save the output file to new folder
+        """
+        assert netcdf_filepath.name[-3:] == '.nc', \
+            f'filepath name should be a .nc file. Currently: {netcdf_filepath.name}'
+
+        print(f'Starting work on {netcdf_filepath.name}')
+        ds = xr.open_dataset(netcdf_filepath)
+
+        # 2. chop out EastAfrica
+        if subset_str is not None:
+            try:
+                ds = self.chop_roi(ds, subset_str)
+            except AssertionError:
+                print("Trying regrid again with inverted latitude")
+                ds = self.chop_roi(ds, subset_str, inverse_lat=True)
+
+        # 3. regrid to same spatial resolution ...?
+        if regrid is not None:
+            ds = self.regrid(ds, regrid)
+
+        # 4. assign time stamp
+        time = pd.to_datetime(ds.attrs['time_coverage_start'])
+        ds = ds.assign_coords(time=time)
+        ds = ds.expand_dims('time')
+
+        filename = self.create_filename(
+            netcdf_filepath.name,
+            subset_name=subset_str if subset_str is not None else None
+        )
+        print(f"Saving to {self.interim}/{filename}")
+        ds.to_netcdf(self.interim / filename)
+
+        print(f"** Done for CHIRPS {netcdf_filepath.name} **")
+
+
 
     def preprocess(self, subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
-                   parallel: bool = False,
+                   parallel_processes: int = 1,
+                   years: Optional[List[int]] = None,
                    cleanup: bool = True) -> None:
         """Preprocess all of the ESA CCI landcover .nc files to produce
         one subset file resampled to the timestep of interest.
@@ -36,4 +116,21 @@ class ESACCIPreprocessor(BasePreProcessor):
         print(f'Reading data from {self.raw_folder}. Writing to {self.interim}')
 
         nc_files = self.get_filepaths()
+
+        if regrid is not None:
+            regrid = self.load_reference_grid(regrid)
+
+        # parallel processing ?
+        if parallel_processes <= 1:  # sequential
+            for file in nc_files:
+                self._preprocess_single(file, subset_str, regrid)
+        else:
+            pool = multiprocessing.Pool(processes=parallel_processes)
+            outputs = pool.map(
+                partial(self._preprocess_single,
+                        subset_str=subset_str,
+                        regrid=regrid),
+                nc_files)
+            print("\nOutputs (errors):\n\t", outputs)
+
         pass
