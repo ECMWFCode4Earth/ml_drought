@@ -5,7 +5,7 @@ import string
 from .base import BaseExporter
 
 
-class EsaCciExporter(BaseExporter):
+class ESACCIExporter(BaseExporter):
     """Exports Land Cover Maps from ESA site
 
     ALL (55GB .nc)
@@ -36,6 +36,9 @@ class EsaCciExporter(BaseExporter):
     def wget_file(self):
         url_path = 'ftp://geo10.elie.ucl.ac.be/v207/ESACCI-LC-L4'\
             '-LCCS-Map-300m-P1Y-1992_2015-v2.0.7b.nc.zip'.replace(' ', '')
+
+        if (self.landcover_folder / url_path.split('/')[-1]).exists():
+            print(f'{filepath} already exists! Skipping')
         os.system(f'wget {url_path} -P {self.landcover_folder.as_posix()}')
 
     def unzip(self):
