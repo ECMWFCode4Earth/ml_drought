@@ -109,5 +109,9 @@ class NDVIPreprocessor(BasePreProcessor):
                 nc_files)
             print("\nOutputs (errors):\n\t", outputs)
 
-        # self.merge_files(subset_str, resample_time, upsampling)
-        # pass
+        # merge and resample files
+        self.merge_files(
+            subset_str=subset_str,
+            resample_time=resample_time,
+            upsampling=upsampling
+        )
