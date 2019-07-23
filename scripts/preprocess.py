@@ -3,7 +3,8 @@ from pathlib import Path
 import sys
 sys.path.append('..')
 from src.preprocess import (VHIPreprocessor, CHIRPSPreprocesser,
-                            PlanetOSPreprocessor, GLEAMPreprocessor)
+                            PlanetOSPreprocessor, GLEAMPreprocessor,
+                            NDVIPreprocessor,)
 
 
 def process_precip_2018():
