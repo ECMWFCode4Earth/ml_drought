@@ -1,6 +1,8 @@
 from pathlib import Path
 import xarray as xr
 import pandas as pd
+import multiprocessing
+from functools import partial
 from typing import Optional, List
 
 from .base import BasePreProcessor
@@ -41,14 +43,14 @@ class NDVIPreprocessor(BasePreProcessor):
         * chop region of interset (ROI)
         * regrid to same spatial grid as a reference dataset (`regrid`)
         * create new dataset with these dimensions
-        * assign time stamp
-        * Save the output file to new folder
+        * Save the output file to new folder / filename
         """
         assert netcdf_filepath.name[-3:] == '.nc', \
             f'filepath name should be a .nc file. Currently: {netcdf_filepath.name}'
 
         print(f'Starting work on {netcdf_filepath.name}')
         ds = xr.open_dataset(netcdf_filepath)
+        ds = ds.drop_dims(['ncrs','nv'])
 
         # 2. chop out EastAfrica
         if subset_str is not None:
@@ -58,17 +60,13 @@ class NDVIPreprocessor(BasePreProcessor):
                 print("Trying regrid again with inverted latitude")
                 ds = self.chop_roi(ds, subset_str, inverse_lat=True)
 
-        # 3. regrid to same spatial resolution ...?
+        # 3. regrid to same spatial resolution
         if regrid is not None:
             ds = self.regrid(ds, regrid)
 
-        # 4. assign time stamp
-        time = pd.to_datetime(ds.attrs['time_coverage_start'])
-        ds = ds.assign_coords(time=time)
-        ds = ds.expand_dims('time')
-
-        # 5. extract the landcover data (reduce storage use)
-        ds = ds.lccs_class.to_dataset(name='lc_class')
+        # 5. extract the ndvi data (reduce storage use)
+        # NOTE: discarding the quality flags here
+        ds = ds.NDVI.to_dataset(name='ndvi')
 
         # save to specific filename
         filename = self.create_filename(
@@ -78,7 +76,7 @@ class NDVIPreprocessor(BasePreProcessor):
         print(f"Saving to {self.interim}/{filename}")
         ds.to_netcdf(self.interim / filename)
 
-        print(f"** Done for ESA CCI landcover: {filename} **")
+        print(f"** Done for {self.dataset}: {filename} **")
 
     def preprocess(self, subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
@@ -111,29 +109,6 @@ class NDVIPreprocessor(BasePreProcessor):
                         regrid=regrid),
                 nc_files)
             print("\nOutputs (errors):\n\t", outputs)
-
-    def preprocess(self, subset_str: Optional[str] = 'kenya',
-                   regrid: Optional[Path] = None,
-                   resample_time: Optional[str] = 'M',
-                   upsampling: bool = True,
-                   parallel_processes: int = 1,
-                   years: Optional[List[int]] = None,
-                   cleanup: bool = True) -> None:
-        """Preprocess all of the ESA CCI landcover .nc files to produce
-        one subset file resampled to the timestep of interest.
-        (downloaded as annual timesteps)
-
-        Note:
-        ----
-        - because the landcover data only goes back to 1993 for all dates
-        before 1993 that we need data for  we have selected the `modal`
-        class from the whole data range (1993-2019).
-        - This assumes that landcover is relatively consistent in the 1980s
-        as the 1990s, 2000s and 2010s
-        """
-        print(f'Reading data from {self.raw_folder}. Writing to {self.interim}')
-
-
 
         # self.merge_files(subset_str, resample_time, upsampling)
         # pass
