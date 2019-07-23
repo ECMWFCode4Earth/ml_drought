@@ -2,11 +2,53 @@ import numpy as np
 
 from src.models.neural_networks.rnn import RNN, RecurrentNetwork
 from src.models.neural_networks.linear_network import LinearNetwork, LinearModel
+from src.models.neural_networks.ealstm import EALSTM, EARecurrentNetwork
 from src.models.regression import LinearRegression
 from src.models import load_model
 
 
 class TestLoadModels:
+
+    def test_ealstm(self, tmp_path, monkeypatch):
+
+        features_per_month = 5
+        dense_features = [10]
+        hidden_size = 128
+        rnn_dropout = 0.25
+        dense_dropout = 0.25
+        include_pred_month = True
+
+        def mocktrain(self):
+            self.model = EALSTM(features_per_month, dense_features, hidden_size,
+                                rnn_dropout, dense_dropout,
+                                include_pred_month, experiment='one_month_forecast')
+            self.features_per_month = features_per_month
+
+        monkeypatch.setattr(EARecurrentNetwork, 'train', mocktrain)
+
+        model = EARecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
+                                   rnn_dropout=rnn_dropout, data_folder=tmp_path)
+        model.train()
+        model.save_model()
+
+        model_path = tmp_path / 'models/ealstm/rnn/model.pkl'
+
+        assert model_path.exists(), 'Model not saved!'
+
+        new_model = load_model(model_path)
+
+        assert type(new_model) == RecurrentNetwork
+
+        for key, val in new_model.model.state_dict.items():
+            assert (model.model.state_dict()[key] == val).all()
+
+        assert new_model.features_per_month == model.features_per_month
+        assert new_model.hidden_size == model.hidden_size
+        assert new_model.rnn_dropout == model.rnn_dropout
+        assert new_model.dense_dropout == model.dense_dropout
+        assert new_model.include_pred_month == model.include_pred_month
+        assert new_model.experiment == model.experiment
+        assert new_model.surrounding_pixels == model.surrounding_pixels
 
     def test_rnn(self, tmp_path, monkeypatch):
 

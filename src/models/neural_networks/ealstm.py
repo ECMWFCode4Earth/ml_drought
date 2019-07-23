@@ -1,6 +1,159 @@
 import torch
 from torch import nn
 
+from pathlib import Path
+import pickle
+
+from typing import Dict, List, Optional, Tuple
+
+from .base import NNBase, LinearBlock
+
+
+class EARecurrentNetwork(NNBase):
+
+    model_name = 'ealstm'
+
+    def __init__(self, hidden_size: int,
+                 dense_features: List[int],
+                 rnn_dropout: float = 0.25,
+                 dense_dropout: float = 0.25,
+                 data_folder: Path = Path('data'),
+                 batch_size: int = 1,
+                 experiment: str = 'one_month_forecast',
+                 pred_months: Optional[List[int]] = None,
+                 include_pred_month: bool = True,
+                 surrounding_pixels: Optional[int] = None) -> None:
+        super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
+                         True, surrounding_pixels)
+
+        # to initialize and save the model
+        self.hidden_size = hidden_size
+        self.rnn_dropout = rnn_dropout
+        self.dense_dropout = dense_dropout
+        self.dense_features = dense_features
+        self.features_per_month: Optional[int] = None
+        self.current_size: Optional[int] = None
+
+    def save_model(self):
+
+        assert self.model is not None, 'Model must be trained before it can be saved!'
+
+        model_dict = {
+            'model': {'state_dict': self.model.state_dict(),
+                      'features_per_month': self.features_per_month,
+                      'current_size': self.current_size},
+            'batch_size': self.batch_size,
+            'hidden_size': self.hidden_size,
+            'rnn_dropout': self.rnn_dropout,
+            'dense_dropout': self.dense_dropout,
+            'dense_features': self.dense_features,
+            'include_pred_month': self.include_pred_month,
+            'surrounding_pixels': self.surrounding_pixels,
+            'experiment': self.experiment
+        }
+
+        with (self.model_dir / 'model.pkl').open('wb') as f:
+            pickle.dump(model_dict, f)
+
+    def load(self, state_dict: Dict, features_per_month: int, current_size: int) -> None:
+        self.features_per_month = features_per_month
+        self.current_size = current_size
+
+        self.model: EALSTM = EALSTM(features_per_month=self.features_per_month,
+                                    dense_features=self.dense_features,
+                                    hidden_size=self.hidden_size,
+                                    rnn_dropout=self.rnn_dropout,
+                                    dense_dropout=self.dense_dropout,
+                                    include_pred_month=self.include_pred_month,
+                                    experiment=self.experiment,
+                                    current_size=self.current_size)
+        self.model.load_state_dict(state_dict)
+
+    def _initialize_model(self, x_ref: Optional[Tuple[torch.Tensor, ...]]) -> nn.Module:
+        if self.features_per_month is None:
+            assert x_ref is not None, \
+                f"x_ref can't be None if features_per_month or current_size is not defined"
+            self.features_per_month = x_ref[0].shape[-1]
+        if self.experiment == 'nowcast':
+            if self.current_size is None:
+                assert x_ref is not None, \
+                    f"x_ref can't be None if features_per_month or current_size is not defined"
+                self.current_size = x_ref[2].shape[-1]
+
+        return EALSTM(features_per_month=self.features_per_month,
+                      dense_features=self.dense_features,
+                      hidden_size=self.hidden_size,
+                      rnn_dropout=self.rnn_dropout,
+                      dense_dropout=self.dense_dropout,
+                      include_pred_month=self.include_pred_month,
+                      experiment=self.experiment,
+                      current_size=self.current_size)
+
+
+class EALSTM(nn.Module):
+    def __init__(self, features_per_month, dense_features, hidden_size,
+                 rnn_dropout, dense_dropout, include_pred_month,
+                 experiment, current_size=None):
+        super().__init__()
+
+        self.experiment = experiment
+        self.include_pred_month = include_pred_month
+
+        self.dropout = nn.Dropout(rnn_dropout)
+        self.rnn = EALSTMCell(input_size_dyn=features_per_month,
+                              input_size_stat=2,  # 2 for latlons, currently
+                              hidden_size=hidden_size,
+                              batch_first=True)
+        self.hidden_size = hidden_size
+        self.rnn_dropout = nn.Dropout(rnn_dropout)
+
+        dense_input_size = hidden_size
+        if include_pred_month:
+            dense_input_size += 12
+        if experiment == 'nowcast':
+            assert current_size is not None
+            dense_input_size += current_size
+        dense_features.insert(0, dense_input_size)
+
+        self.dense_layers = nn.ModuleList([
+            LinearBlock(in_features=dense_features[i - 1],
+                        out_features=dense_features[i],
+                        dropout=dense_dropout)
+            for i in range(1, len(dense_features))
+        ])
+
+        self.final_dense = nn.Linear(in_features=dense_features[-1], out_features=1)
+
+        self.initialize_weights()
+
+    def initialize_weights(self):
+
+        for dense_layer in self.dense_layers:
+            nn.init.kaiming_uniform_(dense_layer.linear.weight.data)
+
+        nn.init.kaiming_uniform_(self.final_dense.weight.data)
+        nn.init.constant_(self.final_dense.bias.data, 0)
+
+    def forward(self, x, pred_month=None, latlons=None, current=None):
+
+        # has to be optional to respect the positionality of the neural
+        # nets
+        assert latlons is not None, "Latlons can't be None!"
+
+        hidden_state, cell_state = self.rnn(x, latlons)
+
+        x = self.rnn_dropout(hidden_state[:, -1, :])
+
+        if self.include_pred_month:
+            x = torch.cat((x, pred_month), dim=-1)
+        if self.experiment == 'nowcast':
+            assert current is not None
+            x = torch.cat((x, current), dim=-1)
+
+        for layer_number, dense_layer in enumerate(self.dense_layers):
+            x = dense_layer(x)
+        return self.final_dense(x)
+
 
 class EALSTMCell(nn.Module):
     """Implementation of the Entity-Aware-LSTM (EA-LSTM)

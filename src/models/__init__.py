@@ -7,9 +7,10 @@ from .parsimonious import Persistence
 from .regression import LinearRegression
 from .neural_networks.linear_network import LinearNetwork
 from .neural_networks.rnn import RecurrentNetwork
+from .neural_networks.ealstm import EARecurrentNetwork
 
 __all__ = ['Persistence', 'LinearRegression', 'LinearNetwork',
-           'RecurrentNetwork']
+           'RecurrentNetwork', 'EARecurrentNetwork']
 
 
 def load_model(model_path: Path, data_path: Optional[Path] = None,
