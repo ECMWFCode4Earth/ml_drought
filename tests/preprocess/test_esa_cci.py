@@ -125,6 +125,7 @@ class TestESACCIPreprocessor:
         (tmp_path / 'raw/esa_cci_landcover').mkdir(parents=True)
         data_path = tmp_path / 'raw/esa_cci_landcover/testy_test.nc'
         dataset = self._make_ESA_CCI_dataset(size=(100, 100))
+        dataset.attrs['time_coverage_start'] = '20190101'
         dataset.to_netcdf(path=data_path)
         ethiopia = get_ethiopia()
 
