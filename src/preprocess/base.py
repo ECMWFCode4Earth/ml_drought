@@ -162,7 +162,7 @@ class BasePreProcessor:
     def merge_files(self, subset_str: Optional[str] = 'kenya',
                     resample_time: Optional[str] = 'M',
                     upsampling: bool = False) -> None:
-
+        print(f"Merging {len(self.get_filepaths('interim'))} files")
         ds = xr.open_mfdataset(self.get_filepaths('interim'))
 
         if resample_time is not None:
