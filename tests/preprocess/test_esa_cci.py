@@ -40,7 +40,7 @@ class TestESACCIPreprocessor:
 
         # make datast with correct attrs
         ds = xr.Dataset({'lc': (dims, lc)}, coords=coords)
-        ds = ds.attrs['time_coverage_start'] = '20190101'
+        ds.attrs['time_coverage_start'] = '20190101'
 
         return ds
 
