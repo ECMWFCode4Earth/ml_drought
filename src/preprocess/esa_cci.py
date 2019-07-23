@@ -10,8 +10,7 @@ class ESACCIPreprocessor(BasePreProcessor):
     """ Preprocesses the ESA CCI Landcover data """
     dataset = 'esa_cci_landcover'
 
-    @staticmethod
-    def create_filename(netcdf_filepath: str,
+    def create_filename(self, netcdf_filepath: str,
                         subset_name: Optional[str] = None) -> str:
         """
         ESACCI-LC-L4-LCCS-Map-300m-P1Y-1992-v2.0.7b.nc
@@ -30,7 +29,6 @@ class ESACCIPreprocessor(BasePreProcessor):
         else:
             new_filename = f"{year}_{filename_stem}.nc"
         return new_filename
-
 
     def merge_files(self, subset_str: Optional[str] = 'kenya',
                     resample_time: Optional[str] = 'M',
@@ -83,6 +81,10 @@ class ESACCIPreprocessor(BasePreProcessor):
         ds = ds.assign_coords(time=time)
         ds = ds.expand_dims('time')
 
+        # 5. extract the landcover data (reduce storage use)
+        ds = ds.lccs_class.to_dataset(name='lc_class')
+
+        # save to specific filename
         filename = self.create_filename(
             netcdf_filepath.name,
             subset_name=subset_str if subset_str is not None else None
@@ -90,9 +92,7 @@ class ESACCIPreprocessor(BasePreProcessor):
         print(f"Saving to {self.interim}/{filename}")
         ds.to_netcdf(self.interim / filename)
 
-        print(f"** Done for CHIRPS {netcdf_filepath.name} **")
-
-
+        print(f"** Done for ESA CCI landcover: {filename} **")
 
     def preprocess(self, subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
@@ -133,4 +133,5 @@ class ESACCIPreprocessor(BasePreProcessor):
                 nc_files)
             print("\nOutputs (errors):\n\t", outputs)
 
+        self.merge_files
         pass
