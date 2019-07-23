@@ -30,19 +30,19 @@ class ESACCIPreprocessor(BasePreProcessor):
             new_filename = f"{year}_{filename_stem}.nc"
         return new_filename
 
-    def merge_files(self, subset_str: Optional[str] = 'kenya',
-                    resample_time: Optional[str] = 'M',
-                    upsampling: bool = False) -> None:
-
-        ds = xr.open_mfdataset(self.get_filepaths('interim'))
-
-        if resample_time is not None:
-            ds = self.resample_time(ds, resample_time, upsampling)
-
-        out = self.out_dir / f'{self.dataset}\
-        {"_" + subset_str if subset_str is not None else ""}.nc'.replace(' ', '')
-        ds.to_netcdf(out)
-        print(f"\n**** {out} Created! ****\n")
+    # def merge_files(self, subset_str: Optional[str] = 'kenya',
+    #                 resample_time: Optional[str] = 'M',
+    #                 upsampling: bool = False) -> None:
+    #
+    #     ds = xr.open_mfdataset(self.get_filepaths('interim'))
+    #
+    #     if resample_time is not None:
+    #         ds = self.resample_time(ds, resample_time, upsampling)
+    #
+    #     out = self.out_dir / f'{self.dataset}\
+    #     {"_" + subset_str if subset_str is not None else ""}.nc'.replace(' ', '')
+    #     ds.to_netcdf(out)
+    #     print(f"\n**** {out} Created! ****\n")
 
     def _preprocess_single(self, netcdf_filepath: Path,
                            subset_str: Optional[str] = 'kenya',
@@ -97,7 +97,7 @@ class ESACCIPreprocessor(BasePreProcessor):
     def preprocess(self, subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
                    resample_time: Optional[str] = 'M',
-                   upsampling: bool = False,
+                   upsampling: bool = True,
                    parallel_processes: int = 1,
                    years: Optional[List[int]] = None,
                    cleanup: bool = True) -> None:
@@ -133,5 +133,5 @@ class ESACCIPreprocessor(BasePreProcessor):
                 nc_files)
             print("\nOutputs (errors):\n\t", outputs)
 
-        self.merge_files
-        pass
+        # self.merge_files(subset_str, resample_time, upsampling)
+        # pass
