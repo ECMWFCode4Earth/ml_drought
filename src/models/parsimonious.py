@@ -2,11 +2,11 @@ import numpy as np
 
 from typing import Dict, Tuple
 
-from .base import ModelBase
+from .base import _ModelBase
 from .data import DataLoader
 
 
-class Persistence(ModelBase):
+class Persistence(_ModelBase):
     """A parsimonious persistence model.
     This "model" predicts the previous time-value of data. For example, its prediction
     for VHI in March 2018 will be VHI for February 2018 (assuming monthly time-granularity).

@@ -6,10 +6,10 @@ from torch import nn
 
 from typing import List, Optional, Tuple
 
-from .base import NNBase, LinearBlock
+from .base import _NNBase, LinearBlock
 
 
-class RecurrentNetwork(NNBase):
+class RecurrentNetwork(_NNBase):
 
     model_name = 'rnn'
 

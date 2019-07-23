@@ -11,12 +11,12 @@ import shap
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from ..base import ModelBase
+from ..base import _ModelBase
 from ..utils import chunk_array
 from ..data import DataLoader, train_val_mask
 
 
-class NNBase(ModelBase):
+class _NNBase(_ModelBase):
 
     def __init__(self,
                  data_folder: Path = Path('data'),

@@ -4,10 +4,10 @@ import torch
 from torch import nn
 from typing import cast, List, Optional, Tuple, Union
 
-from .base import NNBase, LinearBlock
+from .base import _NNBase, LinearBlock
 
 
-class LinearNetwork(NNBase):
+class LinearNetwork(_NNBase):
 
     model_name = 'linear_network'
 

@@ -1,12 +1,12 @@
 import numpy as np
 
-from src.models.base import ModelBase
+from src.models.base import _ModelBase
 
 
 class TestBase:
 
     def test_init(self, tmp_path):
-        ModelBase(tmp_path)
+        _ModelBase(tmp_path)
         assert (tmp_path / 'models').exists(), f'Models dir not made!'
 
     def test_evaluate(self, tmp_path, monkeypatch, capsys):
@@ -20,9 +20,9 @@ class TestBase:
 
             return test_arrays, preds_arrays
 
-        monkeypatch.setattr(ModelBase, 'predict', mockreturn)
+        monkeypatch.setattr(_ModelBase, 'predict', mockreturn)
 
-        base = ModelBase(tmp_path)
+        base = _ModelBase(tmp_path)
         base.evaluate(save_results=False, save_preds=False)
 
         captured = capsys.readouterr()

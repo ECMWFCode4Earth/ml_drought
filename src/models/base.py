@@ -7,19 +7,19 @@ from sklearn.metrics import mean_squared_error
 from typing import cast, Any, Dict, List, Optional, Tuple
 
 
-class ModelBase:
+class _ModelBase:
     """Base for all machine learning models.
-    Attributes:
-    ----------
-    data: pathlib.Path = Path('data')
-        The location of the data folder.
-    batch_size: int 1
-        The number of files to load at once. These will be chunked and shuffled, so
-        a higher value will lead to better shuffling (but will require more memory)
-    pred_months: Optional[List[int]] = None
-        The months the model should predict. If None, all months are predicted
-    include_pred_month: bool = True
-        Whether to include the prediction month to the model's training data
+
+    :param data: The location of the data folder.
+    :param batch_size: The number of files to load at once. These will be
+        chunked and shuffled, so a higher value will lead to better shuffling
+        (but will require more memory)
+    :param pred_months: The months the model should predict. If None, all
+        months are predicted
+    :param include_pred_month: Whether to include the prediction month to the
+        model's training data
+    :param surrounding_pixels: How many surrounding pixels to include in the
+        `x` array. If None, none are included
     """
 
     model_name: str  # to be added by the model classes

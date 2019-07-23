@@ -7,12 +7,12 @@ import shap
 
 from typing import cast, Any, Dict, List, Tuple, Optional, Union
 
-from .base import ModelBase
+from .base import _ModelBase
 from .utils import chunk_array
 from .data import DataLoader, train_val_mask
 
 
-class LinearRegression(ModelBase):
+class LinearRegression(_ModelBase):
 
     model_name = 'linear_regression'
 
