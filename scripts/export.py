@@ -4,8 +4,9 @@ import sys
 sys.path.append('..')
 from src.exporters import (ERA5Exporter, VHIExporter,
                            CHIRPSExporter, ERA5ExporterPOS,
-                           GLEAMExporter)
-
+                           GLEAMExporter, NDVIExporter,
+                           S5Exporter)
+import numpy as np
 
 def export_era5():
     # if the working directory is alread ml_drought don't need ../data
@@ -63,9 +64,53 @@ def export_gleam():
     exporter.export(['E', 'SMroot', 'SMsurf'], 'monthly')
 
 
+def export_ndvi():
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+
+    exporter = NDVIExporter(data_path)
+    exporter.export()
+
+
+
+def export_s5(
+    granularity='hourly', pressure_level=False,
+    variable='total_precipitation', min_year=1993,
+    max_year=1994, min_month=1, max_month=12,
+):
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+
+    exporter = S5Exporter(
+        data_folder=data_path,
+        granularity=granularity,
+        pressure_level=pressure_level,
+    )
+    max_leadtime = None
+    pressure_levels = [200, 500, 925]
+    selection_request = None
+    n_parallel_requests = 1
+
+    exporter.export(
+        variable=variable,
+        min_year=min_year,
+        max_year=max_year,
+        min_month=min_month,
+        max_month=max_month,
+        max_leadtime=max_leadtime,
+        pressure_levels=pressure_levels,
+        n_parallel_requests=n_parallel_requests,
+    )
+
 if __name__ == '__main__':
     export_era5()
     export_vhi()
     export_chirps()
     export_era5POS()
     export_gleam()
+    export_ndvi()
+    # export_s5()
