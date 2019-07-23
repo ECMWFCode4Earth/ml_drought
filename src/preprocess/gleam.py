@@ -3,11 +3,13 @@ import xarray as xr
 from shutil import rmtree
 from typing import Optional
 
-from .base import BasePreProcessor
+from .base import _BasePreProcessor
 
 
-class GLEAMPreprocessor(BasePreProcessor):
-    """Preprocess the GLEAM data
+class GLEAMPreprocessor(_BasePreProcessor):
+    """Preprocesses GLEAM data
+
+    :param data_folder: The location of the data folder
     """
 
     dataset = 'gleam'
@@ -51,7 +53,7 @@ class GLEAMPreprocessor(BasePreProcessor):
         assert netcdf_filepath.name[-3:] == '.nc', \
             f'filepath name should be a .nc file. Currently: {netcdf_filepath.name}'
 
-        filename = self.create_filename(
+        filename = self._create_filename(
             netcdf_filepath.name,
             subset_name=subset_str if subset_str is not None else None
         )
@@ -61,8 +63,8 @@ class GLEAMPreprocessor(BasePreProcessor):
         print(f"** Done for GLEAM {netcdf_filepath.name} **")
 
     @staticmethod
-    def create_filename(netcdf_filename: str,
-                        subset_name: Optional[str] = None) -> str:
+    def _create_filename(netcdf_filename: str,
+                         subset_name: Optional[str] = None) -> str:
         """
         monthly/E_1980_2018_GLEAM_v3.3a_MO.nc
             =>
@@ -80,24 +82,19 @@ class GLEAMPreprocessor(BasePreProcessor):
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
                    cleanup: bool = True) -> None:
-        """ Preprocess all of the GLEAM .nc files to produce
-        one subset file.
+        """ Preprocess all of the GLEAM files to produce
+         one subset file.
 
-        Arguments
-        ----------
-        subset_str: Optional[str] = 'kenya'
-            Whether to subset Kenya when preprocessing
-        regrid: Optional[Path] = None
-            If a Path is passed, the CHIRPS files will be regridded to have the same
-            grid as the dataset at that Path. If None, no regridding happens
-        resample_time: str = 'M'
-            If not None, defines the time length to which the data will be resampled
-        upsampling: bool = False
-            If true, tells the class the time-sampling will be upsampling. In this case,
-            nearest instead of mean is used for the resampling
-        cleanup: bool = True
-            If true, delete interim files created by the class
-        """
+         :param subset_str: Whether to subset an area when preprocessing. Must be
+             one of `{'kenya', 'east_africa', 'ethiopia'}`
+         :param regrid: If a Path is passed, the CHIRPS files will be regridded to have
+             the same grid as the dataset at that Path. If None, no regridding happens
+         :param resample_time: If not None, defines the time length to which the data will
+             be resampled
+         :param upsampling: If `True`, tells the class the time-sampling will be upsampling.
+             In this case, nearest instead of mean is used for the resampling
+         :param cleanup: If `True`, delete interim files created by the class
+         """
         print(f'Reading data from {self.raw_folder}. Writing to {self.interim}')
 
         # get the filepaths for all of the downloaded data

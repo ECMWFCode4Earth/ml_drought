@@ -1,5 +1,5 @@
 from src.utils import Region
-from src.preprocess.utils import select_bounding_box
+from src.preprocess.utils import _select_bounding_box
 from ..utils import _make_dataset
 
 
@@ -13,7 +13,7 @@ class TestSelectBoundingBox:
 
         global_region = Region(name='global', lonmin=lonmax, lonmax=lonmin,
                                latmin=latmin, latmax=latmax)
-        subset = select_bounding_box(ds, global_region, inverse_lon=True)
+        subset = _select_bounding_box(ds, global_region, inverse_lon=True)
 
         # add the time dimension
         assert subset.VHI.values.shape[1:] == size, \
@@ -27,7 +27,7 @@ class TestSelectBoundingBox:
         mid = lonmin + ((lonmax - lonmin) / 2)
         half_region = Region(name='half', lonmin=lonmin, lonmax=mid,
                              latmin=latmin, latmax=latmax)
-        subset = select_bounding_box(ds, half_region)
+        subset = _select_bounding_box(ds, half_region)
 
         assert subset.VHI.values.shape[1:] == (100, 50), \
             f'Expected output subset to have size (50, 100), got {subset.VHI.values.shape}'

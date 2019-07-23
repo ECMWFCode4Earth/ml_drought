@@ -7,10 +7,14 @@ from shutil import rmtree
 
 from typing import Dict, Tuple, List, Optional
 
-from .base import BasePreProcessor
+from .base import _BasePreProcessor
 
 
-class PlanetOSPreprocessor(BasePreProcessor):
+class PlanetOSPreprocessor(_BasePreProcessor):
+    """Preprocesses ERA5 POS data
+
+    :param data_folder: The location of the data folder
+    """
 
     dataset = 'era5POS'
 
@@ -54,8 +58,8 @@ class PlanetOSPreprocessor(BasePreProcessor):
                                   'time': ds.time.values})
 
     @staticmethod
-    def create_filename(netcdf_filepath: Path,
-                        subset_name: Optional[str] = None) -> str:
+    def _create_filename(netcdf_filepath: Path,
+                         subset_name: Optional[str] = None) -> str:
 
         var_name = netcdf_filepath.name[:-3]
         month = netcdf_filepath.parts[-2]
@@ -82,7 +86,7 @@ class PlanetOSPreprocessor(BasePreProcessor):
         if regrid is not None:
             ds = self.regrid(ds, regrid)
 
-        filename = self.create_filename(
+        filename = self._create_filename(
             netcdf_filepath,
             subset_name=subset_str if subset_str is not None else None
         )
@@ -97,25 +101,19 @@ class PlanetOSPreprocessor(BasePreProcessor):
                    upsampling: bool = False,
                    parallel: bool = False,
                    cleanup: bool = True) -> None:
-        """ Preprocess all of the era5 POS .nc files to produce
+        """ Preprocess all of the ERA5 POS files to produce
         one subset file.
 
-        Arguments
-        ----------
-        subset_str: Optional[str] = 'kenya'
-            Whether to subset Kenya when preprocessing
-        regrid: Optional[Path] = None
-            If a Path is passed, the CHIRPS files will be regridded to have the same
-            grid as the dataset at that Path. If None, no regridding happens
-        resample_time: str = 'M'
-            If not None, defines the time length to which the data will be resampled
-        upsampling: bool = False
-            If true, tells the class the time-sampling will be upsampling. In this case,
-            nearest instead of mean is used for the resampling
-        parallel: bool = True
-            If true, run the preprocessing in parallel
-        cleanup: bool = True
-            If true, delete interim files created by the class
+        :param subset_str: Whether to subset an area when preprocessing. Must be
+            one of `{'kenya', 'east_africa', 'ethiopia'}`
+        :param regrid: If a Path is passed, the CHIRPS files will be regridded to have
+            the same grid as the dataset at that Path. If None, no regridding happens
+        :param resample_time: If not None, defines the time length to which the data will
+            be resampled
+        :param upsampling: If `True`, tells the class the time-sampling will be upsampling.
+            In this case, nearest instead of mean is used for the resampling
+        :param parallel: If `True`, run the preprocessing in parallel
+        :param cleanup: If `True`, delete interim files created by the class
         """
         print(f'Reading data from {self.raw_folder}. Writing to {self.interim}')
 

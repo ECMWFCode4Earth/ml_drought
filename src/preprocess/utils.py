@@ -3,10 +3,10 @@ import xarray as xr
 from ..utils import Region
 
 
-def select_bounding_box(ds: xr.Dataset,
-                        region: Region,
-                        inverse_lat: bool = False,
-                        inverse_lon: bool = False) -> xr.Dataset:
+def _select_bounding_box(ds: xr.Dataset,
+                         region: Region,
+                         inverse_lat: bool = False,
+                         inverse_lon: bool = False) -> xr.Dataset:
     """ using the Region namedtuple defined in engineering.regions.py select
     the subset of the dataset that you have defined that region for.
 

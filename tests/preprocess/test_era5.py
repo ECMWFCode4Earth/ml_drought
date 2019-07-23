@@ -48,7 +48,7 @@ class TestPlanetOSPreprocessor:
         path = Path('reanalysis-era5-single-levels-monthly-means'
                     '/2m_temperature/1979_2019/01_12.nc')
 
-        name = ERA5MonthlyMeanPreprocessor.create_filename(path, 'kenya')
+        name = ERA5MonthlyMeanPreprocessor._create_filename(path, 'kenya')
         expected_name = '1979_2019_01_12_2m_temperature_kenya.nc'
         assert name == expected_name, f'{name} generated, expected {expected_name}'
 

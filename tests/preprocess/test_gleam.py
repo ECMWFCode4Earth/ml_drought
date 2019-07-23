@@ -16,7 +16,7 @@ class TestGLEAMPreprocessor:
         test_file = 'testy_test.nc'
         expected_output = 'testy_test_kenya.nc'
 
-        filename = GLEAMPreprocessor.create_filename(test_file, 'kenya')
+        filename = GLEAMPreprocessor._create_filename(test_file, 'kenya')
         assert filename == expected_output, \
             f'Expected output to be {expected_output}, got {filename}'
 

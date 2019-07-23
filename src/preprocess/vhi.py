@@ -19,13 +19,16 @@ from functools import partial
 
 from xarray import Dataset, DataArray
 
-from .base import BasePreProcessor
+from .base import _BasePreProcessor
 
 from typing import Any, List, Optional, Tuple, Union
 
 
-class VHIPreprocessor(BasePreProcessor):
-    """ Preprocesses the VHI data """
+class VHIPreprocessor(_BasePreProcessor):
+    """Preprocess the VHI data
+
+    :param data_folder: The location of the data folder
+    """
 
     dataset = 'vhi'
 
@@ -50,10 +53,10 @@ class VHIPreprocessor(BasePreProcessor):
         ds = ds.sortby('HEIGHT', ascending=False)
 
         # 2. extract the timestamp for that file (from the filepath)
-        timestamp = self.extract_timestamp(ds, netcdf_filepath, use_filepath=True)
+        timestamp = self._extract_timestamp(ds, netcdf_filepath, use_filepath=True)
 
         # 3. create the filepath
-        filename = self.create_filename(
+        filename = self._create_filename(
             timestamp,
             netcdf_filepath,
             subset_name=subset_str,
@@ -65,10 +68,10 @@ class VHIPreprocessor(BasePreProcessor):
             return Path(f'{output_dir}/{filename}')
 
         # 4. extract the lat/lon vectors
-        longitudes, latitudes = self.create_lat_lon_vectors(ds)
+        longitudes, latitudes = self._create_lat_lon_vectors(ds)
 
         # 5. create new dataset with these dimensions
-        new_ds = self.create_new_dataset(ds, longitudes, latitudes, timestamp)
+        new_ds = self._create_new_dataset(ds, longitudes, latitudes, timestamp)
 
         # 6. chop out EastAfrica
         if subset_str is not None:
@@ -117,28 +120,19 @@ class VHIPreprocessor(BasePreProcessor):
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
                    cleanup: bool = True) -> None:
-        """ Preprocess all of the NOAA VHI .nc files to produce
-        one subset file with consistent lat/lon and timestamps.
+        """ Preprocess all of the VHI files to produce one subset file.
 
-        Run in parallel
-
-        Arguments
-        ----------
-        subset_str: Optional[str] = 'kenya'
-            Region to subset. Currently valid: {'kenya', 'ethiopia', 'east_africa'}
-        regrid: Optional[Path] = None
-            If a Path is passed, the VHI files will be regridded to have the same
-            grid as the dataset at that Path. If None, no regridding happens
-        resample_time: str = 'M'
-            If not None, defines the time length to which the data will be resampled
-        upsampling: bool = False
-            If true, tells the class the time-sampling will be upsampling. In this case,
-            nearest instead of mean is used for the resampling
-        parallel: bool = True
-            If true, run the preprocessing in parallel
-        cleanup: bool = True
-            If true, delete interim files created by the class
-        """
+        :param subset_str: Whether to subset an area when preprocessing. Must be
+             one of `{'kenya', 'east_africa', 'ethiopia'}`
+        :param regrid: If a Path is passed, the CHIRPS files will be regridded to have
+             the same grid as the dataset at that Path. If None, no regridding happens
+        :param resample_time: If not None, defines the time length to which the data will
+             be resampled
+        :param upsampling: If `True`, tells the class the time-sampling will be upsampling.
+             In this case, nearest instead of mean is used for the resampling
+        :param parallel: If `True`, run the preprocessing in parallel
+        :param cleanup: If `True`, delete interim files created by the class
+         """
         # get the filepaths for all of the downloaded data
         nc_files = self.get_filepaths()
 
@@ -156,9 +150,9 @@ class VHIPreprocessor(BasePreProcessor):
 
             # TODO check how these errors are being saved (now all paths returned)
             # print the outcome of the script to the user
-            self.print_output(outputs)
+            self._print_output(outputs)
             # save the list of errors to file
-            self.save_errors(errors)
+            self._save_errors(errors)
         else:
             for file in nc_files:
                 self._preprocess_wrapper(str(file), subset_str=subset_str, regrid=regrid)
@@ -169,7 +163,7 @@ class VHIPreprocessor(BasePreProcessor):
             rmtree(self.interim)
 
     @staticmethod
-    def print_output(outputs: List) -> None:
+    def _print_output(outputs: List) -> None:
         print("\n\n*************************\n\n")
         print("Script Run")
         print("*************************")
@@ -178,7 +172,7 @@ class VHIPreprocessor(BasePreProcessor):
         print("\n__Failed File List:",
               [o[-1] for o in outputs if not isinstance(o, Path)])
 
-    def save_errors(self, outputs: List) -> Path:
+    def _save_errors(self, outputs: List) -> Path:
         # write output of failed files to python.txt
         with open(self.interim / 'vhi_preprocess_errors.pkl', 'wb') as f:
             pickle.dump([error[-1] for error in outputs if error is not None], f)
@@ -186,9 +180,9 @@ class VHIPreprocessor(BasePreProcessor):
         return self.interim / 'vhi_preprocess_errors.pkl'
 
     @staticmethod
-    def create_filename(t: Timestamp,
-                        netcdf_filepath: str,
-                        subset_name: Optional[str] = None) -> str:
+    def _create_filename(t: Timestamp,
+                         netcdf_filepath: str,
+                         subset_name: Optional[str] = None) -> str:
         """ create a sensible output filename (HARDCODED for this problem)
         Arguments:
         ---------
@@ -208,10 +202,10 @@ class VHIPreprocessor(BasePreProcessor):
         return new_filename
 
     @staticmethod
-    def extract_timestamp(ds: Dataset,
-                          netcdf_filepath: str,
-                          use_filepath: bool = True,
-                          time_begin: bool = True) -> Timestamp:
+    def _extract_timestamp(ds: Dataset,
+                           netcdf_filepath: str,
+                           use_filepath: bool = True,
+                           time_begin: bool = True) -> Timestamp:
         """from the `attrs` or filename create a datetime object for acquisition time.
 
         NOTE: the acquisition date is SOMEWHERE in this time range (satuday-friday)
@@ -243,7 +237,7 @@ class VHIPreprocessor(BasePreProcessor):
         return date
 
     @staticmethod
-    def create_lat_lon_vectors(ds: Dataset) -> Tuple[Any, Any]:
+    def _create_lat_lon_vectors(ds: Dataset) -> Tuple[Any, Any]:
         """ read the `ds.attrs` and create new latitude, longitude vectors """
         assert ds.WIDTH.size == 10000, \
             f'We are hardcoding the lat/lon values so we need to ensure that all dims ' \
@@ -266,11 +260,11 @@ class VHIPreprocessor(BasePreProcessor):
         return longitudes, latitudes
 
     @staticmethod
-    def create_new_dataarray(ds: Dataset,
-                             variable: str,
-                             longitudes: np.ndarray,
-                             latitudes: np.ndarray,
-                             timestamp: Timestamp) -> DataArray:
+    def _create_new_dataarray(ds: Dataset,
+                              variable: str,
+                              longitudes: np.ndarray,
+                              latitudes: np.ndarray,
+                              timestamp: Timestamp) -> DataArray:
         """ Create a new dataarray for the `variable` from `ds` with geocoding and timestamp """
         # Assert statements - to a test function?
         dims = list(ds.dims)
@@ -299,12 +293,12 @@ class VHIPreprocessor(BasePreProcessor):
         da.name = variable
         return da
 
-    def create_new_dataset(self,
-                           ds: Dataset,
-                           longitudes: np.ndarray,
-                           latitudes: np.ndarray,
-                           timestamp: Timestamp,
-                           all_vars: bool = False) -> Dataset:
+    def _create_new_dataset(self,
+                            ds: Dataset,
+                            longitudes: np.ndarray,
+                            latitudes: np.ndarray,
+                            timestamp: Timestamp,
+                            all_vars: bool = False) -> Dataset:
         """ Create a new dataset from ALL the variables in `ds` with the dims"""
         # initialise the list
         da_list = []
@@ -315,8 +309,8 @@ class VHIPreprocessor(BasePreProcessor):
         else:
             variables = ['VHI']
         for variable in variables:
-            da_list.append(self.create_new_dataarray(ds, variable, longitudes,
-                                                     latitudes, timestamp))
+            da_list.append(self._create_new_dataarray(ds, variable, longitudes,
+                                                      latitudes, timestamp))
         # merge all of the variables into one dataset
         new_ds = xr.merge(da_list)
         new_ds.attrs = ds.attrs

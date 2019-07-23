@@ -109,7 +109,7 @@ class TestVHIPreprocessor:
         subset_name = 'kenya'
         t = pd.to_datetime('1981-08-31')
 
-        out_fname = VHIPreprocessor.create_filename(
+        out_fname = VHIPreprocessor._create_filename(
             t,
             netcdf_filepath,
             subset_name,
@@ -138,13 +138,13 @@ class TestVHIPreprocessor:
         )
 
         processor = VHIPreprocessor(tmp_path)
-        timestamp = processor.extract_timestamp(ds, netcdf_filepath, use_filepath=True)
+        timestamp = processor._extract_timestamp(ds, netcdf_filepath, use_filepath=True)
         expected_timestamp = pd.Timestamp('1981-08-31 00:00:00')
 
         assert timestamp == expected_timestamp, f"Timestamp. \
             Expected: {expected_timestamp} Got: {timestamp}"
 
-        longitudes, latitudes = processor.create_lat_lon_vectors(ds)
+        longitudes, latitudes = processor._create_lat_lon_vectors(ds)
         exp_long = np.linspace(-180, 180, 10000)
         assert all(longitudes == exp_long), f"Longitudes \
             not what expected: np.linspace(-180,180,10000)"
@@ -153,11 +153,11 @@ class TestVHIPreprocessor:
         assert all(latitudes == exp_lat), f"latitudes \
             not what expected: np.linspace(-55.152,75.024,3616)"
 
-        out_ds = processor.create_new_dataset(ds,
-                                              longitudes,
-                                              latitudes,
-                                              timestamp,
-                                              all_vars=False)
+        out_ds = processor._create_new_dataset(ds,
+                                               longitudes,
+                                               latitudes,
+                                               timestamp,
+                                               all_vars=False)
 
         assert isinstance(out_ds, xr.Dataset), \
             f'Expected out_ds to be of type: xr.Dataset, now: {type(out_ds)}'

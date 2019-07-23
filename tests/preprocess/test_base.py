@@ -2,7 +2,7 @@ import pytest
 
 from ..utils import _make_dataset
 
-from src.preprocess.base import BasePreProcessor
+from src.preprocess.base import _BasePreProcessor as BasePreProcessor
 
 
 class TestBase:

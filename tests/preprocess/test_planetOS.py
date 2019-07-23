@@ -48,7 +48,7 @@ class TestPlanetOSPreprocessor:
     def test_make_filename():
         path = Path('2008/01/vhi.nc')
 
-        name = PlanetOSPreprocessor.create_filename(path, 'kenya')
+        name = PlanetOSPreprocessor._create_filename(path, 'kenya')
         expected_name = '2008_01_vhi_kenya.nc'
         assert name == expected_name, f'{name} generated, expected {expected_name}'
 

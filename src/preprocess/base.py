@@ -5,13 +5,11 @@ import numpy as np
 
 from typing import List, Optional
 
-from ..utils import Region, region_lookup
-from .utils import select_bounding_box
-
-__all__ = ['BasePreProcessor', 'Region']
+from ..utils import region_lookup
+from .utils import _select_bounding_box
 
 
-class BasePreProcessor:
+class _BasePreProcessor:
     """Base for all pre-processor classes. The preprocessing classes
     are responsible for taking the raw data exports and normalizing them
     so that they can be ingested by the feature engineering class.
@@ -155,7 +153,7 @@ class BasePreProcessor:
         """
         region = region_lookup[subset_str] if subset_str is not None else None
         if region is not None:
-            ds = select_bounding_box(ds, region, inverse_lat=inverse_lat)
+            ds = _select_bounding_box(ds, region, inverse_lat=inverse_lat)
 
         return ds
 
