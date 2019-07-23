@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import string
+import pandas as pd
 
 from .base import BaseExporter
 
@@ -17,12 +18,12 @@ class ESACCIExporter(BaseExporter):
     http://maps.elie.ucl.ac.be/CCI/viewer/download/ESACCI-LC-Legend.csv
     """
     @staticmethod
-    def remove_punctuation(text: str):
+    def remove_punctuation(text: str) -> str:
         trans = str.maketrans('', '', string.punctuation)
         return text.lower().translate(trans)
 
     @staticmethod
-    def read_legend():
+    def read_legend() -> pd.DataFrame:
         legend_url = 'http://maps.elie.ucl.ac.be/CCI/viewer/download/ESACCI-LC-Legend.csv'
         df = pd.read_csv(legend_url, delimiter=';')
         df = df.rename(columns={'NB_LAB': 'code', 'LCCOwnLabel': 'label'})
@@ -33,7 +34,7 @@ class ESACCIExporter(BaseExporter):
 
         return df
 
-    def wget_file(self):
+    def wget_file(self) -> None:
         url_path = 'ftp://geo10.elie.ucl.ac.be/v207/ESACCI-LC-L4'\
             '-LCCS-Map-300m-P1Y-1992_2015-v2.0.7b.nc.zip'.replace(' ', '')
 
@@ -41,7 +42,7 @@ class ESACCIExporter(BaseExporter):
             print(f'{filepath} already exists! Skipping')
         os.system(f'wget {url_path} -P {self.landcover_folder.as_posix()}')
 
-    def unzip(self):
+    def unzip(self) -> None:
         out_name = 'ESACCI-LC-L4-LCCS-Map-300m-P1Y-1992_2015-v2.0.7b.nc'
         fname = self.landcover_folder / (out_name + '.zip')
         assert fname.exists()
@@ -74,3 +75,7 @@ class ESACCIExporter(BaseExporter):
 
         # unzip the downloaded .zip file -> .nc
         self.unzip()
+
+        # download the legend
+        df = self.read_legend()
+        df.to_csv(self.landcover_folder / 'legend.csv')
