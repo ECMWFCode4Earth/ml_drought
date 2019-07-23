@@ -1,0 +1,7 @@
+src.models.parsimonious module
+==============================
+
+.. automodule:: src.models.parsimonious
+   :members:
+   :undoc-members:
+   :show-inheritance:

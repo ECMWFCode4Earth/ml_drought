@@ -1,549 +1,246 @@
 
-<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta charset="utf-8" />
-    <title>src.preprocess package &#8212; ml_drought  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="../_static/language_data.js"></script>
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>2. src.preprocess package &mdash; ml_drought  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2.1.1. src.preprocess.base module" href="src.preprocess.base.html" />
+    <link rel="prev" title="1.2.6. src.exporters.vhi module" href="src.exporters.vhi.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
    
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
           
 
-          <div class="body" role="main">
+          
+            <a href="../index.html" class="icon icon-home"> ml_drought
+          
+
+          
+          </a>
+
+          
             
-  <div class="section" id="src-preprocess-package">
-<h1>src.preprocess package<a class="headerlink" href="#src-preprocess-package" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="submodules">
-<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
 </div>
-<div class="section" id="module-src.preprocess.base">
-<span id="src-preprocess-base-module"></span><h2>src.preprocess.base module<a class="headerlink" href="#module-src.preprocess.base" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="src.preprocess.base.BasePreProcessor">
-<em class="property">class </em><code class="sig-prename descclassname">src.preprocess.base.</code><code class="sig-name descname">BasePreProcessor</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em><span class="sig-paren">)</span><a class="headerlink" href="#src.preprocess.base.BasePreProcessor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Base for all pre-processor classes. The preprocessing classes
-are responsible for taking the raw data exports and normalizing them
-so that they can be ingested by the feature engineering class.
-This involves:
-- subsetting the ROI (default is Kenya)
-- regridding to a consistent spatial grid (pixel size / resolution)
-- resampling to a consistent time step (hourly, daily, monthly)
-- assigning coordinates to <cite>.nc</cite> files (latitude, longitude, time)</p>
-<dl class="simple">
-<dt>data_folder: Path, default: Path(‘data’)</dt><dd><p>The location of the data folder.</p>
-</dd>
-</dl>
-<dl class="method">
-<dt id="src.preprocess.base.BasePreProcessor.chop_roi">
-<em class="property">static </em><code class="sig-name descname">chop_roi</code><span class="sig-paren">(</span><em class="sig-param">ds: xarray.core.dataset.Dataset</em>, <em class="sig-param">subset_str: Optional[str] = 'kenya'</em>, <em class="sig-param">inverse_lat: bool = False</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="headerlink" href="#src.preprocess.base.BasePreProcessor.chop_roi" title="Permalink to this definition">¶</a></dt>
-<dd><p>lookup the region information from the dictionary in
-<cite>src.utils.region_lookup</cite> and subset the <cite>ds</cite> object based on that
-region.</p>
-</dd></dl>
 
-<dl class="method">
-<dt id="src.preprocess.base.BasePreProcessor.get_filepaths">
-<code class="sig-name descname">get_filepaths</code><span class="sig-paren">(</span><em class="sig-param">folder: str = 'raw'</em><span class="sig-paren">)</span> &#x2192; List[pathlib.Path]<a class="headerlink" href="#src.preprocess.base.BasePreProcessor.get_filepaths" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+          
+        </div>
 
-<dl class="method">
-<dt id="src.preprocess.base.BasePreProcessor.load_reference_grid">
-<em class="property">static </em><code class="sig-name descname">load_reference_grid</code><span class="sig-paren">(</span><em class="sig-param">path_to_grid: pathlib.Path</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="headerlink" href="#src.preprocess.base.BasePreProcessor.load_reference_grid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Since the regridder only needs to the lat and lon values,
-there is no need to pass around an enormous grid for the regridding.</p>
-<p>In fact, only the latitude and longitude values are necessary!</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.base.BasePreProcessor.merge_files">
-<code class="sig-name descname">merge_files</code><span class="sig-paren">(</span><em class="sig-param">subset_str: Optional[str] = 'kenya'</em>, <em class="sig-param">resample_time: Optional[str] = 'M'</em>, <em class="sig-param">upsampling: bool = False</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.preprocess.base.BasePreProcessor.merge_files" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.base.BasePreProcessor.regrid">
-<code class="sig-name descname">regrid</code><span class="sig-paren">(</span><em class="sig-param">ds: xarray.core.dataset.Dataset</em>, <em class="sig-param">reference_ds: xarray.core.dataset.Dataset</em>, <em class="sig-param">method: str = 'nearest_s2d'</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="headerlink" href="#src.preprocess.base.BasePreProcessor.regrid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Use xEMSF package to regrid ds to the same grid as reference_ds</p>
-<dl class="simple">
-<dt>ds: xr.Dataset</dt><dd><p>The dataset to be regridded</p>
-</dd>
-<dt>reference_ds: xr.Dataset</dt><dd><p>The reference dataset, onto which <cite>ds</cite> will be regridded</p>
-</dd>
-<dt>method: str, {‘bilinear’, ‘conservative’, ‘nearest_s2d’, ‘nearest_d2s’, ‘patch’}</dt><dd><p>The method applied for the regridding</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.base.BasePreProcessor.resample_time">
-<em class="property">static </em><code class="sig-name descname">resample_time</code><span class="sig-paren">(</span><em class="sig-param">ds: xarray.core.dataset.Dataset</em>, <em class="sig-param">resample_length: str = 'M'</em>, <em class="sig-param">upsampling: bool = False</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="headerlink" href="#src.preprocess.base.BasePreProcessor.resample_time" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="src.preprocess.base.Region">
-<em class="property">class </em><code class="sig-prename descclassname">src.preprocess.base.</code><code class="sig-name descname">Region</code><span class="sig-paren">(</span><em class="sig-param">name</em>, <em class="sig-param">lonmin</em>, <em class="sig-param">lonmax</em>, <em class="sig-param">latmin</em>, <em class="sig-param">latmax</em><span class="sig-paren">)</span><a class="headerlink" href="#src.preprocess.base.Region" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
-<dl class="method">
-<dt id="src.preprocess.base.Region.latmax">
-<em class="property">property </em><code class="sig-name descname">latmax</code><a class="headerlink" href="#src.preprocess.base.Region.latmax" title="Permalink to this definition">¶</a></dt>
-<dd><p>Alias for field number 4</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.base.Region.latmin">
-<em class="property">property </em><code class="sig-name descname">latmin</code><a class="headerlink" href="#src.preprocess.base.Region.latmin" title="Permalink to this definition">¶</a></dt>
-<dd><p>Alias for field number 3</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.base.Region.lonmax">
-<em class="property">property </em><code class="sig-name descname">lonmax</code><a class="headerlink" href="#src.preprocess.base.Region.lonmax" title="Permalink to this definition">¶</a></dt>
-<dd><p>Alias for field number 2</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.base.Region.lonmin">
-<em class="property">property </em><code class="sig-name descname">lonmin</code><a class="headerlink" href="#src.preprocess.base.Region.lonmin" title="Permalink to this definition">¶</a></dt>
-<dd><p>Alias for field number 1</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.base.Region.name">
-<em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#src.preprocess.base.Region.name" title="Permalink to this definition">¶</a></dt>
-<dd><p>Alias for field number 0</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="module-src.preprocess.chirps">
-<span id="src-preprocess-chirps-module"></span><h2>src.preprocess.chirps module<a class="headerlink" href="#module-src.preprocess.chirps" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><p>subset Kenya</p></li>
-<li><p>merge into one time (~500MB)</p></li>
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="src.exporters.html">1. src.exporters package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.seas5.html">1.1.1. src.exporters.seas5 package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.exporters.seas5.all_valid_s5.html">1.1.1.1.1. src.exporters.seas5.all_valid_s5 module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.exporters.seas5.s5.html">1.1.1.1.2. src.exporters.seas5.s5 module</a></li>
 </ul>
-<dl class="class">
-<dt id="src.preprocess.chirps.CHIRPSPreprocesser">
-<em class="property">class </em><code class="sig-prename descclassname">src.preprocess.chirps.</code><code class="sig-name descname">CHIRPSPreprocesser</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em><span class="sig-paren">)</span><a class="headerlink" href="#src.preprocess.chirps.CHIRPSPreprocesser" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.preprocess.base.BasePreProcessor" title="src.preprocess.base.BasePreProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.preprocess.base.BasePreProcessor</span></code></a></p>
-<p>Preprocesses the CHIRPS data</p>
-<dl class="method">
-<dt id="src.preprocess.chirps.CHIRPSPreprocesser.create_filename">
-<em class="property">static </em><code class="sig-name descname">create_filename</code><span class="sig-paren">(</span><em class="sig-param">netcdf_filepath: str</em>, <em class="sig-param">subset_name: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#src.preprocess.chirps.CHIRPSPreprocesser.create_filename" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>chirps-v2.0.2009.pentads.nc</dt><dd><p>=&gt;</p>
-</dd>
-</dl>
-<p>chirps-v2.0.2009.pentads_kenya.nc</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="src.preprocess.chirps.CHIRPSPreprocesser.dataset">
-<code class="sig-name descname">dataset</code><em class="property"> = 'chirps'</em><a class="headerlink" href="#src.preprocess.chirps.CHIRPSPreprocesser.dataset" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.chirps.CHIRPSPreprocesser.preprocess">
-<code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><em class="sig-param">subset_str: Optional[str] = 'kenya'</em>, <em class="sig-param">regrid: Optional[pathlib.Path] = None</em>, <em class="sig-param">resample_time: Optional[str] = 'M'</em>, <em class="sig-param">upsampling: bool = False</em>, <em class="sig-param">parallel: bool = False</em>, <em class="sig-param">cleanup: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.preprocess.chirps.CHIRPSPreprocesser.preprocess" title="Permalink to this definition">¶</a></dt>
-<dd><p>Preprocess all of the CHIRPS .nc files to produce
-one subset file.</p>
-<dl class="simple">
-<dt>subset_str: Optional[str] = ‘kenya’</dt><dd><p>Whether to subset Kenya when preprocessing</p>
-</dd>
-<dt>regrid: Optional[Path] = None</dt><dd><p>If a Path is passed, the CHIRPS files will be regridded to have the same
-grid as the dataset at that Path. If None, no regridding happens</p>
-</dd>
-<dt>resample_time: str = ‘M’</dt><dd><p>If not None, defines the time length to which the data will be resampled</p>
-</dd>
-<dt>upsampling: bool = False</dt><dd><p>If true, tells the class the time-sampling will be upsampling. In this case,
-nearest instead of mean is used for the resampling</p>
-</dd>
-<dt>parallel: bool = True</dt><dd><p>If true, run the preprocessing in parallel</p>
-</dd>
-<dt>cleanup: bool = True</dt><dd><p>If true, delete interim files created by the class</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="module-src.preprocess.era5">
-<span id="src-preprocess-era5-module"></span><h2>src.preprocess.era5 module<a class="headerlink" href="#module-src.preprocess.era5" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="src.preprocess.era5.ERA5MonthlyMeanPreprocessor">
-<em class="property">class </em><code class="sig-prename descclassname">src.preprocess.era5.</code><code class="sig-name descname">ERA5MonthlyMeanPreprocessor</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em><span class="sig-paren">)</span><a class="headerlink" href="#src.preprocess.era5.ERA5MonthlyMeanPreprocessor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.preprocess.base.BasePreProcessor" title="src.preprocess.base.BasePreProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.preprocess.base.BasePreProcessor</span></code></a></p>
-<dl class="method">
-<dt id="src.preprocess.era5.ERA5MonthlyMeanPreprocessor.create_filename">
-<em class="property">static </em><code class="sig-name descname">create_filename</code><span class="sig-paren">(</span><em class="sig-param">netcdf_filepath: pathlib.Path</em>, <em class="sig-param">subset_name: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#src.preprocess.era5.ERA5MonthlyMeanPreprocessor.create_filename" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="src.preprocess.era5.ERA5MonthlyMeanPreprocessor.dataset">
-<code class="sig-name descname">dataset</code><em class="property"> = 'reanalysis-era5-single-levels-monthly-means'</em><a class="headerlink" href="#src.preprocess.era5.ERA5MonthlyMeanPreprocessor.dataset" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.era5.ERA5MonthlyMeanPreprocessor.preprocess">
-<code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><em class="sig-param">subset_str: Optional[str] = 'kenya'</em>, <em class="sig-param">regrid: Optional[pathlib.Path] = None</em>, <em class="sig-param">resample_time: Optional[str] = 'M'</em>, <em class="sig-param">upsampling: bool = False</em>, <em class="sig-param">parallel: bool = False</em>, <em class="sig-param">cleanup: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.preprocess.era5.ERA5MonthlyMeanPreprocessor.preprocess" title="Permalink to this definition">¶</a></dt>
-<dd><p>Preprocess all of the era5 POS .nc files to produce
-one subset file.</p>
-<dl class="simple">
-<dt>subset_str: Optional[str] = ‘kenya’</dt><dd><p>Whether to subset Kenya when preprocessing</p>
-</dd>
-<dt>regrid: Optional[Path] = None</dt><dd><p>If a Path is passed, the CHIRPS files will be regridded to have the same
-grid as the dataset at that Path. If None, no regridding happens</p>
-</dd>
-<dt>resample_time: str = ‘M’</dt><dd><p>If not None, defines the time length to which the data will be resampled</p>
-</dd>
-<dt>upsampling: bool = False</dt><dd><p>If true, tells the class the time-sampling will be upsampling. In this case,
-nearest instead of mean is used for the resampling</p>
-</dd>
-<dt>parallel: bool = True</dt><dd><p>If true, run the preprocessing in parallel</p>
-</dd>
-<dt>cleanup: bool = True</dt><dd><p>If true, delete interim files created by the class</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="module-src.preprocess.gleam">
-<span id="src-preprocess-gleam-module"></span><h2>src.preprocess.gleam module<a class="headerlink" href="#module-src.preprocess.gleam" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="src.preprocess.gleam.GLEAMPreprocessor">
-<em class="property">class </em><code class="sig-prename descclassname">src.preprocess.gleam.</code><code class="sig-name descname">GLEAMPreprocessor</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em><span class="sig-paren">)</span><a class="headerlink" href="#src.preprocess.gleam.GLEAMPreprocessor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.preprocess.base.BasePreProcessor" title="src.preprocess.base.BasePreProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.preprocess.base.BasePreProcessor</span></code></a></p>
-<p>Preprocess the GLEAM data</p>
-<dl class="method">
-<dt id="src.preprocess.gleam.GLEAMPreprocessor.create_filename">
-<em class="property">static </em><code class="sig-name descname">create_filename</code><span class="sig-paren">(</span><em class="sig-param">netcdf_filename: str</em>, <em class="sig-param">subset_name: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#src.preprocess.gleam.GLEAMPreprocessor.create_filename" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>monthly/E_1980_2018_GLEAM_v3.3a_MO.nc</dt><dd><p>=&gt;</p>
-</dd>
-</dl>
-<p>E_1980_2018_GLEAM_v3.3a_MO_kenya.nc</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="src.preprocess.gleam.GLEAMPreprocessor.dataset">
-<code class="sig-name descname">dataset</code><em class="property"> = 'gleam'</em><a class="headerlink" href="#src.preprocess.gleam.GLEAMPreprocessor.dataset" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.gleam.GLEAMPreprocessor.preprocess">
-<code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><em class="sig-param">subset_str: Optional[str] = 'kenya'</em>, <em class="sig-param">regrid: Optional[pathlib.Path] = None</em>, <em class="sig-param">resample_time: Optional[str] = 'M'</em>, <em class="sig-param">upsampling: bool = False</em>, <em class="sig-param">cleanup: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.preprocess.gleam.GLEAMPreprocessor.preprocess" title="Permalink to this definition">¶</a></dt>
-<dd><p>Preprocess all of the GLEAM .nc files to produce
-one subset file.</p>
-<dl class="simple">
-<dt>subset_str: Optional[str] = ‘kenya’</dt><dd><p>Whether to subset Kenya when preprocessing</p>
-</dd>
-<dt>regrid: Optional[Path] = None</dt><dd><p>If a Path is passed, the CHIRPS files will be regridded to have the same
-grid as the dataset at that Path. If None, no regridding happens</p>
-</dd>
-<dt>resample_time: str = ‘M’</dt><dd><p>If not None, defines the time length to which the data will be resampled</p>
-</dd>
-<dt>upsampling: bool = False</dt><dd><p>If true, tells the class the time-sampling will be upsampling. In this case,
-nearest instead of mean is used for the resampling</p>
-</dd>
-<dt>cleanup: bool = True</dt><dd><p>If true, delete interim files created by the class</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="module-src.preprocess.planetOS">
-<span id="src-preprocess-planetos-module"></span><h2>src.preprocess.planetOS module<a class="headerlink" href="#module-src.preprocess.planetOS" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="src.preprocess.planetOS.PlanetOSPreprocessor">
-<em class="property">class </em><code class="sig-prename descclassname">src.preprocess.planetOS.</code><code class="sig-name descname">PlanetOSPreprocessor</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em><span class="sig-paren">)</span><a class="headerlink" href="#src.preprocess.planetOS.PlanetOSPreprocessor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.preprocess.base.BasePreProcessor" title="src.preprocess.base.BasePreProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.preprocess.base.BasePreProcessor</span></code></a></p>
-<dl class="method">
-<dt id="src.preprocess.planetOS.PlanetOSPreprocessor.create_filename">
-<em class="property">static </em><code class="sig-name descname">create_filename</code><span class="sig-paren">(</span><em class="sig-param">netcdf_filepath: pathlib.Path</em>, <em class="sig-param">subset_name: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#src.preprocess.planetOS.PlanetOSPreprocessor.create_filename" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="src.preprocess.planetOS.PlanetOSPreprocessor.dataset">
-<code class="sig-name descname">dataset</code><em class="property"> = 'era5POS'</em><a class="headerlink" href="#src.preprocess.planetOS.PlanetOSPreprocessor.dataset" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.planetOS.PlanetOSPreprocessor.preprocess">
-<code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><em class="sig-param">subset_str: Optional[str] = 'kenya'</em>, <em class="sig-param">regrid: Optional[pathlib.Path] = None</em>, <em class="sig-param">resample_time: Optional[str] = 'M'</em>, <em class="sig-param">upsampling: bool = False</em>, <em class="sig-param">parallel: bool = False</em>, <em class="sig-param">cleanup: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.preprocess.planetOS.PlanetOSPreprocessor.preprocess" title="Permalink to this definition">¶</a></dt>
-<dd><p>Preprocess all of the era5 POS .nc files to produce
-one subset file.</p>
-<dl class="simple">
-<dt>subset_str: Optional[str] = ‘kenya’</dt><dd><p>Whether to subset Kenya when preprocessing</p>
-</dd>
-<dt>regrid: Optional[Path] = None</dt><dd><p>If a Path is passed, the CHIRPS files will be regridded to have the same
-grid as the dataset at that Path. If None, no regridding happens</p>
-</dd>
-<dt>resample_time: str = ‘M’</dt><dd><p>If not None, defines the time length to which the data will be resampled</p>
-</dd>
-<dt>upsampling: bool = False</dt><dd><p>If true, tells the class the time-sampling will be upsampling. In this case,
-nearest instead of mean is used for the resampling</p>
-</dd>
-<dt>parallel: bool = True</dt><dd><p>If true, run the preprocessing in parallel</p>
-</dd>
-<dt>cleanup: bool = True</dt><dd><p>If true, delete interim files created by the class</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="module-src.preprocess.utils">
-<span id="src-preprocess-utils-module"></span><h2>src.preprocess.utils module<a class="headerlink" href="#module-src.preprocess.utils" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="src.preprocess.utils.select_bounding_box">
-<code class="sig-prename descclassname">src.preprocess.utils.</code><code class="sig-name descname">select_bounding_box</code><span class="sig-paren">(</span><em class="sig-param">ds: xarray.core.dataset.Dataset</em>, <em class="sig-param">region: src.utils.Region</em>, <em class="sig-param">inverse_lat: bool = False</em>, <em class="sig-param">inverse_lon: bool = False</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="headerlink" href="#src.preprocess.utils.select_bounding_box" title="Permalink to this definition">¶</a></dt>
-<dd><p>using the Region namedtuple defined in engineering.regions.py select
-the subset of the dataset that you have defined that region for.</p>
-<dl class="simple">
-<dt>: ds (xr.Dataset)</dt><dd><dl class="simple">
-<dt>the data (usually from netcdf file) that you want to subset a bounding</dt><dd><p>box from</p>
-</dd>
-</dl>
-</dd>
-<dt>: region (Region)</dt><dd><p>namedtuple object defined in engineering/regions.py</p>
-</dd>
-<dt>: inverse_lat (bool) = False</dt><dd><p>Whether to inverse the minimum and maximum latitudes</p>
-</dd>
-<dt>: inverse_lon (bool) = False</dt><dd><p>Whether to inverse the minimum and maximum longitudes</p>
-</dd>
-</dl>
-<dl class="simple">
-<dt>: ds (xr.DataSet)</dt><dd><p>Dataset with a subset of the whol region defined by the Region object</p>
-</dd>
-</dl>
-</dd></dl>
-
-</div>
-<div class="section" id="module-src.preprocess.vhi">
-<span id="src-preprocess-vhi-module"></span><h2>src.preprocess.vhi module<a class="headerlink" href="#module-src.preprocess.vhi" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><p>Add lat lon coordinates</p></li>
-<li><p>add time coordinates</p></li>
-<li><p>subset Kenya</p></li>
-<li><p>merge into one time (~500MB)</p></li>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.base.html">1.2.1. src.exporters.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.cds.html">1.2.2. src.exporters.cds module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.chirps.html">1.2.3. src.exporters.chirps module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.gleam.html">1.2.4. src.exporters.gleam module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.planetOS.html">1.2.5. src.exporters.planetOS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.vhi.html">1.2.6. src.exporters.vhi module</a></li>
 </ul>
-<dl class="class">
-<dt id="src.preprocess.vhi.VHIPreprocessor">
-<em class="property">class </em><code class="sig-prename descclassname">src.preprocess.vhi.</code><code class="sig-name descname">VHIPreprocessor</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em><span class="sig-paren">)</span><a class="headerlink" href="#src.preprocess.vhi.VHIPreprocessor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.preprocess.base.BasePreProcessor" title="src.preprocess.base.BasePreProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.preprocess.base.BasePreProcessor</span></code></a></p>
-<p>Preprocesses the VHI data</p>
-<dl class="method">
-<dt id="src.preprocess.vhi.VHIPreprocessor.create_filename">
-<em class="property">static </em><code class="sig-name descname">create_filename</code><span class="sig-paren">(</span><em class="sig-param">t: pandas._libs.tslibs.timestamps.Timestamp</em>, <em class="sig-param">netcdf_filepath: str</em>, <em class="sig-param">subset_name: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#src.preprocess.vhi.VHIPreprocessor.create_filename" title="Permalink to this definition">¶</a></dt>
-<dd><p>create a sensible output filename (HARDCODED for this problem)
-Arguments:
-———
-t : pandas._libs.tslibs.timestamps.Timestamp, datetime.datetime</p>
-<blockquote>
-<div><p>timestamp of this netcdf file</p>
-</div></blockquote>
-<p>STAR_VHP.G04.C07.NN.P_20110101_VH.nc
-VHP.G04.C07.NJ.P1996027.VH.nc</p>
-</dd></dl>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">2. src.preprocess package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.base.html">2.1.1. src.preprocess.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.chirps.html">2.1.2. src.preprocess.chirps module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.era5.html">2.1.3. src.preprocess.era5 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.gleam.html">2.1.4. src.preprocess.gleam module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.planetOS.html">2.1.5. src.preprocess.planetOS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.utils.html">2.1.6. src.preprocess.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.vhi.html">2.1.7. src.preprocess.vhi module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="src.engineer.html">3. src.engineer package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.engineer.base.html">3.1.1. src.engineer.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.engineer.nowcast.html">3.1.2. src.engineer.nowcast module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.engineer.one_month_forecast.html">3.1.3. src.engineer.one_month_forecast module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="src.models.html">4. src.models package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.models.neural_networks.html">4.1.1. src.models.neural_networks package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.models.neural_networks.base.html">4.1.1.1.1. src.models.neural_networks.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.models.neural_networks.linear_network.html">4.1.1.1.2. src.models.neural_networks.linear_network module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.models.neural_networks.rnn.html">4.1.1.1.3. src.models.neural_networks.rnn module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.base.html">4.2.1. src.models.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.data.html">4.2.2. src.models.data module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.parsimonious.html">4.2.3. src.models.parsimonious module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.regression.html">4.2.4. src.models.regression module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.utils.html">4.2.5. src.models.utils module</a></li>
+</ul>
+</li>
+</ul>
 
-<dl class="method">
-<dt id="src.preprocess.vhi.VHIPreprocessor.create_lat_lon_vectors">
-<em class="property">static </em><code class="sig-name descname">create_lat_lon_vectors</code><span class="sig-paren">(</span><em class="sig-param">ds: xarray.core.dataset.Dataset</em><span class="sig-paren">)</span> &#x2192; Tuple[Any, Any]<a class="headerlink" href="#src.preprocess.vhi.VHIPreprocessor.create_lat_lon_vectors" title="Permalink to this definition">¶</a></dt>
-<dd><p>read the <cite>ds.attrs</cite> and create new latitude, longitude vectors</p>
-</dd></dl>
+            
+          
+        </div>
+      </div>
+    </nav>
 
-<dl class="method">
-<dt id="src.preprocess.vhi.VHIPreprocessor.create_new_dataarray">
-<em class="property">static </em><code class="sig-name descname">create_new_dataarray</code><span class="sig-paren">(</span><em class="sig-param">ds: xarray.core.dataset.Dataset</em>, <em class="sig-param">variable: str</em>, <em class="sig-param">longitudes: numpy.ndarray</em>, <em class="sig-param">latitudes: numpy.ndarray</em>, <em class="sig-param">timestamp: pandas._libs.tslibs.timestamps.Timestamp</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="headerlink" href="#src.preprocess.vhi.VHIPreprocessor.create_new_dataarray" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new dataarray for the <cite>variable</cite> from <cite>ds</cite> with geocoding and timestamp</p>
-</dd></dl>
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
-<dl class="method">
-<dt id="src.preprocess.vhi.VHIPreprocessor.create_new_dataset">
-<code class="sig-name descname">create_new_dataset</code><span class="sig-paren">(</span><em class="sig-param">ds: xarray.core.dataset.Dataset</em>, <em class="sig-param">longitudes: numpy.ndarray</em>, <em class="sig-param">latitudes: numpy.ndarray</em>, <em class="sig-param">timestamp: pandas._libs.tslibs.timestamps.Timestamp</em>, <em class="sig-param">all_vars: bool = False</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="headerlink" href="#src.preprocess.vhi.VHIPreprocessor.create_new_dataset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new dataset from ALL the variables in <cite>ds</cite> with the dims</p>
-</dd></dl>
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ml_drought</a>
+        
+      </nav>
 
-<dl class="attribute">
-<dt id="src.preprocess.vhi.VHIPreprocessor.dataset">
-<code class="sig-name descname">dataset</code><em class="property"> = 'vhi'</em><a class="headerlink" href="#src.preprocess.vhi.VHIPreprocessor.dataset" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
-<dl class="method">
-<dt id="src.preprocess.vhi.VHIPreprocessor.extract_timestamp">
-<em class="property">static </em><code class="sig-name descname">extract_timestamp</code><span class="sig-paren">(</span><em class="sig-param">ds: xarray.core.dataset.Dataset</em>, <em class="sig-param">netcdf_filepath: str</em>, <em class="sig-param">use_filepath: bool = True</em>, <em class="sig-param">time_begin: bool = True</em><span class="sig-paren">)</span> &#x2192; pandas._libs.tslibs.timestamps.Timestamp<a class="headerlink" href="#src.preprocess.vhi.VHIPreprocessor.extract_timestamp" title="Permalink to this definition">¶</a></dt>
-<dd><p>from the <cite>attrs</cite> or filename create a datetime object for acquisition time.</p>
-<p>NOTE: the acquisition date is SOMEWHERE in this time range (satuday-friday)</p>
-<p>USE THE FILENAME</p>
-</dd></dl>
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
 
-<dl class="method">
-<dt id="src.preprocess.vhi.VHIPreprocessor.preprocess">
-<code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><em class="sig-param">subset_str: Optional[str] = 'kenya'</em>, <em class="sig-param">regrid: Optional[pathlib.Path] = None</em>, <em class="sig-param">parallel: bool = True</em>, <em class="sig-param">resample_time: Optional[str] = 'M'</em>, <em class="sig-param">upsampling: bool = False</em>, <em class="sig-param">cleanup: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.preprocess.vhi.VHIPreprocessor.preprocess" title="Permalink to this definition">¶</a></dt>
-<dd><p>Preprocess all of the NOAA VHI .nc files to produce
-one subset file with consistent lat/lon and timestamps.</p>
-<p>Run in parallel</p>
-<dl class="simple">
-<dt>subset_str: Optional[str] = ‘kenya’</dt><dd><p>Region to subset. Currently valid: {‘kenya’, ‘ethiopia’, ‘east_africa’}</p>
-</dd>
-<dt>regrid: Optional[Path] = None</dt><dd><p>If a Path is passed, the VHI files will be regridded to have the same
-grid as the dataset at that Path. If None, no regridding happens</p>
-</dd>
-<dt>resample_time: str = ‘M’</dt><dd><p>If not None, defines the time length to which the data will be resampled</p>
-</dd>
-<dt>upsampling: bool = False</dt><dd><p>If true, tells the class the time-sampling will be upsampling. In this case,
-nearest instead of mean is used for the resampling</p>
-</dd>
-<dt>parallel: bool = True</dt><dd><p>If true, run the preprocessing in parallel</p>
-</dd>
-<dt>cleanup: bool = True</dt><dd><p>If true, delete interim files created by the class</p>
-</dd>
-</dl>
-</dd></dl>
 
-<dl class="method">
-<dt id="src.preprocess.vhi.VHIPreprocessor.print_output">
-<em class="property">static </em><code class="sig-name descname">print_output</code><span class="sig-paren">(</span><em class="sig-param">outputs: List</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.preprocess.vhi.VHIPreprocessor.print_output" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
-<dl class="method">
-<dt id="src.preprocess.vhi.VHIPreprocessor.save_errors">
-<code class="sig-name descname">save_errors</code><span class="sig-paren">(</span><em class="sig-param">outputs: List</em><span class="sig-paren">)</span> &#x2192; pathlib.Path<a class="headerlink" href="#src.preprocess.vhi.VHIPreprocessor.save_errors" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
-</dd></dl>
 
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>2. src.preprocess package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/source/src.preprocess.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
 </div>
-<div class="section" id="module-src.preprocess">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src.preprocess" title="Permalink to this headline">¶</a></h2>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-src.preprocess">
+<span id="src-preprocess-package"></span><h1>2. src.preprocess package<a class="headerlink" href="#module-src.preprocess" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="src.preprocess.VHIPreprocessor">
 <em class="property">class </em><code class="sig-prename descclassname">src.preprocess.</code><code class="sig-name descname">VHIPreprocessor</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em><span class="sig-paren">)</span><a class="headerlink" href="#src.preprocess.VHIPreprocessor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.preprocess.base.BasePreProcessor" title="src.preprocess.base.BasePreProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.preprocess.base.BasePreProcessor</span></code></a></p>
-<p>Preprocesses the VHI data</p>
-<dl class="method">
-<dt id="src.preprocess.VHIPreprocessor.create_filename">
-<em class="property">static </em><code class="sig-name descname">create_filename</code><span class="sig-paren">(</span><em class="sig-param">t: pandas._libs.tslibs.timestamps.Timestamp</em>, <em class="sig-param">netcdf_filepath: str</em>, <em class="sig-param">subset_name: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#src.preprocess.VHIPreprocessor.create_filename" title="Permalink to this definition">¶</a></dt>
-<dd><p>create a sensible output filename (HARDCODED for this problem)
-Arguments:
-———
-t : pandas._libs.tslibs.timestamps.Timestamp, datetime.datetime</p>
-<blockquote>
-<div><p>timestamp of this netcdf file</p>
-</div></blockquote>
-<p>STAR_VHP.G04.C07.NN.P_20110101_VH.nc
-VHP.G04.C07.NJ.P1996027.VH.nc</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.VHIPreprocessor.create_lat_lon_vectors">
-<em class="property">static </em><code class="sig-name descname">create_lat_lon_vectors</code><span class="sig-paren">(</span><em class="sig-param">ds: xarray.core.dataset.Dataset</em><span class="sig-paren">)</span> &#x2192; Tuple[Any, Any]<a class="headerlink" href="#src.preprocess.VHIPreprocessor.create_lat_lon_vectors" title="Permalink to this definition">¶</a></dt>
-<dd><p>read the <cite>ds.attrs</cite> and create new latitude, longitude vectors</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.VHIPreprocessor.create_new_dataarray">
-<em class="property">static </em><code class="sig-name descname">create_new_dataarray</code><span class="sig-paren">(</span><em class="sig-param">ds: xarray.core.dataset.Dataset</em>, <em class="sig-param">variable: str</em>, <em class="sig-param">longitudes: numpy.ndarray</em>, <em class="sig-param">latitudes: numpy.ndarray</em>, <em class="sig-param">timestamp: pandas._libs.tslibs.timestamps.Timestamp</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="headerlink" href="#src.preprocess.VHIPreprocessor.create_new_dataarray" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new dataarray for the <cite>variable</cite> from <cite>ds</cite> with geocoding and timestamp</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.VHIPreprocessor.create_new_dataset">
-<code class="sig-name descname">create_new_dataset</code><span class="sig-paren">(</span><em class="sig-param">ds: xarray.core.dataset.Dataset</em>, <em class="sig-param">longitudes: numpy.ndarray</em>, <em class="sig-param">latitudes: numpy.ndarray</em>, <em class="sig-param">timestamp: pandas._libs.tslibs.timestamps.Timestamp</em>, <em class="sig-param">all_vars: bool = False</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="headerlink" href="#src.preprocess.VHIPreprocessor.create_new_dataset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new dataset from ALL the variables in <cite>ds</cite> with the dims</p>
-</dd></dl>
-
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">src.preprocess.base._BasePreProcessor</span></code></p>
+<p>Preprocess the VHI data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data_folder</strong> – The location of the data folder</p>
+</dd>
+</dl>
 <dl class="attribute">
 <dt id="src.preprocess.VHIPreprocessor.dataset">
 <code class="sig-name descname">dataset</code><em class="property"> = 'vhi'</em><a class="headerlink" href="#src.preprocess.VHIPreprocessor.dataset" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="src.preprocess.VHIPreprocessor.extract_timestamp">
-<em class="property">static </em><code class="sig-name descname">extract_timestamp</code><span class="sig-paren">(</span><em class="sig-param">ds: xarray.core.dataset.Dataset</em>, <em class="sig-param">netcdf_filepath: str</em>, <em class="sig-param">use_filepath: bool = True</em>, <em class="sig-param">time_begin: bool = True</em><span class="sig-paren">)</span> &#x2192; pandas._libs.tslibs.timestamps.Timestamp<a class="headerlink" href="#src.preprocess.VHIPreprocessor.extract_timestamp" title="Permalink to this definition">¶</a></dt>
-<dd><p>from the <cite>attrs</cite> or filename create a datetime object for acquisition time.</p>
-<p>NOTE: the acquisition date is SOMEWHERE in this time range (satuday-friday)</p>
-<p>USE THE FILENAME</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="src.preprocess.VHIPreprocessor.preprocess">
 <code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><em class="sig-param">subset_str: Optional[str] = 'kenya'</em>, <em class="sig-param">regrid: Optional[pathlib.Path] = None</em>, <em class="sig-param">parallel: bool = True</em>, <em class="sig-param">resample_time: Optional[str] = 'M'</em>, <em class="sig-param">upsampling: bool = False</em>, <em class="sig-param">cleanup: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.preprocess.VHIPreprocessor.preprocess" title="Permalink to this definition">¶</a></dt>
-<dd><p>Preprocess all of the NOAA VHI .nc files to produce
-one subset file with consistent lat/lon and timestamps.</p>
-<p>Run in parallel</p>
-<dl class="simple">
-<dt>subset_str: Optional[str] = ‘kenya’</dt><dd><p>Region to subset. Currently valid: {‘kenya’, ‘ethiopia’, ‘east_africa’}</p>
-</dd>
-<dt>regrid: Optional[Path] = None</dt><dd><p>If a Path is passed, the VHI files will be regridded to have the same
-grid as the dataset at that Path. If None, no regridding happens</p>
-</dd>
-<dt>resample_time: str = ‘M’</dt><dd><p>If not None, defines the time length to which the data will be resampled</p>
-</dd>
-<dt>upsampling: bool = False</dt><dd><p>If true, tells the class the time-sampling will be upsampling. In this case,
-nearest instead of mean is used for the resampling</p>
-</dd>
-<dt>parallel: bool = True</dt><dd><p>If true, run the preprocessing in parallel</p>
-</dd>
-<dt>cleanup: bool = True</dt><dd><p>If true, delete interim files created by the class</p>
+<dd><p>Preprocess all of the VHI files to produce one subset file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subset_str</strong> – Whether to subset an area when preprocessing. Must be
+one of <cite>{‘kenya’, ‘east_africa’, ‘ethiopia’}</cite></p></li>
+<li><p><strong>regrid</strong> – If a Path is passed, the CHIRPS files will be regridded to have
+the same grid as the dataset at that Path. If None, no regridding happens</p></li>
+<li><p><strong>resample_time</strong> – If not None, defines the time length to which the data will
+be resampled</p></li>
+<li><p><strong>upsampling</strong> – If <cite>True</cite>, tells the class the time-sampling will be upsampling.
+In this case, nearest instead of mean is used for the resampling</p></li>
+<li><p><strong>parallel</strong> – If <cite>True</cite>, run the preprocessing in parallel</p></li>
+<li><p><strong>cleanup</strong> – If <cite>True</cite>, delete interim files created by the class</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.VHIPreprocessor.print_output">
-<em class="property">static </em><code class="sig-name descname">print_output</code><span class="sig-paren">(</span><em class="sig-param">outputs: List</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.preprocess.VHIPreprocessor.print_output" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="src.preprocess.VHIPreprocessor.save_errors">
-<code class="sig-name descname">save_errors</code><span class="sig-paren">(</span><em class="sig-param">outputs: List</em><span class="sig-paren">)</span> &#x2192; pathlib.Path<a class="headerlink" href="#src.preprocess.VHIPreprocessor.save_errors" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="src.preprocess.CHIRPSPreprocesser">
 <em class="property">class </em><code class="sig-prename descclassname">src.preprocess.</code><code class="sig-name descname">CHIRPSPreprocesser</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em><span class="sig-paren">)</span><a class="headerlink" href="#src.preprocess.CHIRPSPreprocesser" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.preprocess.base.BasePreProcessor" title="src.preprocess.base.BasePreProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.preprocess.base.BasePreProcessor</span></code></a></p>
-<p>Preprocesses the CHIRPS data</p>
-<dl class="method">
-<dt id="src.preprocess.CHIRPSPreprocesser.create_filename">
-<em class="property">static </em><code class="sig-name descname">create_filename</code><span class="sig-paren">(</span><em class="sig-param">netcdf_filepath: str</em>, <em class="sig-param">subset_name: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#src.preprocess.CHIRPSPreprocesser.create_filename" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>chirps-v2.0.2009.pentads.nc</dt><dd><p>=&gt;</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">src.preprocess.base._BasePreProcessor</span></code></p>
+<p>Preprocesses CHIRPS data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data_folder</strong> – The location of the data folder</p>
 </dd>
 </dl>
-<p>chirps-v2.0.2009.pentads_kenya.nc</p>
-</dd></dl>
-
 <dl class="attribute">
 <dt id="src.preprocess.CHIRPSPreprocesser.dataset">
 <code class="sig-name descname">dataset</code><em class="property"> = 'chirps'</em><a class="headerlink" href="#src.preprocess.CHIRPSPreprocesser.dataset" title="Permalink to this definition">¶</a></dt>
@@ -554,20 +251,20 @@ nearest instead of mean is used for the resampling</p>
 <code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><em class="sig-param">subset_str: Optional[str] = 'kenya'</em>, <em class="sig-param">regrid: Optional[pathlib.Path] = None</em>, <em class="sig-param">resample_time: Optional[str] = 'M'</em>, <em class="sig-param">upsampling: bool = False</em>, <em class="sig-param">parallel: bool = False</em>, <em class="sig-param">cleanup: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.preprocess.CHIRPSPreprocesser.preprocess" title="Permalink to this definition">¶</a></dt>
 <dd><p>Preprocess all of the CHIRPS .nc files to produce
 one subset file.</p>
-<dl class="simple">
-<dt>subset_str: Optional[str] = ‘kenya’</dt><dd><p>Whether to subset Kenya when preprocessing</p>
-</dd>
-<dt>regrid: Optional[Path] = None</dt><dd><p>If a Path is passed, the CHIRPS files will be regridded to have the same
-grid as the dataset at that Path. If None, no regridding happens</p>
-</dd>
-<dt>resample_time: str = ‘M’</dt><dd><p>If not None, defines the time length to which the data will be resampled</p>
-</dd>
-<dt>upsampling: bool = False</dt><dd><p>If true, tells the class the time-sampling will be upsampling. In this case,
-nearest instead of mean is used for the resampling</p>
-</dd>
-<dt>parallel: bool = True</dt><dd><p>If true, run the preprocessing in parallel</p>
-</dd>
-<dt>cleanup: bool = True</dt><dd><p>If true, delete interim files created by the class</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subset_str</strong> – Whether to subset an area when preprocessing. Must be
+one of <cite>{‘kenya’, ‘east_africa’, ‘ethiopia’}</cite></p></li>
+<li><p><strong>regrid</strong> – If a Path is passed, the CHIRPS files will be regridded to have
+the same grid as the dataset at that Path. If None, no regridding happens</p></li>
+<li><p><strong>resample_time</strong> – If not None, defines the time length to which the data will
+be resampled</p></li>
+<li><p><strong>upsampling</strong> – If <cite>True</cite>, tells the class the time-sampling will be upsampling.
+In this case, nearest instead of mean is used for the resampling</p></li>
+<li><p><strong>parallel</strong> – If <cite>True</cite>, run the preprocessing in parallel</p></li>
+<li><p><strong>cleanup</strong> – If <cite>True</cite>, delete interim files created by the class</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -577,12 +274,13 @@ nearest instead of mean is used for the resampling</p>
 <dl class="class">
 <dt id="src.preprocess.PlanetOSPreprocessor">
 <em class="property">class </em><code class="sig-prename descclassname">src.preprocess.</code><code class="sig-name descname">PlanetOSPreprocessor</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em><span class="sig-paren">)</span><a class="headerlink" href="#src.preprocess.PlanetOSPreprocessor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.preprocess.base.BasePreProcessor" title="src.preprocess.base.BasePreProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.preprocess.base.BasePreProcessor</span></code></a></p>
-<dl class="method">
-<dt id="src.preprocess.PlanetOSPreprocessor.create_filename">
-<em class="property">static </em><code class="sig-name descname">create_filename</code><span class="sig-paren">(</span><em class="sig-param">netcdf_filepath: pathlib.Path</em>, <em class="sig-param">subset_name: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#src.preprocess.PlanetOSPreprocessor.create_filename" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">src.preprocess.base._BasePreProcessor</span></code></p>
+<p>Preprocesses ERA5 POS data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data_folder</strong> – The location of the data folder</p>
+</dd>
+</dl>
 <dl class="attribute">
 <dt id="src.preprocess.PlanetOSPreprocessor.dataset">
 <code class="sig-name descname">dataset</code><em class="property"> = 'era5POS'</em><a class="headerlink" href="#src.preprocess.PlanetOSPreprocessor.dataset" title="Permalink to this definition">¶</a></dt>
@@ -591,22 +289,22 @@ nearest instead of mean is used for the resampling</p>
 <dl class="method">
 <dt id="src.preprocess.PlanetOSPreprocessor.preprocess">
 <code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><em class="sig-param">subset_str: Optional[str] = 'kenya'</em>, <em class="sig-param">regrid: Optional[pathlib.Path] = None</em>, <em class="sig-param">resample_time: Optional[str] = 'M'</em>, <em class="sig-param">upsampling: bool = False</em>, <em class="sig-param">parallel: bool = False</em>, <em class="sig-param">cleanup: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.preprocess.PlanetOSPreprocessor.preprocess" title="Permalink to this definition">¶</a></dt>
-<dd><p>Preprocess all of the era5 POS .nc files to produce
+<dd><p>Preprocess all of the ERA5 POS files to produce
 one subset file.</p>
-<dl class="simple">
-<dt>subset_str: Optional[str] = ‘kenya’</dt><dd><p>Whether to subset Kenya when preprocessing</p>
-</dd>
-<dt>regrid: Optional[Path] = None</dt><dd><p>If a Path is passed, the CHIRPS files will be regridded to have the same
-grid as the dataset at that Path. If None, no regridding happens</p>
-</dd>
-<dt>resample_time: str = ‘M’</dt><dd><p>If not None, defines the time length to which the data will be resampled</p>
-</dd>
-<dt>upsampling: bool = False</dt><dd><p>If true, tells the class the time-sampling will be upsampling. In this case,
-nearest instead of mean is used for the resampling</p>
-</dd>
-<dt>parallel: bool = True</dt><dd><p>If true, run the preprocessing in parallel</p>
-</dd>
-<dt>cleanup: bool = True</dt><dd><p>If true, delete interim files created by the class</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subset_str</strong> – Whether to subset an area when preprocessing. Must be
+one of <cite>{‘kenya’, ‘east_africa’, ‘ethiopia’}</cite></p></li>
+<li><p><strong>regrid</strong> – If a Path is passed, the CHIRPS files will be regridded to have
+the same grid as the dataset at that Path. If None, no regridding happens</p></li>
+<li><p><strong>resample_time</strong> – If not None, defines the time length to which the data will
+be resampled</p></li>
+<li><p><strong>upsampling</strong> – If <cite>True</cite>, tells the class the time-sampling will be upsampling.
+In this case, nearest instead of mean is used for the resampling</p></li>
+<li><p><strong>parallel</strong> – If <cite>True</cite>, run the preprocessing in parallel</p></li>
+<li><p><strong>cleanup</strong> – If <cite>True</cite>, delete interim files created by the class</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -616,18 +314,13 @@ nearest instead of mean is used for the resampling</p>
 <dl class="class">
 <dt id="src.preprocess.GLEAMPreprocessor">
 <em class="property">class </em><code class="sig-prename descclassname">src.preprocess.</code><code class="sig-name descname">GLEAMPreprocessor</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em><span class="sig-paren">)</span><a class="headerlink" href="#src.preprocess.GLEAMPreprocessor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.preprocess.base.BasePreProcessor" title="src.preprocess.base.BasePreProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.preprocess.base.BasePreProcessor</span></code></a></p>
-<p>Preprocess the GLEAM data</p>
-<dl class="method">
-<dt id="src.preprocess.GLEAMPreprocessor.create_filename">
-<em class="property">static </em><code class="sig-name descname">create_filename</code><span class="sig-paren">(</span><em class="sig-param">netcdf_filename: str</em>, <em class="sig-param">subset_name: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#src.preprocess.GLEAMPreprocessor.create_filename" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>monthly/E_1980_2018_GLEAM_v3.3a_MO.nc</dt><dd><p>=&gt;</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">src.preprocess.base._BasePreProcessor</span></code></p>
+<p>Preprocesses GLEAM data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data_folder</strong> – The location of the data folder</p>
 </dd>
 </dl>
-<p>E_1980_2018_GLEAM_v3.3a_MO_kenya.nc</p>
-</dd></dl>
-
 <dl class="attribute">
 <dt id="src.preprocess.GLEAMPreprocessor.dataset">
 <code class="sig-name descname">dataset</code><em class="property"> = 'gleam'</em><a class="headerlink" href="#src.preprocess.GLEAMPreprocessor.dataset" title="Permalink to this definition">¶</a></dt>
@@ -636,20 +329,21 @@ nearest instead of mean is used for the resampling</p>
 <dl class="method">
 <dt id="src.preprocess.GLEAMPreprocessor.preprocess">
 <code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><em class="sig-param">subset_str: Optional[str] = 'kenya'</em>, <em class="sig-param">regrid: Optional[pathlib.Path] = None</em>, <em class="sig-param">resample_time: Optional[str] = 'M'</em>, <em class="sig-param">upsampling: bool = False</em>, <em class="sig-param">cleanup: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.preprocess.GLEAMPreprocessor.preprocess" title="Permalink to this definition">¶</a></dt>
-<dd><p>Preprocess all of the GLEAM .nc files to produce
+<dd><p>Preprocess all of the GLEAM files to produce
 one subset file.</p>
-<dl class="simple">
-<dt>subset_str: Optional[str] = ‘kenya’</dt><dd><p>Whether to subset Kenya when preprocessing</p>
-</dd>
-<dt>regrid: Optional[Path] = None</dt><dd><p>If a Path is passed, the CHIRPS files will be regridded to have the same
-grid as the dataset at that Path. If None, no regridding happens</p>
-</dd>
-<dt>resample_time: str = ‘M’</dt><dd><p>If not None, defines the time length to which the data will be resampled</p>
-</dd>
-<dt>upsampling: bool = False</dt><dd><p>If true, tells the class the time-sampling will be upsampling. In this case,
-nearest instead of mean is used for the resampling</p>
-</dd>
-<dt>cleanup: bool = True</dt><dd><p>If true, delete interim files created by the class</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subset_str</strong> – Whether to subset an area when preprocessing. Must be
+one of <cite>{‘kenya’, ‘east_africa’, ‘ethiopia’}</cite></p></li>
+<li><p><strong>regrid</strong> – If a Path is passed, the CHIRPS files will be regridded to have
+the same grid as the dataset at that Path. If None, no regridding happens</p></li>
+<li><p><strong>resample_time</strong> – If not None, defines the time length to which the data will
+be resampled</p></li>
+<li><p><strong>upsampling</strong> – If <cite>True</cite>, tells the class the time-sampling will be upsampling.
+In this case, nearest instead of mean is used for the resampling</p></li>
+<li><p><strong>cleanup</strong> – If <cite>True</cite>, delete interim files created by the class</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -659,12 +353,13 @@ nearest instead of mean is used for the resampling</p>
 <dl class="class">
 <dt id="src.preprocess.ERA5MonthlyMeanPreprocessor">
 <em class="property">class </em><code class="sig-prename descclassname">src.preprocess.</code><code class="sig-name descname">ERA5MonthlyMeanPreprocessor</code><span class="sig-paren">(</span><em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em><span class="sig-paren">)</span><a class="headerlink" href="#src.preprocess.ERA5MonthlyMeanPreprocessor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.preprocess.base.BasePreProcessor" title="src.preprocess.base.BasePreProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.preprocess.base.BasePreProcessor</span></code></a></p>
-<dl class="method">
-<dt id="src.preprocess.ERA5MonthlyMeanPreprocessor.create_filename">
-<em class="property">static </em><code class="sig-name descname">create_filename</code><span class="sig-paren">(</span><em class="sig-param">netcdf_filepath: pathlib.Path</em>, <em class="sig-param">subset_name: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#src.preprocess.ERA5MonthlyMeanPreprocessor.create_filename" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">src.preprocess.base._BasePreProcessor</span></code></p>
+<p>Preprocesses ERA5 Monthly data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data_folder</strong> – The location of the data folder</p>
+</dd>
+</dl>
 <dl class="attribute">
 <dt id="src.preprocess.ERA5MonthlyMeanPreprocessor.dataset">
 <code class="sig-name descname">dataset</code><em class="property"> = 'reanalysis-era5-single-levels-monthly-means'</em><a class="headerlink" href="#src.preprocess.ERA5MonthlyMeanPreprocessor.dataset" title="Permalink to this definition">¶</a></dt>
@@ -673,92 +368,91 @@ nearest instead of mean is used for the resampling</p>
 <dl class="method">
 <dt id="src.preprocess.ERA5MonthlyMeanPreprocessor.preprocess">
 <code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><em class="sig-param">subset_str: Optional[str] = 'kenya'</em>, <em class="sig-param">regrid: Optional[pathlib.Path] = None</em>, <em class="sig-param">resample_time: Optional[str] = 'M'</em>, <em class="sig-param">upsampling: bool = False</em>, <em class="sig-param">parallel: bool = False</em>, <em class="sig-param">cleanup: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.preprocess.ERA5MonthlyMeanPreprocessor.preprocess" title="Permalink to this definition">¶</a></dt>
-<dd><p>Preprocess all of the era5 POS .nc files to produce
+<dd><p>Preprocess all of the ERA5 files to produce
 one subset file.</p>
-<dl class="simple">
-<dt>subset_str: Optional[str] = ‘kenya’</dt><dd><p>Whether to subset Kenya when preprocessing</p>
-</dd>
-<dt>regrid: Optional[Path] = None</dt><dd><p>If a Path is passed, the CHIRPS files will be regridded to have the same
-grid as the dataset at that Path. If None, no regridding happens</p>
-</dd>
-<dt>resample_time: str = ‘M’</dt><dd><p>If not None, defines the time length to which the data will be resampled</p>
-</dd>
-<dt>upsampling: bool = False</dt><dd><p>If true, tells the class the time-sampling will be upsampling. In this case,
-nearest instead of mean is used for the resampling</p>
-</dd>
-<dt>parallel: bool = True</dt><dd><p>If true, run the preprocessing in parallel</p>
-</dd>
-<dt>cleanup: bool = True</dt><dd><p>If true, delete interim files created by the class</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subset_str</strong> – Whether to subset an area when preprocessing. Must be
+one of <cite>{‘kenya’, ‘east_africa’, ‘ethiopia’}</cite></p></li>
+<li><p><strong>regrid</strong> – If a Path is passed, the CHIRPS files will be regridded to have
+the same grid as the dataset at that Path. If None, no regridding happens</p></li>
+<li><p><strong>resample_time</strong> – If not None, defines the time length to which the data will
+be resampled</p></li>
+<li><p><strong>upsampling</strong> – If <cite>True</cite>, tells the class the time-sampling will be upsampling.
+In this case, nearest instead of mean is used for the resampling</p></li>
+<li><p><strong>parallel</strong> – If <cite>True</cite>, run the preprocessing in parallel</p></li>
+<li><p><strong>cleanup</strong> – If <cite>True</cite>, delete interim files created by the class</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
 
 </dd></dl>
 
-</div>
-</div>
-
-
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="../index.html">ml_drought</a></h1>
-
-
-
-
-
-
-
-
-<h3>Navigation</h3>
-
-<div class="relations">
-<h3>Related Topics</h3>
+<div class="section" id="submodules">
+<h2>2.1. Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
 <ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-  </ul></li>
+<li class="toctree-l1"><a class="reference internal" href="src.preprocess.base.html">2.1.1. src.preprocess.base module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="src.preprocess.chirps.html">2.1.2. src.preprocess.chirps module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="src.preprocess.era5.html">2.1.3. src.preprocess.era5 module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="src.preprocess.gleam.html">2.1.4. src.preprocess.gleam module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="src.preprocess.planetOS.html">2.1.5. src.preprocess.planetOS module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="src.preprocess.utils.html">2.1.6. src.preprocess.utils module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="src.preprocess.vhi.html">2.1.7. src.preprocess.vhi module</a></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+</div>
 
 
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="src.preprocess.base.html" class="btn btn-neutral float-right" title="2.1.1. src.preprocess.base module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="src.exporters.vhi.html" class="btn btn-neutral float-left" title="1.2.6. src.exporters.vhi module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
 
+  <hr/>
 
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Tommy Lees, Gabriel Tseng
 
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
-
+</footer>
 
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2019, Tommy Lees, Gabriel Tseng.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.1.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/source/src.preprocess.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
 
-    
+    </section>
 
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
     
-  </body>
+   
+
+</body>
 </html>

@@ -6,10 +6,28 @@
 Welcome to ml_drought's documentation!
 ======================================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+This is an `ECMWF Summer of Weather Code <https://www.ecmwf.int/en/learning/workshops/ecmwf-summer-weather-code-2019>`_
+project to use machine learning to better predict and understand drought.
 
+.. toctree::
+    :maxdepth: 1
+    :numbered:
+    :caption: Quickstart
+
+    quickstart/overview
+    quickstart/data
+    quickstart/engineering
+    quickstart/modelling
+
+.. toctree::
+    :maxdepth: 1
+    :numbered:
+    :caption: API Documentation
+
+    source/src.exporters
+    source/src.preprocess
+    source/src.engineer
+    source/src.models
 
 
 Indices and tables

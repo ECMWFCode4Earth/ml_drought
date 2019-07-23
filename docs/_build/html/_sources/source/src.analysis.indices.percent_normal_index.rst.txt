@@ -1,0 +1,7 @@
+src.analysis.indices.percent\_normal\_index module
+==================================================
+
+.. automodule:: src.analysis.indices.percent_normal_index
+   :members:
+   :undoc-members:
+   :show-inheritance:

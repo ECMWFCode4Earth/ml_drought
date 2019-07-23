@@ -1,0 +1,7 @@
+src.analysis.event\_detector module
+===================================
+
+.. automodule:: src.analysis.event_detector
+   :members:
+   :undoc-members:
+   :show-inheritance:

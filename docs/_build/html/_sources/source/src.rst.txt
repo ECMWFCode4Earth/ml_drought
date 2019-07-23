@@ -1,6 +1,11 @@
 src package
 ===========
 
+.. automodule:: src
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -15,27 +20,7 @@ Subpackages
 Submodules
 ----------
 
-src.run module
---------------
+.. toctree::
 
-.. automodule:: src.run
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-src.utils module
-----------------
-
-.. automodule:: src.utils
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: src
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   src.run
+   src.utils

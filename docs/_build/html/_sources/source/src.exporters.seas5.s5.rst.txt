@@ -1,0 +1,7 @@
+src.exporters.seas5.s5 module
+=============================
+
+.. automodule:: src.exporters.seas5.s5
+   :members:
+   :undoc-members:
+   :show-inheritance:

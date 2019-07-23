@@ -1,0 +1,347 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>src.analysis.indices.spi module &mdash; ml_drought  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> ml_drought
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="src.exporters.html">1. src.exporters package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.seas5.html">1.1.1. src.exporters.seas5 package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.exporters.seas5.all_valid_s5.html">1.1.1.1.1. src.exporters.seas5.all_valid_s5 module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.exporters.seas5.s5.html">1.1.1.1.2. src.exporters.seas5.s5 module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.base.html">1.2.1. src.exporters.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.cds.html">1.2.2. src.exporters.cds module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.chirps.html">1.2.3. src.exporters.chirps module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.gleam.html">1.2.4. src.exporters.gleam module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.planetOS.html">1.2.5. src.exporters.planetOS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.vhi.html">1.2.6. src.exporters.vhi module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="src.preprocess.html">2. src.preprocess package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.base.html">2.1.1. src.preprocess.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.chirps.html">2.1.2. src.preprocess.chirps module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.era5.html">2.1.3. src.preprocess.era5 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.gleam.html">2.1.4. src.preprocess.gleam module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.planetOS.html">2.1.5. src.preprocess.planetOS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.utils.html">2.1.6. src.preprocess.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.vhi.html">2.1.7. src.preprocess.vhi module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="src.engineer.html">3. src.engineer package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.engineer.base.html">3.1.1. src.engineer.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.engineer.nowcast.html">3.1.2. src.engineer.nowcast module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.engineer.one_month_forecast.html">3.1.3. src.engineer.one_month_forecast module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="src.models.html">4. src.models package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.models.neural_networks.html">4.1.1. src.models.neural_networks package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.models.neural_networks.base.html">4.1.1.1.1. src.models.neural_networks.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.models.neural_networks.linear_network.html">4.1.1.1.2. src.models.neural_networks.linear_network module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.models.neural_networks.rnn.html">4.1.1.1.3. src.models.neural_networks.rnn module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.base.html">4.2.1. src.models.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.data.html">4.2.2. src.models.data module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.parsimonious.html">4.2.3. src.models.parsimonious module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.regression.html">4.2.4. src.models.regression module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.utils.html">4.2.5. src.models.utils module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ml_drought</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>src.analysis.indices.spi module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/source/src.analysis.indices.spi.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-src.analysis.indices.spi">
+<span id="src-analysis-indices-spi-module"></span><h1>src.analysis.indices.spi module<a class="headerlink" href="#module-src.analysis.indices.spi" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="src.analysis.indices.spi.SPI">
+<em class="property">class </em><code class="sig-prename descclassname">src.analysis.indices.spi.</code><code class="sig-name descname">SPI</code><span class="sig-paren">(</span><em class="sig-param">data_path: pathlib.Path</em><span class="sig-paren">)</span><a class="headerlink" href="#src.analysis.indices.spi.SPI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="src.analysis.indices.base.html#src.analysis.indices.base.BaseIndices" title="src.analysis.indices.base.BaseIndices"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.analysis.indices.base.BaseIndices</span></code></a></p>
+<p><a class="reference external" href="https://climatedataguide.ucar.edu/climate-data/">https://climatedataguide.ucar.edu/climate-data/</a>
+standardized-precipitation-index-spi</p>
+<p>Number of standard deviations that the observed value would deviate from
+the long-term mean, for a normally distributed random variable.</p>
+<p>Comparing the precipitation total for the chosen interval against a
+cumulative probability distribution for the precipitation data (for the
+identical interval). For example, what is statistical interpretation of the
+one-month precipitation total (e.g., 29 mm), compared to all known
+one -month totals? It is necessary to view the drought according to
+the climatological norms for the location and season.</p>
+<p>a long-term time series of precipitation accumulations over the desired
+time scale are used to estimate an appropriate probability density
+function.
+Since precipitation is not normally distributed, a transformation is first
+applied so that the transformed precipitation values follow a normal
+distribution.
+This normal distribution can then be used to understand the divergence
+from normal (mean) conditions in terms of standard deviation / probability.</p>
+<p>## References
+World Meteorological Organization, (2012) Standardized Precipitation Index
+User Guide (M. Svoboda, M. Hayes and D. Wood). (WMO-No. 1090), Geneva.</p>
+<p>Guttman, N. B., 1999: Accepting the Standardized Precipitation Index:
+A calculation algorithm. J. Amer. Water Resour. Assoc.., 35(2), 311-322.</p>
+<p>McKee, T. B., N. J. Doesken, and J. Kliest, 1993: The relationship of
+drought frequency and duration to time scales. In Proceedings of the 8th
+Conference of Applied Climatology, 17-22 January, Anaheim, CA. American
+Meteorological Society, Boston, MA. 179-184.</p>
+<p>Vicente-Serrano, Sergio M., Santiago Beguería, Juan I. López-Moreno, 2010:
+A Multiscalar Drought Index Sensitive to Global Warming: The Standardized
+Precipitation Evapotranspiration Index. J. Climate, 23, 1696–1718.</p>
+<dl class="method">
+<dt id="src.analysis.indices.spi.SPI.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">variable: str</em>, <em class="sig-param">scale: int = 3</em>, <em class="sig-param">distribution: str = 'gamma'</em>, <em class="sig-param">data_start_year: Optional[int] = None</em>, <em class="sig-param">calibration_year_initial: Optional[int] = None</em>, <em class="sig-param">calibration_year_final: Optional[int] = None</em>, <em class="sig-param">periodicity: Optional[str] = 'monthly'</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#src.analysis.indices.spi.SPI.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>fit the index to self.ds writing to new self.index <cite>xr.Dataset</cite></p>
+<dl class="simple">
+<dt>variable: str</dt><dd><p>the name of the variable in the self.ds (xr.Dataset) -&gt; required to convert
+to a xr.DataArray for fitting the SPI</p>
+</dd>
+<dt>scale: int = 3</dt><dd><p>the window to calculate cumulative anomalies. Shorter term droughts will
+have smaller scales.</p>
+</dd>
+<dt>distribution: str = ‘gamma’</dt><dd><p>the distribution used to fit to the raw precipitation data.
+{‘gamma’, ‘pearson’}</p>
+</dd>
+<dt>data_start_year: Optional[int] = None</dt><dd><p>the starting year of the data series. Defaults to using the MINIMUM in the
+time series.
+<a href="#id1"><span class="problematic" id="id2">**</span></a>(we recommend leaving this parameter alone).</p>
+</dd>
+<dt>calibration_year_initial: Optional[int] = None</dt><dd><p>the first year of the calibration period (). Defaults to using the MINIMUM
+year in the time series.</p>
+</dd>
+<dt>calibration_year_final: Optional[int] = None</dt><dd><p>the final year of the calibration period. Defaults to the year before
+the final year. This would be changed to reflect that you don’t want to include
+the year you’re testing for how anomalous it was in your calibration period.</p>
+</dd>
+<dt>periodicity: Optional[str] = ‘monthly’ -&gt; None</dt><dd><p>the periodicity of your data.
+{‘monthly’, ‘daily’}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.indices.spi.SPI.init_calib_year">
+<code class="sig-name descname">init_calib_year</code><span class="sig-paren">(</span><em class="sig-param">initial_yr: Optional[int], final_yr: Optional[int]</em><span class="sig-paren">)</span> &#x2192; Tuple[int, int]<a class="headerlink" href="#src.analysis.indices.spi.SPI.init_calib_year" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.indices.spi.SPI.init_distribution">
+<code class="sig-name descname">init_distribution</code><span class="sig-paren">(</span><em class="sig-param">distribution: str</em><span class="sig-paren">)</span> &#x2192; enum.Enum<a class="headerlink" href="#src.analysis.indices.spi.SPI.init_distribution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.indices.spi.SPI.init_periodicity">
+<code class="sig-name descname">init_periodicity</code><span class="sig-paren">(</span><em class="sig-param">periodicity: Optional[str]</em><span class="sig-paren">)</span> &#x2192; enum.Enum<a class="headerlink" href="#src.analysis.indices.spi.SPI.init_periodicity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.indices.spi.SPI.init_start_year">
+<code class="sig-name descname">init_start_year</code><span class="sig-paren">(</span><em class="sig-param">data_start_year: Optional[int] = None</em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#src.analysis.indices.spi.SPI.init_start_year" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.indices.spi.SPI.initialise_params">
+<code class="sig-name descname">initialise_params</code><span class="sig-paren">(</span><em class="sig-param">scale: int, distribution: str, data_start_year: Optional[int], calibration_year_initial: Optional[int], calibration_year_final: Optional[int], periodicity: Optional[str]</em><span class="sig-paren">)</span> &#x2192; Tuple[int, enum.Enum, int, int, int, int, enum.Enum]<a class="headerlink" href="#src.analysis.indices.spi.SPI.initialise_params" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="src.analysis.indices.spi.SPI.name">
+<code class="sig-name descname">name</code><em class="property"> = 'spi'</em><a class="headerlink" href="#src.analysis.indices.spi.SPI.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="src.analysis.indices.spi.SPI.resample">
+<code class="sig-name descname">resample</code><em class="property"> = True</em><a class="headerlink" href="#src.analysis.indices.spi.SPI.resample" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="src.analysis.indices.spi.SPI.resample_str">
+<code class="sig-name descname">resample_str</code><em class="property"> = 'month'</em><a class="headerlink" href="#src.analysis.indices.spi.SPI.resample_str" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="src.analysis.indices.spi.SPI.stack_pixels">
+<em class="property">static </em><code class="sig-name descname">stack_pixels</code><span class="sig-paren">(</span><em class="sig-param">da: xarray.core.dataarray.DataArray</em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="headerlink" href="#src.analysis.indices.spi.SPI.stack_pixels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Tommy Lees, Gabriel Tseng
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

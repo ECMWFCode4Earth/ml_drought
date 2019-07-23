@@ -1,0 +1,7 @@
+src.engineer.one\_month\_forecast module
+========================================
+
+.. automodule:: src.engineer.one_month_forecast
+   :members:
+   :undoc-members:
+   :show-inheritance:

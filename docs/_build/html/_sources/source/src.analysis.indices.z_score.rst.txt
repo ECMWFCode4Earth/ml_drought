@@ -1,0 +1,7 @@
+src.analysis.indices.z\_score module
+====================================
+
+.. automodule:: src.analysis.indices.z_score
+   :members:
+   :undoc-members:
+   :show-inheritance:

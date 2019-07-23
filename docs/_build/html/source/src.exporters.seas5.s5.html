@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>1.1.1.1.2. src.exporters.seas5.s5 module &mdash; ml_drought  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="1.2.1. src.exporters.base module" href="src.exporters.base.html" />
+    <link rel="prev" title="1.1.1.1.1. src.exporters.seas5.all_valid_s5 module" href="src.exporters.seas5.all_valid_s5.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> ml_drought
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="src.exporters.html">1. src.exporters package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="src.exporters.seas5.html">1.1.1. src.exporters.seas5 package</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="src.exporters.seas5.all_valid_s5.html">1.1.1.1.1. src.exporters.seas5.all_valid_s5 module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">1.1.1.1.2. src.exporters.seas5.s5 module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.base.html">1.2.1. src.exporters.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.cds.html">1.2.2. src.exporters.cds module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.chirps.html">1.2.3. src.exporters.chirps module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.gleam.html">1.2.4. src.exporters.gleam module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.planetOS.html">1.2.5. src.exporters.planetOS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.vhi.html">1.2.6. src.exporters.vhi module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="src.preprocess.html">2. src.preprocess package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.base.html">2.1.1. src.preprocess.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.chirps.html">2.1.2. src.preprocess.chirps module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.era5.html">2.1.3. src.preprocess.era5 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.gleam.html">2.1.4. src.preprocess.gleam module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.planetOS.html">2.1.5. src.preprocess.planetOS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.utils.html">2.1.6. src.preprocess.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.vhi.html">2.1.7. src.preprocess.vhi module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="src.engineer.html">3. src.engineer package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.engineer.base.html">3.1.1. src.engineer.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.engineer.nowcast.html">3.1.2. src.engineer.nowcast module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.engineer.one_month_forecast.html">3.1.3. src.engineer.one_month_forecast module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="src.models.html">4. src.models package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.models.neural_networks.html">4.1.1. src.models.neural_networks package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.models.neural_networks.base.html">4.1.1.1.1. src.models.neural_networks.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.models.neural_networks.linear_network.html">4.1.1.1.2. src.models.neural_networks.linear_network module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.models.neural_networks.rnn.html">4.1.1.1.3. src.models.neural_networks.rnn module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.base.html">4.2.1. src.models.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.data.html">4.2.2. src.models.data module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.parsimonious.html">4.2.3. src.models.parsimonious module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.regression.html">4.2.4. src.models.regression module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.utils.html">4.2.5. src.models.utils module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ml_drought</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="src.exporters.html">1. src.exporters package</a> &raquo;</li>
+        
+          <li><a href="src.exporters.seas5.html">1.1.1. src.exporters.seas5 package</a> &raquo;</li>
+        
+      <li>1.1.1.1.2. src.exporters.seas5.s5 module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/source/src.exporters.seas5.s5.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-src.exporters.seas5.s5">
+<span id="src-exporters-seas5-s5-module"></span><h1>1.1.1.1.2. src.exporters.seas5.s5 module<a class="headerlink" href="#module-src.exporters.seas5.s5" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="src.exporters.seas5.s5.S5Exporter">
+<em class="property">class </em><code class="sig-prename descclassname">src.exporters.seas5.s5.</code><code class="sig-name descname">S5Exporter</code><span class="sig-paren">(</span><em class="sig-param">pressure_level: bool</em>, <em class="sig-param">granularity: str = 'monthly'</em>, <em class="sig-param">data_folder: pathlib.Path = PosixPath('data')</em>, <em class="sig-param">product_type: Optional[str] = None</em>, <em class="sig-param">dataset: Optional[str] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.exporters.seas5.s5.S5Exporter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">src.exporters.cds._CDSExporter</span></code></p>
+<p>An exporter for S5 data from the Climate Data Store</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_folder</strong> – path to the data folder (where data will be stored)</p></li>
+<li><p><strong>variable</strong> – the variable that you want to download.</p></li>
+<li><p><strong>pressure_level</strong> – Do you want data at different atmospheric heights?
+If <cite>True</cite>, data is downloaded from all pressure levels. If <a href="#id1"><span class="problematic" id="id2">`</span></a>False, only
+single level data is used</p></li>
+<li><p><strong>granularity</strong> – The granularity of data being pulled.
+‘hourly’/’pressure_level’ data has a forecast for every 12hrs (12, 24, 36 …)
+‘hourly’/’single_level’ data has a forecast for every 6hrs (6, 12, 18, 24 …)
+‘monthly’ data has a forecast for every month {1 … 6}</p></li>
+<li><p><strong>product_type</strong> – The product type is only valid for monthly datasets. It corresponds
+to the post-processing of the monthly forecasts. If None is given, Defaults to
+<cite>‘monthly_mean’</cite>.
+It can be one of  <cite>{‘ensemble_mean’, ‘hindcast_climate_mean’, ‘monthly_mean’}</cite>. If
+<cite>pressure_level</cite> is <cite>False</cite>, it can additionally be
+<cite>{‘monthly_standard_deviation’, ‘monthly_maximum’, ‘monthly_minimum’}</cite></p></li>
+<li><p><strong>dataset</strong> – The dataset to pull the data from. If none is passed, this is inferred from
+all the other information</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="src.exporters.seas5.s5.S5Exporter.export">
+<code class="sig-name descname">export</code><span class="sig-paren">(</span><em class="sig-param">variable: str</em>, <em class="sig-param">min_year: int = 1993</em>, <em class="sig-param">max_year: int = 2019</em>, <em class="sig-param">min_month: int = 1</em>, <em class="sig-param">max_month: int = 12</em>, <em class="sig-param">max_leadtime: Optional[int] = None</em>, <em class="sig-param">pressure_levels: Optional[List[int]] = None</em>, <em class="sig-param">n_parallel_requests: int = 3</em>, <em class="sig-param">show_api_request: bool = True</em>, <em class="sig-param">break_up: bool = True</em><span class="sig-paren">)</span><a class="headerlink" href="#src.exporters.seas5.s5.S5Exporter.export" title="Permalink to this definition">¶</a></dt>
+<dd><p>Export S5 data from the Climate Data Store</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>variable</strong> – the variable that you want to download</p></li>
+<li><p><strong>min_year</strong> – The minimum year of your request</p></li>
+<li><p><strong>max_year</strong> – The maximum year of your request</p></li>
+<li><p><strong>min_month</strong> – The minimum month of your request</p></li>
+<li><p><strong>max_month</strong> – The maximum month of your request</p></li>
+<li><p><strong>max_leadtime</strong> – The maximum leadtime of your request.
+If granularity is <cite>hourly</cite> then provide in days. If granularity is <cite>monthly</cite>
+then provide in months. If None is passed, defaults to 3 months / 90 days</p></li>
+<li><p><strong>pressure_levels</strong> – Pressure levels to download data at</p></li>
+<li><p><strong>n_parallel_requests</strong> – The number of parallel requests to initialise</p></li>
+<li><p><strong>show_api_request</strong> – Whether to print the API request</p></li>
+<li><p><strong>break_up</strong> – bool: Whether to break up requests</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="src.exporters.base.html" class="btn btn-neutral float-right" title="1.2.1. src.exporters.base module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="src.exporters.seas5.all_valid_s5.html" class="btn btn-neutral float-left" title="1.1.1.1.1. src.exporters.seas5.all_valid_s5 module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Tommy Lees, Gabriel Tseng
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

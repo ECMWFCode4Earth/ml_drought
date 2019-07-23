@@ -1,6 +1,11 @@
 src.analysis package
 ====================
 
+.. automodule:: src.analysis
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -11,35 +16,8 @@ Subpackages
 Submodules
 ----------
 
-src.analysis.evaluation module
-------------------------------
+.. toctree::
 
-.. automodule:: src.analysis.evaluation
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-src.analysis.event\_detector module
------------------------------------
-
-.. automodule:: src.analysis.event_detector
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-src.analysis.plot\_shap module
-------------------------------
-
-.. automodule:: src.analysis.plot_shap
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: src.analysis
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   src.analysis.evaluation
+   src.analysis.event_detector
+   src.analysis.plot_shap

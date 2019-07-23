@@ -1,0 +1,7 @@
+src.models.neural\_networks.base module
+=======================================
+
+.. automodule:: src.models.neural_networks.base
+   :members:
+   :undoc-members:
+   :show-inheritance:

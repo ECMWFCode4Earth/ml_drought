@@ -1,0 +1,7 @@
+src.exporters.gleam module
+==========================
+
+.. automodule:: src.exporters.gleam
+   :members:
+   :undoc-members:
+   :show-inheritance:

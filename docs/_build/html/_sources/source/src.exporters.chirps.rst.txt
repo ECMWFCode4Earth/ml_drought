@@ -1,0 +1,7 @@
+src.exporters.chirps module
+===========================
+
+.. automodule:: src.exporters.chirps
+   :members:
+   :undoc-members:
+   :show-inheritance:

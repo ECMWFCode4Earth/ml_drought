@@ -1,38 +1,16 @@
 src.models.neural\_networks package
 ===================================
 
-Submodules
-----------
-
-src.models.neural\_networks.base module
----------------------------------------
-
-.. automodule:: src.models.neural_networks.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-src.models.neural\_networks.linear\_network module
---------------------------------------------------
-
-.. automodule:: src.models.neural_networks.linear_network
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-src.models.neural\_networks.rnn module
---------------------------------------
-
-.. automodule:: src.models.neural_networks.rnn
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
-Module contents
----------------
-
 .. automodule:: src.models.neural_networks
    :members:
    :undoc-members:
    :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+
+   src.models.neural_networks.base
+   src.models.neural_networks.linear_network
+   src.models.neural_networks.rnn

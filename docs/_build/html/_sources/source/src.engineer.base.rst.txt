@@ -1,0 +1,7 @@
+src.engineer.base module
+========================
+
+.. automodule:: src.engineer.base
+   :members:
+   :undoc-members:
+   :show-inheritance:

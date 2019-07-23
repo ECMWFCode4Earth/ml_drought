@@ -1,0 +1,7 @@
+src.analysis.plot\_shap module
+==============================
+
+.. automodule:: src.analysis.plot_shap
+   :members:
+   :undoc-members:
+   :show-inheritance:

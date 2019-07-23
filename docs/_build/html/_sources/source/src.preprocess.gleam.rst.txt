@@ -1,0 +1,7 @@
+src.preprocess.gleam module
+===========================
+
+.. automodule:: src.preprocess.gleam
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,7 @@
+src.models.neural\_networks.linear\_network module
+==================================================
+
+.. automodule:: src.models.neural_networks.linear_network
+   :members:
+   :undoc-members:
+   :show-inheritance:

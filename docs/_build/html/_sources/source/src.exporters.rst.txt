@@ -1,6 +1,11 @@
 src.exporters package
 =====================
 
+.. automodule:: src.exporters
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -11,59 +16,11 @@ Subpackages
 Submodules
 ----------
 
-src.exporters.base module
--------------------------
+.. toctree::
 
-.. automodule:: src.exporters.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-src.exporters.cds module
-------------------------
-
-.. automodule:: src.exporters.cds
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-src.exporters.chirps module
----------------------------
-
-.. automodule:: src.exporters.chirps
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-src.exporters.gleam module
---------------------------
-
-.. automodule:: src.exporters.gleam
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-src.exporters.planetOS module
------------------------------
-
-.. automodule:: src.exporters.planetOS
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-src.exporters.vhi module
-------------------------
-
-.. automodule:: src.exporters.vhi
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: src.exporters
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   src.exporters.base
+   src.exporters.cds
+   src.exporters.chirps
+   src.exporters.gleam
+   src.exporters.planetOS
+   src.exporters.vhi

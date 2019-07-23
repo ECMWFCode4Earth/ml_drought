@@ -1,0 +1,7 @@
+src.analysis.indices.anomaly\_index module
+==========================================
+
+.. automodule:: src.analysis.indices.anomaly_index
+   :members:
+   :undoc-members:
+   :show-inheritance:

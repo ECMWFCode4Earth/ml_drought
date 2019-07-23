@@ -1,0 +1,7 @@
+src.models.data module
+======================
+
+.. automodule:: src.models.data
+   :members:
+   :undoc-members:
+   :show-inheritance:

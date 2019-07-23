@@ -1,6 +1,11 @@
 src.models package
 ==================
 
+.. automodule:: src.models
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -11,51 +16,10 @@ Subpackages
 Submodules
 ----------
 
-src.models.base module
-----------------------
+.. toctree::
 
-.. automodule:: src.models.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-src.models.data module
-----------------------
-
-.. automodule:: src.models.data
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-src.models.parsimonious module
-------------------------------
-
-.. automodule:: src.models.parsimonious
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-src.models.regression module
-----------------------------
-
-.. automodule:: src.models.regression
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-src.models.utils module
------------------------
-
-.. automodule:: src.models.utils
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: src.models
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   src.models.base
+   src.models.data
+   src.models.parsimonious
+   src.models.regression
+   src.models.utils

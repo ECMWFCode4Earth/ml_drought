@@ -1,0 +1,7 @@
+src.models.regression module
+============================
+
+.. automodule:: src.models.regression
+   :members:
+   :undoc-members:
+   :show-inheritance:

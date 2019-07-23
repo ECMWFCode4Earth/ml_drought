@@ -1,0 +1,7 @@
+src.analysis.evaluation module
+==============================
+
+.. automodule:: src.analysis.evaluation
+   :members:
+   :undoc-members:
+   :show-inheritance:

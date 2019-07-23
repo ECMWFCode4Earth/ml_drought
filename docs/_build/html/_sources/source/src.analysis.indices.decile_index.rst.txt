@@ -1,0 +1,7 @@
+src.analysis.indices.decile\_index module
+=========================================
+
+.. automodule:: src.analysis.indices.decile_index
+   :members:
+   :undoc-members:
+   :show-inheritance:

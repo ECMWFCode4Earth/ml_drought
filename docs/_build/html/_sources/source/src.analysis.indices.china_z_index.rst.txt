@@ -1,0 +1,7 @@
+src.analysis.indices.china\_z\_index module
+===========================================
+
+.. automodule:: src.analysis.indices.china_z_index
+   :members:
+   :undoc-members:
+   :show-inheritance:

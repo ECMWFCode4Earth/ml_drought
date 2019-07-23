@@ -1,0 +1,325 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>4.2.2. src.models.data module &mdash; ml_drought  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="4.2.3. src.models.parsimonious module" href="src.models.parsimonious.html" />
+    <link rel="prev" title="4.2.1. src.models.base module" href="src.models.base.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> ml_drought
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="src.exporters.html">1. src.exporters package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.seas5.html">1.1.1. src.exporters.seas5 package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.exporters.seas5.all_valid_s5.html">1.1.1.1.1. src.exporters.seas5.all_valid_s5 module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.exporters.seas5.s5.html">1.1.1.1.2. src.exporters.seas5.s5 module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.base.html">1.2.1. src.exporters.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.cds.html">1.2.2. src.exporters.cds module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.chirps.html">1.2.3. src.exporters.chirps module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.gleam.html">1.2.4. src.exporters.gleam module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.planetOS.html">1.2.5. src.exporters.planetOS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.exporters.vhi.html">1.2.6. src.exporters.vhi module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="src.preprocess.html">2. src.preprocess package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.base.html">2.1.1. src.preprocess.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.chirps.html">2.1.2. src.preprocess.chirps module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.era5.html">2.1.3. src.preprocess.era5 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.gleam.html">2.1.4. src.preprocess.gleam module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.planetOS.html">2.1.5. src.preprocess.planetOS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.utils.html">2.1.6. src.preprocess.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.preprocess.vhi.html">2.1.7. src.preprocess.vhi module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="src.engineer.html">3. src.engineer package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.engineer.base.html">3.1.1. src.engineer.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.engineer.nowcast.html">3.1.2. src.engineer.nowcast module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.engineer.one_month_forecast.html">3.1.3. src.engineer.one_month_forecast module</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="src.models.html">4. src.models package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="src.models.neural_networks.html">4.1.1. src.models.neural_networks package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.models.neural_networks.base.html">4.1.1.1.1. src.models.neural_networks.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.models.neural_networks.linear_network.html">4.1.1.1.2. src.models.neural_networks.linear_network module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.models.neural_networks.rnn.html">4.1.1.1.3. src.models.neural_networks.rnn module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.base.html">4.2.1. src.models.base module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">4.2.2. src.models.data module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.parsimonious.html">4.2.3. src.models.parsimonious module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.regression.html">4.2.4. src.models.regression module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.models.utils.html">4.2.5. src.models.utils module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ml_drought</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="src.models.html">4. src.models package</a> &raquo;</li>
+        
+      <li>4.2.2. src.models.data module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/source/src.models.data.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-src.models.data">
+<span id="src-models-data-module"></span><h1>4.2.2. src.models.data module<a class="headerlink" href="#module-src.models.data" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="src.models.data.DataLoader">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.data.</code><code class="sig-name descname">DataLoader</code><span class="sig-paren">(</span><em class="sig-param">data_path: pathlib.Path = PosixPath('data')</em>, <em class="sig-param">batch_file_size: int = 1</em>, <em class="sig-param">mode: str = 'train'</em>, <em class="sig-param">shuffle_data: bool = True</em>, <em class="sig-param">clear_nans: bool = True</em>, <em class="sig-param">normalize: bool = True</em>, <em class="sig-param">experiment: str = 'one_month_forecast'</em>, <em class="sig-param">mask: Optional[List[bool]] = None</em>, <em class="sig-param">pred_months: Optional[List[int]] = None</em>, <em class="sig-param">to_tensor: bool = False</em>, <em class="sig-param">surrounding_pixels: Optional[int] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.data.DataLoader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Dataloader; lazily load the training and test data
+Attributes:
+———-
+data_path: Path = Path(‘data’)</p>
+<blockquote>
+<div><p>Location of the data folder</p>
+</div></blockquote>
+<dl class="simple">
+<dt>batch_file_size: int = 1</dt><dd><p>The number of files to load at a time</p>
+</dd>
+<dt>mode: str {‘test’, ‘train’} = ‘train’</dt><dd><p>Whether to load testing or training data. This also affects the way the data is
+returned; for train, it is a concatenated array, but for test it is a dict with dates
+so that the netcdf file can easily be reconstructed</p>
+</dd>
+<dt>shuffle_data: bool = True</dt><dd><p>Whether or not to shuffle data</p>
+</dd>
+<dt>clear_nans: bool = True</dt><dd><p>Whether to remove nan values</p>
+</dd>
+<dt>experiment: str = ‘one_month_forecast’</dt><dd><p>the name of the experiment to run. Defaults to one_month_forecast
+(train on only historical data and predict one month ahead)</p>
+</dd>
+<dt>normalize: bool = True</dt><dd><p>Whether to normalize the data. This assumes a normalizing_dict.pkl was saved by the
+engineer</p>
+</dd>
+<dt>mask: Optional[List[bool]] = None</dt><dd><p>If not None, this list will be used to mask the input files. Useful for creating a train
+and validation set</p>
+</dd>
+<dt>pred_months: Optional[List[int]] = None</dt><dd><p>The months the model should predict. If None, all months are predicted</p>
+</dd>
+<dt>to_tensor: bool = False</dt><dd><p>Whether to turn the np.ndarrays into torch.Tensors</p>
+</dd>
+<dt>surrounding_pixels: Optional[int] = None</dt><dd><p>How many surrounding pixels to add to the input data. e.g. if the input is 1, then in
+addition to the pixels on the prediction point, the neighbouring (spatial) pixels will
+be included too, up to a distance of one pixel away</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="src.models.data.ModelArrays">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.data.</code><code class="sig-name descname">ModelArrays</code><span class="sig-paren">(</span><em class="sig-param">x: src.models.data.TrainData, y: Union[numpy.ndarray, torch.Tensor], x_vars: List[str], y_var: str, latlons: Union[numpy.ndarray, NoneType] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.data.ModelArrays" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="src.models.data.ModelArrays.latlons">
+<code class="sig-name descname">latlons</code><em class="property"> = None</em><a class="headerlink" href="#src.models.data.ModelArrays.latlons" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="src.models.data.TrainData">
+<em class="property">class </em><code class="sig-prename descclassname">src.models.data.</code><code class="sig-name descname">TrainData</code><span class="sig-paren">(</span><em class="sig-param">historical: Union[numpy.ndarray, torch.Tensor], current: Union[numpy.ndarray, torch.Tensor, NoneType], pred_months: Union[numpy.ndarray, torch.Tensor]</em><span class="sig-paren">)</span><a class="headerlink" href="#src.models.data.TrainData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="src.models.data.train_val_mask">
+<code class="sig-prename descclassname">src.models.data.</code><code class="sig-name descname">train_val_mask</code><span class="sig-paren">(</span><em class="sig-param">mask_len: int</em>, <em class="sig-param">val_ratio: float = 0.3</em><span class="sig-paren">)</span> &#x2192; Tuple[List[bool], List[bool]]<a class="headerlink" href="#src.models.data.train_val_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes a trainining and validation mask which can be passed to the dataloader
+Arguments
+———-
+mask_len: int</p>
+<blockquote>
+<div><p>The length of the mask to be created</p>
+</div></blockquote>
+<dl class="simple">
+<dt>val_ratio: float = 0.3</dt><dd><p>The ratio of instances which should be True for the val mask and False for the train
+mask</p>
+</dd>
+</dl>
+<p>The train mask and the val mask, both as lists</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="src.models.parsimonious.html" class="btn btn-neutral float-right" title="4.2.3. src.models.parsimonious module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="src.models.base.html" class="btn btn-neutral float-left" title="4.2.1. src.models.base module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Tommy Lees, Gabriel Tseng
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

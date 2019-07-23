@@ -1,0 +1,7 @@
+src.preprocess.chirps module
+============================
+
+.. automodule:: src.preprocess.chirps
+   :members:
+   :undoc-members:
+   :show-inheritance:

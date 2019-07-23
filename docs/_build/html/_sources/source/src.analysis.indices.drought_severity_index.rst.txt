@@ -1,0 +1,7 @@
+src.analysis.indices.drought\_severity\_index module
+====================================================
+
+.. automodule:: src.analysis.indices.drought_severity_index
+   :members:
+   :undoc-members:
+   :show-inheritance:

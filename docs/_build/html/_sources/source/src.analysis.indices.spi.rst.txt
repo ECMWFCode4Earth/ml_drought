@@ -1,0 +1,7 @@
+src.analysis.indices.spi module
+===============================
+
+.. automodule:: src.analysis.indices.spi
+   :members:
+   :undoc-members:
+   :show-inheritance:
