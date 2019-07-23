@@ -1,6 +1,8 @@
 from pathlib import Path
 import xarray as xr
 import pandas as pd
+import multiprocessing
+from functools import partial
 from typing import Optional, List
 
 from .base import BasePreProcessor
@@ -29,20 +31,6 @@ class ESACCIPreprocessor(BasePreProcessor):
         else:
             new_filename = f"{year}_{filename_stem}.nc"
         return new_filename
-
-    # def merge_files(self, subset_str: Optional[str] = 'kenya',
-    #                 resample_time: Optional[str] = 'M',
-    #                 upsampling: bool = False) -> None:
-    #
-    #     ds = xr.open_mfdataset(self.get_filepaths('interim'))
-    #
-    #     if resample_time is not None:
-    #         ds = self.resample_time(ds, resample_time, upsampling)
-    #
-    #     out = self.out_dir / f'{self.dataset}\
-    #     {"_" + subset_str if subset_str is not None else ""}.nc'.replace(' ', '')
-    #     ds.to_netcdf(out)
-    #     print(f"\n**** {out} Created! ****\n")
 
     def _preprocess_single(self, netcdf_filepath: Path,
                            subset_str: Optional[str] = 'kenya',
