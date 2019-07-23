@@ -27,7 +27,7 @@ class TestNDVIExporter:
         exporter.wget_file(test_filename)
         captured = capsys.readouterr()
 
-        expected_stdout = f'{test_filename} for 1981 already donwloaded!\n'
+        expected_stdout = f'testy_test.nc for 1981 already donwloaded!\n'
         assert captured.out == expected_stdout, \
             f'Expected stdout to be {expected_stdout}, got {captured.out}'
         mock_system.assert_not_called(), 'os.system was called! Should have been skipped'
@@ -55,7 +55,7 @@ class TestNDVIExporter:
             'href="1981/">1981/</a></td><td align="right">14-Jul-2019 16:09'
 
         # EXPECTED response for second page (1981 all .nc files)
-        expected_response ='<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n<html>\n' \
+        expected_response = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n<html>\n' \
             '<head>\n  <title>Index of' \
             '/data/avhrr-land-normalized-difference-vegetation-index/access/' \
             '1981</title>\n</head>\n <body>\n<h1>Index of' \

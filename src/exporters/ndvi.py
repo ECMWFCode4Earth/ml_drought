@@ -25,8 +25,8 @@ class NDVIExporter(BaseExporter):
             self.ndvi_folder.mkdir()
 
         self.base_url = 'https://www.ncei.noaa.gov/data/' \
-        'avhrr-land-normalized-difference-vegetation-index/' \
-        'access'.replace(' ', '')
+            'avhrr-land-normalized-difference-vegetation-index/' \
+            'access'.replace(' ', '')
 
     @staticmethod
     def beautiful_soup_url(url: str) -> BeautifulSoup:
