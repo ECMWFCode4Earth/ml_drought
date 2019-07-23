@@ -142,22 +142,6 @@ def drop_nans_and_flatten(dataArray: xr.DataArray) -> np.ndarray:
     return dataArray.values[~np.isnan(dataArray.values)]
 
 
-def get_modal_value_across_time(ds: xr.Dataset) -> xr.Dataaset:
-    """Get the modal value along the time dimension
-    (produce a 2D spatial array with each pixel being the
-    modal value)
-
-    Arguments:
-    ---------
-    ds: xr.Dataset
-        the dataset that you want to calculate the mode for
-    """
-    stacked = ds.stack(pixels=['lat', 'lon'])
-    # xr.apply_ufunc(stats.mode, stacked)
-    mode = stacked.reduce(stats.mode, dim='time')
-    mode = mode.unstack('pixel')
-    return mode
-
 # dictionary lookup of regions
 region_lookup = {
     "kenya": get_kenya(),
