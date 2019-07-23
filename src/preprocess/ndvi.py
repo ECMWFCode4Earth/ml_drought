@@ -1,9 +1,8 @@
 from pathlib import Path
 import xarray as xr
-import pandas as pd
 import multiprocessing
 from functools import partial
-from typing import Optional, List
+from typing import Optional
 
 from .base import BasePreProcessor
 
@@ -15,16 +14,16 @@ class NDVIPreprocessor(BasePreProcessor):
     def create_filename(self, netcdf_filepath: str,
                         subset_name: Optional[str] = None) -> str:
         """
-        ESACCI-LC-L4-LCCS-Map-300m-P1Y-1992-v2.0.7b.nc
+        AVHRR-Land_v005_AVH13C1_NOAA-09_19860702_c20170612095548.nc
             =>
-        1992_ESACCI-LC-L4-LCCS-Map-300m-P1Y-1992-v2.0.7b_kenya.nc
+        1986_AVHRR-Land_v005_AVH13C1_NOAA-09_19860702_c20170612095548_kenya.nc
         """
         if netcdf_filepath[-3:] == '.nc':
             filename_stem = netcdf_filepath[:-3]
         else:
             filename_stem = netcdf_filepath
 
-        year = filename_stem.split('-')[-2]
+        year = filename_stem.split('_')[-2][:4]
 
         if subset_name is not None:
             new_filename = f"{year}_{filename_stem}_{subset_name}.nc"
@@ -50,7 +49,7 @@ class NDVIPreprocessor(BasePreProcessor):
 
         print(f'Starting work on {netcdf_filepath.name}')
         ds = xr.open_dataset(netcdf_filepath)
-        ds = ds.drop_dims(['ncrs','nv'])
+        ds = ds.drop_dims(['ncrs', 'nv'])
 
         # 2. chop out EastAfrica
         if subset_str is not None:

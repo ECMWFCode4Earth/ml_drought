@@ -12,8 +12,8 @@ class TestNDVIPreprocessor:
 
     @staticmethod
     def test_make_filename():
-        test_file = '1982-testy_test.nc'
-        expected_output = '1982_1982-testy_test_kenya.nc'
+        test_file = '19860702_testy-test.nc'
+        expected_output = '1986_19860702_testy-test_kenya.nc'
 
         filename = NDVIPreprocessor().create_filename(test_file, 'kenya')
         assert filename == expected_output, \
@@ -21,21 +21,23 @@ class TestNDVIPreprocessor:
 
     @staticmethod
     def _make_ndvi_dataset(size, lonmin=-180.0, lonmax=180.0,
-                              latmin=-55.152, latmax=75.024,
-                              add_times=True):
+                           latmin=-55.152, latmax=75.024,
+                           add_times=True):
         lat_len, lon_len = size
         # create the vector
         longitudes = np.linspace(lonmin, lonmax, lon_len)
         latitudes = np.linspace(latmin, latmax, lat_len)
 
-        dims = ['lat', 'lon']
+        dims = ['lat', 'lon', 'ncrs', 'nv']
         coords = {'lat': latitudes,
-                  'lon': longitudes}
+                  'lon': longitudes,
+                  'ncrs': [1],
+                  'nv': [1]}
 
         if add_times:
-            size = (2, size[0], size[1])
+            size = (1, size[0], size[1], 1, 1)
             dims.insert(0, 'time')
-            coords['time'] = [datetime(2019, 1, 1), datetime(2019, 1, 2)]
+            coords['time'] = [datetime(2019, 1, 1)]
         lc = np.random.randint(100, size=size)
 
         return xr.Dataset({'ndvi': (dims, lc)}, coords=coords)
