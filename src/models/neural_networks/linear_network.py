@@ -58,6 +58,7 @@ class LinearNetwork(NNBase):
                                               layer_sizes=self.layer_sizes,
                                               dropout=self.dropout,
                                               include_pred_month=self.include_pred_month,
+                                              include_latlons=self.include_latlons,
                                               experiment=self.experiment)
         self.model.load_state_dict(state_dict)
 

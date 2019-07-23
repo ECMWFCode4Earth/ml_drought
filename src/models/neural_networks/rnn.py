@@ -68,6 +68,7 @@ class RecurrentNetwork(NNBase):
                               rnn_dropout=self.rnn_dropout,
                               dense_dropout=self.dense_dropout,
                               include_pred_month=self.include_pred_month,
+                              include_latlons=self.include_latlons,
                               experiment=self.experiment,
                               current_size=self.current_size)
         self.model.load_state_dict(state_dict)
