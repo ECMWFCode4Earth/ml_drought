@@ -8,6 +8,7 @@ import calendar
 from datetime import date
 import xarray as xr
 import numpy as np
+from scipy import stats
 
 from typing import Optional, Tuple
 
@@ -129,7 +130,7 @@ def create_shape_aligned_climatology(ds, clim, variable, time_period):
     return new_clim
 
 
-def get_modal_value_across_time(ds: xr.DataArray) -> xr.DataArray:
+def get_modal_value_across_time(da: xr.DataArray) -> xr.DataArray:
     """Get the modal value along the time dimension
     (produce a 2D spatial array with each pixel being the
     modal value)
