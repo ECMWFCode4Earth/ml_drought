@@ -38,7 +38,11 @@ class TestESACCIPreprocessor:
             coords['time'] = [datetime(2019, 1, 1), datetime(2019, 1, 2)]
         lc = np.random.randint(100, size=size)
 
-        return xr.Dataset({'lc': (dims, lc)}, coords=coords)
+        # make datast with correct attrs
+        ds = xr.Dataset({'lc': (dims, lc)}, coords=coords)
+        ds = ds.attrs['time_coverage_start'] = '20190101'
+
+        return ds
 
     @staticmethod
     def test_directories_created(tmp_path):

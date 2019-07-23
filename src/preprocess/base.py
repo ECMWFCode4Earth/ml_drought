@@ -34,7 +34,7 @@ class BasePreProcessor:
         self.preprocessed_folder = self.data_folder / 'interim'
 
         if not self.preprocessed_folder.exists():
-            self.preprocessed_folder.mkdir()
+            self.preprocessed_folder.mkdir(exist_ok=True, parents=True)
 
         try:
             self.out_dir = self.preprocessed_folder / f'{self.dataset}_preprocessed'
