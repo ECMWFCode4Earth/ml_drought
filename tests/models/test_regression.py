@@ -96,8 +96,8 @@ class TestLinearRegression:
             f'Model attribute not a linear regression!'
 
         if (experiment != 'nowcast') and (use_pred_months):
-            assert model.model.coef_.size == 120, "Expecting 120 coefficients" \
-                "(3 historical vars * 36 months) + 12 pred_months one_hot encoded"
+            assert model.model.coef_.size == 122, "Expecting 120 coefficients" \
+                "(3 historical vars * 36 months) + 12 pred_months one_hot encoded + 2 latlons"
 
         # Test Predictions / Evaluations
         test_arrays_dict, preds_dict = model.predict()
@@ -107,11 +107,11 @@ class TestLinearRegression:
             ), "Expected length of test arrays to be the same as the predictions"
 
             if use_pred_months:
-                assert model.model.coef_.size == 119, "Expect to have 119 coefficients" \
-                    " (35 tstep x 3 historical) + 12 pred_months_one_hot + 2 current"
+                assert model.model.coef_.size == 121, "Expect to have 119 coefficients" \
+                    " (35 tstep x 3 historical) + 12 pred_months_one_hot + 2 current + 2 latlons"
             else:
-                assert model.model.coef_.size == 107, "Expect to have 107 coefficients" \
-                    " (35 tstep x 3 historical) + 2 current"
+                assert model.model.coef_.size == 109, "Expect to have 107 coefficients" \
+                    " (35 tstep x 3 historical) + 2 current + 2 latlons"
 
     def test_big_mean(self, tmp_path, monkeypatch):
 
