@@ -1,6 +1,5 @@
 from pathlib import Path
-import ftplib
-
+import os
 import string
 
 from .base import BaseExporter
@@ -17,11 +16,12 @@ class EsaCciExporter(BaseExporter):
     LEGEND ( .csv)
     http://maps.elie.ucl.ac.be/CCI/viewer/download/ESACCI-LC-Legend.csv
     """
-
+    @staticmethod
     def remove_punctuation(text: str):
         trans = str.maketrans('', '', string.punctuation)
         return text.lower().translate(trans)
 
+    @staticmethod
     def read_legend():
         legend_url = 'http://maps.elie.ucl.ac.be/CCI/viewer/download/ESACCI-LC-Legend.csv'
         df = pd.read_csv(legend_url, delimiter=';')
