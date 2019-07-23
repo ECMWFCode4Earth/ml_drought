@@ -7,10 +7,10 @@ import warnings
 from typing import cast, Dict, Optional, Tuple
 
 from ..utils import minus_months
-from .engineer import Engineer
+from .base import _EngineerBase
 
 
-class OneMonthForecastEngineer(Engineer):
+class _OneMonthForecastEngineer(_EngineerBase):
     name = 'one_month_forecast'
 
     @staticmethod

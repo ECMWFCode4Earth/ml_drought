@@ -6,10 +6,10 @@ import xarray as xr
 from typing import cast, Dict, Optional, Tuple
 
 from ..utils import minus_months
-from .engineer import Engineer
+from .base import _EngineerBase
 
 
-class NowcastEngineer(Engineer):
+class _NowcastEngineer(_EngineerBase):
     r"""Engineer the preprocessed `.nc` files into `/train`, `/test` `{x, y}.nc`
     for the `nowcast` experiment.
 

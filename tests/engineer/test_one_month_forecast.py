@@ -4,7 +4,7 @@ import numpy as np
 import xarray as xr
 import datetime as dt
 
-from src.engineer import OneMonthForecastEngineer
+from src.engineer import _OneMonthForecastEngineer as OneMonthForecastEngineer
 
 from ..utils import _make_dataset
 from .test_engineer import _setup

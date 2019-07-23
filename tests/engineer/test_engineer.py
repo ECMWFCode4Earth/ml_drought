@@ -1,4 +1,4 @@
-from src.engineer.engineer import Engineer
+from src.engineer.base import _EngineerBase as Engineer
 
 from ..utils import _make_dataset
 
@@ -33,19 +33,30 @@ def _setup(data_path):
 
 class TestEngineer:
 
-    def test_get_preprocessed(self, tmp_path):
+    def test_get_preprocessed(self, tmp_path, monkeypatch):
 
         expected_files, expected_vars = _setup(tmp_path)
+
+        def mock_init(self, data_folder):
+            self.name = 'dummy'
+            self.interim_folder = data_folder / 'interim'
+
+        monkeypatch.setattr(Engineer, '__init__', mock_init)
 
         engineer = Engineer(tmp_path)
         files = engineer._get_preprocessed_files()
 
         assert set(expected_files) == set(files), f'Did not retrieve expected files!'
 
-    def test_join(self, tmp_path):
+    def test_join(self, tmp_path, monkeypatch):
 
         expected_files, expected_vars = _setup(tmp_path)
 
+        def mock_init(self, data_folder):
+            self.name = 'dummy'
+            self.interim_folder = data_folder / 'interim'
+
+        monkeypatch.setattr(Engineer, '__init__', mock_init)
         engineer = Engineer(tmp_path)
         joined_ds = engineer._make_dataset()
 
