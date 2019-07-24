@@ -7,7 +7,7 @@ from torch import nn
 
 from typing import Dict, List, Optional, Tuple
 
-from .base import NNBase, LinearBlock
+from .base import NNBase
 
 
 class RecurrentNetwork(NNBase):
@@ -15,9 +15,8 @@ class RecurrentNetwork(NNBase):
     model_name = 'rnn'
 
     def __init__(self, hidden_size: int,
-                 dense_features: List[int],
+                 dense_features: Optional[List[int]],
                  rnn_dropout: float = 0.25,
-                 dense_dropout: float = 0.25,
                  data_folder: Path = Path('data'),
                  batch_size: int = 1,
                  experiment: str = 'one_month_forecast',
@@ -32,7 +31,7 @@ class RecurrentNetwork(NNBase):
         # to initialize and save the model
         self.hidden_size = hidden_size
         self.rnn_dropout = rnn_dropout
-        self.dense_dropout = dense_dropout
+        if dense_features is None: dense_features = []
         self.dense_features = dense_features
         self.features_per_month: Optional[int] = None
         self.current_size: Optional[int] = None
@@ -48,7 +47,6 @@ class RecurrentNetwork(NNBase):
             'batch_size': self.batch_size,
             'hidden_size': self.hidden_size,
             'rnn_dropout': self.rnn_dropout,
-            'dense_dropout': self.dense_dropout,
             'dense_features': self.dense_features,
             'include_pred_month': self.include_pred_month,
             'include_latlons': self.include_latlons,
@@ -68,7 +66,6 @@ class RecurrentNetwork(NNBase):
                               dense_features=self.dense_features,
                               hidden_size=self.hidden_size,
                               rnn_dropout=self.rnn_dropout,
-                              dense_dropout=self.dense_dropout,
                               include_pred_month=self.include_pred_month,
                               include_latlons=self.include_latlons,
                               experiment=self.experiment,
@@ -90,7 +87,6 @@ class RecurrentNetwork(NNBase):
                    dense_features=self.dense_features,
                    hidden_size=self.hidden_size,
                    rnn_dropout=self.rnn_dropout,
-                   dense_dropout=self.dense_dropout,
                    include_pred_month=self.include_pred_month,
                    include_latlons=self.include_latlons,
                    experiment=self.experiment,
@@ -99,7 +95,7 @@ class RecurrentNetwork(NNBase):
 
 class RNN(nn.Module):
     def __init__(self, features_per_month, dense_features, hidden_size,
-                 rnn_dropout, dense_dropout, include_pred_month,
+                 rnn_dropout, include_pred_month,
                  include_latlons, experiment, current_size=None):
         super().__init__()
 
@@ -121,16 +117,16 @@ class RNN(nn.Module):
         if experiment == 'nowcast':
             assert current_size is not None
             dense_input_size += current_size
+
         dense_features.insert(0, dense_input_size)
+        if dense_features[-1] != 1:
+            dense_features.append(1)
 
         self.dense_layers = nn.ModuleList([
-            LinearBlock(in_features=dense_features[i - 1],
-                        out_features=dense_features[i],
-                        dropout=dense_dropout)
+            nn.Linear(in_features=dense_features[i - 1],
+                      out_features=dense_features[i])
             for i in range(1, len(dense_features))
         ])
-
-        self.final_dense = nn.Linear(in_features=dense_features[-1], out_features=1)
 
         self.initialize_weights()
 
@@ -142,10 +138,8 @@ class RNN(nn.Module):
                 nn.init.uniform_(pam.data, -sqrt_k, sqrt_k)
 
         for dense_layer in self.dense_layers:
-            nn.init.kaiming_uniform_(dense_layer.linear.weight.data)
-
-        nn.init.kaiming_uniform_(self.final_dense.weight.data)
-        nn.init.constant_(self.final_dense.bias.data, 0)
+            nn.init.kaiming_uniform_(dense_layer.weight.data)
+            nn.init.constant_(dense_layer.bias.data, 0)
 
     def forward(self, x, pred_month=None, latlons=None, current=None):
 
@@ -179,7 +173,7 @@ class RNN(nn.Module):
 
         for layer_number, dense_layer in enumerate(self.dense_layers):
             x = dense_layer(x)
-        return self.final_dense(x)
+        return x
 
 
 class UnrolledRNN(nn.Module):

@@ -16,13 +16,11 @@ class TestEARecurrentNetwork:
         dense_features = [10]
         hidden_size = 128
         rnn_dropout = 0.25
-        dense_dropout = 0.25
         include_pred_month = True
 
         def mocktrain(self):
             self.model = EALSTM(features_per_month, dense_features, hidden_size,
-                                rnn_dropout, dense_dropout,
-                                include_pred_month,
+                                rnn_dropout, include_pred_month,
                                 experiment='one_month_forecast')
             self.features_per_month = features_per_month
 
@@ -46,7 +44,6 @@ class TestEARecurrentNetwork:
         assert model_dict['model']['features_per_month'] == features_per_month
         assert model_dict['hidden_size'] == hidden_size
         assert model_dict['rnn_dropout'] == rnn_dropout
-        assert model_dict['dense_dropout'] == dense_dropout
         assert model_dict['dense_features'] == dense_features
         assert model_dict['include_pred_month'] == include_pred_month
         assert model_dict['experiment'] == 'one_month_forecast'
@@ -71,11 +68,9 @@ class TestEARecurrentNetwork:
         dense_features = [10]
         hidden_size = 128
         rnn_dropout = 0.25
-        dense_dropout = 0.25
 
         model = EARecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
-                                   rnn_dropout=rnn_dropout, dense_dropout=dense_dropout,
-                                   data_folder=tmp_path)
+                                   rnn_dropout=rnn_dropout, data_folder=tmp_path)
         model.train()
 
         captured = capsys.readouterr()
