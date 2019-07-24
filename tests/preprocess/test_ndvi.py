@@ -28,19 +28,19 @@ class TestNDVIPreprocessor:
         longitudes = np.linspace(lonmin, lonmax, lon_len)
         latitudes = np.linspace(latmin, latmax, lat_len)
 
-        dims = ['lat', 'lon', 'ncrs', 'nv']
+        dims = ['lat', 'lon']
         coords = {'lat': latitudes,
                   'lon': longitudes,
                   'ncrs': [1],
                   'nv': [1]}
 
         if add_times:
-            size = (1, size[0], size[1], 1, 1)
+            size = (1, size[0], size[1])
             dims.insert(0, 'time')
             coords['time'] = [datetime(2019, 1, 1)]
-        lc = np.random.randint(100, size=size)
+        ndvi = np.random.randint(100, size=size)
 
-        return xr.Dataset({'ndvi': (dims, lc)}, coords=coords)
+        return xr.Dataset({'NDVI': (dims, ndvi)}, coords=coords)
 
     @staticmethod
     def test_directories_created(tmp_path):
@@ -113,7 +113,7 @@ class TestNDVIPreprocessor:
         assert (lats.min() >= kenya.latmin) and (lats.max() <= kenya.latmax), \
             'Latitudes not correctly subset'
 
-        assert out_data.VHI.values.shape[1:] == (20, 20)
+        assert out_data.ndvi.values.shape[1:] == (20, 20)
 
         assert not processor.interim.exists(), \
             f'Interim ndvi folder should have been deleted'

@@ -3,6 +3,7 @@ import xarray as xr
 import multiprocessing
 from functools import partial
 from typing import Optional
+from shutil import rmtree
 
 from .base import BasePreProcessor
 
@@ -115,3 +116,6 @@ class NDVIPreprocessor(BasePreProcessor):
             resample_time=resample_time,
             upsampling=upsampling
         )
+
+        if cleanup:
+            rmtree(self.interim)
