@@ -83,6 +83,10 @@ class DataLoader:
         How many surrounding pixels to add to the input data. e.g. if the input is 1, then in
         addition to the pixels on the prediction point, the neighbouring (spatial) pixels will
         be included too, up to a distance of one pixel away
+    monthly_means: bool = True
+        Whether to include the monthly mean (mean across all spatial values) for
+        the input variables. These will be additional dimensions to the historical
+        (and optionally current) arrays
     """
     def __init__(self, data_path: Path = Path('data'), batch_file_size: int = 1,
                  mode: str = 'train', shuffle_data: bool = True,
@@ -91,7 +95,8 @@ class DataLoader:
                  mask: Optional[List[bool]] = None,
                  pred_months: Optional[List[int]] = None,
                  to_tensor: bool = False,
-                 surrounding_pixels: Optional[int] = None) -> None:
+                 surrounding_pixels: Optional[int] = None,
+                 monthly_means: bool = False) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
@@ -111,6 +116,7 @@ class DataLoader:
                 self.normalizing_dict = pickle.load(f)
 
         self.surrounding_pixels = surrounding_pixels
+        self.monthly_means = monthly_means
         self.to_tensor = to_tensor
 
     def __iter__(self):
@@ -159,6 +165,7 @@ class _BaseIter:
         self.shuffle = loader.shuffle
         self.clear_nans = loader.clear_nans
         self.surrounding_pixels = loader.surrounding_pixels
+        self.monthly_means = loader.monthly_means
         self.to_tensor = loader.to_tensor
         self.experiment = loader.experiment
 
@@ -204,8 +211,7 @@ class _BaseIter:
         assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable! ' \
             f'Got {len(list(y.data_vars))}'
 
-        if self.surrounding_pixels is not None:
-            x = self._add_surrounding(x, self.surrounding_pixels)
+        x = self._add_extra_dims(x, self.surrounding_pixels, self.monthly_means)
 
         x_np, y_np = x.to_array().values, y.to_array().values
 
@@ -306,15 +312,24 @@ class _BaseIter:
                            y_var=list(y.data_vars)[0], latlons=latlons)
 
     @staticmethod
-    def _add_surrounding(x: xr.Dataset, surrounding_pixels: int) -> xr.Dataset:
+    def _add_extra_dims(x: xr.Dataset, surrounding_pixels: Optional[int],
+                        monthly_mean: bool) -> xr.Dataset:
+        original_vars = list(x.data_vars)
 
-        lat_shifts = lon_shifts = range(-surrounding_pixels, surrounding_pixels + 1)
-        for var in x.data_vars:
-            for lat_shift in lat_shifts:
-                for lon_shift in lon_shifts:
-                    if lat_shift == lon_shift == 0: continue
-                    shifted_varname = f'lat_{lat_shift}_lon_{lon_shift}_{var}'
-                    x[shifted_varname] = x[var].shift(lat=lat_shift, lon=lon_shift)
+        if monthly_mean:
+            monthly_mean_values = x.mean(dim=['lat', 'lon'])
+            mean_dataset = xr.ones_like(x) * monthly_mean_values
+            for var in mean_dataset.data_vars:
+                x[f'spatial_mean_{var}'] = mean_dataset[var]
+
+        if surrounding_pixels is not None:
+            lat_shifts = lon_shifts = range(-surrounding_pixels, surrounding_pixels + 1)
+            for var in original_vars:
+                for lat_shift in lat_shifts:
+                    for lon_shift in lon_shifts:
+                        if lat_shift == lon_shift == 0: continue
+                        shifted_varname = f'lat_{lat_shift}_lon_{lon_shift}_{var}'
+                        x[shifted_varname] = x[var].shift(lat=lat_shift, lon=lon_shift)
         return x
 
     @staticmethod

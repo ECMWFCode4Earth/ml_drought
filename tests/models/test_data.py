@@ -100,6 +100,7 @@ class TestBaseIter:
                 self.to_tensor = None
                 self.experiment = experiment
                 self.surrounding_pixels = surrounding_pixels
+                self.monthly_means = False
 
         base_iterator = _BaseIter(MockLoader())
 
@@ -196,27 +197,41 @@ class TestBaseIter:
             assert np.all(x_train_data.current == expected), f"Expected to " \
                 "find the target_time data for the non target variables"
 
-    def test_surrounding_pixels(self):
+    @pytest.mark.parametrize(
+        'surrounding_pixels,monthly_mean',
+        [(1, True), (1, False), (None, True), (None, False)])
+    def test_additional_dims_pixels(self, surrounding_pixels, monthly_mean):
         x, _, _ = _make_dataset(size=(10, 10))
         org_vars = list(x.data_vars)
 
-        x_with_more = _BaseIter._add_surrounding(x, 1)
-        shifted_vars = x_with_more.data_vars
+        x_with_more = _BaseIter._add_extra_dims(x, surrounding_pixels, monthly_mean)
+        shifted_mean_vars = x_with_more.data_vars
 
         for data_var in org_vars:
-            for lat in [-1, 0, 1]:
-                for lon in [-1, 0, 1]:
-                    if lat == lon == 0:
-                        assert f'lat_{lat}_lon_{lon}_{data_var}' not in shifted_vars, \
-                            f'lat_{lat}_lon_{lon}_{data_var} should not ' \
-                            f'be in the shifted variables'
-                    else:
-                        shifted_var_name = f'lat_{lat}_lon_{lon}_{data_var}'
-                        assert shifted_var_name in shifted_vars, \
-                            f'{shifted_var_name} is not in the shifted variables'
+            if surrounding_pixels is not None:
+                for lat in [-1, 0, 1]:
+                    for lon in [-1, 0, 1]:
+                        if lat == lon == 0:
+                            assert f'lat_{lat}_lon_{lon}_{data_var}' not in shifted_mean_vars, \
+                                f'lat_{lat}_lon_{lon}_{data_var} should not ' \
+                                f'be in the shifted variables'
+                        else:
+                            shifted_var_name = f'lat_{lat}_lon_{lon}_{data_var}'
+                            assert shifted_var_name in shifted_mean_vars, \
+                                f'{shifted_var_name} is not in the shifted variables'
 
-                        org = x_with_more.VHI.isel(time=0, lon=5, lat=5).values
-                        shifted = x_with_more[shifted_var_name].isel(time=0,
-                                                                     lon=5 + lon,
-                                                                     lat=5 + lat).values
-                        assert org == shifted, f"Shifted values don't match!"
+                            org = x_with_more.VHI.isel(time=0, lon=5, lat=5).values
+                            shifted = x_with_more[shifted_var_name].isel(time=0,
+                                                                         lon=5 + lon,
+                                                                         lat=5 + lat).values
+                            assert org == shifted, f"Shifted values don't match!"
+
+            if monthly_mean:
+                mean_var_name = f'spatial_mean_{data_var}'
+                assert mean_var_name in shifted_mean_vars, \
+                    f'{mean_var_name} is not in the shifted variables'
+
+                actual_mean = x[data_var].isel(time=0).mean(dim=['lat', 'lon']).values
+                output_mean = x[f'spatial_mean_{data_var}'].isel(time=0, lon=0, lat=0).values
+
+                assert actual_mean == output_mean, f"Mean values don't match!"
