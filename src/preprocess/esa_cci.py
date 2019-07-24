@@ -4,6 +4,7 @@ import pandas as pd
 import multiprocessing
 from functools import partial
 from typing import Optional, List
+from shutil import rmtree
 
 from .base import BasePreProcessor
 
@@ -65,7 +66,12 @@ class ESACCIPreprocessor(BasePreProcessor):
             ds = self.regrid(ds, regrid)
 
         # 4. assign time stamp
-        time = pd.to_datetime(ds.attrs['time_coverage_start'])
+        try:  # try inferring from the ds.attrs
+            time = pd.to_datetime(ds.attrs['time_coverage_start'])
+        except:  # else infer from filename (for tests)
+            year = netcdf_filepath.name.split('-')[-2]
+            time = pd.to_datetime(f'{year}-01-01')
+
         ds = ds.assign_coords(time=time)
         ds = ds.expand_dims('time')
 
@@ -121,5 +127,7 @@ class ESACCIPreprocessor(BasePreProcessor):
                 nc_files)
             print("\nOutputs (errors):\n\t", outputs)
 
-        # self.merge_files(subset_str, resample_time, upsampling)
-        # pass
+        self.merge_files(subset_str, resample_time, upsampling)
+
+        if cleanup:
+            rmtree(self.interim)

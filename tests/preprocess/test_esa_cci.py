@@ -1,6 +1,7 @@
 import xarray as xr
 import numpy as np
 from datetime import datetime
+import pytest
 
 from src.preprocess import ESACCIPreprocessor
 from src.utils import get_kenya, get_ethiopia
@@ -22,7 +23,7 @@ class TestESACCIPreprocessor:
     @staticmethod
     def _make_ESA_CCI_dataset(size, lonmin=-180.0, lonmax=180.0,
                               latmin=-55.152, latmax=75.024,
-                              add_times=True):
+                              add_times=False):
         lat_len, lon_len = size
         # create the vector
         longitudes = np.linspace(lonmin, lonmax, lon_len)
@@ -36,10 +37,10 @@ class TestESACCIPreprocessor:
             size = (2, size[0], size[1])
             dims.insert(0, 'time')
             coords['time'] = [datetime(2019, 1, 1), datetime(2019, 1, 2)]
-        lc = np.random.randint(100, size=size)
+        lccs_class = np.random.randint(100, size=size)
 
         # make datast with correct attrs
-        ds = xr.Dataset({'lc': (dims, lc)}, coords=coords)
+        ds = xr.Dataset({'lccs_class': (dims, lccs_class)}, coords=coords)
         ds.attrs['time_coverage_start'] = '20190101'
 
         return ds
@@ -65,7 +66,7 @@ class TestESACCIPreprocessor:
 
         (tmp_path / 'raw' / 'esa_cci_landcover').mkdir(parents=True)
 
-        test_file = tmp_path / 'raw/esa_cci_landcover/testy_test.nc'
+        test_file = tmp_path / 'raw/esa_cci_landcover/1992-v2.0.7b_testy_test.nc'
         test_file.touch()
 
         processor = ESACCIPreprocessor(tmp_path)
@@ -73,10 +74,11 @@ class TestESACCIPreprocessor:
         files = processor.get_filepaths()
         assert files[0] == test_file, f'Expected {test_file} to be retrieved'
 
-    def test_preprocess(self, tmp_path):
+    @pytest.mark.parametrize('cleanup', [True, False])
+    def test_preprocess(self, tmp_path, cleanup):
 
         (tmp_path / 'raw/esa_cci_landcover').mkdir(parents=True)
-        data_path = tmp_path / 'raw/esa_cci_landcover/testy_test.nc'
+        data_path = tmp_path / 'raw/esa_cci_landcover/1992-v2.0.7b_testy_test.nc'
         dataset = self._make_ESA_CCI_dataset(size=(100, 100))
         dataset.to_netcdf(path=data_path)
 
@@ -90,17 +92,25 @@ class TestESACCIPreprocessor:
 
         processor = ESACCIPreprocessor(tmp_path)
         processor.preprocess(subset_str='kenya', regrid=regrid_path,
-                             parallel_processes=1)
+                             parallel_processes=1, cleanup=cleanup)
 
         expected_out_path = (
-            tmp_path / 'interim/esa_cci_landcover_preprocessed'
-            '/esa_cci_landcover_kenya.nc'
+            tmp_path / 'interim/esa_cci_landcover_interim'
+            '/1992_1992-v2.0.7b_testy_test_kenya.nc'
         )
-        assert expected_out_path.exists(), \
-            f'Expected processed file to be saved to {expected_out_path}'
+        if not cleanup:
+            assert expected_out_path.exists(), \
+                f'Expected processed file to be saved to {expected_out_path}'
+
+        expected_out_processed = (
+            tmp_path / 'interim' / 'esa_cci_landcover_'
+            'preprocessed' / 'esa_cci_landcover_kenya.nc'
+        )
+        assert expected_out_processed.exists(), \
+            'expected a processed folder'
 
         # check the subsetting happened correctly
-        out_data = xr.open_dataset(expected_out_path)
+        out_data = xr.open_dataset(expected_out_processed)
         expected_dims = ['lat', 'lon', 'time']
         assert len(list(out_data.dims)) == len(expected_dims)
         for dim in expected_dims:
@@ -115,15 +125,16 @@ class TestESACCIPreprocessor:
         assert (lats.min() >= kenya.latmin) and (lats.max() <= kenya.latmax), \
             'Latitudes not correctly subset'
 
-        assert out_data.VHI.values.shape[1:] == (20, 20)
+        assert out_data.lc_class.values.shape[1:] == (20, 20)
 
-        assert not processor.interim.exists(), \
-            f'Interim esa_cci_landcover folder should have been deleted'
+        if cleanup:
+            assert not processor.interim.exists(), \
+                f'Interim esa_cci_landcover folder should have been deleted'
 
     def test_alternative_region(self, tmp_path):
         # make the dataset
         (tmp_path / 'raw/esa_cci_landcover').mkdir(parents=True)
-        data_path = tmp_path / 'raw/esa_cci_landcover/testy_test.nc'
+        data_path = tmp_path / 'raw/esa_cci_landcover/1992-v2.0.7b_testy_test.nc'
         dataset = self._make_ESA_CCI_dataset(size=(100, 100))
         dataset.attrs['time_coverage_start'] = '20190101'
         dataset.to_netcdf(path=data_path)
