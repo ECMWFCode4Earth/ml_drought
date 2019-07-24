@@ -68,7 +68,7 @@ class ESACCIPreprocessor(BasePreProcessor):
         # 4. assign time stamp
         try:  # try inferring from the ds.attrs
             time = pd.to_datetime(ds.attrs['time_coverage_start'])
-        except:  # else infer from filename (for tests)
+        except KeyError:  # else infer from filename (for tests)
             year = netcdf_filepath.name.split('-')[-2]
             time = pd.to_datetime(f'{year}-01-01')
 
