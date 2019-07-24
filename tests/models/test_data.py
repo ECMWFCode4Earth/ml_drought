@@ -197,6 +197,12 @@ class TestBaseIter:
             assert np.all(x_train_data.current == expected), f"Expected to " \
                 "find the target_time data for the non target variables"
 
+        assert x_train_data.yearly_means.shape[1] == 4
+
+        if (not normalize) and (not to_tensor):
+            mean_precip = x_coeff1.precip.mean(dim=['time', 'lat', 'lon']).values
+            assert (mean_precip == x_train_data.yearly_means).any()
+
     @pytest.mark.parametrize(
         'surrounding_pixels,monthly_mean',
         [(1, True), (1, False), (None, True), (None, False)])
