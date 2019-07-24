@@ -8,7 +8,6 @@ import calendar
 from datetime import date
 import xarray as xr
 import numpy as np
-from scipy import stats
 
 from typing import Optional, Tuple
 
