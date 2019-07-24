@@ -20,19 +20,24 @@ class EARecurrentNetwork(NNBase):
                  batch_size: int = 1,
                  experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
+                 include_latlons: bool = True,
                  include_pred_month: bool = True,
                  include_monthly_means: bool = True,
+                 include_yearly_means: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
-                         True, include_monthly_means, surrounding_pixels)
+                         include_latlons, include_monthly_means, include_yearly_means,
+                         surrounding_pixels)
 
         # to initialize and save the model
         self.hidden_size = hidden_size
         self.rnn_dropout = rnn_dropout
         if dense_features is None: dense_features = []
         self.dense_features = dense_features
+
         self.features_per_month: Optional[int] = None
         self.current_size: Optional[int] = None
+        self.yearly_mean_size: Optional[int] = None
 
     def save_model(self):
 
@@ -41,23 +46,28 @@ class EARecurrentNetwork(NNBase):
         model_dict = {
             'model': {'state_dict': self.model.state_dict(),
                       'features_per_month': self.features_per_month,
-                      'current_size': self.current_size},
+                      'current_size': self.current_size,
+                      'yearly_mean_size': self.yearly_mean_size},
             'batch_size': self.batch_size,
             'hidden_size': self.hidden_size,
             'rnn_dropout': self.rnn_dropout,
             'dense_features': self.dense_features,
             'include_pred_month': self.include_pred_month,
+            'include_latlons': self.include_latlons,
             'surrounding_pixels': self.surrounding_pixels,
             'include_monthly_means': self.include_monthly_means,
+            'include_yearly_means': self.include_yearly_means,
             'experiment': self.experiment
         }
 
         with (self.model_dir / 'model.pkl').open('wb') as f:
             pickle.dump(model_dict, f)
 
-    def load(self, state_dict: Dict, features_per_month: int, current_size: int) -> None:
+    def load(self, state_dict: Dict, features_per_month: int, current_size: Optional[int],
+             yearly_mean_size: Optional[int]) -> None:
         self.features_per_month = features_per_month
         self.current_size = current_size
+        self.yearly_mean_size = yearly_mean_size
 
         self.model: EALSTM = EALSTM(features_per_month=self.features_per_month,
                                     dense_features=self.dense_features,
@@ -65,7 +75,9 @@ class EARecurrentNetwork(NNBase):
                                     rnn_dropout=self.rnn_dropout,
                                     include_pred_month=self.include_pred_month,
                                     experiment=self.experiment,
-                                    current_size=self.current_size)
+                                    current_size=self.current_size,
+                                    yearly_mean_size=self.yearly_mean_size,
+                                    include_latlons=self.include_latlons)
         self.model.load_state_dict(state_dict)
 
     def _initialize_model(self, x_ref: Optional[Tuple[torch.Tensor, ...]]) -> nn.Module:
@@ -77,7 +89,11 @@ class EARecurrentNetwork(NNBase):
             if self.current_size is None:
                 assert x_ref is not None, \
                     f"x_ref can't be None if features_per_month or current_size is not defined"
-                self.current_size = x_ref[2].shape[-1]
+                self.current_size = x_ref[3].shape[-1]
+        if self.include_yearly_means:
+            if self.yearly_mean_size is None:
+                assert x_ref is not None
+                self.yearly_mean_size = x_ref[4].shape[-1]
 
         return EALSTM(features_per_month=self.features_per_month,
                       dense_features=self.dense_features,
@@ -85,21 +101,34 @@ class EARecurrentNetwork(NNBase):
                       rnn_dropout=self.rnn_dropout,
                       include_pred_month=self.include_pred_month,
                       experiment=self.experiment,
-                      current_size=self.current_size)
+                      yearly_mean_size=self.yearly_mean_size,
+                      current_size=self.current_size,
+                      include_latlons=self.include_latlons)
 
 
 class EALSTM(nn.Module):
     def __init__(self, features_per_month, dense_features, hidden_size,
-                 rnn_dropout, include_pred_month,
-                 experiment, current_size=None):
+                 rnn_dropout, include_latlons, include_pred_month,
+                 experiment, yearly_mean_size=None, current_size=None):
         super().__init__()
 
         self.experiment = experiment
         self.include_pred_month = include_pred_month
+        self.include_latlons = include_latlons
+        self.include_yearly_mean = False
+
+        assert include_latlons or (yearly_mean_size is not None), \
+            "Need one of latlons or yearly mean for the static input"
+        static_size = 0
+        if self.include_latlons:
+            static_size += 2
+        if yearly_mean_size is not None:
+            self.include_yearly_mean = True
+            static_size += yearly_mean_size
 
         self.dropout = nn.Dropout(rnn_dropout)
         self.rnn = EALSTMCell(input_size_dyn=features_per_month,
-                              input_size_stat=2,  # 2 for latlons, currently
+                              input_size_stat=static_size,
                               hidden_size=hidden_size,
                               batch_first=True)
         self.hidden_size = hidden_size
@@ -130,13 +159,16 @@ class EALSTM(nn.Module):
             nn.init.kaiming_uniform_(dense_layer.weight.data)
             nn.init.constant_(dense_layer.bias.data, 0)
 
-    def forward(self, x, pred_month=None, latlons=None, current=None):
+    def forward(self, x, pred_month=None, latlons=None, current=None, yearly_means=None):
 
-        # has to be optional to respect the positionality of the neural
-        # nets
-        assert latlons is not None, "Latlons can't be None!"
+        assert (yearly_means is not None) or (latlons is not None), \
+            "Both latlons and yearly means can't be None"
 
-        hidden_state, cell_state = self.rnn(x, latlons)
+        static_x = []
+        if self.include_latlons is not None: static_x.append(latlons)
+        if self.include_yearly_mean is not None: static_x.append(yearly_means)
+
+        hidden_state, cell_state = self.rnn(x, torch.cat(static_x, dim=-1))
 
         x = self.rnn_dropout(hidden_state[:, -1, :])
 

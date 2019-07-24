@@ -16,19 +16,24 @@ class TestEARecurrentNetwork:
         dense_features = [10]
         hidden_size = 128
         rnn_dropout = 0.25
+        include_latlons = True
         include_pred_month = True
+        include_yearly_means = True
+        yearly_mean_size = 3
 
         def mocktrain(self):
             self.model = EALSTM(features_per_month, dense_features, hidden_size,
-                                rnn_dropout, include_pred_month,
-                                experiment='one_month_forecast')
+                                rnn_dropout, include_latlons, include_pred_month,
+                                experiment='one_month_forecast', yearly_mean_size=yearly_mean_size)
             self.features_per_month = features_per_month
+            self.yearly_mean_size = yearly_mean_size
 
         monkeypatch.setattr(EARecurrentNetwork, 'train', mocktrain)
 
         model = EARecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
                                    include_pred_month=include_pred_month,
-                                   rnn_dropout=rnn_dropout, data_folder=tmp_path)
+                                   rnn_dropout=rnn_dropout, data_folder=tmp_path,
+                                   include_yearly_means=include_yearly_means)
         model.train()
         model.save_model()
 
@@ -42,10 +47,13 @@ class TestEARecurrentNetwork:
             assert (model.model.state_dict()[key] == val).all()
 
         assert model_dict['model']['features_per_month'] == features_per_month
+        assert model_dict['model']['yearly_mean_size'] == yearly_mean_size
         assert model_dict['hidden_size'] == hidden_size
         assert model_dict['rnn_dropout'] == rnn_dropout
         assert model_dict['dense_features'] == dense_features
         assert model_dict['include_pred_month'] == include_pred_month
+        assert model_dict['include_latlons'] == include_latlons
+        assert model_dict['include_yearly_means'] == include_yearly_means
         assert model_dict['experiment'] == 'one_month_forecast'
 
     @pytest.mark.parametrize('use_pred_months', [True, False])

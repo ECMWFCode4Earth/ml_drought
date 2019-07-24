@@ -21,9 +21,11 @@ class LinearNetwork(NNBase):
                  include_pred_month: bool = True,
                  include_latlons: bool = True,
                  include_monthly_means: bool = True,
+                 include_yearly_means: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
-                         include_latlons, include_monthly_means, surrounding_pixels)
+                         include_latlons, include_monthly_means, include_yearly_means,
+                         surrounding_pixels)
 
         if type(layer_sizes) is int:
             layer_sizes = cast(List[int], [layer_sizes])
@@ -47,6 +49,7 @@ class LinearNetwork(NNBase):
             'include_latlons': self.include_latlons,
             'surrounding_pixels': self.surrounding_pixels,
             'include_monthly_means': self.include_monthly_means,
+            'include_yearly_means': self.include_yearly_means,
             'experiment': self.experiment
         }
 
@@ -61,6 +64,7 @@ class LinearNetwork(NNBase):
                                               dropout=self.dropout,
                                               include_pred_month=self.include_pred_month,
                                               include_latlons=self.include_latlons,
+                                              include_yearly_means=self.include_yearly_means,
                                               experiment=self.experiment)
         self.model.load_state_dict(state_dict)
 
@@ -71,23 +75,28 @@ class LinearNetwork(NNBase):
             if self.experiment == 'nowcast':
                 current_tensor = x_ref[3]
                 input_size += current_tensor.shape[-1]
+            if self.include_yearly_means:
+                ym_tensor = x_ref[4]
+                input_size += ym_tensor.shape[-1]
             self.input_size = input_size
         return LinearModel(input_size=self.input_size,
                            layer_sizes=self.layer_sizes,
                            dropout=self.dropout,
                            include_pred_month=self.include_pred_month,
                            include_latlons=self.include_latlons,
+                           include_yearly_means=self.include_yearly_means,
                            experiment=self.experiment)
 
 
 class LinearModel(nn.Module):
 
     def __init__(self, input_size, layer_sizes, dropout, include_pred_month,
-                 include_latlons, experiment='one_month_forecast'):
+                 include_latlons, include_yearly_means, experiment='one_month_forecast'):
         super().__init__()
 
         self.include_pred_month = include_pred_month
         self.include_latlons = include_latlons
+        self.include_yearly_means = include_yearly_means
         self.experiment = experiment
 
         # change the size of inputs if include_pred_month
@@ -120,21 +129,22 @@ class LinearModel(nn.Module):
         # see: Initializing the biases
         nn.init.constant_(self.final_dense.bias.data, 0)
 
-    def forward(self, x, pred_month=None, latlons=None, current=None):
+    def forward(self, x, pred_month=None, latlons=None, current=None,
+                yearly_means=None):
         # flatten the final 2 dimensions (time / feature)
         x = x.contiguous().view(x.shape[0], -1)
 
         # concatenate the one_hot_month matrix onto X
         if self.include_pred_month:
             x = torch.cat((x, pred_month), dim=-1)
-
         if self.include_latlons:
             x = torch.cat((x, latlons), dim=-1)
-
         # concatenate the non-target variables onto X
         if self.experiment == 'nowcast':
             assert current is not None
             x = torch.cat((x, current), dim=-1)
+        if self.include_yearly_means:
+            x = torch.cat((x, yearly_means), dim=-1)
 
         # pass the inputs through the layers
         for layer in self.dense_layers:

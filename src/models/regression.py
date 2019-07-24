@@ -6,7 +6,7 @@ import pickle
 
 import shap
 
-from typing import cast, Dict, List, Tuple, Optional
+from typing import cast, Dict, List, Union, Tuple, Optional
 
 from .base import ModelBase
 from .utils import chunk_array
@@ -24,10 +24,11 @@ class LinearRegression(ModelBase):
                  include_pred_month: bool = True,
                  include_latlons: bool = True,
                  include_monthly_means: bool = True,
+                 include_yearly_means: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months,
                          include_pred_month, include_latlons, include_monthly_means,
-                         surrounding_pixels)
+                         include_yearly_means, surrounding_pixels)
 
         self.explainer: Optional[shap.LinearExplainer] = None
 
@@ -77,28 +78,7 @@ class LinearRegression(ModelBase):
                                                     batch_size,
                                                     shuffle=True):
                     batch_y = cast(np.ndarray, batch_y)
-                    assert batch_x[0] is not None, \
-                        f'x[0] should be historical data, and therefore should not be None'
-                    x_in = batch_x[0].reshape(
-                        batch_x[0].shape[0],
-                        batch_x[0].shape[1] * batch_x[0].shape[2])
-
-                    # one-hot encoded pred_months
-                    if self.include_pred_month:
-                        pred_months = batch_x[1]  # .astype(int)
-                        # one hot encoding, should be num_classes + 1, but
-                        # for us its + 2, since 0 is not a class either
-                        pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
-                        x_in = np.concatenate(
-                            (x_in, pred_months_onehot), axis=-1
-                        )
-                    if self.include_latlons:
-                        x_in = np.concatenate((x_in, batch_x[2]), axis=-1)
-                    if self.experiment == 'nowcast':
-                        current_time_data = batch_x[3]
-                        x_in = np.concatenate(
-                            (x_in, current_time_data), axis=-1
-                        )
+                    x_in = self._concatenate_data(batch_x)
 
                     # fit the model
                     self.model.partial_fit(x_in, batch_y.ravel())
@@ -110,25 +90,7 @@ class LinearRegression(ModelBase):
             if early_stopping is not None:
                 val_rmse = []
                 for x, y in val_dataloader:
-                    x_in = x[0].reshape(
-                        x[0].shape[0], x[0].shape[1] * x[0].shape[2]
-                    )
-                    if self.include_pred_month:
-                        pred_months = x[1]
-                        # one hot encoding, should be num_classes + 1, but
-                        # for us its + 2, since 0 is not a class either
-                        pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
-                        x_in = np.concatenate(
-                            (x_in, pred_months_onehot), axis=-1
-                        )
-                    if self.include_latlons:
-                        x_in = np.concatenate((x_in, x[2]), axis=-1)
-                    if self.experiment == 'nowcast':
-                        current_time_data = x[3]
-                        x_in = np.concatenate(
-                            (x_in, current_time_data), axis=-1
-                        )
-
+                    x_in = self._concatenate_data(x)
                     val_pred_y = self.model.predict(x_in)
                     val_rmse.append(np.sqrt(mean_squared_error(y, val_pred_y)))
 
@@ -161,18 +123,7 @@ class LinearRegression(ModelBase):
 
         x = data.historical
         batch, timesteps, dims = x.shape[0], x.shape[1], x.shape[2]
-        reshaped_x = x.reshape(batch, timesteps * dims)
-
-        if self.include_pred_month:
-            pred_months = data.pred_months
-            pred_months = np.eye(14)[pred_months][:, 1:-1]
-            reshaped_x = np.concatenate((reshaped_x, pred_months), axis=-1)
-        if self.include_latlons:
-            latlons = data.latlons
-            reshaped_x = np.concatenate((reshaped_x, latlons), axis=-1)
-        if self.experiment == 'nowcast':
-            current = data.current
-            reshaped_x = np.concatenate((reshaped_x, current), axis=-1)
+        reshaped_x = self._concatenate_data(data)
 
         explanations = self.explainer.shap_values(reshaped_x)
 
@@ -195,7 +146,8 @@ class LinearRegression(ModelBase):
             'include_pred_month': self.include_pred_month,
             'surrounding_pixels': self.surrounding_pixels,
             'batch_size': self.batch_size,
-            'include_monthly_means': self.include_monthly_means
+            'include_monthly_means': self.include_monthly_means,
+            'include_yearly_means': self.include_yearly_means
         }
 
         with (self.model_dir / 'model.pkl').open('wb') as f:
@@ -221,21 +173,7 @@ class LinearRegression(ModelBase):
 
         for dict in test_arrays_loader:
             for key, val in dict.items():
-                x = val.x.historical
-                x = x.reshape(x.shape[0], x.shape[1] * x.shape[2])
-                if self.include_pred_month:
-                    pred_months = val.x.pred_months
-                    # one hot encoding, should be num_classes + 1, but
-                    # for us its + 2, since 0 is not a class either
-                    pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
-                    x = np.concatenate((x, pred_months_onehot), axis=-1)
-                if self.include_latlons:
-                    x = np.concatenate((x, val.x.latlons), axis=-1)
-                if self.experiment == 'nowcast':
-                    # target_month data for non-target variables
-                    current_data = val.x.current
-                    x = np.concatenate((x, current_data), axis=-1)
-
+                x = self._concatenate_data(val.x)
                 preds = self.model.predict(x)
                 preds_dict[key] = preds
                 test_arrays_dict[key] = {'y': val.y, 'latlons': val.latlons}
@@ -277,3 +215,32 @@ class LinearRegression(ModelBase):
             mean * size / total_size for mean, size in zip(means, sizes)
         ]
         return sum(weighted_means)
+
+    def _concatenate_data(self, x: Union[Tuple[Optional[np.ndarray], ...],
+                                         TrainData]) -> np.ndarray:
+
+        if type(x) is tuple:
+            x_his, x_pm, x_latlons, x_cur, x_ym = x  # type: ignore
+        elif type(x) == TrainData:
+            x_his, x_pm, x_latlons = x.historical, x.pred_months, x.latlons  # type: ignore
+            x_cur, x_ym = x.current, x.yearly_means  # type: ignore
+
+        assert x_his is not None, \
+            'x[0] should be historical data, and therefore should not be None'
+        x_in = x_his.reshape(x_his.shape[0], x_his.shape[1] * x_his.shape[2])
+
+        if self.include_pred_month:
+            # one hot encoding, should be num_classes + 1, but
+            # for us its + 2, since 0 is not a class either
+            pred_months_onehot = np.eye(14)[x_pm][:, 1:-1]
+            x_in = np.concatenate(
+                (x_in, pred_months_onehot), axis=-1
+            )
+        if self.include_latlons:
+            x_in = np.concatenate((x_latlons, x_latlons), axis=-1)
+        if self.experiment == 'nowcast':
+            x_in = np.concatenate((x_in, x_cur), axis=-1)
+        if self.include_yearly_means:
+            x_in = np.concatenate((x_in, x_ym), axis=-1)
+
+        return x_in

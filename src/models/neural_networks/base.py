@@ -25,9 +25,11 @@ class NNBase(ModelBase):
                  include_pred_month: bool = True,
                  include_latlons: bool = True,
                  include_monthly_means: bool = True,
+                 include_yearly_means: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
-                         include_latlons, include_monthly_means, surrounding_pixels)
+                         include_latlons, include_monthly_means, include_yearly_means,
+                         surrounding_pixels)
 
         # for reproducibility
         torch.manual_seed(42)
@@ -117,7 +119,8 @@ class NNBase(ModelBase):
                     pred = self.model(x_batch[0],
                                       self._one_hot_months(x_batch[1]),
                                       x_batch[2],
-                                      x_batch[3])
+                                      x_batch[3],
+                                      x_batch[4])
                     loss = F.smooth_l1_loss(pred, y_batch)
                     loss.backward()
                     optimizer.step()
@@ -136,7 +139,8 @@ class NNBase(ModelBase):
                         val_pred_y = self.model(x[0],
                                                 self._one_hot_months(x[1]),
                                                 x[2],
-                                                x[3])
+                                                x[3],
+                                                x[4])
                         val_loss = F.mse_loss(val_pred_y, y)
 
                         val_rmse.append(math.sqrt(val_loss.item()))
@@ -178,7 +182,7 @@ class NNBase(ModelBase):
                 for key, val in dict.items():
                     preds = self.model(
                         val.x.historical, self._one_hot_months(val.x.pred_months),
-                        val.x.latlons, val.x.current
+                        val.x.latlons, val.x.current, val.x.yearly_means
                     )
                     preds_dict[key] = preds.numpy()
                     test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons}
@@ -201,6 +205,7 @@ class NNBase(ModelBase):
         output_pm: List[torch.Tensor] = []
         output_ll: List[torch.Tensor] = []
         output_cur: List[torch.Tensor] = []
+        output_ym: List[torch.Tensor] = []
 
         samples_per_instance = max(1, sample_size // len(train_dataloader))
 
@@ -219,10 +224,13 @@ class NNBase(ModelBase):
                     if self.experiment == 'nowcast':
                         assert x[3] is not None
                         output_cur.append(x[3])
+                    if self.include_yearly_means:
+                        output_ym.append(x[4])
         return [torch.stack(output_tensors),  # type: ignore
                 torch.cat(output_pm, dim=0) if len(output_pm) > 0 else None,
                 torch.cat(output_ll, dim=0) if len(output_ll) > 0 else None,
-                torch.cat(output_cur, dim=0) if len(output_cur) > 0 else None]
+                torch.cat(output_cur, dim=0) if len(output_cur) > 0 else None,
+                torch.cat(output_ym, dim=0) if len(output_cur) > 0 else None]
 
     def _one_hot_months(self, indices: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
         if self.include_pred_month:
