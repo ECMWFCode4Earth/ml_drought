@@ -33,11 +33,13 @@ class ModelBase:
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
                  include_latlons: bool = True,
+                 include_monthly_means: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
 
         self.batch_size = batch_size
         self.include_pred_month = include_pred_month
         self.include_latlons = include_latlons
+        self.include_monthly_means = include_monthly_means
         self.data_path = data_folder
         self.experiment = experiment
         self.pred_months = pred_months

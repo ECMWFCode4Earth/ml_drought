@@ -96,7 +96,7 @@ class DataLoader:
                  pred_months: Optional[List[int]] = None,
                  to_tensor: bool = False,
                  surrounding_pixels: Optional[int] = None,
-                 monthly_means: bool = False) -> None:
+                 monthly_means: bool = True) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
@@ -307,7 +307,6 @@ class _BaseIter:
 
             if self.experiment == 'nowcast':
                 train_data.current = torch.from_numpy(train_data.current).float()
-
         return ModelArrays(x=train_data, y=y_np, x_vars=list(x.data_vars),
                            y_var=list(y.data_vars)[0], latlons=latlons)
 

@@ -20,9 +20,10 @@ class LinearNetwork(NNBase):
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
                  include_latlons: bool = True,
+                 include_monthly_means: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
-                         include_latlons, surrounding_pixels)
+                         include_latlons, include_monthly_means, surrounding_pixels)
 
         if type(layer_sizes) is int:
             layer_sizes = cast(List[int], [layer_sizes])
@@ -45,6 +46,7 @@ class LinearNetwork(NNBase):
             'include_pred_month': self.include_pred_month,
             'include_latlons': self.include_latlons,
             'surrounding_pixels': self.surrounding_pixels,
+            'include_monthly_means': self.include_monthly_means,
             'experiment': self.experiment
         }
 
@@ -67,7 +69,7 @@ class LinearNetwork(NNBase):
             assert x_ref is not None, "x_ref can't be None if no input size is defined!"
             input_size = x_ref[0].view(x_ref[0].shape[0], -1).shape[1]
             if self.experiment == 'nowcast':
-                current_tensor = x_ref[2]
+                current_tensor = x_ref[3]
                 input_size += current_tensor.shape[-1]
             self.input_size = input_size
         return LinearModel(input_size=self.input_size,

@@ -22,9 +22,10 @@ class EARecurrentNetwork(NNBase):
                  experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
+                 include_monthly_means: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
-                         True, surrounding_pixels)
+                         True, include_monthly_means, surrounding_pixels)
 
         # to initialize and save the model
         self.hidden_size = hidden_size
@@ -49,6 +50,7 @@ class EARecurrentNetwork(NNBase):
             'dense_features': self.dense_features,
             'include_pred_month': self.include_pred_month,
             'surrounding_pixels': self.surrounding_pixels,
+            'include_monthly_means': self.include_monthly_means,
             'experiment': self.experiment
         }
 
