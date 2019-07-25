@@ -65,7 +65,7 @@ def process_gleam():
                          resample_time='M', upsampling=False)
 
 
-def process_ndvi():
+def process_ndvi(years=None):
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
     else:
@@ -75,7 +75,8 @@ def process_ndvi():
 
     processor = NDVIPreprocessor(data_path)
     processor.preprocess(subset_str='kenya', regrid=None,
-                         resample_time='M', upsampling=False)
+                         resample_time='M', upsampling=False,
+                         years_to_process=years)
 
 
 if __name__ == '__main__':
