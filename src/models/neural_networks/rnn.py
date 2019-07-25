@@ -15,7 +15,7 @@ class RecurrentNetwork(NNBase):
     model_name = 'rnn'
 
     def __init__(self, hidden_size: int,
-                 dense_features: Optional[List[int]],
+                 dense_features: Optional[List[int]] = None,
                  rnn_dropout: float = 0.25,
                  data_folder: Path = Path('data'),
                  batch_size: int = 1,
