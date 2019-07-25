@@ -20,7 +20,7 @@ class EARecurrentNetwork(NNBase):
                  batch_size: int = 1,
                  experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
-                 include_latlons: bool = True,
+                 include_latlons: bool = False,
                  include_pred_month: bool = True,
                  include_monthly_means: bool = True,
                  include_yearly_means: bool = True,
@@ -165,8 +165,12 @@ class EALSTM(nn.Module):
             "Both latlons and yearly means can't be None"
 
         static_x = []
-        if self.include_latlons is not None: static_x.append(latlons)
-        if self.include_yearly_mean is not None: static_x.append(yearly_means)
+        if self.include_latlons:
+            assert latlons is not None
+            static_x.append(latlons)
+        if self.include_yearly_mean:
+            assert yearly_means is not None
+            static_x.append(yearly_means)
 
         hidden_state, cell_state = self.rnn(x, torch.cat(static_x, dim=-1))
 

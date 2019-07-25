@@ -105,7 +105,6 @@ class TestLinearRegression:
         if use_pred_months:
             coef_size += 12
 
-        coef_size += 2  # for the latlons
         coef_size += 3  # for the yearly means
 
         assert model.model.coef_.size == coef_size, f'Got unexpected coef size'

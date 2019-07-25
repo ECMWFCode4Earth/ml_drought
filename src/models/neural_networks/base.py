@@ -23,7 +23,7 @@ class NNBase(ModelBase):
                  experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
-                 include_latlons: bool = True,
+                 include_latlons: bool = False,
                  include_monthly_means: bool = True,
                  include_yearly_means: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:

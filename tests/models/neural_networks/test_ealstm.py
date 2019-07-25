@@ -32,6 +32,7 @@ class TestEARecurrentNetwork:
 
         model = EARecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
                                    include_pred_month=include_pred_month,
+                                   include_latlons=include_latlons,
                                    rnn_dropout=rnn_dropout, data_folder=tmp_path,
                                    include_yearly_means=include_yearly_means)
         model.train()
