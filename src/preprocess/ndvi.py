@@ -45,13 +45,23 @@ class NDVIPreprocessor(BasePreProcessor):
         * regrid to same spatial grid as a reference dataset (`regrid`)
         * create new dataset with these dimensions
         * Save the output file to new folder / filename
+
+        Example filename:
+        `AVHRR-Land_v005_AVH13C1_NOAA-19_20160826_c20170620152140.nc`
         """
         assert netcdf_filepath.name[-3:] == '.nc', \
             f'filepath name should be a .nc file. Currently: {netcdf_filepath.name}'
 
         print(f'Starting work on {netcdf_filepath.name}')
-        ds = xr.open_dataset(netcdf_filepath)
-        ds = ds.drop_dims(['ncrs', 'nv'])
+        try:
+            ds = xr.open_dataset(netcdf_filepath)
+            ds = ds.drop_dims(['ncrs', 'nv'])
+        except ValueError:
+            print(f'Unable to decode times for {netcdf_filepath.name}')
+            ds = xr.open_dataset(netcdf_filepath, decode_times=False)
+            # time = pd.to_datetime(ds.attrs['time_coverage_start'])
+            time = pd.to_datetime(netcdf_filepath.name.split('_')[-2])
+            ds.time.values = np.array([time])
 
         if 'latitude' in [d for d in ds.dims]:
             ds = ds.rename({'latitude': 'lat'})
