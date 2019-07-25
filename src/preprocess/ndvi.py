@@ -88,16 +88,42 @@ class NDVIPreprocessor(BasePreProcessor):
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
                    parallel_processes: int = 1,
+                   years_to_process: Optional[List[int]] = None,
                    cleanup: bool = True) -> None:
         """Preprocess all of the NOAA NDVI .nc files to produce
         one subset file.
+        Arguments
+        ----------
+        subset_str: Optional[str] = 'kenya'
+            Whether to subset Kenya when preprocessing
+        regrid: Optional[Path] = None
+            If a Path is passed, the CHIRPS files will be regridded to have the same
+            grid as the dataset at that Path. If None, no regridding happens
+        resample_time: str = 'M'
+            If not None, defines the time length to which the data will be resampled
+        upsampling: bool = False
+            If true, tells the class the time-sampling will be upsampling. In this case,
+            nearest instead of mean is used for the resampling
+        parallel: bool = True
+            If true, run the preprocessing in parallel
+        years: Optional[List[int]] = None,
+            which subset of years to process data for (selected
+            by using the years folders created bythe NDVIExporter)
+        cleanup: bool = True
+            If true, delete interim files created by the class
 
         Note:
         ----
-        - the raw data is downloaded at daily resolution
+        - the raw data is downloaded at daily resolution and
+        saved in annual directories.
         """
         print(f'Reading data from {self.raw_folder}. Writing to {self.interim}')
         nc_files = self.get_filepaths()
+
+        # ability to only process particular years (for long jobs)
+        if years_to_process is not None:
+            assert np.isin(years, np.arange(1981, 2020)).all()
+            [f for f in nc_files if f.parents[0] in years_to_process]
 
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
