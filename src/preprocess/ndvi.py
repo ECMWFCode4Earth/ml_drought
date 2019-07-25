@@ -64,6 +64,8 @@ class NDVIPreprocessor(BasePreProcessor):
             # time = pd.to_datetime(ds.attrs['time_coverage_start'])
             time = pd.to_datetime(netcdf_filepath.name.split('_')[-2])
             ds.time.values = np.array([time])
+            ds['latitude'] = np.linspace(-90, 90, 3600)
+            ds['longitude'] = np.linspace(-180, 180, 7200)
 
         if 'latitude' in [d for d in ds.dims]:
             ds = ds.rename({'latitude': 'lat'})
