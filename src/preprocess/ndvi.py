@@ -125,7 +125,10 @@ class NDVIPreprocessor(BasePreProcessor):
         if years_to_process is not None:
             assert np.isin(years_to_process, np.arange(1981, 2020)).all()
             print(f'Running preprocess NDVI for: {years_to_process}')
-            nc_files = [f for f in nc_files if int(f.parents[0]) in years_to_process]
+            nc_files = [
+                f for f in nc_files
+                if int(f.parents[0].name) in years_to_process
+            ]
 
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
