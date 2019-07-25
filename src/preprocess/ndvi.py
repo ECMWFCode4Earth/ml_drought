@@ -142,11 +142,11 @@ class NDVIPreprocessor(BasePreProcessor):
         # ability to only process particular years (for long jobs)
         if years_to_process is not None:
             assert np.isin(years_to_process, np.arange(1981, 2020)).all()
-            years_to_process = [str(y) for y in years_to_process]
-            print(f'Running preprocess NDVI for: {years_to_process}')
+            yrs_strings = [str(y) for y in years_to_process]
+            print(f'Running preprocess NDVI for: {yrs_strings}')
             nc_files = [
                 f for f in nc_files
-                if f.parents[0].name in years_to_process
+                if f.parents[0].name in yrs_strings
             ]
 
         if regrid is not None:
