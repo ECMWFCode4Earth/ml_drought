@@ -131,7 +131,8 @@ class ERA5LandPreprocessor(BasePreProcessor):
         self.merge_files(
             subset_str=subset_str,
             resample_time=resample_time,
-            upsampling=upsampling
+            upsampling=upsampling,
+            variable=variable
         )
 
         if cleanup:
