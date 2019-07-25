@@ -4,7 +4,8 @@ import xarray as xr
 
 
 def _make_dataset(size, variable_name='VHI', lonmin=-180.0, lonmax=180.0,
-                  latmin=-55.152, latmax=75.024, add_times=True, const=False):
+                  latmin=-55.152, latmax=75.024, add_times=True, const=False,
+                  start_date='1999-01-01', end_date='2001-12-31'):
 
     lat_len, lon_len = size
     # create the vector
@@ -16,7 +17,7 @@ def _make_dataset(size, variable_name='VHI', lonmin=-180.0, lonmax=180.0,
               'lon': longitudes}
 
     if add_times:
-        times = pd.date_range('1999-01-01', '2001-12-31', name='time', freq='M')
+        times = pd.date_range(start_date, end_date, name='time', freq='M')
         size = (len(times), size[0], size[1])
         dims.insert(0, 'time')
         coords['time'] = times
@@ -30,12 +31,17 @@ def _make_dataset(size, variable_name='VHI', lonmin=-180.0, lonmax=180.0,
     return ds, (lonmin, lonmax), (latmin, latmax)
 
 
-def _create_dummy_precip_data(tmp_path):
+def _create_dummy_precip_data(tmp_path,
+                              start_date='1999-01-01',
+                              end_date='2001-12-31'):
     data_dir = tmp_path / 'data' / 'interim' / 'chirps_preprocessed'
     if not data_dir.exists():
         data_dir.mkdir(parents=True, exist_ok=True)
 
-    precip, _, _ = _make_dataset((30, 30), variable_name='precip')
+    precip, _, _ = _make_dataset(
+        (30, 30), variable_name='precip',
+        start_date=start_date, end_date=end_date
+    )
     precip.to_netcdf(data_dir / 'chirps_kenya.nc')
 
     return data_dir

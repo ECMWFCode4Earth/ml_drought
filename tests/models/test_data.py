@@ -104,8 +104,7 @@ class TestBaseIter:
 
         base_iterator = _BaseIter(MockLoader())
 
-        arrays = base_iterator.ds_folder_to_np(data_dir, return_latlons=True,
-                                               to_tensor=to_tensor)
+        arrays = base_iterator.ds_folder_to_np(data_dir, to_tensor=to_tensor)
 
         x_train_data, y_np, latlons = (
             arrays.x, arrays.y, arrays.latlons
@@ -126,9 +125,13 @@ class TestBaseIter:
                 f'Expect: (25, 3) Got: {x_train_data.current.shape}'
 
         expected_latlons = 25 if surrounding_pixels is None else 9
-        assert latlons.shape == (expected_latlons, 2), \
-            f'The shape of latlons should not change. ' \
-            f'Got: {latlons.shape}. Expecting: (25, 2)'
+
+        assert latlons.shape == (expected_latlons, 2), "The shape of "\
+            "latlons should not change"\
+            f"Got: {latlons.shape}. Expecting: (25, 2)"
+        assert x_train_data.latlons.shape == (expected_latlons, 2), "The shape of "\
+            "latlons should not change"\
+            f"Got: {latlons.shape}. Expecting: (25, 2)"
 
         if normalize and (experiment == 'nowcast') and (not to_tensor):
             assert x_train_data.current.max() < 6, f'The current data should be' \

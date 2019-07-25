@@ -5,7 +5,7 @@ from pathlib import Path
 from src.engineer import OneMonthForecastEngineer, NowcastEngineer
 
 
-def engineer(pred_months=11):
+def engineer(pred_months=12):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
@@ -19,7 +19,7 @@ def engineer(pred_months=11):
     )
 
 
-def nowcast_engineer():
+def nowcast_engineer(pred_months=12):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
@@ -27,9 +27,12 @@ def nowcast_engineer():
         data_path = Path('../data')
 
     engineer = NowcastEngineer(data_path)
-    engineer.engineer(test_year=2018, target_variable='VHI')
+    engineer.engineer(
+        test_year=2018, target_variable='VHI',
+        pred_months=pred_months
+    )
 
 
 if __name__ == '__main__':
-    engineer(pred_months=3)
-    nowcast_engineer(pred_months=3)
+    engineer(pred_months=12)
+    nowcast_engineer(pred_months=12)

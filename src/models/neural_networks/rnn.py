@@ -1,12 +1,13 @@
 import math
+import pickle
 from pathlib import Path
 
 import torch
 from torch import nn
 
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
-from .base import NNBase
+from .base import NNBase, LinearBlock
 
 
 class RecurrentNetwork(NNBase):
@@ -16,19 +17,21 @@ class RecurrentNetwork(NNBase):
     def __init__(self, hidden_size: int,
                  dense_features: List[int],
                  rnn_dropout: float = 0.25,
+                 dense_dropout: float = 0.25,
                  data_folder: Path = Path('data'),
                  batch_size: int = 1,
                  experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
+                 include_latlons: bool = True,
                  surrounding_pixels: Optional[int] = None,
                  ignore_vars: Optional[List[str]] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
-                         surrounding_pixels, ignore_vars)
-
+                         include_latlons, surrounding_pixels, ignore_vars)
         # to initialize and save the model
         self.hidden_size = hidden_size
         self.rnn_dropout = rnn_dropout
+        self.dense_dropout = dense_dropout
         self.dense_features = dense_features
         self.features_per_month: Optional[int] = None
         self.current_size: Optional[int] = None
@@ -38,40 +41,70 @@ class RecurrentNetwork(NNBase):
         assert self.model is not None, 'Model must be trained before it can be saved!'
 
         model_dict = {
-            'state_dict': self.model.state_dict(),
-            'features_per_month': self.features_per_month,
+            'model': {'state_dict': self.model.state_dict(),
+                      'features_per_month': self.features_per_month,
+                      'current_size': self.current_size},
+            'batch_size': self.batch_size,
             'hidden_size': self.hidden_size,
             'rnn_dropout': self.rnn_dropout,
+            'dense_dropout': self.dense_dropout,
             'dense_features': self.dense_features,
             'include_pred_month': self.include_pred_month,
+            'include_latlons': self.include_latlons,
             'surrounding_pixels': self.surrounding_pixels,
             'experiment': self.experiment,
             'ignore_vars': self.ignore_vars
         }
 
-        torch.save(model_dict, self.model_dir / 'model.pkl')
+        with (self.model_dir / 'model.pkl').open('wb') as f:
+            pickle.dump(model_dict, f)
 
-    def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> nn.Module:
-        self.features_per_month = x_ref[0].shape[-1]
+    def load(self, state_dict: Dict, features_per_month: int, current_size: int) -> None:
+        self.features_per_month = features_per_month
+        self.current_size = current_size
+
+        self.model: RNN = RNN(features_per_month=self.features_per_month,
+                              dense_features=self.dense_features,
+                              hidden_size=self.hidden_size,
+                              rnn_dropout=self.rnn_dropout,
+                              dense_dropout=self.dense_dropout,
+                              include_pred_month=self.include_pred_month,
+                              include_latlons=self.include_latlons,
+                              experiment=self.experiment,
+                              current_size=self.current_size)
+        self.model.load_state_dict(state_dict)
+
+    def _initialize_model(self, x_ref: Optional[Tuple[torch.Tensor, ...]]) -> nn.Module:
+        if self.features_per_month is None:
+            assert x_ref is not None, \
+                f"x_ref can't be None if features_per_month or current_size is not defined"
+            self.features_per_month = x_ref[0].shape[-1]
         if self.experiment == 'nowcast':
-            self.current_size = x_ref[2].shape[-1]
+            if self.current_size is None:
+                assert x_ref is not None, \
+                    f"x_ref can't be None if features_per_month or current_size is not defined"
+                self.current_size = x_ref[3].shape[-1]
 
         return RNN(features_per_month=self.features_per_month,
                    dense_features=self.dense_features,
                    hidden_size=self.hidden_size,
                    rnn_dropout=self.rnn_dropout,
+                   dense_dropout=self.dense_dropout,
                    include_pred_month=self.include_pred_month,
+                   include_latlons=self.include_latlons,
                    experiment=self.experiment,
                    current_size=self.current_size)
 
 
 class RNN(nn.Module):
     def __init__(self, features_per_month, dense_features, hidden_size,
-                 rnn_dropout, include_pred_month, experiment, current_size=None):
+                 rnn_dropout, dense_dropout, include_pred_month,
+                 include_latlons, experiment, current_size=None):
         super().__init__()
 
         self.experiment = experiment
         self.include_pred_month = include_pred_month
+        self.include_latlons = include_latlons
 
         self.dropout = nn.Dropout(rnn_dropout)
         self.rnn = UnrolledRNN(input_size=features_per_month,
@@ -82,18 +115,21 @@ class RNN(nn.Module):
         dense_input_size = hidden_size
         if include_pred_month:
             dense_input_size += 12
+        if include_latlons:
+            dense_input_size += 2
         if experiment == 'nowcast':
             assert current_size is not None
             dense_input_size += current_size
         dense_features.insert(0, dense_input_size)
-        if dense_features[-1] != 1:
-            dense_features.append(1)
 
         self.dense_layers = nn.ModuleList([
-            nn.Linear(in_features=dense_features[i - 1],
-                      out_features=dense_features[i])
+            LinearBlock(in_features=dense_features[i - 1],
+                        out_features=dense_features[i],
+                        dropout=dense_dropout)
             for i in range(1, len(dense_features))
         ])
+
+        self.final_dense = nn.Linear(in_features=dense_features[-1], out_features=1)
 
         self.initialize_weights()
 
@@ -105,10 +141,12 @@ class RNN(nn.Module):
                 nn.init.uniform_(pam.data, -sqrt_k, sqrt_k)
 
         for dense_layer in self.dense_layers:
-            nn.init.kaiming_uniform_(dense_layer.weight.data)
-            nn.init.constant_(dense_layer.bias.data, 0)
+            nn.init.kaiming_uniform_(dense_layer.linear.weight.data)
 
-    def forward(self, x, pred_month=None, current=None):
+        nn.init.kaiming_uniform_(self.final_dense.weight.data)
+        nn.init.constant_(self.final_dense.bias.data, 0)
+
+    def forward(self, x, pred_month=None, latlons=None, current=None):
 
         sequence_length = x.shape[1]
 
@@ -130,15 +168,17 @@ class RNN(nn.Module):
 
         x = hidden_state.squeeze(0)
 
+        if self.include_pred_month:
+            x = torch.cat((x, pred_month), dim=-1)
+        if self.include_latlons:
+            x = torch.cat((x, latlons), dim=-1)
         if self.experiment == 'nowcast':
             assert current is not None
             x = torch.cat((x, current), dim=-1)
 
-        if self.include_pred_month:
-            x = torch.cat((x, pred_month), dim=-1)
         for layer_number, dense_layer in enumerate(self.dense_layers):
             x = dense_layer(x)
-        return x
+        return self.final_dense(x)
 
 
 class UnrolledRNN(nn.Module):

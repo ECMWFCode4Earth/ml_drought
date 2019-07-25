@@ -75,7 +75,7 @@ def select_same_time_slice(reference_ds, ds):
 # General Utils
 # ------------------------------------------------------------------------------
 
-def drop_nans_and_flatten(dataArray):
+def drop_nans_and_flatten(dataArray: xr.DataArray) -> np.ndarray:
     """flatten the array and drop nans from that array. Useful for plotting histograms.
 
     Arguments:

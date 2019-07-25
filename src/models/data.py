@@ -16,6 +16,9 @@ class TrainData:
     historical: Union[np.ndarray, torch.Tensor]
     current: Union[np.ndarray, torch.Tensor, None]
     pred_months: Union[np.ndarray, torch.Tensor]
+    # latlons are repeated here so they can be tensor-ized and
+    # normalized
+    latlons: Union[np.ndarray, torch.Tensor]
 
 
 @dataclass
@@ -199,7 +202,6 @@ class _BaseIter:
     def ds_folder_to_np(self,
                         folder: Path,
                         clear_nans: bool = True,
-                        return_latlons: bool = False,
                         to_tensor: bool = False
                         ) -> ModelArrays:
 
@@ -212,7 +214,9 @@ class _BaseIter:
 
         if self.surrounding_pixels is not None:
             x = self._add_surrounding(x, self.surrounding_pixels)
+
         x_np, y_np = x.to_array().values, y.to_array().values
+
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
             self.calculate_normalizing_array(list(x.data_vars))
 
@@ -228,12 +232,19 @@ class _BaseIter:
         ).month
         x_months = np.array([target_month] * x_np.shape[0])
 
+        # then, latlons
+        lons, lats = np.meshgrid(x.lon.values, x.lat.values)
+        flat_lats, flat_lons = lats.reshape(-1, 1), lons.reshape(-1, 1)
+        latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
+        train_latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
+
         # then, y
         y_np = y_np.reshape(y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
         y_np = np.moveaxis(y_np, -1, 0).reshape(-1, 1)
 
         if self.normalizing_array is not None:
             x_np = (x_np - self.normalizing_array['mean']) / (self.normalizing_array['std'])
+            train_latlons = train_latlons / [90, 180]
 
         if self.experiment == 'nowcast':
             # if nowcast then we have a TrainData.current
@@ -245,14 +256,16 @@ class _BaseIter:
             train_data = TrainData(
                 current=current,
                 historical=historical,
-                pred_months=x_months
+                pred_months=x_months,
+                latlons=train_latlons
             )
 
         else:
             train_data = TrainData(
                 current=None,
                 historical=x_np,
-                pred_months=x_months
+                pred_months=x_months,
+                latlons=train_latlons
             )
 
         assert y_np.shape[0] == x_np.shape[0], f'x and y data have a different ' \
@@ -281,34 +294,24 @@ class _BaseIter:
                 )[0]
                 train_data.current = train_data.current[notnan_indices]  # type: ignore
 
-            train_data.historical, y_np = (
-                train_data.historical[notnan_indices], y_np[notnan_indices]
-            )
+            train_data.historical = train_data.historical[notnan_indices]
             train_data.pred_months = train_data.pred_months[notnan_indices]  # type: ignore
+            train_data.latlons = train_data.latlons[notnan_indices]
+            y_np = y_np[notnan_indices]
+
+            latlons = latlons[notnan_indices]
 
         if to_tensor:
-            train_data.historical, y_np = (
-                torch.from_numpy(train_data.historical).float(),
-                torch.from_numpy(y_np).float()
-            )
+            train_data.historical = torch.from_numpy(train_data.historical).float()
             train_data.pred_months = torch.from_numpy(train_data.pred_months).float()
+            train_data.latlons = torch.from_numpy(train_data.latlons).float()
+            y_np = torch.from_numpy(y_np).float()
 
             if self.experiment == 'nowcast':
                 train_data.current = torch.from_numpy(train_data.current).float()
 
-        if return_latlons:
-            lons, lats = np.meshgrid(x.lon.values, x.lat.values)
-            flat_lats, flat_lons = lats.reshape(-1, 1), lons.reshape(-1, 1)
-            latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
-
-            if clear_nans:
-                latlons = latlons[notnan_indices]
-
-            return ModelArrays(x=train_data, y=y_np, x_vars=list(x.data_vars),
-                               y_var=list(y.data_vars)[0], latlons=latlons)
-
         return ModelArrays(x=train_data, y=y_np, x_vars=list(x.data_vars),
-                           y_var=list(y.data_vars)[0])
+                           y_var=list(y.data_vars)[0], latlons=latlons)
 
     @staticmethod
     def _add_surrounding(x: xr.Dataset, surrounding_pixels: int) -> xr.Dataset:
@@ -357,14 +360,14 @@ class _TrainIter(_BaseIter):
                                 Union[np.ndarray, torch.Tensor]]:
 
         if self.idx < self.max_idx:
-            out_x, out_x_add, out_y, out_x_curr = [], [], [], []
+            out_x, out_x_add, out_x_curr, out_x_latlon, out_y = [], [], [], [], []
 
             cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
             while self.idx < cur_max_idx:
                 subfolder = self.data_files[self.idx]
                 arrays = self.ds_folder_to_np(
                     subfolder, clear_nans=self.clear_nans,
-                    return_latlons=False, to_tensor=False
+                    to_tensor=False
                 )
                 if arrays.x.historical.shape[0] == 0:
                     print(f'{subfolder} returns no values. Skipping')
@@ -372,6 +375,7 @@ class _TrainIter(_BaseIter):
                     # remove the empty element from the list
                     self.data_files.pop(self.idx)
                     self.max_idx -= 1
+                    self.idx -= 1  # we're going to add one later
 
                     cur_max_idx = min(cur_max_idx + 1, self.max_idx)
 
@@ -379,30 +383,30 @@ class _TrainIter(_BaseIter):
                 if arrays.x.current is not None:
                     out_x_curr.append(arrays.x.current)
                 out_x_add.append(arrays.x.pred_months)
+                out_x_latlon.append(arrays.x.latlons)
                 out_y.append(arrays.y)
                 self.idx += 1
 
             final_x = np.concatenate(out_x, axis=0)
             final_x_curr = np.concatenate(out_x_curr, axis=0) if out_x_curr != [] else None
             final_x_add = np.concatenate(out_x_add, axis=0)
+            final_x_latlon = np.concatenate(out_x_latlon, axis=0)
             final_y = np.concatenate(out_y, axis=0)
 
             if self.to_tensor:
-                # x matrix
                 final_x = torch.from_numpy(final_x).float()
-                # pred_months data
                 final_x_add = torch.from_numpy(final_x_add).float()
-                # current timestep data
+                final_x_latlon = torch.from_numpy(final_x_latlon).float()
                 final_x_curr = torch.from_numpy(
                     final_x_curr
                 ).float() if final_x_curr is not None else None
-                # y (target) data
+
                 final_y = torch.from_numpy(final_y).float()
 
             if final_x.shape[0] == 0:
                 raise StopIteration()
 
-            return (final_x, final_x_add, final_x_curr), final_y
+            return (final_x, final_x_add, final_x_latlon, final_x_curr), final_y
 
         else:  # final_x_curr >= self.max_idx
             raise StopIteration()
@@ -419,7 +423,7 @@ class _TestIter(_BaseIter):
             while self.idx < cur_max_idx:
                 subfolder = self.data_files[self.idx]
                 arrays = self.ds_folder_to_np(subfolder, clear_nans=self.clear_nans,
-                                              return_latlons=True, to_tensor=self.to_tensor)
+                                              to_tensor=self.to_tensor)
                 if arrays.x.historical.shape[0] == 0:
                     print(f'{subfolder} returns no values. Skipping')
                     # remove the empty element from the list

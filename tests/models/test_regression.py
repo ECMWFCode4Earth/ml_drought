@@ -14,13 +14,18 @@ class TestLinearRegression:
 
     def test_save(self, tmp_path, monkeypatch):
 
-        model_array = np.array([1, 1, 1, 1, 1])
+        coef_array = np.array([1, 1, 1, 1, 1])
+        intercept_array = np.array([2])
 
         def mocktrain(self):
             class MockModel:
                 @property
                 def coef_(self):
-                    return model_array
+                    return coef_array
+
+                @property
+                def intercept_(self):
+                    return intercept_array
 
             self.model = MockModel()
 
@@ -31,11 +36,16 @@ class TestLinearRegression:
         model.save_model()
 
         assert (
-            tmp_path / 'models/one_month_forecast/linear_regression/model.npy'
+            tmp_path / 'models/one_month_forecast/linear_regression/model.pkl'
         ).exists(), f'Model not saved!'
 
-        saved_model = np.load(tmp_path / 'models/one_month_forecast/linear_regression/model.npy')
-        assert np.array_equal(model_array, saved_model), f'Different array saved!'
+        with (tmp_path / 'models/one_month_forecast/linear_regression/model.pkl').open('rb') as f:
+            model_dict = pickle.load(f)
+        assert np.array_equal(coef_array, model_dict['model']['coef']), \
+            'Different coef array saved!'
+        assert np.array_equal(intercept_array, model_dict['model']['intercept']), \
+            'Different intercept array saved!'
+        assert model_dict['experiment'] == 'one_month_forecast', 'Different experiment saved!'
 
     @pytest.mark.parametrize('use_pred_months,experiment',
                              [(True, 'one_month_forecast'),
@@ -86,8 +96,8 @@ class TestLinearRegression:
             f'Model attribute not a linear regression!'
 
         if (experiment != 'nowcast') and (use_pred_months):
-            assert model.model.coef_.size == 120, "Expecting 120 coefficients" \
-                "(3 historical vars * 36 months) + 12 pred_months one_hot encoded"
+            assert model.model.coef_.size == 122, "Expecting 120 coefficients" \
+                "(3 historical vars * 36 months) + 12 pred_months one_hot encoded + 2 latlons"
 
         # Test Predictions / Evaluations
         test_arrays_dict, preds_dict = model.predict()
@@ -97,11 +107,11 @@ class TestLinearRegression:
             ), "Expected length of test arrays to be the same as the predictions"
 
             if use_pred_months:
-                assert model.model.coef_.size == 119, "Expect to have 119 coefficients" \
-                    " (35 tstep x 3 historical) + 12 pred_months_one_hot + 2 current"
+                assert model.model.coef_.size == 121, "Expect to have 119 coefficients" \
+                    " (35 tstep x 3 historical) + 12 pred_months_one_hot + 2 current + 2 latlons"
             else:
-                assert model.model.coef_.size == 107, "Expect to have 107 coefficients" \
-                    " (35 tstep x 3 historical) + 2 current"
+                assert model.model.coef_.size == 109, "Expect to have 107 coefficients" \
+                    " (35 tstep x 3 historical) + 2 current + 2 latlons"
 
     def test_big_mean(self, tmp_path, monkeypatch):
 
