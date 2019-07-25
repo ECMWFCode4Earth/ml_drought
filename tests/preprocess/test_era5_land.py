@@ -85,9 +85,8 @@ class TestERA5LandPreprocessor:
         processor.preprocess(subset_str='kenya', regrid=regrid_path,
                              parallel_processes=1)
 
-        expected_out_path = tmp_path / 'interim/reanalysis-era5-land' \
-                                       'means_preprocessed/reanalysis-era5' \
-                                       '-land_kenya.nc'
+        expected_out_path = tmp_path / 'interim/reanalysis-era5'\
+            '-land_preprocessed/reanalysis-era5-land_kenya.nc'
         assert expected_out_path.exists(), \
             f'Expected processed file to be saved to {expected_out_path}'
 
