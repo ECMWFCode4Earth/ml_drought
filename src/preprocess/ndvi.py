@@ -52,6 +52,11 @@ class NDVIPreprocessor(BasePreProcessor):
         ds = xr.open_dataset(netcdf_filepath)
         ds = ds.drop_dims(['ncrs', 'nv'])
 
+        if 'latitude' in [d for d in ds.dims]:
+            ds = ds.rename({'latitude': 'lat'})
+        if 'longitude' in [d for d in ds.dims]:
+            ds = ds.rename({'longitude': 'lon'})
+
         # 2. chop out EastAfrica
         if subset_str is not None:
             try:
