@@ -237,7 +237,7 @@ class LinearRegression(ModelBase):
                 (x_in, pred_months_onehot), axis=-1
             )
         if self.include_latlons:
-            x_in = np.concatenate((x_latlons, x_latlons), axis=-1)
+            x_in = np.concatenate((x_in, x_latlons), axis=-1)
         if self.experiment == 'nowcast':
             x_in = np.concatenate((x_in, x_cur), axis=-1)
         if self.include_yearly_means:
