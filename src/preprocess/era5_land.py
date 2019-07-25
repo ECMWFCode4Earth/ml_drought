@@ -44,7 +44,6 @@ class ERA5LandPreprocessor(BasePreProcessor):
         """
         print(f'Processing {netcdf_filepath.name}')
 
-
         # 1. read in the dataset
         ds = xr.open_dataset(netcdf_filepath).rename({'longitude': 'lon', 'latitude': 'lat'})
 

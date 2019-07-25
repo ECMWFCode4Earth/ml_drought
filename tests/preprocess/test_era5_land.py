@@ -52,7 +52,6 @@ class TestERA5LandPreprocessor:
 
     @staticmethod
     def test_get_filenames(tmp_path):
-
         (tmp_path / 'raw/reanalysis-era5-land/'
                     '2m_temperature/1979_2019').mkdir(parents=True)
 
