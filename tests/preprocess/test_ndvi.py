@@ -11,11 +11,11 @@ from ..utils import _make_dataset
 class TestNDVIPreprocessor:
 
     @staticmethod
-    def test_make_filename():
+    def test_make_filename(tmp_path):
         test_file = '19860702_testy-test.nc'
         expected_output = '1986_19860702_testy-test_kenya.nc'
 
-        filename = NDVIPreprocessor().create_filename(test_file, 'kenya')
+        filename = NDVIPreprocessor(tmp_path).create_filename(test_file, 'kenya')
         assert filename == expected_output, \
             f'Expected output to be {expected_output}, got {filename}'
 
