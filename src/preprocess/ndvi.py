@@ -1,8 +1,9 @@
 from pathlib import Path
 import xarray as xr
+import numpy as np
 import multiprocessing
 from functools import partial
-from typing import Optional
+from typing import Optional, List
 from shutil import rmtree
 
 from .base import BasePreProcessor
@@ -122,7 +123,7 @@ class NDVIPreprocessor(BasePreProcessor):
 
         # ability to only process particular years (for long jobs)
         if years_to_process is not None:
-            assert np.isin(years, np.arange(1981, 2020)).all()
+            assert np.isin(years_to_process, np.arange(1981, 2020)).all()
             [f for f in nc_files if f.parents[0] in years_to_process]
 
         if regrid is not None:
