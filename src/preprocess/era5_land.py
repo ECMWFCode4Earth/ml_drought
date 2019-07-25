@@ -72,6 +72,26 @@ class ERA5LandPreprocessor(BasePreProcessor):
                    cleanup: bool = True) -> None:
         """Preprocess all of the ERA5-Land .nc files to produce
         one subset file.
+        Arguments
+        ----------
+        :param: subset_str: Optional[str] = 'kenya'
+            Whether to subset Kenya when preprocessing
+        :param: regrid: Optional[Path] = None
+            If a Path is passed, the CHIRPS files will be regridded to have the same
+            grid as the dataset at that Path. If None, no regridding happens
+        :param: resample_time: str = 'M'
+            If not None, defines the time length to which the data will be resampled
+        :param: upsampling: bool = False
+            If true, tells the class the time-sampling will be upsampling. In this case,
+            nearest instead of mean is used for the resampling
+        :param: variable: Optional[str] = None
+            the variable that you want to preprocess. If None then will
+            process ALL variables that have been downloaded to the
+            `data/raw/reanalysis-era5-land` by the ERA5LandExporter
+        :param: parallel: bool = True
+            If true, run the preprocessing in parallel
+        :param: cleanup: bool = True
+            If true, delete interim files created by the class
 
         Note:
         ----
