@@ -94,7 +94,11 @@ class NDVIPreprocessor(BasePreProcessor):
             subset_name=subset_str if subset_str is not None else None
         )
         print(f"Saving to {self.interim}/{filename}")
-        ds.to_netcdf(self.interim / filename)
+        try:
+            ds.to_netcdf(self.interim / filename)
+        except ValueError:
+            ds.time.attrs = ''
+            ds.to_netcdf(self.interim / filename)
 
         print(f"** Done for {self.dataset}: {filename} **")
 
