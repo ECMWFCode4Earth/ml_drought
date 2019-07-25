@@ -153,7 +153,7 @@ def get_modal_value_across_time(da: xr.DataArray) -> xr.DataArray:
     # NOTE: assuming that time is dim=0
     mode = stats.mode(data, axis=0)[0]
 
-    mode_da = xr.ones_like(da)
+    mode_da = xr.ones_like(da).isel(time=slice(0, 1))
     mode_da.values = mode
 
     return mode_da

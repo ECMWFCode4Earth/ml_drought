@@ -62,6 +62,11 @@ class ESACCIPreprocessor(BasePreProcessor):
                 ds = self.chop_roi(ds, subset_str, inverse_lat=True)
 
         # 3. regrid to same spatial resolution ...?
+        # NOTE: have to remove the extra vars for the regridder
+        ds = ds.drop([
+            'processed_flag', 'current_pixel_state',
+            'observation_count', 'change_count', 'crs'
+        ])
         if regrid is not None:
             ds = self.regrid(ds, regrid)
 
@@ -87,6 +92,20 @@ class ESACCIPreprocessor(BasePreProcessor):
         ds.to_netcdf(self.interim / filename)
 
         print(f"** Done for ESA CCI landcover: {filename} **")
+
+    def merge_files(self, subset_str: Optional[str] = 'kenya',
+                    resample_time: Optional[str] = 'M',
+                    upsampling: bool = False) -> None:
+
+        ds = xr.open_mfdataset(self.get_filepaths('interim'))
+
+        if resample_time is not None:
+            ds = self.resample_time(ds, resample_time, upsampling)
+
+        out = self.out_dir / f'{self.dataset}\
+        {"_" + subset_str if subset_str is not None else ""}.nc'.replace(' ', '')
+        ds.to_netcdf(out)
+        print(f"\n**** {out} Created! ****\n")
 
     def preprocess(self, subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
