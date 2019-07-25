@@ -68,6 +68,7 @@ class ERA5LandPreprocessor(BasePreProcessor):
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
                    parallel_processes: int = 1,
+                   variable: Optional[str] = None,
                    cleanup: bool = True) -> None:
         """Preprocess all of the ERA5-Land .nc files to produce
         one subset file.
@@ -78,6 +79,17 @@ class ERA5LandPreprocessor(BasePreProcessor):
         """
         print(f'Reading data from {self.raw_folder}. Writing to {self.interim}')
         nc_files = self.get_filepaths()
+
+        # run for one variable or all variables?
+        if variable is not None:
+            variables = [
+                d.name
+                for d in (self.raw_folder / self.dataset).iterdir()
+            ]
+            assert variable in variables, 'Expect the variable provided' \
+                f'to be in {variables}'
+            print(f'Running preprocessor for var: {variable}')
+            nc_files = [f for f in nc_files if f.parents[1].name == variable]
 
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)

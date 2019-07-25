@@ -83,7 +83,7 @@ class TestERA5LandPreprocessor:
 
         processor = ERA5LandPreprocessor(tmp_path)
         processor.preprocess(subset_str='kenya', regrid=regrid_path,
-                             parallel_processes=1)
+                             parallel_processes=1, variable='2m_temperature')
 
         expected_out_path = tmp_path / 'interim/reanalysis-era5'\
             '-land_preprocessed/reanalysis-era5-land_kenya.nc'
