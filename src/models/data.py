@@ -19,6 +19,7 @@ class TrainData:
     # latlons are repeated here so they can be tensor-ized and
     # normalized
     latlons: Union[np.ndarray, torch.Tensor]
+    yearly_aggs: Union[np.ndarray, torch.Tensor]
 
 
 @dataclass
@@ -83,6 +84,10 @@ class DataLoader:
         How many surrounding pixels to add to the input data. e.g. if the input is 1, then in
         addition to the pixels on the prediction point, the neighbouring (spatial) pixels will
         be included too, up to a distance of one pixel away
+    monthly_aggs: bool = True
+        Whether to include the monthly aggregates (mean and std across all spatial values) for
+        the input variables. These will be additional dimensions to the historical
+        (and optionally current) arrays
     """
     def __init__(self, data_path: Path = Path('data'), batch_file_size: int = 1,
                  mode: str = 'train', shuffle_data: bool = True,
@@ -91,7 +96,8 @@ class DataLoader:
                  mask: Optional[List[bool]] = None,
                  pred_months: Optional[List[int]] = None,
                  to_tensor: bool = False,
-                 surrounding_pixels: Optional[int] = None) -> None:
+                 surrounding_pixels: Optional[int] = None,
+                 monthly_aggs: bool = True) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
@@ -111,6 +117,7 @@ class DataLoader:
                 self.normalizing_dict = pickle.load(f)
 
         self.surrounding_pixels = surrounding_pixels
+        self.monthly_aggs = monthly_aggs
         self.to_tensor = to_tensor
 
     def __iter__(self):
@@ -159,6 +166,7 @@ class _BaseIter:
         self.shuffle = loader.shuffle
         self.clear_nans = loader.clear_nans
         self.surrounding_pixels = loader.surrounding_pixels
+        self.monthly_aggs = loader.monthly_aggs
         self.to_tensor = loader.to_tensor
         self.experiment = loader.experiment
 
@@ -168,6 +176,7 @@ class _BaseIter:
 
         self.normalizing_dict = loader.normalizing_dict
         self.normalizing_array: Optional[Dict[str, np.ndarray]] = None
+        self.normalizing_array_ym: Optional[Dict[str, np.ndarray]] = None
 
         self.idx = 0
         self.max_idx = len(loader.data_files)
@@ -175,7 +184,8 @@ class _BaseIter:
     def __iter__(self):
         return self
 
-    def calculate_normalizing_array(self, data_vars: List[str]):
+    def calculate_normalizing_array(self, data_vars: List[str],
+                                    yearly_agg: bool = False) -> Dict[str, np.ndarray]:
         # If we've made it here, normalizing_dict is definitely not None
         self.normalizing_dict = cast(Dict[str, Dict[str, np.ndarray]], self.normalizing_dict)
 
@@ -184,15 +194,28 @@ class _BaseIter:
         for var in data_vars:
             for norm_var in normalizing_dict_keys:
                 if var.endswith(norm_var):
-                    mean.append(self.normalizing_dict[norm_var]['mean'])
-                    std.append(self.normalizing_dict[norm_var]['std'])
+                    var_mean = self.normalizing_dict[norm_var]['mean']
+                    var_std = self.normalizing_dict[norm_var]['std']
+                    if yearly_agg:
+                        var_mean = np.mean(var_mean)
+                        var_std = np.mean(var_std)
+                    mean.append(var_mean)
+                    std.append(var_std)
                     break
 
-        self.normalizing_array = cast(Dict[str, np.ndarray], {
+        mean_np, std_np = np.vstack(mean), np.vstack(std)
+
+        if yearly_agg:
+            mean_np, std_np = mean_np.squeeze(1), std_np.squeeze(1)
+        else:
             # swapaxes so that its [timesteps, features], not [features, timesteps]
-            'mean': np.vstack(mean).swapaxes(0, 1),
-            'std': np.vstack(std).swapaxes(0, 1)
+            mean_np, std_np = mean_np.swapaxes(0, 1), std_np.swapaxes(0, 1)
+
+        normalizing_array = cast(Dict[str, np.ndarray], {
+            'mean': mean_np,
+            'std': std_np
         })
+        return normalizing_array
 
     def ds_folder_to_np(self,
                         folder: Path,
@@ -204,13 +227,23 @@ class _BaseIter:
         assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable! ' \
             f'Got {len(list(y.data_vars))}'
 
-        if self.surrounding_pixels is not None:
-            x = self._add_surrounding(x, self.surrounding_pixels)
+        yearly_mean = x.mean(dim=['time', 'lat', 'lon'])
+        yearly_mean_np = yearly_mean.to_array().values
+
+        yearly_std = x.std(dim=['time', 'lat', 'lon'])
+        yearly_std_np = yearly_std.to_array().values
+
+        yearly_agg = np.concatenate((yearly_mean_np, yearly_std_np))
+
+        x = self._add_extra_dims(x, self.surrounding_pixels, self.monthly_aggs)
 
         x_np, y_np = x.to_array().values, y.to_array().values
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
-            self.calculate_normalizing_array(list(x.data_vars))
+            self.normalizing_array = self.calculate_normalizing_array(
+                list(x.data_vars), yearly_agg=False)
+            self.normalizing_array_ym = self.calculate_normalizing_array(
+                list(yearly_mean.data_vars) + list(yearly_std.data_vars), yearly_agg=True)
 
         # first, x
         x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
@@ -223,6 +256,7 @@ class _BaseIter:
             str(y.time.values[0])[:-3], '%Y-%m-%dT%H:%M:%S.%f'
         ).month
         x_months = np.array([target_month] * x_np.shape[0])
+        yearly_agg = np.vstack([yearly_agg] * x_np.shape[0])
 
         # then, latlons
         lons, lats = np.meshgrid(x.lon.values, x.lat.values)
@@ -234,9 +268,11 @@ class _BaseIter:
         y_np = y_np.reshape(y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
         y_np = np.moveaxis(y_np, -1, 0).reshape(-1, 1)
 
-        if self.normalizing_array is not None:
+        if (self.normalizing_array is not None) and (self.normalizing_array_ym is not None):
             x_np = (x_np - self.normalizing_array['mean']) / (self.normalizing_array['std'])
             train_latlons = train_latlons / [90, 180]
+            yearly_agg = (yearly_agg - self.normalizing_array_ym['mean']) / \
+                self.normalizing_array_ym['std']
 
         if self.experiment == 'nowcast':
             # if nowcast then we have a TrainData.current
@@ -249,7 +285,8 @@ class _BaseIter:
                 current=current,
                 historical=historical,
                 pred_months=x_months,
-                latlons=train_latlons
+                latlons=train_latlons,
+                yearly_aggs=yearly_agg
             )
 
         else:
@@ -257,7 +294,8 @@ class _BaseIter:
                 current=None,
                 historical=x_np,
                 pred_months=x_months,
-                latlons=train_latlons
+                latlons=train_latlons,
+                yearly_aggs=yearly_agg
             )
 
         assert y_np.shape[0] == x_np.shape[0], f'x and y data have a different ' \
@@ -289,6 +327,8 @@ class _BaseIter:
             train_data.historical = train_data.historical[notnan_indices]
             train_data.pred_months = train_data.pred_months[notnan_indices]  # type: ignore
             train_data.latlons = train_data.latlons[notnan_indices]
+            train_data.yearly_aggs = train_data.yearly_aggs[notnan_indices]
+
             y_np = y_np[notnan_indices]
 
             latlons = latlons[notnan_indices]
@@ -297,24 +337,42 @@ class _BaseIter:
             train_data.historical = torch.from_numpy(train_data.historical).float()
             train_data.pred_months = torch.from_numpy(train_data.pred_months).float()
             train_data.latlons = torch.from_numpy(train_data.latlons).float()
+            train_data.yearly_aggs = torch.from_numpy(train_data.yearly_aggs).float()
             y_np = torch.from_numpy(y_np).float()
 
             if self.experiment == 'nowcast':
                 train_data.current = torch.from_numpy(train_data.current).float()
-
         return ModelArrays(x=train_data, y=y_np, x_vars=list(x.data_vars),
                            y_var=list(y.data_vars)[0], latlons=latlons)
 
     @staticmethod
-    def _add_surrounding(x: xr.Dataset, surrounding_pixels: int) -> xr.Dataset:
+    def _add_extra_dims(x: xr.Dataset, surrounding_pixels: Optional[int],
+                        monthly_agg: bool) -> xr.Dataset:
+        original_vars = list(x.data_vars)
 
-        lat_shifts = lon_shifts = range(-surrounding_pixels, surrounding_pixels + 1)
-        for var in x.data_vars:
-            for lat_shift in lat_shifts:
-                for lon_shift in lon_shifts:
-                    if lat_shift == lon_shift == 0: continue
-                    shifted_varname = f'lat_{lat_shift}_lon_{lon_shift}_{var}'
-                    x[shifted_varname] = x[var].shift(lat=lat_shift, lon=lon_shift)
+        if monthly_agg:
+            # first, the means
+            monthly_mean_values = x.mean(dim=['lat', 'lon'])
+            mean_dataset = xr.ones_like(x) * monthly_mean_values
+
+            # then, the std
+            monthly_std_values = x.std(dim=['lat', 'lon'])
+            std_dataset = xr.ones_like(x) * monthly_std_values
+
+            for var in mean_dataset.data_vars:
+                x[f'spatial_mean_{var}'] = mean_dataset[var]
+
+            for var in std_dataset.data_vars:
+                x[f'spatial_std_{var}'] = std_dataset[var]
+
+        if surrounding_pixels is not None:
+            lat_shifts = lon_shifts = range(-surrounding_pixels, surrounding_pixels + 1)
+            for var in original_vars:
+                for lat_shift in lat_shifts:
+                    for lon_shift in lon_shifts:
+                        if lat_shift == lon_shift == 0: continue
+                        shifted_varname = f'lat_{lat_shift}_lon_{lon_shift}_{var}'
+                        x[shifted_varname] = x[var].shift(lat=lat_shift, lon=lon_shift)
         return x
 
     @staticmethod
@@ -352,7 +410,8 @@ class _TrainIter(_BaseIter):
                                 Union[np.ndarray, torch.Tensor]]:
 
         if self.idx < self.max_idx:
-            out_x, out_x_add, out_x_curr, out_x_latlon, out_y = [], [], [], [], []
+            out_x, out_x_add, out_x_curr, out_x_latlon, out_x_ym = [], [], [], [], []
+            out_y = []
 
             cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
             while self.idx < cur_max_idx:
@@ -376,6 +435,7 @@ class _TrainIter(_BaseIter):
                     out_x_curr.append(arrays.x.current)
                 out_x_add.append(arrays.x.pred_months)
                 out_x_latlon.append(arrays.x.latlons)
+                out_x_ym.append(arrays.x.yearly_aggs)
                 out_y.append(arrays.y)
                 self.idx += 1
 
@@ -383,12 +443,14 @@ class _TrainIter(_BaseIter):
             final_x_curr = np.concatenate(out_x_curr, axis=0) if out_x_curr != [] else None
             final_x_add = np.concatenate(out_x_add, axis=0)
             final_x_latlon = np.concatenate(out_x_latlon, axis=0)
+            final_x_ym = np.concatenate(out_x_ym, axis=0)
             final_y = np.concatenate(out_y, axis=0)
 
             if self.to_tensor:
                 final_x = torch.from_numpy(final_x).float()
                 final_x_add = torch.from_numpy(final_x_add).float()
                 final_x_latlon = torch.from_numpy(final_x_latlon).float()
+                final_x_ym = torch.from_numpy(final_x_ym).float()
                 final_x_curr = torch.from_numpy(
                     final_x_curr
                 ).float() if final_x_curr is not None else None
@@ -398,7 +460,7 @@ class _TrainIter(_BaseIter):
             if final_x.shape[0] == 0:
                 raise StopIteration()
 
-            return (final_x, final_x_add, final_x_latlon, final_x_curr), final_y
+            return (final_x, final_x_add, final_x_latlon, final_x_curr, final_x_ym), final_y
 
         else:  # final_x_curr >= self.max_idx
             raise StopIteration()
