@@ -182,8 +182,8 @@ class BasePreProcessor:
             ds = self.resample_time(ds, resample_time, upsampling)
 
         out = self.out_dir / f'{self.dataset}' \
-            '{"_" + variable if variable is not None else ""}' \
-            '{"_" + subset_str if subset_str is not None else ""}.nc'.replace(' ', '')
+            f'{"_" + variable if variable is not None else ""}' \
+            f'{"_" + subset_str if subset_str is not None else ""}.nc'.replace(' ', '')
 
         ds.to_netcdf(out)
         print(f"\n**** {out} Created! ****\n")
