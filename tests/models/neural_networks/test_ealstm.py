@@ -18,15 +18,15 @@ class TestEARecurrentNetwork:
         rnn_dropout = 0.25
         include_latlons = True
         include_pred_month = True
-        include_yearly_means = True
-        yearly_mean_size = 3
+        include_yearly_aggs = True
+        yearly_agg_size = 3
 
         def mocktrain(self):
             self.model = EALSTM(features_per_month, dense_features, hidden_size,
                                 rnn_dropout, include_latlons, include_pred_month,
-                                experiment='one_month_forecast', yearly_mean_size=yearly_mean_size)
+                                experiment='one_month_forecast', yearly_agg_size=yearly_agg_size)
             self.features_per_month = features_per_month
-            self.yearly_mean_size = yearly_mean_size
+            self.yearly_agg_size = yearly_agg_size
 
         monkeypatch.setattr(EARecurrentNetwork, 'train', mocktrain)
 
@@ -34,7 +34,7 @@ class TestEARecurrentNetwork:
                                    include_pred_month=include_pred_month,
                                    include_latlons=include_latlons,
                                    rnn_dropout=rnn_dropout, data_folder=tmp_path,
-                                   include_yearly_means=include_yearly_means)
+                                   include_yearly_aggs=include_yearly_aggs)
         model.train()
         model.save_model()
 
@@ -48,13 +48,13 @@ class TestEARecurrentNetwork:
             assert (model.model.state_dict()[key] == val).all()
 
         assert model_dict['model']['features_per_month'] == features_per_month
-        assert model_dict['model']['yearly_mean_size'] == yearly_mean_size
+        assert model_dict['model']['yearly_agg_size'] == yearly_agg_size
         assert model_dict['hidden_size'] == hidden_size
         assert model_dict['rnn_dropout'] == rnn_dropout
         assert model_dict['dense_features'] == dense_features
         assert model_dict['include_pred_month'] == include_pred_month
         assert model_dict['include_latlons'] == include_latlons
-        assert model_dict['include_yearly_means'] == include_yearly_means
+        assert model_dict['include_yearly_aggs'] == include_yearly_aggs
         assert model_dict['experiment'] == 'one_month_forecast'
 
     @pytest.mark.parametrize('use_pred_months', [True, False])

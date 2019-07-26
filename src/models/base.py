@@ -34,14 +34,14 @@ class ModelBase:
                  include_pred_month: bool = True,
                  include_latlons: bool = False,
                  include_monthly_aggs: bool = True,
-                 include_yearly_means: bool = True,
+                 include_yearly_aggs: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
 
         self.batch_size = batch_size
         self.include_pred_month = include_pred_month
         self.include_latlons = include_latlons
         self.include_monthly_aggs = include_monthly_aggs
-        self.include_yearly_means = include_yearly_means
+        self.include_yearly_aggs = include_yearly_aggs
         self.data_path = data_folder
         self.experiment = experiment
         self.pred_months = pred_months

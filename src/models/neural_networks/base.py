@@ -25,10 +25,10 @@ class NNBase(ModelBase):
                  include_pred_month: bool = True,
                  include_latlons: bool = False,
                  include_monthly_aggs: bool = True,
-                 include_yearly_means: bool = True,
+                 include_yearly_aggs: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
-                         include_latlons, include_monthly_aggs, include_yearly_means,
+                         include_latlons, include_monthly_aggs, include_yearly_aggs,
                          surrounding_pixels)
 
         # for reproducibility
@@ -182,7 +182,7 @@ class NNBase(ModelBase):
                 for key, val in dict.items():
                     preds = self.model(
                         val.x.historical, self._one_hot_months(val.x.pred_months),
-                        val.x.latlons, val.x.current, val.x.yearly_means
+                        val.x.latlons, val.x.current, val.x.yearly_aggs
                     )
                     preds_dict[key] = preds.numpy()
                     test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons}
@@ -224,7 +224,7 @@ class NNBase(ModelBase):
                     if self.experiment == 'nowcast':
                         assert x[3] is not None
                         output_cur.append(x[3])
-                    if self.include_yearly_means:
+                    if self.include_yearly_aggs:
                         output_ym.append(x[4])
         return [torch.stack(output_tensors),  # type: ignore
                 torch.cat(output_pm, dim=0) if len(output_pm) > 0 else None,

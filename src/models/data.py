@@ -19,7 +19,7 @@ class TrainData:
     # latlons are repeated here so they can be tensor-ized and
     # normalized
     latlons: Union[np.ndarray, torch.Tensor]
-    yearly_means: Union[np.ndarray, torch.Tensor]
+    yearly_aggs: Union[np.ndarray, torch.Tensor]
 
 
 @dataclass
@@ -185,7 +185,7 @@ class _BaseIter:
         return self
 
     def calculate_normalizing_array(self, data_vars: List[str],
-                                    yearly_mean: bool = False) -> Dict[str, np.ndarray]:
+                                    yearly_agg: bool = False) -> Dict[str, np.ndarray]:
         # If we've made it here, normalizing_dict is definitely not None
         self.normalizing_dict = cast(Dict[str, Dict[str, np.ndarray]], self.normalizing_dict)
 
@@ -196,7 +196,7 @@ class _BaseIter:
                 if var.endswith(norm_var):
                     var_mean = self.normalizing_dict[norm_var]['mean']
                     var_std = self.normalizing_dict[norm_var]['std']
-                    if yearly_mean:
+                    if yearly_agg:
                         var_mean = np.mean(var_mean)
                         var_std = np.mean(var_std)
                     mean.append(var_mean)
@@ -205,9 +205,9 @@ class _BaseIter:
 
         mean_np, std_np = np.vstack(mean), np.vstack(std)
 
-        if yearly_mean:
+        if yearly_agg:
             mean_np, std_np = mean_np.squeeze(1), std_np.squeeze(1)
-        if not yearly_mean:
+        else:
             # swapaxes so that its [timesteps, features], not [features, timesteps]
             mean_np, std_np = mean_np.swapaxes(0, 1), std_np.swapaxes(0, 1)
 
@@ -230,15 +230,20 @@ class _BaseIter:
         yearly_mean = x.mean(dim=['time', 'lat', 'lon'])
         yearly_mean_np = yearly_mean.to_array().values
 
+        yearly_std = x.std(dim=['time', 'lat', 'lon'])
+        yearly_std_np = yearly_std.to_array().values
+
+        yearly_agg = np.concatenate((yearly_mean_np, yearly_std_np))
+
         x = self._add_extra_dims(x, self.surrounding_pixels, self.monthly_aggs)
 
         x_np, y_np = x.to_array().values, y.to_array().values
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
             self.normalizing_array = self.calculate_normalizing_array(
-                list(x.data_vars), yearly_mean=False)
+                list(x.data_vars), yearly_agg=False)
             self.normalizing_array_ym = self.calculate_normalizing_array(
-                list(yearly_mean.data_vars), yearly_mean=True)
+                list(yearly_mean.data_vars) + list(yearly_std.data_vars), yearly_agg=True)
 
         # first, x
         x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
@@ -251,7 +256,7 @@ class _BaseIter:
             str(y.time.values[0])[:-3], '%Y-%m-%dT%H:%M:%S.%f'
         ).month
         x_months = np.array([target_month] * x_np.shape[0])
-        yearly_mean_np = np.vstack([yearly_mean_np] * x_np.shape[0])
+        yearly_agg = np.vstack([yearly_agg] * x_np.shape[0])
 
         # then, latlons
         lons, lats = np.meshgrid(x.lon.values, x.lat.values)
@@ -266,7 +271,7 @@ class _BaseIter:
         if (self.normalizing_array is not None) and (self.normalizing_array_ym is not None):
             x_np = (x_np - self.normalizing_array['mean']) / (self.normalizing_array['std'])
             train_latlons = train_latlons / [90, 180]
-            yearly_mean_np = (yearly_mean_np - self.normalizing_array_ym['mean']) / \
+            yearly_agg = (yearly_agg - self.normalizing_array_ym['mean']) / \
                 self.normalizing_array_ym['std']
 
         if self.experiment == 'nowcast':
@@ -281,7 +286,7 @@ class _BaseIter:
                 historical=historical,
                 pred_months=x_months,
                 latlons=train_latlons,
-                yearly_means=yearly_mean_np
+                yearly_aggs=yearly_agg
             )
 
         else:
@@ -290,7 +295,7 @@ class _BaseIter:
                 historical=x_np,
                 pred_months=x_months,
                 latlons=train_latlons,
-                yearly_means=yearly_mean_np
+                yearly_aggs=yearly_agg
             )
 
         assert y_np.shape[0] == x_np.shape[0], f'x and y data have a different ' \
@@ -322,7 +327,7 @@ class _BaseIter:
             train_data.historical = train_data.historical[notnan_indices]
             train_data.pred_months = train_data.pred_months[notnan_indices]  # type: ignore
             train_data.latlons = train_data.latlons[notnan_indices]
-            train_data.yearly_means = train_data.yearly_means[notnan_indices]
+            train_data.yearly_aggs = train_data.yearly_aggs[notnan_indices]
 
             y_np = y_np[notnan_indices]
 
@@ -332,7 +337,7 @@ class _BaseIter:
             train_data.historical = torch.from_numpy(train_data.historical).float()
             train_data.pred_months = torch.from_numpy(train_data.pred_months).float()
             train_data.latlons = torch.from_numpy(train_data.latlons).float()
-            train_data.yearly_means = torch.from_numpy(train_data.yearly_means).float()
+            train_data.yearly_aggs = torch.from_numpy(train_data.yearly_aggs).float()
             y_np = torch.from_numpy(y_np).float()
 
             if self.experiment == 'nowcast':
@@ -430,7 +435,7 @@ class _TrainIter(_BaseIter):
                     out_x_curr.append(arrays.x.current)
                 out_x_add.append(arrays.x.pred_months)
                 out_x_latlon.append(arrays.x.latlons)
-                out_x_ym.append(arrays.x.yearly_means)
+                out_x_ym.append(arrays.x.yearly_aggs)
                 out_y.append(arrays.y)
                 self.idx += 1
 

@@ -20,12 +20,12 @@ class TestLinearNetwork:
         include_latlons = True
         include_monthly_aggs = True
         surrounding_pixels = 1
-        include_yearly_means = True
+        include_yearly_aggs = True
 
         def mocktrain(self):
             self.model = LinearModel(
                 input_size, layer_sizes, dropout, include_pred_month,
-                include_latlons, include_yearly_means
+                include_latlons, include_yearly_aggs
             )
             self.input_size = input_size
 
@@ -36,7 +36,7 @@ class TestLinearNetwork:
                               include_pred_month=include_pred_month,
                               include_latlons=include_latlons,
                               include_monthly_aggs=include_monthly_aggs,
-                              include_yearly_means=include_yearly_means,
+                              include_yearly_aggs=include_yearly_aggs,
                               surrounding_pixels=surrounding_pixels)
         model.train()
         model.save_model()
@@ -57,7 +57,7 @@ class TestLinearNetwork:
         assert model_dict['include_pred_month'] == include_pred_month
         assert model_dict['include_latlons'] == include_latlons
         assert model_dict['include_monthly_aggs'] == include_monthly_aggs
-        assert model_dict['include_yearly_means'] == include_yearly_means
+        assert model_dict['include_yearly_aggs'] == include_yearly_aggs
         assert model_dict['surrounding_pixels'] == surrounding_pixels
 
     @pytest.mark.parametrize(
@@ -131,7 +131,7 @@ class TestLinearNetwork:
                 n_expected += 12
             if use_latlons:
                 n_expected += 2
-        n_expected += 3  # +3 for the yearly means
+        n_expected += 3 * 2  # +3 for the yearly means, +3 for yearly stds
 
         assert n_input_features == n_expected, "Expected the number" \
             f"of input features to be: {n_expected}" \

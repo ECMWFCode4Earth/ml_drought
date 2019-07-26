@@ -24,11 +24,11 @@ class LinearRegression(ModelBase):
                  include_pred_month: bool = True,
                  include_latlons: bool = False,
                  include_monthly_aggs: bool = True,
-                 include_yearly_means: bool = True,
+                 include_yearly_aggs: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months,
                          include_pred_month, include_latlons, include_monthly_aggs,
-                         include_yearly_means, surrounding_pixels)
+                         include_yearly_aggs, surrounding_pixels)
 
         self.explainer: Optional[shap.LinearExplainer] = None
 
@@ -147,7 +147,7 @@ class LinearRegression(ModelBase):
             'surrounding_pixels': self.surrounding_pixels,
             'batch_size': self.batch_size,
             'include_monthly_aggs': self.include_monthly_aggs,
-            'include_yearly_means': self.include_yearly_means
+            'include_yearly_aggs': self.include_yearly_aggs
         }
 
         with (self.model_dir / 'model.pkl').open('wb') as f:
@@ -223,7 +223,7 @@ class LinearRegression(ModelBase):
             x_his, x_pm, x_latlons, x_cur, x_ym = x  # type: ignore
         elif type(x) == TrainData:
             x_his, x_pm, x_latlons = x.historical, x.pred_months, x.latlons  # type: ignore
-            x_cur, x_ym = x.current, x.yearly_means  # type: ignore
+            x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
 
         assert x_his is not None, \
             'x[0] should be historical data, and therefore should not be None'
@@ -240,7 +240,7 @@ class LinearRegression(ModelBase):
             x_in = np.concatenate((x_in, x_latlons), axis=-1)
         if self.experiment == 'nowcast':
             x_in = np.concatenate((x_in, x_cur), axis=-1)
-        if self.include_yearly_means:
+        if self.include_yearly_aggs:
             x_in = np.concatenate((x_in, x_ym), axis=-1)
 
         return x_in

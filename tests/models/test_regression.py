@@ -106,7 +106,7 @@ class TestLinearRegression:
         if use_pred_months:
             coef_size += 12
 
-        coef_size += 3  # for the yearly means
+        coef_size += 6  # for the yearly aggs
 
         assert model.model.coef_.size == coef_size, f'Got unexpected coef size'
 
