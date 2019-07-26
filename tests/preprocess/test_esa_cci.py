@@ -38,9 +38,24 @@ class TestESACCIPreprocessor:
             dims.insert(0, 'time')
             coords['time'] = [datetime(2019, 1, 1), datetime(2019, 1, 2)]
         lccs_class = np.random.randint(100, size=size)
+        processed_flag = [1]
+        current_pixel_state = [1]
+        observation_count = [1]
+        change_count = [1]
+        crs = [1]
 
         # make datast with correct attrs
-        ds = xr.Dataset({'lccs_class': (dims, lccs_class)}, coords=coords)
+        ds = xr.Dataset(
+            {
+                'lccs_class': (dims, lccs_class),
+                'processed_flag': (processed_flag),
+                'current_pixel_state': (current_pixel_state),
+                'observation_count': (observation_count),
+                'change_count': (change_count),
+                'crs': (crs),
+            },
+            coords=coords
+        )
         ds.attrs['time_coverage_start'] = '20190101'
 
         return ds

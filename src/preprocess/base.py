@@ -173,14 +173,17 @@ class BasePreProcessor:
 
     def merge_files(self, subset_str: Optional[str] = 'kenya',
                     resample_time: Optional[str] = 'M',
-                    upsampling: bool = False) -> None:
+                    upsampling: bool = False,
+                    variable: Optional[str] = None) -> None:
 
         ds = xr.open_mfdataset(self.get_filepaths('interim'))
 
         if resample_time is not None:
             ds = self.resample_time(ds, resample_time, upsampling)
 
-        out = self.out_dir / f'{self.dataset}\
-        {"_" + subset_str if subset_str is not None else ""}.nc'.replace(' ', '')
+        out = self.out_dir / f'{self.dataset}' \
+            '{"_" + variable if variable is not None else ""}' \
+            '{"_" + subset_str if subset_str is not None else ""}.nc'.replace(' ', '')
+
         ds.to_netcdf(out)
         print(f"\n**** {out} Created! ****\n")
