@@ -87,7 +87,7 @@ class TestEARecurrentNetwork:
         assert expected_stdout in captured.out
 
         assert type(model.model) == EALSTM, \
-            f'Model attribute not an RNN!'
+            f'Model attribute not an EALSTM!'
 
     @pytest.mark.parametrize('use_pred_months', [True, False])
     def test_predict(self, tmp_path, use_pred_months):

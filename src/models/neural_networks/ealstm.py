@@ -263,7 +263,7 @@ class EALSTMCell(nn.Module):
         -------
         h_n : torch.Tensor
             The hidden states of each time step of each sample in the batch.
-        c_n : torch.Tensor]
+        c_n : torch.Tensor
             The cell states of each time step of each sample in the batch.
         """
         if self.batch_first:
