@@ -45,7 +45,6 @@ class TestLoadModels:
         assert new_model.features_per_month == model.features_per_month
         assert new_model.hidden_size == model.hidden_size
         assert new_model.rnn_dropout == model.rnn_dropout
-        assert new_model.dense_dropout == model.dense_dropout
         assert new_model.include_pred_month == model.include_pred_month
         assert new_model.experiment == model.experiment
         assert new_model.surrounding_pixels == model.surrounding_pixels
@@ -86,7 +85,6 @@ class TestLoadModels:
         assert new_model.features_per_month == model.features_per_month
         assert new_model.hidden_size == model.hidden_size
         assert new_model.rnn_dropout == model.rnn_dropout
-        assert new_model.dense_dropout == model.dense_dropout
         assert new_model.include_pred_month == model.include_pred_month
         assert new_model.experiment == model.experiment
         assert new_model.surrounding_pixels == model.surrounding_pixels

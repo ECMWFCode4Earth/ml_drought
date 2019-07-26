@@ -47,12 +47,12 @@ class TestLinearRegression:
             'Different intercept array saved!'
         assert model_dict['experiment'] == 'one_month_forecast', 'Different experiment saved!'
 
-    @pytest.mark.parametrize('use_pred_months,experiment,monthly_mean',
+    @pytest.mark.parametrize('use_pred_months,experiment,monthly_agg',
                              [(True, 'one_month_forecast', True),
                               (True, 'nowcast', False),
                               (False, 'one_month_forecast', False),
                               (False, 'nowcast', True)])
-    def test_train(self, tmp_path, capsys, use_pred_months, experiment, monthly_mean):
+    def test_train(self, tmp_path, capsys, use_pred_months, experiment, monthly_agg):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -84,7 +84,7 @@ class TestLinearRegression:
 
         model = LinearRegression(
             tmp_path, include_pred_month=use_pred_months, experiment=experiment,
-            include_monthly_means=monthly_mean
+            include_monthly_aggs=monthly_agg
         )
         model.train()
 
@@ -100,8 +100,9 @@ class TestLinearRegression:
             coef_size = (3 * 35) + 2
         elif experiment == 'one_month_forecast':
             coef_size = (3 * 36)
-        if monthly_mean:
-            coef_size *= 2
+        if monthly_agg:
+            # doubled including the mean, tripled including the std
+            coef_size *= 3
         if use_pred_months:
             coef_size += 12
 
@@ -135,7 +136,7 @@ class TestLinearRegression:
             return MockIterator()
 
         def do_nothing(self, data_path, batch_file_size, shuffle_data, mode, pred_months,
-                       monthly_means, surrounding_pixels):
+                       monthly_aggs, surrounding_pixels):
             pass
 
         monkeypatch.setattr(DataLoader, '__iter__', mockiter)

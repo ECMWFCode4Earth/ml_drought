@@ -77,7 +77,7 @@ class TestRecurrentNetwork:
 
         model = RecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
                                  rnn_dropout=rnn_dropout,
-                                 data_folder=tmp_path, include_monthly_means=True)
+                                 data_folder=tmp_path, include_monthly_aggs=True)
         model.train()
 
         captured = capsys.readouterr()

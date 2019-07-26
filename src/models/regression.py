@@ -23,11 +23,11 @@ class LinearRegression(ModelBase):
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
                  include_latlons: bool = False,
-                 include_monthly_means: bool = True,
+                 include_monthly_aggs: bool = True,
                  include_yearly_means: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months,
-                         include_pred_month, include_latlons, include_monthly_means,
+                         include_pred_month, include_latlons, include_monthly_aggs,
                          include_yearly_means, surrounding_pixels)
 
         self.explainer: Optional[shap.LinearExplainer] = None
@@ -50,14 +50,14 @@ class LinearRegression(ModelBase):
                                           shuffle_data=True, mode='train',
                                           pred_months=self.pred_months,
                                           mask=train_mask,
-                                          monthly_means=self.include_monthly_means,
+                                          monthly_aggs=self.include_monthly_aggs,
                                           surrounding_pixels=self.surrounding_pixels)
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
                                         experiment=self.experiment,
                                         shuffle_data=False, mode='train',
                                         pred_months=self.pred_months, mask=val_mask,
-                                        monthly_means=self.include_monthly_means,
+                                        monthly_aggs=self.include_monthly_aggs,
                                         surrounding_pixels=self.surrounding_pixels)
             batches_without_improvement = 0
             best_val_score = np.inf
@@ -67,7 +67,7 @@ class LinearRegression(ModelBase):
                                           batch_file_size=self.batch_size,
                                           pred_months=self.pred_months,
                                           shuffle_data=True, mode='train',
-                                          monthly_means=self.include_monthly_means,
+                                          monthly_aggs=self.include_monthly_aggs,
                                           surrounding_pixels=self.surrounding_pixels)
         self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
 
@@ -146,7 +146,7 @@ class LinearRegression(ModelBase):
             'include_pred_month': self.include_pred_month,
             'surrounding_pixels': self.surrounding_pixels,
             'batch_size': self.batch_size,
-            'include_monthly_means': self.include_monthly_means,
+            'include_monthly_aggs': self.include_monthly_aggs,
             'include_yearly_means': self.include_yearly_means
         }
 
@@ -164,7 +164,7 @@ class LinearRegression(ModelBase):
             data_path=self.data_path, batch_file_size=self.batch_size,
             experiment=self.experiment, shuffle_data=False, mode='test',
             pred_months=self.pred_months, surrounding_pixels=self.surrounding_pixels,
-            monthly_means=self.include_monthly_means)
+            monthly_aggs=self.include_monthly_aggs)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -192,7 +192,7 @@ class LinearRegression(ModelBase):
                                       pred_months=self.pred_months,
                                       shuffle_data=False, mode='train',
                                       surrounding_pixels=self.surrounding_pixels,
-                                      monthly_means=self.include_monthly_means)
+                                      monthly_aggs=self.include_monthly_aggs)
 
         means, sizes = [], []
         for x, _ in train_dataloader:

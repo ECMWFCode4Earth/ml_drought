@@ -24,11 +24,11 @@ class NNBase(ModelBase):
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
                  include_latlons: bool = False,
-                 include_monthly_means: bool = True,
+                 include_monthly_aggs: bool = True,
                  include_yearly_means: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
-                         include_latlons, include_monthly_means, include_yearly_means,
+                         include_latlons, include_monthly_aggs, include_yearly_means,
                          surrounding_pixels)
 
         # for reproducibility
@@ -77,7 +77,7 @@ class NNBase(ModelBase):
                                           mask=train_mask,
                                           to_tensor=True,
                                           pred_months=self.pred_months,
-                                          monthly_means=self.include_monthly_means,
+                                          monthly_aggs=self.include_monthly_aggs,
                                           surrounding_pixels=self.surrounding_pixels)
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
@@ -86,7 +86,7 @@ class NNBase(ModelBase):
                                         mask=val_mask,
                                         to_tensor=True,
                                         pred_months=self.pred_months,
-                                        monthly_means=self.include_monthly_means,
+                                        monthly_aggs=self.include_monthly_aggs,
                                         surrounding_pixels=self.surrounding_pixels)
 
             batches_without_improvement = 0
@@ -98,7 +98,7 @@ class NNBase(ModelBase):
                                           experiment=self.experiment,
                                           to_tensor=True,
                                           pred_months=self.pred_months,
-                                          monthly_means=self.include_monthly_means,
+                                          monthly_aggs=self.include_monthly_aggs,
                                           surrounding_pixels=self.surrounding_pixels)
         # initialize the model
         if self.model is None:
@@ -168,7 +168,7 @@ class NNBase(ModelBase):
                                         shuffle_data=False, mode='test',
                                         experiment=self.experiment,
                                         pred_months=self.pred_months, to_tensor=True,
-                                        monthly_means=self.include_monthly_means,
+                                        monthly_aggs=self.include_monthly_aggs,
                                         surrounding_pixels=self.surrounding_pixels)
 
         preds_dict: Dict[str, np.ndarray] = {}
@@ -199,7 +199,7 @@ class NNBase(ModelBase):
                                       shuffle_data=True, mode='train',
                                       pred_months=self.pred_months,
                                       to_tensor=True,
-                                      monthly_means=self.include_monthly_means,
+                                      monthly_aggs=self.include_monthly_aggs,
                                       surrounding_pixels=self.surrounding_pixels)
         output_tensors: List[torch.Tensor] = []
         output_pm: List[torch.Tensor] = []

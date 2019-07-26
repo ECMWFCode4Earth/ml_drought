@@ -23,11 +23,11 @@ class RecurrentNetwork(NNBase):
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
                  include_latlons: bool = False,
-                 include_monthly_means: bool = True,
+                 include_monthly_aggs: bool = True,
                  include_yearly_means: bool = True,
                  surrounding_pixels: Optional[int] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
-                         include_latlons, include_monthly_means, include_yearly_means,
+                         include_latlons, include_monthly_aggs, include_yearly_means,
                          surrounding_pixels)
 
         # to initialize and save the model
@@ -56,7 +56,7 @@ class RecurrentNetwork(NNBase):
             'include_pred_month': self.include_pred_month,
             'include_latlons': self.include_latlons,
             'surrounding_pixels': self.surrounding_pixels,
-            'include_monthly_means': self.include_monthly_means,
+            'include_monthly_aggs': self.include_monthly_aggs,
             'include_yearly_means': self.include_yearly_means,
             'experiment': self.experiment
         }

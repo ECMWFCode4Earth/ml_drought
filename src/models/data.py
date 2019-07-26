@@ -84,8 +84,8 @@ class DataLoader:
         How many surrounding pixels to add to the input data. e.g. if the input is 1, then in
         addition to the pixels on the prediction point, the neighbouring (spatial) pixels will
         be included too, up to a distance of one pixel away
-    monthly_means: bool = True
-        Whether to include the monthly mean (mean across all spatial values) for
+    monthly_aggs: bool = True
+        Whether to include the monthly aggregates (mean and std across all spatial values) for
         the input variables. These will be additional dimensions to the historical
         (and optionally current) arrays
     """
@@ -97,7 +97,7 @@ class DataLoader:
                  pred_months: Optional[List[int]] = None,
                  to_tensor: bool = False,
                  surrounding_pixels: Optional[int] = None,
-                 monthly_means: bool = True) -> None:
+                 monthly_aggs: bool = True) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
@@ -117,7 +117,7 @@ class DataLoader:
                 self.normalizing_dict = pickle.load(f)
 
         self.surrounding_pixels = surrounding_pixels
-        self.monthly_means = monthly_means
+        self.monthly_aggs = monthly_aggs
         self.to_tensor = to_tensor
 
     def __iter__(self):
@@ -166,7 +166,7 @@ class _BaseIter:
         self.shuffle = loader.shuffle
         self.clear_nans = loader.clear_nans
         self.surrounding_pixels = loader.surrounding_pixels
-        self.monthly_means = loader.monthly_means
+        self.monthly_aggs = loader.monthly_aggs
         self.to_tensor = loader.to_tensor
         self.experiment = loader.experiment
 
@@ -230,7 +230,7 @@ class _BaseIter:
         yearly_mean = x.mean(dim=['time', 'lat', 'lon'])
         yearly_mean_np = yearly_mean.to_array().values
 
-        x = self._add_extra_dims(x, self.surrounding_pixels, self.monthly_means)
+        x = self._add_extra_dims(x, self.surrounding_pixels, self.monthly_aggs)
 
         x_np, y_np = x.to_array().values, y.to_array().values
 
@@ -342,14 +342,23 @@ class _BaseIter:
 
     @staticmethod
     def _add_extra_dims(x: xr.Dataset, surrounding_pixels: Optional[int],
-                        monthly_mean: bool) -> xr.Dataset:
+                        monthly_agg: bool) -> xr.Dataset:
         original_vars = list(x.data_vars)
 
-        if monthly_mean:
+        if monthly_agg:
+            # first, the means
             monthly_mean_values = x.mean(dim=['lat', 'lon'])
             mean_dataset = xr.ones_like(x) * monthly_mean_values
+
+            # then, the std
+            monthly_std_values = x.std(dim=['lat', 'lon'])
+            std_dataset = xr.ones_like(x) * monthly_std_values
+
             for var in mean_dataset.data_vars:
                 x[f'spatial_mean_{var}'] = mean_dataset[var]
+
+            for var in std_dataset.data_vars:
+                x[f'spatial_std_{var}'] = std_dataset[var]
 
         if surrounding_pixels is not None:
             lat_shifts = lon_shifts = range(-surrounding_pixels, surrounding_pixels + 1)
