@@ -122,7 +122,7 @@ class TestBaseIter:
             expected_shape = (25, 2) if surrounding_pixels is None else (9, 2 * 9)
             assert x_train_data.current.shape == expected_shape, \
                 f'Expecting multiple vars in the current timestep. ' \
-                f'Expect: (25, 3) Got: {x_train_data.current.shape}'
+                f'Expect: (25, 5) Got: {x_train_data.current.shape}'
 
         expected_latlons = 25 if surrounding_pixels is None else 9
 
