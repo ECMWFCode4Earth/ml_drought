@@ -519,6 +519,7 @@ def get_lookup_val(xr_obj, variable, new_variable, lookup_dict):
     : lookup_dict (dict)
         the dictionary we want to lookup the values of 'variable' in to return values to 'new_variable'
     """
+    assert variable in list(ds.data_vars), f"variable is not in {list(ds.data_vars)}"
     # get the values as a numpy array
     if isinstance(xr_obj, xr.Dataset):
         ar = xr_obj[variable].values
