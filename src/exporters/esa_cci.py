@@ -21,7 +21,12 @@ class ESACCIExporter(BaseExporter):
     def remove_punctuation(text: str) -> str:
         rm_punctuation = str.maketrans('', '', string.punctuation)
         rm_digits = str.maketrans('', '', string.digits)
-        return text.lower().translate(rm_punctuation).translate(rm_digits).rstrip()
+        return (
+            text.lower()
+            .translate(rm_punctuation)
+            .translate(rm_digits)
+            .rstrip().replace('   ', ' ')
+        )
 
     def read_legend(self) -> pd.DataFrame:
         legend_url = 'http://maps.elie.ucl.ac.be/CCI/viewer/download/ESACCI-LC-Legend.csv'
