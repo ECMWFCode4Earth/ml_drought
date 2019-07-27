@@ -18,12 +18,14 @@ class TestLinearNetwork:
         dropout = 0.25
         include_pred_month = True
         include_latlons = True
+        include_monthly_aggs = True
         surrounding_pixels = 1
+        include_yearly_aggs = True
 
         def mocktrain(self):
             self.model = LinearModel(
                 input_size, layer_sizes, dropout, include_pred_month,
-                include_latlons
+                include_latlons, include_yearly_aggs
             )
             self.input_size = input_size
 
@@ -33,6 +35,8 @@ class TestLinearNetwork:
                               dropout=dropout, experiment='one_month_forecast',
                               include_pred_month=include_pred_month,
                               include_latlons=include_latlons,
+                              include_monthly_aggs=include_monthly_aggs,
+                              include_yearly_aggs=include_yearly_aggs,
                               surrounding_pixels=surrounding_pixels)
         model.train()
         model.save_model()
@@ -52,16 +56,19 @@ class TestLinearNetwork:
         assert model_dict['model']['input_size'] == input_size
         assert model_dict['include_pred_month'] == include_pred_month
         assert model_dict['include_latlons'] == include_latlons
+        assert model_dict['include_monthly_aggs'] == include_monthly_aggs
+        assert model_dict['include_yearly_aggs'] == include_yearly_aggs
         assert model_dict['surrounding_pixels'] == surrounding_pixels
 
     @pytest.mark.parametrize(
-        'use_pred_months,use_latlons,experiment',
-        [(True, False, 'one_month_forecast'),
-         (False, True, 'one_month_forecast'),
-         (False, True, 'nowcast'),
-         (True, False, 'nowcast')]
+        'use_pred_months,use_latlons,experiment,monthly_agg',
+        [(True, False, 'one_month_forecast', True),
+         (False, True, 'one_month_forecast', False),
+         (False, True, 'nowcast', True),
+         (True, False, 'nowcast', False)]
     )
-    def test_train(self, tmp_path, capsys, use_pred_months, use_latlons, experiment):
+    def test_train(self, tmp_path, capsys, use_pred_months, use_latlons, experiment,
+                   monthly_agg):
         # make the x, y data (5*5 latlons, 36 timesteps, 3 features)
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
@@ -95,7 +102,8 @@ class TestLinearNetwork:
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
                               dropout=dropout, experiment=experiment,
                               include_pred_month=use_pred_months,
-                              include_latlons=use_latlons)
+                              include_latlons=use_latlons,
+                              include_monthly_aggs=monthly_agg)
 
         model.train()
 
@@ -107,6 +115,8 @@ class TestLinearNetwork:
         # Expect to have 12 more features if use_pred_months
         if experiment == 'nowcast':
             n_expected = 107
+            if monthly_agg:
+                n_expected *= 3
             if use_pred_months:
                 n_expected += 12
             if use_latlons:
@@ -115,10 +125,13 @@ class TestLinearNetwork:
             # NOTE: data hasn't been through `src.Engineer` therefore including
             #  current data (hence why more features than `nowcast`)
             n_expected = 108
+            if monthly_agg:
+                n_expected *= 3
             if use_pred_months:
                 n_expected += 12
             if use_latlons:
                 n_expected += 2
+        n_expected += 3 * 2  # +3 for the yearly means, +3 for yearly stds
 
         assert n_input_features == n_expected, "Expected the number" \
             f"of input features to be: {n_expected}" \
