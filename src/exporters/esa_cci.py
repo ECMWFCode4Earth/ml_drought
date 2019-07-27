@@ -22,8 +22,7 @@ class ESACCIExporter(BaseExporter):
         trans = str.maketrans('', '', string.punctuation)
         return text.lower().translate(trans)
 
-    @staticmethod
-    def read_legend() -> pd.DataFrame:
+    def read_legend(self) -> pd.DataFrame:
         legend_url = 'http://maps.elie.ucl.ac.be/CCI/viewer/download/ESACCI-LC-Legend.csv'
         df = pd.read_csv(legend_url, delimiter=';')
         df = df.rename(columns={'NB_LAB': 'code', 'LCCOwnLabel': 'label'})
