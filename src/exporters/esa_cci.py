@@ -29,7 +29,7 @@ class ESACCIExporter(BaseExporter):
         df = df.rename(columns={'NB_LAB': 'code', 'LCCOwnLabel': 'label'})
 
         # standardise text (remove punctuation & lowercase)
-        df['label_text'] = df['label'].apply(remove_punctuation)
+        df['label_text'] = df['label'].apply(self.remove_punctuation)
         df = df[['code', 'label', 'label_text', 'R', 'G', 'B']]
 
         return df
