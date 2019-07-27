@@ -1,5 +1,4 @@
 """
-
 * Collapsing Time Dimensions
 * Collapsing Spatial Dimensions
 * Binning your datasets
