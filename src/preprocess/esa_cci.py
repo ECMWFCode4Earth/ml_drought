@@ -142,6 +142,12 @@ class ESACCIPreprocessor(BasePreProcessor):
         one subset file resampled to the timestep of interest.
         (downloaded as annual timesteps)
 
+        Arguments:
+        ---------
+
+        remap_dict: Optional[Dict] = None
+            provide a dictionary to manually remap the values (for pytest)
+
         Note:
         ----
         - because the landcover data only goes back to 1993 for all dates
