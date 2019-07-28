@@ -32,6 +32,8 @@ class ESACCIExporter(BaseExporter):
         legend_url = 'http://maps.elie.ucl.ac.be/CCI/viewer/download/ESACCI-LC-Legend.csv'
         df = pd.read_csv(legend_url, delimiter=';')
         df = df.rename(columns={'NB_LAB': 'code', 'LCCOwnLabel': 'label'})
+        # create new code of evenly spaced values
+        df['new_code'] = np.arange(0, 380, 10)
 
         # standardise text (remove punctuation & lowercase)
         df['label_text'] = df['label'].apply(self.remove_punctuation)
