@@ -3,8 +3,10 @@ import xarray as xr
 import pandas as pd
 import multiprocessing
 from functools import partial
-from typing import Optional, List
+from typing import Optional, List, Dict
 from shutil import rmtree
+import numpy as np
+from numpy import copy
 
 from .base import BasePreProcessor
 
@@ -33,9 +35,41 @@ class ESACCIPreprocessor(BasePreProcessor):
             new_filename = f"{year}_{filename_stem}.nc"
         return new_filename
 
+    def remap_values_to_even_spaced_integers(self, ds: xr.Dataset,
+                                             remap: Optional[Dict] = None) -> xr.Dataset:
+        """https://stackoverflow.com/a/3404089/9940782"""
+        assert 'lc_class' in ds.data_vars, "Should be run after preprocessing!"
+        new_ds = xr.ones_like(ds)
+
+        # extract and copy numpy array
+        array = ds.lc_class.values
+        new_array = copy(array)
+
+        if not remap:
+            # create remap dictionary
+            legend = pd.read_csv(self.raw_folder / self.dataset / 'legend.csv')
+            valid_vals = legend.code.values
+            remap_vals = np.arange(0, (len(valid_vals) * 10), 10)
+
+            assert isinstance(valid_vals, np.ndarray)
+            remap = dict(zip(valid_vals, remap_vals))
+
+            # save the new codes to pandas dataframe
+            legend['new_code'] = remap_vals
+            legend.to_csv(self.out_dir / 'legend.csv')
+
+        # perform the remap
+        for k, v in remap.items(): new_array[array == k] = v
+
+        # reassign values to new ds
+        new_ds['lc_class'] = (['time', 'lat', 'lon'], new_array)
+
+        return new_ds
+
     def _preprocess_single(self, netcdf_filepath: Path,
                            subset_str: Optional[str] = 'kenya',
-                           regrid: Optional[xr.Dataset] = None) -> None:
+                           regrid: Optional[xr.Dataset] = None,
+                           remap_dict: Optional[Dict] = None) -> None:
         """ Preprocess a single netcdf file (run in parallel if
         `parallel_processes` arg > 1)
 
@@ -83,6 +117,9 @@ class ESACCIPreprocessor(BasePreProcessor):
         # 5. extract the landcover data (reduce storage use)
         ds = ds.lccs_class.to_dataset(name='lc_class')
 
+        # 6. remap values
+        ds = self.remap_values_to_even_spaced_integers(ds, remap_dict)
+
         # save to specific filename
         filename = self.create_filename(
             netcdf_filepath.name,
@@ -99,7 +136,8 @@ class ESACCIPreprocessor(BasePreProcessor):
                    upsampling: bool = True,
                    parallel_processes: int = 1,
                    years: Optional[List[int]] = None,
-                   cleanup: bool = True) -> None:
+                   cleanup: bool = True,
+                   remap_dict: Optional[Dict] = None) -> None:
         """Preprocess all of the ESA CCI landcover .nc files to produce
         one subset file resampled to the timestep of interest.
         (downloaded as annual timesteps)
@@ -122,13 +160,13 @@ class ESACCIPreprocessor(BasePreProcessor):
         # parallel processing ?
         if parallel_processes <= 1:  # sequential
             for file in nc_files:
-                self._preprocess_single(file, subset_str, regrid)
+                self._preprocess_single(file, subset_str, regrid, remap_dict)
         else:
             pool = multiprocessing.Pool(processes=parallel_processes)
             outputs = pool.map(
                 partial(self._preprocess_single,
                         subset_str=subset_str,
-                        regrid=regrid),
+                        regrid=regrid, remap_dict=remap_dict),
                 nc_files)
             print("\nOutputs (errors):\n\t", outputs)
 

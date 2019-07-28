@@ -105,9 +105,14 @@ class TestESACCIPreprocessor:
         regrid_path = tmp_path / 'regridder.nc'
         regrid_dataset.to_netcdf(regrid_path)
 
+        # build a dummy remap_dict
+        unique_vals = np.unique(dataset.lccs_class.values)
+        remap_dict = dict(zip(unique_vals, np.arange(0, len(unique_vals) * 10, 10)))
+
         processor = ESACCIPreprocessor(tmp_path)
         processor.preprocess(subset_str='kenya', regrid=regrid_path,
-                             parallel_processes=1, cleanup=cleanup)
+                             parallel_processes=1, cleanup=cleanup,
+                             remap_dict=remap_dict)
 
         expected_out_path = (
             tmp_path / 'interim/esa_cci_landcover_interim'
@@ -142,6 +147,9 @@ class TestESACCIPreprocessor:
 
         assert out_data.lc_class.values.shape[1:] == (20, 20)
 
+        assert ((np.unique(out_data.lc_class.values) % 10) == 0).all(), \
+            'values should be remapped to multiples of 10'
+
         if cleanup:
             assert not processor.interim.exists(), \
                 f'Interim esa_cci_landcover folder should have been deleted'
@@ -164,11 +172,15 @@ class TestESACCIPreprocessor:
         regrid_path = tmp_path / 'regridder.nc'
         regrid_dataset.to_netcdf(regrid_path)
 
+        # build a dummy remap_dict
+        unique_vals = np.unique(dataset.lccs_class.values)
+        remap_dict = dict(zip(unique_vals, np.arange(0, len(unique_vals))))
+
         # build the Preprocessor object and subset with a different subset_str
         processor = ESACCIPreprocessor(tmp_path)
         processor.preprocess(
             subset_str='ethiopia', regrid=regrid_path,
-            parallel_processes=1
+            parallel_processes=1, remap_dict=remap_dict
         )
 
         expected_out_path = (
