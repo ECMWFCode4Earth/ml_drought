@@ -144,7 +144,23 @@ class ESACCIPreprocessor(BasePreProcessor):
 
         Arguments:
         ---------
-
+        subset_str: Optional[str] = 'kenya'
+            Whether to subset Kenya when preprocessing
+        regrid: Optional[Path] = None
+            If a Path is passed, the CHIRPS files will be regridded to have the same
+            grid as the dataset at that Path. If None, no regridding happens
+        resample_time: str = 'M'
+            If not None, defines the time length to which the data will be resampled
+        upsampling: bool = False
+            If true, tells the class the time-sampling will be upsampling. In this case,
+            nearest instead of mean is used for the resampling
+        parallel_processes: int = 1
+            the number of parallel processes to run. If less than or equal to one
+            then it will be run sequentially (default behaviour)
+        years: Optional[List[int]] = None
+            preprocess a subset of the years from the raw data
+        cleanup: bool = True
+            If true, delete interim files created by the class
         remap_dict: Optional[Dict] = None
             provide a dictionary to manually remap the values (for pytest)
 
