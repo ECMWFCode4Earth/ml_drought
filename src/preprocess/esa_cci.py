@@ -38,6 +38,7 @@ class ESACCIPreprocessor(BasePreProcessor):
     def remap_values_to_even_spaced_integers(self, ds: xr.Dataset,
                                              remap: Optional[Dict] = None) -> xr.Dataset:
         """https://stackoverflow.com/a/3404089/9940782"""
+        print("Remapping values to new codes")
         assert 'lc_class' in ds.data_vars, "Should be run after preprocessing!"
         new_ds = xr.ones_like(ds)
 
@@ -58,6 +59,7 @@ class ESACCIPreprocessor(BasePreProcessor):
             legend['new_code'] = remap_vals
             legend.to_csv(self.out_dir / 'legend.csv')
 
+        print("Performing the remap")
         # perform the remap
         for k, v in remap.items(): new_array[array == k] = v
 
