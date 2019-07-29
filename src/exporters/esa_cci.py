@@ -1,7 +1,8 @@
-from pathlib import Path
 import os
 import string
+import numpy as np
 import pandas as pd
+from pathlib import Path
 
 from .base import BaseExporter
 
@@ -17,6 +18,18 @@ class ESACCIExporter(BaseExporter):
     LEGEND ( .csv)
     http://maps.elie.ucl.ac.be/CCI/viewer/download/ESACCI-LC-Legend.csv
     """
+
+    target_url: str = 'ftp://geo10.elie.ucl.ac.be/v207'
+    target_file: str = 'ESACCI-LC-L4-LCCS-Map-300m-P1Y-1992_2015-v2.0.7b.nc'
+    legend_url: str = 'http://maps.elie.ucl.ac.be/CCI/viewer/download/ESACCI-LC-Legend.csv'
+
+    def __init__(self, data_folder: Path = Path('data')) -> None:
+        super().__init__(data_folder)
+        # write the download to landcover
+        self.landcover_folder = self.raw_folder / 'esa_cci_landcover'
+        if not self.landcover_folder.exists():
+            self.landcover_folder.mkdir()
+
     @staticmethod
     def remove_punctuation(text: str) -> str:
         rm_punctuation = str.maketrans('', '', string.punctuation)
@@ -29,11 +42,12 @@ class ESACCIExporter(BaseExporter):
         )
 
     def read_legend(self) -> pd.DataFrame:
-        legend_url = 'http://maps.elie.ucl.ac.be/CCI/viewer/download/ESACCI-LC-Legend.csv'
-        df = pd.read_csv(legend_url, delimiter=';')
-        df = df.rename(columns={'NB_LAB': 'code', 'LCCOwnLabel': 'label'})
+        df = pd.read_csv(self.legend_url, delimiter=';')
+        df = df.rename(columns={'LCCOwnLabel': 'label'})
+
         # create new code of evenly spaced values
-        df['new_code'] = np.arange(0, 380, 10)
+        # this will replace NB_LAB
+        df['code'] = np.arange(0, len(df) * 10, 10)
 
         # standardise text (remove punctuation & lowercase)
         df['label_text'] = df['label'].apply(self.remove_punctuation)
@@ -42,47 +56,34 @@ class ESACCIExporter(BaseExporter):
         return df
 
     def wget_file(self) -> None:
-        url_path = 'ftp://geo10.elie.ucl.ac.be/v207/ESACCI-LC-L4'\
-            '-LCCS-Map-300m-P1Y-1992_2015-v2.0.7b.nc.zip'.replace(' ', '')
+        url_path = f'{self.target_url}/{self.target_file}'.replace(' ', '')
 
-        if (self.landcover_folder / url_path.split('/')[-1]).exists():
-            print(f'{filepath} already exists! Skipping')
-        os.system(f'wget {url_path} -P {self.landcover_folder.as_posix()}')
+        output_file = self.landcover_folder / url_path.split('/')[-1]
+        if output_file.exists():
+            print(f'{output_file} already exists! Skipping')
+            return None
+        os.system(f'wget {url_path}.zip -P {self.landcover_folder.as_posix()}')
 
     def unzip(self) -> None:
-        out_name = 'ESACCI-LC-L4-LCCS-Map-300m-P1Y-1992_2015-v2.0.7b.nc'
-        fname = self.landcover_folder / (out_name + '.zip')
+        fname = self.landcover_folder / (self.target_file + '.zip')
         assert fname.exists()
         print(f'Unzipping {fname.name}')
 
         os.system(f'unzip {fname.as_posix()}')
-        assert out_name.exists()
+        assert (self.landcover_folder / self.target_file).exists()
         print(f'{fname.name} unzipped!')
 
     def export(self) -> None:
         """Export functionality for the ESA CCI LandCover product
         """
-        # write the download to landcover
-        self.landcover_folder = self.raw_folder / 'esa_cci_landcover'
-        if not self.landcover_folder.exists():
-            self.landcover_folder.mkdir()
-
         # check if the file already exists
-        fname = 'ESACCI-LC-L4-LCCS-Map-300m-P1Y-1992_2015-v2.0.7b.nc'
-        if (self.landcover_folder / (fname + '.zip')).exists():
-            if (self.landcover_folder / fname).exists():
-                print('zip folder already exists. Unzipping')
-                self.unzip()
+        if (self.landcover_folder / self.target_file).exists() and \
+                (self.landcover_folder / 'legend.csv').exists():
+            print('Data already downloaded!')
 
-            else:
-                print('Data already downloaded!')
-
-        # download the file using wget
-        self.wget_file()
-
-        # unzip the downloaded .zip file -> .nc
-        self.unzip()
-
-        # download the legend
-        df = self.read_legend()
-        df.to_csv(self.landcover_folder / 'legend.csv')
+        else:
+            self.wget_file()
+            self.unzip()
+            # download the legend
+            df = self.read_legend()
+            df.to_csv(self.landcover_folder / 'legend.csv')
