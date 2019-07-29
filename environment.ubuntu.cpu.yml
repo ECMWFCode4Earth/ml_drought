@@ -4,6 +4,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - _libgcc_mutex=0.1
   - appdirs=1.4.3
   - asn1crypto=0.24.0
   - atomicwrites=1.3.0
@@ -18,9 +19,11 @@ dependencies:
   - beautifulsoup4=4.7.1
   - blas=1.0
   - bokeh=1.2.0
+  - boltons=19.1.0
   - boto=2.49.0
   - boto3=1.9.153
   - botocore=1.12.153
+  - bottleneck=1.2.1
   - bzip2=1.0.6
   - ca-certificates=2019.6.16
   - cdsapi=0.1.4
@@ -29,7 +32,7 @@ dependencies:
   - cfn-lint=0.20.2
   - cftime=1.0.3.4
   - chardet=3.0.4
-  - click=7.0
+  - click=6.7
   - cloudpickle=1.0.0
   - cookies=2.2.1
   - cryptography=2.6.1
@@ -46,10 +49,12 @@ dependencies:
   - docker-pycreds=0.4.0
   - docutils=0.14
   - ecdsa=0.13
+  - elevation=1.0.6
   - entrypoints=0.3
   - esmf=7.1.0
   - esmpy=7.1.0
   - expat=2.2.5
+  - fasteners=0.14.1
   - flake8=3.7.7
   - flask=1.0.3
   - fontconfig=2.13.1
@@ -108,6 +113,7 @@ dependencies:
   - mccabe=0.6.1
   - mkl=2019.4
   - mock=3.0.5
+  - monotonic=1.5
   - more-itertools=4.3.0
   - moto=1.3.8
   - mpi=1.0
@@ -116,7 +122,6 @@ dependencies:
   - multiprocess=0.70.7
   - mypy=0.701
   - mypy_extensions=0.4.1
-  # - nco=1.0.0
   - ncurses=6.1
   - netcdf-fortran=4.4.5
   - netcdf4=1.5.1.2
@@ -127,7 +132,7 @@ dependencies:
   - olefile=0.46
   - openblas=0.3.6
   - openblas-devel=0.3.6
-  - openssl=1.1.1b
+  - openssl=1.1.1c
   - packaging=19.0
   - pandas=0.24.2
   - paramiko=2.4.2
@@ -138,13 +143,12 @@ dependencies:
   - pexpect=4.7.0
   - pickleshare=0.7.5
   - pillow=5.3.0
+  - pint=0.9
   - pip=19.1.1
-  - pip:
-      - climate-indices
-      - nco
   - pluggy=0.11.0
   - pox=0.2.5
   - ppft=1.6.4.9
+  - proj4=6.1.0
   - prompt_toolkit=2.0.9
   - psutil=5.4.8
   - pthread-stubs=0.4
@@ -159,6 +163,7 @@ dependencies:
   - pynacl=1.3.0
   - pyopenssl=19.0.0
   - pyparsing=2.4.0
+  - pyproj=2.2.1
   - pyqt=5.9.2
   - pyrsistent=0.15.2
   - pysocks=1.6.8
@@ -200,13 +205,18 @@ dependencies:
   - wheel=0.33.1
   - wrapt=1.11.1
   - xarray=0.12.1
+  - xclim=0.9b0
   - xesmf=0.1.1
   - xmltodict=0.12.0
   - xorg-libxau=1.0.9
   - xorg-libxdmcp=1.1.3
   - xz=5.2.4
-  - xclim=0.9b0
   - yaml=0.1.7
   - zict=0.1.4
   - zlib=1.2.11
   - zstd=1.4.0
+  - pip:
+    - climate-indices==1.0.5
+    - llvmlite==0.29.0
+    - nco==1.0.0
+    - numba==0.45.0

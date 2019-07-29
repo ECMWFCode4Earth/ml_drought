@@ -29,7 +29,7 @@ dependencies:
   - cfn-lint=0.20.2
   - cftime=1.0.3.4
   - chardet=3.0.4
-  - click=7.0
+  - click=6.7
   - cloudpickle=1.0.0
   - cookies=2.2.1
   - cryptography=2.6.1
@@ -45,9 +45,11 @@ dependencies:
   - docker-pycreds=0.4.0
   - docutils=0.14
   - ecdsa=0.13
+  - elevation=1.0.6
   - entrypoints=0.3
   - esmf=7.1.0
   - esmpy=7.1.0
+  - fasteners=0.14.1
   - flake8=3.7.7
   - flask=1.0.3
   - freetype=2.10.0
@@ -99,6 +101,7 @@ dependencies:
   - mccabe=0.6.1
   - mkl=2019.4
   - mock=3.0.5
+  - monotonic=1.5
   - more-itertools=4.3.0
   - moto=1.3.8
   - mpi=1.0
@@ -184,11 +187,8 @@ dependencies:
   - wheel=0.33.1
   - wrapt=1.11.1
   - xarray=0.12.1
-<<<<<<< HEAD
   - xesmf=0.1.1
-=======
   - xclim=0.9b0
->>>>>>> 7cf872ce8fd56baac9ac20328334cb578c8cc2c3
   - xmltodict=0.12.0
   - xz=5.2.4
   - yaml=0.1.7
