@@ -5,6 +5,7 @@ sys.path.append('..')
 from src.exporters import (ERA5Exporter, VHIExporter,
                            CHIRPSExporter, ERA5ExporterPOS,
                            GLEAMExporter)
+from src.exporters.srtm import SRTMExporter
 
 
 def export_era5():
@@ -62,10 +63,21 @@ def export_gleam():
     exporter = GLEAMExporter(data_folder=data_path)
     exporter.export(['E', 'SMroot', 'SMsurf'], 'monthly')
 
+def export_srtm():
+    # if the working directory is alread ml_drought don't need ../data
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+
+    exporter = SRTMExporter(data_folder=data_path)
+    exporter.export()
+
 
 if __name__ == '__main__':
-    export_era5()
-    export_vhi()
-    export_chirps()
-    export_era5POS()
-    export_gleam()
+    # export_era5()
+    # export_vhi()
+    # export_chirps()
+    # export_era5POS()
+    # export_gleam()
+    export_srtm()
