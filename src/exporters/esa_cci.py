@@ -1,6 +1,5 @@
 import os
 import string
-import numpy as np
 import pandas as pd
 from pathlib import Path
 
@@ -43,11 +42,7 @@ class ESACCIExporter(BaseExporter):
 
     def read_legend(self) -> pd.DataFrame:
         df = pd.read_csv(self.legend_url, delimiter=';')
-        df = df.rename(columns={'LCCOwnLabel': 'label'})
-
-        # create new code of evenly spaced values
-        # this will replace NB_LAB
-        df['code'] = np.arange(0, len(df) * 10, 10)
+        df = df.rename(columns={'NB_LAB': 'code', 'LCCOwnLabel': 'label'})
 
         # standardise text (remove punctuation & lowercase)
         df['label_text'] = df['label'].apply(self.remove_punctuation)
