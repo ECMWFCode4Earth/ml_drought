@@ -116,7 +116,7 @@ class TestLinearNetwork:
         if experiment == 'nowcast':
             n_expected = 107
             if monthly_agg:
-                n_expected *= 3
+                n_expected *= 2
             if use_pred_months:
                 n_expected += 12
             if use_latlons:
@@ -126,12 +126,12 @@ class TestLinearNetwork:
             #  current data (hence why more features than `nowcast`)
             n_expected = 108
             if monthly_agg:
-                n_expected *= 3
+                n_expected *= 2
             if use_pred_months:
                 n_expected += 12
             if use_latlons:
                 n_expected += 2
-        n_expected += 3 * 2  # +3 for the yearly means, +3 for yearly stds
+        n_expected += 3  # +3 for the yearly means
 
         assert n_input_features == n_expected, "Expected the number" \
             f"of input features to be: {n_expected}" \

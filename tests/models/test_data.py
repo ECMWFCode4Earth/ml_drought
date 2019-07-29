@@ -197,13 +197,11 @@ class TestBaseIter:
             assert np.all(x_train_data.current == expected), f"Expected to " \
                 "find the target_time data for the non target variables"
 
-        assert x_train_data.yearly_aggs.shape[1] == 4 * 2  # means and std
+        assert x_train_data.yearly_aggs.shape[1] == 4  # means
 
         if (not normalize) and (not to_tensor):
             mean_precip = x_coeff1.precip.mean(dim=['time', 'lat', 'lon']).values
-            std_precip = x_coeff1.precip.std(dim=['time', 'lat', 'lon']).values
             assert (mean_precip == x_train_data.yearly_aggs).any()
-            assert (std_precip == x_train_data.yearly_aggs).any()
 
     @pytest.mark.parametrize(
         'surrounding_pixels,monthly_agg',
@@ -243,12 +241,3 @@ class TestBaseIter:
                 output_mean = x[f'spatial_mean_{data_var}'].isel(time=0, lon=0, lat=0).values
 
                 assert actual_mean == output_mean, f"Mean values don't match!"
-
-                std_var_name = f'spatial_std_{data_var}'
-                assert std_var_name in shifted_agg_vars, \
-                    f'{std_var_name} is not in the shifted variables'
-
-                actual_std = x[data_var].isel(time=0).std(dim=['lat', 'lon']).values
-                output_std = x[f'spatial_std_{data_var}'].isel(time=0, lon=0, lat=0).values
-
-                assert actual_std == output_std, f"std values don't match!"

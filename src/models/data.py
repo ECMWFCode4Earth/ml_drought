@@ -228,12 +228,7 @@ class _BaseIter:
             f'Got {len(list(y.data_vars))}'
 
         yearly_mean = x.mean(dim=['time', 'lat', 'lon'])
-        yearly_mean_np = yearly_mean.to_array().values
-
-        yearly_std = x.std(dim=['time', 'lat', 'lon'])
-        yearly_std_np = yearly_std.to_array().values
-
-        yearly_agg = np.concatenate((yearly_mean_np, yearly_std_np))
+        yearly_agg = yearly_mean.to_array().values
 
         x = self._add_extra_dims(x, self.surrounding_pixels, self.monthly_aggs)
 
@@ -243,7 +238,7 @@ class _BaseIter:
             self.normalizing_array = self.calculate_normalizing_array(
                 list(x.data_vars), yearly_agg=False)
             self.normalizing_array_ym = self.calculate_normalizing_array(
-                list(yearly_mean.data_vars) + list(yearly_std.data_vars), yearly_agg=True)
+                list(yearly_mean.data_vars), yearly_agg=True)
 
         # first, x
         x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
@@ -351,19 +346,11 @@ class _BaseIter:
         original_vars = list(x.data_vars)
 
         if monthly_agg:
-            # first, the means
             monthly_mean_values = x.mean(dim=['lat', 'lon'])
             mean_dataset = xr.ones_like(x) * monthly_mean_values
 
-            # then, the std
-            monthly_std_values = x.std(dim=['lat', 'lon'])
-            std_dataset = xr.ones_like(x) * monthly_std_values
-
             for var in mean_dataset.data_vars:
                 x[f'spatial_mean_{var}'] = mean_dataset[var]
-
-            for var in std_dataset.data_vars:
-                x[f'spatial_std_{var}'] = std_dataset[var]
 
         if surrounding_pixels is not None:
             lat_shifts = lon_shifts = range(-surrounding_pixels, surrounding_pixels + 1)
