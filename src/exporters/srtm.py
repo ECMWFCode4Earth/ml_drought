@@ -21,7 +21,7 @@ class SRTMExporter(BaseExporter):
         return region.lonmin, region.latmin, region.lonmax, region.latmax
 
     @staticmethod
-    def _tiff_to_nc(tif_file: Path, nc_file: Path) -> None:
+    def _tif_to_nc(tif_file: Path, nc_file: Path) -> None:
         ds = gdal.Open(tif_file.resolve().as_posix())
         _ = gdal.Translate(format='NetCDF', srcDS=ds,
                            destName=nc_file.resolve().as_posix())
@@ -65,4 +65,4 @@ class SRTMExporter(BaseExporter):
 
         if not output_nc.exists():
             print(f'Converting {output_tif} to NetCDF format ({output_nc})')
-            self._tiff_to_nc(output_tif, output_nc)
+            self._tif_to_nc(output_tif, output_nc)
