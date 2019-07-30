@@ -4,13 +4,13 @@ import numpy as np
 import xarray as xr
 import datetime as dt
 
-from src.engineer import OneMonthForecastEngineer
+from src.engineer import _OneMonthForecastEngineer as OneMonthForecastEngineer
 
 from ..utils import _make_dataset
-from .test_engineer import TestEngineer
+from .test_base import _setup
 
 
-class TestOneMonthForecastEngineer(TestEngineer):
+class TestOneMonthForecastEngineer:
     def test_init(self, tmp_path):
 
         with pytest.raises(AssertionError) as e:
@@ -27,7 +27,7 @@ class TestOneMonthForecastEngineer(TestEngineer):
 
     def test_yearsplit(self, tmp_path):
 
-        self._setup(tmp_path)
+        _setup(tmp_path)
 
         dataset, _, _ = _make_dataset(size=(2, 2))
 
@@ -42,7 +42,7 @@ class TestOneMonthForecastEngineer(TestEngineer):
 
     def test_engineer(self, tmp_path):
 
-        self._setup(tmp_path)
+        _setup(tmp_path)
 
         pred_months = expected_length = 11
 
@@ -83,14 +83,14 @@ class TestOneMonthForecastEngineer(TestEngineer):
                 f'Std incorrectly calculated!'
 
     def test_stratify(self, tmp_path):
-        self._setup(tmp_path)
+        _setup(tmp_path)
         engineer = OneMonthForecastEngineer(tmp_path)
         ds_target, _, _ = _make_dataset(size=(20, 20))
         ds_predictor, _, _ = _make_dataset(size=(20, 20))
         ds_predictor = ds_predictor.rename({'VHI': 'predictor'})
         ds = ds_predictor.merge(ds_target)
 
-        xy_dict, max_train_date = engineer.stratify_xy(
+        xy_dict, max_train_date = engineer._stratify_xy(
             ds=ds,
             year=2001,
             target_variable='VHI',
