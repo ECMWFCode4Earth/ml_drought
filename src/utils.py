@@ -156,6 +156,9 @@ def get_modal_value_across_time(da: xr.DataArray) -> xr.DataArray:
     mode_da = xr.ones_like(da).isel(time=slice(0, 1))
     mode_da.values = mode
 
+    # return a lat, lon array (remove time dimension)
+    mode_da = mode_da.squeeze('time').drop('time')
+
     return mode_da
 
 
