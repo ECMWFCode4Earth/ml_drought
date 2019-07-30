@@ -178,7 +178,7 @@ class ESACCIPreprocessor(BasePreProcessor):
 
         nc_files = self.get_filepaths()
         if years is not None:
-            nc_files = [f for f in nc_files if int(f.parents[0]) in years]
+            nc_files = [f for f in nc_files if int(str(f.parents[0])) in years]
 
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
