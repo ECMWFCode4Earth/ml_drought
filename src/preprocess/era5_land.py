@@ -2,7 +2,7 @@ from pathlib import Path
 import xarray as xr
 import multiprocessing
 from functools import partial
-from typing import Optional
+from typing import Optional, List
 from shutil import rmtree
 
 from .base import BasePreProcessor
@@ -69,6 +69,7 @@ class ERA5LandPreprocessor(BasePreProcessor):
                    upsampling: bool = False,
                    parallel_processes: int = 1,
                    variable: Optional[str] = None,
+                   years: Optional[List[int]] = None,
                    cleanup: bool = True) -> None:
         """Preprocess all of the ERA5-Land .nc files to produce
         one subset file.
@@ -88,8 +89,10 @@ class ERA5LandPreprocessor(BasePreProcessor):
             the variable that you want to preprocess. If None then will
             process ALL variables that have been downloaded to the
             `data/raw/reanalysis-era5-land` by the ERA5LandExporter
-        :param: parallel: bool = True
-            If true, run the preprocessing in parallel
+        :param: parallel_processes: int = 1
+            If > 1, run the preprocessing in parallel
+        :param: years: Optional[List[int]] = None
+            preprocess a subset of the years from the raw data
         :param: cleanup: bool = True
             If true, delete interim files created by the class
 
@@ -99,6 +102,8 @@ class ERA5LandPreprocessor(BasePreProcessor):
         """
         print(f'Reading data from {self.raw_folder}. Writing to {self.interim}')
         nc_files = self.get_filepaths()
+        if years is not None:
+            nc_files = [f for f in nc_files if int(f.parents[0]) in years]
 
         # run for one variable or all variables?
         if variable is not None:
