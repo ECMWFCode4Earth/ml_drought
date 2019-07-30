@@ -68,6 +68,10 @@ class CHIRPSExporter(BaseExporter):
         return chirpsfiles
 
     def wget_file(self, filepath: str) -> None:
+        """
+        https://explainshell.com/explain?cmd=wget+-np+-nH+--cut
+        -dirs+7+www.google.come+-P+folder
+        """
         assert self.region_folder is not None, \
             f'A region folder must be defined and made'
         if (self.region_folder / filepath).exists():
