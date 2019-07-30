@@ -227,7 +227,6 @@ def plot_mean_and_std(mean_ds, std_ds, ax):
         pd.DataFrame({mean_var:mean_ts}).plot.line(ax=ax, marker='o')
         ax.fill_between(time -1, min_y, max_y, alpha=0.3)
 
-
     return ax
 
 
