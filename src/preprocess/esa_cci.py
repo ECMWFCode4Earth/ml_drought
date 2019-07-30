@@ -177,6 +177,8 @@ class ESACCIPreprocessor(BasePreProcessor):
         print(f'Reading data from {self.raw_folder}. Writing to {self.interim}')
 
         nc_files = self.get_filepaths()
+        if years is not None:
+            nc_files = [f for f in nc_files if int(f.parents[0]) in years]
 
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
