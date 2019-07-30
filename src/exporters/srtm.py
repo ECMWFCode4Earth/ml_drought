@@ -41,11 +41,9 @@ class SRTMExporter(BaseExporter):
 
         output_name = self.output_folder / f'{region_name}.tif'
 
-        print(self._region_to_tuple(region))
-
         try:
             elevation.clip(bounds=self._region_to_tuple(region),
-                           output=output_name.as_posix(),
+                           output=output_name.resolve().as_posix(),
                            product=product,
                            max_download_tiles=max_download_tiles)
         except Exception as e:
