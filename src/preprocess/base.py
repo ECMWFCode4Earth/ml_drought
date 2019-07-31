@@ -5,7 +5,7 @@ import numpy as np
 
 from typing import List, Optional
 
-from ..utils import Region, region_lookup, get_modal_value_across_time
+from ..utils import Region, region_lookup
 from .utils import select_bounding_box
 
 __all__ = ['BasePreProcessor', 'Region']
@@ -172,16 +172,8 @@ class BasePreProcessor:
 
         ds = xr.open_mfdataset(self.get_filepaths('interim'))
 
-        if not self.static:
-            # time resampling only happens for dynamic variables
-            if resample_time is not None:
-                ds = self.resample_time(ds, resample_time, upsampling)
-        else:
-            # if the variable is static, we will take the mode across
-            # the time variables
-            for var in ds.data_vars:
-                ds[var] = get_modal_value_across_time(ds[var])
-            ds.drop('time')
+        if resample_time is not None:
+            ds = self.resample_time(ds, resample_time, upsampling)
 
         if filename is None:
             filename = f'{self.dataset}{"_" + subset_str if subset_str is not None else ""}.nc'
