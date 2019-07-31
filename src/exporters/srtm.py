@@ -1,11 +1,12 @@
-import elevation
-from osgeo import gdal
 from pathlib import Path
 
 from typing import Tuple
 
 from .base import BaseExporter
 from ..utils import Region, region_lookup
+
+elevation = None
+gdal = None
 
 
 class SRTMExporter(BaseExporter):
@@ -15,6 +16,21 @@ class SRTMExporter(BaseExporter):
     """
 
     dataset = 'srtm'
+
+    def __init__(self, data_folder: Path = Path('data')):
+        super().__init__(data_folder)
+
+        # try and import gdal
+        print('The SRTM exporter requires GDAL and the elevation python package. '
+              'The mac conda environment contains them.'
+              'In addition, a (finnicky) ubuntu environment contains them in '
+              'environment.ubuntu.cpu.gdal.yml')
+        global gdal
+        if gdal is None:
+            from osgeo import gdal
+        global elevation
+        if elevation is None:
+            import elevation
 
     @staticmethod
     def _region_to_tuple(region: Region) -> Tuple[float, float, float, float]:
