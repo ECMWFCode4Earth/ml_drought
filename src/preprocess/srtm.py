@@ -34,7 +34,7 @@ class SRTMPreprocessor(BasePreProcessor):
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
 
-        netcdf_filepath = self.raw_folder / f'{subset_str}.nc'
+        netcdf_filepath = self.raw_folder / f'{self.dataset}/{subset_str}.nc'
 
         print(f'Starting work on {netcdf_filepath.name}')
         ds = xr.open_dataset(netcdf_filepath).drop('crs').rename({'Band1': 'topography'})
