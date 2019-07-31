@@ -100,6 +100,7 @@ class TestBaseIter:
                 self.to_tensor = None
                 self.experiment = experiment
                 self.surrounding_pixels = surrounding_pixels
+                self.ignore_vars = ['precip']
                 self.monthly_aggs = False
 
         base_iterator = _BaseIter(MockLoader())
@@ -113,20 +114,19 @@ class TestBaseIter:
         if not to_tensor:
             assert isinstance(y_np, np.ndarray)
 
-        expected_features = 4 if surrounding_pixels is None else 4 * 9
-        assert x_train_data.historical.shape[-1] == expected_features, "" \
-            "There should be" \
-            "4 historical variables (the final dimension):" \
-            f"{x_train_data.historical.shape}"
+        expected_features = 3 if surrounding_pixels is None else 3 * 9
+        assert x_train_data.historical.shape[-1] == expected_features, \
+            f'There should be 4 historical variables ' \
+            f'(the final dimension): {x_train_data.historical.shape}'
 
         if experiment == 'nowcast':
-            expected_shape = (25, 3) if surrounding_pixels is None else (9, 3 * 9)
-            assert x_train_data.current.shape == expected_shape, "" \
-                "Expecting multiple vars" \
-                "in the current timestep. Expect: (25, 3) "\
-                f"Got: {x_train_data.current.shape}"
+            expected_shape = (25, 2) if surrounding_pixels is None else (9, 2 * 9)
+            assert x_train_data.current.shape == expected_shape, \
+                f'Expecting multiple vars in the current timestep. ' \
+                f'Expect: (25, 5) Got: {x_train_data.current.shape}'
 
         expected_latlons = 25 if surrounding_pixels is None else 9
+
         assert latlons.shape == (expected_latlons, 2), "The shape of "\
             "latlons should not change"\
             f"Got: {latlons.shape}. Expecting: (25, 2)"
@@ -135,8 +135,8 @@ class TestBaseIter:
             f"Got: {latlons.shape}. Expecting: (25, 2)"
 
         if normalize and (experiment == 'nowcast') and (not to_tensor):
-            assert x_train_data.current.max() < 6, f"The current data should be" \
-                f" normalized. Currently: {x_train_data.current.flatten()}"
+            assert x_train_data.current.max() < 6, f'The current data should be' \
+                f' normalized. Currently: {x_train_data.current.flatten()}'
 
         if to_tensor:
             assert (
@@ -155,7 +155,7 @@ class TestBaseIter:
                 f"current ({x_train_data.current.shape[0]}) arrays."
 
             expected = (
-                x[['precip', 'soil_moisture', 'temp']]
+                x[['soil_moisture', 'temp']]
                 .sel(time=y.time)
                 .stack(dims=['lat', 'lon'])
                 .to_array().values.T[:, 0, :]
@@ -185,10 +185,10 @@ class TestBaseIter:
 
         if (not normalize) and (experiment == 'nowcast') and (surrounding_pixels is None):
             # test that we are getting the right `current` data
-            relevant_features = ['precip', 'soil_moisture', 'temp']
+            relevant_features = ['soil_moisture', 'temp']
             target_time = y.time
             expected = (
-                x[relevant_features]   # all vars except target_var
+                x[relevant_features]   # all vars except target_var and the ignored var
                 .sel(time=target_time)  # select the target_time
                 .stack(dims=['lat', 'lon'])  # stack lat,lon so shape = (lat*lon, time, dims)
                 .to_array().values[:, 0, :].T  # extract numpy array, transpose and drop dim
@@ -197,13 +197,14 @@ class TestBaseIter:
             assert np.all(x_train_data.current == expected), f"Expected to " \
                 "find the target_time data for the non target variables"
 
-        assert x_train_data.yearly_aggs.shape[1] == 4 * 2  # means and std
+        # n_variables should be 3 because `ignoring` precip
+        assert x_train_data.yearly_aggs.shape[1] == 3 * 2  # means and std
 
         if (not normalize) and (not to_tensor):
-            mean_precip = x_coeff1.precip.mean(dim=['time', 'lat', 'lon']).values
-            std_precip = x_coeff1.precip.std(dim=['time', 'lat', 'lon']).values
-            assert (mean_precip == x_train_data.yearly_aggs).any()
-            assert (std_precip == x_train_data.yearly_aggs).any()
+            mean_temp = x_coeff3.temp.mean(dim=['time', 'lat', 'lon']).values
+            std_temp = x_coeff3.temp.std(dim=['time', 'lat', 'lon']).values
+            assert (mean_temp == x_train_data.yearly_aggs).any()
+            assert (std_temp == x_train_data.yearly_aggs).any()
 
     @pytest.mark.parametrize(
         'surrounding_pixels,monthly_agg',

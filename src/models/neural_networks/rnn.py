@@ -25,10 +25,11 @@ class RecurrentNetwork(NNBase):
                  include_latlons: bool = False,
                  include_monthly_aggs: bool = True,
                  include_yearly_aggs: bool = True,
-                 surrounding_pixels: Optional[int] = None) -> None:
+                 surrounding_pixels: Optional[int] = None,
+                 ignore_vars: Optional[List[str]] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
                          include_latlons, include_monthly_aggs, include_yearly_aggs,
-                         surrounding_pixels)
+                         surrounding_pixels, ignore_vars)
 
         # to initialize and save the model
         self.hidden_size = hidden_size
@@ -56,6 +57,7 @@ class RecurrentNetwork(NNBase):
             'include_pred_month': self.include_pred_month,
             'include_latlons': self.include_latlons,
             'surrounding_pixels': self.surrounding_pixels,
+            'ignore_vars': self.ignore_vars,
             'include_monthly_aggs': self.include_monthly_aggs,
             'include_yearly_aggs': self.include_yearly_aggs,
             'experiment': self.experiment
@@ -91,6 +93,7 @@ class RecurrentNetwork(NNBase):
                 assert x_ref is not None, \
                     f"x_ref can't be None if features_per_month or current_size is not defined"
                 self.current_size = x_ref[3].shape[-1]
+
         if self.include_yearly_aggs:
             if self.yearly_agg_size is None:
                 assert x_ref is not None, \

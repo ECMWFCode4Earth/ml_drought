@@ -25,10 +25,11 @@ class LinearRegression(ModelBase):
                  include_latlons: bool = False,
                  include_monthly_aggs: bool = True,
                  include_yearly_aggs: bool = True,
-                 surrounding_pixels: Optional[int] = None) -> None:
+                 surrounding_pixels: Optional[int] = None,
+                 ignore_vars: Optional[List[str]] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months,
                          include_pred_month, include_latlons, include_monthly_aggs,
-                         include_yearly_aggs, surrounding_pixels)
+                         include_yearly_aggs, surrounding_pixels, ignore_vars)
 
         self.explainer: Optional[shap.LinearExplainer] = None
 
@@ -50,13 +51,16 @@ class LinearRegression(ModelBase):
                                           shuffle_data=True, mode='train',
                                           pred_months=self.pred_months,
                                           mask=train_mask,
+                                          ignore_vars=self.ignore_vars,
                                           monthly_aggs=self.include_monthly_aggs,
                                           surrounding_pixels=self.surrounding_pixels)
+
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
                                         experiment=self.experiment,
                                         shuffle_data=False, mode='train',
                                         pred_months=self.pred_months, mask=val_mask,
+                                        ignore_vars=self.ignore_vars,
                                         monthly_aggs=self.include_monthly_aggs,
                                         surrounding_pixels=self.surrounding_pixels)
             batches_without_improvement = 0
@@ -67,6 +71,7 @@ class LinearRegression(ModelBase):
                                           batch_file_size=self.batch_size,
                                           pred_months=self.pred_months,
                                           shuffle_data=True, mode='train',
+                                          ignore_vars=self.ignore_vars,
                                           monthly_aggs=self.include_monthly_aggs,
                                           surrounding_pixels=self.surrounding_pixels)
         self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
@@ -146,6 +151,7 @@ class LinearRegression(ModelBase):
             'include_pred_month': self.include_pred_month,
             'surrounding_pixels': self.surrounding_pixels,
             'batch_size': self.batch_size,
+            'ignore_vars': self.ignore_vars,
             'include_monthly_aggs': self.include_monthly_aggs,
             'include_yearly_aggs': self.include_yearly_aggs
         }
@@ -164,6 +170,7 @@ class LinearRegression(ModelBase):
             data_path=self.data_path, batch_file_size=self.batch_size,
             experiment=self.experiment, shuffle_data=False, mode='test',
             pred_months=self.pred_months, surrounding_pixels=self.surrounding_pixels,
+            ignore_vars=self.ignore_vars,
             monthly_aggs=self.include_monthly_aggs)
 
         preds_dict: Dict[str, np.ndarray] = {}
@@ -192,6 +199,7 @@ class LinearRegression(ModelBase):
                                       pred_months=self.pred_months,
                                       shuffle_data=False, mode='train',
                                       surrounding_pixels=self.surrounding_pixels,
+                                      ignore_vars=self.ignore_vars,
                                       monthly_aggs=self.include_monthly_aggs)
 
         means, sizes = [], []
@@ -205,7 +213,7 @@ class LinearRegression(ModelBase):
                 pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
                 x_in = np.concatenate((x_in, pred_months_onehot), axis=-1)
             if self.experiment == 'nowcast':
-                current = x[2]
+                current = x[3]
                 x_in = np.concatenate((x_in, current), axis=-1)
             sizes.append(x_in.shape[0])
             means.append(x_in.mean(axis=0))
