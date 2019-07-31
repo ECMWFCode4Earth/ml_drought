@@ -197,13 +197,14 @@ class TestBaseIter:
             assert np.all(x_train_data.current == expected), f"Expected to " \
                 "find the target_time data for the non target variables"
 
-        assert x_train_data.yearly_aggs.shape[1] == 4 * 2  # means and std
+        # n_variables should be 3 because `ignoring` precip
+        assert x_train_data.yearly_aggs.shape[1] == 3 * 2  # means and std
 
         if (not normalize) and (not to_tensor):
-            mean_precip = x_coeff1.precip.mean(dim=['time', 'lat', 'lon']).values
-            std_precip = x_coeff1.precip.std(dim=['time', 'lat', 'lon']).values
-            assert (mean_precip == x_train_data.yearly_aggs).any()
-            assert (std_precip == x_train_data.yearly_aggs).any()
+            mean_temp = x_coeff3.temp.mean(dim=['time', 'lat', 'lon']).values
+            std_temp = x_coeff3.temp.std(dim=['time', 'lat', 'lon']).values
+            assert (mean_temp == x_train_data.yearly_aggs).any()
+            assert (std_temp == x_train_data.yearly_aggs).any()
 
     @pytest.mark.parametrize(
         'surrounding_pixels,monthly_agg',
