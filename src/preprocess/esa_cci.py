@@ -1,8 +1,6 @@
 from pathlib import Path
 import xarray as xr
 import pandas as pd
-import multiprocessing
-from functools import partial
 from typing import Optional, List, Dict
 from shutil import rmtree
 import numpy as np
@@ -13,9 +11,12 @@ from .base import BasePreProcessor
 
 class ESACCIPreprocessor(BasePreProcessor):
     """ Preprocesses the ESA CCI Landcover data """
-    dataset = 'esa_cci_landcover'
 
-    def create_filename(self, netcdf_filepath: str,
+    dataset = 'esa_cci_landcover'
+    static = True
+
+    @staticmethod
+    def create_filename(netcdf_filepath: str,
                         subset_name: Optional[str] = None) -> str:
         """
         ESACCI-LC-L4-LCCS-Map-300m-P1Y-1992-v2.0.7b.nc
@@ -134,9 +135,6 @@ class ESACCIPreprocessor(BasePreProcessor):
 
     def preprocess(self, subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
-                   resample_time: Optional[str] = 'M',
-                   upsampling: bool = True,
-                   parallel_processes: int = 1,
                    years: Optional[List[int]] = None,
                    cleanup: bool = True,
                    remap_dict: Optional[Dict] = None) -> None:
@@ -151,14 +149,6 @@ class ESACCIPreprocessor(BasePreProcessor):
         regrid: Optional[Path] = None
             If a Path is passed, the CHIRPS files will be regridded to have the same
             grid as the dataset at that Path. If None, no regridding happens
-        resample_time: str = 'M'
-            If not None, defines the time length to which the data will be resampled
-        upsampling: bool = False
-            If true, tells the class the time-sampling will be upsampling. In this case,
-            nearest instead of mean is used for the resampling
-        parallel_processes: int = 1
-            the number of parallel processes to run. If less than or equal to one
-            then it will be run sequentially (default behaviour)
         years: Optional[List[int]] = None
             preprocess a subset of the years from the raw data
         cleanup: bool = True
@@ -183,20 +173,10 @@ class ESACCIPreprocessor(BasePreProcessor):
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
 
-        # parallel processing ?
-        if parallel_processes <= 1:  # sequential
-            for file in nc_files:
-                self._preprocess_single(file, subset_str, regrid, remap_dict)
-        else:
-            pool = multiprocessing.Pool(processes=parallel_processes)
-            outputs = pool.map(
-                partial(self._preprocess_single,
-                        subset_str=subset_str,
-                        regrid=regrid, remap_dict=remap_dict),
-                nc_files)
-            print("\nOutputs (errors):\n\t", outputs)
+        for file in nc_files:
+            self._preprocess_single(file, subset_str, regrid, remap_dict)
 
-        self.merge_files(subset_str, resample_time, upsampling)
+        self.merge_files(subset_str)
 
         if cleanup:
             rmtree(self.interim)

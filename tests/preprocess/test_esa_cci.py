@@ -65,15 +65,15 @@ class TestESACCIPreprocessor:
         processor = ESACCIPreprocessor(tmp_path)
 
         assert (
-            tmp_path / processor.preprocessed_folder / 'esa_cci_landcover_preprocessed'
+            tmp_path / processor.preprocessed_folder / 'static/esa_cci_landcover_preprocessed'
         ).exists(), \
             'Should have created a directory tmp_path/interim' \
             '/esa_cci_landcover_preprocessed'
 
         assert (
-            tmp_path / processor.preprocessed_folder / 'esa_cci_landcover_interim'
+            tmp_path / processor.preprocessed_folder / 'static/esa_cci_landcover_interim'
         ).exists(), \
-            'Should have created a directory tmp_path/interim' \
+            'Should have created a directory tmp_path/interim/static' \
             '/esa_cci_landcover_interim'
 
     @staticmethod
@@ -111,11 +111,11 @@ class TestESACCIPreprocessor:
 
         processor = ESACCIPreprocessor(tmp_path)
         processor.preprocess(subset_str='kenya', regrid=regrid_path,
-                             parallel_processes=1, cleanup=cleanup,
+                             cleanup=cleanup,
                              remap_dict=remap_dict)
 
         expected_out_path = (
-            tmp_path / 'interim/esa_cci_landcover_interim'
+            tmp_path / 'interim/static/esa_cci_landcover_interim'
             '/1992_1992-v2.0.7b_testy_test_kenya.nc'
         )
         if not cleanup:
@@ -123,7 +123,7 @@ class TestESACCIPreprocessor:
                 f'Expected processed file to be saved to {expected_out_path}'
 
         expected_out_processed = (
-            tmp_path / 'interim' / 'esa_cci_landcover_'
+            tmp_path / 'interim/static/esa_cci_landcover_'
             'preprocessed' / 'esa_cci_landcover_kenya.nc'
         )
         assert expected_out_processed.exists(), \
@@ -145,7 +145,7 @@ class TestESACCIPreprocessor:
         assert (lats.min() >= kenya.latmin) and (lats.max() <= kenya.latmax), \
             'Latitudes not correctly subset'
 
-        assert out_data.lc_class.values.shape[1:] == (20, 20)
+        assert out_data.lc_class.values.shape == (20, 20)
 
         assert ((np.unique(out_data.lc_class.values) % 10) == 0).all(), \
             'values should be remapped to multiples of 10'
@@ -180,11 +180,11 @@ class TestESACCIPreprocessor:
         processor = ESACCIPreprocessor(tmp_path)
         processor.preprocess(
             subset_str='ethiopia', regrid=regrid_path,
-            parallel_processes=1, remap_dict=remap_dict
+            remap_dict=remap_dict
         )
 
         expected_out_path = (
-            tmp_path / 'interim/esa_cci_landcover_preprocessed'
+            tmp_path / 'interim/static/esa_cci_landcover_preprocessed'
             '/esa_cci_landcover_ethiopia.nc'
         )
         assert expected_out_path.exists(), \
