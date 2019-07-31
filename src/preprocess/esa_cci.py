@@ -5,7 +5,6 @@ from typing import Optional, List
 from shutil import rmtree
 
 from .base import BasePreProcessor
-from ..utils import get_modal_value_across_time
 
 
 class ESACCIPreprocessor(BasePreProcessor):
