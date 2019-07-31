@@ -36,10 +36,9 @@ class SRTMExporter(BaseExporter):
     def _region_to_tuple(region: Region) -> Tuple[float, float, float, float]:
         return region.lonmin, region.latmin, region.lonmax, region.latmax
 
-    @staticmethod
-    def _tif_to_nc(tif_file: Path, nc_file: Path) -> None:
-        ds = gdal.Open(tif_file.resolve().as_posix())
-        _ = gdal.Translate(format='NetCDF', srcDS=ds,
+    def _tif_to_nc(self, tif_file: Path, nc_file: Path) -> None:
+        ds = gdal.Open(tif_file.resolve().as_posix())  # type: ignore
+        _ = gdal.Translate(format='NetCDF', srcDS=ds,  # type: ignore
                            destName=nc_file.resolve().as_posix())
 
     def export(self, region_name: str = 'kenya',
@@ -68,14 +67,14 @@ class SRTMExporter(BaseExporter):
         if not output_tif.exists():
             print(f'Downloading tiles. Saving as tif to {output_tif}')
             try:
-                elevation.clip(bounds=self._region_to_tuple(region),
+                elevation.clip(bounds=self._region_to_tuple(region),  # type: ignore
                                output=output_tif.resolve().as_posix(),
                                product=product,
                                max_download_tiles=max_download_tiles)
             except Exception as e:
                 print(e)
 
-            elevation.clean()
+            elevation.clean()  # type: ignore
 
         output_nc = self.output_folder / f'{region_name}.nc'
 
