@@ -34,7 +34,7 @@ class BasePreProcessor:
         self.preprocessed_folder = self.data_folder / 'interim'
 
         if not self.preprocessed_folder.exists():
-            self.preprocessed_folder.mkdir()
+            self.preprocessed_folder.mkdir(exist_ok=True, parents=True)
 
         try:
             self.out_dir = self.preprocessed_folder / f'{self.dataset}_preprocessed'
@@ -161,14 +161,17 @@ class BasePreProcessor:
 
     def merge_files(self, subset_str: Optional[str] = 'kenya',
                     resample_time: Optional[str] = 'M',
-                    upsampling: bool = False) -> None:
+                    upsampling: bool = False,
+                    filename: Optional[str] = None) -> None:
 
         ds = xr.open_mfdataset(self.get_filepaths('interim'))
 
         if resample_time is not None:
             ds = self.resample_time(ds, resample_time, upsampling)
 
-        out = self.out_dir / f'{self.dataset}\
-        {"_" + subset_str if subset_str is not None else ""}.nc'.replace(' ', '')
+        if filename is None:
+            filename = f'{self.dataset}{"_" + subset_str if subset_str is not None else ""}.nc'
+        out = self.out_dir / filename
+
         ds.to_netcdf(out)
         print(f"\n**** {out} Created! ****\n")

@@ -1,16 +1,14 @@
-import torch
-from torch import nn
 import numpy as np
 import pickle
 import pytest
 
-from src.models.neural_networks.rnn import UnrolledRNN, RNN
-from src.models import RecurrentNetwork
+from src.models.neural_networks.ealstm import EALSTM
+from src.models import EARecurrentNetwork
 
 from tests.utils import _make_dataset
 
 
-class TestRecurrentNetwork:
+class TestEARecurrentNetwork:
 
     def test_save(self, tmp_path, monkeypatch):
 
@@ -18,30 +16,29 @@ class TestRecurrentNetwork:
         dense_features = [10]
         hidden_size = 128
         rnn_dropout = 0.25
-        include_pred_month = True
-        experiment = 'one_month_forecast'
-        ignore_vars = ['precip']
         include_latlons = True
+        include_pred_month = True
+        include_yearly_aggs = True
+        yearly_agg_size = 3
 
         def mocktrain(self):
-            self.model = RNN(features_per_month, dense_features, hidden_size,
-                             rnn_dropout,
-                             include_pred_month, include_latlons,
-                             experiment='one_month_forecast')
+            self.model = EALSTM(features_per_month, dense_features, hidden_size,
+                                rnn_dropout, include_latlons, include_pred_month,
+                                experiment='one_month_forecast', yearly_agg_size=yearly_agg_size)
             self.features_per_month = features_per_month
+            self.yearly_agg_size = yearly_agg_size
 
-        monkeypatch.setattr(RecurrentNetwork, 'train', mocktrain)
+        monkeypatch.setattr(EARecurrentNetwork, 'train', mocktrain)
 
-        model = RecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
-                                 rnn_dropout=rnn_dropout, data_folder=tmp_path,
-                                 ignore_vars=ignore_vars, experiment=experiment,
-                                 include_pred_month=include_pred_month,
-                                 include_latlons=include_latlons)
-
+        model = EARecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
+                                   include_pred_month=include_pred_month,
+                                   include_latlons=include_latlons,
+                                   rnn_dropout=rnn_dropout, data_folder=tmp_path,
+                                   include_yearly_aggs=include_yearly_aggs)
         model.train()
         model.save_model()
 
-        assert (tmp_path / 'models/one_month_forecast/rnn/model.pkl').exists(), \
+        assert (tmp_path / 'models/one_month_forecast/ealstm/model.pkl').exists(), \
             f'Model not saved!'
 
         with (model.model_dir / 'model.pkl').open('rb') as f:
@@ -51,13 +48,14 @@ class TestRecurrentNetwork:
             assert (model.model.state_dict()[key] == val).all()
 
         assert model_dict['model']['features_per_month'] == features_per_month
+        assert model_dict['model']['yearly_agg_size'] == yearly_agg_size
         assert model_dict['hidden_size'] == hidden_size
         assert model_dict['rnn_dropout'] == rnn_dropout
         assert model_dict['dense_features'] == dense_features
         assert model_dict['include_pred_month'] == include_pred_month
-        assert model_dict['experiment'] == experiment
-        assert model_dict['ignore_vars'] == ignore_vars
         assert model_dict['include_latlons'] == include_latlons
+        assert model_dict['include_yearly_aggs'] == include_yearly_aggs
+        assert model_dict['experiment'] == 'one_month_forecast'
 
     @pytest.mark.parametrize('use_pred_months', [True, False])
     def test_train(self, tmp_path, capsys, use_pred_months):
@@ -80,17 +78,16 @@ class TestRecurrentNetwork:
         hidden_size = 128
         rnn_dropout = 0.25
 
-        model = RecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
-                                 rnn_dropout=rnn_dropout,
-                                 data_folder=tmp_path, include_monthly_aggs=True)
+        model = EARecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
+                                   rnn_dropout=rnn_dropout, data_folder=tmp_path)
         model.train()
 
         captured = capsys.readouterr()
         expected_stdout = 'Epoch 1, train smooth L1: 0.'
         assert expected_stdout in captured.out
 
-        assert type(model.model) == RNN, \
-            f'Model attribute not an RNN!'
+        assert type(model.model) == EALSTM, \
+            f'Model attribute not an EALSTM!'
 
     @pytest.mark.parametrize('use_pred_months', [True, False])
     def test_predict(self, tmp_path, use_pred_months):
@@ -119,8 +116,8 @@ class TestRecurrentNetwork:
         hidden_size = 128
         rnn_dropout = 0.25
 
-        model = RecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
-                                 rnn_dropout=rnn_dropout, data_folder=tmp_path)
+        model = EARecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
+                                   rnn_dropout=rnn_dropout, data_folder=tmp_path)
         model.train()
         test_arrays_dict, pred_dict = model.predict()
 
@@ -130,44 +127,3 @@ class TestRecurrentNetwork:
 
         # _make_dataset with const=True returns all ones
         assert (test_arrays_dict['hello']['y'] == 1).all()
-
-
-class TestUnrolledRNN:
-    @staticmethod
-    def test_rnn():
-        """
-        We implement our own unrolled RNN, so that it can be explained with
-        shap. This test makes sure it roughly mirrors the behaviour of the pytorch
-        LSTM.
-        """
-
-        batch_size, hidden_size, features_per_month = 32, 124, 6
-
-        x = torch.ones(batch_size, 1, features_per_month)
-
-        hidden_state = torch.zeros(1, x.shape[0], hidden_size)
-        cell_state = torch.zeros(1, x.shape[0], hidden_size)
-
-        torch_rnn = nn.LSTM(input_size=features_per_month,
-                            hidden_size=hidden_size,
-                            batch_first=True,
-                            num_layers=1)
-
-        our_rnn = UnrolledRNN(input_size=features_per_month,
-                              hidden_size=hidden_size,
-                              batch_first=True)
-
-        for parameters in torch_rnn.all_weights:
-            for pam in parameters:
-                nn.init.constant_(pam.data, 1)
-
-        for parameters in our_rnn.parameters():
-            for pam in parameters:
-                nn.init.constant_(pam.data, 1)
-
-        with torch.no_grad():
-            o_out, (o_cell, o_hidden) = our_rnn(x, (hidden_state, cell_state))
-            t_out, (t_cell, t_hidden) = torch_rnn(x, (hidden_state, cell_state))
-
-        assert np.isclose(o_out.numpy(), t_out.numpy(), 0.01).all(), "Difference in hidden state"
-        assert np.isclose(t_cell.numpy(), o_cell.numpy(), 0.01).all(), "Difference in cell state"

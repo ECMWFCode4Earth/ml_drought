@@ -16,13 +16,10 @@ class CHIRPSExporter(BaseExporter):
     # 0.25degree
     ftp://ftp.chg.ucsb.edu/pub/org/chg/products/CHIRPS-2.0/africa_pentad/tifs/
     """
+    dataset = 'chirps'
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
         super().__init__(data_folder)
-
-        self.chirps_folder = self.raw_folder / "chirps"
-        if not self.chirps_folder.exists():
-            self.chirps_folder.mkdir()
 
         self.region_folder: Optional[Path] = None
 
@@ -68,6 +65,10 @@ class CHIRPSExporter(BaseExporter):
         return chirpsfiles
 
     def wget_file(self, filepath: str) -> None:
+        """
+        https://explainshell.com/explain?cmd=wget+-np+-nH+--cut
+        -dirs+7+www.google.come+-P+folder
+        """
         assert self.region_folder is not None, \
             f'A region folder must be defined and made'
         if (self.region_folder / filepath).exists():
@@ -122,7 +123,7 @@ class CHIRPSExporter(BaseExporter):
                               f"But no files later than 2019")
 
         # write the region download to a unique file location
-        self.region_folder = self.chirps_folder / region
+        self.region_folder = self.output_folder / region
         if not self.region_folder.exists():
             self.region_folder.mkdir()
 

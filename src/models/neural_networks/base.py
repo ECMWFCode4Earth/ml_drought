@@ -4,7 +4,6 @@ from pathlib import Path
 import math
 
 import torch
-from torch import nn
 from torch.nn import functional as F
 
 import shap
@@ -24,11 +23,15 @@ class NNBase(ModelBase):
                  experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
-                 include_latlons: bool = True,
+                 include_latlons: bool = False,
+                 include_monthly_aggs: bool = True,
+                 include_yearly_aggs: bool = True,
                  surrounding_pixels: Optional[int] = None,
                  ignore_vars: Optional[List[str]] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
-                         include_latlons, surrounding_pixels, ignore_vars)
+                         include_latlons, include_monthly_aggs, include_yearly_aggs, 
+                         surrounding_pixels, ignore_vars)
+
         # for reproducibility
         torch.manual_seed(42)
 
@@ -75,8 +78,10 @@ class NNBase(ModelBase):
                                           mask=train_mask,
                                           to_tensor=True,
                                           pred_months=self.pred_months,
-                                          surrounding_pixels=self.surrounding_pixels,
-                                          ignore_vars=self.ignore_vars)
+                                          ignore_vars=self.ignore_vars,
+                                          monthly_aggs=self.include_monthly_aggs,
+                                          surrounding_pixels=self.surrounding_pixels)
+
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
                                         shuffle_data=False, mode='train',
@@ -84,8 +89,9 @@ class NNBase(ModelBase):
                                         mask=val_mask,
                                         to_tensor=True,
                                         pred_months=self.pred_months,
-                                        surrounding_pixels=self.surrounding_pixels,
-                                        ignore_vars=self.ignore_vars)
+                                        ignore_vars=self.ignore_vars,
+                                        monthly_aggs=self.include_monthly_aggs,
+                                        surrounding_pixels=self.surrounding_pixels)
 
             batches_without_improvement = 0
             best_val_score = np.inf
@@ -96,8 +102,10 @@ class NNBase(ModelBase):
                                           experiment=self.experiment,
                                           to_tensor=True,
                                           pred_months=self.pred_months,
-                                          surrounding_pixels=self.surrounding_pixels,
-                                          ignore_vars=self.ignore_vars)
+                                          ignore_vars=self.ignore_vars,
+                                          monthly_aggs=self.include_monthly_aggs,
+                                          surrounding_pixels=self.surrounding_pixels)
+
         # initialize the model
         if self.model is None:
             x_ref, _ = next(iter(train_dataloader))
@@ -117,7 +125,8 @@ class NNBase(ModelBase):
                     pred = self.model(x_batch[0],
                                       self._one_hot_months(x_batch[1]),
                                       x_batch[2],
-                                      x_batch[3])
+                                      x_batch[3],
+                                      x_batch[4])
                     loss = F.smooth_l1_loss(pred, y_batch)
                     loss.backward()
                     optimizer.step()
@@ -136,7 +145,8 @@ class NNBase(ModelBase):
                         val_pred_y = self.model(x[0],
                                                 self._one_hot_months(x[1]),
                                                 x[2],
-                                                x[3])
+                                                x[3],
+                                                x[4])
                         val_loss = F.mse_loss(val_pred_y, y)
 
                         val_rmse.append(math.sqrt(val_loss.item()))
@@ -164,8 +174,9 @@ class NNBase(ModelBase):
                                         shuffle_data=False, mode='test',
                                         experiment=self.experiment,
                                         pred_months=self.pred_months, to_tensor=True,
-                                        surrounding_pixels=self.surrounding_pixels,
-                                        ignore_vars=self.ignore_vars)
+                                        ignore_vars=self.ignore_vars,
+                                        monthly_aggs=self.include_monthly_aggs,
+                                        surrounding_pixels=self.surrounding_pixels)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -178,7 +189,7 @@ class NNBase(ModelBase):
                 for key, val in dict.items():
                     preds = self.model(
                         val.x.historical, self._one_hot_months(val.x.pred_months),
-                        val.x.latlons, val.x.current
+                        val.x.latlons, val.x.current, val.x.yearly_aggs
                     )
                     preds_dict[key] = preds.numpy()
                     test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons}
@@ -195,12 +206,15 @@ class NNBase(ModelBase):
                                       shuffle_data=True, mode='train',
                                       pred_months=self.pred_months,
                                       to_tensor=True,
-                                      surrounding_pixels=self.surrounding_pixels,
-                                      ignore_vars=self.ignore_vars)
+                                      ignore_vars=self.ignore_vars,
+                                      monthly_aggs=self.include_monthly_aggs,
+                                      surrounding_pixels=self.surrounding_pixels)
+
         output_tensors: List[torch.Tensor] = []
         output_pm: List[torch.Tensor] = []
         output_ll: List[torch.Tensor] = []
         output_cur: List[torch.Tensor] = []
+        output_ym: List[torch.Tensor] = []
 
         samples_per_instance = max(1, sample_size // len(train_dataloader))
 
@@ -219,30 +233,16 @@ class NNBase(ModelBase):
                     if self.experiment == 'nowcast':
                         assert x[3] is not None
                         output_cur.append(x[3])
+                    if self.include_yearly_aggs:
+                        output_ym.append(x[4])
         return [torch.stack(output_tensors),  # type: ignore
                 torch.cat(output_pm, dim=0) if len(output_pm) > 0 else None,
                 torch.cat(output_ll, dim=0) if len(output_ll) > 0 else None,
-                torch.cat(output_cur, dim=0) if len(output_cur) > 0 else None]
+                torch.cat(output_cur, dim=0) if len(output_cur) > 0 else None,
+                torch.cat(output_ym, dim=0) if len(output_cur) > 0 else None]
 
     def _one_hot_months(self, indices: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
         if self.include_pred_month:
             assert indices is not None, f"Years can't be None if include pred months is True"
             return torch.eye(14)[indices.long()][:, 1:-1]
         return None
-
-
-class LinearBlock(nn.Module):
-    """
-    A linear layer followed by batchnorm, a ReLU activation, and dropout
-    """
-
-    def __init__(self, in_features, out_features, dropout=0.25):
-        super().__init__()
-        self.linear = nn.Linear(in_features=in_features, out_features=out_features, bias=False)
-        self.relu = nn.LeakyReLU(negative_slope=0.1, inplace=True)
-        self.batchnorm = nn.BatchNorm1d(num_features=out_features)
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, x):
-        x = self.relu(self.batchnorm(self.linear(x)))
-        return self.dropout(x)
