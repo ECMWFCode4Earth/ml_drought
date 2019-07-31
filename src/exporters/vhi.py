@@ -17,6 +17,7 @@ class VHIExporter(BaseExporter):
 
     ftp.star.nesdis.noaa.gov
     """
+    dataset = 'vhi'
 
     @staticmethod
     def get_ftp_filenames(years: Optional[List]) -> List:

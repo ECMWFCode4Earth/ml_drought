@@ -16,13 +16,10 @@ class ERA5ExporterPOS(BaseExporter):
 
     https://github.com/planet-os/notebooks/blob/master/aws/era5-pds.md
     """
+    dataset = 'era5POS'
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
         super().__init__(data_folder)
-
-        self.era5_folder = self.raw_folder / 'era5POS'
-        if not self.era5_folder.exists():
-            self.era5_folder.mkdir()
 
         self.era5_bucket = 'era5-pds'
         self.client = boto3.client('s3', config=Config(signature_version=botocore.UNSIGNED))
@@ -96,7 +93,7 @@ class ERA5ExporterPOS(BaseExporter):
         for year, month in product(years, months):
             target_key = f'{year}/{month:02d}/data/{variable}.nc'
 
-            target_folder = self.era5_folder / f'{year}/{month:02d}'
+            target_folder = self.output_folder / f'{year}/{month:02d}'
             target_folder.mkdir(parents=True, exist_ok=True)
             target_output = target_folder / f'{variable}.nc'
 

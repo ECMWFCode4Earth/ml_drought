@@ -18,7 +18,7 @@ class TestCHIRPSExporter:
         # checks we don't redownload files
 
         exporter = CHIRPSExporter(tmp_path)
-        exporter.region_folder = exporter.chirps_folder / 'global'
+        exporter.region_folder = exporter.output_folder / 'global'
         exporter.region_folder.mkdir()
 
         # setup the already downloaded file
