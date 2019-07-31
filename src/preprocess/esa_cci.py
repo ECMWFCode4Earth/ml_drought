@@ -1,12 +1,11 @@
 from pathlib import Path
 import xarray as xr
 import pandas as pd
-from typing import Optional, List, Dict
+from typing import Optional, List
 from shutil import rmtree
-import numpy as np
-from numpy import copy
 
 from .base import BasePreProcessor
+from ..utils import get_modal_value_across_time
 
 
 class ESACCIPreprocessor(BasePreProcessor):
@@ -36,43 +35,20 @@ class ESACCIPreprocessor(BasePreProcessor):
             new_filename = f"{year}_{filename_stem}.nc"
         return new_filename
 
-    def remap_values_to_even_spaced_integers(self, ds: xr.Dataset,
-                                             remap: Optional[Dict] = None) -> xr.Dataset:
-        """https://stackoverflow.com/a/3404089/9940782"""
-        print("Remapping values to new codes")
-        assert 'lc_class' in ds.data_vars, "Should be run after preprocessing!"
-        new_ds = xr.ones_like(ds)
+    def _one_hot_encode(self, ds: xr.Dataset) -> xr.Dataset:
 
-        # extract and copy numpy array
-        array = ds.lc_class.values
-        new_array = copy(array)
+        legend = pd.read_csv(self.raw_folder / self.dataset / 'legend.csv')
+        # no data should have a value of 0 in the legend
 
-        if not remap:
-            # create remap dictionary
-            legend = pd.read_csv(self.raw_folder / self.dataset / 'legend.csv')
-            valid_vals = legend.code.values
-            remap_vals = np.arange(0, (len(valid_vals) * 10), 10)
-
-            assert isinstance(valid_vals, np.ndarray)
-            remap = dict(zip(valid_vals, remap_vals))
-
-            # save the new codes to pandas dataframe
-            legend['new_code'] = remap_vals
-            legend.to_csv(self.out_dir / 'legend.csv')
-
-        print("Performing the remap")
-        # perform the remap
-        for k, v in remap.items(): new_array[array == k] = v
-
-        # reassign values to new ds
-        new_ds['lc_class'] = (['time', 'lat', 'lon'], new_array)
-
-        return new_ds
+        for idx, row in legend.iterrows():
+            value, label = row.code, row.label
+            ds[label] = ds.lc_class.where(ds.lc_class == value, 0).clip(min=0, max=1)
+        ds.drop('lc_class')
+        return ds
 
     def _preprocess_single(self, netcdf_filepath: Path,
                            subset_str: Optional[str] = 'kenya',
-                           regrid: Optional[xr.Dataset] = None,
-                           remap_dict: Optional[Dict] = None) -> None:
+                           regrid: Optional[xr.Dataset] = None) -> None:
         """ Preprocess a single netcdf file (run in parallel if
         `parallel_processes` arg > 1)
 
@@ -107,21 +83,8 @@ class ESACCIPreprocessor(BasePreProcessor):
         if regrid is not None:
             ds = self.regrid(ds, regrid)
 
-        # 4. assign time stamp
-        try:  # try inferring from the ds.attrs
-            time = pd.to_datetime(ds.attrs['time_coverage_start'])
-        except KeyError:  # else infer from filename (for tests)
-            year = netcdf_filepath.name.split('-')[-2]
-            time = pd.to_datetime(f'{year}-01-01')
-
-        ds = ds.assign_coords(time=time)
-        ds = ds.expand_dims('time')
-
         # 5. extract the landcover data (reduce storage use)
         ds = ds.lccs_class.to_dataset(name='lc_class')
-
-        # 6. remap values
-        ds = self.remap_values_to_even_spaced_integers(ds, remap_dict)
 
         # save to specific filename
         filename = self.create_filename(
@@ -137,7 +100,7 @@ class ESACCIPreprocessor(BasePreProcessor):
                    regrid: Optional[Path] = None,
                    years: Optional[List[int]] = None,
                    cleanup: bool = True,
-                   remap_dict: Optional[Dict] = None) -> None:
+                   one_hot_encode: bool = True) -> None:
         """Preprocess all of the ESA CCI landcover .nc files to produce
         one subset file resampled to the timestep of interest.
         (downloaded as annual timesteps)
@@ -153,8 +116,8 @@ class ESACCIPreprocessor(BasePreProcessor):
             preprocess a subset of the years from the raw data
         cleanup: bool = True
             If true, delete interim files created by the class
-        remap_dict: Optional[Dict] = None
-            provide a dictionary to manually remap the values (for pytest)
+        one_hot_encode: bool = True
+            Whether to one hot encode the values
 
         Note:
         ----
@@ -174,9 +137,22 @@ class ESACCIPreprocessor(BasePreProcessor):
             regrid = self.load_reference_grid(regrid)
 
         for file in nc_files:
-            self._preprocess_single(file, subset_str, regrid, remap_dict)
+            self._preprocess_single(file, subset_str, regrid)
 
-        self.merge_files(subset_str)
+        ds = xr.open_mfdataset(self.get_filepaths('interim'))
+
+        if one_hot_encode:
+            ds = self._one_hot_encode(ds)
+
+        filename = self.dataset
+        if subset_str is not None:
+            filename = f'{filename}{"_" + subset_str}'
+        if one_hot_encode:
+            filename = f'{filename}_one_hot'
+        filename = f'{filename}.nc'
+
+        out = self.out_dir / filename
+        ds.to_netcdf(out)
 
         if cleanup:
             rmtree(self.interim)

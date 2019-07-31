@@ -1,6 +1,6 @@
 import xarray as xr
 import numpy as np
-from datetime import datetime
+import pandas as pd
 import pytest
 
 from src.preprocess import ESACCIPreprocessor
@@ -21,9 +21,15 @@ class TestESACCIPreprocessor:
             f'Expected output to be {expected_output}, got {filename}'
 
     @staticmethod
+    def _make_ESA_CCI_legend():
+        data = {'code': list(range(10)),
+                'label': [f'feature_{i}' for i in range(10)]}
+
+        return pd.DataFrame(data)
+
+    @staticmethod
     def _make_ESA_CCI_dataset(size, lonmin=-180.0, lonmax=180.0,
-                              latmin=-55.152, latmax=75.024,
-                              add_times=False):
+                              latmin=-55.152, latmax=75.024):
         lat_len, lon_len = size
         # create the vector
         longitudes = np.linspace(lonmin, lonmax, lon_len)
@@ -33,11 +39,7 @@ class TestESACCIPreprocessor:
         coords = {'lat': latitudes,
                   'lon': longitudes}
 
-        if add_times:
-            size = (2, size[0], size[1])
-            dims.insert(0, 'time')
-            coords['time'] = [datetime(2019, 1, 1), datetime(2019, 1, 2)]
-        lccs_class = np.random.randint(100, size=size)
+        lccs_class = np.random.randint(10, size=size)
         processed_flag = [1]
         current_pixel_state = [1]
         observation_count = [1]
@@ -97,6 +99,9 @@ class TestESACCIPreprocessor:
         dataset = self._make_ESA_CCI_dataset(size=(100, 100))
         dataset.to_netcdf(path=data_path)
 
+        legend_path = tmp_path / 'raw/esa_cci_landcover/legend.csv'
+        self._make_ESA_CCI_legend().to_csv(legend_path)
+
         kenya = get_kenya()
         regrid_dataset, _, _ = _make_dataset(size=(20, 20),
                                              latmin=kenya.latmin, latmax=kenya.latmax,
@@ -105,14 +110,9 @@ class TestESACCIPreprocessor:
         regrid_path = tmp_path / 'regridder.nc'
         regrid_dataset.to_netcdf(regrid_path)
 
-        # build a dummy remap_dict
-        unique_vals = np.unique(dataset.lccs_class.values)
-        remap_dict = dict(zip(unique_vals, np.arange(0, len(unique_vals) * 10, 10)))
-
         processor = ESACCIPreprocessor(tmp_path)
         processor.preprocess(subset_str='kenya', regrid=regrid_path,
-                             cleanup=cleanup,
-                             remap_dict=remap_dict)
+                             cleanup=cleanup)
 
         expected_out_path = (
             tmp_path / 'interim/static/esa_cci_landcover_interim'
@@ -124,14 +124,14 @@ class TestESACCIPreprocessor:
 
         expected_out_processed = (
             tmp_path / 'interim/static/esa_cci_landcover_'
-            'preprocessed' / 'esa_cci_landcover_kenya.nc'
+            'preprocessed' / 'esa_cci_landcover_kenya_one_hot.nc'
         )
         assert expected_out_processed.exists(), \
             'expected a processed folder'
 
         # check the subsetting happened correctly
         out_data = xr.open_dataset(expected_out_processed)
-        expected_dims = ['lat', 'lon', 'time']
+        expected_dims = ['lat', 'lon']
         assert len(list(out_data.dims)) == len(expected_dims)
         for dim in expected_dims:
             assert dim in list(out_data.dims), \
@@ -147,9 +147,6 @@ class TestESACCIPreprocessor:
 
         assert out_data.lc_class.values.shape == (20, 20)
 
-        assert ((np.unique(out_data.lc_class.values) % 10) == 0).all(), \
-            'values should be remapped to multiples of 10'
-
         if cleanup:
             assert not processor.interim.exists(), \
                 f'Interim esa_cci_landcover folder should have been deleted'
@@ -163,6 +160,9 @@ class TestESACCIPreprocessor:
         dataset.to_netcdf(path=data_path)
         ethiopia = get_ethiopia()
 
+        legend_path = tmp_path / 'raw/esa_cci_landcover/legend.csv'
+        self._make_ESA_CCI_legend().to_csv(legend_path)
+
         # regrid the datasets
         regrid_dataset, _, _ = _make_dataset(
             size=(20, 20), latmin=ethiopia.latmin,
@@ -172,20 +172,15 @@ class TestESACCIPreprocessor:
         regrid_path = tmp_path / 'regridder.nc'
         regrid_dataset.to_netcdf(regrid_path)
 
-        # build a dummy remap_dict
-        unique_vals = np.unique(dataset.lccs_class.values)
-        remap_dict = dict(zip(unique_vals, np.arange(0, len(unique_vals))))
-
         # build the Preprocessor object and subset with a different subset_str
         processor = ESACCIPreprocessor(tmp_path)
         processor.preprocess(
-            subset_str='ethiopia', regrid=regrid_path,
-            remap_dict=remap_dict
+            subset_str='ethiopia', regrid=regrid_path
         )
 
         expected_out_path = (
             tmp_path / 'interim/static/esa_cci_landcover_preprocessed'
-            '/esa_cci_landcover_ethiopia.nc'
+            '/esa_cci_landcover_ethiopia_one_hot.nc'
         )
         assert expected_out_path.exists(), \
             f'Expected processed file to be saved to {expected_out_path}'

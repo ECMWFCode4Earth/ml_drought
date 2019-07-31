@@ -5,6 +5,7 @@ sys.path.append('..')
 from src.preprocess import (VHIPreprocessor, CHIRPSPreprocesser,
                             PlanetOSPreprocessor, GLEAMPreprocessor,
                             ESACCIPreprocessor)
+from src.preprocess.srtm import SRTMPreprocessor
 
 
 def process_precip_2018():
@@ -78,9 +79,22 @@ def process_esa_cci_landcover():
                          resample_time='M', upsampling=False)
 
 
+def preprocess_srtm():
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+    regrid_path = data_path / 'interim/chirps_preprocessed/chirps_kenya.nc'
+    assert regrid_path.exists(), f'{regrid_path} not available'
+
+    processor = SRTMPreprocessor(data_path)
+    processor.preprocess(subset_str='kenya', regrid=regrid_path)
+
+
 if __name__ == '__main__':
-    process_precip_2018()
-    process_vhi_2018()
-    process_era5POS_2018()
-    process_gleam()
-    process_esa_cci_landcover()
+    # process_precip_2018()
+    # process_vhi_2018()
+    # process_era5POS_2018()
+    # process_gleam()
+    # process_esa_cci_landcover()
+    preprocess_srtm()
