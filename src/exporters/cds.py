@@ -1,4 +1,3 @@
-import cdsapi
 from pathlib import Path
 import warnings
 import itertools
@@ -10,6 +9,8 @@ from typing import Dict, Optional, List, cast
 
 from .base import BaseExporter, Region, get_kenya
 
+cdsapi = None
+
 
 class CDSExporter(BaseExporter):
     """Exports for the Climate Data Store
@@ -20,7 +21,11 @@ class CDSExporter(BaseExporter):
     def __init__(self, data_folder: Path = Path('data')) -> None:
         super().__init__(data_folder)
 
-        self.client = cdsapi.Client()
+        global cdsapi
+        if cdsapi is None:
+            import cdsapi
+
+        self.client = cdsapi.Client()  # type: ignore
 
     @staticmethod
     def create_area(region: Region) -> str:
@@ -122,7 +127,7 @@ class CDSExporter(BaseExporter):
                 self.client.retrieve(dataset, selection_request, str(output_file))
 
             else:  # in parallel create a new Client each time it's called
-                client = cdsapi.Client()
+                client = cdsapi.Client()  # type: ignore
                 client.retrieve(dataset, selection_request, str(output_file))
 
         return output_file
