@@ -70,7 +70,8 @@ class SRTMExporter(BaseExporter):
                 elevation.clip(bounds=self._region_to_tuple(region),  # type: ignore
                                output=output_tif.resolve().as_posix(),
                                product=product,
-                               max_download_tiles=max_download_tiles)
+                               max_download_tiles=max_download_tiles,
+                               margin='1')
             except Exception as e:
                 print(e)
 

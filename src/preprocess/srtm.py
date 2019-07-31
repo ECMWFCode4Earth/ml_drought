@@ -40,10 +40,13 @@ class SRTMPreprocessor(BasePreProcessor):
         ds = xr.open_dataset(netcdf_filepath).drop('crs').rename({'Band1': 'topography'})
 
         if regrid is not None:
-            ds = self.regrid(ds, regrid)
+            # using the default 'nearest_s2d' method doesn't work
+            # The ESMF regrid function returns lots of internal
+            # subroutine errors
+            ds = self.regrid(ds, regrid, method='bilinear')
 
-        print(f'Saving to {self.interim}/{subset_str}.nc')
-        ds.to_netcdf(self.interim / f'{subset_str}.nc')
+        print(f'Saving to {self.out_dir}/{subset_str}.nc')
+        ds.to_netcdf(str(self.out_dir / f'{subset_str}.nc'))
 
         print(f'Processed {netcdf_filepath}')
 
