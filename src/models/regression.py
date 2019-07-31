@@ -51,7 +51,6 @@ class LinearRegression(ModelBase):
                                           shuffle_data=True, mode='train',
                                           pred_months=self.pred_months,
                                           mask=train_mask,
-                                          surrounding_pixels=self.surrounding_pixels,
                                           ignore_vars=self.ignore_vars,
                                           monthly_aggs=self.include_monthly_aggs,
                                           surrounding_pixels=self.surrounding_pixels)
@@ -61,7 +60,6 @@ class LinearRegression(ModelBase):
                                         experiment=self.experiment,
                                         shuffle_data=False, mode='train',
                                         pred_months=self.pred_months, mask=val_mask,
-                                        surrounding_pixels=self.surrounding_pixels,
                                         ignore_vars=self.ignore_vars,
                                         monthly_aggs=self.include_monthly_aggs,
                                         surrounding_pixels=self.surrounding_pixels)
@@ -73,7 +71,6 @@ class LinearRegression(ModelBase):
                                           batch_file_size=self.batch_size,
                                           pred_months=self.pred_months,
                                           shuffle_data=True, mode='train',
-                                          surrounding_pixels=self.surrounding_pixels,
                                           ignore_vars=self.ignore_vars,
                                           monthly_aggs=self.include_monthly_aggs,
                                           surrounding_pixels=self.surrounding_pixels)

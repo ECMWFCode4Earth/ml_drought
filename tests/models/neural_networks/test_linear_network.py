@@ -35,7 +35,6 @@ class TestLinearNetwork:
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
                               dropout=dropout, experiment='one_month_forecast',
                               include_pred_month=include_pred_month,
-                              surrounding_pixels=surrounding_pixels,
                               include_latlons=include_latlons,
                               include_monthly_aggs=include_monthly_aggs,
                               include_yearly_aggs=include_yearly_aggs,

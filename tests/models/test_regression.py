@@ -136,7 +136,7 @@ class TestLinearRegression:
             return MockIterator()
 
         def do_nothing(self, data_path, batch_file_size, shuffle_data, mode, pred_months,
-                       surrounding_pixels, monthly_agg, ignore_vars):
+                       surrounding_pixels, monthly_aggs, ignore_vars):
 
             pass
 

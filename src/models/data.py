@@ -99,7 +99,7 @@ class DataLoader:
                  pred_months: Optional[List[int]] = None,
                  to_tensor: bool = False,
                  surrounding_pixels: Optional[int] = None,
-                 ignore_vars: Optional[List[str]] = None) -> None:
+                 ignore_vars: Optional[List[str]] = None,
                  monthly_aggs: bool = True) -> None:
 
         self.batch_file_size = batch_file_size
