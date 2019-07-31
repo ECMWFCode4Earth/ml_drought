@@ -53,7 +53,6 @@ class LinearNetwork(NNBase):
             'ignore_vars': self.ignore_vars,
             'include_monthly_aggs': self.include_monthly_aggs,
             'include_yearly_aggs': self.include_yearly_aggs,
-            'experiment': self.experiment
         }
 
         with (self.model_dir / 'model.pkl').open('wb') as f:

@@ -29,7 +29,7 @@ class NNBase(ModelBase):
                  surrounding_pixels: Optional[int] = None,
                  ignore_vars: Optional[List[str]] = None) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
-                         include_latlons, include_monthly_aggs, include_yearly_aggs, 
+                         include_latlons, include_monthly_aggs, include_yearly_aggs,
                          surrounding_pixels, ignore_vars)
 
         # for reproducibility
