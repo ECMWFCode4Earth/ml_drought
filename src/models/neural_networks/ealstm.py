@@ -24,10 +24,12 @@ class EARecurrentNetwork(NNBase):
                  include_pred_month: bool = True,
                  include_monthly_aggs: bool = True,
                  include_yearly_aggs: bool = True,
-                 surrounding_pixels: Optional[int] = None) -> None:
+                 surrounding_pixels: Optional[int] = None,
+                 ignore_vars: Optional[List[str]] = None,
+                 include_static: bool = True) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
                          include_latlons, include_monthly_aggs, include_yearly_aggs,
-                         surrounding_pixels)
+                         surrounding_pixels, ignore_vars, include_static)
 
         # to initialize and save the model
         self.hidden_size = hidden_size
@@ -38,6 +40,7 @@ class EARecurrentNetwork(NNBase):
         self.features_per_month: Optional[int] = None
         self.current_size: Optional[int] = None
         self.yearly_agg_size: Optional[int] = None
+        self.static_size: Optional[int] = None
 
     def save_model(self):
 
@@ -47,7 +50,8 @@ class EARecurrentNetwork(NNBase):
             'model': {'state_dict': self.model.state_dict(),
                       'features_per_month': self.features_per_month,
                       'current_size': self.current_size,
-                      'yearly_agg_size': self.yearly_agg_size},
+                      'yearly_agg_size': self.yearly_agg_size,
+                      'static_size': self.static_size},
             'batch_size': self.batch_size,
             'hidden_size': self.hidden_size,
             'rnn_dropout': self.rnn_dropout,
@@ -57,17 +61,20 @@ class EARecurrentNetwork(NNBase):
             'surrounding_pixels': self.surrounding_pixels,
             'include_monthly_aggs': self.include_monthly_aggs,
             'include_yearly_aggs': self.include_yearly_aggs,
-            'experiment': self.experiment
+            'experiment': self.experiment,
+            'ignore_vars': self.ignore_vars,
+            'include_static': self.include_static
         }
 
         with (self.model_dir / 'model.pkl').open('wb') as f:
             pickle.dump(model_dict, f)
 
     def load(self, state_dict: Dict, features_per_month: int, current_size: Optional[int],
-             yearly_agg_size: Optional[int]) -> None:
+             yearly_agg_size: Optional[int], static_size: Optional[int]) -> None:
         self.features_per_month = features_per_month
         self.current_size = current_size
         self.yearly_agg_size = yearly_agg_size
+        self.static_size = static_size
 
         self.model: EALSTM = EALSTM(features_per_month=self.features_per_month,
                                     dense_features=self.dense_features,
@@ -77,7 +84,8 @@ class EARecurrentNetwork(NNBase):
                                     experiment=self.experiment,
                                     current_size=self.current_size,
                                     yearly_agg_size=self.yearly_agg_size,
-                                    include_latlons=self.include_latlons)
+                                    include_latlons=self.include_latlons,
+                                    static_size=self.static_size)
         self.model.load_state_dict(state_dict)
 
     def _initialize_model(self, x_ref: Optional[Tuple[torch.Tensor, ...]]) -> nn.Module:
@@ -94,6 +102,10 @@ class EARecurrentNetwork(NNBase):
             if self.yearly_agg_size is None:
                 assert x_ref is not None
                 self.yearly_agg_size = x_ref[4].shape[-1]
+        if self.include_static:
+            if self.static_size is None:
+                assert x_ref is not None
+                self.static_size = x_ref[5].shape[-1]
 
         return EALSTM(features_per_month=self.features_per_month,
                       dense_features=self.dense_features,
@@ -103,32 +115,38 @@ class EARecurrentNetwork(NNBase):
                       experiment=self.experiment,
                       yearly_agg_size=self.yearly_agg_size,
                       current_size=self.current_size,
-                      include_latlons=self.include_latlons)
+                      include_latlons=self.include_latlons,
+                      static_size=self.static_size)
 
 
 class EALSTM(nn.Module):
     def __init__(self, features_per_month, dense_features, hidden_size,
                  rnn_dropout, include_latlons, include_pred_month,
-                 experiment, yearly_agg_size=None, current_size=None):
+                 experiment, yearly_agg_size=None, current_size=None,
+                 static_size=None):
         super().__init__()
 
         self.experiment = experiment
         self.include_pred_month = include_pred_month
         self.include_latlons = include_latlons
         self.include_yearly_agg = False
+        self.include_static = False
 
-        assert include_latlons or (yearly_agg_size is not None), \
-            "Need one of latlons or yearly mean for the static input"
-        static_size = 0
+        assert include_latlons or (yearly_agg_size is not None) or (static_size is not None), \
+            "Need at least one of {latlons, yearly mean, static} for the static input"
+        ea_static_size = 0
         if self.include_latlons:
-            static_size += 2
+            ea_static_size += 2
         if yearly_agg_size is not None:
             self.include_yearly_agg = True
-            static_size += yearly_agg_size
+            ea_static_size += yearly_agg_size
+        if static_size is not None:
+            self.include_static = True
+            ea_static_size += static_size
 
         self.dropout = nn.Dropout(rnn_dropout)
         self.rnn = EALSTMCell(input_size_dyn=features_per_month,
-                              input_size_stat=static_size,
+                              input_size_stat=ea_static_size,
                               hidden_size=hidden_size,
                               batch_first=True)
         self.hidden_size = hidden_size
@@ -159,10 +177,11 @@ class EALSTM(nn.Module):
             nn.init.kaiming_uniform_(dense_layer.weight.data)
             nn.init.constant_(dense_layer.bias.data, 0)
 
-    def forward(self, x, pred_month=None, latlons=None, current=None, yearly_aggs=None):
+    def forward(self, x, pred_month=None, latlons=None, current=None, yearly_aggs=None,
+                static=None):
 
-        assert (yearly_aggs is not None) or (latlons is not None), \
-            "Both latlons and yearly means can't be None"
+        assert (yearly_aggs is not None) or (latlons is not None) or (static is not None), \
+            "latlons, yearly means and static can't all be None"
 
         static_x = []
         if self.include_latlons:
@@ -171,6 +190,8 @@ class EALSTM(nn.Module):
         if self.include_yearly_agg:
             assert yearly_aggs is not None
             static_x.append(yearly_aggs)
+        if self.include_static:
+            static_x.append(static)
 
         hidden_state, cell_state = self.rnn(x, torch.cat(static_x, dim=-1))
 

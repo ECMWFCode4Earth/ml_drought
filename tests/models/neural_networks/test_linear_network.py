@@ -26,7 +26,7 @@ class TestLinearNetwork:
         def mocktrain(self):
             self.model = LinearModel(
                 input_size, layer_sizes, dropout, include_pred_month,
-                include_latlons, include_yearly_aggs
+                include_latlons, include_yearly_aggs, include_static=True
             )
             self.input_size = input_size
 
@@ -64,14 +64,14 @@ class TestLinearNetwork:
         assert model_dict['ignore_vars'] == ignore_vars
 
     @pytest.mark.parametrize(
-        'use_pred_months,use_latlons,experiment,monthly_agg',
-        [(True, False, 'one_month_forecast', True),
-         (False, True, 'one_month_forecast', False),
-         (False, True, 'nowcast', True),
-         (True, False, 'nowcast', False)]
+        'use_pred_months,use_latlons,experiment,monthly_agg,static',
+        [(True, False, 'one_month_forecast', True, False),
+         (False, True, 'one_month_forecast', False, True),
+         (False, True, 'nowcast', True, False),
+         (True, False, 'nowcast', False, True)]
     )
     def test_train(self, tmp_path, capsys, use_pred_months, use_latlons, experiment,
-                   monthly_agg):
+                   monthly_agg, static):
         # make the x, y data (5*5 latlons, 36 timesteps, 3 features)
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
@@ -99,6 +99,18 @@ class TestLinearNetwork:
         x.to_netcdf(test_features / 'x.nc')
         y.to_netcdf(test_features / 'y.nc')
 
+        if static:
+            x_static, _, _ = _make_dataset(size=(5, 5), add_times=False)
+            static_features = tmp_path / f'features/static'
+            static_features.mkdir(parents=True)
+            x_static.to_netcdf(static_features / 'data.nc')
+
+            static_norm_dict = {'VHI': {'mean': 0.0, 'std': 1.0}}
+            with (
+                tmp_path / f'features/static/normalizing_dict.pkl'
+            ).open('wb') as f:
+                pickle.dump(static_norm_dict, f)
+
         layer_sizes = [10]
         dropout = 0.25
 
@@ -106,7 +118,8 @@ class TestLinearNetwork:
                               dropout=dropout, experiment=experiment,
                               include_pred_month=use_pred_months,
                               include_latlons=use_latlons,
-                              include_monthly_aggs=monthly_agg)
+                              include_monthly_aggs=monthly_agg,
+                              include_static=static)
 
         model.train()
 
@@ -136,12 +149,15 @@ class TestLinearNetwork:
                 n_expected += 2
         n_expected += 3 * 2  # +3 for the yearly means, +3 for yearly stds
 
+        if static:
+            n_expected += 1  # for the static variable
+
         assert n_input_features == n_expected, "Expected the number" \
             f"of input features to be: {n_expected}" \
             f"Got: {n_input_features}"
 
         captured = capsys.readouterr()
-        expected_stdout = 'Epoch 1, train smooth L1: 0.'
+        expected_stdout = 'Epoch 1, train smooth L1: '
         assert expected_stdout in captured.out
 
         assert type(model.model) == LinearModel, \
@@ -163,6 +179,18 @@ class TestLinearNetwork:
 
         test_features = tmp_path / f'features/{experiment}/test/hello'
         test_features.mkdir(parents=True)
+
+        # static
+        x_static, _, _ = _make_dataset(size=(5, 5), add_times=False)
+        static_features = tmp_path / f'features/static'
+        static_features.mkdir(parents=True)
+        x_static.to_netcdf(static_features / 'data.nc')
+
+        static_norm_dict = {'VHI': {'mean': 0.0, 'std': 1.0}}
+        with (
+            tmp_path / f'features/static/normalizing_dict.pkl'
+        ).open('wb') as f:
+            pickle.dump(static_norm_dict, f)
 
         # if nowcast we need another x feature
         if experiment == 'nowcast':
@@ -230,6 +258,18 @@ class TestLinearNetwork:
             tmp_path / 'features/one_month_forecast/normalizing_dict.pkl'
         ).open('wb') as f:
             pickle.dump(norm_dict, f)
+
+        # static
+        x_static, _, _ = _make_dataset(size=(5, 5), add_times=False)
+        static_features = tmp_path / f'features/static'
+        static_features.mkdir(parents=True)
+        x_static.to_netcdf(static_features / 'data.nc')
+
+        static_norm_dict = {'VHI': {'mean': 0.0, 'std': 1.0}}
+        with (
+            tmp_path / f'features/static/normalizing_dict.pkl'
+        ).open('wb') as f:
+            pickle.dump(static_norm_dict, f)
 
         model = LinearNetwork(data_folder=tmp_path, layer_sizes=[100],
                               dropout=0.25, include_pred_month=True)

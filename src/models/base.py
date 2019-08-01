@@ -29,6 +29,8 @@ class ModelBase:
     include_latlons: bool = True
         Whether to include prediction pixel latitudes and longitudes in the model's
         training data
+    include_static: bool = True
+        Whether to include static data
     """
 
     model_name: str  # to be added by the model classes
@@ -42,7 +44,8 @@ class ModelBase:
                  include_monthly_aggs: bool = True,
                  include_yearly_aggs: bool = True,
                  surrounding_pixels: Optional[int] = None,
-                 ignore_vars: Optional[List[str]] = None) -> None:
+                 ignore_vars: Optional[List[str]] = None,
+                 include_static: bool = True) -> None:
 
         self.batch_size = batch_size
         self.include_pred_month = include_pred_month
@@ -55,6 +58,7 @@ class ModelBase:
         self.models_dir = data_folder / 'models' / self.experiment
         self.surrounding_pixels = surrounding_pixels
         self.ignore_vars = ignore_vars
+        self.include_static = include_static
 
         if not self.models_dir.exists():
             self.models_dir.mkdir(parents=True, exist_ok=False)

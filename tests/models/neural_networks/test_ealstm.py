@@ -74,6 +74,18 @@ class TestEARecurrentNetwork:
         x.to_netcdf(test_features / 'x.nc')
         y.to_netcdf(test_features / 'y.nc')
 
+        # static
+        x_static, _, _ = _make_dataset(size=(5, 5), add_times=False)
+        static_features = tmp_path / f'features/static'
+        static_features.mkdir(parents=True)
+        x_static.to_netcdf(static_features / 'data.nc')
+
+        static_norm_dict = {'VHI': {'mean': 0.0, 'std': 1.0}}
+        with (
+            tmp_path / f'features/static/normalizing_dict.pkl'
+        ).open('wb') as f:
+            pickle.dump(static_norm_dict, f)
+
         dense_features = [10]
         hidden_size = 128
         rnn_dropout = 0.25
@@ -111,6 +123,18 @@ class TestEARecurrentNetwork:
 
         x.to_netcdf(train_features / 'x.nc')
         y.to_netcdf(train_features / 'y.nc')
+
+        # static
+        x_static, _, _ = _make_dataset(size=(5, 5), add_times=False)
+        static_features = tmp_path / f'features/static'
+        static_features.mkdir(parents=True)
+        x_static.to_netcdf(static_features / 'data.nc')
+
+        static_norm_dict = {'VHI': {'mean': 0.0, 'std': 1.0}}
+        with (
+            tmp_path / f'features/static/normalizing_dict.pkl'
+        ).open('wb') as f:
+            pickle.dump(static_norm_dict, f)
 
         dense_features = [10]
         hidden_size = 128

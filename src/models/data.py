@@ -222,6 +222,7 @@ class _BaseIter:
                 if var == norm_var:
                     mean.append(self.static_normalizing_dict[norm_var]['mean'])
                     std.append(self.static_normalizing_dict[norm_var]['std'])
+                    break
 
         normalizing_array = cast(Dict[str, np.ndarray], {
             'mean': np.asarray(mean),
@@ -301,7 +302,8 @@ class _BaseIter:
 
         return x_np, y_np
 
-    def _calculate_target_months(self, y: xr.Dataset, num_instances: int) -> np.ndarray:
+    @staticmethod
+    def _calculate_target_months(y: xr.Dataset, num_instances: int) -> np.ndarray:
         # then, the x month
         assert len(y.time) == 1, 'Expected y to only have 1 timestamp!' \
             f'Got {len(y.time)}'
@@ -326,10 +328,8 @@ class _BaseIter:
 
     def _calculate_static(self, num_instances: int) -> np.ndarray:
         static_np = self.static.to_array().values  # type: ignore
-
         static_np = static_np.reshape(static_np.shape[0], static_np.shape[1] * static_np.shape[2])
         static_np = np.moveaxis(static_np, -1, 0).reshape(-1, 1)
-
         assert static_np.shape[0] == num_instances
 
         if self.static_normalizing_dict is not None:
@@ -511,7 +511,8 @@ class _TrainIter(_BaseIter):
                                 Union[np.ndarray, torch.Tensor]]:
 
         if self.idx < self.max_idx:
-            out_x, out_x_add, out_x_curr, out_x_latlon, out_x_ym = [], [], [], [], []
+            out_x, out_x_add, out_x_curr, out_x_latlon = [], [], [], []
+            out_x_ym, out_x_static = [], []
             out_y = []
 
             cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
@@ -534,6 +535,8 @@ class _TrainIter(_BaseIter):
                 out_x.append(arrays.x.historical)
                 if arrays.x.current is not None:
                     out_x_curr.append(arrays.x.current)
+                if arrays.x.static is not None:
+                    out_x_static.append(arrays.x.static)
                 out_x_add.append(arrays.x.pred_months)
                 out_x_latlon.append(arrays.x.latlons)
                 out_x_ym.append(arrays.x.yearly_aggs)
@@ -542,6 +545,7 @@ class _TrainIter(_BaseIter):
 
             final_x = np.concatenate(out_x, axis=0)
             final_x_curr = np.concatenate(out_x_curr, axis=0) if out_x_curr != [] else None
+            final_x_static = np.concatenate(out_x_static, axis=0) if out_x_static != [] else None
             final_x_add = np.concatenate(out_x_add, axis=0)
             final_x_latlon = np.concatenate(out_x_latlon, axis=0)
             final_x_ym = np.concatenate(out_x_ym, axis=0)
@@ -552,16 +556,17 @@ class _TrainIter(_BaseIter):
                 final_x_add = torch.from_numpy(final_x_add).float()
                 final_x_latlon = torch.from_numpy(final_x_latlon).float()
                 final_x_ym = torch.from_numpy(final_x_ym).float()
-                final_x_curr = torch.from_numpy(
-                    final_x_curr
-                ).float() if final_x_curr is not None else None
-
+                if final_x_curr is not None:
+                    final_x_curr = torch.from_numpy(final_x_curr).float()
+                if final_x_static is not None:
+                    final_x_static = torch.from_numpy(final_x_static).float()
                 final_y = torch.from_numpy(final_y).float()
 
             if final_x.shape[0] == 0:
                 raise StopIteration()
 
-            return (final_x, final_x_add, final_x_latlon, final_x_curr, final_x_ym), final_y
+            return (final_x, final_x_add, final_x_latlon, final_x_curr,
+                    final_x_ym, final_x_static), final_y
 
         else:  # final_x_curr >= self.max_idx
             raise StopIteration()
