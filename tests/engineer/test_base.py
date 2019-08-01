@@ -3,17 +3,21 @@ from src.engineer.base import _EngineerBase as Engineer
 from ..utils import _make_dataset
 
 
-def _setup(data_path):
+def _setup(data_path, add_times=True, static=False):
     # setup
     interim_folder = data_path / 'interim'
     interim_folder.mkdir()
+
+    if static:
+        interim_folder = interim_folder / 'static'
+        interim_folder.mkdir()
 
     expected_output, expected_vars = [], []
     for var in ['a', 'b']:
         (interim_folder / f'{var}_preprocessed').mkdir(exist_ok=True, parents=True)
 
         # this file should be captured
-        data, _, _ = _make_dataset((10, 10), var, const=True)
+        data, _, _ = _make_dataset((10, 10), var, const=True, add_times=add_times)
         filename = interim_folder / f'{var}_preprocessed/hello.nc'
         data.to_netcdf(filename)
 
