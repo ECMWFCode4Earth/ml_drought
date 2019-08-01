@@ -64,7 +64,7 @@ class ESACCIExporter(BaseExporter):
         assert fname.exists()
         print(f'Unzipping {fname.name}')
 
-        os.system(f'unzip {fname.as_posix()}')
+        os.system(f'unzip {fname.as_posix()} -d {self.landcover_folder.resolve().as_posix()}')
         print(f'{fname.name} unzipped!')
 
     def export(self) -> None:
