@@ -103,7 +103,7 @@ class TestBaseIter:
                 self.monthly_aggs = False
 
                 self.static = None
-                self.static_normalizer = None
+                self.static_normalizing_dict = None
 
         base_iterator = _BaseIter(MockLoader())
 
