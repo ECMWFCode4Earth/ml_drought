@@ -102,6 +102,9 @@ class TestBaseIter:
                 self.surrounding_pixels = surrounding_pixels
                 self.monthly_aggs = False
 
+                self.static = None
+                self.static_normalizer = None
+
         base_iterator = _BaseIter(MockLoader())
 
         arrays = base_iterator.ds_folder_to_np(data_dir, to_tensor=to_tensor)
