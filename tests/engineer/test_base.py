@@ -44,7 +44,7 @@ class TestEngineer:
         monkeypatch.setattr(Engineer, '__init__', mock_init)
 
         engineer = Engineer(tmp_path)
-        files = engineer._get_preprocessed_files()
+        files = engineer._get_preprocessed_files(static=False)
 
         assert set(expected_files) == set(files), f'Did not retrieve expected files!'
 
@@ -59,7 +59,7 @@ class TestEngineer:
         monkeypatch.setattr(Engineer, '__init__', mock_init)
 
         engineer = Engineer(tmp_path)
-        joined_ds = engineer._make_dataset()
+        joined_ds = engineer._make_dataset(static=False)
 
         dims = ['lon', 'lat', 'time']
         output_vars = [var for var in joined_ds.variables if var not in dims]

@@ -12,9 +12,11 @@ from typing import cast, DefaultDict, Dict, List, Optional, Union, Tuple
 class _EngineerBase:
     name: str
 
-    def __init__(self, data_folder: Path = Path('data')) -> None:
+    def __init__(self, data_folder: Path = Path('data'),
+                 process_static: bool = False) -> None:
 
         self.data_folder = data_folder
+        self.process_static = process_static
 
         self.interim_folder = data_folder / 'interim'
         assert self.interim_folder.exists(), \
@@ -25,6 +27,11 @@ class _EngineerBase:
         if not self.output_folder.exists():
             self.output_folder.mkdir(parents=True)
 
+        if self.process_static:
+            self.static_output_folder = data_folder / 'features/static'
+            if not self.static_output_folder.exists():
+                self.static_output_folder.mkdir(parents=True)
+
         self.num_normalization_values: int = 0
         self.normalization_values: DefaultDict[str, Dict[str, np.ndarray]] = defaultdict(dict)
 
@@ -33,12 +40,50 @@ class _EngineerBase:
                  pred_months: int = 12,
                  expected_length: Optional[int] = 12,
                  ) -> None:
+
+        self._process_dynamic(test_year, target_variable, pred_months, expected_length)
+        if self.process_static:
+            self._process_static()
+
+    def _process_static(self):
+
+        # this function assumes the static data has only two dimensions,
+        # lat and lon
+
+        output_file = self.static_output_folder / 'data.nc'
+        assert not output_file.exists(), 'A static data file already exists!'
+
+        static_ds = self._make_dataset(static=True)
+
+        normalization_values: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
+
+        for var in static_ds.data_vars:
+            if var.endswith('one_hot'):
+                mean = 0
+                std = 1
+            else:
+                mean = float(static_ds[var].mean(dim=['lat', 'lon'], skipna=True).values)
+                std = float(static_ds[var].std(dim=['lat', 'lon'], skipna=True).values)
+
+            normalization_values[var]['mean'] = mean
+            normalization_values[var]['std'] = std
+
+        static_ds.to_netcdf(self.static_output_folder / 'data.nc')
+        savepath = self.static_output_folder / 'normalizing_dict.pkl'
+        with savepath.open('wb') as f:
+            pickle.dump(normalization_values, f)
+
+    def _process_dynamic(self, test_year: Union[int, List[int]],
+                         target_variable: str = 'VHI',
+                         pred_months: int = 12,
+                         expected_length: Optional[int] = 12,
+                         ) -> None:
         if expected_length is None:
             warnings.warn('** `expected_length` is None. This means that \
             missing data will not be skipped. Are you sure? **')
 
         # read in all the data from interim/{var}_preprocessed
-        data = self._make_dataset()
+        data = self._make_dataset(static=False)
 
         # ensure test_year is List[int]
         if type(test_year) is int:
@@ -65,19 +110,23 @@ class _EngineerBase:
         with savepath.open('wb') as f:
             pickle.dump(self.normalization_values, f)
 
-    def _get_preprocessed_files(self) -> List[Path]:
+    def _get_preprocessed_files(self, static: bool) -> List[Path]:
         processed_files = []
-        for subfolder in self.interim_folder.iterdir():
+        if static:
+            interim_folder = self.interim_folder / 'static'
+        else:
+            interim_folder = self.interim_folder
+        for subfolder in interim_folder.iterdir():
             if str(subfolder).endswith('_preprocessed') and subfolder.is_dir():
                 processed_files.extend(list(subfolder.glob('*.nc')))
         return processed_files
 
-    def _make_dataset(self) -> xr.Dataset:
+    def _make_dataset(self, static: bool) -> xr.Dataset:
 
         datasets = []
         dims = ['lon', 'lat']
         coords = {}
-        for idx, file in enumerate(self._get_preprocessed_files()):
+        for idx, file in enumerate(self._get_preprocessed_files(static)):
             print(f'Processing {file}')
             datasets.append(xr.open_dataset(file))
 

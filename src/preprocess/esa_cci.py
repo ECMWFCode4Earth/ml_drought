@@ -41,7 +41,7 @@ class ESACCIPreprocessor(BasePreProcessor):
 
         for idx, row in legend.iterrows():
             value, label = row.code, row.label
-            ds[label] = ds.lc_class.where(ds.lc_class == value, 0).clip(min=0, max=1)
+            ds[f'{label}_one_hot'] = ds.lc_class.where(ds.lc_class == value, 0).clip(min=0, max=1)
         ds.drop('lc_class')
         return ds
 

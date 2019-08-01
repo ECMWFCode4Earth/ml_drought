@@ -15,11 +15,13 @@ class Engineer:
     access to the same data.
 
     :param data_folder: The location of the data folder.
+    :param process_static: Whether to process static data
     :param experiment: One of `{'one_month_forecast', 'nowcast'}, defines the experiment for which
         the dataset is created
     """
 
     def __init__(self, data_folder: Path = Path('data_path'),
+                 process_static: bool = True,
                  experiment: str = 'one_month_forecast') -> None:
 
         assert experiment in {'one_month_forecast', 'nowcast'},\
@@ -27,9 +29,9 @@ class Engineer:
 
         engineer: _EngineerBase
         if experiment == 'one_month_forecast':
-            engineer = _OneMonthForecastEngineer(data_folder)
+            engineer = _OneMonthForecastEngineer(data_folder, process_static)
         elif experiment == 'nowcast':
-            engineer = _NowcastEngineer(data_folder)
+            engineer = _NowcastEngineer(data_folder, process_static)
         self.engineer_class = engineer
 
     def engineer(self, test_year: Union[int, List[int]],
