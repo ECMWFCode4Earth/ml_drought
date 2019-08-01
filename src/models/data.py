@@ -85,6 +85,8 @@ class DataLoader:
         How many surrounding pixels to add to the input data. e.g. if the input is 1, then in
         addition to the pixels on the prediction point, the neighbouring (spatial) pixels will
         be included too, up to a distance of one pixel away
+    ignore_vars: Optional[List[str]] = None
+        A list of variables to ignore. If None, all variables in the data_path will be included
     monthly_aggs: bool = True
         Whether to include the monthly aggregates (mean and std across all spatial values) for
         the input variables. These will be additional dimensions to the historical
@@ -100,6 +102,7 @@ class DataLoader:
                  pred_months: Optional[List[int]] = None,
                  to_tensor: bool = False,
                  surrounding_pixels: Optional[int] = None,
+                 ignore_vars: Optional[List[str]] = None,
                  monthly_aggs: bool = True,
                  static: bool = False) -> None:
 
@@ -123,6 +126,7 @@ class DataLoader:
         self.surrounding_pixels = surrounding_pixels
         self.monthly_aggs = monthly_aggs
         self.to_tensor = to_tensor
+        self.ignore_vars = ignore_vars
 
         self.static = None
         self.static_normalizing_dict = None
@@ -185,6 +189,7 @@ class _BaseIter:
         self.monthly_aggs = loader.monthly_aggs
         self.to_tensor = loader.to_tensor
         self.experiment = loader.experiment
+        self.ignore_vars = loader.ignore_vars
 
         self.static = loader.static
         self.static_normalizing_dict = loader.static_normalizing_dict
@@ -344,6 +349,8 @@ class _BaseIter:
         x, y = xr.open_dataset(folder / 'x.nc'), xr.open_dataset(folder / 'y.nc')
         assert len(list(y.data_vars)) == 1, f'Expect only 1 target variable! ' \
             f'Got {len(list(y.data_vars))}'
+        if self.ignore_vars is not None:
+            x = x.drop(self.ignore_vars)
 
         yearly_agg = self._calculate_aggs(x)  # before to avoid aggs from surrounding pixels
         x_np, y_np = self._calculate_historical(x, y)

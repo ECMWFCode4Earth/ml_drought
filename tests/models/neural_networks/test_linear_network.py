@@ -20,6 +20,7 @@ class TestLinearNetwork:
         include_latlons = True
         include_monthly_aggs = True
         surrounding_pixels = 1
+        ignore_vars = ['precip']
         include_yearly_aggs = True
 
         def mocktrain(self):
@@ -37,7 +38,8 @@ class TestLinearNetwork:
                               include_latlons=include_latlons,
                               include_monthly_aggs=include_monthly_aggs,
                               include_yearly_aggs=include_yearly_aggs,
-                              surrounding_pixels=surrounding_pixels)
+                              surrounding_pixels=surrounding_pixels,
+                              ignore_vars=ignore_vars)
         model.train()
         model.save_model()
 
@@ -59,6 +61,7 @@ class TestLinearNetwork:
         assert model_dict['include_monthly_aggs'] == include_monthly_aggs
         assert model_dict['include_yearly_aggs'] == include_yearly_aggs
         assert model_dict['surrounding_pixels'] == surrounding_pixels
+        assert model_dict['ignore_vars'] == ignore_vars
 
     @pytest.mark.parametrize(
         'use_pred_months,use_latlons,experiment,monthly_agg',
