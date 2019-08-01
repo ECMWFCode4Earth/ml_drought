@@ -5,6 +5,7 @@ from typing import Optional, List
 from shutil import rmtree
 
 from .base import BasePreProcessor
+from ..utils import get_modal_value_across_time
 
 
 class ESACCIPreprocessor(BasePreProcessor):
@@ -82,6 +83,15 @@ class ESACCIPreprocessor(BasePreProcessor):
         if regrid is not None:
             ds = self.regrid(ds, regrid)
 
+        try:  # try inferring from the ds.attrs
+            time = pd.to_datetime(ds.attrs['time_coverage_start'])
+        except KeyError:  # else infer from filename (for tests)
+            year = netcdf_filepath.name.split('-')[-2]
+            time = pd.to_datetime(f'{year}-01-01')
+
+        ds = ds.assign_coords(time=time)
+        ds = ds.expand_dims('time')
+
         # 5. extract the landcover data (reduce storage use)
         ds = ds.lccs_class.to_dataset(name='lc_class')
 
@@ -139,6 +149,8 @@ class ESACCIPreprocessor(BasePreProcessor):
             self._preprocess_single(file, subset_str, regrid)
 
         ds = xr.open_mfdataset(self.get_filepaths('interim'))
+
+        ds = get_modal_value_across_time(ds.lc_class).to_dataset()
 
         if one_hot_encode:
             ds = self._one_hot_encode(ds)
