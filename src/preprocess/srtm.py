@@ -64,6 +64,9 @@ class SRTMPreprocessor(BasePreProcessor):
         ds = xr.open_dataset(netcdf_filepath).drop('crs').rename({'Band1': 'topography'})
 
         if regrid is not None:
+            print('The SRTM preprocessor requires CDO to be installed! '
+                  'See here for installation details: '
+                  'https://code.mpimet.mpg.de/projects/cdo/wiki/Tutorial')
             ds = self.regrid(ds, regrid)
 
         print(f'Saving to {self.out_dir}/{subset_str}.nc')
