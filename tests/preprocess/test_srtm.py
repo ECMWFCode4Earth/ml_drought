@@ -2,9 +2,6 @@ import numpy as np
 import xarray as xr
 
 from src.preprocess import SRTMPreprocessor
-from src.utils import get_kenya
-
-from ..utils import _make_dataset
 
 
 class TestSRTMPreprocessor:
@@ -45,22 +42,17 @@ class TestSRTMPreprocessor:
 
     def test_preprocess(self, tmp_path):
 
+        # regridding is not tested here, since it requires the CDO
+        # package to be installed.
+
         (tmp_path / 'raw/srtm').mkdir(parents=True)
         data_path = tmp_path / 'raw/srtm/kenya.nc'
         dataset = self._make_srtm_dataset(size=(100, 100))
         dataset.to_netcdf(path=data_path)
 
-        kenya = get_kenya()
-        regrid_dataset, _, _ = _make_dataset(size=(20, 20),
-                                             latmin=kenya.latmin, latmax=kenya.latmax,
-                                             lonmin=kenya.lonmin, lonmax=kenya.lonmax)
-
-        regrid_path = tmp_path / 'regridder.nc'
-        regrid_dataset.to_netcdf(regrid_path)
-
         processor = SRTMPreprocessor(tmp_path)
 
-        processor.preprocess(subset_str='kenya', regrid=regrid_path)
+        processor.preprocess(subset_str='kenya', regrid=None)
 
         expected_out_processed = (
             tmp_path / 'interim/static/srtm_preprocessed/kenya.nc'
@@ -75,16 +67,6 @@ class TestSRTMPreprocessor:
         for dim in expected_dims:
             assert dim in list(out_data.dims), \
                 f'Expected {dim} to be in the processed dataset dims'
-
-        lons = out_data.lon.values
-        assert (lons.min() >= kenya.lonmin) and (lons.max() <= kenya.lonmax), \
-            'Longitudes not correctly subset'
-
-        lats = out_data.lat.values
-        assert (lats.min() >= kenya.latmin) and (lats.max() <= kenya.latmax), \
-            'Latitudes not correctly subset'
-
-        assert out_data.topography.values.shape == (20, 20)
 
         assert not processor.interim.exists(), \
             f'Interim srtm folder should have been deleted'
