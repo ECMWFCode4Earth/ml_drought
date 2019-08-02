@@ -412,7 +412,7 @@ class _BaseIter:
                         historical_nans_summed == 0
                     ) & (y_nans_summed == 0) & (
                         current_nans_summed == 0
-                    )
+                    ) & (static_nans_summed == 0)
                 )[0]
                 train_data.current = train_data.current[notnan_indices]  # type: ignore
 
