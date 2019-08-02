@@ -23,7 +23,7 @@ class TestESACCIPreprocessor:
     @staticmethod
     def _make_ESA_CCI_legend():
         data = {'code': list(range(10)),
-                'label': [f'feature_{i}' for i in range(10)]}
+                'label_text': [f'feature_{i}' for i in range(10)]}
 
         return pd.DataFrame(data)
 
