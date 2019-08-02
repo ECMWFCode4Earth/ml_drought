@@ -114,11 +114,11 @@ class TestLinearRegression:
             coef_size = (3 * 36)
         if monthly_agg:
             # doubled including the mean, tripled including the std
-            coef_size *= 3
+            coef_size *= 2
         if use_pred_months:
             coef_size += 12
 
-        coef_size += 6  # for the yearly aggs
+        coef_size += 3  # for the yearly aggs
         coef_size += 1  # for the static variable
 
         assert model.model.coef_.size == coef_size, f'Got unexpected coef size'
