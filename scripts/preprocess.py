@@ -4,8 +4,7 @@ import sys
 sys.path.append('..')
 from src.preprocess import (VHIPreprocessor, CHIRPSPreprocesser,
                             PlanetOSPreprocessor, GLEAMPreprocessor,
-                            ESACCIPreprocessor)
-from src.preprocess.srtm import SRTMPreprocessor
+                            ESACCIPreprocessor, SRTMPreprocessor)
 
 
 def process_precip_2018():
@@ -75,8 +74,7 @@ def process_esa_cci_landcover():
     assert regrid_path.exists(), f'{regrid_path} not available'
 
     processor = ESACCIPreprocessor(data_path)
-    processor.preprocess(subset_str='kenya', regrid=regrid_path,
-                         resample_time='M', upsampling=False)
+    processor.preprocess(subset_str='kenya', regrid=regrid_path)
 
 
 def preprocess_srtm():
@@ -92,9 +90,9 @@ def preprocess_srtm():
 
 
 if __name__ == '__main__':
-    # process_precip_2018()
-    # process_vhi_2018()
-    # process_era5POS_2018()
-    # process_gleam()
-    # process_esa_cci_landcover()
+    process_precip_2018()
+    process_vhi_2018()
+    process_era5POS_2018()
+    process_gleam()
+    process_esa_cci_landcover()
     preprocess_srtm()

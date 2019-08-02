@@ -51,9 +51,8 @@ def regression(
                                     shuffle_data=False, mode='test')
     key, val = list(next(iter(test_arrays_loader)).items())[0]
 
-    explain_hist, explain_add = predictor.explain([val.x.historical, val.x.pred_months])
+    explain_hist, explain_add = predictor.explain(val.x)
 
-    print(explain_hist.shape)
     np.save('shap_regression_historical.npy', explain_hist)
     np.save('shap_regression_add.npy', explain_add)
     np.save('shap_x_hist.npy', val.x.historical)
@@ -178,8 +177,8 @@ def earnn(
 
 
 if __name__ == '__main__':
-    # parsimonious()
-    # regression(experiment='nowcast')
-    # linear_nn()
+    parsimonious()
+    regression()
+    linear_nn()
+    rnn()
     earnn()
-    # earnn()

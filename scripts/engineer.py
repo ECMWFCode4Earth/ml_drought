@@ -6,7 +6,7 @@ from src.engineer import Engineer
 
 
 def engineer(experiment='one_month_forecast', process_static=True,
-             pred_months=12, expected_length=12):
+             pred_months=12):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
@@ -31,5 +31,5 @@ def engineer_static():
 
 
 if __name__ == '__main__':
-    # engineer(pred_months=12)
-    engineer_static()
+    engineer(pred_months=12)
+    # engineer_static()

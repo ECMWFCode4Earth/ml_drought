@@ -4,8 +4,8 @@ import sys
 sys.path.append('..')
 from src.exporters import (ERA5Exporter, VHIExporter,
                            CHIRPSExporter, ERA5ExporterPOS,
-                           GLEAMExporter, ESACCIExporter)
-from src.exporters.srtm import SRTMExporter
+                           GLEAMExporter, ESACCIExporter,
+                           S5Exporter, SRTMExporter)
 
 
 def export_era5():
@@ -85,10 +85,48 @@ def export_esa():
     exporter = ESACCIExporter(data_folder=data_path)
     exporter.export()
 
+
+def export_s5():
+    # if the working directory is alread ml_drought don't need ../data
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+
+    granularity = 'hourly'
+    pressure_level = False
+
+    exporter = S5Exporter(
+        data_folder=data_path,
+        granularity=granularity,
+        pressure_level=pressure_level,
+    )
+    variable = 'total_precipitation'
+    min_year = 1993
+    max_year = 2014
+    min_month = 1
+    max_month = 12
+    max_leadtime = None
+    pressure_levels = [200, 500, 925]
+    n_parallel_requests = 20
+
+    exporter.export(
+        variable=variable,
+        min_year=min_year,
+        max_year=max_year,
+        min_month=min_month,
+        max_month=max_month,
+        max_leadtime=max_leadtime,
+        pressure_levels=pressure_levels,
+        n_parallel_requests=n_parallel_requests,
+    )
+
+
 if __name__ == '__main__':
-    # export_era5()
-    # export_vhi()
-    # export_chirps()
-    # export_era5POS()
-    # export_gleam()
+    export_era5()
+    export_vhi()
+    export_chirps()
+    export_era5POS()
+    export_gleam()
     export_esa()
+    export_s5()
