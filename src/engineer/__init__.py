@@ -55,3 +55,13 @@ class Engineer:
             time granularity different from `'M'`
         """
         self.engineer_class.engineer(test_year, target_variable, pred_months, expected_length)
+
+    @staticmethod
+    def engineer_static_only(data_folder: Path = Path('data')):
+        """
+        Only process static data (i.e. data in interim/static).
+
+        :param data_folder: The location of the data folder.
+        """
+        engineer = _EngineerBase(data_folder, process_static=True)
+        engineer._process_static()

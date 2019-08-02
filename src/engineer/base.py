@@ -22,10 +22,13 @@ class _EngineerBase:
         assert self.interim_folder.exists(), \
             f'{data_folder / "interim"} does not exist. Has the preprocesser been run?'
 
-        # specific folder for that
-        self.output_folder = data_folder / 'features' / self.name
-        if not self.output_folder.exists():
-            self.output_folder.mkdir(parents=True)
+        try:
+            # specific folder for that
+            self.output_folder = data_folder / 'features' / self.name
+            if not self.output_folder.exists():
+                self.output_folder.mkdir(parents=True)
+        except AttributeError:
+            print('Name not defined! No experiment folder set up')
 
         if self.process_static:
             self.static_output_folder = data_folder / 'features/static'
