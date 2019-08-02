@@ -131,23 +131,19 @@ class TestLinearNetwork:
         # Expect to have 12 more features if use_pred_months
         if experiment == 'nowcast':
             n_expected = 107
-            if monthly_agg:
-                n_expected *= 3
-            if use_pred_months:
-                n_expected += 12
-            if use_latlons:
-                n_expected += 2
         else:
             # NOTE: data hasn't been through `src.Engineer` therefore including
             #  current data (hence why more features than `nowcast`)
             n_expected = 108
-            if monthly_agg:
-                n_expected *= 3
-            if use_pred_months:
-                n_expected += 12
-            if use_latlons:
-                n_expected += 2
-        n_expected += 3 * 2  # +3 for the yearly means, +3 for yearly stds
+
+        if monthly_agg:
+            n_expected *= 2
+        if use_pred_months:
+            n_expected += 12
+        if use_latlons:
+            n_expected += 2
+
+        n_expected += 3  # +3 for the yearly means
 
         if static:
             n_expected += 1  # for the static variable

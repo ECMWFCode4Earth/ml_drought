@@ -265,16 +265,11 @@ class _BaseIter:
 
     def _calculate_aggs(self, x: xr.Dataset) -> np.ndarray:
         yearly_mean = x.mean(dim=['time', 'lat', 'lon'])
-        yearly_mean_np = yearly_mean.to_array().values
-
-        yearly_std = x.std(dim=['time', 'lat', 'lon'])
-        yearly_std_np = yearly_std.to_array().values
-
-        yearly_agg = np.concatenate((yearly_mean_np, yearly_std_np))
+        yearly_agg = yearly_mean.to_array().values
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
             self.normalizing_array_ym = self.calculate_normalizing_array(
-                list(yearly_mean.data_vars) + list(yearly_std.data_vars), yearly_agg=True)
+                list(yearly_mean.data_vars), yearly_agg=True)
 
         if self.normalizing_array_ym is not None:
             yearly_agg = (yearly_agg - self.normalizing_array_ym['mean']) / \
@@ -417,7 +412,7 @@ class _BaseIter:
                         historical_nans_summed == 0
                     ) & (y_nans_summed == 0) & (
                         current_nans_summed == 0
-                    )
+                    ) & (static_nans_summed == 0)
                 )[0]
                 train_data.current = train_data.current[notnan_indices]  # type: ignore
 
@@ -456,15 +451,8 @@ class _BaseIter:
             monthly_mean_values = x.mean(dim=['lat', 'lon'])
             mean_dataset = xr.ones_like(x) * monthly_mean_values
 
-            # then, the std
-            monthly_std_values = x.std(dim=['lat', 'lon'])
-            std_dataset = xr.ones_like(x) * monthly_std_values
-
             for var in mean_dataset.data_vars:
                 x[f'spatial_mean_{var}'] = mean_dataset[var]
-
-            for var in std_dataset.data_vars:
-                x[f'spatial_std_{var}'] = std_dataset[var]
 
         if surrounding_pixels is not None:
             lat_shifts = lon_shifts = range(-surrounding_pixels, surrounding_pixels + 1)
