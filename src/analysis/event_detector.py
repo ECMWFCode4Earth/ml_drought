@@ -193,6 +193,8 @@ class EventDetector:
                method: str = 'std',
                value: Optional[float] = None) -> None:
         """
+        Detect threshold exceedences above or below a threshold. The threshold
+        can also be calculated or applied from elsewhere.
 
         Arguments:
         ---------
