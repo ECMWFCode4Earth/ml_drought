@@ -25,6 +25,21 @@ class TestNowcastEngineer:
         assert (tmp_path / 'features' / 'nowcast').exists(), '\
         nowcast directory not made!'
 
+    def test_static(self, tmp_path):
+        _, expected_vars = _setup(tmp_path, add_times=False, static=True)
+        engineer = NowcastEngineer(tmp_path, process_static=True)
+
+        assert (tmp_path / 'features/static').exists(), 'Static output folder does not exist!'
+
+        engineer._process_static()
+
+        output_file = tmp_path / 'features/static/data.nc'
+        assert output_file.exists(), 'Static output folder does not exist!'
+        static_data = xr.open_dataset(output_file)
+
+        for var in expected_vars:
+            assert var in static_data.data_vars
+
     def test_yearsplit(self, tmp_path):
 
         _setup(tmp_path)

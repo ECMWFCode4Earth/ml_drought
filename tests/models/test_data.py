@@ -103,6 +103,9 @@ class TestBaseIter:
                 self.ignore_vars = ['precip']
                 self.monthly_aggs = False
 
+                self.static = None
+                self.static_normalizing_dict = None
+
         base_iterator = _BaseIter(MockLoader())
 
         arrays = base_iterator.ds_folder_to_np(data_dir, to_tensor=to_tensor)

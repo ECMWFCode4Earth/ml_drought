@@ -95,6 +95,7 @@ def linear_nn(
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
+    predictor.save_model()
 
     # The code below is commented out because of a bug in the shap deep Explainer which
     # prevents it from working. It has been fixed in master, but not deployed yet:
@@ -146,6 +147,7 @@ def rnn(
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
+    predictor.save_model()
 
     # See above; we need to update the shap version before this can be explained
 
@@ -170,6 +172,7 @@ def earnn(
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
+    predictor.save_model()
 
     # See above; we need to update the shap version before this can be explained
 

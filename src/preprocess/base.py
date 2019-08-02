@@ -27,6 +27,7 @@ class BasePreProcessor:
         The location of the data folder.
     """
     dataset: str
+    static: bool = False
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
         self.data_folder = data_folder
@@ -37,13 +38,18 @@ class BasePreProcessor:
             self.preprocessed_folder.mkdir(exist_ok=True, parents=True)
 
         try:
-            self.out_dir = self.preprocessed_folder / f'{self.dataset}_preprocessed'
-            if not self.out_dir.exists():
-                self.out_dir.mkdir()
+            if self.static:
+                folder_prefix = f'static/{self.dataset}'
+            else:
+                folder_prefix = self.dataset
 
-            self.interim = self.preprocessed_folder / f'{self.dataset}_interim'
+            self.out_dir = self.preprocessed_folder / f'{folder_prefix}_preprocessed'
+            if not self.out_dir.exists():
+                self.out_dir.mkdir(parents=True)
+
+            self.interim = self.preprocessed_folder / f'{folder_prefix}_interim'
             if not self.interim.exists():
-                self.interim.mkdir()
+                self.interim.mkdir(parents=True)
         except AttributeError:
             print('A dataset attribute must be added for '
                   'the interim and out directories to be created')

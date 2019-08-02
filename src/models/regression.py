@@ -26,10 +26,12 @@ class LinearRegression(ModelBase):
                  include_monthly_aggs: bool = True,
                  include_yearly_aggs: bool = True,
                  surrounding_pixels: Optional[int] = None,
-                 ignore_vars: Optional[List[str]] = None) -> None:
+                 ignore_vars: Optional[List[str]] = None,
+                 include_static: bool = True) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months,
                          include_pred_month, include_latlons, include_monthly_aggs,
-                         include_yearly_aggs, surrounding_pixels, ignore_vars)
+                         include_yearly_aggs, surrounding_pixels, ignore_vars,
+                         include_static)
 
         self.explainer: Optional[shap.LinearExplainer] = None
 
@@ -53,7 +55,8 @@ class LinearRegression(ModelBase):
                                           mask=train_mask,
                                           ignore_vars=self.ignore_vars,
                                           monthly_aggs=self.include_monthly_aggs,
-                                          surrounding_pixels=self.surrounding_pixels)
+                                          surrounding_pixels=self.surrounding_pixels,
+                                          static=self.include_static)
 
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
@@ -62,7 +65,8 @@ class LinearRegression(ModelBase):
                                         pred_months=self.pred_months, mask=val_mask,
                                         ignore_vars=self.ignore_vars,
                                         monthly_aggs=self.include_monthly_aggs,
-                                        surrounding_pixels=self.surrounding_pixels)
+                                        surrounding_pixels=self.surrounding_pixels,
+                                        static=self.include_static)
             batches_without_improvement = 0
             best_val_score = np.inf
         else:
@@ -73,7 +77,8 @@ class LinearRegression(ModelBase):
                                           shuffle_data=True, mode='train',
                                           ignore_vars=self.ignore_vars,
                                           monthly_aggs=self.include_monthly_aggs,
-                                          surrounding_pixels=self.surrounding_pixels)
+                                          surrounding_pixels=self.surrounding_pixels,
+                                          static=self.include_static)
         self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
 
         for epoch in range(num_epochs):
@@ -153,7 +158,8 @@ class LinearRegression(ModelBase):
             'batch_size': self.batch_size,
             'ignore_vars': self.ignore_vars,
             'include_monthly_aggs': self.include_monthly_aggs,
-            'include_yearly_aggs': self.include_yearly_aggs
+            'include_yearly_aggs': self.include_yearly_aggs,
+            'include_static': self.include_static
         }
 
         with (self.model_dir / 'model.pkl').open('wb') as f:
@@ -170,8 +176,8 @@ class LinearRegression(ModelBase):
             data_path=self.data_path, batch_file_size=self.batch_size,
             experiment=self.experiment, shuffle_data=False, mode='test',
             pred_months=self.pred_months, surrounding_pixels=self.surrounding_pixels,
-            ignore_vars=self.ignore_vars,
-            monthly_aggs=self.include_monthly_aggs)
+            ignore_vars=self.ignore_vars, monthly_aggs=self.include_monthly_aggs,
+            static=self.include_static)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -200,7 +206,8 @@ class LinearRegression(ModelBase):
                                       shuffle_data=False, mode='train',
                                       surrounding_pixels=self.surrounding_pixels,
                                       ignore_vars=self.ignore_vars,
-                                      monthly_aggs=self.include_monthly_aggs)
+                                      monthly_aggs=self.include_monthly_aggs,
+                                      static=self.include_static)
 
         means, sizes = [], []
         for x, _ in train_dataloader:
@@ -228,10 +235,11 @@ class LinearRegression(ModelBase):
                                          TrainData]) -> np.ndarray:
 
         if type(x) is tuple:
-            x_his, x_pm, x_latlons, x_cur, x_ym = x  # type: ignore
+            x_his, x_pm, x_latlons, x_cur, x_ym, x_static = x  # type: ignore
         elif type(x) == TrainData:
             x_his, x_pm, x_latlons = x.historical, x.pred_months, x.latlons  # type: ignore
             x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
+            x_static = x.static  # type: ignore
 
         assert x_his is not None, \
             'x[0] should be historical data, and therefore should not be None'
@@ -250,5 +258,7 @@ class LinearRegression(ModelBase):
             x_in = np.concatenate((x_in, x_cur), axis=-1)
         if self.include_yearly_aggs:
             x_in = np.concatenate((x_in, x_ym), axis=-1)
+        if self.include_static:
+            x_in = np.concatenate((x_in, x_static), axis=-1)
 
         return x_in

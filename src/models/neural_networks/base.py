@@ -27,10 +27,11 @@ class NNBase(ModelBase):
                  include_monthly_aggs: bool = True,
                  include_yearly_aggs: bool = True,
                  surrounding_pixels: Optional[int] = None,
-                 ignore_vars: Optional[List[str]] = None) -> None:
+                 ignore_vars: Optional[List[str]] = None,
+                 include_static: bool = True) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
                          include_latlons, include_monthly_aggs, include_yearly_aggs,
-                         surrounding_pixels, ignore_vars)
+                         surrounding_pixels, ignore_vars, include_static)
 
         # for reproducibility
         torch.manual_seed(42)
@@ -80,7 +81,8 @@ class NNBase(ModelBase):
                                           pred_months=self.pred_months,
                                           ignore_vars=self.ignore_vars,
                                           monthly_aggs=self.include_monthly_aggs,
-                                          surrounding_pixels=self.surrounding_pixels)
+                                          surrounding_pixels=self.surrounding_pixels,
+                                          static=self.include_static)
 
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
@@ -91,7 +93,8 @@ class NNBase(ModelBase):
                                         pred_months=self.pred_months,
                                         ignore_vars=self.ignore_vars,
                                         monthly_aggs=self.include_monthly_aggs,
-                                        surrounding_pixels=self.surrounding_pixels)
+                                        surrounding_pixels=self.surrounding_pixels,
+                                        static=self.include_static)
 
             batches_without_improvement = 0
             best_val_score = np.inf
@@ -104,7 +107,8 @@ class NNBase(ModelBase):
                                           pred_months=self.pred_months,
                                           ignore_vars=self.ignore_vars,
                                           monthly_aggs=self.include_monthly_aggs,
-                                          surrounding_pixels=self.surrounding_pixels)
+                                          surrounding_pixels=self.surrounding_pixels,
+                                          static=self.include_static)
 
         # initialize the model
         if self.model is None:
@@ -126,7 +130,8 @@ class NNBase(ModelBase):
                                       self._one_hot_months(x_batch[1]),
                                       x_batch[2],
                                       x_batch[3],
-                                      x_batch[4])
+                                      x_batch[4],
+                                      x_batch[5])
                     loss = F.smooth_l1_loss(pred, y_batch)
                     loss.backward()
                     optimizer.step()
@@ -146,7 +151,8 @@ class NNBase(ModelBase):
                                                 self._one_hot_months(x[1]),
                                                 x[2],
                                                 x[3],
-                                                x[4])
+                                                x[4],
+                                                x[5])
                         val_loss = F.mse_loss(val_pred_y, y)
 
                         val_rmse.append(math.sqrt(val_loss.item()))
@@ -176,7 +182,8 @@ class NNBase(ModelBase):
                                         pred_months=self.pred_months, to_tensor=True,
                                         ignore_vars=self.ignore_vars,
                                         monthly_aggs=self.include_monthly_aggs,
-                                        surrounding_pixels=self.surrounding_pixels)
+                                        surrounding_pixels=self.surrounding_pixels,
+                                        static=self.include_static)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -189,7 +196,7 @@ class NNBase(ModelBase):
                 for key, val in dict.items():
                     preds = self.model(
                         val.x.historical, self._one_hot_months(val.x.pred_months),
-                        val.x.latlons, val.x.current, val.x.yearly_aggs
+                        val.x.latlons, val.x.current, val.x.yearly_aggs, val.x.static
                     )
                     preds_dict[key] = preds.numpy()
                     test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons}
@@ -208,13 +215,15 @@ class NNBase(ModelBase):
                                       to_tensor=True,
                                       ignore_vars=self.ignore_vars,
                                       monthly_aggs=self.include_monthly_aggs,
-                                      surrounding_pixels=self.surrounding_pixels)
+                                      surrounding_pixels=self.surrounding_pixels,
+                                      static=self.include_static)
 
         output_tensors: List[torch.Tensor] = []
         output_pm: List[torch.Tensor] = []
         output_ll: List[torch.Tensor] = []
         output_cur: List[torch.Tensor] = []
         output_ym: List[torch.Tensor] = []
+        output_static: List[torch.Tensor] = []
 
         samples_per_instance = max(1, sample_size // len(train_dataloader))
 
@@ -235,11 +244,14 @@ class NNBase(ModelBase):
                         output_cur.append(x[3])
                     if self.include_yearly_aggs:
                         output_ym.append(x[4])
+                    if self.include_static:
+                        output_static.append(x[5])
         return [torch.stack(output_tensors),  # type: ignore
                 torch.cat(output_pm, dim=0) if len(output_pm) > 0 else None,
                 torch.cat(output_ll, dim=0) if len(output_ll) > 0 else None,
                 torch.cat(output_cur, dim=0) if len(output_cur) > 0 else None,
-                torch.cat(output_ym, dim=0) if len(output_cur) > 0 else None]
+                torch.cat(output_ym, dim=0) if len(output_cur) > 0 else None,
+                torch.cat(output_static, dim=0) if len(output_static) > 0 else None]
 
     def _one_hot_months(self, indices: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
         if self.include_pred_month:

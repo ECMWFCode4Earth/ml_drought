@@ -26,10 +26,11 @@ class RecurrentNetwork(NNBase):
                  include_monthly_aggs: bool = True,
                  include_yearly_aggs: bool = True,
                  surrounding_pixels: Optional[int] = None,
-                 ignore_vars: Optional[List[str]] = None) -> None:
+                 ignore_vars: Optional[List[str]] = None,
+                 include_static: bool = True) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
                          include_latlons, include_monthly_aggs, include_yearly_aggs,
-                         surrounding_pixels, ignore_vars)
+                         surrounding_pixels, ignore_vars, include_static)
 
         # to initialize and save the model
         self.hidden_size = hidden_size
@@ -40,6 +41,7 @@ class RecurrentNetwork(NNBase):
         self.features_per_month: Optional[int] = None
         self.current_size: Optional[int] = None
         self.yearly_agg_size: Optional[int] = None
+        self.static_size: Optional[int] = None
 
     def save_model(self):
 
@@ -49,7 +51,8 @@ class RecurrentNetwork(NNBase):
             'model': {'state_dict': self.model.state_dict(),
                       'features_per_month': self.features_per_month,
                       'current_size': self.current_size,
-                      'yearly_agg_size': self.yearly_agg_size},
+                      'yearly_agg_size': self.yearly_agg_size,
+                      'static_size': self.static_size},
             'batch_size': self.batch_size,
             'hidden_size': self.hidden_size,
             'rnn_dropout': self.rnn_dropout,
@@ -60,17 +63,19 @@ class RecurrentNetwork(NNBase):
             'ignore_vars': self.ignore_vars,
             'include_monthly_aggs': self.include_monthly_aggs,
             'include_yearly_aggs': self.include_yearly_aggs,
-            'experiment': self.experiment
+            'experiment': self.experiment,
+            'include_static': self.include_static
         }
 
         with (self.model_dir / 'model.pkl').open('wb') as f:
             pickle.dump(model_dict, f)
 
     def load(self, state_dict: Dict, features_per_month: int, current_size: Optional[int],
-             yearly_agg_size: Optional[int]) -> None:
+             yearly_agg_size: Optional[int], static_size: Optional[int]) -> None:
         self.features_per_month = features_per_month
         self.current_size = current_size
         self.yearly_agg_size = yearly_agg_size
+        self.static_size = static_size
 
         self.model: RNN = RNN(features_per_month=self.features_per_month,
                               dense_features=self.dense_features,
@@ -80,7 +85,8 @@ class RecurrentNetwork(NNBase):
                               include_latlons=self.include_latlons,
                               experiment=self.experiment,
                               current_size=self.current_size,
-                              yearly_agg_size=self.yearly_agg_size)
+                              yearly_agg_size=self.yearly_agg_size,
+                              static_size=self.static_size)
         self.model.load_state_dict(state_dict)
 
     def _initialize_model(self, x_ref: Optional[Tuple[torch.Tensor, ...]]) -> nn.Module:
@@ -100,6 +106,11 @@ class RecurrentNetwork(NNBase):
                     f"x_ref can't be None if features_per_month or current_size is not defined"
                 self.yearly_agg_size = x_ref[4].shape[-1]
 
+        if self.include_static:
+            if self.static_size is None:
+                assert x_ref is not None
+                self.static_size = x_ref[5].shape[-1]
+
         return RNN(features_per_month=self.features_per_month,
                    dense_features=self.dense_features,
                    hidden_size=self.hidden_size,
@@ -108,20 +119,22 @@ class RecurrentNetwork(NNBase):
                    include_latlons=self.include_latlons,
                    experiment=self.experiment,
                    current_size=self.current_size,
-                   yearly_agg_size=self.yearly_agg_size)
+                   yearly_agg_size=self.yearly_agg_size,
+                   static_size=self.static_size)
 
 
 class RNN(nn.Module):
     def __init__(self, features_per_month, dense_features, hidden_size,
                  rnn_dropout, include_pred_month,
                  include_latlons, experiment, current_size=None,
-                 yearly_agg_size=None):
+                 yearly_agg_size=None, static_size=None):
         super().__init__()
 
         self.experiment = experiment
         self.include_pred_month = include_pred_month
         self.include_latlons = include_latlons
         self.include_yearly_agg = False
+        self.include_static = False
 
         self.dropout = nn.Dropout(rnn_dropout)
         self.rnn = UnrolledRNN(input_size=features_per_month,
@@ -140,6 +153,9 @@ class RNN(nn.Module):
         if yearly_agg_size is not None:
             self.include_yearly_agg = True
             dense_input_size += yearly_agg_size
+        if static_size is not None:
+            self.include_static = True
+            dense_input_size += static_size
 
         dense_features.insert(0, dense_input_size)
         if dense_features[-1] != 1:
@@ -164,7 +180,8 @@ class RNN(nn.Module):
             nn.init.kaiming_uniform_(dense_layer.weight.data)
             nn.init.constant_(dense_layer.bias.data, 0)
 
-    def forward(self, x, pred_month=None, latlons=None, current=None, yearly_aggs=None):
+    def forward(self, x, pred_month=None, latlons=None, current=None, yearly_aggs=None,
+                static=None):
 
         sequence_length = x.shape[1]
 
@@ -195,6 +212,8 @@ class RNN(nn.Module):
             x = torch.cat((x, current), dim=-1)
         if self.include_yearly_agg:
             x = torch.cat((x, yearly_aggs), dim=-1)
+        if self.include_static:
+            x = torch.cat((x, static), dim=-1)
 
         for layer_number, dense_layer in enumerate(self.dense_layers):
             x = dense_layer(x)

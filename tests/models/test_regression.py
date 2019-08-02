@@ -54,6 +54,7 @@ class TestLinearRegression:
                               (False, 'nowcast', True)])
     def test_train(self, tmp_path, capsys, use_pred_months, experiment, monthly_agg):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
+        x_static, _, _ = _make_dataset(size=(5, 5), add_times=False)
         y = x.isel(time=[-1])
 
         x_add1, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='precip')
@@ -67,20 +68,31 @@ class TestLinearRegression:
                      'temp': {'mean': np.zeros((1, x.to_array().values.shape[1])),
                               'std': np.ones((1, x.to_array().values.shape[1]))}}
 
+        static_norm_dict = {'VHI': {'mean': 0.0,
+                            'std': 1.0}}
+
         test_features = tmp_path / f'features/{experiment}/train/hello'
         test_features.mkdir(parents=True)
         pred_features = tmp_path / f'features/{experiment}/test/hello'
         pred_features.mkdir(parents=True)
+        static_features = tmp_path / f'features/static'
+        static_features.mkdir(parents=True)
 
         with (
             tmp_path / f'features/{experiment}/normalizing_dict.pkl'
         ).open('wb') as f:
             pickle.dump(norm_dict, f)
 
+        with (
+            tmp_path / f'features/static/normalizing_dict.pkl'
+        ).open('wb') as f:
+            pickle.dump(static_norm_dict, f)
+
         x.to_netcdf(test_features / 'x.nc')
         x.to_netcdf(pred_features / 'x.nc')
         y.to_netcdf(test_features / 'y.nc')
         y.to_netcdf(pred_features / 'y.nc')
+        x_static.to_netcdf(static_features / 'data.nc')
 
         model = LinearRegression(
             tmp_path, include_pred_month=use_pred_months, experiment=experiment,
@@ -89,7 +101,7 @@ class TestLinearRegression:
         model.train()
 
         captured = capsys.readouterr()
-        expected_stdout = 'Epoch 1, train RMSE: 0.'
+        expected_stdout = 'Epoch 1, train RMSE: '
         assert expected_stdout in captured.out, \
             f'Expected stdout to be {expected_stdout}, got {captured.out}'
 
@@ -107,6 +119,7 @@ class TestLinearRegression:
             coef_size += 12
 
         coef_size += 6  # for the yearly aggs
+        coef_size += 1  # for the static variable
 
         assert model.model.coef_.size == coef_size, f'Got unexpected coef size'
 
@@ -136,7 +149,7 @@ class TestLinearRegression:
             return MockIterator()
 
         def do_nothing(self, data_path, batch_file_size, shuffle_data, mode, pred_months,
-                       surrounding_pixels, monthly_aggs, ignore_vars):
+                       surrounding_pixels, monthly_aggs, ignore_vars, static):
 
             pass
 

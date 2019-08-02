@@ -23,10 +23,11 @@ class LinearNetwork(NNBase):
                  include_monthly_aggs: bool = True,
                  include_yearly_aggs: bool = True,
                  surrounding_pixels: Optional[int] = None,
-                 ignore_vars: Optional[List[str]] = None) -> None:
+                 ignore_vars: Optional[List[str]] = None,
+                 include_static: bool = True) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
                          include_latlons, include_monthly_aggs, include_yearly_aggs,
-                         surrounding_pixels, ignore_vars)
+                         surrounding_pixels, ignore_vars, include_static)
 
         if type(layer_sizes) is int:
             layer_sizes = cast(List[int], [layer_sizes])
@@ -53,6 +54,7 @@ class LinearNetwork(NNBase):
             'ignore_vars': self.ignore_vars,
             'include_monthly_aggs': self.include_monthly_aggs,
             'include_yearly_aggs': self.include_yearly_aggs,
+            'include_static': self.include_static
         }
 
         with (self.model_dir / 'model.pkl').open('wb') as f:
@@ -67,7 +69,8 @@ class LinearNetwork(NNBase):
                                               include_pred_month=self.include_pred_month,
                                               include_latlons=self.include_latlons,
                                               include_yearly_aggs=self.include_yearly_aggs,
-                                              experiment=self.experiment)
+                                              experiment=self.experiment,
+                                              include_static=self.include_static)
         self.model.load_state_dict(state_dict)
 
     def _initialize_model(self, x_ref: Optional[Tuple[torch.Tensor, ...]]) -> nn.Module:
@@ -80,25 +83,32 @@ class LinearNetwork(NNBase):
             if self.include_yearly_aggs:
                 ym_tensor = x_ref[4]
                 input_size += ym_tensor.shape[-1]
+            if self.include_static:
+                static_tensor = x_ref[5]
+                input_size += static_tensor.shape[-1]
             self.input_size = input_size
+
         return LinearModel(input_size=self.input_size,
                            layer_sizes=self.layer_sizes,
                            dropout=self.dropout,
                            include_pred_month=self.include_pred_month,
                            include_latlons=self.include_latlons,
                            include_yearly_aggs=self.include_yearly_aggs,
-                           experiment=self.experiment)
+                           experiment=self.experiment,
+                           include_static=self.include_static)
 
 
 class LinearModel(nn.Module):
 
     def __init__(self, input_size, layer_sizes, dropout, include_pred_month,
-                 include_latlons, include_yearly_aggs, experiment='one_month_forecast'):
+                 include_latlons, include_yearly_aggs, include_static,
+                 experiment='one_month_forecast'):
         super().__init__()
 
         self.include_pred_month = include_pred_month
         self.include_latlons = include_latlons
         self.include_yearly_aggs = include_yearly_aggs
+        self.include_static = include_static
         self.experiment = experiment
 
         # change the size of inputs if include_pred_month
@@ -132,7 +142,7 @@ class LinearModel(nn.Module):
         nn.init.constant_(self.final_dense.bias.data, 0)
 
     def forward(self, x, pred_month=None, latlons=None, current=None,
-                yearly_aggs=None):
+                yearly_aggs=None, static=None):
         # flatten the final 2 dimensions (time / feature)
         x = x.contiguous().view(x.shape[0], -1)
 
@@ -147,6 +157,8 @@ class LinearModel(nn.Module):
             x = torch.cat((x, current), dim=-1)
         if self.include_yearly_aggs:
             x = torch.cat((x, yearly_aggs), dim=-1)
+        if self.include_static:
+            x = torch.cat((x, static), dim=-1)
 
         # pass the inputs through the layers
         for layer in self.dense_layers:
