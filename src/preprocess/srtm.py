@@ -37,6 +37,14 @@ class SRTMPreprocessor(BasePreProcessor):
 
         remapped_ds = xr.open_dataset(regrid_output)
 
+        reference_grid = self.load_reference_grid(regrid)
+
+        # the CDO method yields rounding errors which make merging datasets tricky
+        # (e.g. 32.4999 != 32.5). This makes sure the longitude and latitude grids
+        # exactly match the reference
+        remapped_ds['lon'] = reference_grid.lon
+        remapped_ds['lat'] = reference_grid.lat
+
         return remapped_ds
 
     def preprocess(self, subset_str: str = 'kenya',
