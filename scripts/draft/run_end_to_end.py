@@ -142,6 +142,16 @@ def engineer_data(data_path):
     engineer(experiment='nowcast')
 
 
+# ----------------------------------------------------------------
+# Run the actual models
+# ----------------------------------------------------------------
+
+def models(data_path):
+
+    print("Running persistence model")
+    predictor = Persistence(data_path, experiment=experiment)
+    predictor.evaluate(save_preds=True)
+
 if __name__ == '__main__':
     # get the data path
     if Path('.').absolute().name == 'ml_drought':
@@ -164,3 +174,6 @@ if __name__ == '__main__':
     # engineer
     print("** Running Engineer **")
     engineer_data(data_path)
+
+    # models
+    print("** Running Models **")
