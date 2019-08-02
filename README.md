@@ -57,7 +57,7 @@ For updates follow [@tommylees112](https://twitter.com/tommylees112) on twitter 
 
 ## Pipeline <a name="pipeline"></a>
 
-Currently, the entrypoint into the pipeline are the scripts in the [scripts folder](scripts) - see the
+Currently, the entrypoints into the pipeline are the scripts in the [scripts folder](scripts) - see the
 [scripts README](scripts/README.md) for more information.
 
 In the future, this will be replaced by the [`run.py`](run.py) file, with [json configurations](pipeline_config).
