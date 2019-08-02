@@ -4,7 +4,9 @@ These scripts are the practical entrypoints into the pipeline.
 In the future, they will be replaced by the [`run.py`](../run.py) file, with configurations defined by `.json` objects.
 
 The scripts match the major steps of the pipeline, which are also described in more detail in the 
-[notebooks documentation](../notebooks/docs).
+[notebooks documentation](../notebooks/docs). 
+In nearly all cases, the classes and public functions are documented using docstrings. This documentation can be exposed
+using [`help`](https://docs.python.org/3/library/functions.html#help).
 
 Running all the current scripts (which would roughly equate to running the pipeline end to end) requires roughly
 **500 GB** of disk space. We can successfully run all the steps using a google cloud instance with **13GB** of memory.
