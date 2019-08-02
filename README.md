@@ -57,6 +57,9 @@ For updates follow [@tommylees112](https://twitter.com/tommylees112) on twitter 
 
 ## Pipeline <a name="pipeline"></a>
 
+A blog post describing the goals and design of the pipeline can be found 
+[here](https://medium.com/@gabrieltseng/a-machine-learning-pipeline-for-climate-research-ebf83b2b349a).
+
 Currently, the entrypoints into the pipeline are the scripts in the [scripts folder](scripts) - see the
 [scripts README](scripts/README.md) for more information.
 
