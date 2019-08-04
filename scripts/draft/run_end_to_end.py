@@ -166,9 +166,9 @@ def run_models(data_path, experiment):
     print(f"Running Linear Regression model: {experiment}")
     predictor = LinearRegression(
         data_path, experiment=experiment,
-        include_pred_month=True,surrounding_pixels=1
+        include_pred_month=True, surrounding_pixels=1
     )
-
+    predictor.train(num_epochs=10, early_stopping=3)
     # linear network
     print(f"Running Linear Neural Network model: {experiment}")
     predictor = LinearNetwork(
@@ -176,7 +176,7 @@ def run_models(data_path, experiment):
         layer_sizes=[100], include_pred_month=True,
         surrounding_pixels=1
     )
-    predictor.train(num_epochs=50, early_stopping=5)
+    predictor.train(num_epochs=10, early_stopping=3)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
@@ -189,7 +189,7 @@ def run_models(data_path, experiment):
         include_pred_month=True,
         surrounding_pixels=1
     )
-    predictor.train(num_epochs=50, early_stopping=5)
+    predictor.train(num_epochs=10, early_stopping=3)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
@@ -202,7 +202,7 @@ def run_models(data_path, experiment):
         include_pred_month=True,
         surrounding_pixels=1
     )
-    predictor.train(num_epochs=50, early_stopping=5)
+    predictor.train(num_epochs=10, early_stopping=3)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 

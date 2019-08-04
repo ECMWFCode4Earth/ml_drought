@@ -10,6 +10,7 @@
 #   docker-command
 #   use this command to start a docker container
 # docker run -it --name cdo --rm -v $(pwd):~/cdo_install -w ~/cdo_install ubuntu:latest bash
+mkdir -p ~/cdo_install
 
 home=~/cdo_install
 apt-get update && apt-get install -y wget build-essential checkinstall unzip m4 curl libcurl4-gnutls-dev
