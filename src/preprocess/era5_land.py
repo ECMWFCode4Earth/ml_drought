@@ -103,7 +103,7 @@ class ERA5LandPreprocessor(BasePreProcessor):
         print(f'Reading data from {self.raw_folder}. Writing to {self.interim}')
         nc_files = self.get_filepaths()
         if years is not None:
-            nc_files = [f for f in nc_files if int(f.parents[0]) in years]
+            nc_files = [f for f in nc_files if int(f.parents[0]) in years]  # type: ignore
 
         # run for one variable or all variables?
         if variable is not None:
