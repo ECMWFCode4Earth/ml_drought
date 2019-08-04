@@ -145,10 +145,10 @@ def engineer(data_path, experiment='one_month_forecast', process_static=True,
 
 def engineer_data(data_path):
     print('** Engineering data for one_month_forecast experiment **')
-    engineer(experiment='one_month_forecast')
+    engineer(data_path=data_path, experiment='one_month_forecast')
 
     print('** Engineering data for nowcast experiment **')
-    engineer(experiment='nowcast')
+    engineer(data_path=data_path, experiment='nowcast')
 
 
 # ----------------------------------------------------------------
@@ -165,14 +165,14 @@ def run_models(data_path, experiment):
     # linear regression
     print(f"Running Linear Regression model: {experiment}")
     predictor = LinearRegression(
-        data_path, experiment=experiments,
+        data_path, experiment=experiment,
         include_pred_month=True,surrounding_pixels=1
     )
 
     # linear network
     print(f"Running Linear Neural Network model: {experiment}")
     predictor = LinearNetwork(
-        data_path, experiment=experiment,
+        data_folder=data_path, experiment=experiment,
         layer_sizes=[100], include_pred_month=True,
         surrounding_pixels=1
     )
