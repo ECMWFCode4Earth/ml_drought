@@ -6,7 +6,7 @@ import pickle
 
 import shap
 
-from typing import cast, Dict, List, Tuple, Optional
+from typing import cast, Dict, List, Union, Tuple, Optional
 
 from .base import ModelBase
 from .utils import chunk_array
@@ -22,10 +22,16 @@ class LinearRegression(ModelBase):
                  batch_size: int = 1,
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
-                 include_latlons: bool = True,
-                 surrounding_pixels: Optional[int] = None) -> None:
+                 include_latlons: bool = False,
+                 include_monthly_aggs: bool = True,
+                 include_yearly_aggs: bool = True,
+                 surrounding_pixels: Optional[int] = None,
+                 ignore_vars: Optional[List[str]] = None,
+                 include_static: bool = True) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months,
-                         include_pred_month, include_latlons, surrounding_pixels)
+                         include_pred_month, include_latlons, include_monthly_aggs,
+                         include_yearly_aggs, surrounding_pixels, ignore_vars,
+                         include_static)
 
         self.explainer: Optional[shap.LinearExplainer] = None
 
@@ -47,14 +53,20 @@ class LinearRegression(ModelBase):
                                           shuffle_data=True, mode='train',
                                           pred_months=self.pred_months,
                                           mask=train_mask,
+                                          ignore_vars=self.ignore_vars,
+                                          monthly_aggs=self.include_monthly_aggs,
+                                          surrounding_pixels=self.surrounding_pixels,
+                                          static=self.include_static)
 
-                                          surrounding_pixels=self.surrounding_pixels)
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
                                         experiment=self.experiment,
                                         shuffle_data=False, mode='train',
                                         pred_months=self.pred_months, mask=val_mask,
-                                        surrounding_pixels=self.surrounding_pixels)
+                                        ignore_vars=self.ignore_vars,
+                                        monthly_aggs=self.include_monthly_aggs,
+                                        surrounding_pixels=self.surrounding_pixels,
+                                        static=self.include_static)
             batches_without_improvement = 0
             best_val_score = np.inf
         else:
@@ -63,7 +75,10 @@ class LinearRegression(ModelBase):
                                           batch_file_size=self.batch_size,
                                           pred_months=self.pred_months,
                                           shuffle_data=True, mode='train',
-                                          surrounding_pixels=self.surrounding_pixels)
+                                          ignore_vars=self.ignore_vars,
+                                          monthly_aggs=self.include_monthly_aggs,
+                                          surrounding_pixels=self.surrounding_pixels,
+                                          static=self.include_static)
         self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
 
         for epoch in range(num_epochs):
@@ -73,28 +88,7 @@ class LinearRegression(ModelBase):
                                                     batch_size,
                                                     shuffle=True):
                     batch_y = cast(np.ndarray, batch_y)
-                    assert batch_x[0] is not None, \
-                        f'x[0] should be historical data, and therefore should not be None'
-                    x_in = batch_x[0].reshape(
-                        batch_x[0].shape[0],
-                        batch_x[0].shape[1] * batch_x[0].shape[2])
-
-                    # one-hot encoded pred_months
-                    if self.include_pred_month:
-                        pred_months = batch_x[1]  # .astype(int)
-                        # one hot encoding, should be num_classes + 1, but
-                        # for us its + 2, since 0 is not a class either
-                        pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
-                        x_in = np.concatenate(
-                            (x_in, pred_months_onehot), axis=-1
-                        )
-                    if self.include_latlons:
-                        x_in = np.concatenate((x_in, batch_x[2]), axis=-1)
-                    if self.experiment == 'nowcast':
-                        current_time_data = batch_x[3]
-                        x_in = np.concatenate(
-                            (x_in, current_time_data), axis=-1
-                        )
+                    x_in = self._concatenate_data(batch_x)
 
                     # fit the model
                     self.model.partial_fit(x_in, batch_y.ravel())
@@ -106,25 +100,7 @@ class LinearRegression(ModelBase):
             if early_stopping is not None:
                 val_rmse = []
                 for x, y in val_dataloader:
-                    x_in = x[0].reshape(
-                        x[0].shape[0], x[0].shape[1] * x[0].shape[2]
-                    )
-                    if self.include_pred_month:
-                        pred_months = x[1]
-                        # one hot encoding, should be num_classes + 1, but
-                        # for us its + 2, since 0 is not a class either
-                        pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
-                        x_in = np.concatenate(
-                            (x_in, pred_months_onehot), axis=-1
-                        )
-                    if self.include_latlons:
-                        x_in = np.concatenate((x_in, x[2]), axis=-1)
-                    if self.experiment == 'nowcast':
-                        current_time_data = x[3]
-                        x_in = np.concatenate(
-                            (x_in, current_time_data), axis=-1
-                        )
-
+                    x_in = self._concatenate_data(x)
                     val_pred_y = self.model.predict(x_in)
                     val_rmse.append(np.sqrt(mean_squared_error(y, val_pred_y)))
 
@@ -157,18 +133,7 @@ class LinearRegression(ModelBase):
 
         x = data.historical
         batch, timesteps, dims = x.shape[0], x.shape[1], x.shape[2]
-        reshaped_x = x.reshape(batch, timesteps * dims)
-
-        if self.include_pred_month:
-            pred_months = data.pred_months
-            pred_months = np.eye(14)[pred_months][:, 1:-1]
-            reshaped_x = np.concatenate((reshaped_x, pred_months), axis=-1)
-        if self.include_latlons:
-            latlons = data.latlons
-            reshaped_x = np.concatenate((reshaped_x, latlons), axis=-1)
-        if self.experiment == 'nowcast':
-            current = data.current
-            reshaped_x = np.concatenate((reshaped_x, current), axis=-1)
+        reshaped_x = self._concatenate_data(data)
 
         explanations = self.explainer.shap_values(reshaped_x)
 
@@ -190,7 +155,11 @@ class LinearRegression(ModelBase):
             'pred_months': self.pred_months,
             'include_pred_month': self.include_pred_month,
             'surrounding_pixels': self.surrounding_pixels,
-            'batch_size': self.batch_size
+            'batch_size': self.batch_size,
+            'ignore_vars': self.ignore_vars,
+            'include_monthly_aggs': self.include_monthly_aggs,
+            'include_yearly_aggs': self.include_yearly_aggs,
+            'include_static': self.include_static
         }
 
         with (self.model_dir / 'model.pkl').open('wb') as f:
@@ -206,7 +175,9 @@ class LinearRegression(ModelBase):
         test_arrays_loader = DataLoader(
             data_path=self.data_path, batch_file_size=self.batch_size,
             experiment=self.experiment, shuffle_data=False, mode='test',
-            pred_months=self.pred_months, surrounding_pixels=self.surrounding_pixels)
+            pred_months=self.pred_months, surrounding_pixels=self.surrounding_pixels,
+            ignore_vars=self.ignore_vars, monthly_aggs=self.include_monthly_aggs,
+            static=self.include_static)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -215,21 +186,7 @@ class LinearRegression(ModelBase):
 
         for dict in test_arrays_loader:
             for key, val in dict.items():
-                x = val.x.historical
-                x = x.reshape(x.shape[0], x.shape[1] * x.shape[2])
-                if self.include_pred_month:
-                    pred_months = val.x.pred_months
-                    # one hot encoding, should be num_classes + 1, but
-                    # for us its + 2, since 0 is not a class either
-                    pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
-                    x = np.concatenate((x, pred_months_onehot), axis=-1)
-                if self.include_latlons:
-                    x = np.concatenate((x, val.x.latlons), axis=-1)
-                if self.experiment == 'nowcast':
-                    # target_month data for non-target variables
-                    current_data = val.x.current
-                    x = np.concatenate((x, current_data), axis=-1)
-
+                x = self._concatenate_data(val.x)
                 preds = self.model.predict(x)
                 preds_dict[key] = preds
                 test_arrays_dict[key] = {'y': val.y, 'latlons': val.latlons}
@@ -247,7 +204,10 @@ class LinearRegression(ModelBase):
                                       batch_file_size=1,
                                       pred_months=self.pred_months,
                                       shuffle_data=False, mode='train',
-                                      surrounding_pixels=self.surrounding_pixels)
+                                      surrounding_pixels=self.surrounding_pixels,
+                                      ignore_vars=self.ignore_vars,
+                                      monthly_aggs=self.include_monthly_aggs,
+                                      static=self.include_static)
 
         means, sizes = [], []
         for x, _ in train_dataloader:
@@ -260,7 +220,7 @@ class LinearRegression(ModelBase):
                 pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
                 x_in = np.concatenate((x_in, pred_months_onehot), axis=-1)
             if self.experiment == 'nowcast':
-                current = x[2]
+                current = x[3]
                 x_in = np.concatenate((x_in, current), axis=-1)
             sizes.append(x_in.shape[0])
             means.append(x_in.mean(axis=0))
@@ -270,3 +230,35 @@ class LinearRegression(ModelBase):
             mean * size / total_size for mean, size in zip(means, sizes)
         ]
         return sum(weighted_means)
+
+    def _concatenate_data(self, x: Union[Tuple[Optional[np.ndarray], ...],
+                                         TrainData]) -> np.ndarray:
+
+        if type(x) is tuple:
+            x_his, x_pm, x_latlons, x_cur, x_ym, x_static = x  # type: ignore
+        elif type(x) == TrainData:
+            x_his, x_pm, x_latlons = x.historical, x.pred_months, x.latlons  # type: ignore
+            x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
+            x_static = x.static  # type: ignore
+
+        assert x_his is not None, \
+            'x[0] should be historical data, and therefore should not be None'
+        x_in = x_his.reshape(x_his.shape[0], x_his.shape[1] * x_his.shape[2])
+
+        if self.include_pred_month:
+            # one hot encoding, should be num_classes + 1, but
+            # for us its + 2, since 0 is not a class either
+            pred_months_onehot = np.eye(14)[x_pm][:, 1:-1]
+            x_in = np.concatenate(
+                (x_in, pred_months_onehot), axis=-1
+            )
+        if self.include_latlons:
+            x_in = np.concatenate((x_in, x_latlons), axis=-1)
+        if self.experiment == 'nowcast':
+            x_in = np.concatenate((x_in, x_cur), axis=-1)
+        if self.include_yearly_aggs:
+            x_in = np.concatenate((x_in, x_ym), axis=-1)
+        if self.include_static:
+            x_in = np.concatenate((x_in, x_static), axis=-1)
+
+        return x_in

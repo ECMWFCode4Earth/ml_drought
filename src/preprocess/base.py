@@ -27,6 +27,7 @@ class BasePreProcessor:
         The location of the data folder.
     """
     dataset: str
+    static: bool = False
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
         self.data_folder = data_folder
@@ -34,16 +35,21 @@ class BasePreProcessor:
         self.preprocessed_folder = self.data_folder / 'interim'
 
         if not self.preprocessed_folder.exists():
-            self.preprocessed_folder.mkdir()
+            self.preprocessed_folder.mkdir(exist_ok=True, parents=True)
 
         try:
-            self.out_dir = self.preprocessed_folder / f'{self.dataset}_preprocessed'
-            if not self.out_dir.exists():
-                self.out_dir.mkdir()
+            if self.static:
+                folder_prefix = f'static/{self.dataset}'
+            else:
+                folder_prefix = self.dataset
 
-            self.interim = self.preprocessed_folder / f'{self.dataset}_interim'
+            self.out_dir = self.preprocessed_folder / f'{folder_prefix}_preprocessed'
+            if not self.out_dir.exists():
+                self.out_dir.mkdir(parents=True)
+
+            self.interim = self.preprocessed_folder / f'{folder_prefix}_interim'
             if not self.interim.exists():
-                self.interim.mkdir()
+                self.interim.mkdir(parents=True)
         except AttributeError:
             print('A dataset attribute must be added for '
                   'the interim and out directories to be created')
@@ -162,15 +168,17 @@ class BasePreProcessor:
     def merge_files(self, subset_str: Optional[str] = 'kenya',
                     resample_time: Optional[str] = 'M',
                     upsampling: bool = False,
-                    variable: Optional[str] = None) -> None:
+                    variable: Optional[str] = None,
+                    filename: Optional[str] = None) -> None:
 
         ds = xr.open_mfdataset(self.get_filepaths('interim'))
 
         if resample_time is not None:
             ds = self.resample_time(ds, resample_time, upsampling)
 
-        out = self.out_dir / f'{self.dataset}' \
-            f'{"_" + variable if variable is not None else ""}' \
-            f'{"_" + subset_str if subset_str is not None else ""}.nc'.replace(' ', '')
+        if filename is None:
+            filename = f'{self.dataset}{"_" + subset_str if subset_str is not None else ""}.nc'
+        out = self.out_dir / filename
+
         ds.to_netcdf(out)
         print(f"\n**** {out} Created! ****\n")

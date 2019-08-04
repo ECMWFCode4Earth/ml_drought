@@ -29,12 +29,12 @@ import cartopy
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-from scripts.eng_utils import drop_nans_and_flatten
-from scripts.eng_utils import calculate_monthly_mean, calculate_spatial_mean, create_double_year, calculate_monthly_std
-from scripts.eng_utils import get_unmasked_data
-from scripts.eng_utils import get_non_coord_variables
-from scripts.eng_utils import caclulate_std_of_mthly_seasonality
-from scripts.eng_utils import select_pixel, turn_tuple_to_point
+from scripts.drafts.eng_utils import drop_nans_and_flatten
+from scripts.drafts.eng_utils import calculate_monthly_mean, calculate_spatial_mean, create_double_year
+from scripts.drafts.eng_utils import get_unmasked_data
+from scripts.drafts.eng_utils import get_non_coord_variables
+from scripts.drafts.eng_utils import caclulate_std_of_mthly_seasonality
+from scripts.drafts.eng_utils import select_pixel, turn_tuple_to_point
 
 # ------------------------------------------------------------------------------
 # Histograms (Marginal Distributions)
@@ -226,7 +226,6 @@ def plot_mean_and_std(mean_ds, std_ds, ax):
         # ax.plot(x=time, y=mean_ts)
         pd.DataFrame({mean_var:mean_ts}).plot.line(ax=ax, marker='o')
         ax.fill_between(time -1, min_y, max_y, alpha=0.3)
-
 
     return ax
 
