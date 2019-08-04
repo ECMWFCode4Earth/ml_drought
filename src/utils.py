@@ -8,6 +8,7 @@ import calendar
 from datetime import date
 import xarray as xr
 import numpy as np
+from scipy import stats
 
 from typing import Optional, Tuple
 
@@ -127,6 +128,38 @@ def create_shape_aligned_climatology(ds, clim, variable, time_period):
     )
 
     return new_clim
+
+
+def get_modal_value_across_time(da: xr.DataArray) -> xr.DataArray:
+    """Get the modal value along the time dimension
+    (produce a 2D spatial array with each pixel being the
+    modal value)
+
+    Arguments:
+    ---------
+    ds: xr.DataArray
+        the DataArray that you want to calculate the mode for
+
+    TODO: Why do these not work?
+    # stacked = ds.stack(pixels=['lat', 'lon'])
+    # # xr.apply_ufunc(stats.mode, stacked)
+    # mode = stacked.reduce(, dim='time')
+    # mode = mode.unstack('pixel')
+    """
+    print("Extracting the data to numpy array")
+    data = da.values
+
+    print("calculating the mode across the time dimension")
+    # NOTE: assuming that time is dim=0
+    mode = stats.mode(data, axis=0)[0]
+
+    mode_da = xr.ones_like(da).isel(time=slice(0, 1))
+    mode_da.values = mode
+
+    # return a lat, lon array (remove time dimension)
+    mode_da = mode_da.squeeze('time').drop('time')
+
+    return mode_da
 
 
 def drop_nans_and_flatten(dataArray: xr.DataArray) -> np.ndarray:

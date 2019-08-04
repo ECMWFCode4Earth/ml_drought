@@ -7,7 +7,9 @@ import matplotlib.pyplot as plt
 import pickle
 
 from src.analysis import plot_shap_values
-from src.models import Persistence, LinearRegression, LinearNetwork, RecurrentNetwork
+from src.models import (Persistence, LinearRegression,
+                        LinearNetwork, RecurrentNetwork,
+                        EARecurrentNetwork)
 from src.models.data import DataLoader
 
 
@@ -49,9 +51,8 @@ def regression(
                                     shuffle_data=False, mode='test')
     key, val = list(next(iter(test_arrays_loader)).items())[0]
 
-    explain_hist, explain_add = predictor.explain([val.x.historical, val.x.pred_months])
+    explain_hist, explain_add = predictor.explain(val.x)
 
-    print(explain_hist.shape)
     np.save('shap_regression_historical.npy', explain_hist)
     np.save('shap_regression_add.npy', explain_add)
     np.save('shap_x_hist.npy', val.x.historical)
@@ -93,6 +94,7 @@ def linear_nn(
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
+    predictor.save_model()
 
     # The code below is commented out because of a bug in the shap deep Explainer which
     # prevents it from working. It has been fixed in master, but not deployed yet:
@@ -137,7 +139,6 @@ def rnn(
 
     predictor = RecurrentNetwork(
         hidden_size=128,
-        dense_features=[100],
         data_folder=data_path,
         experiment=experiment,
         include_pred_month=include_pred_month,
@@ -145,12 +146,39 @@ def rnn(
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
+    predictor.save_model()
+
+    # See above; we need to update the shap version before this can be explained
+
+
+def earnn(
+    experiment='one_month_forecast',
+    include_pred_month=True,
+    surrounding_pixels=1
+):
+    # if the working directory is alread ml_drought don't need ../data
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+
+    predictor = EARecurrentNetwork(
+        hidden_size=128,
+        data_folder=data_path,
+        experiment=experiment,
+        include_pred_month=include_pred_month,
+        surrounding_pixels=surrounding_pixels
+    )
+    predictor.train(num_epochs=50, early_stopping=5)
+    predictor.evaluate(save_preds=True)
+    predictor.save_model()
 
     # See above; we need to update the shap version before this can be explained
 
 
 if __name__ == '__main__':
-    # parsimonious()
-    # regression(experiment='nowcast')
-    # linear_nn()
+    parsimonious()
+    regression()
+    linear_nn()
     rnn()
+    earnn()
