@@ -146,11 +146,64 @@ def engineer_data(data_path):
 # Run the actual models
 # ----------------------------------------------------------------
 
-def models(data_path):
 
+def run_models(data_path, experiment):
+    # NOTE: this model is the same for all experiments
     print("Running persistence model")
     predictor = Persistence(data_path, experiment=experiment)
     predictor.evaluate(save_preds=True)
+
+    # linear regression
+    print(f"Running Linear Regression model: {experiment}")
+    predictor = LinearRegression(
+        data_path, experiment=experiments,
+        include_pred_month=True,surrounding_pixels=1
+    )
+
+    # linear network
+    print(f"Running Linear Neural Network model: {experiment}")
+    predictor = LinearNetwork(
+        data_path, experiment=experiment,
+        layer_sizes=[100], include_pred_month=True,
+        surrounding_pixels=1
+    )
+    predictor.train(num_epochs=50, early_stopping=5)
+    predictor.evaluate(save_preds=True)
+    predictor.save_model()
+
+    # recurrent network
+    print(f"Running RNN (LSTM) model: {experiment}")
+    predictor = RecurrentNetwork(
+        data_folder=data_path,
+        hidden_size=128,
+        experiment=experiment,
+        include_pred_month=True,
+        surrounding_pixels=1
+    )
+    predictor.train(num_epochs=50, early_stopping=5)
+    predictor.evaluate(save_preds=True)
+    predictor.save_model()
+
+    # EA LSTM
+    print(f"Running Entity Aware LSTM model: {experiment}")
+    predictor = EARecurrentNetwork(
+        data_folder=data_path,
+        hidden_size=128,
+        experiment=experiment,
+        include_pred_month=True,
+        surrounding_pixels=1
+    )
+    predictor.train(num_epochs=50, early_stopping=5)
+    predictor.evaluate(save_preds=True)
+    predictor.save_model()
+
+
+def model_data(data_path):
+    experiments = ['one_month_forecast', 'nowcast']
+    for experiment in experiments:
+        print('** Running Experiments **')
+        run_models(data_path, experiment)
+
 
 if __name__ == '__main__':
     # get the data path
@@ -177,3 +230,4 @@ if __name__ == '__main__':
 
     # models
     print("** Running Models **")
+    model_data(data_path)
