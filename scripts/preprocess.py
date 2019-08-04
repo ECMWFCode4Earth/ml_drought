@@ -51,7 +51,6 @@ def process_era5POS_2018():
 
 
 def process_era5_land(variable: str):
-    # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
     else:
