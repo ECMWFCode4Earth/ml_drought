@@ -86,7 +86,7 @@ class TestERA5LandPreprocessor:
                              parallel_processes=1, variable='2m_temperature')
 
         expected_out_path = tmp_path / 'interim/reanalysis-era5'\
-            '-land_preprocessed/reanalysis-era5-land_2m_temperature_kenya.nc'
+            '-land_preprocessed/reanalysis-era5-land_kenya.nc'
         assert expected_out_path.exists(), \
             f'Expected processed file to be saved to {expected_out_path}'
 
