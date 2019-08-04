@@ -52,6 +52,14 @@ def export_data(data_path):
     exporter.export(years=None, region='global', period='monthly')
     del exporter
 
+    # temperature
+    print('** Exporting ERA5 Temperature **')
+    exporter = ERA5Exporter(data_path)
+    exporter.export(
+        variable='2m_temperature', granularity='monthly',
+    )
+    del exporter
+
     # evaporation
     print('** Exporting GLEAM Evaporation **')
     exporter = GLEAMExporter(data_folder=data_path)
