@@ -169,6 +169,7 @@ def run_models(data_path, experiment):
         include_pred_month=True, surrounding_pixels=1
     )
     predictor.train(num_epochs=10, early_stopping=3)
+
     # linear network
     print(f"Running Linear Neural Network model: {experiment}")
     predictor = LinearNetwork(
