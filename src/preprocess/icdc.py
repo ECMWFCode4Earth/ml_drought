@@ -12,7 +12,7 @@ class ICDCPreprocessor(BasePreProcessor):
     variable: str
     icdc_data_dir = Path('/pool/data/ICDC/land/')
 
-    def get_filepaths(self) -> List[Path]:
+    def get_icdc_filepaths(self) -> List[Path]:
         dir = self.icdc_data_dir / self.dataset / 'DATA'
         years = [d.name for d in dir.iterdir() if d.is_dir()]
 
@@ -74,7 +74,7 @@ class ICDCPreprocessor(BasePreProcessor):
                    regrid: Optional[Path] = None,
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
-                   cleanup: bool = True) -> None:
+                   cleanup: bool = False) -> None:
         """ Preprocess all of the GLEAM .nc files to produce
         one subset file.
 
@@ -93,7 +93,7 @@ class ICDCPreprocessor(BasePreProcessor):
         cleanup: bool = True
             If true, delete interim files created by the class
         """
-        nc_files = self.get_filepaths()
+        nc_files = self.get_icdc_filepaths()
 
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)

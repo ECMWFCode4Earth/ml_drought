@@ -5,5 +5,9 @@ from src.preprocess.icdc import (
 )
 
 processor = ModisNDVI()
+# processor.preprocess()
 
-processor.preprocess()
+subset_str='kenya'
+resample_time='M'
+upsampling=False
+processor.merge_files(subset_str, resample_time, upsampling)
