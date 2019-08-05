@@ -223,60 +223,48 @@ class EALSTMCell(nn.Module):
         self.hidden_size = hidden_size
         self.batch_first = batch_first
 
-        # the h layers have no bias - since we add the outputs of these layers
-        # only one of them need a bias term
-
-        self.forget_gate_i = nn.Sequential(*[
-            nn.Linear(in_features=input_size_dyn, out_features=hidden_size,
-                      bias=True), nn.Sigmoid()])
-        self.forget_gate_h = nn.Sequential(*[
-            nn.Linear(in_features=hidden_size, out_features=hidden_size),
-            nn.Sigmoid()])
+        self.forget_gate_i = nn.Linear(in_features=input_size_dyn,
+                                       out_features=hidden_size, bias=False)
+        self.forget_gate_h = nn.Linear(in_features=hidden_size, out_features=hidden_size,
+                                       bias=True)
 
         self.update_gate = nn.Sequential(*[
-            nn.Linear(in_features=input_size_stat, out_features=hidden_size,
-                      bias=True), nn.Sigmoid()
-        ])
-
-        self.update_candidates_i = nn.Sequential(*[
-            nn.Linear(in_features=input_size_dyn, out_features=hidden_size,
-                      bias=True), nn.Tanh()
-        ])
-        self.update_candidates_h = nn.Sequential(*[
-            nn.Linear(in_features=hidden_size, out_features=hidden_size),
-            nn.Tanh()
-        ])
-
-        self.output_gate_i = nn.Sequential(*[
-            nn.Linear(in_features=input_size_dyn, out_features=hidden_size,
-                      bias=True), nn.Sigmoid()
-        ])
-        self.output_gate_h = nn.Sequential(*[
-            nn.Linear(in_features=hidden_size, out_features=hidden_size),
+            nn.Linear(in_features=input_size_stat, out_features=hidden_size),
             nn.Sigmoid()
         ])
+
+        self.update_candidates_i = nn.Linear(in_features=input_size_dyn, out_features=hidden_size,
+                                             bias=False)
+        self.update_candidates_h = nn.Linear(in_features=hidden_size, out_features=hidden_size,
+                                             bias=True)
+
+        self.output_gate_i = nn.Linear(in_features=input_size_dyn, out_features=hidden_size,
+                                       bias=False)
+        self.output_gate_h = nn.Linear(in_features=hidden_size, out_features=hidden_size,
+                                       bias=True)
 
         self.reset_parameters()
 
     def reset_parameters(self):
-        self._reset_i(self.forget_gate_i[0])
-        self._reset_i(self.update_candidates_i[0])
-        self._reset_i(self.output_gate_i[0])
+        self._reset_i(self.forget_gate_i)
+        self._reset_i(self.update_candidates_i)
+        self._reset_i(self.output_gate_i)
         self._reset_i(self.update_gate[0])
+        nn.init.constant_(self.update_gate[0].bias.data, val=0)
 
-        self._reset_h(self.forget_gate_h[0], self.hidden_size)
-        self._reset_h(self.update_candidates_h[0], self.hidden_size)
-        self._reset_h(self.output_gate_h[0], self.hidden_size)
+        self._reset_h(self.forget_gate_h, self.hidden_size)
+        self._reset_h(self.update_candidates_h, self.hidden_size)
+        self._reset_h(self.output_gate_h, self.hidden_size)
 
     @staticmethod
     def _reset_i(layer):
         nn.init.orthogonal(layer.weight.data)
-        nn.init.constant_(layer.bias.data, val=0)
 
     @staticmethod
     def _reset_h(layer, hidden_size):
         weight_hh_data = torch.eye(hidden_size)
         layer.weight.data = weight_hh_data
+        nn.init.constant_(layer.bias.data, val=0)
 
     def forward(self, x_d, x_s):
         """[summary]
@@ -308,15 +296,15 @@ class EALSTMCell(nn.Module):
 
         # calculate input gate only once because inputs are static
         i = self.update_gate(x_s)
-        print(f'Our i: {i}')
 
         # perform forward steps over input sequence
         for t in range(seq_len):
             h_0, c_0 = h_x
 
-            forget_state = self.forget_gate_i(x_d[t]) + self.forget_gate_h(h_0)
-            cell_candidates = self.update_candidates_i(x_d[t]) + self.update_candidates_h(h_0)
-            output_state = self.output_gate_i(x_d[t]) + self.output_gate_h(h_0)
+            forget_state = torch.sigmoid(self.forget_gate_i(x_d[t]) + self.forget_gate_h(h_0))
+            cell_candidates = torch.tanh(self.update_candidates_i(x_d[t]) +
+                                         self.update_candidates_h(h_0))
+            output_state = torch.sigmoid(self.output_gate_i(x_d[t]) + self.output_gate_h(h_0))
 
             c_1 = forget_state * c_0 + i * cell_candidates
             h_1 = output_state * torch.tanh(c_1)
@@ -435,7 +423,6 @@ class OrgEALSTMCell(nn.Module):
         # calculate input gate only once because inputs are static
         bias_s_batch = (self.bias_s.unsqueeze(0).expand(batch_size, *self.bias_s.size()))
         i = torch.sigmoid(torch.addmm(bias_s_batch, x_s, self.weight_sh))
-        print(f'Their i: {i}')
 
         # perform forward steps over input sequence
         for t in range(seq_len):

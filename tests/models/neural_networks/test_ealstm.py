@@ -2,7 +2,10 @@ import numpy as np
 import pickle
 import pytest
 
-from src.models.neural_networks.ealstm import EALSTM
+import torch
+from torch import nn
+
+from src.models.neural_networks.ealstm import EALSTM, EALSTMCell, OrgEALSTMCell
 from src.models import EARecurrentNetwork
 
 from tests.utils import _make_dataset
@@ -151,3 +154,53 @@ class TestEARecurrentNetwork:
 
         # _make_dataset with const=True returns all ones
         assert (test_arrays_dict['hello']['y'] == 1).all()
+
+
+class TestEALSTMCell:
+    @staticmethod
+    def test_ealstm(monkeypatch):
+        """
+        We implement our own unrolled RNN, so that it can be explained with
+        shap. This test makes sure it roughly mirrors the behaviour of the pytorch
+        LSTM.
+        """
+
+        batch_size, hidden_size, timesteps, dyn_input, static_input = 3, 5, 2, 6, 4
+
+        @staticmethod
+        def i_init(layer):
+            nn.init.constant_(layer.weight.data, val=1)
+        monkeypatch.setattr(EALSTMCell, '_reset_i', i_init)
+
+        def org_init(self):
+            """Initialize all learnable parameters of the LSTM"""
+            nn.init.constant_(self.weight_ih.data, val=1)
+            nn.init.constant_(self.weight_sh, val=1)
+
+            weight_hh_data = torch.eye(self.hidden_size)
+            weight_hh_data = weight_hh_data.repeat(1, 3)
+            self.weight_hh.data = weight_hh_data
+
+            nn.init.constant_(self.bias.data, val=0)
+            nn.init.constant_(self.bias_s.data, val=0)
+        monkeypatch.setattr(OrgEALSTMCell, 'reset_parameters', org_init)
+
+        org_ealstm = OrgEALSTMCell(input_size_dyn=dyn_input,
+                                   input_size_stat=static_input,
+                                   hidden_size=hidden_size)
+
+        our_ealstm = EALSTMCell(input_size_dyn=dyn_input,
+                                input_size_stat=static_input,
+                                hidden_size=hidden_size)
+
+        static = torch.rand(batch_size, static_input)
+        dynamic = torch.rand(batch_size, timesteps, dyn_input)
+
+        with torch.no_grad():
+            org_hn, org_cn = org_ealstm(dynamic, static)
+            our_hn, our_cn = our_ealstm(dynamic, static)
+
+        assert np.isclose(org_hn.numpy(), our_hn.numpy(), 0.01).all(), \
+            "Difference in hidden state"
+        assert np.isclose(org_cn.numpy(), our_cn.numpy(), 0.01).all(), \
+            "Difference in cell state"
