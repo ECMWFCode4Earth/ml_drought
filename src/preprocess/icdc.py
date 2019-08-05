@@ -10,7 +10,7 @@ class ICDCPreprocessor(BasePreProcessor):
     """ For working with data on ICDC (TEMP.)
     """
     variable: str
-    icdc_data_dir = Path('/pool/data/ICDC/land/')
+    icdc_data_dir = Path(f'/pool/data/ICDC/{self.source}/')
 
     def get_icdc_filepaths(self) -> List[Path]:
         dir = self.icdc_data_dir / self.dataset / 'DATA'
@@ -113,12 +113,120 @@ class ICDCPreprocessor(BasePreProcessor):
 
 
 class ESACCISoilMoisture(ICDCPreprocessor):
+    source = 'land'
     dataset = 'esa_cci_soilmoisture'
 
 
 class LAIModisAvhrr(ICDCPreprocessor):
+    source = 'land'
     dataset = 'avhrr_modis_lai'
 
 
 class ModisNDVI(ICDCPreprocessor):
+    source = 'land'
     dataset = 'modis_aqua_vegetationindex'
+
+
+class AMSRESoilMoisture(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'amsre_soilmoisture'
+
+
+class ASCATSoilMoisture(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'ascat_soilmoisture'
+
+
+class EUMetsatAlbedo(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'eumetsat_albedo'
+
+
+class EUMetSatAlbedo2(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'eumetsat_clara2_surfacealbedo'
+
+
+class EUMetSatRadiation(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'eumetsat_clara2_surfaceradiation'
+
+
+class EUMetSatIrradiance(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'eumetsat_surfacesolarirradiance'
+
+
+class SpotFAPAR(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'fapar_spot_proba_v'
+
+
+class GLEAMEvaporation(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'gleam_evaporation'
+
+
+class SpotLai(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'lai_spot_proba_v'
+
+
+class SpotLSAlbedo(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'land_surface_albedo_spot'
+
+
+class ModisAlbedo(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'modis_albedo'
+
+
+class ModisForestCover(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'modis_forestcoverfraction'
+
+
+class ModisLandcover(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'modis_landcover'
+
+
+class ModisLatLon(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'modis_latlon'
+
+
+class ModisLSTClimatology(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'modis_lst_climatology'
+
+
+class ModisNPP(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'modis_primary_production'
+
+
+class ModisSRTM(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'modis-srtm_landwaterdistribution'
+
+
+class ModisLST(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'modis_terra_landsurfacetemperature'
+
+
+class SMOSSoilMoisture(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'smos_soilmoisture'
+
+
+class Topography(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'topography'
+
+
+class SpotVegetationCoverFraction(ICDCPreprocessor):
+    source = 'land'
+    dataset = 'vegetationcoverfraction_spot_proba_v'
