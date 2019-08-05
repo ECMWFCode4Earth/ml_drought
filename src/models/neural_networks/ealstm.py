@@ -243,6 +243,9 @@ class EALSTMCell(nn.Module):
         self.output_gate_h = nn.Linear(in_features=hidden_size, out_features=hidden_size,
                                        bias=True)
 
+        self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
+
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -301,10 +304,10 @@ class EALSTMCell(nn.Module):
         for t in range(seq_len):
             h_0, c_0 = h_x
 
-            forget_state = torch.sigmoid(self.forget_gate_i(x_d[t]) + self.forget_gate_h(h_0))
-            cell_candidates = torch.tanh(self.update_candidates_i(x_d[t]) +
-                                         self.update_candidates_h(h_0))
-            output_state = torch.sigmoid(self.output_gate_i(x_d[t]) + self.output_gate_h(h_0))
+            forget_state = self.sigmoid(self.forget_gate_i(x_d[t]) + self.forget_gate_h(h_0))
+            cell_candidates = self.tanh(self.update_candidates_i(x_d[t]) +
+                                        self.update_candidates_h(h_0))
+            output_state = self.sigmoid(self.output_gate_i(x_d[t]) + self.output_gate_h(h_0))
 
             c_1 = forget_state * c_0 + i * cell_candidates
             h_1 = output_state * torch.tanh(c_1)
