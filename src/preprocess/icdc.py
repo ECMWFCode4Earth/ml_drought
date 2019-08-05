@@ -13,7 +13,7 @@ class ICDCPreprocessor(BasePreProcessor):
     icdc_data_dir = Path('/pool/data/ICDC/land/')
 
     def get_filepaths(self) -> List[Path]:
-        dir = self.icdc_data_dir / self.variable / 'DATA'
+        dir = self.icdc_data_dir / self.dataset / 'DATA'
         years = [d.name for d in dir.iterdir() if d.is_dir()]
 
         filepaths: List = []
@@ -109,12 +109,12 @@ class ICDCPreprocessor(BasePreProcessor):
 
 
 class ESACCISoilMoisture(ICDCPreprocessor):
-    variable = 'esa_cci_soilmoisture'
+    dataset = 'esa_cci_soilmoisture'
 
 
 class LAIModisAvhrr(ICDCPreprocessor):
-    variable = 'avhrr_modis_lai'
+    dataset = 'avhrr_modis_lai'
 
 
 class ModisNDVI(ICDCPreprocessor):
-    variable = 'modis_aqua_vegetationindex'
+    dataset = 'modis_aqua_vegetationindex'
