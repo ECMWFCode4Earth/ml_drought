@@ -194,6 +194,8 @@ class _BaseIter:
         self.static = loader.static
         self.static_normalizing_dict = loader.static_normalizing_dict
 
+        self.static_array: Optional[np.ndarray] = None
+
         if self.shuffle:
             # makes sure they are shuffled every epoch
             shuffle(self.data_files)
@@ -310,18 +312,21 @@ class _BaseIter:
         return latlons, train_latlons
 
     def _calculate_static(self, num_instances: int) -> np.ndarray:
-        static_np = self.static.to_array().values  # type: ignore
-        static_np = static_np.reshape(static_np.shape[0], static_np.shape[1] * static_np.shape[2])
-        static_np = np.moveaxis(static_np, -1, 0)
-        assert static_np.shape[0] == num_instances
+        if self.static_array is None:
+            static_np = self.static.to_array().values  # type: ignore
+            static_np = static_np.reshape(static_np.shape[0],
+                                          static_np.shape[1] * static_np.shape[2])
+            static_np = np.moveaxis(static_np, -1, 0)
+            assert static_np.shape[0] == num_instances
 
-        if self.static_normalizing_dict is not None:
-            static_vars = list(self.static.data_vars)  # type: ignore
-            self.static_normalizing_array = self.calculate_static_normalizing_array(static_vars)
+            if self.static_normalizing_dict is not None:
+                vars = list(self.static.data_vars)  # type: ignore
+                self.static_normalizing_array = self.calculate_static_normalizing_array(vars)
 
-            static_np = (static_np - self.static_normalizing_array['mean']) / \
-                self.static_normalizing_array['std']
-        return static_np
+                static_np = (static_np - self.static_normalizing_array['mean']) / \
+                    self.static_normalizing_array['std']
+            self.static_array = static_np
+        return self.static_array
 
     def ds_folder_to_np(self,
                         folder: Path,
