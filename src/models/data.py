@@ -230,32 +230,20 @@ class _BaseIter:
         })
         return normalizing_array
 
-    def calculate_normalizing_array(self, data_vars: List[str],
-                                    yearly_agg: bool = False) -> Dict[str, np.ndarray]:
+    def calculate_normalizing_array(self, data_vars: List[str]) -> Dict[str, np.ndarray]:
         # If we've made it here, normalizing_dict is definitely not None
-        self.normalizing_dict = cast(Dict[str, Dict[str, np.ndarray]], self.normalizing_dict)
+        self.normalizing_dict = cast(Dict[str, Dict[str, float]], self.normalizing_dict)
 
         mean, std = [], []
         normalizing_dict_keys = self.normalizing_dict.keys()
         for var in data_vars:
             for norm_var in normalizing_dict_keys:
                 if var.endswith(norm_var):
-                    var_mean = self.normalizing_dict[norm_var]['mean']
-                    var_std = self.normalizing_dict[norm_var]['std']
-                    if yearly_agg:
-                        var_mean = np.mean(var_mean)
-                        var_std = np.mean(var_std)
-                    mean.append(var_mean)
-                    std.append(var_std)
+                    mean.append(self.normalizing_dict[norm_var]['mean'])
+                    std.append(self.normalizing_dict[norm_var]['std'])
                     break
 
-        mean_np, std_np = np.vstack(mean), np.vstack(std)
-
-        if yearly_agg:
-            mean_np, std_np = mean_np.squeeze(1), std_np.squeeze(1)
-        else:
-            # swapaxes so that its [timesteps, features], not [features, timesteps]
-            mean_np, std_np = mean_np.swapaxes(0, 1), std_np.swapaxes(0, 1)
+        mean_np, std_np = np.asarray(mean), np.asarray(std)
 
         normalizing_array = cast(Dict[str, np.ndarray], {
             'mean': mean_np,
@@ -269,7 +257,7 @@ class _BaseIter:
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
             self.normalizing_array_ym = self.calculate_normalizing_array(
-                list(yearly_mean.data_vars), yearly_agg=True)
+                list(yearly_mean.data_vars))
 
         if self.normalizing_array_ym is not None:
             yearly_agg = (yearly_agg - self.normalizing_array_ym['mean']) / \
@@ -292,7 +280,7 @@ class _BaseIter:
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
             self.normalizing_array = self.calculate_normalizing_array(
-                list(x.data_vars), yearly_agg=False)
+                list(x.data_vars))
             x_np = (x_np - self.normalizing_array['mean']) / (self.normalizing_array['std'])
 
         return x_np, y_np

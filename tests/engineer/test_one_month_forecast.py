@@ -92,9 +92,9 @@ class TestOneMonthForecastEngineer:
 
         for key, val in norm_dict.items():
             assert key in {'a', 'b'}, f'Unexpected key!'
-            assert (norm_dict[key]['mean'] == 1).all(), \
+            assert norm_dict[key]['mean'] == 1, \
                 f'Mean incorrectly calculated!'
-            assert (norm_dict[key]['std'] == 0).all(), \
+            assert norm_dict[key]['std'] == 0, \
                 f'Std incorrectly calculated!'
 
     def test_stratify(self, tmp_path):

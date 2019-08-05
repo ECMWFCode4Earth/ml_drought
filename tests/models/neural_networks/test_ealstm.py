@@ -1,4 +1,3 @@
-import numpy as np
 import pickle
 import pytest
 
@@ -65,9 +64,7 @@ class TestEARecurrentNetwork:
         test_features = tmp_path / 'features/one_month_forecast/train/hello'
         test_features.mkdir(parents=True)
 
-        norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
-                             'std': np.ones(x.to_array().values.shape[:2])}
-                     }
+        norm_dict = {'VHI': {'mean': 0, 'std': 1}}
         with (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').open('wb') as f:
             pickle.dump(norm_dict, f)
 
@@ -112,9 +109,7 @@ class TestEARecurrentNetwork:
         test_features = tmp_path / 'features/one_month_forecast/test/hello'
         test_features.mkdir(parents=True)
 
-        norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
-                             'std': np.ones(x.to_array().values.shape[:2])}
-                     }
+        norm_dict = {'VHI': {'mean': 0.0, 'std': 1.0}}
         with (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').open('wb') as f:
             pickle.dump(norm_dict, f)
 

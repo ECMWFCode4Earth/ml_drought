@@ -1,4 +1,3 @@
-import numpy as np
 import pickle
 import pytest
 import xarray as xr
@@ -80,12 +79,9 @@ class TestLinearNetwork:
         x_add2, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='temp')
         x = xr.merge([x, x_add1, x_add2])
 
-        norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                             'std': np.ones((1, x.to_array().values.shape[1]))},
-                     'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                'std': np.ones((1, x.to_array().values.shape[1]))},
-                     'temp': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                              'std': np.ones((1, x.to_array().values.shape[1]))}}
+        norm_dict = {'VHI': {'mean': 0, 'std': 1},
+                     'precip': {'mean': 0, 'std': 1},
+                     'temp': {'mean': 0, 'std': 1}}
 
         test_features = tmp_path / f'features/{experiment}/train/hello'
         test_features.mkdir(parents=True, exist_ok=True)
@@ -194,16 +190,11 @@ class TestLinearNetwork:
             x_add2, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='temp')
             x = xr.merge([x, x_add1, x_add2])
 
-            norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                 'std': np.ones((1, x.to_array().values.shape[1]))},
-                         'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                    'std': np.ones((1, x.to_array().values.shape[1]))},
-                         'temp': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                  'std': np.ones((1, x.to_array().values.shape[1]))}}
+            norm_dict = {'VHI': {'mean': 0, 'std': 1},
+                         'precip': {'mean': 0, 'std': 1},
+                         'temp': {'mean': 0, 'std': 1}}
         else:
-            norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
-                                 'std': np.ones(x.to_array().values.shape[:2])}
-                         }
+            norm_dict = {'VHI': {'mean': 0, 'std': 1}}
 
         with (
             tmp_path / f'features/{experiment}/normalizing_dict.pkl'
@@ -247,9 +238,7 @@ class TestLinearNetwork:
         x.to_netcdf(train_features / 'x.nc')
         y.to_netcdf(train_features / 'y.nc')
 
-        norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
-                             'std': np.ones(x.to_array().values.shape[:2])}
-                     }
+        norm_dict = {'VHI': {'mean': 0, 'std': 1}}
         with (
             tmp_path / 'features/one_month_forecast/normalizing_dict.pkl'
         ).open('wb') as f:
