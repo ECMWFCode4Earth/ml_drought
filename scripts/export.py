@@ -5,7 +5,7 @@ sys.path.append('..')
 from src.exporters import (ERA5Exporter, VHIExporter,
                            CHIRPSExporter, ERA5ExporterPOS,
                            GLEAMExporter, ESACCIExporter,
-                           S5Exporter, SRTMExporter)
+                           S5Exporter, SRTMExporter, KenyaAdminExporter)
 
 
 def export_era5():
@@ -122,6 +122,16 @@ def export_s5():
     )
 
 
+def export_kenya_boundaries():
+    # if the working directory is alread ml_drought don't need ../data
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+
+    exporter = KenyaAdminExporter(data_path)
+    exporter.export()
+
 if __name__ == '__main__':
     export_era5()
     export_vhi()
@@ -130,3 +140,4 @@ if __name__ == '__main__':
     export_gleam()
     export_esa()
     export_s5()
+    export_kenya_boundaries()
