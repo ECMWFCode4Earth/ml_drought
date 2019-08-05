@@ -20,7 +20,11 @@ class ICDCPreprocessor(BasePreProcessor):
         for year in years:
             filepaths.extend((dir / year).glob('*.nc'))
 
-        return filepaths
+        if filepaths != []:
+            return filepaths
+        else:
+            filepaths.extend((dir).glob('*.nc'))
+            return filepaths
 
     @staticmethod
     def create_filename(netcdf_filename: str,

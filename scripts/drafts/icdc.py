@@ -4,10 +4,23 @@ from src.preprocess.icdc import (
     ModisNDVI
 )
 
-processor = ModisNDVI()
-# processor.preprocess()
 
-subset_str='kenya'
-resample_time='M'
-upsampling=False
-processor.merge_files(subset_str, resample_time, upsampling)
+def modis_ndvi():
+    processor = ModisNDVI()
+    processor.preprocess()
+
+
+def cci_soil_moisture():
+    processor = ESACCISoilMoisture()
+    processor.preprocess()
+
+
+def modis_lai():
+    processor = LAIModisAvhrr()
+    processor.preprocess()
+
+
+if __name__ == '__main__':
+    modis_ndvi()
+    cci_soil_moisture()
+    modis_lai()
