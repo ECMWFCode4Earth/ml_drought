@@ -94,7 +94,7 @@ class EastAfricaAdmin(OCHAExporter):
         assert False, 'Currently no way of extracting .rar files without' \
             'having sudo control - `sudo apt-get install unrar`' \
             'https://www.tecmint.com/how-to-open-extract-and-create-rar-files-in-linux/'
-            
+
         urls = {
             'east-africa-boundaries': 'https://data.humdata.org/dataset/756f07a8-e462-49a9-ab89-ff481d586953/resource/50435c12-b850-4b07-8c1e-b2368dea085b/download/esa_admin1_region.rar'
         }
