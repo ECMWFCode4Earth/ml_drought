@@ -1,7 +1,7 @@
 from pathlib import Path
 import xarray as xr
 from shutil import rmtree
-from typing import Optional
+from typing import Optional, List
 
 from .base import BasePreProcessor
 
@@ -16,7 +16,7 @@ class ICDCPreprocessor(BasePreProcessor):
         dir = self.icdc_data_dir / self.variable / 'DATA'
         years = [d.name for d in dir.iterdir() if d.is_dir()]
 
-        filepaths = []
+        filepaths: List = []
         for year in years:
             filepaths.extend((dir / year).glob('*.nc'))
 
@@ -69,9 +69,6 @@ class ICDCPreprocessor(BasePreProcessor):
         ds.to_netcdf(self.interim / filename)
 
         print(f"** Done for {self.variable} {netcdf_filepath.name} **")
-
-    def merge_files(self):
-        pass
 
     def preprocess(self, subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
