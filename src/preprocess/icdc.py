@@ -68,7 +68,7 @@ class ICDCPreprocessor(BasePreProcessor):
         print(f"Saving to {self.interim}/{filename}")
         ds.to_netcdf(self.interim / filename)
 
-        print(f"** Done for {self.variable} {netcdf_filepath.name} **")
+        print(f"** Done for {self.dataset} {netcdf_filepath.name} **")
 
     def preprocess(self, subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
