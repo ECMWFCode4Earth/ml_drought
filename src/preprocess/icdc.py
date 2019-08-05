@@ -109,3 +109,15 @@ class ICDCPreprocessor(BasePreProcessor):
 
         if cleanup:
             rmtree(self.interim)
+
+
+class ESACCISoilMoisture(ICDCPreprocessor):
+    variable = 'esa_cci_soilmoisture'
+
+
+class LAIModisAvhrr(ICDCPreprocessor):
+    variable = 'avhrr_modis_lai'
+
+
+class ModisNDVI(ICDCPreprocessor):
+    variable = 'modis_aqua_vegetationindex'
