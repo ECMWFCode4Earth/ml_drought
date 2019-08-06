@@ -94,7 +94,7 @@ class NDVIExporter(BaseExporter):
     def export(self, years: Optional[List[int]] = None,
                parallel_processes: int = 1) -> None:
         """Export functionality for the NDVI product from AVHRR (NOAA)
-            1981 - 2019.
+            1981 - 2019 (daily).
         Arguments
         ----------
         years: Optional list of ints, default = None
