@@ -310,7 +310,7 @@ class EALSTMCell(nn.Module):
             output_state = self.sigmoid(self.output_gate_i(x_d[t]) + self.output_gate_h(h_0))
 
             c_1 = forget_state * c_0 + i * cell_candidates
-            h_1 = output_state * torch.tanh(c_1)
+            h_1 = output_state * self.tanh(c_1)
 
             # store intermediate hidden/cell state in list
             h_n.append(h_1)
