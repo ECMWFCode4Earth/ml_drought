@@ -33,3 +33,6 @@ class TestSelectBoundingBox:
             f'Expected output subset to have size (50, 100), got {subset.VHI.values.shape}'
         assert max(subset.lon.values) < 0, \
             f'Got a longitude greater than 0, {max(subset.lon.values)}'
+
+
+# class TestSHPToNetCDF:
