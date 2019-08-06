@@ -143,6 +143,8 @@ class EALSTM(nn.Module):
         if static_size is not None:
             self.include_static = True
             ea_static_size += static_size
+        if include_pred_month:
+            ea_static_size += 12
 
         self.dropout = nn.Dropout(rnn_dropout)
         self.rnn = EALSTMCell(input_size_dyn=features_per_month,
@@ -153,8 +155,6 @@ class EALSTM(nn.Module):
         self.rnn_dropout = nn.Dropout(rnn_dropout)
 
         dense_input_size = hidden_size
-        if include_pred_month:
-            dense_input_size += 12
         if experiment == 'nowcast':
             assert current_size is not None
             dense_input_size += current_size
@@ -192,13 +192,13 @@ class EALSTM(nn.Module):
             static_x.append(yearly_aggs)
         if self.include_static:
             static_x.append(static)
+        if self.include_pred_month:
+            static_x.append(pred_month)
 
         hidden_state, cell_state = self.rnn(x, torch.cat(static_x, dim=-1))
 
         x = self.rnn_dropout(hidden_state[:, -1, :])
 
-        if self.include_pred_month:
-            x = torch.cat((x, pred_month), dim=-1)
         if self.experiment == 'nowcast':
             assert current is not None
             x = torch.cat((x, current), dim=-1)
