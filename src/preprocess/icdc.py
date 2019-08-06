@@ -7,14 +7,14 @@ from .base import BasePreProcessor
 
 
 class ICDCPreprocessor(BasePreProcessor):
-    """ For working with data on ICDC (TEMP.)
+    """ For working with data on ICDC (SPECIFIC to Uni Server)
     """
     variable: str  # the name of the variable on icdc
     source: str  # {'land', 'atmosphere', 'climate_indices', 'ocean', 'ice_and_snow'}
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
-        super().__init__(data_folder)        
-        icdc_data_dir = Path(f'/pool/data/ICDC/{self.source}/')
+        super().__init__(data_folder)
+        self.icdc_data_dir = Path(f'/pool/data/ICDC/{self.source}/')
 
     def get_icdc_filepaths(self) -> List[Path]:
         dir = self.icdc_data_dir / self.dataset / 'DATA'
@@ -60,7 +60,10 @@ class ICDCPreprocessor(BasePreProcessor):
 
         # 2. chop out EastAfrica
         if subset_str is not None:
-            ds = self.chop_roi(ds, subset_str, inverse_lat=True)
+            try:
+                ds = self.chop_roi(ds, subset_str, inverse_lat=True)
+            except AssertionError:
+                ds = self.chop_roi(ds, subset_str, inverse_lat=False)
 
         if regrid is not None:
             ds = self.regrid(ds, regrid)
