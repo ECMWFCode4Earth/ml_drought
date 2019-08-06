@@ -46,7 +46,8 @@ class ICDCPreprocessor(BasePreProcessor):
     def _preprocess_single(self, netcdf_filepath: Path,
                            subset_str: Optional[str] = 'kenya',
                            regrid: Optional[xr.Dataset] = None) -> None:
-        """Run the Preprocessing steps for the GLEAM data
+        """Run the Preprocessing steps for the data stored on ICDC
+        https://icdc.cen.uni-hamburg.de/1/daten.html
 
         Process:
         -------
