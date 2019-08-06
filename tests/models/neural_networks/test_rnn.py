@@ -18,37 +18,46 @@ class TestRecurrentNetwork:
         dense_features = [10]
         hidden_size = 128
         rnn_dropout = 0.25
-        dense_dropout = 0.25
         include_pred_month = True
+        experiment = 'one_month_forecast'
+        ignore_vars = ['precip']
+        include_latlons = True
 
         def mocktrain(self):
             self.model = RNN(features_per_month, dense_features, hidden_size,
-                             rnn_dropout, dense_dropout,
-                             include_pred_month, experiment='one_month_forecast')
+                             rnn_dropout,
+                             include_pred_month, include_latlons,
+                             experiment='one_month_forecast')
             self.features_per_month = features_per_month
 
         monkeypatch.setattr(RecurrentNetwork, 'train', mocktrain)
 
         model = RecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
-                                 rnn_dropout=rnn_dropout, data_folder=tmp_path)
+                                 rnn_dropout=rnn_dropout, data_folder=tmp_path,
+                                 ignore_vars=ignore_vars, experiment=experiment,
+                                 include_pred_month=include_pred_month,
+                                 include_latlons=include_latlons)
+
         model.train()
         model.save_model()
 
         assert (tmp_path / 'models/one_month_forecast/rnn/model.pkl').exists(), \
             f'Model not saved!'
 
-        model_dict = torch.load(model.model_dir / 'model.pkl')
+        with (model.model_dir / 'model.pkl').open('rb') as f:
+            model_dict = pickle.load(f)
 
-        for key, val in model_dict['state_dict'].items():
+        for key, val in model_dict['model']['state_dict'].items():
             assert (model.model.state_dict()[key] == val).all()
 
-        assert model_dict['features_per_month'] == features_per_month
+        assert model_dict['model']['features_per_month'] == features_per_month
         assert model_dict['hidden_size'] == hidden_size
         assert model_dict['rnn_dropout'] == rnn_dropout
-        assert model_dict['dense_dropout'] == dense_dropout
         assert model_dict['dense_features'] == dense_features
         assert model_dict['include_pred_month'] == include_pred_month
-        assert model_dict['experiment'] == 'one_month_forecast'
+        assert model_dict['experiment'] == experiment
+        assert model_dict['ignore_vars'] == ignore_vars
+        assert model_dict['include_latlons'] == include_latlons
 
     @pytest.mark.parametrize('use_pred_months', [True, False])
     def test_train(self, tmp_path, capsys, use_pred_months):
@@ -67,18 +76,29 @@ class TestRecurrentNetwork:
         x.to_netcdf(test_features / 'x.nc')
         y.to_netcdf(test_features / 'y.nc')
 
+        # static
+        x_static, _, _ = _make_dataset(size=(5, 5), add_times=False)
+        static_features = tmp_path / f'features/static'
+        static_features.mkdir(parents=True)
+        x_static.to_netcdf(static_features / 'data.nc')
+
+        static_norm_dict = {'VHI': {'mean': 0.0, 'std': 1.0}}
+        with (
+            tmp_path / f'features/static/normalizing_dict.pkl'
+        ).open('wb') as f:
+            pickle.dump(static_norm_dict, f)
+
         dense_features = [10]
         hidden_size = 128
         rnn_dropout = 0.25
-        dense_dropout = 0.25
 
         model = RecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
-                                 rnn_dropout=rnn_dropout, dense_dropout=dense_dropout,
-                                 data_folder=tmp_path)
+                                 rnn_dropout=rnn_dropout,
+                                 data_folder=tmp_path, include_monthly_aggs=True)
         model.train()
 
         captured = capsys.readouterr()
-        expected_stdout = 'Epoch 1, train smooth L1: 0.'
+        expected_stdout = 'Epoch 1, train smooth L1:'
         assert expected_stdout in captured.out
 
         assert type(model.model) == RNN, \
@@ -106,6 +126,18 @@ class TestRecurrentNetwork:
 
         x.to_netcdf(train_features / 'x.nc')
         y.to_netcdf(train_features / 'y.nc')
+
+        # static
+        x_static, _, _ = _make_dataset(size=(5, 5), add_times=False)
+        static_features = tmp_path / f'features/static'
+        static_features.mkdir(parents=True)
+        x_static.to_netcdf(static_features / 'data.nc')
+
+        static_norm_dict = {'VHI': {'mean': 0.0, 'std': 1.0}}
+        with (
+            tmp_path / f'features/static/normalizing_dict.pkl'
+        ).open('wb') as f:
+            pickle.dump(static_norm_dict, f)
 
         dense_features = [10]
         hidden_size = 128
