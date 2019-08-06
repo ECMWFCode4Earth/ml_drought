@@ -61,12 +61,9 @@ class TestLinearRegression:
         x_add2, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='temp')
         x = xr.merge([x, x_add1, x_add2])
 
-        norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                             'std': np.ones((1, x.to_array().values.shape[1]))},
-                     'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                'std': np.ones((1, x.to_array().values.shape[1]))},
-                     'temp': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                              'std': np.ones((1, x.to_array().values.shape[1]))}}
+        norm_dict = {'VHI': {'mean': 0, 'std': 1},
+                     'precip': {'mean': 0, 'std': 1},
+                     'temp': {'mean': 0, 'std': 1}}
 
         static_norm_dict = {'VHI': {'mean': 0.0,
                             'std': 1.0}}

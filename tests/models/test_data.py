@@ -85,8 +85,8 @@ class TestBaseIter:
         norm_dict = {}
         for var in x.data_vars:
             norm_dict[var] = {
-                'mean': x[var].mean(dim=['lat', 'lon'], skipna=True).values,
-                'std': x[var].std(dim=['lat', 'lon'], skipna=True).values
+                'mean': float(x[var].mean(dim=['lat', 'lon', 'time'], skipna=True).values),
+                'std': float(x[var].std(dim=['lat', 'lon', 'time'], skipna=True).values)
             }
 
         class MockLoader:
