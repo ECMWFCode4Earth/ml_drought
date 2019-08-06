@@ -1,16 +1,15 @@
-import xarray as xr
-
 from pathlib import Path
-from rasterio import features
-from affine import Affine
-import numpy as np
-import geopandas as gpd
-
-from typing import Tuple, List, Optional
-from shapely.geometry import Polygon
+import xarray as xr
 from xarray.core.coordinates import DataArrayCoordinates
+import numpy as np
+from typing import Tuple, List, Optional, Dict
 
 from ..utils import Region
+
+features = None
+Affine = None
+gpd = None
+Polygon = None
 
 
 def select_bounding_box(ds: xr.Dataset,
@@ -65,112 +64,134 @@ def select_bounding_box(ds: xr.Dataset,
     return ds_slice
 
 
-def transform_from_latlon(lat: xr.DataArray, lon: xr.DataArray) -> Affine:
-    """ input 1D array of lat / lon and output an Affine transformation
-    """
-    lat = np.asarray(lat)
-    lon = np.asarray(lon)
-    trans = Affine.translation(lon[0], lat[0])
-    scale = Affine.scale(lon[1] - lon[0], lat[1] - lat[0])
-    return trans * scale
+class SHPToNetCDF:
+    def __init__(self):
+        print(
+            'the SHPToNetCDF functionality requires'
+            'rasterio, Affine, geopandas and shapely'
+        )
 
+        global features
+        if features is None:
+            from rasterio import features
 
-def rasterize(shapes: List[Polygon],
-              coords: DataArrayCoordinates,
-              variable_name: str,
-              **kwargs):
-    """Rasterize a list of (geometry, fill_value) tuples onto the given
-    xarray coordinates. This only works for 1d latitude and longitude
-    arrays.
-    """
-    fill = np.nan
-    transform: Affine = transform_from_latlon(
-        coords['lat'], coords['lon']
-    )
-    out_shape: Tuple = (len(coords['lat']), len(coords['lon']))
-    raster: np.ndarray = features.rasterize(
-        shapes, out_shape=out_shape, fill=fill,
-        transform=transform, dtype=float, **kwargs
-    )
-    spatial_coords: Dict = {
-        'lat': coords['lat'], 'lon': coords['lon']
-    }
-    dims = ['lat', 'lon']
+        global Affine
+        if Affine is None:
+            from affine import Affine
 
-    return xr.Dataset({variable_name: (dims, raster)}, coords=spatial_coords)
+        global gpd
+        if gpd is None:
+            import geopandas as gpd
 
+        global Polygon
+        if Polygon is None:
+            from shapely.geometry import Polygon
 
-def shapefile_to_xarray(da: xr.DataArray,
-                        shp_path: Path,
-                        var_name: str = 'region',
-                        lookup_colname: Optional[str] = None) -> xr.Dataset:
-    """ Create a new coord for the da indicating whether or not it
-     is inside the shapefile
+    @staticmethod
+    def transform_from_latlon(lat: xr.DataArray, lon: xr.DataArray) -> Affine:  # type: ignore
+        """ input 1D array of lat / lon and output an Affine transformation
+        """
+        lat = np.asarray(lat)
+        lon = np.asarray(lon)
+        trans = Affine.translation(lon[0], lat[0])  # type: ignore
+        scale = Affine.scale(lon[1] - lon[0], lat[1] - lat[0])  # type: ignore
+        return trans * scale
 
-    Creates a new coord - "var_name" which will have integer values
-     used to subset da for plotting / analysis
+    def rasterize(self, shapes: List[Polygon],  # type: ignore
+                  coords: DataArrayCoordinates,
+                  variable_name: str,
+                  **kwargs):
+        """Rasterize a list of (geometry, fill_value) tuples onto the given
+        xarray coordinates. This only works for 1d latitude and longitude
+        arrays.
+        """
+        fill = np.nan
+        transform: Affine = self.transform_from_latlon(  # type: ignore
+            coords['lat'], coords['lon']
+        )
+        out_shape: Tuple = (len(coords['lat']), len(coords['lon']))
+        raster: np.ndarray = features.rasterize(  # type: ignore
+            shapes, out_shape=out_shape, fill=fill,
+            transform=transform, dtype=float, **kwargs
+        )
+        spatial_coords: Dict = {
+            'lat': coords['lat'], 'lon': coords['lon']
+        }
+        dims = ['lat', 'lon']
 
-    Arguments:
-    ---------
-    :da: xr.DataArray
-        the `DataArray` with the shape that we want to rasterize the
-        shapefile onto.
+        return xr.Dataset({variable_name: (dims, raster)}, coords=spatial_coords)
 
-    :shp_path: Path
-        the path to the .shp file to be converted into a categorical
-        xr.Dataset.
+    def shapefile_to_xarray(self, da: xr.DataArray,
+                            shp_path: Path,
+                            var_name: str = 'region',
+                            lookup_colname: Optional[str] = None) -> xr.Dataset:
+        """ Create a new coord for the da indicating whether or not it
+         is inside the shapefile
 
-    :var_name: str = 'region'
-        the variable name in the new output Dataset
+        Creates a new coord - "var_name" which will have integer values
+         used to subset da for plotting / analysis
 
-    :lookup_colname: Optional[str] = None
-        the column that defines the `values` in the lookup
-        dictionary when defining the (e.g. Region names)
+        Arguments:
+        ---------
+        :da: xr.DataArray
+            the `DataArray` with the shape that we want to rasterize the
+            shapefile onto.
 
-        e.g. 'DISTNAME' in this shapefile below
-           DISTID   DISTNAME  geometry
-        0   101.0    NAIROBI  POLYGON ((36. -1 ...
-        1   201.0     KIAMBU  POLYGON ((36. -0.7 ...
+        :shp_path: Path
+            the path to the .shp file to be converted into a categorical
+            xr.Dataset.
 
-    Returns:
-    -------
-    :xr.Dataset
-        Dataset with metadata associated with the areas in the shapefile.
-        Stored as `ds.attrs['keys']` & `ds.attrs['values']`
+        :var_name: str = 'region'
+            the variable name in the new output Dataset
 
-    TODO: add a add_all_cols_as_attrs() function
-    """
-    # 1. read in shapefile
-    gdf = gpd.read_file(shp_path)
+        :lookup_colname: Optional[str] = None
+            the column that defines the `values` in the lookup
+            dictionary when defining the (e.g. Region names)
 
-    # allow the user to see the column headers
-    if lookup_colname is None:
-        print('lookup_colname MUST be provided (see error message below)')
-        print(gdf.head())
+            e.g. 'DISTNAME' in this shapefile below
+               DISTID   DISTNAME  geometry
+            0   101.0    NAIROBI  POLYGON ((36. -1 ...
+            1   201.0     KIAMBU  POLYGON ((36. -0.7 ...
 
-    assert lookup_colname in gdf.columns, \
-        f'lookup_colname must be one of: {list(gdf.columns)}'
+        Returns:
+        -------
+        :xr.Dataset
+            Dataset with metadata associated with the areas in the shapefile.
+            Stored as `ds.attrs['keys']` & `ds.attrs['values']`
 
-    # 2. create a list of tuples (shapely.geometry, id)
-    # this allows for many different polygons within a .shp file
-    # (e.g. Admin Regions of Kenya)
-    shapes = [(shape, n) for n, shape in enumerate(gdf.geometry)]
+        TODO: add a add_all_cols_as_attrs() function
+        """
+        # 1. read in shapefile
+        gdf = gpd.read_file(shp_path)  # type: ignore
 
-    # 3. create a new variable set to the id in `shapes` (same shape as da)
-    ds = rasterize(
-        shapes=shapes, coords=da.coords, variable_name=var_name
-    )
-    values = [value for value in gdf[lookup_colname].to_list()]
-    keys = [str(key) for key in gdf.index.to_list()]
-    data_vals = ds[[d for d in ds.data_vars][0]].values
-    unique_values = np.unique(data_vals[~np.isnan(data_vals)])
-    unique_values = [str(int(v)) for v in unique_values]
-    ds.attrs['keys'] = ', '.join(keys)
-    ds.attrs['values'] = ', '.join(values)
-    ds.attrs['unique_values'] = ', '.join(unique_values)
+        # allow the user to see the column headers
+        if lookup_colname is None:
+            print('lookup_colname MUST be provided (see error message below)')
+            print(gdf.head())
 
-    if ds[var_name].isnull().mean() <= 0.01:
-        print('NOTE: Only 1% of values overlap with shapes')
-        print('Are you certain the subset or shapefile are the correct region?')
+        assert lookup_colname in gdf.columns, \
+            f'lookup_colname must be one of: {list(gdf.columns)}'
 
-    return ds
+        # 2. create a list of tuples (shapely.geometry, id)
+        # this allows for many different polygons within a .shp file
+        # (e.g. Admin Regions of Kenya)
+        shapes = [(shape, n) for n, shape in enumerate(gdf.geometry)]
+
+        # 3. create a new variable set to the id in `shapes` (same shape as da)
+        ds = self.rasterize(
+            shapes=shapes, coords=da.coords, variable_name=var_name
+        )
+        values = [value for value in gdf[lookup_colname].to_list()]
+        keys = [str(key) for key in gdf.index.to_list()]
+        data_vals = ds[[d for d in ds.data_vars][0]].values
+        unique_values = np.unique(data_vals[~np.isnan(data_vals)])
+        unique_values = [str(int(v)) for v in unique_values]
+        ds.attrs['keys'] = ', '.join(keys)
+        ds.attrs['values'] = ', '.join(values)
+        ds.attrs['unique_values'] = ', '.join(unique_values)
+
+        if ds[var_name].isnull().mean() <= 0.01:
+            print('NOTE: Only 1% of values overlap with shapes')
+            print('Are you certain the subset or shapefile are the correct region?')
+
+        return ds

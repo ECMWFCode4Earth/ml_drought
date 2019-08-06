@@ -1,12 +1,11 @@
 from pathlib import Path
 import xarray as xr
 from collections import namedtuple
-
-import geopandas as gpd
-from geopandas.geodataframe import GeoDataFrame
-
 from .base import BasePreProcessor
-from .utils import shapefile_to_xarray
+from .utils import SHPToNetCDF
+
+gpd = None
+GeoDataFrame = None
 
 
 AdminBoundaries = namedtuple(
@@ -23,6 +22,18 @@ class OCHAAdminBoundariesPreprocesser(BasePreProcessor):
     country: str
     dataset = 'boundaries'
     analysis = True
+
+    def __init__(self, data_folder: Path = Path('data')):
+        super().__init__(data_folder)
+
+        # try and import geopandas
+        print('The OCHA AdminBoundaries preprocessor requires the geopandas package')
+        global gpd
+        if gpd is None:
+            import geopandas as gpd
+        global GeoDataFrame
+        if GeoDataFrame is None:
+            from geopandas.geodataframe import GeoDataFrame
 
     def get_filename(self, var_name: str) -> str:  # type: ignore
         new_filename = f'{var_name}_{self.country}.nc'
@@ -73,7 +84,8 @@ class OCHAAdminBoundariesPreprocesser(BasePreProcessor):
         da = target_ds[data_var]
 
         # turn the shapefile into a categorical variable (like landcover)
-        ds = shapefile_to_xarray(
+        shp_to_nc = SHPToNetCDF()
+        ds = shp_to_nc.shapefile_to_xarray(
             da=da, shp_path=shp_filepath, var_name=var_name,
             lookup_colname=lookup_colname
         )
@@ -100,42 +112,42 @@ class KenyaAdminPreprocessor(OCHAAdminBoundariesPreprocesser):
             name='level_1',
             lookup_colname='PROVINCE',
             var_name='province_l1',
-            shp_filepath= self.base_raw_dir / 'Admin2/KEN_admin2_2002_DEPHA.shp',
+            shp_filepath=self.base_raw_dir / 'Admin2/KEN_admin2_2002_DEPHA.shp',
         )
 
         level_2 = AdminBoundaries(
             name='level_2',
             lookup_colname='DISTNAME',
             var_name='district_l2',
-            shp_filepath= self.base_raw_dir / 'Ken_Districts/Ken_Districts.shp',
+            shp_filepath=self.base_raw_dir / 'Ken_Districts/Ken_Districts.shp',
         )
 
         level_3 = AdminBoundaries(
             name='level_3',
             lookup_colname='DIVNAME',
             var_name='division_l3',
-            shp_filepath= self.base_raw_dir / 'Ken_Divisions/Ken_Divisions.shp',
+            shp_filepath=self.base_raw_dir / 'Ken_Divisions/Ken_Divisions.shp',
         )
 
         level_3_wards = AdminBoundaries(
             name='level_3_wards',
             lookup_colname='IEBC_WARDS',
             var_name='wards_l3',
-            shp_filepath= self.base_raw_dir / 'Kenya wards.shp',
+            shp_filepath=self.base_raw_dir / 'Kenya wards.shp',
         )
 
         level_4 = AdminBoundaries(
             name='level_4',
             lookup_colname='LOCNAME',
             var_name='location_l4',
-            shp_filepath= self.base_raw_dir / 'Ken_Locations/Ken_Locations.shp',
+            shp_filepath=self.base_raw_dir / 'Ken_Locations/Ken_Locations.shp',
         )
 
         level_5 = AdminBoundaries(
             name='level_5',
             lookup_colname='SLNAME',
             var_name='sublocation_l5',
-            shp_filepath= self.base_raw_dir / 'Ken_Sublocations/Ken_Sublocations.shp',
+            shp_filepath=self.base_raw_dir / 'Ken_Sublocations/Ken_Sublocations.shp',
         )
 
         lookup = {
