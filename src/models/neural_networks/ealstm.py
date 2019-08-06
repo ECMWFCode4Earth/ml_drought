@@ -209,10 +209,131 @@ class EALSTM(nn.Module):
 
 
 class EALSTMCell(nn.Module):
+    """See below. Implemented using modules so it can be explained with shap
+    """
+    def __init__(self,
+                 input_size_dyn: int,
+                 input_size_stat: int,
+                 hidden_size: int,
+                 batch_first: bool = True):
+        super().__init__()
+
+        self.input_size_dyn = input_size_dyn
+        self.input_size_stat = input_size_stat
+        self.hidden_size = hidden_size
+        self.batch_first = batch_first
+
+        self.forget_gate_i = nn.Linear(in_features=input_size_dyn,
+                                       out_features=hidden_size, bias=False)
+        self.forget_gate_h = nn.Linear(in_features=hidden_size, out_features=hidden_size,
+                                       bias=True)
+
+        self.update_gate = nn.Sequential(*[
+            nn.Linear(in_features=input_size_stat, out_features=hidden_size),
+            nn.Sigmoid()
+        ])
+
+        self.update_candidates_i = nn.Linear(in_features=input_size_dyn, out_features=hidden_size,
+                                             bias=False)
+        self.update_candidates_h = nn.Linear(in_features=hidden_size, out_features=hidden_size,
+                                             bias=True)
+
+        self.output_gate_i = nn.Linear(in_features=input_size_dyn, out_features=hidden_size,
+                                       bias=False)
+        self.output_gate_h = nn.Linear(in_features=hidden_size, out_features=hidden_size,
+                                       bias=True)
+
+        self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        self._reset_i(self.forget_gate_i)
+        self._reset_i(self.update_candidates_i)
+        self._reset_i(self.output_gate_i)
+        self._reset_i(self.update_gate[0])
+        nn.init.constant_(self.update_gate[0].bias.data, val=0)
+
+        self._reset_h(self.forget_gate_h, self.hidden_size)
+        self._reset_h(self.update_candidates_h, self.hidden_size)
+        self._reset_h(self.output_gate_h, self.hidden_size)
+
+    @staticmethod
+    def _reset_i(layer):
+        nn.init.orthogonal(layer.weight.data)
+
+    @staticmethod
+    def _reset_h(layer, hidden_size):
+        weight_hh_data = torch.eye(hidden_size)
+        layer.weight.data = weight_hh_data
+        nn.init.constant_(layer.bias.data, val=0)
+
+    def forward(self, x_d, x_s):
+        """[summary]
+        Parameters
+        ----------
+        x_d : torch.Tensor
+            Tensor, containing a batch of sequences of the dynamic features. Shape has to match
+            the format specified with batch_first.
+        x_s : torch.Tensor
+            Tensor, containing a batch of static features.
+        Returns
+        -------
+        h_n : torch.Tensor
+            The hidden states of each time step of each sample in the batch.
+        c_n : torch.Tensor
+            The cell states of each time step of each sample in the batch.
+        """
+        if self.batch_first:
+            x_d = x_d.transpose(0, 1)
+
+        seq_len, batch_size, _ = x_d.size()
+
+        h_0 = x_d.data.new(batch_size, self.hidden_size).zero_()
+        c_0 = x_d.data.new(batch_size, self.hidden_size).zero_()
+        h_x = (h_0, c_0)
+
+        # empty lists to temporally store all intermediate hidden/cell states
+        h_n, c_n = [], []
+
+        # calculate input gate only once because inputs are static
+        i = self.update_gate(x_s)
+
+        # perform forward steps over input sequence
+        for t in range(seq_len):
+            h_0, c_0 = h_x
+
+            forget_state = self.sigmoid(self.forget_gate_i(x_d[t]) + self.forget_gate_h(h_0))
+            cell_candidates = self.tanh(self.update_candidates_i(x_d[t]) +
+                                        self.update_candidates_h(h_0))
+            output_state = self.sigmoid(self.output_gate_i(x_d[t]) + self.output_gate_h(h_0))
+
+            c_1 = forget_state * c_0 + i * cell_candidates
+            h_1 = output_state * torch.tanh(c_1)
+
+            # store intermediate hidden/cell state in list
+            h_n.append(h_1)
+            c_n.append(c_1)
+
+            h_x = (h_1, c_1)
+
+        h_n = torch.stack(h_n, 0)
+        c_n = torch.stack(c_n, 0)
+
+        if self.batch_first:
+            h_n = h_n.transpose(0, 1)
+            c_n = c_n.transpose(0, 1)
+
+        return h_n, c_n
+
+
+class OrgEALSTMCell(nn.Module):
     """Implementation of the Entity-Aware-LSTM (EA-LSTM)
 
     This code was copied from
     https://github.com/kratzert/ealstm_regional_modeling/blob/master/papercode/ealstm.py
+    and is currently used just to test our implementation of the EALSTMCell
 
     Parameters
     ----------
