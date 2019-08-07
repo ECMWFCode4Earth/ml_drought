@@ -127,7 +127,7 @@ class NNBase(ModelBase):
                 for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
                     optimizer.zero_grad()
                     pred = self.model(x_batch[0],
-                                      self._one_hot_months(x_batch[1]),
+                                      self._one_hot_months(x_batch[1]),  # type: ignore
                                       x_batch[2],
                                       x_batch[3],
                                       x_batch[4],
@@ -232,29 +232,36 @@ class NNBase(ModelBase):
                 for _ in range(samples_per_instance):
                     idx = random.randint(0, x[0].shape[0] - 1)
                     output_tensors.append(x[0][idx])
-                    if self.include_pred_month:
-                        one_hot_months = self._one_hot_months(x[1][idx: idx + 1])
-                        assert one_hot_months is not None
-                        output_pm.append(one_hot_months)
-                    if self.include_latlons:
-                        assert x[2] is not None
-                        output_ll.append(x[2])
-                    if self.experiment == 'nowcast':
-                        assert x[3] is not None
-                        output_cur.append(x[3])
-                    if self.include_yearly_aggs:
-                        output_ym.append(x[4])
-                    if self.include_static:
-                        output_static.append(x[5])
-        return [torch.stack(output_tensors),  # type: ignore
-                torch.cat(output_pm, dim=0) if len(output_pm) > 0 else None,
-                torch.cat(output_ll, dim=0) if len(output_ll) > 0 else None,
-                torch.cat(output_cur, dim=0) if len(output_cur) > 0 else None,
-                torch.cat(output_ym, dim=0) if len(output_cur) > 0 else None,
-                torch.cat(output_static, dim=0) if len(output_static) > 0 else None]
 
-    def _one_hot_months(self, indices: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
-        if self.include_pred_month:
-            assert indices is not None, f"Years can't be None if include pred months is True"
-            return torch.eye(14)[indices.long()][:, 1:-1]
-        return None
+                    # one hot months
+                    one_hot_months = self._one_hot_months(x[1][idx: idx + 1])
+                    output_pm.append(one_hot_months)
+
+                    # latlons
+                    output_ll.append(x[2])
+
+                    # current array
+                    if x[3] is None:
+                        output_cur.append(torch.zeros(1))
+                    else:
+                        output_cur.append(x[3])
+
+                    # yearly aggs
+                    output_ym.append(x[4])
+
+                    # static data
+                    if x[5] is None:
+                        output_static.append(torch.zeros(1))
+                    else:
+                        output_static.append(x[5])
+
+        return [torch.stack(output_tensors),  # type: ignore
+                torch.cat(output_pm, dim=0),
+                torch.cat(output_ll, dim=0),
+                torch.cat(output_cur, dim=0),
+                torch.cat(output_ym, dim=0),
+                torch.cat(output_static, dim=0)]
+
+    @staticmethod
+    def _one_hot_months(indices: torch.Tensor) -> torch.Tensor:
+        return torch.eye(14)[indices.long()][:, 1:-1]
