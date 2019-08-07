@@ -7,6 +7,7 @@ import pickle
 from typing import Dict, List, Optional, Tuple
 
 from .base import NNBase
+from .utils import VariationalDropout
 
 
 class EARecurrentNetwork(NNBase):
@@ -245,7 +246,7 @@ class EALSTMCell(nn.Module):
 
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
-        self.dropout = nn.Dropout(dropout)
+        self.dropout = VariationalDropout(dropout)
 
         self.reset_parameters()
 
@@ -316,6 +317,9 @@ class EALSTMCell(nn.Module):
             # store intermediate hidden/cell state in list
             h_n.append(h_1)
             c_n.append(c_1)
+
+            if self.training & (t == 0):
+                self.dropout.update_mask(h_1.shape, h_1.is_cuda)
 
             h_x = (self.dropout(h_1), c_1)
 

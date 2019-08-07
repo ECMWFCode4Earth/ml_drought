@@ -8,6 +8,7 @@ from torch import nn
 from typing import Dict, List, Optional, Tuple
 
 from .base import NNBase
+from .utils import VariationalDropout
 
 
 class RecurrentNetwork(NNBase):
@@ -136,7 +137,7 @@ class RNN(nn.Module):
         self.include_yearly_agg = False
         self.include_static = False
 
-        self.dropout = nn.Dropout(rnn_dropout)
+        self.dropout = VariationalDropout(rnn_dropout)
         self.rnn = UnrolledRNN(input_size=features_per_month,
                                hidden_size=hidden_size,
                                batch_first=True)
@@ -199,6 +200,8 @@ class RNN(nn.Module):
             input_x = x[:, i, :].unsqueeze(1)
             _, (hidden_state, cell_state) = self.rnn(input_x,
                                                      (hidden_state, cell_state))
+            if self.training and (i == 0):
+                self.dropout.update_mask(hidden_state.shape, hidden_state.is_cuda)
             hidden_state = self.dropout(hidden_state)
 
         x = hidden_state.squeeze(0)
