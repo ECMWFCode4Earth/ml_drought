@@ -1,5 +1,6 @@
 import pickle
 import pytest
+from copy import copy
 import numpy as np
 
 import torch
@@ -17,6 +18,7 @@ class TestEARecurrentNetwork:
 
         features_per_month = 5
         dense_features = [10]
+        input_dense_features = copy(dense_features)
         hidden_size = 128
         rnn_dropout = 0.25
         include_latlons = True
@@ -54,7 +56,7 @@ class TestEARecurrentNetwork:
         assert model_dict['model']['yearly_agg_size'] == yearly_agg_size
         assert model_dict['hidden_size'] == hidden_size
         assert model_dict['rnn_dropout'] == rnn_dropout
-        assert model_dict['dense_features'] == dense_features
+        assert model_dict['dense_features'] == input_dense_features
         assert model_dict['include_pred_month'] == include_pred_month
         assert model_dict['include_latlons'] == include_latlons
         assert model_dict['include_yearly_aggs'] == include_yearly_aggs

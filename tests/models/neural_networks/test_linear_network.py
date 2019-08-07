@@ -1,4 +1,5 @@
 import pickle
+from copy import copy
 import pytest
 import xarray as xr
 
@@ -13,6 +14,7 @@ class TestLinearNetwork:
     def test_save(self, tmp_path, monkeypatch):
 
         layer_sizes = [10]
+        input_layer_sizes = copy(layer_sizes)
         input_size = 10
         dropout = 0.25
         include_pred_month = True
@@ -53,7 +55,7 @@ class TestLinearNetwork:
             assert (model.model.state_dict()[key] == val).all()
 
         assert model_dict['dropout'] == dropout
-        assert model_dict['layer_sizes'] == layer_sizes
+        assert model_dict['layer_sizes'] == input_layer_sizes
         assert model_dict['model']['input_size'] == input_size
         assert model_dict['include_pred_month'] == include_pred_month
         assert model_dict['include_latlons'] == include_latlons

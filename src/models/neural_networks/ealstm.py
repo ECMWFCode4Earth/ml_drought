@@ -3,6 +3,7 @@ from torch import nn
 
 from pathlib import Path
 import pickle
+from copy import copy
 
 from typing import Dict, List, Optional, Tuple
 
@@ -34,6 +35,7 @@ class EARecurrentNetwork(NNBase):
         # to initialize and save the model
         self.hidden_size = hidden_size
         self.rnn_dropout = rnn_dropout
+        self.input_dense = copy(dense_features)  # this is to make sure we can reload the model
         if dense_features is None: dense_features = []
         self.dense_features = dense_features
 
@@ -55,7 +57,7 @@ class EARecurrentNetwork(NNBase):
             'batch_size': self.batch_size,
             'hidden_size': self.hidden_size,
             'rnn_dropout': self.rnn_dropout,
-            'dense_features': self.dense_features,
+            'dense_features': self.input_dense,
             'include_pred_month': self.include_pred_month,
             'include_latlons': self.include_latlons,
             'surrounding_pixels': self.surrounding_pixels,
