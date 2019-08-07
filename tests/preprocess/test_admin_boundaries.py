@@ -8,6 +8,7 @@ from ..utils import _make_dataset, CreateSHPFile
 
 class TestAdminBoundariesPreprocessor:
     @staticmethod
+    @pytest.mark.xfail(reason='geopandas not part of the testing environment')
     def test_init(tmp_path):
         preprocessor = OCHAAdminBoundariesPreprocesser(tmp_path)
         assert preprocessor.out_dir.parts[-2] == 'analysis', 'self.analysis should' \
@@ -16,6 +17,7 @@ class TestAdminBoundariesPreprocessor:
         assert (tmp_path / 'analysis' / 'boundaries_preprocessed').exists()
 
     @staticmethod
+    @pytest.mark.xfail(reason='geopandas not part of the testing environment')
     def test_existing_file_not_overwritten(tmp_path, capsys):
         ref_nc_dir = tmp_path / 'interim' / 'vhi_preprocessed'
         ref_nc_dir.mkdir(exist_ok=True, parents=True)
