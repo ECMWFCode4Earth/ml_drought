@@ -41,7 +41,8 @@ def load_model(model_path: Path, data_path: Optional[Path] = None,
     str_to_model = {
         'rnn': RecurrentNetwork,
         'linear_network': LinearNetwork,
-        'linear_regression': LinearRegression
+        'linear_regression': LinearRegression,
+        'ealstm': EARecurrentNetwork
     }
 
     # The assumption that model type is index -2 and that the data path
