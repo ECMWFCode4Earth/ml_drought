@@ -146,13 +146,12 @@ class EALSTM(nn.Module):
         if include_pred_month:
             ea_static_size += 12
 
-        self.dropout = nn.Dropout(rnn_dropout)
         self.rnn = EALSTMCell(input_size_dyn=features_per_month,
                               input_size_stat=ea_static_size,
                               hidden_size=hidden_size,
+                              dropout=rnn_dropout,
                               batch_first=True)
         self.hidden_size = hidden_size
-        self.rnn_dropout = nn.Dropout(rnn_dropout)
 
         dense_input_size = hidden_size
         if experiment == 'nowcast':
@@ -197,7 +196,7 @@ class EALSTM(nn.Module):
 
         hidden_state, cell_state = self.rnn(x, torch.cat(static_x, dim=-1))
 
-        x = self.rnn_dropout(hidden_state[:, -1, :])
+        x = hidden_state[:, -1, :]
 
         if self.experiment == 'nowcast':
             assert current is not None
@@ -215,6 +214,7 @@ class EALSTMCell(nn.Module):
                  input_size_dyn: int,
                  input_size_stat: int,
                  hidden_size: int,
+                 dropout: float = 0,
                  batch_first: bool = True):
         super().__init__()
 
@@ -245,6 +245,7 @@ class EALSTMCell(nn.Module):
 
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
+        self.dropout = nn.Dropout(dropout)
 
         self.reset_parameters()
 
@@ -316,7 +317,7 @@ class EALSTMCell(nn.Module):
             h_n.append(h_1)
             c_n.append(c_1)
 
-            h_x = (h_1, c_1)
+            h_x = (self.dropout(h_1), c_1)
 
         h_n = torch.stack(h_n, 0)
         c_n = torch.stack(c_n, 0)
