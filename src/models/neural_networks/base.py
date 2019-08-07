@@ -238,29 +238,29 @@ class NNBase(ModelBase):
                     output_pm.append(one_hot_months)
 
                     # latlons
-                    output_ll.append(x[2])
+                    output_ll.append(x[2][idx])
 
                     # current array
                     if x[3] is None:
                         output_cur.append(torch.zeros(1))
                     else:
-                        output_cur.append(x[3])
+                        output_cur.append(x[3][idx])
 
                     # yearly aggs
-                    output_ym.append(x[4])
+                    output_ym.append(x[4][idx])
 
                     # static data
                     if x[5] is None:
                         output_static.append(torch.zeros(1))
                     else:
-                        output_static.append(x[5])
+                        output_static.append(x[5][idx])
 
         return [torch.stack(output_tensors),  # type: ignore
                 torch.cat(output_pm, dim=0),
-                torch.cat(output_ll, dim=0),
-                torch.cat(output_cur, dim=0),
-                torch.cat(output_ym, dim=0),
-                torch.cat(output_static, dim=0)]
+                torch.stack(output_ll),
+                torch.stack(output_cur),
+                torch.stack(output_ym),
+                torch.stack(output_static)]
 
     @staticmethod
     def _one_hot_months(indices: torch.Tensor) -> torch.Tensor:
