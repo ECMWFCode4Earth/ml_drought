@@ -49,6 +49,7 @@ def _create_dummy_precip_data(tmp_path,
 
     return data_dir
 
+
 class CreateSHPFile:
     def __init__(self):
         # import Point and Geopandas
