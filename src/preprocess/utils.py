@@ -64,10 +64,10 @@ def select_bounding_box(ds: xr.Dataset,
     return ds_slice
 
 
-class SHPToNetCDF:
+class SHPtoXarray:
     def __init__(self):
         print(
-            'the SHPToNetCDF functionality requires'
+            'the SHPtoXarray functionality requires'
             'rasterio, Affine, geopandas and shapely'
         )
 

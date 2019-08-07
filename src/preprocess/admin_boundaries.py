@@ -2,7 +2,7 @@ from pathlib import Path
 import xarray as xr
 from collections import namedtuple
 from .base import BasePreProcessor
-from .utils import SHPToNetCDF
+from .utils import SHPtoXarray
 
 gpd = None
 GeoDataFrame = None
@@ -84,7 +84,7 @@ class OCHAAdminBoundariesPreprocesser(BasePreProcessor):
         da = target_ds[data_var]
 
         # turn the shapefile into a categorical variable (like landcover)
-        shp_to_nc = SHPToNetCDF()
+        shp_to_nc = SHPtoXarray()
         ds = shp_to_nc.shapefile_to_xarray(
             da=da, shp_path=shp_filepath, var_name=var_name,
             lookup_colname=lookup_colname
