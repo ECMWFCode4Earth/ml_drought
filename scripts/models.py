@@ -222,6 +222,8 @@ def earnn(
     key, val = list(next(iter(test_arrays_loader)).items())[0]
 
     explain_inputs = _make_nn_input(val.x, start_idx=0)
+    with open('variables_ealstm.txt', 'w') as f:
+        f.write(str(val.x_vars))
     explain_arrays = predictor.explain(explain_inputs)
     for idx, shap_array in enumerate(explain_arrays):
         np.save(f'shap_ealstm_valie_{idx_to_input[idx]}.npy', shap_array)
