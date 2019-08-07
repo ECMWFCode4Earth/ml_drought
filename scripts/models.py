@@ -226,7 +226,7 @@ def earnn(
         f.write(str(val.x_vars))
     explain_arrays = predictor.explain(explain_inputs)
     for idx, shap_array in enumerate(explain_arrays):
-        np.save(f'shap_ealstm_valie_{idx_to_input[idx]}.npy', shap_array)
+        np.save(f'shap_ealstm_value_{idx_to_input[idx]}.npy', shap_array)
         np.save(f'shap_ealstm_input_{idx_to_input[idx]}.npy', explain_inputs[idx].cpu().numpy())
 
 
