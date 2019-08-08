@@ -79,13 +79,14 @@ def monthly_r2_score(month: int,
 
 
 def plot_predictions(pred_month: int, model: str,
+                     target_var: str = 'VHI',
                      pred_year: int = 2018,
                      data_path: Path = Path('data'),
                      experiment: str = 'one_month_forecast'):
 
     true = xr.open_dataset(data_path / f'features/{experiment}/test'
                            f'/{pred_year}_{pred_month}/y.nc').\
-        rename({'VHI': 'preds'}).isel(time=0)
+        rename({target_var: 'preds'}).isel(time=0)
 
     model_ds = xr.open_dataset(data_path / f'models/{experiment}/{model}/preds'
                                f'_{pred_year}_{pred_month}.nc')
