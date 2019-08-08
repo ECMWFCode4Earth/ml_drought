@@ -46,33 +46,7 @@ def regression(
     predictor.evaluate(save_preds=True)
 
     # mostly to test it works
-    test_arrays_loader = DataLoader(data_path=data_path, batch_file_size=1,
-                                    experiment=experiment,
-                                    shuffle_data=False, mode='test')
-    key, val = list(next(iter(test_arrays_loader)).items())[0]
-
-    explain_hist, explain_add = predictor.explain(val.x)
-
-    np.save('shap_regression_historical.npy', explain_hist)
-    np.save('shap_regression_add.npy', explain_add)
-    np.save('shap_x_hist.npy', val.x.historical)
-    np.save('shap_x_add.npy', val.x.pred_months)
-
-    with open('variables.txt', 'w') as f:
-        f.write(str(val.x_vars))
-
-    # plot the variables
-    with (data_path / f'features/{experiment}/normalizing_dict.pkl').open('rb') as f:
-        normalizing_dict = pickle.load(f)
-
-    for variable in val.x_vars:
-        plt.clf()
-        plot_shap_values(
-            val.x.historical[0], explain_hist[0], val.x_vars,
-            normalizing_dict, variable, normalize_shap_plots=True,
-            show=False
-        )
-        plt.savefig(f'{variable}_linear_regression.png', dpi=300, bbox_inches='tight')
+    predictor.explain(save_shap_values=True)
 
 
 def linear_nn(

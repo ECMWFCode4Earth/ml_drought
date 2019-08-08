@@ -140,13 +140,15 @@ class TestLinearRegression:
                     if self.idx < self.max_idx:
                         # batch_size = 10, timesteps = 2, num_features = 1
                         self.idx += 1
-                        return (np.ones((10, 2, 1)), np.ones((10, ), dtype=np.int8)), None
+                        return (np.ones((10, 2, 1)), np.ones((10, ), dtype=np.int8),
+                                np.ones((10, 2)), np.ones((10, 2)), np.ones((10, 2)),
+                                np.ones((10, 2))), None
                     else:
                         raise StopIteration()
             return MockIterator()
 
         def do_nothing(self, data_path, batch_file_size, shuffle_data, mode, pred_months,
-                       surrounding_pixels, monthly_aggs, ignore_vars, static):
+                       surrounding_pixels, ignore_vars):
 
             pass
 
@@ -157,7 +159,8 @@ class TestLinearRegression:
         calculated_mean = model._calculate_big_mean()
 
         # 1 for the 2 features and for the first month, 0 for the rest
-        expected_mean = np.array([1., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+        expected_mean = np.array([1., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                                  1., 1., 1., 1.])
 
         # np.isclose because of rounding
         assert np.isclose(calculated_mean, expected_mean).all()

@@ -68,7 +68,7 @@ class NNBase(ModelBase):
             # if no input is passed to explain, take 10 values and explain them
             test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=1,
                                             shuffle_data=True, mode='test', to_tensor=True,
-                                            static=True)
+                                            static=True, experiment=self.experiment)
             key, val = list(next(iter(test_arrays_loader)).items())[0]
             x = self.make_shap_input(val.x, start_idx=0, num_inputs=10)
             var_names = val.x_vars
