@@ -1,6 +1,7 @@
 import numpy as np
 import random
 from pathlib import Path
+import pickle
 import math
 
 import torch
@@ -8,11 +9,11 @@ from torch.nn import functional as F
 
 import shap
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 from ..base import ModelBase
 from ..utils import chunk_array
-from ..data import DataLoader, train_val_mask
+from ..data import DataLoader, train_val_mask, TrainData, idx_to_input
 
 
 class NNBase(ModelBase):
@@ -38,8 +39,9 @@ class NNBase(ModelBase):
 
         self.explainer: Optional[shap.DeepExplainer] = None
 
-    def explain(self, x: Any) -> Union[np.ndarray,
-                                       Tuple[np.ndarray, ...]]:
+    def explain(self, x: Optional[List[torch.Tensor]] = None,
+                var_names: Optional[List[str]] = None,
+                save_shap_values: bool = True) -> List[np.ndarray]:
         assert self.model is not None, 'Model must be trained!'
 
         if self.explainer is None:
@@ -47,13 +49,30 @@ class NNBase(ModelBase):
             self.explainer: shap.DeepExplainer = shap.DeepExplainer(
                 self.model, background_samples)
 
-        if self.include_pred_month:
-            assert type(x) == list, \
-                'include_pred_month is True, so this model expects a list of tensors as input'
-            if len(x[1].shape) == 1:
-                x[1] = self._one_hot_months(x[1])
+        if x is None:
+            # if no input is passed to explain, take 10 values and explain them
+            test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=1,
+                                            shuffle_data=False, mode='test', to_tensor=True,
+                                            static=True)
+            key, val = list(next(iter(test_arrays_loader)).items())[0]
+            x = self.make_shap_input(val.x, start_idx=0, num_inputs=10)
+            var_names = val.x_vars
 
-        return self.explainer.shap_values(x)
+        explain_arrays = self.explainer.shap_values(x)
+
+        if save_shap_values:
+            analysis_folder = self.model_dir / 'analysis'
+            if not analysis_folder.exists():
+                analysis_folder.mkdir()
+            for idx, shap_array in enumerate(explain_arrays):
+                np.save(analysis_folder / f'shap value_{idx_to_input[idx]}.npy', shap_array)
+                np.save(analysis_folder / f'input_{idx_to_input[idx]}.npy', x[idx].cpu().numpy())
+
+            # save the variable names too
+            with (analysis_folder / 'input_variable_names.pkl').open('wb') as f:
+                pickle.dump(var_names, f)
+
+        return explain_arrays
 
     def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> torch.nn.Module:
         raise NotImplementedError
@@ -265,3 +284,28 @@ class NNBase(ModelBase):
     @staticmethod
     def _one_hot_months(indices: torch.Tensor) -> torch.Tensor:
         return torch.eye(14)[indices.long()][:, 1:-1]
+
+    def make_shap_input(self, x: TrainData, start_idx: int = 0,
+                        num_inputs: int = 10) -> List[torch.Tensor]:
+        """
+        Returns a list of tensors, as is required
+        by the shap explainer
+        """
+        output_tensors = []
+        output_tensors.append(x.historical[start_idx: start_idx + num_inputs])
+        # one hot months
+        one_hot_months = self._one_hot_months(x.pred_months[start_idx: start_idx + num_inputs])
+        output_tensors.append(one_hot_months[start_idx: start_idx + num_inputs])
+        output_tensors.append(x.latlons[start_idx: start_idx + num_inputs])
+        if x.current is None:
+            output_tensors.append(torch.zeros(num_inputs, 1))
+        else:
+            output_tensors.append(x.current[start_idx: start_idx + num_inputs])
+        # yearly aggs
+        output_tensors.append(x.yearly_aggs[start_idx: start_idx + num_inputs])
+        # static data
+        if x.static is None:
+            output_tensors.append(torch.zeros(num_inputs, 1))
+        else:
+            output_tensors.append(x.static[start_idx: start_idx + num_inputs])
+        return output_tensors

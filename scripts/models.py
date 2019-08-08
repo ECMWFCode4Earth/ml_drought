@@ -5,50 +5,12 @@ from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
-import torch
 
 from src.analysis import plot_shap_values
 from src.models import (Persistence, LinearRegression,
                         LinearNetwork, RecurrentNetwork,
                         EARecurrentNetwork, load_model)
-from src.models.neural_networks.base import NNBase
 from src.models.data import DataLoader
-
-
-idx_to_input = {
-    0: 'historical',
-    1: 'pred_months',
-    2: 'latlons',
-    3: 'current',
-    4: 'yearly_aggs',
-    5: 'static'
-}
-
-
-def _make_nn_input(x, start_idx):
-    """
-    Returns a list of tensors, as is required
-    by the shap explainer
-    """
-
-    output_tensors = []
-    output_tensors.append(x.historical[start_idx: start_idx + 3])
-    # one hot months
-    one_hot_months = NNBase._one_hot_months(x.pred_months[start_idx: start_idx + 3])
-    output_tensors.append(one_hot_months[start_idx: start_idx + 3])
-    output_tensors.append(x.latlons[start_idx: start_idx + 3])
-    if x.current is None:
-        output_tensors.append(torch.zeros(3, 1))
-    else:
-        output_tensors.append(x.current[start_idx: start_idx + 3])
-    # yearly aggs
-    output_tensors.append(x.yearly_aggs[start_idx: start_idx + 3])
-    # static data
-    if x.static is None:
-        output_tensors.append(torch.zeros(3, 1))
-    else:
-        output_tensors.append(x.static[start_idx: start_idx + 3])
-    return output_tensors
 
 
 def parsimonious(
@@ -215,19 +177,7 @@ def earnn(
     else:
         predictor = load_model(data_path / f'models/{experiment}/ealstm/model.pkl')
 
-    # See above; we need to update the shap version before this can be explained
-    test_arrays_loader = DataLoader(data_path=data_path, batch_file_size=1,
-                                    shuffle_data=False, mode='test', to_tensor=True,
-                                    static=True)
-    key, val = list(next(iter(test_arrays_loader)).items())[0]
-
-    explain_inputs = _make_nn_input(val.x, start_idx=0)
-    with open('variables_ealstm.txt', 'w') as f:
-        f.write(str(val.x_vars))
-    explain_arrays = predictor.explain(explain_inputs)
-    for idx, shap_array in enumerate(explain_arrays):
-        np.save(f'shap_ealstm_value_{idx_to_input[idx]}.npy', shap_array)
-        np.save(f'shap_ealstm_input_{idx_to_input[idx]}.npy', explain_inputs[idx].cpu().numpy())
+    _ = predictor.explain(save_shap_values=True)
 
 
 if __name__ == '__main__':

@@ -32,6 +32,19 @@ class ModelArrays:
     latlons: Optional[np.ndarray] = None
 
 
+# The dict below maps the indices of the arrays returned
+# by the training iterator to their name. It should be updated
+# if new inputs are added
+idx_to_input = {
+    0: 'historical',
+    1: 'pred_months',
+    2: 'latlons',
+    3: 'current',
+    4: 'yearly_aggs',
+    5: 'static'
+}
+
+
 def train_val_mask(mask_len: int, val_ratio: float = 0.3) -> Tuple[List[bool], List[bool]]:
     """Makes a trainining and validation mask which can be passed to the dataloader
     Arguments
