@@ -41,7 +41,22 @@ class NNBase(ModelBase):
 
     def explain(self, x: Optional[List[torch.Tensor]] = None,
                 var_names: Optional[List[str]] = None,
-                save_shap_values: bool = True) -> List[np.ndarray]:
+                save_shap_values: bool = True) -> Dict[str, np.ndarray]:
+        """
+        Expain the outputs of a trained model.
+
+        Arguments
+        ----------
+        x: The values to explain. If None, samples are randomly drawn from
+            the test data
+        var_names: The variable names of the historical inputs. If x is None, this
+            will be calculated. Only necessary if the arrays are going to be saved
+        save_shap_values: Whether or not to save the shap values
+
+        Returns
+        ----------
+        shap_dict: A dictionary of shap values for each of the model's input arrays
+        """
         assert self.model is not None, 'Model must be trained!'
 
         if self.explainer is None:
@@ -52,7 +67,7 @@ class NNBase(ModelBase):
         if x is None:
             # if no input is passed to explain, take 10 values and explain them
             test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=1,
-                                            shuffle_data=False, mode='test', to_tensor=True,
+                                            shuffle_data=True, mode='test', to_tensor=True,
                                             static=True)
             key, val = list(next(iter(test_arrays_loader)).items())[0]
             x = self.make_shap_input(val.x, start_idx=0, num_inputs=10)
@@ -69,10 +84,11 @@ class NNBase(ModelBase):
                 np.save(analysis_folder / f'input_{idx_to_input[idx]}.npy', x[idx].cpu().numpy())
 
             # save the variable names too
-            with (analysis_folder / 'input_variable_names.pkl').open('wb') as f:
-                pickle.dump(var_names, f)
+            if var_names is not None:
+                with (analysis_folder / 'input_variable_names.pkl').open('wb') as f:
+                    pickle.dump(var_names, f)
 
-        return explain_arrays
+        return {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)}
 
     def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> torch.nn.Module:
         raise NotImplementedError
