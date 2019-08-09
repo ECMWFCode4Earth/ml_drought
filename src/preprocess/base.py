@@ -28,6 +28,7 @@ class BasePreProcessor:
     """
     dataset: str
     static: bool = False
+    analysis: bool = False
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
         self.data_folder = data_folder
@@ -43,7 +44,11 @@ class BasePreProcessor:
             else:
                 folder_prefix = self.dataset
 
-            self.out_dir = self.preprocessed_folder / f'{folder_prefix}_preprocessed'
+            if self.analysis:
+                self.out_dir = self.data_folder / 'analysis' / f'{self.dataset}_preprocessed'
+            else:
+                self.out_dir = self.preprocessed_folder / f'{folder_prefix}_preprocessed'
+
             if not self.out_dir.exists():
                 self.out_dir.mkdir(parents=True)
 
