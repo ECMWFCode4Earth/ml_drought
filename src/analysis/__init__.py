@@ -9,9 +9,11 @@ from .indices import (
     DecileIndex,
     AnomalyIndex,
 )
+from .region_analysis import RegionAnalysis
 
 __all__ = [
     'plot_shap_values', 'EventDetector', 'SPI', 'ZScoreIndex',
     'PercentNormalIndex', 'DroughtSeverityIndex',
     'ChinaZIndex', 'DecileIndex', 'AnomalyIndex',
+    'RegionAnalysis'
 ]
