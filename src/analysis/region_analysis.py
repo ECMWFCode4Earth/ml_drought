@@ -42,15 +42,19 @@ class RegionAnalysis:
 
         self.models_dir: Path = data_dir / 'models' / experiment
         self.features_dir: Path = data_dir / 'features' / experiment / 'test'
+        assert self.models_dir.exists(), 'Require data/models to have been'\
+            'created by the pipeline.'
+        assert self.features_dir.exists(), 'Require data/features to have been'\
+            'created by the pipeline.'
 
         self.models: List[str] = [m.name for m in self.models_dir.iterdir()]
 
-        assert experiment is in ['one_month_forecast', 'nowcast']
+        assert experiment in ['one_month_forecast', 'nowcast']
         self.experiment: str = experiment
 
         # NOTE: this shouldn't be specific for the boundaries it should
         # also be able to work with landcover
-        if admin_boundaries = True:
+        if admin_boundaries == True:
             self.shape_data_dir = data_dir / 'analysis' / 'boundaries_preprocessed'
         else:
             self.shape_data_dir = data_dir / 'interim' / 'static' / 'landcover'
@@ -72,7 +76,7 @@ class RegionAnalysis:
             '`data/analysis`'
         region_group_name: str = region_data_path.name
         region_ds: xr.Dataset = xr.open_dataset(region_data_path)
-        region_da: xr.DataArray = region_ds[v for v in region_ds.data_vars][0]
+        region_da: xr.DataArray = region_ds[[v for v in region_ds.data_vars]][0]
         region_lookup: Dict = dict(zip(
             [int(k.strip()) for k in region_ds.attrs['keys'].split(',')],
             [v.strip() for v in region_ds.attrs['values'].split(',')]
@@ -205,7 +209,7 @@ class RegionAnalysis:
             assert False, 'decide if it is better to write individual .csv or store one big df'
             assert False, 'write tests first thing you lazy bum (easier to iterate)'
 
-    def evaluate(self) -> None:
+    def analyze(self) -> None:
         """For all preprocessed regions"""
         for region_data_path in self.region_data_paths:
             self._evaluate_single_shapefile(region_data_path)
