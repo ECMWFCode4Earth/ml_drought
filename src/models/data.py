@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import numpy as np
 import pandas as pd
+from pandas import Timestamp
 from random import shuffle
 from pathlib import Path
 import pickle
@@ -30,10 +31,11 @@ class ModelArrays:
     x_vars: List[str]
     y_var: str
     latlons: Optional[np.ndarray] = None
+    target_time: Optional[Timestamp] = None
 
 
 def train_val_mask(mask_len: int, val_ratio: float = 0.3) -> Tuple[List[bool], List[bool]]:
-    """Makes a trainining and validation mask which can be passed to the dataloader
+    """Makes a training and validation mask which can be passed to the dataloader
     Arguments
     ----------
     mask_len: int
@@ -340,6 +342,7 @@ class _BaseIter:
         if self.ignore_vars is not None:
             x = x.drop(self.ignore_vars)
 
+        target_time = pd.to_datetime(y.time.values[0])
         yearly_agg = self._calculate_aggs(x)  # before to avoid aggs from surrounding pixels
         x_np, y_np = self._calculate_historical(x, y)
         x_months = self._calculate_target_months(y, x_np.shape[0])
@@ -432,7 +435,8 @@ class _BaseIter:
             if self.experiment == 'nowcast':
                 train_data.current = torch.from_numpy(train_data.current).float()
         return ModelArrays(x=train_data, y=y_np, x_vars=list(x.data_vars),
-                           y_var=list(y.data_vars)[0], latlons=latlons)
+                           y_var=list(y.data_vars)[0], latlons=latlons,
+                           target_time=target_time)
 
     @staticmethod
     def _add_extra_dims(x: xr.Dataset, surrounding_pixels: Optional[int],

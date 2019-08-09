@@ -125,6 +125,17 @@ class TestLinearRegression:
             test_arrays_dict['hello']['y'].size == preds_dict['hello'].shape[0]
         ), 'Expected length of test arrays to be the same as the predictions'
 
+        # test saving the model outputs
+        model.evaluate(save_preds=True)
+
+        save_path = model.data_path / 'models' / experiment / 'linear_regression'
+        assert (save_path / 'preds_hello.nc').exists()
+        assert (save_path / 'results.json').exists()
+
+        pred_ds = xr.open_dataset(save_path / 'preds_hello.nc')
+        assert np.isin(['lat', 'lon', 'time'], [c for c in pred_ds.coords]).all()
+        assert y.time == pred_ds.time
+
     def test_big_mean(self, tmp_path, monkeypatch):
 
         def mockiter(self):

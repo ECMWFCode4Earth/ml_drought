@@ -6,6 +6,7 @@ from datetime import datetime
 from pandas.core.indexes.datetimes import DatetimeIndex
 from typing import Tuple, Dict, List, Union, Optional
 
+
 class RegionAnalysis:
     """Create summary statistics for all Regions (defined as xr.Dataset objects)
     comparing the model predictions against the true values for both train and
@@ -207,4 +208,4 @@ class RegionAnalysis:
     def evaluate(self) -> None:
         """For all preprocessed regions"""
         for region_data_path in self.region_data_paths:
-            self._evaluate_single_shapefile(region_data_path):
+            self._evaluate_single_shapefile(region_data_path)
