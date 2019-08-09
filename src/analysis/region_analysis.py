@@ -42,9 +42,9 @@ class RegionAnalysis:
 
         self.models_dir: Path = data_dir / 'models' / experiment
         self.features_dir: Path = data_dir / 'features' / experiment / 'test'
-        assert self.models_dir.exists(), 'Require data/models to have been'\
+        assert self.models_dir.exists(), 'Require {data_path}/models to have been'\
             'created by the pipeline.'
-        assert self.features_dir.exists(), 'Require data/features to have been'\
+        assert self.features_dir.exists(), 'Require {data_path}/features to have been'\
             'created by the pipeline.'
 
         self.models: List[str] = [m.name for m in self.models_dir.iterdir()]
@@ -58,7 +58,7 @@ class RegionAnalysis:
             self.shape_data_dir = data_dir / 'analysis' / 'boundaries_preprocessed'
         else:
             self.shape_data_dir = data_dir / 'interim' / 'static' / 'landcover'
-        self.region_data_paths: List[Path] = self.shape_data_dir.glob('*.nc')
+        self.region_data_paths: List[Path] = [f for f in self.shape_data_dir.glob('*.nc')]
 
         self.out_dir: Path = data_dir / 'analysis' / 'region_analysis'
         if not self.out_dir.exists():
