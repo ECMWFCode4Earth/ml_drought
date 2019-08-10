@@ -119,7 +119,7 @@ class RegionAnalysis:
                                 region_lookup: Dict,
                                 pred_da: xr.DataArray,
                                 true_da: xr.DataArray,
-                                datetime: datetime) -> Tuple[List, List, List]:
+                                datetime: datetime) -> Tuple[List, List, List, List]:
         # For each region calculate mean `target_variable` in true / pred
         valid_region_ids: List = [k for k in region_lookup.keys()]
         region_name: List = []

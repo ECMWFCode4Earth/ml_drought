@@ -168,4 +168,3 @@ class TestRegionAnalysis:
                 ['datetime', 'region_name', 'predicted_mean_value', 'true_mean_value'],
                 df.columns
             ).all()
-        assert False
