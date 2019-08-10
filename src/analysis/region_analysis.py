@@ -5,6 +5,7 @@ import pandas as pd
 from datetime import datetime
 from pandas.core.indexes.datetimes import DatetimeIndex
 from typing import Tuple, Dict, List, Union, Optional
+import warnings
 
 
 class RegionAnalysis:
@@ -64,7 +65,7 @@ class RegionAnalysis:
         if not self.out_dir.exists():
             self.out_dir.mkdir(parents=True, exist_ok=True)
 
-        print(f'Running the Region Analysis for experiment: {self.experiment}')
+        print(f'Initialised the Region Analysis for experiment: {self.experiment}')
         print(f'Models: {self.models}')
         print(f'Regions: {[r.name for r in self.region_data_paths]}')
         # print(f'Test timesteps: {}')
@@ -76,7 +77,7 @@ class RegionAnalysis:
             '`data/analysis`'
         region_group_name: str = region_data_path.name
         region_ds: xr.Dataset = xr.open_dataset(region_data_path)
-        region_da: xr.DataArray = region_ds[[v for v in region_ds.data_vars]][0]
+        region_da: xr.DataArray = region_ds[[v for v in region_ds.data_vars][0]]
         region_lookup: Dict = dict(zip(
             [int(k.strip()) for k in region_ds.attrs['keys'].split(',')],
             [v.strip() for v in region_ds.attrs['values'].split(',')]
@@ -88,34 +89,37 @@ class RegionAnalysis:
         assert 'models' in preds_data_path.parts, 'Only modelled' \
             'from the pipeline should be used using this class' \
             '`data/models`'
+
+        pred_ds = xr.open_dataset(preds_data_path)
+        # get the variable = Dataset -> DataArray
         if self.pred_variable is None:
             # Check that variables are only length 1
             pred_variables = [v for v in pred_ds.data_vars]
             assert len(pred_variables) == 1, 'Only expect one variable in pred_ds'
             self.pred_variable = pred_variables[0]
 
-        pred_ds = xr.open_dataset(preds_data_path)
         return pred_ds[self.pred_variable]
 
     def load_true_data(self, true_data_path: Path) -> xr.DataArray:
         assert 'features' in true_data_path.parts, 'Only engineered data' \
             'from the pipeline should be used using this class' \
             '`data/features`'
+        true_ds = xr.open_dataset(true_data_path)
+        # Dataset -> DataArray
         if self.true_variable is None:
             # Check that variables are only length 1
             true_variables = [v for v in true_ds.data_vars]
             assert len(true_variables) == 1, 'Only expect one variable in true_ds'
             self.true_variable = true_variables[0]
 
-        true_ds = xr.open_dataset(true_data_path)
+
         return true_ds[self.true_variable]
 
     def compute_mean_statistics(self, region_da: xr.DataArray,
                                 region_lookup: Dict,
                                 pred_da: xr.DataArray,
                                 true_da: xr.DataArray,
-                                datetime: datetime,
-                                computation: str = 'mean') -> Tuple[List, List, List]:
+                                datetime: datetime) -> Tuple[List, List, List]:
         # For each region calculate mean `target_variable` in true / pred
         valid_region_ids: List = [k for k in region_lookup.keys()]
         region_name: List = []
@@ -124,15 +128,14 @@ class RegionAnalysis:
         datetimes: List = []
 
         for valid_region_id in valid_region_ids:
-            region_name.append(lookup[region_id])
+            region_name.append(region_lookup[valid_region_id])
             predicted_mean_value.append(
-                pred_da.where(region_da == region_id).mean().values
+                pred_da.where(region_da == valid_region_id).mean().values
             )
             true_mean_value.append(
-                true_da.where(region_da == region_id).mean().values
+                true_da.where(region_da == valid_region_id).mean().values
             )
-            # TODO: Add time coord to the prediction outputs of models
-            # assert true_da.time == pred_da.time
+            # assert true_da.time == pred_da.time, 'time must be matching!'
             datetimes.append(datetime)
 
         assert len(region_name) == len(predicted_mean_value) == len(datetimes)
@@ -140,12 +143,12 @@ class RegionAnalysis:
 
     def get_pred_data_on_timestep(self, datetime: datetime, model: str) -> Path:
         # TODO: fix this method to be more flexible to higher time-resolution data
-        warnings.warning('This functionality only works with MONTHLY predictions')
-        month = int(datetime.month.values)
-        year = int(datetime.year.values)
+        warnings.warn('This functionality only works with MONTHLY predictions')
+        month = int(datetime.month)
+        year = int(datetime.year)
 
         preds_data_path = (
-            self.models_dir / model / f'preds_{year}_{month}' / 'y.nc'
+            self.models_dir / model / f'preds_{year}_{month}.nc'
         )
         return preds_data_path
 
@@ -165,7 +168,7 @@ class RegionAnalysis:
         # >>> get_all_timesteps(self.models_dir / 'ealstm')
         return [datetime(1, 1, 1)]
 
-    def _evaluate_single_shapefile(self, region_data_path: Path) -> None:
+    def _analyze_single_shapefile(self, region_data_path: Path) -> None:
         admin_level_name = region_data_path.name.replace('.nc', '')
         # for ONE REGION compute the each model statistics (pred & true)
         region_da, region_lookup, region_group_name = self.load_region_data(region_data_path)
@@ -190,7 +193,8 @@ class RegionAnalysis:
                 pred_da = self.load_prediction_data(preds_data_path)
                 # compute the statistics
                 datetimes, region_name, predicted_mean_value, true_mean_value = self.compute_mean_statistics(
-                    region_da=region_da, true_da=true_da, pred_da=pred_da, datetime=dt
+                    region_da=region_da, true_da=true_da, pred_da=pred_da,
+                    region_lookup=region_lookup, datetime=dt
                 )
                 # store as pandas object and add to
                 dfs.append(pd.DataFrame({
@@ -200,16 +204,13 @@ class RegionAnalysis:
                     'true_mean_value': true_mean_value,
                 }))
 
-            df = pd.merge(dfs)
+            df = pd.concat(dfs).reset_index()
             df = df.sort_values(by=['datetime'])
             output_filepath = self.out_dir / model / f'{model}_{admin_level_name}.csv'
             df.to_csv(output_filepath)
             print(f'** Written output csv to {output_filepath.as_posix()} **')
 
-            assert False, 'decide if it is better to write individual .csv or store one big df'
-            assert False, 'write tests first thing you lazy bum (easier to iterate)'
-
     def analyze(self) -> None:
         """For all preprocessed regions"""
         for region_data_path in self.region_data_paths:
-            self._evaluate_single_shapefile(region_data_path)
+            self._analyze_single_shapefile(region_data_path)
