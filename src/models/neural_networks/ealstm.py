@@ -149,10 +149,10 @@ class EALSTM(nn.Module):
             ea_static_size += 12
 
         self.dropout = nn.Dropout(rnn_dropout)
-        self.rnn = EALSTMCell(input_size_dyn=features_per_month,
-                              input_size_stat=ea_static_size,
-                              hidden_size=hidden_size,
-                              batch_first=True)
+        self.rnn = OrgEALSTMCell(input_size_dyn=features_per_month,
+                                 input_size_stat=ea_static_size,
+                                 hidden_size=hidden_size,
+                                 batch_first=True)
         self.hidden_size = hidden_size
         self.rnn_dropout = nn.Dropout(rnn_dropout)
 
@@ -376,6 +376,10 @@ class OrgEALSTMCell(nn.Module):
         self.bias = nn.Parameter(torch.FloatTensor(3 * hidden_size))  # type: ignore
         self.bias_s = nn.Parameter(torch.FloatTensor(hidden_size))  # type: ignore
 
+        # module activations for shap
+        self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
+
         # initialize parameters
         self.reset_parameters()
 
@@ -427,7 +431,7 @@ class OrgEALSTMCell(nn.Module):
 
         # calculate input gate only once because inputs are static
         bias_s_batch = (self.bias_s.unsqueeze(0).expand(batch_size, *self.bias_s.size()))
-        i = torch.sigmoid(torch.addmm(bias_s_batch, x_s, self.weight_sh))
+        i = self.sigmoid(torch.addmm(bias_s_batch, x_s, self.weight_sh))
 
         # perform forward steps over input sequence
         for t in range(seq_len):
@@ -438,8 +442,8 @@ class OrgEALSTMCell(nn.Module):
                      torch.mm(x_d[t], self.weight_ih))
             f, o, g = gates.chunk(3, 1)
 
-            c_1 = torch.sigmoid(f) * c_0 + i * torch.tanh(g)
-            h_1 = torch.sigmoid(o) * torch.tanh(c_1)
+            c_1 = self.sigmoid(f) * c_0 + i * self.tanh(g)
+            h_1 = self.sigmoid(o) * self.tanh(c_1)
 
             # store intermediate hidden/cell state in list
             h_n.append(h_1)
