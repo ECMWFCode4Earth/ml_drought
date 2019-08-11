@@ -240,6 +240,7 @@ class RegionAnalysis:
 
     def compute_global_error_metrics(self) -> None:
         models = []
+        admin_regions = []
         rmses = []
         maes = []
         r2s = []
@@ -271,6 +272,7 @@ class RegionAnalysis:
                 mean_model_performance.true_mean_value,
                 mean_model_performance.predicted_mean_value
             )
+            admin_regions.append(admin_name)
             models.append(model)
             rmses.append(rmse)
             maes.append(mae)
@@ -278,6 +280,7 @@ class RegionAnalysis:
 
         self.global_mean_metrics = pd.DataFrame({
             'model': models,
+            'admin_region': admin_regions,
             'rmse': rmses,
             'mae': maes,
             'r2': r2s,
