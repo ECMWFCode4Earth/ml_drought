@@ -6,6 +6,8 @@ from datetime import datetime
 from pandas.core.indexes.datetimes import DatetimeIndex
 from typing import Tuple, Dict, List, Union, Optional
 import warnings
+import numpy as np
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 
 class RegionAnalysis:
@@ -234,6 +236,41 @@ class RegionAnalysis:
                 print(f'** Written output csv to {output_filepath.as_posix()} **')
                 return df
 
+    def compute_global_error_metrics(self) -> None:
+        models = []
+        rmses = []
+        maes = []
+        r2s = []
+        for model in self.df.model.unique():
+            mean_model_performance = (
+                self.df
+                .loc[self.df.model == model][['predicted_mean_value', 'true_mean_value']]
+            )
+            rmse = np.sqrt(mean_squared_error(
+                mean_model_performance.true_mean_value,
+                mean_model_performance.predicted_mean_value
+            ))
+            mae = mean_absolute_error(
+                mean_model_performance.true_mean_value,
+                mean_model_performance.predicted_mean_value
+            )
+            r2 = r2_score(
+                mean_model_performance.true_mean_value,
+                mean_model_performance.predicted_mean_value
+            )
+            models.append(model)
+            rmses.append(rmse)
+            maes.append(mae)
+            r2s.append(r2)
+
+        self.global_mean_metrics = pd.DataFrame({
+            'model': models,
+            'rmse': rmses,
+            'mae': maes,
+            'r2': r2s,
+        })
+        print('* Assigned Global Error Metrics to `self.global_mean_metrics` *')
+
     def analyze(self) -> None:
         """For all preprocessed regions"""
         all_regions_dfs = []
@@ -248,4 +285,7 @@ class RegionAnalysis:
             all_regions_df = all_regions_df.drop(columns='level_0')
 
         self.df = all_regions_df
-        print('** Assigned all region dfs to `self.df` **')
+        print('* Assigned all region dfs to `self.df` *')
+
+        # compute error metrics for each model globally
+        self.compute_global_error_metrics()
