@@ -273,7 +273,7 @@ class RegionAnalysis:
         })
         print('* Assigned Global Error Metrics to `self.global_mean_metrics` *')
 
-    def analyze(self) -> None:
+    def analyze(self, compute_global_errors: bool = False) -> None:
         """For all preprocessed regions"""
         all_regions_dfs = []
         for region_data_path in self.region_data_paths:
@@ -291,4 +291,5 @@ class RegionAnalysis:
         print('* Assigned all region dfs to `self.df` *')
 
         # compute error metrics for each model globally
-        self.compute_global_error_metrics()
+        if compute_global_errors:
+            self.compute_global_error_metrics()
