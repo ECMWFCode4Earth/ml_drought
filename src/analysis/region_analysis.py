@@ -278,6 +278,7 @@ class RegionAnalysis:
             df = self._analyze_single_shapefile(region_data_path)
             all_regions_dfs.append(df)
 
+        # clean up the DataFrame
         all_regions_df = pd.concat(all_regions_dfs).reset_index()
         if 'index' in all_regions_df.columns:
             all_regions_df = all_regions_df.drop(columns='index')
