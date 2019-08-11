@@ -189,7 +189,9 @@ class LinearRegression(ModelBase):
                 x = self._concatenate_data(val.x)
                 preds = self.model.predict(x)
                 preds_dict[key] = preds
-                test_arrays_dict[key] = {'y': val.y, 'latlons': val.latlons, 'time': val.target_time}
+                test_arrays_dict[key] = {
+                    'y': val.y, 'latlons': val.latlons, 'time': val.target_time
+                }
 
         return test_arrays_dict, preds_dict
 

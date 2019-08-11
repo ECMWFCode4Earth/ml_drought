@@ -152,7 +152,7 @@ class ModelBase:
 
                 preds_xr = pd.DataFrame(data={
                     'preds': preds, 'lat': latlons[:, 0],
-                    'lon': latlons[:, 1], 'time': times,
-                    }).set_index(['lat', 'lon', 'time']).to_xarray()
+                    'lon': latlons[:, 1], 'time': times}
+                ).set_index(['lat', 'lon', 'time']).to_xarray()
 
                 preds_xr.to_netcdf(self.model_dir / f'preds_{key}.nc')
