@@ -6,6 +6,7 @@ from typing import Tuple, Dict, List, Union, Optional
 import warnings
 import numpy as np
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import itertools
 
 
 class RegionAnalysis:
