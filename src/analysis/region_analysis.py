@@ -225,7 +225,8 @@ class RegionAnalysis:
                 print(f'No matching time data found for {model}')
                 print(f'Contents of {model} dir:')
                 print(f'\t{[f.name for f in (self.models_dir / model).iterdir()]}')
-                return
+
+                return None
 
             else:
                 df = pd.concat(dfs).reset_index()
@@ -233,6 +234,7 @@ class RegionAnalysis:
                 output_filepath = self.out_dir / model / f'{model}_{admin_level_name}.csv'
                 df.to_csv(output_filepath)
                 print(f'** Written output csv to {output_filepath.as_posix()} **')
+
                 return df
 
     def compute_global_error_metrics(self) -> None:
@@ -244,6 +246,7 @@ class RegionAnalysis:
             mean_model_performance = (
                 self.df
                 .loc[self.df.model == model][['predicted_mean_value', 'true_mean_value']]
+                .astype('float')
             )
             # drop nans
             mean_model_performance = mean_model_performance.dropna(how='any')
@@ -273,7 +276,7 @@ class RegionAnalysis:
         })
         print('* Assigned Global Error Metrics to `self.global_mean_metrics` *')
 
-    def analyze(self, compute_global_errors: bool = False) -> None:
+    def analyze(self, compute_global_errors: bool = True) -> None:
         """For all preprocessed regions"""
         all_regions_dfs = []
         for region_data_path in self.region_data_paths:
