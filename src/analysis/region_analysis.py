@@ -245,6 +245,9 @@ class RegionAnalysis:
                 self.df
                 .loc[self.df.model == model][['predicted_mean_value', 'true_mean_value']]
             )
+            # drop nans
+            mean_model_performance = mean_model_performance.dropna(how='any')
+
             rmse = np.sqrt(mean_squared_error(
                 mean_model_performance.true_mean_value,
                 mean_model_performance.predicted_mean_value

@@ -6,6 +6,7 @@ from src.preprocess import (VHIPreprocessor, CHIRPSPreprocesser,
                             PlanetOSPreprocessor, GLEAMPreprocessor,
                             ESACCIPreprocessor, SRTMPreprocessor)
 
+from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
 
 def process_precip_2018():
     # if the working directory is alread ml_drought don't need ../data
@@ -87,6 +88,23 @@ def preprocess_srtm():
 
     processor = SRTMPreprocessor(data_path)
     processor.preprocess(subset_str='kenya', regrid=regrid_path)
+
+
+def preprocess_kenya_boundaries(selection: str = 'level_1'):
+    assert selection in [f'level_{i}' for i in range(1,6)], \
+        f'selection must be one of {[f"level_{i}" for i in range(1,6)]}'
+
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+    regrid_path = data_path / 'interim/chirps_preprocessed/chirps_kenya.nc'
+    assert regrid_path.exists(), f'{regrid_path} not available'
+
+    processor = KenyaAdminPreprocessor(data_path)
+    processor.preprocess(
+        reference_nc_filepath=regrid_path, selection=selection
+    )
 
 
 if __name__ == '__main__':
