@@ -247,10 +247,9 @@ class RegionAnalysis:
 
         # TODO: pandas groupby functionality?
         groups = [p for p in itertools.product(
-          self.df.admin_level_name.unique(), self.df.model.unique()
+            self.df.admin_level_name.unique(), self.df.model.unique()
         )]
         for admin_name, model in groups:
-            # [p for p in itertools.product(self.df.admin_level_name.unique(), self.df.model.unique())]
             mean_model_performance = (
                 self.df
                 .loc[self.df.admin_level_name == admin_name]
