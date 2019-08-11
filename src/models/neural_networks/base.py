@@ -80,7 +80,7 @@ class NNBase(ModelBase):
             if not analysis_folder.exists():
                 analysis_folder.mkdir()
             for idx, shap_array in enumerate(explain_arrays):
-                np.save(analysis_folder / f'shap value_{idx_to_input[idx]}.npy', shap_array)
+                np.save(analysis_folder / f'shap_value_{idx_to_input[idx]}.npy', shap_array)
                 np.save(analysis_folder / f'input_{idx_to_input[idx]}.npy', x[idx].cpu().numpy())
 
             # save the variable names too
