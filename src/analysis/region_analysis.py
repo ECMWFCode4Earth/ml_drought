@@ -242,10 +242,17 @@ class RegionAnalysis:
         rmses = []
         maes = []
         r2s = []
-        for model in self.df.model.unique():
+
+        # TODO: pandas groupby functionality?
+        groups = [p for p in itertools.product(
+          self.df.admin_level_name.unique(), self.df.model.unique()
+        )]
+        for admin_name, model in groups:
+            # [p for p in itertools.product(self.df.admin_level_name.unique(), self.df.model.unique())]
             mean_model_performance = (
                 self.df
-                .loc[self.df.model == model][['predicted_mean_value', 'true_mean_value']]
+                .loc[self.df.admin_level_name == admin_name]
+                .loc[self.df.model == model, ['predicted_mean_value', 'true_mean_value']]
                 .astype('float')
             )
             # drop nans
