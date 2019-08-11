@@ -1,9 +1,7 @@
 from pathlib import Path
 import xarray as xr
-import matplotlib.pyplot as plt
 import pandas as pd
 from datetime import datetime
-from pandas.core.indexes.datetimes import DatetimeIndex
 from typing import Tuple, Dict, List, Union, Optional
 import warnings
 import numpy as np
@@ -64,7 +62,7 @@ class RegionAnalysis:
 
         # NOTE: this shouldn't be specific for the boundaries it should
         # also be able to work with landcover
-        if admin_boundaries == True:
+        if admin_boundaries:
             self.shape_data_dir = data_dir / 'analysis' / 'boundaries_preprocessed'
         else:
             self.shape_data_dir = data_dir / 'interim' / 'static' / 'landcover'
@@ -120,7 +118,6 @@ class RegionAnalysis:
             true_variables = [v for v in true_ds.data_vars]
             assert len(true_variables) == 1, 'Only expect one variable in true_ds'
             self.true_variable = true_variables[0]
-
 
         return true_ds[self.true_variable]
 
@@ -208,7 +205,9 @@ class RegionAnalysis:
                     continue
                 pred_da = self.load_prediction_data(preds_data_path)
                 # compute the statistics
-                datetimes, region_name, predicted_mean_value, true_mean_value = self.compute_mean_statistics(
+                (
+                    datetimes, region_name, predicted_mean_value, true_mean_value
+                ) = self.compute_mean_statistics(
                     region_da=region_da, true_da=true_da, pred_da=pred_da,
                     region_lookup=region_lookup, datetime=dt
                 )
