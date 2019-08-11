@@ -13,6 +13,11 @@ class RegionAnalysis:
     comparing the model predictions against the true values for both train and
     test datasets.
 
+    This class produces two different formats for the same data. Firstly, it
+    writes a csv file for each model-region object.
+    Secondly, it saves all of the data to a class attribute (`self.df`) in long
+    format. This allows the class to then produce summary statistics.
+
     Attributes:
     -----------
     :region_ds: xr.DataArray
@@ -34,6 +39,8 @@ class RegionAnalysis:
     - this doesn't have to be the case if we use the trained model and push the
     data in `X.nc` through
     """
+    df: pd.DataFrame
+
     def __init__(self,
                  data_dir: Path = Path('data'),
                  experiment: str = 'one_month_forecast',
@@ -168,12 +175,13 @@ class RegionAnalysis:
         # >>> get_all_timesteps(self.models_dir / 'ealstm')
         return [datetime(1, 1, 1)]
 
-    def _analyze_single_shapefile(self, region_data_path: Path) -> None:
+    def _analyze_single_shapefile(self, region_data_path: Path) -> Union[pd.DataFrame, None]:
         admin_level_name = region_data_path.name.replace('.nc', '')
         # for ONE REGION compute the each model statistics (pred & true)
         region_da, region_lookup, region_group_name = self.load_region_data(region_data_path)
 
         for model in self.models:
+            print(f'\n** Calculating for {model} **')
             # create the filename
             if not (self.out_dir / model).exists():
                 (self.out_dir / model).mkdir(exist_ok=True, parents=True)
@@ -182,7 +190,7 @@ class RegionAnalysis:
             #      (less fiddly with getting associated data for preds/true)
             # for each timestep in the test data get associated PREDICTED data
             dfs = []
-            true_data_paths = [f for f in self.features_dir.glob('*/*.nc')]  # if f.name == 'y.nc'
+            true_data_paths = [f for f in self.features_dir.glob('*/y.nc')]  # if f.name == 'y.nc'
             for true_data_path in true_data_paths:
                 # load the required data
                 true_da = self.load_true_data(true_data_path)
@@ -190,6 +198,12 @@ class RegionAnalysis:
                 preds_data_path = self.get_pred_data_on_timestep(
                     datetime=dt, model=model
                 )
+                if not preds_data_path.exists():
+                    # if it's not there
+                    warnings.warn(
+                        f'{preds_data_path.parents[0] / preds_data_path.name} does not exist'
+                    )
+                    continue
                 pred_da = self.load_prediction_data(preds_data_path)
                 # compute the statistics
                 datetimes, region_name, predicted_mean_value, true_mean_value = self.compute_mean_statistics(
@@ -198,19 +212,40 @@ class RegionAnalysis:
                 )
                 # store as pandas object and add to
                 dfs.append(pd.DataFrame({
+                    'admin_level_name': [admin_level_name for _ in range(len(datetimes))],
+                    'model': [model for _ in range(len(datetimes))],
                     'datetime': datetimes,
                     'region_name': region_name,
                     'predicted_mean_value': predicted_mean_value,
                     'true_mean_value': true_mean_value,
                 }))
 
-            df = pd.concat(dfs).reset_index()
-            df = df.sort_values(by=['datetime'])
-            output_filepath = self.out_dir / model / f'{model}_{admin_level_name}.csv'
-            df.to_csv(output_filepath)
-            print(f'** Written output csv to {output_filepath.as_posix()} **')
+            if dfs == []:
+                print(f'No matching time data found for {model}')
+                print(f'Contents of {model} dir:')
+                print(f'\t{[f.name for f in (self.models_dir / model).iterdir()]}')
+                return
+
+            else:
+                df = pd.concat(dfs).reset_index()
+                df = df.sort_values(by=['datetime'])
+                output_filepath = self.out_dir / model / f'{model}_{admin_level_name}.csv'
+                df.to_csv(output_filepath)
+                print(f'** Written output csv to {output_filepath.as_posix()} **')
+                return df
 
     def analyze(self) -> None:
         """For all preprocessed regions"""
+        all_regions_dfs = []
         for region_data_path in self.region_data_paths:
-            self._analyze_single_shapefile(region_data_path)
+            df = self._analyze_single_shapefile(region_data_path)
+            all_regions_dfs.append(df)
+
+        all_regions_df = pd.concat(all_regions_dfs).reset_index()
+        if 'index' in all_regions_df.columns:
+            all_regions_df = all_regions_df.drop(columns='index')
+        if 'level_0' in all_regions_df.columns:
+            all_regions_df = all_regions_df.drop(columns='level_0')
+
+        self.df = all_regions_df
+        print('** Assigned all region dfs to `self.df` **')

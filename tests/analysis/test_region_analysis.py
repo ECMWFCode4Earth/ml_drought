@@ -70,7 +70,7 @@ class TestRegionAnalysis:
 
         true_data_dir = tmp_path / 'features' / 'one_month_forecast' / 'test'
         pred_data_dir = tmp_path / 'models' / 'one_month_forecast'
-        true_data_paths = [f for f in true_data_dir.glob('**/*.nc')]
+        true_data_paths = [f for f in true_data_dir.glob('**/y.nc')]
         pred_data_paths = [f for f in pred_data_dir.glob('**/*.nc')]
         true_data_paths.sort()
         pred_data_paths.sort()
@@ -160,6 +160,7 @@ class TestRegionAnalysis:
         assert len(output_paths) == 3
 
         for output_path in output_paths:
+            # check for EVERY region
             df = pd.read_csv(output_path)
             assert np.isin(
                 ['region_0', 'region_1', 'region_2'], df.region_name.unique()
@@ -168,3 +169,7 @@ class TestRegionAnalysis:
                 ['datetime', 'region_name', 'predicted_mean_value', 'true_mean_value'],
                 df.columns
             ).all()
+
+        # check the main df saved as a class attribute
+        assert analyser.df.model.unique() == ['ealstm']
+        assert isinstance(analyser.df, pd.DataFrame)
