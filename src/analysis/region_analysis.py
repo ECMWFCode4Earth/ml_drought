@@ -175,11 +175,12 @@ class RegionAnalysis:
         # >>> get_all_timesteps(self.models_dir / 'ealstm')
         return [datetime(1, 1, 1)]
 
-    def _analyze_single_shapefile(self, region_data_path: Path) -> Union[pd.DataFrame, None]:
+    def _analyze_single_shapefile(self, region_data_path: Path) -> Optional[pd.DataFrame]:
         admin_level_name = region_data_path.name.replace('.nc', '')
         # for ONE REGION compute the each model statistics (pred & true)
         region_da, region_lookup, region_group_name = self.load_region_data(region_data_path)
 
+        all_model_dfs = []
         for model in self.models:
             print(f'\n** Calculating for {model} **')
             # create the filename
@@ -227,16 +228,25 @@ class RegionAnalysis:
                 print(f'Contents of {model} dir:')
                 print(f'\t{[f.name for f in (self.models_dir / model).iterdir()]}')
 
-                return None
-
             else:
                 df = pd.concat(dfs).reset_index()
                 df = df.sort_values(by=['datetime'])
                 output_filepath = self.out_dir / model / f'{model}_{admin_level_name}.csv'
                 df.to_csv(output_filepath)
-                print(f'** Written output csv to {output_filepath.as_posix()} **')
+                print(f'** Written {model} csv to {output_filepath.as_posix()} **')
+                all_model_dfs.append(df)
 
-                return df
+        if all_model_dfs != []:
+            all_model_df = pd.concat(all_model_dfs).reset_index()
+            all_model_df = (
+                all_model_df
+                .sort_values(by=['datetime'])
+                .drop(columns=['index', 'level_0'])
+            )
+            return all_model_df
+        else:
+            print('No DataFrames Created')
+            return None
 
     def compute_global_error_metrics(self) -> None:
         models = []
