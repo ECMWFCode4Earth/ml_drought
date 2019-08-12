@@ -2,6 +2,7 @@ import torch
 from torch import nn
 import numpy as np
 import pickle
+from copy import copy
 import pytest
 
 from src.models.neural_networks.rnn import UnrolledRNN, RNN
@@ -16,6 +17,7 @@ class TestRecurrentNetwork:
 
         features_per_month = 5
         dense_features = [10]
+        input_dense_features = copy(dense_features)
         hidden_size = 128
         rnn_dropout = 0.25
         include_pred_month = True
@@ -53,7 +55,7 @@ class TestRecurrentNetwork:
         assert model_dict['model']['features_per_month'] == features_per_month
         assert model_dict['hidden_size'] == hidden_size
         assert model_dict['rnn_dropout'] == rnn_dropout
-        assert model_dict['dense_features'] == dense_features
+        assert model_dict['dense_features'] == input_dense_features
         assert model_dict['include_pred_month'] == include_pred_month
         assert model_dict['experiment'] == experiment
         assert model_dict['ignore_vars'] == ignore_vars
