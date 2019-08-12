@@ -85,8 +85,7 @@ class LinearRegression(ModelBase):
             train_rmse = []
             for x, y in train_dataloader:
                 for batch_x, batch_y in chunk_array(x, y,
-                                                    batch_size,
-                                                    shuffle=True):
+                                                    batch_size):
                     batch_y = cast(np.ndarray, batch_y)
                     x_in = self._concatenate_data(batch_x)
 

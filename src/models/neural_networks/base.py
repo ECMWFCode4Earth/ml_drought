@@ -168,7 +168,7 @@ class NNBase(ModelBase):
             train_l1 = []
             self.model.train()
             for x, y in train_dataloader:
-                for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
+                for x_batch, y_batch in chunk_array(x, y, batch_size):
                     optimizer.zero_grad()
                     pred = self.model(x_batch[0],
                                       self._one_hot_months(x_batch[1]),  # type: ignore
