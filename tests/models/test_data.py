@@ -105,6 +105,7 @@ class TestBaseIter:
 
                 self.static = None
                 self.static_normalizing_dict = None
+                self.months_from_pred = True
 
         base_iterator = _BaseIter(MockLoader())
 
@@ -117,7 +118,7 @@ class TestBaseIter:
         if not to_tensor:
             assert isinstance(y_np, np.ndarray)
 
-        expected_features = 3 if surrounding_pixels is None else 3 * 9
+        expected_features = 4 if surrounding_pixels is None else (3 * 9) + 1
         assert x_train_data.historical.shape[-1] == expected_features, \
             f'There should be 4 historical variables ' \
             f'(the final dimension): {x_train_data.historical.shape}'

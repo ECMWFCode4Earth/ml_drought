@@ -117,7 +117,8 @@ class DataLoader:
                  surrounding_pixels: Optional[int] = None,
                  ignore_vars: Optional[List[str]] = None,
                  monthly_aggs: bool = True,
-                 static: bool = False) -> None:
+                 static: bool = False,
+                 months_from_pred: bool = False) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
@@ -140,6 +141,7 @@ class DataLoader:
         self.monthly_aggs = monthly_aggs
         self.to_tensor = to_tensor
         self.ignore_vars = ignore_vars
+        self.months_from_pred = months_from_pred
 
         self.static = None
         self.static_normalizing_dict = None
@@ -203,6 +205,7 @@ class _BaseIter:
         self.to_tensor = loader.to_tensor
         self.experiment = loader.experiment
         self.ignore_vars = loader.ignore_vars
+        self.months_from_pred = loader.months_from_pred
 
         self.static = loader.static
         self.static_normalizing_dict = loader.static_normalizing_dict
@@ -297,6 +300,13 @@ class _BaseIter:
             self.normalizing_array = self.calculate_normalizing_array(
                 list(x.data_vars))
             x_np = (x_np - self.normalizing_array['mean']) / (self.normalizing_array['std'])
+
+        if self.months_from_pred:
+            num_months = np.vstack([np.arange(x_np.shape[1], 0, -1)] * x_np.shape[0])
+            # normalize
+            num_months = num_months / x_np.shape[1]
+            num_months = np.expand_dims(num_months, axis=-1)
+            x_np = np.concatenate((x_np, num_months), axis=-1)
 
         return x_np, y_np
 
@@ -444,6 +454,9 @@ class _BaseIter:
 
             if self.experiment == 'nowcast':
                 train_data.current = torch.from_numpy(train_data.current).float()
+        x_vars = list(x.data_vars)
+        if self.months_from_pred:
+            x_vars.append('months_from_pred')
         return ModelArrays(x=train_data, y=y_np, x_vars=list(x.data_vars),
                            y_var=list(y.data_vars)[0], latlons=latlons)
 
