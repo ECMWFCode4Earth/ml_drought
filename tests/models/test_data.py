@@ -93,7 +93,7 @@ class TestBaseIter:
             def __init__(self):
                 self.batch_file_size = None
                 self.mode = None
-                self.shuffle = None
+                self.shuffle_data = None
                 self.clear_nans = None
                 self.data_files = []
                 self.normalizing_dict = norm_dict if normalize else None

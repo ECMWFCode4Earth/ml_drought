@@ -122,7 +122,7 @@ class DataLoader:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
-        self.shuffle = shuffle_data
+        self.shuffle_data = shuffle_data
         self.clear_nans = clear_nans
         self.experiment = experiment
         self.data_files = self._load_datasets(
@@ -198,7 +198,7 @@ class _BaseIter:
     def __init__(self, loader: DataLoader) -> None:
         self.data_files = loader.data_files
         self.batch_file_size = loader.batch_file_size
-        self.shuffle = loader.shuffle
+        self.shuffle_data = loader.shuffle_data
         self.clear_nans = loader.clear_nans
         self.surrounding_pixels = loader.surrounding_pixels
         self.monthly_aggs = loader.monthly_aggs
@@ -212,7 +212,7 @@ class _BaseIter:
 
         self.static_array: Optional[np.ndarray] = None
 
-        if self.shuffle:
+        if self.shuffle_data:
             # makes sure they are shuffled every epoch
             shuffle(self.data_files)
 
@@ -557,6 +557,17 @@ class _TrainIter(_BaseIter):
             final_x_latlon = np.concatenate(out_x_latlon, axis=0)
             final_x_ym = np.concatenate(out_x_ym, axis=0)
             final_y = np.concatenate(out_y, axis=0)
+
+            if self.shuffle_data:
+                s_i = np.random.permutation(len(final_x))
+
+                final_x = final_x[s_i]
+                final_x_curr = final_x_curr[s_i] if final_x_curr is not None else None
+                final_x_static = final_x_static[s_i] if final_x_static is not None else None
+                final_x_add = final_x_add[s_i]
+                final_x_latlon = final_x_latlon[s_i]
+                final_x_ym = final_x_ym[s_i]
+                final_y = final_y[s_i]
 
             if self.to_tensor:
                 final_x = torch.from_numpy(final_x).float()
