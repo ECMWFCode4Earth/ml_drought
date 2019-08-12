@@ -177,12 +177,13 @@ class RegionAnalysis:
 
     def _analyze_single_shapefile(self, region_data_path: Path) -> Optional[pd.DataFrame]:
         admin_level_name = region_data_path.name.replace('.nc', '')
+        print(f'* Analyzing for {admin_level_name} *')
         # for ONE REGION compute the each model statistics (pred & true)
         region_da, region_lookup, region_group_name = self.load_region_data(region_data_path)
 
         all_model_dfs = []
         for model in self.models:
-            print(f'\n** Calculating for {model} **')
+            print(f'\n** Analyzing for {model}-{admin_level_name} **')
             # create the filename
             if not (self.out_dir / model).exists():
                 (self.out_dir / model).mkdir(exist_ok=True, parents=True)
