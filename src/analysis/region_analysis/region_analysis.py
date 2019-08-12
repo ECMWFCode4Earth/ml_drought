@@ -8,6 +8,8 @@ import numpy as np
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import itertools
 
+from .region_geo_plotter import RegionGeoPlotter
+
 
 class RegionAnalysis:
     """Create summary statistics for all Regions (defined as xr.Dataset objects)
@@ -49,6 +51,7 @@ class RegionAnalysis:
         self.pred_variable: Optional[str] = None
         self.true_variable: Optional[str] = None
 
+        self.data_dir: Path = data_dir
         self.models_dir: Path = data_dir / 'models' / experiment
         self.features_dir: Path = data_dir / 'features' / experiment / 'test'
         assert self.models_dir.exists(), 'Require {data_path}/models to have been'\
@@ -72,6 +75,8 @@ class RegionAnalysis:
         self.out_dir: Path = data_dir / 'analysis' / 'region_analysis'
         if not self.out_dir.exists():
             self.out_dir.mkdir(parents=True, exist_ok=True)
+
+        self.df: Optional[pd.DataFrame] = None
 
         print(f'Initialised the Region Analysis for experiment: {self.experiment}')
         print(f'Models: {self.models}')
@@ -129,13 +134,13 @@ class RegionAnalysis:
                                 datetime: datetime) -> Tuple[List, List, List, List]:
         # For each region calculate mean `target_variable` in true / pred
         valid_region_ids: List = [k for k in region_lookup.keys()]
-        region_name: List = []
+        region_names: List = []
         predicted_mean_value: List = []
         true_mean_value: List = []
         datetimes: List = []
 
         for valid_region_id in valid_region_ids:
-            region_name.append(region_lookup[valid_region_id])
+            region_names.append(region_lookup[valid_region_id])
             predicted_mean_value.append(
                 pred_da.where(region_da == valid_region_id).mean().values
             )
@@ -145,8 +150,8 @@ class RegionAnalysis:
             # assert true_da.time == pred_da.time, 'time must be matching!'
             datetimes.append(datetime)
 
-        assert len(region_name) == len(predicted_mean_value) == len(datetimes)
-        return datetimes, region_name, predicted_mean_value, true_mean_value
+        assert len(region_names) == len(predicted_mean_value) == len(datetimes)
+        return datetimes, region_names, predicted_mean_value, true_mean_value
 
     def get_pred_data_on_timestep(self, datetime: datetime, model: str) -> Path:
         # TODO: fix this method to be more flexible to higher time-resolution data
@@ -249,7 +254,26 @@ class RegionAnalysis:
             print('No DataFrames Created')
             return None
 
-    def compute_global_error_metrics(self) -> None:
+    @staticmethod
+    def compute_error_metrics(group_model_performance) -> Tuple[float, float, float]:
+        # drop nans
+        group_model_performance = group_model_performance.dropna(how='any')
+
+        rmse = np.sqrt(mean_squared_error(
+            group_model_performance.true_mean_value,
+            group_model_performance.predicted_mean_value
+        ))
+        mae = mean_absolute_error(
+            group_model_performance.true_mean_value,
+            group_model_performance.predicted_mean_value
+        )
+        r2 = r2_score(
+            group_model_performance.true_mean_value,
+            group_model_performance.predicted_mean_value
+        )
+        return rmse, mae, r2
+
+    def compute_global_error_metrics(self) -> pd.DataFrame:
         models = []
         admin_regions = []
         rmses = []
@@ -261,44 +285,82 @@ class RegionAnalysis:
             self.df.admin_level_name.unique(), self.df.model.unique()
         )]
         for admin_name, model in groups:
-            mean_model_performance = (
+            group_model_performance = (
                 self.df
                 .loc[self.df.admin_level_name == admin_name]
                 .loc[self.df.model == model, ['predicted_mean_value', 'true_mean_value']]
                 .astype('float')
             )
-            # drop nans
-            mean_model_performance = mean_model_performance.dropna(how='any')
+            rmse, mae, r2 = self.compute_error_metrics(group_model_performance)
 
-            rmse = np.sqrt(mean_squared_error(
-                mean_model_performance.true_mean_value,
-                mean_model_performance.predicted_mean_value
-            ))
-            mae = mean_absolute_error(
-                mean_model_performance.true_mean_value,
-                mean_model_performance.predicted_mean_value
-            )
-            r2 = r2_score(
-                mean_model_performance.true_mean_value,
-                mean_model_performance.predicted_mean_value
-            )
             admin_regions.append(admin_name)
             models.append(model)
             rmses.append(rmse)
             maes.append(mae)
             r2s.append(r2)
 
-        self.global_mean_metrics = pd.DataFrame({
+        return pd.DataFrame({
             'model': models,
-            'admin_region': admin_regions,
+            'admin_level_name': admin_regions,
             'rmse': rmses,
             'mae': maes,
             'r2': r2s,
         })
-        print('* Assigned Global Error Metrics to `self.global_mean_metrics` *')
+
+    def compute_regional_error_metrics(self) -> pd.DataFrame:
+        """calculate the mean error in each Region over time
+        (12 test months by default).
+        """
+        assert self.df is not None, 'require `RegionAnalysis.df`. Has'\
+            ' `RegionAnalysis.analyze()` been run?'
+        models = self.df.model.unique()
+        region_names = self.df.region_name.unique()
+        admin_level_names = self.df.admin_level_name.unique()
+
+        models_array = []
+        admin_level_names_array = []
+        region_names_array = []
+        rmses = []
+        maes = []
+        r2s = []
+
+        # calculate TEMPORAL average
+        products = itertools.product(models, region_names, admin_level_names)
+        groups = [g for g in products]  # 0: model, 1: region, 2: admin_level
+
+        for model, region, admin_level in groups:
+            df_group = self.df.loc[
+                # rows
+                (self.df.model == model) & (self.df.region_name == region) &\
+                (self.df.admin_level_name == admin_level),
+                # columns
+                ['predicted_mean_value', 'true_mean_value']
+            ].astype('float')
+
+            rmse, mae, r2 = self.compute_error_metrics(df_group)
+
+            # create the arrays
+            models_array.append(model)
+            admin_level_names_array.append(admin_level)
+            region_names_array.append(region)
+            rmses.append(rmse)
+            maes.append(mae)
+            r2s.append(r2)
+
+        return pd.DataFrame({
+            'model': models_array,
+            'admin_level_name': admin_level_names_array,
+            'region_name': region_names_array,
+            'rmse': rmses,
+            'mae': maes,
+            'r2': r2s,
+        })
 
     def analyze(self, compute_global_errors: bool = True) -> None:
-        """For all preprocessed regions"""
+        """For all preprocessed regions calculate the mean True value and
+        mean predicted values. Also have the option to calculate global
+        errors (across all regions in an administrative level).
+        """
         all_regions_dfs = []
         for region_data_path in self.region_data_paths:
             df = self._analyze_single_shapefile(region_data_path)
@@ -313,9 +375,26 @@ class RegionAnalysis:
         if 'level_0' in all_regions_df.columns:
             all_regions_df = all_regions_df.drop(columns='level_0')
 
-        self.df = all_regions_df
+        self.df = all_regions_df.astype(
+            {'predicted_mean_value': 'float64', 'true_mean_value': 'float64'}
+        )
         print('* Assigned all region dfs to `self.df` *')
 
         # compute error metrics for each model globally
         if compute_global_errors:
-            self.compute_global_error_metrics()
+            self.global_mean_metrics = self.compute_global_error_metrics()
+            print('\n* Assigned Global Error Metrics to `self.global_mean_metrics` *')
+
+    def create_model_performance_by_region_geodataframe(self) -> None:
+        """Join pd.DataFrame object stored in `RegionAnalysis.df` with the a
+        GeoDataFrames for the admin_level at `RegionGeoPlotter.gdf` in order
+        to create spatial plots of the model performances in different regions.
+        """
+        assert self.df is not None, 'require ' \
+            '`RegionAnalysis.df`. Has `RegionAnalysis.analyze`' \
+            'been run? Run that first!'
+
+        # create the region geoplotter object
+        geoplotter = RegionGeoPlotter(data_folder=self.data_dir, country='kenya')
+        geoplotter.read_shapefiles()
+        geoplotter.merge_all_model_performances_gdfs(all_models_df=self.df)
