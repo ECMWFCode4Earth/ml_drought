@@ -173,3 +173,11 @@ class TestRegionAnalysis:
         # check the main df saved as a class attribute
         assert analyser.df.model.unique() == ['ealstm']
         assert isinstance(analyser.df, pd.DataFrame)
+
+        # the number of rows in the dataframe
+        num_models = 1
+        num_datetimes = num_regions = num_admin_levels = 3
+        expected_number_rows = num_models * num_admin_levels * num_datetimes * num_regions
+        assert len(analyser.df) == expected_number_rows, f'Expected {expected_number_rows}' \
+            f'Got: {len(analyser.df)}. We should have a row for each combination' \
+            'of models, datetimes, regions, admin_levels'

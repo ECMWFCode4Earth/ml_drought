@@ -304,7 +304,9 @@ class RegionAnalysis:
             all_regions_dfs.append(df)
 
         # clean up the DataFrame
+        all_regions_dfs = [df for df in all_regions_dfs if df is not None]
         all_regions_df = pd.concat(all_regions_dfs).reset_index()
+
         if 'index' in all_regions_df.columns:
             all_regions_df = all_regions_df.drop(columns='index')
         if 'level_0' in all_regions_df.columns:
