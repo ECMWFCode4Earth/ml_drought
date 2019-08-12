@@ -29,13 +29,18 @@ class NNBase(ModelBase):
                  include_yearly_aggs: bool = True,
                  surrounding_pixels: Optional[int] = None,
                  ignore_vars: Optional[List[str]] = None,
-                 include_static: bool = True) -> None:
+                 include_static: bool = True,
+                 include_months_from_pred: bool = False) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
                          include_latlons, include_monthly_aggs, include_yearly_aggs,
                          surrounding_pixels, ignore_vars, include_static)
 
         # for reproducibility
         torch.manual_seed(42)
+
+        # for now, this feature only makes sense for the RNN and EALSTM
+        # so only the neural network base will have it
+        self.include_months_from_pred = include_months_from_pred
 
         self.explainer: Optional[shap.DeepExplainer] = None
 
@@ -68,7 +73,8 @@ class NNBase(ModelBase):
             # if no input is passed to explain, take 10 values and explain them
             test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=1,
                                             shuffle_data=True, mode='test', to_tensor=True,
-                                            static=True, experiment=self.experiment)
+                                            static=True, experiment=self.experiment,
+                                            months_from_pred=self.include_months_from_pred)
             key, val = list(next(iter(test_arrays_loader)).items())[0]
             x = self.make_shap_input(val.x, start_idx=0, num_inputs=10)
             var_names = val.x_vars
@@ -117,7 +123,8 @@ class NNBase(ModelBase):
                                           ignore_vars=self.ignore_vars,
                                           monthly_aggs=self.include_monthly_aggs,
                                           surrounding_pixels=self.surrounding_pixels,
-                                          static=self.include_static)
+                                          static=self.include_static,
+                                          months_from_pred=self.include_months_from_pred)
 
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
@@ -129,7 +136,8 @@ class NNBase(ModelBase):
                                         ignore_vars=self.ignore_vars,
                                         monthly_aggs=self.include_monthly_aggs,
                                         surrounding_pixels=self.surrounding_pixels,
-                                        static=self.include_static)
+                                        static=self.include_static,
+                                        months_from_pred=self.include_months_from_pred)
 
             batches_without_improvement = 0
             best_val_score = np.inf
@@ -143,7 +151,8 @@ class NNBase(ModelBase):
                                           ignore_vars=self.ignore_vars,
                                           monthly_aggs=self.include_monthly_aggs,
                                           surrounding_pixels=self.surrounding_pixels,
-                                          static=self.include_static)
+                                          static=self.include_static,
+                                          months_from_pred=self.include_months_from_pred)
 
         # initialize the model
         if self.model is None:
@@ -218,7 +227,8 @@ class NNBase(ModelBase):
                                         ignore_vars=self.ignore_vars,
                                         monthly_aggs=self.include_monthly_aggs,
                                         surrounding_pixels=self.surrounding_pixels,
-                                        static=self.include_static)
+                                        static=self.include_static,
+                                        months_from_pred=self.include_months_from_pred)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -251,7 +261,8 @@ class NNBase(ModelBase):
                                       ignore_vars=self.ignore_vars,
                                       monthly_aggs=self.include_monthly_aggs,
                                       surrounding_pixels=self.surrounding_pixels,
-                                      static=self.include_static)
+                                      static=self.include_static,
+                                      months_from_pred=self.include_months_from_pred)
 
         output_tensors: List[torch.Tensor] = []
         output_pm: List[torch.Tensor] = []

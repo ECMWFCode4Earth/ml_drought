@@ -28,7 +28,8 @@ class LinearNetwork(NNBase):
                  include_static: bool = True) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
                          include_latlons, include_monthly_aggs, include_yearly_aggs,
-                         surrounding_pixels, ignore_vars, include_static)
+                         surrounding_pixels, ignore_vars, include_static,
+                         include_months_from_pred=False)
 
         self.input_layer_sizes = copy(layer_sizes)
         if type(layer_sizes) is int:

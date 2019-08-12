@@ -28,10 +28,12 @@ class RecurrentNetwork(NNBase):
                  include_yearly_aggs: bool = True,
                  surrounding_pixels: Optional[int] = None,
                  ignore_vars: Optional[List[str]] = None,
-                 include_static: bool = True) -> None:
+                 include_static: bool = True,
+                 include_months_from_pred: bool = True) -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
                          include_latlons, include_monthly_aggs, include_yearly_aggs,
-                         surrounding_pixels, ignore_vars, include_static)
+                         surrounding_pixels, ignore_vars, include_static,
+                         include_months_from_pred)
 
         # to initialize and save the model
         self.hidden_size = hidden_size
@@ -66,7 +68,8 @@ class RecurrentNetwork(NNBase):
             'include_monthly_aggs': self.include_monthly_aggs,
             'include_yearly_aggs': self.include_yearly_aggs,
             'experiment': self.experiment,
-            'include_static': self.include_static
+            'include_static': self.include_static,
+            'include_months_from_pred': self.include_months_from_pred
         }
 
         with (self.model_dir / 'model.pkl').open('wb') as f:
