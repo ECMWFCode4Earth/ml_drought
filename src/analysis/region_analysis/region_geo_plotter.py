@@ -34,9 +34,9 @@ class RegionGeoPlotter:
         self.country_preprocessor = self.get_country_preprocessor(country_str=country)
 
         # Setup type hints without assignment
-        self.region_gdfs: Dict[GeoDataFrame] = {}
+        self.region_gdfs: Dict[str, AdminLevelGeoDF] = {}
 
-        self.gdf: Optional[GeoDataFrame] = None
+        self.gdf: Optional[GeoDataFrame] = None  # type: ignore
         self.all_gdfs: List = []
 
     def get_country_preprocessor(self, country_str: str) -> Any:
@@ -75,7 +75,7 @@ class RegionGeoPlotter:
             raise NotImplementedError
 
     def join_model_performances_to_geometry(self, model_performance_df: pd.DataFrame,
-                                            admin_name: str) -> GeoDataFrame:
+                                            admin_name: str) -> GeoDataFrame:  # type: ignore
         """Join the `geometry` column from the shapefile read in as GeoDataFrame
         to the model performance metrics in model_performance_df. Required to
         make spatial plots of data.
@@ -97,7 +97,7 @@ class RegionGeoPlotter:
         gdf[gdf_colname] = gdf[gdf_colname].apply(str.rstrip).apply(str.lstrip)
 
         df_colname = 'region_name'
-        out_gdf = gpd.GeoDataFrame(
+        out_gdf = gpd.GeoDataFrame(  # type: ignore
             pd.merge(
                 model_performance_df, gdf[[gdf_colname, 'geometry']],
                 left_on=df_colname, right_on=gdf_colname
@@ -106,8 +106,9 @@ class RegionGeoPlotter:
 
         return out_gdf
 
-    def merge_all_model_performances_gdfs(self, all_models_df: pd.DataFrame) -> GeoDataFrame:
-        all_gdfs = []
+    def merge_all_model_performances_gdfs(self, all_models_df: pd.DataFrame
+                                         ) -> GeoDataFrame:  # type: ignore
+        all_gdfs: List[GeoDataFrame] = []  # type: ignore
         assert 'admin_level_name' in all_models_df.columns, f'Expect to find admin_region' \
             f'in {all_models_df.columns}'
 
@@ -121,20 +122,17 @@ class RegionGeoPlotter:
         self.gdf = pd.concat(all_gdfs)
         # convert mean model outputs to float
         try:
-            self.gdf = self.gdf.astype(
+            self.gdf = self.gdf.astype(  # type: ignore
                 {'predicted_mean_value': 'float64', 'true_mean_value': 'float64'}
             )
         except KeyError:
-            self.gdf = self.gdf.astype(
+            self.gdf = self.gdf.astype(  # type: ignore
                 {'rmse': 'float64', 'mae': 'float64', 'r2': 'float64'}
             )
 
         print('* Assigned the complete GeoDataFrame to `RegionGeoPlotter.gdf`')
 
-        if not isinstance(self.gdf, GeoDataFrame):
-            self.gdf = GeoDataFrame(self.gdf)
+        if not isinstance(self.gdf, GeoDataFrame):  # type: ignore
+            self.gdf = GeoDataFrame(self.gdf)  # type: ignore
 
         return self.gdf
-
-    def plot_mean_region_scores() -> None:
-        return
