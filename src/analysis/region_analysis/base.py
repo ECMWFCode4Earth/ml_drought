@@ -85,7 +85,6 @@ class RegionAnalysis:
         if self.admin_boundaries:
             self.shape_data_dir = data_dir / 'analysis' / 'boundaries_preprocessed'
         else:
-            # dynamically get the first `landcover` folder in interim/static
             static_dir = data_dir / 'interim' / 'static' / 'esa_cci_landcover_preprocessed'
             self.shape_data_dir = static_dir
 
