@@ -21,7 +21,7 @@ def run_administrative_region_analysis():
         'There are no processed regions. '\
         'Has the pipeline been run?'
 
-    analyzer = AdministrativeRegionAnalysis(data_dir)
+    analyzer = AdministrativeRegionAnalysis(data_path)
     analyzer.analyze()
     print(analyzer.regional_mean_metrics)
 
@@ -41,12 +41,12 @@ def run_landcover_region_analysis():
         f.name for f in (
             data_path / 'interim'/ 'static' /
             'esa_cci_landcover_preprocessed'
-        ).glob('*')
+        ).glob('*.nc')
     ] != [], \
         'There is no landcover data. '\
         'Has the pipeline been run?'
 
-    analyzer = LandcoverRegionAnalysis(data_dir)
+    analyzer = LandcoverRegionAnalysis(data_path)
     analyzer.analyze()
     print(analyzer.regional_mean_metrics)
 
