@@ -3,7 +3,7 @@ import pandas as pd
 
 from src.analysis import AdministrativeRegionAnalysis
 from tests.utils import _make_dataset
-from .test_region_analysis import TestRegionAnalysis
+from .test_base import TestRegionAnalysis
 
 
 class TestAdministrativeRegionAnalysis(TestRegionAnalysis):

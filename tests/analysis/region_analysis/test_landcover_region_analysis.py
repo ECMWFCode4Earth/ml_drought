@@ -4,7 +4,7 @@ import xarray as xr
 
 from src.analysis import LandcoverRegionAnalysis
 from tests.utils import _make_dataset
-from .test_region_analysis import TestRegionAnalysis
+from .test_base import TestRegionAnalysis
 
 
 class TestLandcoverRegionAnalysis(TestRegionAnalysis):
@@ -36,6 +36,68 @@ class TestLandcoverRegionAnalysis(TestRegionAnalysis):
 
         ds = xr.merge([*all_ds])
         ds.to_netcdf(parent_dir / fname)
+
+    def test_loading_functions(self, tmp_path):
+        self._create_dummy_true_preds_data(tmp_path)
+        self._create_dummy_landcover_data(tmp_path)
+
+        analyser = LandcoverRegionAnalysis(data_dir=tmp_path)
+
+        region_data_dir = tmp_path / 'interim' / 'static' / 'esa_cci_landcover_preprocessed'
+        region_data_path = region_data_dir / 'esa_cci_landcover_kenya_one_hot.nc'
+        landcover_das = analyser.load_landcover_data(region_data_path)
+
+        true_data_dir = tmp_path / 'features' / 'one_month_forecast' / 'test'
+        pred_data_dir = tmp_path / 'models' / 'one_month_forecast'
+        true_data_paths = [f for f in true_data_dir.glob('**/y.nc')]
+        pred_data_paths = [f for f in pred_data_dir.glob('**/*.nc')]
+        true_data_paths.sort()
+        pred_data_paths.sort()
+
+        true_data_path = true_data_paths[0]
+        pred_data_path = pred_data_paths[0]
+        true_da = analyser.load_prediction_data(pred_data_path)
+        pred_da = analyser.load_true_data(true_data_path)
+
+        assert pred_da.time == true_da.time, 'the predicted time should be the ' \
+            'same as the true data time.'
+
+        assert len(landcover_das) == 4
+        assert all([isinstance(da, xr.DataArray) for da in landcover_das])
+
+    def test_compute_mean_stats(self, tmp_path):
+        # create and load all data
+        self._create_dummy_true_preds_data(tmp_path)
+        self._create_dummy_landcover_data(tmp_path)
+
+        region_data_dir = tmp_path / 'interim' / 'static' / 'esa_cci_landcover_preprocessed'
+        region_data_path = region_data_dir / 'esa_cci_landcover_kenya_one_hot.nc'
+        true_data_dir = tmp_path / 'features' / 'one_month_forecast' / 'test'
+        pred_data_dir = tmp_path / 'models' / 'one_month_forecast'
+        true_data_paths = [f for f in true_data_dir.glob('**/*.nc')]
+        pred_data_paths = [f for f in pred_data_dir.glob('**/*.nc')]
+        true_data_paths.sort()
+        pred_data_paths.sort()
+
+        true_data_path = true_data_paths[0]
+        pred_data_path = pred_data_paths[0]
+
+        analyser = AdministrativeRegionAnalysis(tmp_path)
+        true_da = analyser.load_prediction_data(pred_data_path)
+        pred_da = analyser.load_true_data(true_data_path)
+        datetime = pd.to_datetime(pred_da.time.values).to_pydatetime()
+        landcover_das = analyser.load_landcover_data(region_data_path)
+
+        (
+            datetimes, region_name, predicted_mean_value, true_mean_value
+        ) = analyser.compute_mean_statistics(
+            region_da=None, region_lookup=None, landcover_das=landcover_das
+            pred_da=pred_da, true_da=true_da, datetime=datetime
+        )
+        assert len(datetimes) == len(region_name) == len(predicted_mean_value)
+        assert len(predicted_mean_value) == len(true_mean_value)
+        assert False
+
 
     def test_analyzer_analyze(self, tmp_path):
         self._create_dummy_landcover_data(tmp_path)
