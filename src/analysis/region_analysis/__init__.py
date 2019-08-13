@@ -1,5 +1,7 @@
-from .region_analysis import RegionAnalysis
+from .administrative_region_analysis import AdministrativeRegionAnalysis
+from .landcover_region_analysis import LandcoverRegionAnalysis
 
 __all__ = [
-    'RegionAnalysis',
+    'AdministrativeRegionAnalysis',
+    'LandcoverRegionAnalysis'
 ]

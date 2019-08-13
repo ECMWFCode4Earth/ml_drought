@@ -3,8 +3,8 @@ import xarray as xr
 import pandas as pd
 from datetime import datetime
 from typing import Tuple, Dict, List, Union, Optional
-import warnings
 import numpy as np
+import warnings
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import itertools
 
@@ -12,14 +12,17 @@ from .region_geo_plotter import RegionGeoPlotter
 
 
 class RegionAnalysis:
-    """Create summary statistics for all Regions (defined as xr.Dataset objects)
-    comparing the model predictions against the true values for both train and
+    """Create summary statistics for all Regions
+    (defined as xr.Dataset objects) comparing the model
+    predictions against the true values for both train and
     test datasets.
 
-    This class produces two different formats for the same data. Firstly, it
-    writes a csv file for each model-region object.
-    Secondly, it saves all of the data to a class attribute (`self.df`) in long
-    format. This allows the class to then produce summary statistics.
+    This class produces two different formats for the same
+    data. Firstly, it writes a csv file for each
+    model-region object. Secondly, it saves all of the
+    data to a class attribute (`self.df`) in long format.
+    This allows the class to then produce summary
+    statistics.
 
     Attributes:
     -----------
@@ -30,20 +33,12 @@ class RegionAnalysis:
     :self.models_dir: Path
     :self.features_dir: Path
     :self.models: List[str]
+    :self.admin_boundaries: bool
 
     TODO:
     # train or test `true` data ?
     self.mode = 'test' if test_mode else 'train'
-
-    Note:
-    - because we only save data from the `test` data (vs. the `train` data)
-     we can currently only use data from:
-     `(data/features/{experiment}/test).glob('**/*.nc')` to do our analysis
-    - this doesn't have to be the case if we use the trained model and push the
-    data in `X.nc` through
     """
-    df: pd.DataFrame
-
     def __init__(self,
                  data_dir: Path = Path('data'),
                  experiment: str = 'one_month_forecast',
@@ -66,10 +61,19 @@ class RegionAnalysis:
 
         # NOTE: this shouldn't be specific for the boundaries it should
         # also be able to work with landcover
-        if admin_boundaries:
+        self.admin_boundaries: bool = admin_boundaries
+
+        if self.admin_boundaries:
             self.shape_data_dir = data_dir / 'analysis' / 'boundaries_preprocessed'
         else:
-            self.shape_data_dir = data_dir / 'interim' / 'static' / 'landcover'
+            # dynamically get the first `landcover` folder in interim/static
+            static_dir = data_dir / 'interim' / 'static'
+            lc_dir = [
+                d for d in static_dir.iterdir()
+                if ['landcover' in p for p in d.parts]
+            ][0]
+            self.shape_data_dir = lc_dir
+
         self.region_data_paths: List[Path] = [f for f in self.shape_data_dir.glob('*.nc')]
 
         self.out_dir: Path = data_dir / 'analysis' / 'region_analysis'
@@ -82,21 +86,6 @@ class RegionAnalysis:
         print(f'Models: {self.models}')
         print(f'Regions: {[r.name for r in self.region_data_paths]}')
         # print(f'Test timesteps: {}')
-
-    def load_region_data(self, region_data_path: Path) -> Tuple[xr.DataArray, Dict, str]:
-        # LOAD in region lookup DataArray
-        assert 'analysis' in region_data_path.parts, 'Only preprocessed' \
-            'region files (as netcdf) should be used' \
-            '`data/analysis`'
-        region_group_name: str = region_data_path.name
-        region_ds: xr.Dataset = xr.open_dataset(region_data_path)
-        region_da: xr.DataArray = region_ds[[v for v in region_ds.data_vars][0]]
-        region_lookup: Dict = dict(zip(
-            [int(k.strip()) for k in region_ds.attrs['keys'].split(',')],
-            [v.strip() for v in region_ds.attrs['values'].split(',')]
-        ))
-
-        return region_da, region_lookup, region_group_name
 
     def load_prediction_data(self, preds_data_path: Path) -> xr.DataArray:
         assert 'models' in preds_data_path.parts, 'Only modelled' \
@@ -127,32 +116,6 @@ class RegionAnalysis:
 
         return true_ds[self.true_variable]
 
-    def compute_mean_statistics(self, region_da: xr.DataArray,
-                                region_lookup: Dict,
-                                pred_da: xr.DataArray,
-                                true_da: xr.DataArray,
-                                datetime: datetime) -> Tuple[List, List, List, List]:
-        # For each region calculate mean `target_variable` in true / pred
-        valid_region_ids: List = [k for k in region_lookup.keys()]
-        region_names: List = []
-        predicted_mean_value: List = []
-        true_mean_value: List = []
-        datetimes: List = []
-
-        for valid_region_id in valid_region_ids:
-            region_names.append(region_lookup[valid_region_id])
-            predicted_mean_value.append(
-                pred_da.where(region_da == valid_region_id).mean().values
-            )
-            true_mean_value.append(
-                true_da.where(region_da == valid_region_id).mean().values
-            )
-            # assert true_da.time == pred_da.time, 'time must be matching!'
-            datetimes.append(datetime)
-
-        assert len(region_names) == len(predicted_mean_value) == len(datetimes)
-        return datetimes, region_names, predicted_mean_value, true_mean_value
-
     def get_pred_data_on_timestep(self, datetime: datetime, model: str) -> Path:
         # TODO: fix this method to be more flexible to higher time-resolution data
         warnings.warn('This functionality only works with MONTHLY predictions')
@@ -170,89 +133,6 @@ class RegionAnalysis:
         assert len(dt) == 1, 'only meant to have ONE datetime in this example'
 
         return dt.to_pydatetime()[0]
-
-    @staticmethod
-    def get_all_timesteps(path_to_dir: Path) -> List[datetime]:
-        # TODO: this should be dynamically selecting timesteps from xr objects
-        # not manually creating strings that are in the format of interest
-        # defined by the filenames/folder names
-        # >>> get_all_timesteps(self.features_dir)
-        # >>> get_all_timesteps(self.models_dir / 'ealstm')
-        return [datetime(1, 1, 1)]
-
-    def _analyze_single_shapefile(self, region_data_path: Path) -> Optional[pd.DataFrame]:
-        admin_level_name = region_data_path.name.replace('.nc', '')
-        print(f'* Analyzing for {admin_level_name} *')
-        # for ONE REGION compute the each model statistics (pred & true)
-        region_da, region_lookup, region_group_name = self.load_region_data(region_data_path)
-
-        all_model_dfs = []
-        for model in self.models:
-            print(f'\n** Analyzing for {model}-{admin_level_name} **')
-            # create the filename
-            if not (self.out_dir / model).exists():
-                (self.out_dir / model).mkdir(exist_ok=True, parents=True)
-
-            # TODO: rewrite this once the preds data has timestamps
-            #      (less fiddly with getting associated data for preds/true)
-            # for each timestep in the test data get associated PREDICTED data
-            dfs = []
-            true_data_paths = [f for f in self.features_dir.glob('*/y.nc')]  # if f.name == 'y.nc'
-            for true_data_path in true_data_paths:
-                # load the required data
-                true_da = self.load_true_data(true_data_path)
-                dt = self.read_xr_datetime(true_da)
-                preds_data_path = self.get_pred_data_on_timestep(
-                    datetime=dt, model=model
-                )
-                if not preds_data_path.exists():
-                    # if it's not there
-                    warnings.warn(
-                        f'{preds_data_path.parents[0] / preds_data_path.name} does not exist'
-                    )
-                    continue
-                pred_da = self.load_prediction_data(preds_data_path)
-                # compute the statistics
-                (
-                    datetimes, region_name, predicted_mean_value, true_mean_value
-                ) = self.compute_mean_statistics(
-                    region_da=region_da, true_da=true_da, pred_da=pred_da,
-                    region_lookup=region_lookup, datetime=dt
-                )
-                # store as pandas object and add to
-                dfs.append(pd.DataFrame({
-                    'admin_level_name': [admin_level_name for _ in range(len(datetimes))],
-                    'model': [model for _ in range(len(datetimes))],
-                    'datetime': datetimes,
-                    'region_name': region_name,
-                    'predicted_mean_value': predicted_mean_value,
-                    'true_mean_value': true_mean_value,
-                }))
-
-            if dfs == []:
-                print(f'No matching time data found for {model}')
-                print(f'Contents of {model} dir:')
-                print(f'\t{[f.name for f in (self.models_dir / model).iterdir()]}')
-
-            else:
-                df = pd.concat(dfs).reset_index()
-                df = df.sort_values(by=['datetime'])
-                output_filepath = self.out_dir / model / f'{model}_{admin_level_name}.csv'
-                df.to_csv(output_filepath)
-                print(f'** Written {model} csv to {output_filepath.as_posix()} **')
-                all_model_dfs.append(df)
-
-        if all_model_dfs != []:
-            all_model_df = pd.concat(all_model_dfs).reset_index()
-            all_model_df = (
-                all_model_df
-                .sort_values(by=['datetime'])
-                .drop(columns=['index', 'level_0'])
-            )
-            return all_model_df
-        else:
-            print('No DataFrames Created')
-            return None
 
     @staticmethod
     def compute_error_metrics(group_model_performance) -> Tuple[float, float, float]:
@@ -356,35 +236,6 @@ class RegionAnalysis:
             'r2': r2s,
         })
 
-    def analyze(self, compute_global_errors: bool = True) -> None:
-        """For all preprocessed regions calculate the mean True value and
-        mean predicted values. Also have the option to calculate global
-        errors (across all regions in an administrative level).
-        """
-        all_regions_dfs = []
-        for region_data_path in self.region_data_paths:
-            df = self._analyze_single_shapefile(region_data_path)
-            all_regions_dfs.append(df)
-
-        # clean up the DataFrame
-        all_regions_dfs = [df for df in all_regions_dfs if df is not None]
-        all_regions_df = pd.concat(all_regions_dfs).reset_index()
-
-        if 'index' in all_regions_df.columns:
-            all_regions_df = all_regions_df.drop(columns='index')
-        if 'level_0' in all_regions_df.columns:
-            all_regions_df = all_regions_df.drop(columns='level_0')
-
-        self.df = all_regions_df.astype(
-            {'predicted_mean_value': 'float64', 'true_mean_value': 'float64'}
-        )
-        print('* Assigned all region dfs to `self.df` *')
-
-        # compute error metrics for each model globally
-        if compute_global_errors:
-            self.global_mean_metrics = self.compute_global_error_metrics()
-            print('\n* Assigned Global Error Metrics to `self.global_mean_metrics` *')
-
     def create_model_performance_by_region_geodataframe(self) -> None:
         """Join pd.DataFrame object stored in `RegionAnalysis.df` with the a
         GeoDataFrames for the admin_level at `RegionGeoPlotter.gdf` in order
@@ -398,3 +249,98 @@ class RegionAnalysis:
         geoplotter = RegionGeoPlotter(data_folder=self.data_dir, country='kenya')
         geoplotter.read_shapefiles()
         geoplotter.merge_all_model_performances_gdfs(all_models_df=self.df)
+
+    def _base_analyze_single(self, admin_level_name: str,
+                             region_da: Optional[xr.DataArray] = None,
+                             region_lookup: Optional[Dict] = None,
+                             region_group_name: Optional[str] = None,
+                             landcover_das: Optional[List[xr.DataArray]] = None
+                             ) -> Optional[pd.DataFrame]:
+        # RUN CHECKS FOR CORRECT INPUTS
+        if self.admin_boundaries:
+            assert region_da is not None, 'require `region_da`' \
+                'argument to run administrative region analysis'
+            assert region_lookup is not None, 'require `region_lookup`' \
+                'argument to run administrative region analysis'
+            assert region_group_name is not None, 'require `region_group_name`' \
+                'argument to run administrative region analysis'
+        else:
+            assert landcover_das is not None, 'If running landcover region analysis' \
+                'require the `landcover_das` argument to run the analysis'
+
+        print(f'* Analyzing for {admin_level_name} *')
+        all_model_dfs = []
+        for model in self.models:
+            print(f'\n** Analyzing for {model}-{admin_level_name} **')
+            # create the filename
+            if not (self.out_dir / model).exists():
+                (self.out_dir / model).mkdir(exist_ok=True, parents=True)
+
+            dfs = []
+            true_data_paths = [f for f in self.features_dir.glob('*/y.nc')]
+            # convert this to funciton
+            for true_data_path in true_data_paths:
+                # load the required data
+                true_da = self.load_true_data(true_data_path)
+                dt = self.read_xr_datetime(true_da)
+                preds_data_path = self.get_pred_data_on_timestep(
+                    datetime=dt, model=model
+                )
+                if not preds_data_path.exists():
+                    # if it's not there
+                    warnings.warn(
+                        f'{preds_data_path.parents[0] / preds_data_path.name} does not exist'
+                    )
+                    continue
+                pred_da = self.load_prediction_data(preds_data_path)
+
+                # compute the statistics - different for landcover vs. admin regions
+                if self.admin_boundaries:
+                    (
+                        datetimes, region_name, predicted_mean_value, true_mean_value
+                    ) = self.compute_mean_statistics(
+                        region_da=region_da, true_da=true_da, pred_da=pred_da,
+                        region_lookup=region_lookup, datetime=dt
+                    )
+                else:
+                    (
+                        datetimes, region_name, predicted_mean_value, true_mean_value
+                    ) = self.compute_mean_statistics(
+                        landcover_das, true_da=true_da, pred_da=pred_da,
+                        datetime=dt
+                    )
+
+                # store as pandas object and add to
+                dfs.append(pd.DataFrame({
+                    'admin_level_name': [admin_level_name for _ in range(len(datetimes))],
+                    'model': [model for _ in range(len(datetimes))],
+                    'datetime': datetimes,
+                    'region_name': region_name,
+                    'predicted_mean_value': predicted_mean_value,
+                    'true_mean_value': true_mean_value,
+                }))
+
+            if dfs == []:
+                print(f'No matching time data found for {model}')
+                print(f'Contents of {model} dir:')
+                print(f'\t{[f.name for f in (self.models_dir / model).iterdir()]}')
+
+            else:
+                df = pd.concat(dfs).reset_index()
+                df = df.sort_values(by=['datetime'])
+                output_filepath = self.out_dir / model / f'{model}_{admin_level_name}.csv'
+                df.to_csv(output_filepath)
+                print(f'** Written {model} csv to {output_filepath.as_posix()} **')
+                all_model_dfs.append(df)
+
+        if all_model_dfs != []:
+            all_model_df = pd.concat(all_model_dfs).reset_index()
+            all_model_df = (
+                all_model_df
+                .sort_values(by=['datetime'])
+                .drop(columns=['index', 'level_0'])
+            )
+            return all_model_df
+        else:
+            print('No DataFrames Created')
+            return None

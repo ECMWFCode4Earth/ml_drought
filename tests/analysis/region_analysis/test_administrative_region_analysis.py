@@ -1,38 +1,12 @@
 import numpy as np
 import pandas as pd
 
-from src.analysis import RegionAnalysis
-from ..utils import _make_dataset
+from src.analysis import AdministrativeRegionAnalysis
+from tests.utils import _make_dataset
+from .test_region_analysis import TestRegionAnalysis
 
 
-class TestRegionAnalysis:
-    @staticmethod
-    def _create_dummy_true_preds_data(tmp_path):
-        # save the preds
-        parent_dir = tmp_path / 'models' / 'one_month_forecast' / 'ealstm'
-        parent_dir.mkdir(exist_ok=True, parents=True)
-        save_fnames = ['preds_2018_1.nc', 'preds_2018_2.nc', 'preds_2018_3.nc']
-        times = ['2018-01-31', '2018-02-28', '2018-03-31']
-        for fname, time in zip(save_fnames, times):
-            ds, _, _ = _make_dataset((30, 30), variable_name='VHI',
-                                     lonmin=30, lonmax=35,
-                                     latmin=-2, latmax=2,
-                                     start_date=time, end_date=time)
-            ds.to_netcdf(parent_dir / fname)
-
-        # save the TRUTH (test files)
-        save_dnames = ['2018_1', '2018_2', '2018_3']
-        parent_dir = tmp_path / 'features' / 'one_month_forecast' / 'test'
-        parent_dir.mkdir(exist_ok=True, parents=True)
-        for dname, time in zip(save_dnames, times):
-            ds, _, _ = _make_dataset((30, 30), variable_name='VHI',
-                                     lonmin=30, lonmax=35,
-                                     latmin=-2, latmax=2,
-                                     start_date=time, end_date=time)
-
-            (parent_dir / dname).mkdir(exist_ok=True, parents=True)
-            ds.to_netcdf(parent_dir / dname / 'y.nc')
-
+class TestAdministrativeRegionAnalysis(TestRegionAnalysis):
     @staticmethod
     def _create_dummy_admin_boundaries_data(tmp_path, prefix: str):
         ds, _, _ = _make_dataset((30, 30), variable_name='VHI',
@@ -50,19 +24,11 @@ class TestRegionAnalysis:
             tmp_path / 'analysis' / 'boundaries_preprocessed' / f'province_l{prefix}_kenya.nc'
         )
 
-    def test_init(self, tmp_path):
-        self._create_dummy_true_preds_data(tmp_path)
-        self._create_dummy_admin_boundaries_data(tmp_path, prefix='')
-        analyser = RegionAnalysis(data_dir=tmp_path, admin_boundaries=True)
-
-        assert (tmp_path / 'analysis' / 'region_analysis').exists()
-        assert analyser.shape_data_dir.name == 'boundaries_preprocessed'
-
     def test_loading_functions(self, tmp_path):
         self._create_dummy_true_preds_data(tmp_path)
         self._create_dummy_admin_boundaries_data(tmp_path, prefix='1')
 
-        analyser = RegionAnalysis(data_dir=tmp_path, admin_boundaries=True)
+        analyser = AdministrativeRegionAnalysis(data_dir=tmp_path)
 
         region_data_dir = tmp_path / 'analysis' / 'boundaries_preprocessed'
         region_data_path = region_data_dir / f'province_l1_kenya.nc'
@@ -104,7 +70,7 @@ class TestRegionAnalysis:
         true_data_path = true_data_paths[0]
         pred_data_path = pred_data_paths[0]
 
-        analyser = RegionAnalysis(tmp_path, admin_boundaries=True)
+        analyser = AdministrativeRegionAnalysis(tmp_path)
         true_da = analyser.load_prediction_data(pred_data_path)
         pred_da = analyser.load_true_data(true_data_path)
         datetime = pd.to_datetime(pred_da.time.values).to_pydatetime()
@@ -128,8 +94,8 @@ class TestRegionAnalysis:
         region_data_dir = tmp_path / 'analysis' / 'boundaries_preprocessed'
         region_data_path = region_data_dir / f'province_l1_kenya.nc'
 
-        analyser = RegionAnalysis(tmp_path, admin_boundaries=True)
-        analyser._analyze_single_shapefile(region_data_path=region_data_path)
+        analyser = AdministrativeRegionAnalysis(tmp_path)
+        analyser._analyze_single(region_data_path=region_data_path)
 
         model = 'ealstm'
         admin_level_name = 'province_l1_kenya'
@@ -153,7 +119,7 @@ class TestRegionAnalysis:
         self._create_dummy_true_preds_data(tmp_path)
 
         # test the analyzer
-        analyser = RegionAnalysis(tmp_path, admin_boundaries=True)
+        analyser = AdministrativeRegionAnalysis(tmp_path)
         analyser.analyze()
 
         output_paths = [f for f in (tmp_path / 'analysis/region_analysis/ealstm').iterdir()]

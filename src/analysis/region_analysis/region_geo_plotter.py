@@ -107,7 +107,7 @@ class RegionGeoPlotter:
         return out_gdf
 
     def merge_all_model_performances_gdfs(self, all_models_df: pd.DataFrame
-                                         ) -> GeoDataFrame:  # type: ignore
+                                          ) -> GeoDataFrame:  # type: ignore
         all_gdfs: List[GeoDataFrame] = []  # type: ignore
         assert 'admin_level_name' in all_models_df.columns, f'Expect to find admin_region' \
             f'in {all_models_df.columns}'
