@@ -87,10 +87,6 @@ class RegionAnalysis:
         else:
             # dynamically get the first `landcover` folder in interim/static
             static_dir = data_dir / 'interim' / 'static' / 'esa_cci_landcover_preprocessed'
-            lc_dir = [
-                d for d in static_dir.iterdir()
-                if ['landcover' in p for p in d.parts]
-            ][0]
             self.shape_data_dir = static_dir
 
         self.region_data_paths: List[Path] = [f for f in self.shape_data_dir.glob('*.nc')]
