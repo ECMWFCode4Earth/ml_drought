@@ -23,6 +23,7 @@ def run_administrative_region_analysis():
 
     analyzer = AdministrativeRegionAnalysis(data_dir)
     analyzer.analyze()
+    print(analyzer.regional_mean_metrics)
 
 
 def run_landcover_region_analysis():
@@ -47,6 +48,7 @@ def run_landcover_region_analysis():
 
     analyzer = LandcoverRegionAnalysis(data_dir)
     analyzer.analyze()
+    print(analyzer.regional_mean_metrics)
 
 
 if __name__ == '__main__':
