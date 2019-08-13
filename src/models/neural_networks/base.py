@@ -1,6 +1,7 @@
 import numpy as np
 import random
 from pathlib import Path
+import pickle
 import math
 
 import torch
@@ -8,11 +9,11 @@ from torch.nn import functional as F
 
 import shap
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 from ..base import ModelBase
 from ..utils import chunk_array
-from ..data import DataLoader, train_val_mask
+from ..data import DataLoader, train_val_mask, TrainData, idx_to_input
 
 
 class NNBase(ModelBase):
@@ -38,8 +39,24 @@ class NNBase(ModelBase):
 
         self.explainer: Optional[shap.DeepExplainer] = None
 
-    def explain(self, x: Any) -> Union[np.ndarray,
-                                       Tuple[np.ndarray, ...]]:
+    def explain(self, x: Optional[List[torch.Tensor]] = None,
+                var_names: Optional[List[str]] = None,
+                save_shap_values: bool = True) -> Dict[str, np.ndarray]:
+        """
+        Expain the outputs of a trained model.
+
+        Arguments
+        ----------
+        x: The values to explain. If None, samples are randomly drawn from
+            the test data
+        var_names: The variable names of the historical inputs. If x is None, this
+            will be calculated. Only necessary if the arrays are going to be saved
+        save_shap_values: Whether or not to save the shap values
+
+        Returns
+        ----------
+        shap_dict: A dictionary of shap values for each of the model's input arrays
+        """
         assert self.model is not None, 'Model must be trained!'
 
         if self.explainer is None:
@@ -47,13 +64,31 @@ class NNBase(ModelBase):
             self.explainer: shap.DeepExplainer = shap.DeepExplainer(
                 self.model, background_samples)
 
-        if self.include_pred_month:
-            assert type(x) == list, \
-                'include_pred_month is True, so this model expects a list of tensors as input'
-            if len(x[1].shape) == 1:
-                x[1] = self._one_hot_months(x[1])
+        if x is None:
+            # if no input is passed to explain, take 10 values and explain them
+            test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=1,
+                                            shuffle_data=True, mode='test', to_tensor=True,
+                                            static=True, experiment=self.experiment)
+            key, val = list(next(iter(test_arrays_loader)).items())[0]
+            x = self.make_shap_input(val.x, start_idx=0, num_inputs=10)
+            var_names = val.x_vars
 
-        return self.explainer.shap_values(x)
+        explain_arrays = self.explainer.shap_values(x)
+
+        if save_shap_values:
+            analysis_folder = self.model_dir / 'analysis'
+            if not analysis_folder.exists():
+                analysis_folder.mkdir()
+            for idx, shap_array in enumerate(explain_arrays):
+                np.save(analysis_folder / f'shap_value_{idx_to_input[idx]}.npy', shap_array)
+                np.save(analysis_folder / f'input_{idx_to_input[idx]}.npy', x[idx].cpu().numpy())
+
+            # save the variable names too
+            if var_names is not None:
+                with (analysis_folder / 'input_variable_names.pkl').open('wb') as f:
+                    pickle.dump(var_names, f)
+
+        return {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)}
 
     def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> torch.nn.Module:
         raise NotImplementedError
@@ -127,7 +162,7 @@ class NNBase(ModelBase):
                 for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
                     optimizer.zero_grad()
                     pred = self.model(x_batch[0],
-                                      self._one_hot_months(x_batch[1]),
+                                      self._one_hot_months(x_batch[1]),  # type: ignore
                                       x_batch[2],
                                       x_batch[3],
                                       x_batch[4],
@@ -232,29 +267,61 @@ class NNBase(ModelBase):
                 for _ in range(samples_per_instance):
                     idx = random.randint(0, x[0].shape[0] - 1)
                     output_tensors.append(x[0][idx])
-                    if self.include_pred_month:
-                        one_hot_months = self._one_hot_months(x[1][idx: idx + 1])
-                        assert one_hot_months is not None
-                        output_pm.append(one_hot_months)
-                    if self.include_latlons:
-                        assert x[2] is not None
-                        output_ll.append(x[2])
-                    if self.experiment == 'nowcast':
-                        assert x[3] is not None
-                        output_cur.append(x[3])
-                    if self.include_yearly_aggs:
-                        output_ym.append(x[4])
-                    if self.include_static:
-                        output_static.append(x[5])
-        return [torch.stack(output_tensors),  # type: ignore
-                torch.cat(output_pm, dim=0) if len(output_pm) > 0 else None,
-                torch.cat(output_ll, dim=0) if len(output_ll) > 0 else None,
-                torch.cat(output_cur, dim=0) if len(output_cur) > 0 else None,
-                torch.cat(output_ym, dim=0) if len(output_cur) > 0 else None,
-                torch.cat(output_static, dim=0) if len(output_static) > 0 else None]
 
-    def _one_hot_months(self, indices: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
-        if self.include_pred_month:
-            assert indices is not None, f"Years can't be None if include pred months is True"
-            return torch.eye(14)[indices.long()][:, 1:-1]
-        return None
+                    # one hot months
+                    one_hot_months = self._one_hot_months(x[1][idx: idx + 1])
+                    output_pm.append(one_hot_months)
+
+                    # latlons
+                    output_ll.append(x[2][idx])
+
+                    # current array
+                    if x[3] is None:
+                        output_cur.append(torch.zeros(1))
+                    else:
+                        output_cur.append(x[3][idx])
+
+                    # yearly aggs
+                    output_ym.append(x[4][idx])
+
+                    # static data
+                    if x[5] is None:
+                        output_static.append(torch.zeros(1))
+                    else:
+                        output_static.append(x[5][idx])
+
+        return [torch.stack(output_tensors),  # type: ignore
+                torch.cat(output_pm, dim=0),
+                torch.stack(output_ll),
+                torch.stack(output_cur),
+                torch.stack(output_ym),
+                torch.stack(output_static)]
+
+    @staticmethod
+    def _one_hot_months(indices: torch.Tensor) -> torch.Tensor:
+        return torch.eye(14)[indices.long()][:, 1:-1]
+
+    def make_shap_input(self, x: TrainData, start_idx: int = 0,
+                        num_inputs: int = 10) -> List[torch.Tensor]:
+        """
+        Returns a list of tensors, as is required
+        by the shap explainer
+        """
+        output_tensors = []
+        output_tensors.append(x.historical[start_idx: start_idx + num_inputs])
+        # one hot months
+        one_hot_months = self._one_hot_months(x.pred_months[start_idx: start_idx + num_inputs])
+        output_tensors.append(one_hot_months[start_idx: start_idx + num_inputs])
+        output_tensors.append(x.latlons[start_idx: start_idx + num_inputs])
+        if x.current is None:
+            output_tensors.append(torch.zeros(num_inputs, 1))
+        else:
+            output_tensors.append(x.current[start_idx: start_idx + num_inputs])
+        # yearly aggs
+        output_tensors.append(x.yearly_aggs[start_idx: start_idx + num_inputs])
+        # static data
+        if x.static is None:
+            output_tensors.append(torch.zeros(num_inputs, 1))
+        else:
+            output_tensors.append(x.static[start_idx: start_idx + num_inputs])
+        return output_tensors

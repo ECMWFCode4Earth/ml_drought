@@ -1,5 +1,6 @@
 import math
 import pickle
+from copy import copy
 from pathlib import Path
 
 import torch
@@ -35,6 +36,7 @@ class RecurrentNetwork(NNBase):
         # to initialize and save the model
         self.hidden_size = hidden_size
         self.rnn_dropout = rnn_dropout
+        self.input_dense_features = copy(dense_features)
         if dense_features is None: dense_features = []
         self.dense_features = dense_features
 
@@ -56,7 +58,7 @@ class RecurrentNetwork(NNBase):
             'batch_size': self.batch_size,
             'hidden_size': self.hidden_size,
             'rnn_dropout': self.rnn_dropout,
-            'dense_features': self.dense_features,
+            'dense_features': self.input_dense_features,
             'include_pred_month': self.include_pred_month,
             'include_latlons': self.include_latlons,
             'surrounding_pixels': self.surrounding_pixels,

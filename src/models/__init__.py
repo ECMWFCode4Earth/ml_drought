@@ -41,7 +41,8 @@ def load_model(model_path: Path, data_path: Optional[Path] = None,
     str_to_model = {
         'rnn': RecurrentNetwork,
         'linear_network': LinearNetwork,
-        'linear_regression': LinearRegression
+        'linear_regression': LinearRegression,
+        'ealstm': EARecurrentNetwork
     }
 
     # The assumption that model type is index -2 and that the data path
@@ -50,7 +51,7 @@ def load_model(model_path: Path, data_path: Optional[Path] = None,
     if model_type is None:
         model_type = cast(str, str(model_path.parts[-2]))
     if data_path is None:
-        data_path = cast(Path, model_path.parts[-5])
+        data_path = cast(Path, model_path.parents[3])
 
     with model_path.open('rb') as f:
         model_dict = pickle.load(f)
@@ -59,7 +60,6 @@ def load_model(model_path: Path, data_path: Optional[Path] = None,
     for key, val in model_dict.items():
         if key != 'model':
             init_kwargs[key] = val
-
     model = str_to_model[model_type](**init_kwargs)
 
     model.load(**model_dict['model'])
