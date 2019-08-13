@@ -4,7 +4,7 @@ import xarray as xr
 from src.analysis.region_analysis.base import (
     RegionAnalysis
 )
-from tests.utils import _make_dataset-
+from tests.utils import _make_dataset
 
 
 class TestRegionAnalysis:
