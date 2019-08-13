@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Tuple, Optional
 
 
 int2month = {
@@ -31,7 +31,7 @@ def plot_shap_values(x: np.ndarray,
                      normalize_shap_plots: bool = True,
                      show: bool = False,
                      polished_value_name: Optional[str] = None,
-                     pred_month: Optional[int] = None) -> None:
+                     pred_date: Optional[Tuple[int, int]] = None) -> None:
     """Plots the denormalized values against their shap values, so that
     variations in the input features to the model can be compared to their effect
     on the model. For example plots, see notebooks/08_gt_recurrent_model.ipynb.
@@ -55,8 +55,9 @@ def plot_shap_values(x: np.ndarray,
         If True, a plot of the variable `value_to_plot` against its shap values will be plotted.
     polished_value_name: Optional[str] = None
         If passed to the model, this is used instead of value_to_plot when labelling the axes.
-    pred_month: Optional[str] = None
-        If passed to the model, the x axis will contain actual months instead of
+    pred_month: Optional[Tuple[int, int]] = None
+        If passed to the model, the x axis will contain actual months instead of the index.
+        Note the tuple is [int_month, int_year]
     """
     # first, lets isolate the lists
     idx = val_list.index(value_to_plot)
@@ -74,15 +75,17 @@ def plot_shap_values(x: np.ndarray,
 
     months = list(range(1, len(x_val) + 1))
 
-    if pred_month is not None:
-        int_months = []
-        cur_month = pred_month
+    if pred_date is not None:
+        int_months, int_years = [], []
+        cur_month, cur_year = pred_date[0], pred_date[1]
         for i in range(1, len(x_val) + 1):
             cur_month = cur_month - 1
             if cur_month == 0:
                 cur_month = 12
+                cur_year -= 1
             int_months.append(cur_month)
-        str_months = [int2month[m] for m in int_months][::-1]
+            int_years.append(cur_year)
+        str_dates = [f'{int2month[m]} {y}' for m, y in zip(int_months, int_years)][::-1]
 
     host = host_subplot(111, axes_class=AA.Axes)
     plt.subplots_adjust(right=0.75)
@@ -108,9 +111,10 @@ def plot_shap_values(x: np.ndarray,
 
     host.legend(loc=2)
 
-    if pred_month is not None:
-        host.set_xticks(months, minor=False)
-        host.set_xticklabels(str_months)
+    if pred_date is not None:
+        modulo = (len(months) - 1) % 2
+        host.set_xticks(months[modulo::2])
+        host.set_xticklabels(str_dates[modulo::2])
 
     plt.draw()
     if show:
