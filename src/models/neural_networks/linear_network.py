@@ -1,5 +1,6 @@
 from pathlib import Path
 import pickle
+from copy import copy
 
 import torch
 from torch import nn
@@ -29,6 +30,7 @@ class LinearNetwork(NNBase):
                          include_latlons, include_monthly_aggs, include_yearly_aggs,
                          surrounding_pixels, ignore_vars, include_static)
 
+        self.input_layer_sizes = copy(layer_sizes)
         if type(layer_sizes) is int:
             layer_sizes = cast(List[int], [layer_sizes])
 
@@ -45,7 +47,7 @@ class LinearNetwork(NNBase):
             'batch_size': self.batch_size,
             'model': {'state_dict': self.model.state_dict(),
                       'input_size': self.input_size},
-            'layer_sizes': self.layer_sizes,
+            'layer_sizes': self.input_layer_sizes,
             'dropout': self.dropout,
             'include_pred_month': self.include_pred_month,
             'include_latlons': self.include_latlons,
