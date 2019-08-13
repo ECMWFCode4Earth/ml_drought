@@ -29,6 +29,8 @@ class LandcoverRegionAnalysis(RegionAnalysis):
     def load_landcover_data(self, region_data_path: Path) -> List[xr.DataArray]:
         # load the one_hot_encoded preprocessed landcover data
         landcover_ds: xr.Dataset = xr.open_dataset(region_data_path)
+        if 'lc_class' in [d for d in landcover_ds.data_vars]:
+            landcover_ds = landcover_ds.drop('lc_class')
         assert all(['one_hot' in var for var in landcover_ds.data_vars]), \
             'This method only works with one_hot_encoded landcover data'
 

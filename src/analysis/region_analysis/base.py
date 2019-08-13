@@ -86,12 +86,12 @@ class RegionAnalysis:
             self.shape_data_dir = data_dir / 'analysis' / 'boundaries_preprocessed'
         else:
             # dynamically get the first `landcover` folder in interim/static
-            static_dir = data_dir / 'interim' / 'static'
+            static_dir = data_dir / 'interim' / 'static' / 'esa_cci_landcover_preprocessed'
             lc_dir = [
                 d for d in static_dir.iterdir()
                 if ['landcover' in p for p in d.parts]
             ][0]
-            self.shape_data_dir = lc_dir
+            self.shape_data_dir = static_dir
 
         self.region_data_paths: List[Path] = [f for f in self.shape_data_dir.glob('*.nc')]
 
@@ -159,6 +159,8 @@ class RegionAnalysis:
     def compute_error_metrics(group_model_performance) -> Tuple[float, float, float]:
         # drop nans
         group_model_performance = group_model_performance.dropna(how='any')
+        if group_model_performance.empty:
+            return np.nan, np.nan, np.nan
 
         rmse = np.sqrt(mean_squared_error(
             group_model_performance.true_mean_value,
