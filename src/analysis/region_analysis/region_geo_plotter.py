@@ -20,7 +20,6 @@ class RegionGeoPlotter:
         self.data_folder = data_folder
         print('The RegionGeoPlotter requires `geopandas` to be installed.')
         # try and import geopandas
-        print('The OCHA AdminBoundaries preprocessor requires the geopandas package')
         global gpd
         if gpd is None:
             import geopandas as gpd
@@ -60,14 +59,19 @@ class RegionGeoPlotter:
 
             for level in levels:
                 admin_boundary = self.country_preprocessor.get_admin_level(selection=level)
-                gdf = gpd.read_file(admin_boundary.shp_filepath)
-                key = f'{admin_boundary.var_name}_{self.country}'
-                region_gdfs[key] = AdminLevelGeoDF(
-                    gdf=gdf,
-                    gdf_colname=admin_boundary.lookup_colname,
-                    admin_name=key,
-                )
-
+                try:
+                    gdf = gpd.read_file(admin_boundary.shp_filepath)
+                    key = f'{admin_boundary.var_name}_{self.country}'
+                    region_gdfs[key] = AdminLevelGeoDF(
+                        gdf=gdf,
+                        gdf_colname=admin_boundary.lookup_colname,
+                        admin_name=key,
+                    )
+                except Exception:
+                    print(
+                        f'{admin_boundary.shp_filepath} not found.'
+                        'Moving to next file'
+                    )
             self.region_gdfs = region_gdfs
             print('* Read shapefiles and stored in `RegionGeoPlotter.region_gdfs`')
 

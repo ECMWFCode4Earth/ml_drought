@@ -95,7 +95,8 @@ class AdministrativeRegionAnalysis(RegionAnalysis):
             region_lookup=region_lookup, region_group_name=region_group_name,
         )
 
-    def analyze(self, compute_global_errors: bool = True) -> None:
+    def analyze(self, compute_global_errors: bool = True,
+                compute_regional_errors: bool = True) -> None:
         """For all preprocessed regions calculate the mean True value and
         mean predicted values. Also have the option to calculate global
         errors (across all regions (in an admin level) / landcover classes).
@@ -121,6 +122,4 @@ class AdministrativeRegionAnalysis(RegionAnalysis):
         print('* Assigned all region dfs to `self.df` *')
 
         # compute error metrics for each model globally
-        if compute_global_errors:
-            self.global_mean_metrics = self.compute_global_error_metrics()
-            print('\n* Assigned Global Error Metrics to `self.global_mean_metrics` *')
+        self.compute_metrics(compute_global_errors, compute_regional_errors)

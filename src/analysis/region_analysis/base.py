@@ -42,7 +42,22 @@ class RegionAnalysis:
     def __init__(self,
                  data_dir: Path = Path('data'),
                  experiment: str = 'one_month_forecast',
+                 models: Union[List[str], None] = None,
                  admin_boundaries: bool = True):
+        """Base RegionAnalysis class.
+
+        Arguments:
+        :data_dir: Path = Path('data')
+            path to data directory
+
+        :experiment: str = 'one_month_forecast'
+            the name of the experiment that want to analyze
+
+        :models: Union[List[str], None] = None
+            a list of models (as strings)
+
+        :admin_boundaries: bool = True
+        """
         self.pred_variable: Optional[str] = None
         self.true_variable: Optional[str] = None
 
@@ -55,6 +70,10 @@ class RegionAnalysis:
             'created by the pipeline.'
 
         self.models: List[str] = [m.name for m in self.models_dir.iterdir()]
+        if models is not None:
+            self.models = self.models[np.isin(self.models, models)]
+            assert self.models is not [], 'None of the `models` are here in ' \
+                f'try one of: {[d.name for d in self.models_dir.iterdir()]}'
 
         assert experiment in ['one_month_forecast', 'nowcast']
         self.experiment: str = experiment
@@ -85,6 +104,8 @@ class RegionAnalysis:
         print(f'Initialised the Region Analysis for experiment: {self.experiment}')
         print(f'Models: {self.models}')
         print(f'Regions: {[r.name for r in self.region_data_paths]}')
+        region_type = 'administrative_boundaries' if self.admin_boundaries else 'landcover'
+        print(f'Region Type: {region_type}')
         # print(f'Test timesteps: {}')
 
     def load_prediction_data(self, preds_data_path: Path) -> xr.DataArray:
@@ -347,3 +368,19 @@ class RegionAnalysis:
         else:
             print('No DataFrames Created')
             return None
+
+    def compute_metrics(self, compute_global_errors: bool = True,
+                        compute_regional_errors: bool = True) -> None:
+        if compute_global_errors:
+            self.global_mean_metrics = self.compute_global_error_metrics()
+            fname = f'global_error_metrics_{self.experiment}.nc'
+            self.global_mean_metrics.to_csv(self.out_dir / fname)
+            print('\n* Assigned Global Error Metrics to `self.global_mean_metrics` *')
+            print(f'* Written csv to data/analysis/region_analysis/{fname} *')
+
+        if compute_regional_errors:
+            self.regional_mean_metrics = self.compute_regional_error_metrics()
+            fname = f'regional_error_metrics_{self.experiment}.nc'
+            self.regional_mean_metrics.to_csv(self.out_dir / fname)
+            print('\n* Assigned Regional Error Metrics to `self.regional_mean_metrics` *')
+            print(f'* Written csv to data/analysis/region_analysis/{fname} *')
