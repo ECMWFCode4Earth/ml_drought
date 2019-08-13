@@ -47,7 +47,7 @@ class TestRegionGeoPlotter:
         )
 
     @pytest.mark.xfail(reason='geopandas not part of test environment')
-    def test_(self, tmp_path):
+    def test_gdf_merge(self, tmp_path):
         shp_filepath = (
             tmp_path / 'raw' / 'boundaries' / 'kenya' /
             'Admin2/KEN_admin2_2002_DEPHA.shp'
