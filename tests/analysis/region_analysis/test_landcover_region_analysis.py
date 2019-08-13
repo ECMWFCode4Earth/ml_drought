@@ -82,7 +82,7 @@ class TestLandcoverRegionAnalysis(TestRegionAnalysis):
         true_data_path = true_data_paths[0]
         pred_data_path = pred_data_paths[0]
 
-        analyser = AdministrativeRegionAnalysis(tmp_path)
+        analyser = LandcoverRegionAnalysis(tmp_path)
         true_da = analyser.load_prediction_data(pred_data_path)
         pred_da = analyser.load_true_data(true_data_path)
         datetime = pd.to_datetime(pred_da.time.values).to_pydatetime()
@@ -91,13 +91,11 @@ class TestLandcoverRegionAnalysis(TestRegionAnalysis):
         (
             datetimes, region_name, predicted_mean_value, true_mean_value
         ) = analyser.compute_mean_statistics(
-            region_da=None, region_lookup=None, landcover_das=landcover_das
+            landcover_das=landcover_das,
             pred_da=pred_da, true_da=true_da, datetime=datetime
         )
         assert len(datetimes) == len(region_name) == len(predicted_mean_value)
         assert len(predicted_mean_value) == len(true_mean_value)
-        assert False
-
 
     def test_analyzer_analyze(self, tmp_path):
         self._create_dummy_landcover_data(tmp_path)
