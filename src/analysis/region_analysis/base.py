@@ -160,6 +160,9 @@ class RegionAnalysis:
         maes = []
         r2s = []
 
+        assert self.df is not None, 'This method requires `self.analyze`' \
+            'to have been run. Have you run the `analyze()` method?'
+
         # TODO: pandas groupby functionality?
         groups = [p for p in itertools.product(
             self.df.admin_level_name.unique(), self.df.model.unique()
@@ -298,14 +301,14 @@ class RegionAnalysis:
                 if self.admin_boundaries:
                     (
                         datetimes, region_name, predicted_mean_value, true_mean_value
-                    ) = self.compute_mean_statistics(
+                    ) = self.compute_mean_statistics(  # type: ignore
                         region_da=region_da, true_da=true_da, pred_da=pred_da,
                         region_lookup=region_lookup, datetime=dt
                     )
                 else:
                     (
                         datetimes, region_name, predicted_mean_value, true_mean_value
-                    ) = self.compute_mean_statistics(
+                    ) = self.compute_mean_statistics(  # type: ignore
                         landcover_das, true_da=true_da, pred_da=pred_da,
                         datetime=dt
                     )
