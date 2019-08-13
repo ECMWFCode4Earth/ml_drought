@@ -87,7 +87,8 @@ class LandcoverRegionAnalysis(RegionAnalysis):
         )
 
     def analyze(self, compute_global_errors: bool = True,
-                compute_regional_errors: bool = True) -> None:
+                compute_regional_errors: bool = True,
+                save_all_df: bool = True) -> None:
         """For all preprocessed regions calculate the mean True value and
         mean predicted values. Also have the option to calculate global
         errors (across all regions (in an admin level) / landcover classes).
@@ -116,3 +117,9 @@ class LandcoverRegionAnalysis(RegionAnalysis):
 
         # compute error metrics for each model globally
         self.compute_metrics(compute_global_errors, compute_regional_errors)
+
+        if save_all_df:
+            self.df.to_csv(
+                self.out_dir /
+                f'{self.experiment}_all_admin_regions.csv'
+            )
