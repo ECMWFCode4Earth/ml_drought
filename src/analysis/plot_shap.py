@@ -7,6 +7,22 @@ import numpy as np
 from typing import Dict, List, Optional
 
 
+int2month = {
+    1: 'Jan',
+    2: 'Feb',
+    3: 'Mar',
+    4: 'Apr',
+    5: 'May',
+    6: 'Jun',
+    7: 'Jul',
+    8: 'Aug',
+    9: 'Sep',
+    10: 'Oct',
+    11: 'Nov',
+    12: 'Dec'
+}
+
+
 def plot_shap_values(x: np.ndarray,
                      shap_values: np.ndarray,
                      val_list: List[str],
@@ -14,7 +30,8 @@ def plot_shap_values(x: np.ndarray,
                      value_to_plot: str,
                      normalize_shap_plots: bool = True,
                      show: bool = False,
-                     polished_value_name: Optional[str] = None) -> None:
+                     polished_value_name: Optional[str] = None,
+                     pred_month: Optional[int] = None) -> None:
     """Plots the denormalized values against their shap values, so that
     variations in the input features to the model can be compared to their effect
     on the model. For example plots, see notebooks/08_gt_recurrent_model.ipynb.
@@ -38,6 +55,8 @@ def plot_shap_values(x: np.ndarray,
         If True, a plot of the variable `value_to_plot` against its shap values will be plotted.
     polished_value_name: Optional[str] = None
         If passed to the model, this is used instead of value_to_plot when labelling the axes.
+    pred_month: Optional[str] = None
+        If passed to the model, the x axis will contain actual months instead of
     """
     # first, lets isolate the lists
     idx = val_list.index(value_to_plot)
@@ -54,6 +73,16 @@ def plot_shap_values(x: np.ndarray,
     shap_val = shap_values[:, idx]
 
     months = list(range(1, len(x_val) + 1))
+
+    if pred_month is not None:
+        int_months = []
+        cur_month = pred_month
+        for i in range(1, len(x_val) + 1):
+            cur_month = cur_month - 1
+            if cur_month == 0:
+                cur_month = 12
+            int_months.append(cur_month)
+        str_months = [int2month[m] for m in int_months][::-1]
 
     host = host_subplot(111, axes_class=AA.Axes)
     plt.subplots_adjust(right=0.75)
@@ -78,6 +107,10 @@ def plot_shap_values(x: np.ndarray,
     par1.axis["right"].label.set_color(p2.get_color())
 
     host.legend(loc=2)
+
+    if pred_month is not None:
+        host.set_xticks(months, minor=False)
+        host.set_xticklabels(str_months)
 
     plt.draw()
     if show:
