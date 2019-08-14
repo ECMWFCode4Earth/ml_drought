@@ -168,7 +168,7 @@ class ERA5LandExporter(CDSExporter):
             return cast(List[Path], output_paths)
 
         if break_up == 'yearly':
-            output_paths: List[Path] = []
+            output_paths= []
             for year in processed_selection_request['year']:
                 updated_request = processed_selection_request.copy()
                 updated_request['year'] = [year]
