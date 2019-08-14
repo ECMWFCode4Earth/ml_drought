@@ -31,10 +31,10 @@ class TestVHIPreprocessor:
     def test_vhi_init_directories_created(tmp_path):
         v = VHIPreprocessor(tmp_path)
 
-        assert (tmp_path / v.preprocessed_folder / "vhi_preprocessed").exists(), \
+        assert (tmp_path / v.preprocessed_folder / "VHI_preprocessed").exists(), \
             f'Should have created a directory tmp_path/interim/vhi_preprocessed'
 
-        assert (tmp_path / v.preprocessed_folder / "vhi_interim").exists(), \
+        assert (tmp_path / v.preprocessed_folder / "VHI_interim").exists(), \
             f'Should have created a directory tmp_path/interim/vhi_interim'
 
     @staticmethod

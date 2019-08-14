@@ -36,13 +36,13 @@ class BasePreProcessor:
         self.raw_folder = self.data_folder / 'raw'
         self.preprocessed_folder = self.data_folder / 'interim'
 
-        if output_name is None:
-            output_name = self.dataset
-
         if not self.preprocessed_folder.exists():
             self.preprocessed_folder.mkdir(exist_ok=True, parents=True)
 
         try:
+            if output_name is None:
+                output_name = self.dataset
+
             if self.static:
                 folder_prefix = f'static/{output_name}'
             else:
