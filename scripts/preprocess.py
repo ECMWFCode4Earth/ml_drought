@@ -34,7 +34,7 @@ def process_precip_2018():
     processor = CHIRPSPreprocesser(data_path)
 
     processor.preprocess(subset_str='kenya',
-                         regrid=None,
+                         regrid=regrid_path,
                          parallel=False)
 
 
@@ -87,6 +87,10 @@ def preprocess_srtm():
         data_path = Path('../data')
     regrid_path = data_path / 'interim/VCI_preprocessed/data_kenya.nc'
     assert regrid_path.exists(), f'{regrid_path} not available'
+
+    print('Warning: regridding with CDO using the VCI preprocessor data fails because'
+          'CDO reads the grid type as generic instead of latlon. This can be fixed '
+          'just by changing the grid type to latlon in the grid definition file.')
 
     processor = SRTMPreprocessor(data_path)
     processor.preprocess(subset_str='kenya', regrid=regrid_path)
