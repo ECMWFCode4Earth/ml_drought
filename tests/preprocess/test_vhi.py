@@ -228,10 +228,14 @@ class TestVHIPreprocessor:
         demo_raw_folder.mkdir(parents=True, exist_ok=True)
         netcdf_filepath = demo_raw_folder / 'VHP.G04.C07.NC.P1981035.VH.nc'
 
+        raw_height, raw_width = 360, 100
+        v.raw_height = raw_height
+        v.raw_width = raw_width
+
         # build dummy .nc object
-        height = list(range(0, 3616))
-        width = list(range(0, 10000))
-        vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
+        height = list(range(0, raw_height))
+        width = list(range(0, raw_width))
+        vci = tci = vhi = np.random.randint(100, size=(raw_height, raw_width))
 
         raw_ds = xr.Dataset(
             {'VCI': (['HEIGHT', 'WIDTH'], vci),

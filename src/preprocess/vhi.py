@@ -29,6 +29,9 @@ class VHIPreprocessor(BasePreProcessor):
 
     dataset = 'vhi'
 
+    raw_height: int = 3616
+    raw_width: int = 10000
+
     def __init__(self, data_folder: Path = Path('data'),
                  var: str = 'VHI') -> None:
         assert var in ['VCI', 'VHI', 'TCI']
@@ -251,13 +254,12 @@ class VHIPreprocessor(BasePreProcessor):
         date = pd.to_datetime(atime)
         return date
 
-    @staticmethod
-    def create_lat_lon_vectors(ds: Dataset) -> Tuple[Any, Any]:
+    def create_lat_lon_vectors(self, ds: Dataset) -> Tuple[Any, Any]:
         """ read the `ds.attrs` and create new latitude, longitude vectors """
-        assert ds.WIDTH.size == 10000, \
+        assert ds.WIDTH.size == self.raw_width, \
             f'We are hardcoding the lat/lon values so we need to ensure that all dims ' \
             f'are the same. WIDTH != 10000, == {ds.WIDTH.size}'
-        assert ds.HEIGHT.size == 3616, \
+        assert ds.HEIGHT.size == self.raw_height, \
             f'We are hardcoding the lat/lon values so we need to ensure that all dims ' \
             f'are the same. HEIGHT != 3616, == {ds.HEIGHT.size}'
 
