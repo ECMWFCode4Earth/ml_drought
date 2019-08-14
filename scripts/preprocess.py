@@ -27,7 +27,7 @@ def process_precip_2018():
     else:
         data_path = Path('../data')
 
-    regrid_path = data_path / 'interim/VCI_preprocessed/VCI_kenya.nc'
+    regrid_path = data_path / 'interim/VCI_preprocessed/data_kenya.nc'
     assert regrid_path.exists(), f'{regrid_path} not available'
 
     processor = CHIRPSPreprocesser(data_path)
@@ -43,7 +43,7 @@ def process_era5POS_2018():
         data_path = Path('data')
     else:
         data_path = Path('../data')
-    regrid_path = data_path / 'interim/chirps_preprocessed/chirps_kenya.nc'
+    regrid_path = data_path / 'interim/VCI_preprocessed/data_kenya.nc'
     assert regrid_path.exists(), f'{regrid_path} not available'
 
     processor = PlanetOSPreprocessor(data_path)
@@ -58,7 +58,7 @@ def process_gleam():
         data_path = Path('data')
     else:
         data_path = Path('../data')
-    regrid_path = data_path / 'interim/chirps_preprocessed/chirps_kenya.nc'
+    regrid_path = data_path / 'interim/VCI_preprocessed/data_kenya.nc'
     assert regrid_path.exists(), f'{regrid_path} not available'
 
     processor = GLEAMPreprocessor(data_path)
@@ -72,7 +72,7 @@ def process_esa_cci_landcover():
         data_path = Path('data')
     else:
         data_path = Path('../data')
-    regrid_path = data_path / 'interim/chirps_preprocessed/chirps_kenya.nc'
+    regrid_path = data_path / 'interim/VCI_preprocessed/data_kenya.nc'
     assert regrid_path.exists(), f'{regrid_path} not available'
 
     processor = ESACCIPreprocessor(data_path)
@@ -84,7 +84,7 @@ def preprocess_srtm():
         data_path = Path('data')
     else:
         data_path = Path('../data')
-    regrid_path = data_path / 'interim/chirps_preprocessed/chirps_kenya.nc'
+    regrid_path = data_path / 'interim/VCI_preprocessed/data_kenya.nc'
     assert regrid_path.exists(), f'{regrid_path} not available'
 
     processor = SRTMPreprocessor(data_path)
