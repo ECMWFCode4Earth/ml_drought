@@ -81,17 +81,17 @@ class CHIRPSExporter(BaseExporter):
                               chirps_files: List[str],
                               region: str = 'africa',
                               period: str = 'monthly',
-                              parallel: bool = False) -> None:
+                              n_parallel_processes: int = 1) -> None:
         """ download the chirps files using wget """
-        # build the base url
+        n_parallel_processes = min(1, n_parallel_processes)
 
+        # build the base url
         url = self.get_url(region, period)
 
         filepaths = [url + f for f in chirps_files]
 
-        if parallel:
-            processes = min(100, len(chirps_files))
-            pool = multiprocessing.Pool(processes=processes)
+        if n_parallel_processes > 1:
+            pool = multiprocessing.Pool(processes=n_parallel_processes)
             pool.map(self.wget_file, filepaths)
         else:
             for file in filepaths:
@@ -100,7 +100,7 @@ class CHIRPSExporter(BaseExporter):
     def export(self, years: Optional[List[int]] = None,
                region: str = 'global',
                period: str = 'monthly',
-               parallel: bool = False) -> None:
+               n_parallel_processes: int = 1) -> None:
         """Export functionality for the CHIRPS precipitation product
         Arguments
         ----------
@@ -111,8 +111,8 @@ class CHIRPSExporter(BaseExporter):
             If africa, a tif file is downloaded
         period: str {'monthly', 'weekly', 'pentad'...}
             The period of the data being downloaded
-        parallel: bool, default = False
-            Whether to parallelize the downloading of data
+        n_parallel_processes: int, default = 1
+            Whether to n_parallel_processesize the downloading of data
         """
 
         if years is not None:
@@ -137,5 +137,5 @@ class CHIRPSExporter(BaseExporter):
         ]
         chirps_files = [f for f in chirps_files if f not in existing_files]
 
-        # download files in parallel
-        self.download_chirps_files(chirps_files, region, period, parallel)
+        # download files in n_parallel_processes
+        self.download_chirps_files(chirps_files, region, period, n_parallel_processes)
