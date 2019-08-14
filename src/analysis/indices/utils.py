@@ -16,6 +16,17 @@ def rolling_cumsum(ds: xr.Dataset,
     return ds_window
 
 
+def rolling_mean(ds: xr.Dataset,
+                 rolling_window: int = 3) -> xr.Dataset:
+    ds_window = (
+        ds.rolling(time=rolling_window, center=True)
+        .mean()
+        .dropna(dim='time', how='all')
+    )
+
+    return ds_window
+
+
 def apply_over_period(da: xr.Dataset,
                       func,
                       in_variable: str,
