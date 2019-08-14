@@ -27,23 +27,38 @@ class BasePreProcessor:
         The location of the data folder.
     """
     dataset: str
+    static: bool = False
+    analysis: bool = False
 
-    def __init__(self, data_folder: Path = Path('data')) -> None:
+    def __init__(self, data_folder: Path = Path('data'),
+                 output_name: Optional[str] = None) -> None:
         self.data_folder = data_folder
         self.raw_folder = self.data_folder / 'raw'
         self.preprocessed_folder = self.data_folder / 'interim'
 
         if not self.preprocessed_folder.exists():
-            self.preprocessed_folder.mkdir()
+            self.preprocessed_folder.mkdir(exist_ok=True, parents=True)
 
         try:
-            self.out_dir = self.preprocessed_folder / f'{self.dataset}_preprocessed'
-            if not self.out_dir.exists():
-                self.out_dir.mkdir()
+            if output_name is None:
+                output_name = self.dataset
 
-            self.interim = self.preprocessed_folder / f'{self.dataset}_interim'
+            if self.static:
+                folder_prefix = f'static/{output_name}'
+            else:
+                folder_prefix = output_name
+
+            if self.analysis:
+                self.out_dir = self.data_folder / 'analysis' / f'{folder_prefix}_preprocessed'
+            else:
+                self.out_dir = self.preprocessed_folder / f'{folder_prefix}_preprocessed'
+
+            if not self.out_dir.exists():
+                self.out_dir.mkdir(parents=True)
+
+            self.interim = self.preprocessed_folder / f'{folder_prefix}_interim'
             if not self.interim.exists():
-                self.interim.mkdir()
+                self.interim.mkdir(parents=True)
         except AttributeError:
             print('A dataset attribute must be added for '
                   'the interim and out directories to be created')
@@ -170,14 +185,17 @@ class BasePreProcessor:
 
     def merge_files(self, subset_str: Optional[str] = 'kenya',
                     resample_time: Optional[str] = 'M',
-                    upsampling: bool = False) -> None:
+                    upsampling: bool = False,
+                    filename: Optional[str] = None) -> None:
 
         ds = xr.open_mfdataset(self.get_filepaths('interim'))
 
         if resample_time is not None:
             ds = self.resample_time(ds, resample_time, upsampling)
 
-        out = self.out_dir / f'{self.dataset}\
-        {"_" + subset_str if subset_str is not None else ""}.nc'.replace(' ', '')
+        if filename is None:
+            filename = f'data{"_" + subset_str if subset_str is not None else ""}.nc'
+        out = self.out_dir / filename
+
         ds.to_netcdf(out)
         print(f"\n**** {out} Created! ****\n")

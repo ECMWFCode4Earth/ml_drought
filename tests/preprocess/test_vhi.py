@@ -10,20 +10,19 @@ from ..utils import _make_dataset
 class TestVHIPreprocessor:
 
     @staticmethod
-    def _make_vhi_dataset():
+    def _make_vhi_dataset(height, width):
         # build dummy .nc object
-        height = list(range(0, 3616))
-        width = list(range(0, 10000))
-        # vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
-        vci = tci = vhi = np.ones(shape=(3616, 10000))
+        height_list = list(range(0, height))
+        width_list = list(range(0, width))
+        vci = tci = vhi = np.random.randint(100, size=(height, width))
 
         ds = xr.Dataset(
             {'VCI': (['HEIGHT', 'WIDTH'], vci),
              'TCI': (['HEIGHT', 'WIDTH'], tci),
              'VHI': (['HEIGHT', 'WIDTH'], vhi)},
             coords={
-                'HEIGHT': height,
-                'WIDTH': width}
+                'HEIGHT': height_list,
+                'WIDTH': width_list}
         )
 
         return ds
@@ -32,10 +31,10 @@ class TestVHIPreprocessor:
     def test_vhi_init_directories_created(tmp_path):
         v = VHIPreprocessor(tmp_path)
 
-        assert (tmp_path / v.preprocessed_folder / "vhi_preprocessed").exists(), \
+        assert (tmp_path / v.preprocessed_folder / "VHI_preprocessed").exists(), \
             f'Should have created a directory tmp_path/interim/vhi_preprocessed'
 
-        assert (tmp_path / v.preprocessed_folder / "vhi_interim").exists(), \
+        assert (tmp_path / v.preprocessed_folder / "VHI_interim").exists(), \
             f'Should have created a directory tmp_path/interim/vhi_interim'
 
     @staticmethod
@@ -62,8 +61,7 @@ class TestVHIPreprocessor:
         assert recovered_names == fnames, \
             f'Expected all .nc files to be retrieved.'
 
-    @staticmethod
-    def test_preprocessor_output(tmp_path):
+    def test_preprocessor_output(self, tmp_path):
         v = VHIPreprocessor(tmp_path)
 
         # get filename
@@ -72,19 +70,11 @@ class TestVHIPreprocessor:
         netcdf_filepath = demo_raw_folder / 'VHP.G04.C07.NC.P1981035.VH.nc'
 
         # build dummy .nc object
-        height = list(range(0, 3616))
-        width = list(range(0, 10000))
-        # vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
-        vci = tci = vhi = np.ones(shape=(3616, 10000))
+        raw_height, raw_width = 360, 100
+        v.raw_height = raw_height
+        v.raw_width = raw_width
 
-        raw_ds = xr.Dataset(
-            {'VCI': (['HEIGHT', 'WIDTH'], vci),
-             'TCI': (['HEIGHT', 'WIDTH'], tci),
-             'VHI': (['HEIGHT', 'WIDTH'], vhi)},
-            coords={
-                'HEIGHT': height,
-                'WIDTH': width}
-        )
+        raw_ds = self._make_vhi_dataset(raw_height, raw_width)
         raw_ds.to_netcdf(netcdf_filepath)
 
         # run the preprocessing steps
@@ -120,27 +110,19 @@ class TestVHIPreprocessor:
         expected = 'STAR_VHP.G04.C07.NC_1981_8_31_kenya_VH.nc'
         assert out_fname == expected, f'Expected: {expected}, got: {out_fname}'
 
-    @staticmethod
-    def test_create_new_dataset(tmp_path):
+    def test_create_new_dataset(self, tmp_path):
 
         netcdf_filepath = 'VHP.G04.C07.NC.P1981035.VH.nc'
 
         # build dummy .nc object
-        height = list(range(0, 3616))
-        width = list(range(0, 10000))
-        # vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
-        vci = tci = vhi = np.ones(shape=(3616, 10000))
-
-        ds = xr.Dataset(
-            {'VCI': (['HEIGHT', 'WIDTH'], vci),
-             'TCI': (['HEIGHT', 'WIDTH'], tci),
-             'VHI': (['HEIGHT', 'WIDTH'], vhi)},
-            coords={
-                'HEIGHT': height,
-                'WIDTH': width}
-        )
-
         processor = VHIPreprocessor(tmp_path)
+
+        raw_height, raw_width = 360, 100
+        processor.raw_height = raw_height
+        processor.raw_width = raw_width
+
+        ds = self._make_vhi_dataset(raw_height, raw_width)
+
         timestamp = processor.extract_timestamp(ds, netcdf_filepath, use_filepath=True)
         expected_timestamp = pd.Timestamp('1981-08-31 00:00:00')
 
@@ -148,11 +130,11 @@ class TestVHIPreprocessor:
             Expected: {expected_timestamp} Got: {timestamp}"
 
         longitudes, latitudes = processor.create_lat_lon_vectors(ds)
-        exp_long = np.linspace(-180, 180, 10000)
+        exp_long = np.linspace(-180, 180, raw_width)
         assert all(longitudes == exp_long), f"Longitudes \
             not what expected: np.linspace(-180,180,10000)"
 
-        exp_lat = np.linspace(-55.152, 75.024, 3616)
+        exp_lat = np.linspace(-55.152, 75.024, raw_height)
         assert all(latitudes == exp_lat), f"latitudes \
             not what expected: np.linspace(-55.152,75.024,3616)"
 
@@ -160,7 +142,7 @@ class TestVHIPreprocessor:
                                               longitudes,
                                               latitudes,
                                               timestamp,
-                                              all_vars=False)
+                                              var_selection=['VHI'])
 
         assert isinstance(out_ds, xr.Dataset), \
             f'Expected out_ds to be of type: xr.Dataset, now: {type(out_ds)}'
@@ -183,19 +165,11 @@ class TestVHIPreprocessor:
         netcdf_filepath = demo_raw_folder / 'VHP.G04.C07.NC.P1981035.VH.nc'
 
         # build dummy .nc object
-        height = list(range(0, 3616))
-        width = list(range(0, 10000))
-        # vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
-        vci = tci = vhi = np.ones(shape=(3616, 10000))
+        raw_height, raw_width = 360, 100
+        v.raw_height = raw_height
+        v.raw_width = raw_width
 
-        raw_ds = xr.Dataset(
-            {'VCI': (['HEIGHT', 'WIDTH'], vci),
-             'TCI': (['HEIGHT', 'WIDTH'], tci),
-             'VHI': (['HEIGHT', 'WIDTH'], vhi)},
-            coords={
-                'HEIGHT': height,
-                'WIDTH': width}
-        )
+        raw_ds = self._make_vhi_dataset(raw_height, raw_width)
         raw_ds.to_netcdf(netcdf_filepath)
 
         # get regridder
@@ -217,9 +191,55 @@ class TestVHIPreprocessor:
             regrid=regrid_dataset
         )
 
-        expected_out_path = tmp_path / 'interim/vhi_interim/\
+        expected_out_path = tmp_path / 'interim/VHI_interim/\
         STAR_VHP.G04.C07.NC_1981_8_31_ethiopia_VH.nc'.replace(' ', '')
         assert expected_out_path.exists(), \
             f'Expected processed file to be saved to {expected_out_path}'
         assert out == expected_out_path, f"Expected: {expected_out_path}, \
         Got: {out}"
+
+    def test_VCI(self, tmp_path):
+        v = VHIPreprocessor(tmp_path, var='VCI')
+
+        # get filename
+        demo_raw_folder = (v.raw_folder / 'vhi' / '1981')
+        demo_raw_folder.mkdir(parents=True, exist_ok=True)
+        netcdf_filepath = demo_raw_folder / 'VHP.G04.C07.NC.P1981035.VH.nc'
+
+        raw_height, raw_width = 360, 100
+        v.raw_height = raw_height
+        v.raw_width = raw_width
+
+        # build dummy .nc object
+        raw_ds = self._make_vhi_dataset(raw_height, raw_width)
+        raw_ds.to_netcdf(netcdf_filepath)
+
+        # get regridder
+        ethiopia = get_ethiopia()
+        regrid_dataset, _, _ = _make_dataset(
+            size=(20, 20), latmin=ethiopia.latmin,
+            latmax=ethiopia.latmax, lonmin=ethiopia.lonmin,
+            lonmax=ethiopia.lonmax
+        )
+
+        regrid_path = tmp_path / 'regridder.nc'
+        regrid_dataset.to_netcdf(regrid_path)
+
+        # run the preprocessing steps
+        out = v._preprocess(
+            netcdf_filepath=netcdf_filepath.as_posix(),
+            output_dir=v.interim.as_posix(),
+            subset_str='ethiopia',
+            regrid=regrid_dataset
+        )
+
+        expected_out_path = tmp_path / 'interim/VCI_interim/\
+        STAR_VHP.G04.C07.NC_1981_8_31_ethiopia_VH.nc'.replace(' ', '')
+        assert expected_out_path.exists(), \
+            f'Expected processed file to be saved to {expected_out_path}'
+        assert out == expected_out_path, f"Expected: {expected_out_path}, \
+        Got: {out}"
+
+        output = xr.open_dataset(expected_out_path)
+        assert 'VCI' in list(output.data_vars)
+        assert 'VHI' not in list(output.data_vars)

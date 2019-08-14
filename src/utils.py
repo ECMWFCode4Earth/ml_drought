@@ -7,6 +7,8 @@ from collections import namedtuple
 import calendar
 from datetime import date
 import xarray as xr
+import numpy as np
+from scipy import stats
 
 from typing import Optional, Tuple
 
@@ -57,7 +59,8 @@ def minus_months(cur_year: int, cur_month: int, diff_months: int,
 
 
 def get_ds_mask(ds: xr.Dataset) -> xr.Dataset:
-    """
+    """ Return a boolean Dataset which is a mask of the first timestep in `ds`
+
     NOTE:
         assumes that all of the null values from `ds` are valid null values (e.g.
         water bodies). Could also be invalid nulls due to poor data processing /
@@ -67,6 +70,109 @@ def get_ds_mask(ds: xr.Dataset) -> xr.Dataset:
     mask.name = 'mask'
 
     return mask
+
+
+def create_shape_aligned_climatology(ds, clim, variable, time_period):
+    """match the time dimension of `clim` to the shape of `ds` so that can
+    perform simple calculations / arithmetic on the values of clim
+
+    Arguments:
+    ---------
+    ds : xr.Dataset
+        the dataset with the raw values that you are comparing to climatology
+
+    clim: xr.Dataset
+        the climatology values for a given `time_period`
+
+    variable: str
+        name of the variable that you are comparing to the climatology
+
+    time_period: str
+        the period string used to calculate the climatology
+         time_period = {'dayofyear', 'season', 'month'}
+
+    Notes:
+        1. assumes that `lat` and `lon` are the
+        coord names in ds
+
+    """
+    for coord in ['lat', 'lon']:
+        assert coord in [c for c in ds.coords]
+
+    ds[time_period] = ds[f'time.{time_period}']
+
+    values = clim[variable].values
+    keys = clim[time_period].values
+    # map the `time_period` to the `values` of the climatology (threshold or mean)
+    lookup_dict = dict(zip(keys, values))
+
+    # extract an array of the `time_period` values from the `ds`
+    timevals = ds[time_period].values
+
+    # use the lat lon arrays (climatology values) in `lookup_dict` corresponding
+    #  to time_period values defined in `timevals` and stack into new array
+    new_clim_vals = np.stack([lookup_dict[timevals[i]] for i in range(len(timevals))])
+
+    assert new_clim_vals.shape == ds[variable].shape, f"\
+        Shapes for new_clim_vals and ds must match! \
+         new_clim_vals.shape: {new_clim_vals.shape} \
+         ds.shape: {ds[variable].shape}"
+
+    # copy that forward in time
+    new_clim = xr.Dataset(
+        {variable: (['time', 'lat', 'lon'], new_clim_vals)},
+        coords={
+            'lat': clim.lat,
+            'lon': clim.lon,
+            'time': ds.time,
+        }
+    )
+
+    return new_clim
+
+
+def get_modal_value_across_time(da: xr.DataArray) -> xr.DataArray:
+    """Get the modal value along the time dimension
+    (produce a 2D spatial array with each pixel being the
+    modal value)
+
+    Arguments:
+    ---------
+    ds: xr.DataArray
+        the DataArray that you want to calculate the mode for
+
+    TODO: Why do these not work?
+    # stacked = ds.stack(pixels=['lat', 'lon'])
+    # # xr.apply_ufunc(stats.mode, stacked)
+    # mode = stacked.reduce(, dim='time')
+    # mode = mode.unstack('pixel')
+    """
+    print("Extracting the data to numpy array")
+    data = da.values
+
+    print("calculating the mode across the time dimension")
+    # NOTE: assuming that time is dim=0
+    mode = stats.mode(data, axis=0)[0]
+
+    mode_da = xr.ones_like(da).isel(time=slice(0, 1))
+    mode_da.values = mode
+
+    # return a lat, lon array (remove time dimension)
+    mode_da = mode_da.squeeze('time').drop('time')
+
+    return mode_da
+
+
+def drop_nans_and_flatten(dataArray: xr.DataArray) -> np.ndarray:
+    """flatten the array and drop nans from that array. Useful for plotting histograms.
+
+    Arguments:
+    ---------
+    : dataArray (xr.DataArray)
+        the DataArray of your value you want to flatten
+    """
+    # drop NaNs and flatten
+    return dataArray.values[~np.isnan(dataArray.values)]
 
 
 # dictionary lookup of regions

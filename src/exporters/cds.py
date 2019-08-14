@@ -1,4 +1,3 @@
-import cdsapi
 from pathlib import Path
 import warnings
 import itertools
@@ -6,9 +5,11 @@ import re
 from pprint import pprint
 import multiprocessing
 
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, cast
 
 from .base import BaseExporter, Region, get_kenya
+
+cdsapi = None
 
 
 class CDSExporter(BaseExporter):
@@ -20,7 +21,11 @@ class CDSExporter(BaseExporter):
     def __init__(self, data_folder: Path = Path('data')) -> None:
         super().__init__(data_folder)
 
-        self.client = cdsapi.Client()
+        global cdsapi
+        if cdsapi is None:
+            import cdsapi
+
+        self.client = cdsapi.Client()  # type: ignore
 
     @staticmethod
     def create_area(region: Region) -> str:
@@ -122,7 +127,7 @@ class CDSExporter(BaseExporter):
                 self.client.retrieve(dataset, selection_request, str(output_file))
 
             else:  # in parallel create a new Client each time it's called
-                client = cdsapi.Client()
+                client = cdsapi.Client()  # type: ignore
                 client.retrieve(dataset, selection_request, str(output_file))
 
         return output_file
@@ -251,7 +256,7 @@ class ERA5Exporter(CDSExporter):
                show_api_request: bool = True,
                selection_request: Optional[Dict] = None,
                break_up: bool = False,
-               N_parallel_requests: int = 3) -> List[Path]:
+               n_parallel_requests: int = 3) -> List[Path]:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
 
@@ -275,7 +280,7 @@ class ERA5Exporter(CDSExporter):
             API. If true, the calls will be broken up into months
         parallel: bool, default = True
             Whether to download data in parallel
-        N_parallel_requests:
+        n_parallel_requests:
             How many parallel requests to the CDSAPI to make
 
         Returns:
@@ -292,12 +297,12 @@ class ERA5Exporter(CDSExporter):
         if dataset is None:
             dataset = self.get_dataset(variable, granularity)
 
-        if N_parallel_requests < 1: N_parallel_requests = 1
+        if n_parallel_requests < 1: n_parallel_requests = 1
 
         # break up by month
         if break_up:
-            if N_parallel_requests > 1:  # Run in parallel
-                p = multiprocessing.Pool(int(N_parallel_requests))
+            if n_parallel_requests > 1:  # Run in parallel
+                p = multiprocessing.Pool(int(n_parallel_requests))
 
             output_paths = []
             for year, month in itertools.product(processed_selection_request['year'],
@@ -306,22 +311,22 @@ class ERA5Exporter(CDSExporter):
                 updated_request['year'] = [year]
                 updated_request['month'] = [month]
 
-                if N_parallel_requests > 1:  # Run in parallel
+                if n_parallel_requests > 1:  # Run in parallel
                     # multiprocessing of the paths
                     output_paths.append(
                         p.apply_async(
                             self._export,
                             args=(dataset, updated_request, show_api_request, True)
-                        ).get()
+                        )
                     )
                 else:  # run sequentially
-                    output_paths.append(
+                    output_paths.append(  # type: ignore
                         self._export(dataset, updated_request, show_api_request)
                     )
-            if N_parallel_requests > 1:
+            if n_parallel_requests > 1:
                 p.close()
                 p.join()
-            return output_paths
+            return cast(List[Path], output_paths)
 
         return [self._export(dataset,
                              processed_selection_request,

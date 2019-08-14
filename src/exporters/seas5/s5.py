@@ -67,9 +67,9 @@ class S5Exporter(CDSExporter):
         granularity: {granularity} and pressure_level: {pressure_level}"
 
         if dataset is None:
-            self.dataset = self.get_dataset(self.granularity, self.pressure_level)
+            self.dataset: str = self.get_dataset(self.granularity, self.pressure_level)
         else:
-            self.dataset = dataset
+            self.dataset: str = dataset
 
         # get the reference dictionary that corresponds to that dataset
         self.dataset_reference = dataset_reference[self.dataset]
