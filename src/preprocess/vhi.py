@@ -31,7 +31,7 @@ class VHIPreprocessor(BasePreProcessor):
 
     def __init__(self, data_folder: Path = Path('data'),
                  var: str = 'VHI') -> None:
-        assert var in ['VCI', 'VHI']
+        assert var in ['VCI', 'VHI', 'TCI']
         self.data_var = var
 
         super().__init__(data_folder, var)
