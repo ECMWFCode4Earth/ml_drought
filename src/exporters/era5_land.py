@@ -72,6 +72,29 @@ class ERA5LandExporter(CDSExporter):
                 processed_selection_request[key] = [self._correct_input(x, key) for x in val]
         return processed_selection_request
 
+    def _broken_export(self, updated_request: Dict,
+                       dataset: str,
+                       output_paths: List,
+                       show_api_request: bool = True,
+                       n_parallel_requests: int = 1,
+                       pool: Optional[multiprocessing.pool.Pool] = None) -> List:
+        if n_parallel_requests > 1:  # Run in parallel
+            assert pool is not None, '`p` argument (multiprocessing.Pool)' \
+                ' must be provided for n_parallel_requests > 1'
+            # multiprocessing of the paths
+            output_paths.append(
+                pool.apply_async(
+                    self._export,
+                    args=(dataset, updated_request, show_api_request, True)
+                )
+            )
+        else:  # run sequentially
+            output_paths.append(  # type: ignore
+                self._export(dataset, updated_request, show_api_request)
+            )
+
+        return output_paths
+
     def export(self,
                variable: str,
                show_api_request: bool = True,
@@ -118,57 +141,45 @@ class ERA5LandExporter(CDSExporter):
 
         if n_parallel_requests < 1: n_parallel_requests = 1
 
+        p: Optional[multiprocessing.pool.Pool]
+        if n_parallel_requests > 1:  # Run in parallel
+            p = multiprocessing.Pool(int(n_parallel_requests))
+        else:
+            p = None
+
         # break up by month
         if break_up == 'monthly':
-            if n_parallel_requests > 1:  # Run in parallel
-                p = multiprocessing.Pool(int(n_parallel_requests))
-
-            output_paths = []
+            output_paths: List[Path] = []
             for year, month in itertools.product(processed_selection_request['year'],
                                                  processed_selection_request['month']):
                 updated_request = processed_selection_request.copy()
                 updated_request['year'] = [year]
                 updated_request['month'] = [month]
+                output_paths = self._broken_export(
+                    updated_request=updated_request, dataset=dataset,
+                    output_paths=output_paths, show_api_request=show_api_request,
+                    n_parallel_requests=n_parallel_requests, pool=p
+                )
 
-                if n_parallel_requests > 1:  # Run in parallel
-                    # multiprocessing of the paths
-                    output_paths.append(
-                        p.apply_async(
-                            self._export,
-                            args=(dataset, updated_request, show_api_request, True)
-                        )
-                    )
-                else:  # run sequentially
-                    output_paths.append(  # type: ignore
-                        self._export(dataset, updated_request, show_api_request)
-                    )
             if n_parallel_requests > 1:
+                assert p is not None
                 p.close()
                 p.join()
             return cast(List[Path], output_paths)
 
         if break_up == 'yearly':
-            if n_parallel_requests > 1:  # Run in parallel
-                p = multiprocessing.Pool(int(n_parallel_requests))
-
-            output_paths = []
+            output_paths: List[Path] = []
             for year in processed_selection_request['year']:
                 updated_request = processed_selection_request.copy()
                 updated_request['year'] = [year]
+                output_paths = self._broken_export(
+                    updated_request=updated_request, dataset=dataset,
+                    output_paths=output_paths, show_api_request=show_api_request,
+                    n_parallel_requests=n_parallel_requests, pool=p
+                )
 
-                if n_parallel_requests > 1:  # Run in parallel
-                    # multiprocessing of the paths
-                    output_paths.append(
-                        p.apply_async(
-                            self._export,
-                            args=(dataset, updated_request, show_api_request, True)
-                        )
-                    )
-                else:  # run sequentially
-                    output_paths.append(  # type: ignore
-                        self._export(dataset, updated_request, show_api_request)
-                    )
             if n_parallel_requests > 1:
+                assert p is not None
                 p.close()
                 p.join()
             return cast(List[Path], output_paths)
