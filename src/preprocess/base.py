@@ -30,7 +30,8 @@ class BasePreProcessor:
     static: bool = False
     analysis: bool = False
 
-    def __init__(self, data_folder: Path = Path('data')) -> None:
+    def __init__(self, data_folder: Path = Path('data'),
+                 output_name: Optional[str] = None) -> None:
         self.data_folder = data_folder
         self.raw_folder = self.data_folder / 'raw'
         self.preprocessed_folder = self.data_folder / 'interim'
@@ -39,13 +40,16 @@ class BasePreProcessor:
             self.preprocessed_folder.mkdir(exist_ok=True, parents=True)
 
         try:
+            if output_name is None:
+                output_name = self.dataset
+
             if self.static:
-                folder_prefix = f'static/{self.dataset}'
+                folder_prefix = f'static/{output_name}'
             else:
-                folder_prefix = self.dataset
+                folder_prefix = output_name
 
             if self.analysis:
-                self.out_dir = self.data_folder / 'analysis' / f'{self.dataset}_preprocessed'
+                self.out_dir = self.data_folder / 'analysis' / f'{folder_prefix}_preprocessed'
             else:
                 self.out_dir = self.preprocessed_folder / f'{folder_prefix}_preprocessed'
 
@@ -181,7 +185,7 @@ class BasePreProcessor:
             ds = self.resample_time(ds, resample_time, upsampling)
 
         if filename is None:
-            filename = f'{self.dataset}{"_" + subset_str if subset_str is not None else ""}.nc'
+            filename = f'data{"_" + subset_str if subset_str is not None else ""}.nc'
         out = self.out_dir / filename
 
         ds.to_netcdf(out)

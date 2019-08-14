@@ -29,11 +29,28 @@ class VHIPreprocessor(BasePreProcessor):
 
     dataset = 'vhi'
 
+    raw_height: int = 3616
+    raw_width: int = 10000
+
+    def __init__(self, data_folder: Path = Path('data'),
+                 var: str = 'VHI') -> None:
+        """
+        var: str
+            The variable to output. This will be output to its own
+            folder, so it is safe to run this preprocessor for each var
+            (the data won't be overwritten). Must be one of {'VCI', 'VHI', 'TCI'}
+        """
+        assert var in ['VCI', 'VHI', 'TCI']
+        self.data_var = var
+
+        super().__init__(data_folder, var)
+
     def _preprocess(self,
                     netcdf_filepath: str,
                     output_dir: str,
                     subset_str: Optional[str] = 'kenya',
-                    regrid: Optional[Dataset] = None) -> Path:
+                    regrid: Optional[Dataset] = None,
+                    ) -> Path:
         """Run the Preprocessing steps for the NOAA VHI data
 
         Process:
@@ -68,7 +85,8 @@ class VHIPreprocessor(BasePreProcessor):
         longitudes, latitudes = self.create_lat_lon_vectors(ds)
 
         # 5. create new dataset with these dimensions
-        new_ds = self.create_new_dataset(ds, longitudes, latitudes, timestamp)
+        new_ds = self.create_new_dataset(ds, longitudes, latitudes, timestamp,
+                                         [self.data_var])
 
         # 6. chop out EastAfrica
         if subset_str is not None:
@@ -242,13 +260,12 @@ class VHIPreprocessor(BasePreProcessor):
         date = pd.to_datetime(atime)
         return date
 
-    @staticmethod
-    def create_lat_lon_vectors(ds: Dataset) -> Tuple[Any, Any]:
+    def create_lat_lon_vectors(self, ds: Dataset) -> Tuple[Any, Any]:
         """ read the `ds.attrs` and create new latitude, longitude vectors """
-        assert ds.WIDTH.size == 10000, \
+        assert ds.WIDTH.size == self.raw_width, \
             f'We are hardcoding the lat/lon values so we need to ensure that all dims ' \
             f'are the same. WIDTH != 10000, == {ds.WIDTH.size}'
-        assert ds.HEIGHT.size == 3616, \
+        assert ds.HEIGHT.size == self.raw_height, \
             f'We are hardcoding the lat/lon values so we need to ensure that all dims ' \
             f'are the same. HEIGHT != 3616, == {ds.HEIGHT.size}'
 
@@ -304,17 +321,16 @@ class VHIPreprocessor(BasePreProcessor):
                            longitudes: np.ndarray,
                            latitudes: np.ndarray,
                            timestamp: Timestamp,
-                           all_vars: bool = False) -> Dataset:
-        """ Create a new dataset from ALL the variables in `ds` with the dims"""
+                           var_selection: Optional[List[str]] = None) -> Dataset:
+        """ Create a new dataset from ALL the variables in `ds` with the dims.
+            If no vars are selected, all are used"""
         # initialise the list
         da_list = []
 
         # for each variable create a new data array and append to list
-        if all_vars:
-            variables = list(ds.variables.keys())
-        else:
-            variables = ['VHI']
-        for variable in variables:
+        if var_selection is None:
+            var_selection = list(ds.variables.keys())
+        for variable in var_selection:
             da_list.append(self.create_new_dataarray(ds, variable, longitudes,
                                                      latitudes, timestamp))
         # merge all of the variables into one dataset
