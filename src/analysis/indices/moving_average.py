@@ -1,9 +1,9 @@
 from pathlib import Path
 from typing import Optional
-import xarray as xr
 
 from .base import BaseIndices
-from .utils import apply_over_period, rolling_mean
+from .utils import rolling_mean
+
 
 class MovingAverage(BaseIndices):
 

@@ -4,7 +4,8 @@ import xarray as xr
 import numpy as np
 
 from .base import BaseIndices
-from .utils import apply_over_period, rolling_mean
+from .utils import rolling_mean
+
 
 class VegetationDeficitIndex(BaseIndices):
     """3 month moving average VCI
@@ -52,7 +53,7 @@ class VegetationDeficitIndex(BaseIndices):
             resample_str=resample_str
         )
 
-        if not 'VCI' in [v for v in self.ds.data_vars]:
+        if 'VCI' not in [v for v in self.ds.data_vars]:
             print(
                 'This is a VCI specific index. Are you sure you want to fit?'
                 f' Found: {[v for v in self.ds.data_vars]}'
@@ -60,7 +61,7 @@ class VegetationDeficitIndex(BaseIndices):
 
     @staticmethod
     def vegetation_index_classify(da: xr.DataArray,
-            new_variable_name: str) -> xr.DataArray:
+                                  new_variable_name: str) -> xr.DataArray:
         """use the numpy `np.digitize` function to bin the
         values to their associated labels
         https://stackoverflow.com/a/56514582/9940782
