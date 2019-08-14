@@ -30,22 +30,26 @@ class BasePreProcessor:
     static: bool = False
     analysis: bool = False
 
-    def __init__(self, data_folder: Path = Path('data')) -> None:
+    def __init__(self, data_folder: Path = Path('data'),
+                 output_name: Optional[str] = None) -> None:
         self.data_folder = data_folder
         self.raw_folder = self.data_folder / 'raw'
         self.preprocessed_folder = self.data_folder / 'interim'
+
+        if output_name is None:
+            output_name = self.dataset
 
         if not self.preprocessed_folder.exists():
             self.preprocessed_folder.mkdir(exist_ok=True, parents=True)
 
         try:
             if self.static:
-                folder_prefix = f'static/{self.dataset}'
+                folder_prefix = f'static/{output_name}'
             else:
-                folder_prefix = self.dataset
+                folder_prefix = output_name
 
             if self.analysis:
-                self.out_dir = self.data_folder / 'analysis' / f'{self.dataset}_preprocessed'
+                self.out_dir = self.data_folder / 'analysis' / f'{folder_prefix}_preprocessed'
             else:
                 self.out_dir = self.preprocessed_folder / f'{folder_prefix}_preprocessed'
 

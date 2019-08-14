@@ -29,11 +29,19 @@ class VHIPreprocessor(BasePreProcessor):
 
     dataset = 'vhi'
 
+    def __init__(self, data_folder: Path = Path('data'),
+                 var: str = 'VHI') -> None:
+        assert var in ['VCI', 'VHI']
+        self.data_var = var
+
+        super().__init__(data_folder, var)
+
     def _preprocess(self,
                     netcdf_filepath: str,
                     output_dir: str,
                     subset_str: Optional[str] = 'kenya',
-                    regrid: Optional[Dataset] = None) -> Path:
+                    regrid: Optional[Dataset] = None,
+                    ) -> Path:
         """Run the Preprocessing steps for the NOAA VHI data
 
         Process:
@@ -58,6 +66,7 @@ class VHIPreprocessor(BasePreProcessor):
             netcdf_filepath,
             subset_name=subset_str,
         )
+        print(filename)
 
         # test if the file already exists
         if Path(f'{output_dir}/{filename}').exists():
@@ -68,7 +77,8 @@ class VHIPreprocessor(BasePreProcessor):
         longitudes, latitudes = self.create_lat_lon_vectors(ds)
 
         # 5. create new dataset with these dimensions
-        new_ds = self.create_new_dataset(ds, longitudes, latitudes, timestamp)
+        new_ds = self.create_new_dataset(ds, longitudes, latitudes, timestamp,
+                                         [self.data_var])
 
         # 6. chop out EastAfrica
         if subset_str is not None:
@@ -304,17 +314,16 @@ class VHIPreprocessor(BasePreProcessor):
                            longitudes: np.ndarray,
                            latitudes: np.ndarray,
                            timestamp: Timestamp,
-                           all_vars: bool = False) -> Dataset:
-        """ Create a new dataset from ALL the variables in `ds` with the dims"""
+                           var_selection: Optional[List[str]] = None) -> Dataset:
+        """ Create a new dataset from ALL the variables in `ds` with the dims.
+            If no vars are selected, all are used"""
         # initialise the list
         da_list = []
 
         # for each variable create a new data array and append to list
-        if all_vars:
-            variables = list(ds.variables.keys())
-        else:
-            variables = ['VHI']
-        for variable in variables:
+        if var_selection is None:
+            var_selection = list(ds.variables.keys())
+        for variable in var_selection:
             da_list.append(self.create_new_dataarray(ds, variable, longitudes,
                                                      latitudes, timestamp))
         # merge all of the variables into one dataset

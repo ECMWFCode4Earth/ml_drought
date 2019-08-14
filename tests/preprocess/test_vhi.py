@@ -157,7 +157,7 @@ class TestVHIPreprocessor:
                                               longitudes,
                                               latitudes,
                                               timestamp,
-                                              all_vars=False)
+                                              var_selection=['VHI'])
 
         assert isinstance(out_ds, xr.Dataset), \
             f'Expected out_ds to be of type: xr.Dataset, now: {type(out_ds)}'
@@ -213,7 +213,7 @@ class TestVHIPreprocessor:
             regrid=regrid_dataset
         )
 
-        expected_out_path = tmp_path / 'interim/vhi_interim/\
+        expected_out_path = tmp_path / 'interim/VHI_interim/\
         STAR_VHP.G04.C07.NC_1981_8_31_ethiopia_VH.nc'.replace(' ', '')
         assert expected_out_path.exists(), \
             f'Expected processed file to be saved to {expected_out_path}'
