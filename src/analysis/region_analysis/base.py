@@ -370,14 +370,18 @@ class RegionAnalysis:
                         compute_regional_errors: bool = True) -> None:
         if compute_global_errors:
             self.global_mean_metrics = self.compute_global_error_metrics()
-            fname = f'global_error_metrics_{self.experiment}.csv'
+            fname = f'global_error_metrics_{self.experiment}'
+            fname += '_admin' if self.admin_boundaries else '_landcover'
+            fname = f'{fname}.csv'
             self.global_mean_metrics.to_csv(self.out_dir / fname)
             print('\n* Assigned Global Error Metrics to `self.global_mean_metrics` *')
             print(f'* Written csv to data/analysis/region_analysis/{fname} *')
 
         if compute_regional_errors:
             self.regional_mean_metrics = self.compute_regional_error_metrics()
-            fname = f'regional_error_metrics_{self.experiment}.csv'
+            fname = f'regional_error_metrics_{self.experiment}'
+            fname += '_admin' if self.admin_boundaries else '_landcover'
+            fname = f'{fname}.csv'
             self.regional_mean_metrics.to_csv(self.out_dir / fname)
             print('\n* Assigned Regional Error Metrics to `self.regional_mean_metrics` *')
             print(f'* Written csv to data/analysis/region_analysis/{fname} *')
