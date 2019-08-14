@@ -66,7 +66,6 @@ class VHIPreprocessor(BasePreProcessor):
             netcdf_filepath,
             subset_name=subset_str,
         )
-        print(filename)
 
         # test if the file already exists
         if Path(f'{output_dir}/{filename}').exists():
