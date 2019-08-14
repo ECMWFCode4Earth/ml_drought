@@ -34,6 +34,12 @@ class VHIPreprocessor(BasePreProcessor):
 
     def __init__(self, data_folder: Path = Path('data'),
                  var: str = 'VHI') -> None:
+        """
+        var: str
+            The variable to output. This will be output to its own
+            folder, so it is safe to run this preprocessor for each var
+            (the data won't be overwritten). Must be one of {'VCI', 'VHI', 'TCI'}
+        """
         assert var in ['VCI', 'VHI', 'TCI']
         self.data_var = var
 
