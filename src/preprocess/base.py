@@ -185,7 +185,7 @@ class BasePreProcessor:
             ds = self.resample_time(ds, resample_time, upsampling)
 
         if filename is None:
-            filename = f'{self.dataset}{"_" + subset_str if subset_str is not None else ""}.nc'
+            filename = f'data{"_" + subset_str if subset_str is not None else ""}.nc'
         out = self.out_dir / filename
 
         ds.to_netcdf(out)

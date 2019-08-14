@@ -83,7 +83,7 @@ class TestCHIRPSPreprocessor:
         processor.preprocess(subset_str='kenya', regrid=regrid_path,
                              parallel=False)
 
-        expected_out_path = tmp_path / 'interim/chirps_preprocessed/chirps_kenya.nc'
+        expected_out_path = tmp_path / 'interim/chirps_preprocessed/data_kenya.nc'
         assert expected_out_path.exists(), \
             f'Expected processed file to be saved to {expected_out_path}'
 
@@ -130,6 +130,6 @@ class TestCHIRPSPreprocessor:
         processor.preprocess(subset_str='ethiopia', regrid=regrid_path,
                              parallel=False)
 
-        expected_out_path = tmp_path / 'interim/chirps_preprocessed/chirps_ethiopia.nc'
+        expected_out_path = tmp_path / 'interim/chirps_preprocessed/data_ethiopia.nc'
         assert expected_out_path.exists(), \
             f'Expected processed file to be saved to {expected_out_path}'
