@@ -79,6 +79,10 @@ class TestVHIPreprocessor:
         # build dummy .nc object
         raw_ds = self._make_vhi_dataset()
         raw_ds.to_netcdf(netcdf_filepath)
+        mock.patch(
+            'VHIPreprocessor.create_lat_lon_vectors',
+            return_value=mock_get_latlon()
+        )
 
         # run the preprocessing steps
         out = v._preprocess(
