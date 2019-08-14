@@ -64,6 +64,7 @@ class ZScoreIndex(BaseIndices):
         print(f"Fitting ZSI for variable: {variable}")
         # 1. calculate a cumsum over `rolling_window` timesteps
         ds_window = rolling_cumsum(self.ds, rolling_window)
+
         # 2. calculate the ZSI for the variable
         out_variable = 'ZSI'
         zsi = apply_over_period(
