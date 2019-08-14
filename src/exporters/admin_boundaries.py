@@ -39,7 +39,7 @@ class OCHAExporter(BaseExporter):
         new_fname = new_fname + '.zip' if new_fname[-4:] != '.zip' else new_fname
         new_filepath = fname.absolute().parents[0] / new_fname
         os.system(f'mv {fname.absolute().as_posix()} {new_filepath.as_posix()}')
-        print(f'Renamed file to: {new_fname.as_posix()}')
+        print(f'Renamed file to: {new_fname}')
 
 
 class KenyaAdminExporter(OCHAExporter):
