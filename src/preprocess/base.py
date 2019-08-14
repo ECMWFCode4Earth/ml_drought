@@ -62,6 +62,8 @@ class BasePreProcessor:
     def get_filepaths(self, folder: str = 'raw') -> List[Path]:
         if folder == 'raw':
             target_folder = self.raw_folder / self.dataset
+        elif folder == 'vhi':
+            target_folder = self.raw_folder / 'vhi'
         else:
             target_folder = self.interim
         outfiles = list(target_folder.glob('**/*.nc'))

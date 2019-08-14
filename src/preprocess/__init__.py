@@ -1,4 +1,4 @@
-from .vhi import VHIPreprocessor
+from .vhi import VHIPreprocessor, VCIPreprocessor
 from .chirps import CHIRPSPreprocesser
 from .planetOS import PlanetOSPreprocessor
 from .gleam import GLEAMPreprocessor
@@ -11,4 +11,4 @@ __all__ = ['VHIPreprocessor', 'CHIRPSPreprocesser',
            'PlanetOSPreprocessor', 'GLEAMPreprocessor',
            'ERA5MonthlyMeanPreprocessor',
            'ESACCIPreprocessor', 'SRTMPreprocessor',
-           'KenyaAdminPreprocessor']
+           'KenyaAdminPreprocessor', 'VCIPreprocessor']

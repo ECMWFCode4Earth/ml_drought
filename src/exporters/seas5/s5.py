@@ -93,7 +93,7 @@ class S5Exporter(CDSExporter):
         max_month: int = 12,
         max_leadtime: Optional[int] = None,
         pressure_levels: Optional[List[int]] = None,
-        n_parallel_requests: int = 3,
+        n_parallel_requests: int = 1,
         show_api_request: bool = True,
         break_up: bool = True,
     ):

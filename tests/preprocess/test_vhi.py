@@ -1,10 +1,17 @@
 import xarray as xr
 import numpy as np
 import pandas as pd
+from unittest import mock
 
-from src.preprocess import VHIPreprocessor
+from src.preprocess import VHIPreprocessor, VCIPreprocessor
 from src.utils import get_ethiopia
 from ..utils import _make_dataset
+
+
+def mock_get_latlon():
+    longitudes = np.linspace(-180, 180, 10000 // 100)
+    latitudes = np.linspace(-55.152, 75.024, 3616 // 100)
+    return longitudes, latitudes
 
 
 class TestVHIPreprocessor:
@@ -12,9 +19,9 @@ class TestVHIPreprocessor:
     @staticmethod
     def _make_vhi_dataset():
         # build dummy .nc object
-        height = list(range(0, 3616))
-        width = list(range(0, 10000))
-        vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
+        height = list(range(0, 3616 // 100))
+        width = list(range(0, 10000 // 100))
+        vci = tci = vhi = np.random.randint(100, size=(len(height), len(width)))
 
         ds = xr.Dataset(
             {'VCI': (['HEIGHT', 'WIDTH'], vci),
@@ -61,8 +68,7 @@ class TestVHIPreprocessor:
         assert recovered_names == fnames, \
             f'Expected all .nc files to be retrieved.'
 
-    @staticmethod
-    def test_preprocessor_output(tmp_path):
+    def test_preprocessor_output(self, tmp_path):
         v = VHIPreprocessor(tmp_path)
 
         # get filename
@@ -71,18 +77,7 @@ class TestVHIPreprocessor:
         netcdf_filepath = demo_raw_folder / 'VHP.G04.C07.NC.P1981035.VH.nc'
 
         # build dummy .nc object
-        height = list(range(0, 3616))
-        width = list(range(0, 10000))
-        vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
-
-        raw_ds = xr.Dataset(
-            {'VCI': (['HEIGHT', 'WIDTH'], vci),
-             'TCI': (['HEIGHT', 'WIDTH'], tci),
-             'VHI': (['HEIGHT', 'WIDTH'], vhi)},
-            coords={
-                'HEIGHT': height,
-                'WIDTH': width}
-        )
+        raw_ds = self._make_vhi_dataset()
         raw_ds.to_netcdf(netcdf_filepath)
 
         # run the preprocessing steps
@@ -118,24 +113,12 @@ class TestVHIPreprocessor:
         expected = 'STAR_VHP.G04.C07.NC_1981_8_31_kenya_VH.nc'
         assert out_fname == expected, f'Expected: {expected}, got: {out_fname}'
 
-    @staticmethod
-    def test_create_new_dataset(tmp_path):
+    def test_create_new_dataset(self, tmp_path):
 
         netcdf_filepath = 'VHP.G04.C07.NC.P1981035.VH.nc'
 
         # build dummy .nc object
-        height = list(range(0, 3616))
-        width = list(range(0, 10000))
-        vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
-
-        ds = xr.Dataset(
-            {'VCI': (['HEIGHT', 'WIDTH'], vci),
-             'TCI': (['HEIGHT', 'WIDTH'], tci),
-             'VHI': (['HEIGHT', 'WIDTH'], vhi)},
-            coords={
-                'HEIGHT': height,
-                'WIDTH': width}
-        )
+        ds = self._make_vhi_dataset()
 
         processor = VHIPreprocessor(tmp_path)
         timestamp = processor.extract_timestamp(ds, netcdf_filepath, use_filepath=True)
@@ -143,6 +126,18 @@ class TestVHIPreprocessor:
 
         assert timestamp == expected_timestamp, f"Timestamp. \
             Expected: {expected_timestamp} Got: {timestamp}"
+
+        # @Gabi could you mock this function
+        # `create_lat_lon_vectors()`
+        # to return a (-180, 180, 10000 // 100)
+        # longitude array and a
+        # (-55.152, 75.024, 3616 // 100) lat array
+        # then we can reduce the size of arrays in
+        # _make_vhi_dataset
+        mock.patch(
+            'VHIPreprocessor.create_lat_lon_vectors',
+            return_value=mock_get_latlon()
+        )
 
         longitudes, latitudes = processor.create_lat_lon_vectors(ds)
         exp_long = np.linspace(-180, 180, 10000)
@@ -180,18 +175,7 @@ class TestVHIPreprocessor:
         netcdf_filepath = demo_raw_folder / 'VHP.G04.C07.NC.P1981035.VH.nc'
 
         # build dummy .nc object
-        height = list(range(0, 3616))
-        width = list(range(0, 10000))
-        vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
-
-        raw_ds = xr.Dataset(
-            {'VCI': (['HEIGHT', 'WIDTH'], vci),
-             'TCI': (['HEIGHT', 'WIDTH'], tci),
-             'VHI': (['HEIGHT', 'WIDTH'], vhi)},
-            coords={
-                'HEIGHT': height,
-                'WIDTH': width}
-        )
+        raw_ds = self._make_vhi_dataset()
         raw_ds.to_netcdf(netcdf_filepath)
 
         # get regridder
@@ -219,3 +203,37 @@ class TestVHIPreprocessor:
             f'Expected processed file to be saved to {expected_out_path}'
         assert out == expected_out_path, f"Expected: {expected_out_path}, \
         Got: {out}"
+
+
+class TestVCIPreprocessor:
+    @staticmethod
+    def _make_vhi_dataset():
+        # build dummy .nc object
+        height = list(range(0, 3616 // 100))
+        width = list(range(0, 10000 // 100))
+        vci = tci = vhi = np.random.randint(100, size=(len(height), len(width)))
+
+        ds = xr.Dataset(
+            {'VCI': (['HEIGHT', 'WIDTH'], vci),
+             'TCI': (['HEIGHT', 'WIDTH'], tci),
+             'VHI': (['HEIGHT', 'WIDTH'], vhi)},
+            coords={
+                'HEIGHT': height,
+                'WIDTH': width}
+        )
+
+        return ds
+
+    def test_preprocess(self, tmp_path):
+        ds = self._make_vhi_dataset()
+        demo_raw_folder = (tmp_path / 'raw' / 'vhi' / '1981')
+        demo_raw_folder.mkdir(parents=True, exist_ok=True)
+        netcdf_filepath = demo_raw_folder / 'VHP.G04.C07.NC.P1981035.VH.nc'
+        ds.to_netcdf(netcdf_filepath)
+
+        processor = VCIPreprocessor(tmp_path)
+        processor.preprocess_vci()
+
+        out_folder = tmp_path / 'interim' / 'vci_preprocessed'
+        assert out_folder.exists()
+        assert len([f for f in out_folder.iterdir()]) == 1

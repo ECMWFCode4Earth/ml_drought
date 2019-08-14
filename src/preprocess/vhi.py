@@ -16,7 +16,6 @@ from pandas._libs.tslibs.timestamps import Timestamp
 import time
 from shutil import rmtree
 from functools import partial
-
 from xarray import Dataset, DataArray
 
 from .base import BasePreProcessor
@@ -33,7 +32,8 @@ class VHIPreprocessor(BasePreProcessor):
                     netcdf_filepath: str,
                     output_dir: str,
                     subset_str: Optional[str] = 'kenya',
-                    regrid: Optional[Dataset] = None) -> Path:
+                    regrid: Optional[Dataset] = None,
+                    selected_vars: Optional[List[str]] = None) -> Path:
         """Run the Preprocessing steps for the NOAA VHI data
 
         Process:
@@ -68,7 +68,9 @@ class VHIPreprocessor(BasePreProcessor):
         longitudes, latitudes = self.create_lat_lon_vectors(ds)
 
         # 5. create new dataset with these dimensions
-        new_ds = self.create_new_dataset(ds, longitudes, latitudes, timestamp)
+        new_ds = self.create_new_dataset(
+            ds, longitudes, latitudes, timestamp, selected_vars
+        )
 
         # 6. chop out EastAfrica
         if subset_str is not None:
@@ -82,14 +84,18 @@ class VHIPreprocessor(BasePreProcessor):
         # TODO: change to pathlib.Path objects
         new_ds.to_netcdf(f'{output_dir}/{filename}')
 
-        print(f'** Done for VHI {netcdf_filepath.split("/")[-1]} **')
+        print(
+            f'** Done for {selected_vars}'
+            f' {netcdf_filepath.split("/")[-1]} **'
+        )
 
         return Path(f'{output_dir}/{filename}')
 
     def _preprocess_wrapper(self,
                             netcdf_filepath: str,
                             subset_str: Optional[str] = 'kenya',
-                            regrid: Optional[Dataset] = None
+                            regrid: Optional[Dataset] = None,
+                            selected_vars: Optional[List[str]] = None
                             ) -> Union[Path, Tuple[Exception, str]]:
         """ function to be run in parallel & safely catch errors
 
@@ -104,7 +110,8 @@ class VHIPreprocessor(BasePreProcessor):
 
         try:
             return self._preprocess(
-                netcdf_filepath, self.interim.as_posix(), subset_str, regrid
+                netcdf_filepath, self.interim.as_posix(), subset_str, regrid,
+                selected_vars=selected_vars
             )
         except Exception as e:
             print(f"### FAILED: {netcdf_filepath}")
@@ -113,9 +120,11 @@ class VHIPreprocessor(BasePreProcessor):
     def preprocess(self,
                    subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
-                   parallel: bool = True,
+                   n_parallel_requests: int = 1,
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
+                   selected_vars: Optional[List[str]] = None,
+                   target_folder_str: str = 'raw',
                    cleanup: bool = True) -> None:
         """ Preprocess all of the NOAA VHI .nc files to produce
         one subset file with consistent lat/lon and timestamps.
@@ -134,24 +143,38 @@ class VHIPreprocessor(BasePreProcessor):
         upsampling: bool = False
             If true, tells the class the time-sampling will be upsampling. In this case,
             nearest instead of mean is used for the resampling
-        parallel: bool = True
-            If true, run the preprocessing in parallel
+        n_parallel_requests: int = 1,
+            If > 1, run the preprocessing in parallel
+        selected_vars: Optional[List[str]] = None
+            Selected variables from the VHI dataset
+            {'VCI', 'TCI', 'VHI'}
+        target_folder_str: str = 'raw'
+            Change the target_folder string for the vhi dataset
+            Default is 'raw' which will search in raw/{dataset}
+            but for the other variables we need to specify 'vhi'
         cleanup: bool = True
             If true, delete interim files created by the class
         """
+        # n_parallel_requests can only be a MINIMUM of 1
+        if n_parallel_requests < 1:
+            n_parallel_requests = 1
+
         # get the filepaths for all of the downloaded data
-        nc_files = self.get_filepaths()
+        nc_files = self.get_filepaths(target_folder_str)
 
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
 
         print(f"Reading data from {self.raw_folder}. \
             Writing to {self.interim}")
-        if parallel:
-            pool = multiprocessing.Pool(processes=100)
+        if n_parallel_requests > 1:  # Run in parallel:
+            pool = multiprocessing.Pool(
+                processes=n_parallel_requests
+            )
             outputs = pool.map(partial(self._preprocess_wrapper,
                                        subset_str=subset_str,
-                                       regrid=regrid), nc_files)
+                                       regrid=regrid,
+                                       selected_vars=selected_vars), nc_files)
             errors = [o for o in outputs if not isinstance(o, Path)]
 
             # TODO check how these errors are being saved (now all paths returned)
@@ -161,7 +184,10 @@ class VHIPreprocessor(BasePreProcessor):
             self.save_errors(errors)
         else:
             for file in nc_files:
-                self._preprocess_wrapper(str(file), subset_str=subset_str, regrid=regrid)
+                self._preprocess_wrapper(
+                    str(file), subset_str=subset_str, regrid=regrid,
+                    selected_vars=selected_vars
+                )
 
         self.merge_files(subset_str=subset_str, resample_time=resample_time,
                          upsampling=upsampling)
@@ -304,7 +330,8 @@ class VHIPreprocessor(BasePreProcessor):
                            longitudes: np.ndarray,
                            latitudes: np.ndarray,
                            timestamp: Timestamp,
-                           all_vars: bool = False) -> Dataset:
+                           all_vars: bool = False,
+                           selected_vars: Optional[List[str]] = None) -> Dataset:
         """ Create a new dataset from ALL the variables in `ds` with the dims"""
         # initialise the list
         da_list = []
@@ -312,8 +339,13 @@ class VHIPreprocessor(BasePreProcessor):
         # for each variable create a new data array and append to list
         if all_vars:
             variables = list(ds.variables.keys())
+        elif selected_vars is not None:
+            assert selected_vars in list(ds.variables.keys()), 'Must'\
+                f' provide valid variables: {list(ds.variables.keys())}'
+            variables = selected_vars
         else:
             variables = ['VHI']
+
         for variable in variables:
             da_list.append(self.create_new_dataarray(ds, variable, longitudes,
                                                      latitudes, timestamp))
@@ -322,3 +354,27 @@ class VHIPreprocessor(BasePreProcessor):
         new_ds.attrs = ds.attrs
 
         return new_ds
+
+
+class VCIPreprocessor(VHIPreprocessor):
+    dataset = 'vci'
+
+    def preprocess_vci(self, subset_str: Optional[str] = 'kenya',
+                       regrid: Optional[Path] = None,
+                       n_parallel_requests: int = 1,
+                       resample_time: Optional[str] = 'M',
+                       upsampling: bool = False,
+                       cleanup: bool = True) -> None:
+        """Wrapper for the VHI Preprocessor to save preprocessed files to a
+        new directory
+        """
+        self.preprocess(
+            subset_str=subset_str,
+            regrid=regrid,
+            n_parallel_requests=n_parallel_requests,
+            resample_time=resample_time,
+            upsampling=upsampling,
+            selected_vars=['VCI'],
+            target_folder_str='vhi',
+            cleanup=cleanup,
+        )
