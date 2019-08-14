@@ -4,13 +4,13 @@ import numpy as np
 import xarray as xr
 import datetime as dt
 
-from src.engineer import OneMonthForecastEngineer
+from src.engineer import _OneMonthForecastEngineer as OneMonthForecastEngineer
 
 from ..utils import _make_dataset
-from .test_engineer import TestEngineer
+from .test_base import _setup
 
 
-class TestOneMonthForecastEngineer(TestEngineer):
+class TestOneMonthForecastEngineer:
     def test_init(self, tmp_path):
 
         with pytest.raises(AssertionError) as e:
@@ -25,9 +25,24 @@ class TestOneMonthForecastEngineer(TestEngineer):
         assert (tmp_path / 'features' / 'one_month_forecast').exists(), '\
         one_month_forecast directory not made!'
 
+    def test_static(self, tmp_path):
+        _, expected_vars = _setup(tmp_path, add_times=False, static=True)
+        engineer = OneMonthForecastEngineer(tmp_path, process_static=True)
+
+        assert (tmp_path / 'features/static').exists(), 'Static output folder does not exist!'
+
+        engineer._process_static()
+
+        output_file = tmp_path / 'features/static/data.nc'
+        assert output_file.exists(), 'Static output folder does not exist!'
+        static_data = xr.open_dataset(output_file)
+
+        for var in expected_vars:
+            assert var in static_data.data_vars
+
     def test_yearsplit(self, tmp_path):
 
-        self._setup(tmp_path)
+        _setup(tmp_path)
 
         dataset, _, _ = _make_dataset(size=(2, 2))
 
@@ -42,7 +57,7 @@ class TestOneMonthForecastEngineer(TestEngineer):
 
     def test_engineer(self, tmp_path):
 
-        self._setup(tmp_path)
+        _setup(tmp_path)
 
         pred_months = expected_length = 11
 
@@ -77,20 +92,20 @@ class TestOneMonthForecastEngineer(TestEngineer):
 
         for key, val in norm_dict.items():
             assert key in {'a', 'b'}, f'Unexpected key!'
-            assert (norm_dict[key]['mean'] == 1).all(), \
+            assert norm_dict[key]['mean'] == 1, \
                 f'Mean incorrectly calculated!'
-            assert (norm_dict[key]['std'] == 0).all(), \
+            assert norm_dict[key]['std'] == 0, \
                 f'Std incorrectly calculated!'
 
     def test_stratify(self, tmp_path):
-        self._setup(tmp_path)
+        _setup(tmp_path)
         engineer = OneMonthForecastEngineer(tmp_path)
         ds_target, _, _ = _make_dataset(size=(20, 20))
         ds_predictor, _, _ = _make_dataset(size=(20, 20))
         ds_predictor = ds_predictor.rename({'VHI': 'predictor'})
         ds = ds_predictor.merge(ds_target)
 
-        xy_dict, max_train_date = engineer.stratify_xy(
+        xy_dict, max_train_date = engineer._stratify_xy(
             ds=ds,
             year=2001,
             target_variable='VHI',

@@ -4,10 +4,10 @@ from pathlib import Path
 from xclim.run_length import rle, longest_run  # , windowed_run_events
 from typing import Tuple, Optional, Any
 import warnings
-from ..utils import get_ds_mask
+from ..utils import get_ds_mask, create_shape_aligned_climatology
 
 
-class EventDetector():
+class EventDetector:
     """A flexible method for detecting events and calculating the size of runs
     in a timeseries of interest.
 
@@ -146,62 +146,6 @@ class EventDetector():
         print("Calculated threshold - `thresh`")
         return clim, thresh
 
-    @staticmethod
-    def create_shape_aligned_climatology(ds, clim, variable, time_period):
-        """match the time dimension of `clim` to the shape of `ds` so that can
-        perform simple calculations / arithmetic on the values of clim
-
-        Arguments:
-        ---------
-        ds : xr.Dataset
-            the dataset with the raw values that you are comparing to climatology
-
-        clim: xr.Dataset
-            the climatology values for a given `time_period`
-
-        variable: str
-            name of the variable that you are comparing to the climatology
-
-        time_period: str
-            the period string used to calculate the climatology
-             time_period = {'dayofyear', 'season', 'month'}
-
-        Notes:
-            1. assumes that `lat` and `lon` are the
-            coord names in ds
-
-        """
-        ds[time_period] = ds[f'time.{time_period}']
-
-        values = clim[variable].values
-        keys = clim[time_period].values
-        # map the `time_period` to the `values` of the climatology (threshold or mean)
-        lookup_dict = dict(zip(keys, values))
-
-        # extract an array of the `time_period` values from the `ds`
-        timevals = ds[time_period].values
-
-        # use the lat lon arrays (climatology values) in `lookup_dict` corresponding
-        #  to time_period values defined in `timevals` and stack into new array
-        new_clim_vals = np.stack([lookup_dict[timevals[i]] for i in range(len(timevals))])
-
-        assert new_clim_vals.shape == ds[variable].shape, f"\
-            Shapes for new_clim_vals and ds must match! \
-             new_clim_vals.shape: {new_clim_vals.shape} \
-             ds.shape: {ds[variable].shape}"
-
-        # copy that forward in time
-        new_clim = xr.Dataset(
-            {variable: (['time', 'lat', 'lon'], new_clim_vals)},
-            coords={
-                'lat': clim.lat,
-                'lon': clim.lon,
-                'time': ds.time,
-            }
-        )
-
-        return new_clim
-
     def calculate_threshold_exceedences(self,
                                         variable: str,
                                         time_period: str,
@@ -226,10 +170,10 @@ class EventDetector():
         self.thresh = thresh
 
         # make them the same size as the ds variable
-        clim_ext = self.create_shape_aligned_climatology(
+        clim_ext = create_shape_aligned_climatology(
             ds, clim, variable, time_period
         )
-        thresh_ext = self.create_shape_aligned_climatology(
+        thresh_ext = create_shape_aligned_climatology(
             ds, thresh, variable, time_period
         )
         # TODO: do I want to store these extended datasets?
@@ -249,6 +193,8 @@ class EventDetector():
                method: str = 'std',
                value: Optional[float] = None) -> None:
         """
+        Detect threshold exceedences above or below a threshold. The threshold
+        can also be calculated or applied from elsewhere.
 
         Arguments:
         ---------
