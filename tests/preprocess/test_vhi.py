@@ -219,3 +219,56 @@ class TestVHIPreprocessor:
             f'Expected processed file to be saved to {expected_out_path}'
         assert out == expected_out_path, f"Expected: {expected_out_path}, \
         Got: {out}"
+
+    def test_VCI(self, tmp_path):
+        v = VHIPreprocessor(tmp_path, var='VCI')
+
+        # get filename
+        demo_raw_folder = (v.raw_folder / 'vhi' / '1981')
+        demo_raw_folder.mkdir(parents=True, exist_ok=True)
+        netcdf_filepath = demo_raw_folder / 'VHP.G04.C07.NC.P1981035.VH.nc'
+
+        # build dummy .nc object
+        height = list(range(0, 3616))
+        width = list(range(0, 10000))
+        vci = tci = vhi = np.random.randint(100, size=(3616, 10000))
+
+        raw_ds = xr.Dataset(
+            {'VCI': (['HEIGHT', 'WIDTH'], vci),
+             'TCI': (['HEIGHT', 'WIDTH'], tci),
+             'VHI': (['HEIGHT', 'WIDTH'], vhi)},
+            coords={
+                'HEIGHT': height,
+                'WIDTH': width}
+        )
+        raw_ds.to_netcdf(netcdf_filepath)
+
+        # get regridder
+        ethiopia = get_ethiopia()
+        regrid_dataset, _, _ = _make_dataset(
+            size=(20, 20), latmin=ethiopia.latmin,
+            latmax=ethiopia.latmax, lonmin=ethiopia.lonmin,
+            lonmax=ethiopia.lonmax
+        )
+
+        regrid_path = tmp_path / 'regridder.nc'
+        regrid_dataset.to_netcdf(regrid_path)
+
+        # run the preprocessing steps
+        out = v._preprocess(
+            netcdf_filepath=netcdf_filepath.as_posix(),
+            output_dir=v.interim.as_posix(),
+            subset_str='ethiopia',
+            regrid=regrid_dataset
+        )
+
+        expected_out_path = tmp_path / 'interim/VCI_interim/\
+        STAR_VHP.G04.C07.NC_1981_8_31_ethiopia_VH.nc'.replace(' ', '')
+        assert expected_out_path.exists(), \
+            f'Expected processed file to be saved to {expected_out_path}'
+        assert out == expected_out_path, f"Expected: {expected_out_path}, \
+        Got: {out}"
+
+        output = xr.open_dataset(expected_out_path)
+        assert 'VCI' in list(output.data_vars)
+        assert 'VHI' not in list(output.data_vars)
