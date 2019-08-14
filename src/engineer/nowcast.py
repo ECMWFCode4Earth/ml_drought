@@ -1,17 +1,16 @@
 import numpy as np
 import calendar
 from datetime import date
-from pathlib import Path
 import xarray as xr
 
 from typing import cast, Dict, Optional, Tuple
 
 from ..utils import minus_months
-from .engineer import Engineer
+from .base import _EngineerBase
 
 
-class NowcastEngineer(Engineer):
-    """Engineer the preprocessed `.nc` files into `/train`, `/test` `{x, y}.nc`
+class _NowcastEngineer(_EngineerBase):
+    r"""Engineer the preprocessed `.nc` files into `/train`, `/test` `{x, y}.nc`
     for the `nowcast` experiment.
 
     This takes all non_target variables UP TO the target timestep and the
@@ -26,13 +25,9 @@ class NowcastEngineer(Engineer):
     Where P is the `non_target_variable` and V is the `target_variable`.
     t=0 is the `target_timestep`.
     """
+    name = 'nowcast'
 
-    def __init__(self, data_folder: Path = Path("data")) -> None:
-        self.name: str = "nowcast"
-
-        super().__init__(self.name, data_folder)
-
-    def stratify_xy(
+    def _stratify_xy(
         self,
         ds: xr.Dataset,
         year: int,
@@ -98,8 +93,7 @@ class NowcastEngineer(Engineer):
         x_non_target_dataset = ds.drop(target_variable).sel(time=x_non_target)
 
         # create the x_target_dataset with all -9999.0 at target time
-        # nan_target_variable = self.make_nan_dataset(y_dataset)
-        nan_target_variable = self.make_fill_value_dataset(y_dataset)
+        nan_target_variable = self._make_fill_value_dataset(y_dataset)
         x_target_dataset = (
             ds[target_variable]
             .isel(time=x_target)

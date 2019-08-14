@@ -4,13 +4,13 @@ import numpy as np
 import xarray as xr
 import datetime as dt
 
-from src.engineer import NowcastEngineer
+from src.engineer import _NowcastEngineer as NowcastEngineer
 
 from ..utils import _make_dataset
-from .test_engineer import TestEngineer
+from .test_base import _setup
 
 
-class TestNowcastEngineer(TestEngineer):
+class TestNowcastEngineer:
     def test_init(self, tmp_path):
 
         with pytest.raises(AssertionError) as e:
@@ -25,9 +25,24 @@ class TestNowcastEngineer(TestEngineer):
         assert (tmp_path / 'features' / 'nowcast').exists(), '\
         nowcast directory not made!'
 
+    def test_static(self, tmp_path):
+        _, expected_vars = _setup(tmp_path, add_times=False, static=True)
+        engineer = NowcastEngineer(tmp_path, process_static=True)
+
+        assert (tmp_path / 'features/static').exists(), 'Static output folder does not exist!'
+
+        engineer._process_static()
+
+        output_file = tmp_path / 'features/static/data.nc'
+        assert output_file.exists(), 'Static output folder does not exist!'
+        static_data = xr.open_dataset(output_file)
+
+        for var in expected_vars:
+            assert var in static_data.data_vars
+
     def test_yearsplit(self, tmp_path):
 
-        self._setup(tmp_path)
+        _setup(tmp_path)
 
         dataset, _, _ = _make_dataset(size=(2, 2))
 
@@ -42,7 +57,7 @@ class TestNowcastEngineer(TestEngineer):
 
     def test_engineer(self, tmp_path):
 
-        self._setup(tmp_path)
+        _setup(tmp_path)
 
         engineer = NowcastEngineer(tmp_path)
         engineer.engineer(
@@ -78,28 +93,20 @@ class TestNowcastEngineer(TestEngineer):
         for key, val in norm_dict.items():
             assert key in {'a', 'b'}, f'Unexpected key!'
             # TODO: fix how to test for the final (12th) value
-            if key == 'a':
-                assert (norm_dict[key]['mean'] == 1)[:-1].all(), \
-                    f'Mean incorrectly calculated!'
-                assert (norm_dict[key]['mean'][-1] == -9999), \
-                    f'Mean incorrectly calculated!'
-            else:
-                assert (norm_dict[key]['mean'] == 1).all(), \
-                    f'Mean incorrectly calculated!'
-            assert len(norm_dict[key]['mean']) == 12,\
-                f'Mean should be of length 12'
-            assert (norm_dict[key]['std'] == 0).all(), \
+            assert norm_dict[key]['mean'] == 1, \
+                f'Mean incorrectly calculated!'
+            assert norm_dict[key]['std'] == 0, \
                 f'Std incorrectly calculated!'
 
     def test_stratify(self, tmp_path):
-        self._setup(tmp_path)
+        _setup(tmp_path)
         engineer = NowcastEngineer(tmp_path)
         ds_target, _, _ = _make_dataset(size=(20, 20))
         ds_predictor, _, _ = _make_dataset(size=(20, 20))
         ds_predictor = ds_predictor.rename({'VHI': 'predictor'})
         ds = ds_predictor.merge(ds_target)
 
-        xy_dict, max_train_date = engineer.stratify_xy(
+        xy_dict, max_train_date = engineer._stratify_xy(
             ds=ds,
             year=2001,
             target_variable='VHI',
@@ -120,7 +127,7 @@ class TestNowcastEngineer(TestEngineer):
         `year`'
 
     def test_stratify_catches_not_equal_expected_length(self, tmp_path):
-        self._setup(tmp_path)
+        _setup(tmp_path)
         engineer = NowcastEngineer(tmp_path)
 
         ds_target, _, _ = _make_dataset(size=(20, 20))
@@ -128,7 +135,7 @@ class TestNowcastEngineer(TestEngineer):
         ds_predictor = ds_predictor.rename({'VHI': 'predictor'})
         ds = ds_predictor.merge(ds_target)
 
-        xy_dict, max_train_date = engineer.stratify_xy(
+        xy_dict, max_train_date = engineer._stratify_xy(
             ds=ds,
             year=2001,
             target_variable='VHI',

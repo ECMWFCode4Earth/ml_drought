@@ -12,13 +12,10 @@ class GLEAMExporter(BaseExporter):
 
     Access information can be found at gleam.eu
     """
+    dataset = 'gleam'
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
         super().__init__(data_folder)
-
-        self.gleam_folder = self.raw_folder / 'gleam'
-        if not self.gleam_folder.exists():
-            self.gleam_folder.mkdir()
 
         password = 'v33_GLEAM2019#aw'
         username = 'gleamuser'
@@ -69,7 +66,7 @@ class GLEAMExporter(BaseExporter):
 
         stem = sftppath[len(self.base_sftp_path):]
         filename = sftppath.split('/')[-1]
-        return self.gleam_folder / stem[:-len(filename)].strip('/'), filename
+        return self.output_folder / stem[:-len(filename)].strip('/'), filename
 
     def export(self,
                variables: Union[str, List[str]],

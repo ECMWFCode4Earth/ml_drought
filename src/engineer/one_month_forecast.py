@@ -1,24 +1,20 @@
 import numpy as np
 import calendar
 from datetime import date
-from pathlib import Path
 import xarray as xr
 import warnings
 
 from typing import cast, Dict, Optional, Tuple
 
 from ..utils import minus_months
-from .engineer import Engineer
+from .base import _EngineerBase
 
 
-class OneMonthForecastEngineer(Engineer):
-    def __init__(self, data_folder: Path = Path("data")) -> None:
-        self.name: str = "one_month_forecast"
-
-        super().__init__(self.name, data_folder)
+class _OneMonthForecastEngineer(_EngineerBase):
+    name = 'one_month_forecast'
 
     @staticmethod
-    def stratify_xy(
+    def _stratify_xy(
         ds: xr.Dataset,
         year: int,
         target_variable: str,
