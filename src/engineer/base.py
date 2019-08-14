@@ -51,7 +51,9 @@ class _EngineerBase:
         # lat and lon
 
         output_file = self.static_output_folder / 'data.nc'
-        assert not output_file.exists(), 'A static data file already exists!'
+        if output_file.exists():
+            warnings.warn('A static data file already exists!')
+            return None
 
         static_ds = self._make_dataset(static=True)
 

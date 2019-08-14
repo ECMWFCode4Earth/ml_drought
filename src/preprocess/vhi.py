@@ -131,14 +131,14 @@ class VHIPreprocessor(BasePreProcessor):
     def preprocess(self,
                    subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
-                   parallel: bool = True,
+                   n_parallel_processes: int = 1,
                    resample_time: Optional[str] = 'M',
                    upsampling: bool = False,
                    cleanup: bool = True) -> None:
         """ Preprocess all of the NOAA VHI .nc files to produce
         one subset file with consistent lat/lon and timestamps.
 
-        Run in parallel
+        Run in parallel if n_parallel_processes > 1
 
         Arguments
         ----------
@@ -152,8 +152,8 @@ class VHIPreprocessor(BasePreProcessor):
         upsampling: bool = False
             If true, tells the class the time-sampling will be upsampling. In this case,
             nearest instead of mean is used for the resampling
-        parallel: bool = True
-            If true, run the preprocessing in parallel
+        n_parallel_processes: int = 1
+            If > 1, run the preprocessing in n_parallel_processes
         cleanup: bool = True
             If true, delete interim files created by the class
         """
@@ -165,8 +165,9 @@ class VHIPreprocessor(BasePreProcessor):
 
         print(f"Reading data from {self.raw_folder}. \
             Writing to {self.interim}")
-        if parallel:
-            pool = multiprocessing.Pool(processes=100)
+        n_parallel_processes = max(n_parallel_processes, 1)
+        if n_parallel_processes > 1:
+            pool = multiprocessing.Pool(processes=n_parallel_processes)
             outputs = pool.map(partial(self._preprocess_wrapper,
                                        subset_str=subset_str,
                                        regrid=regrid), nc_files)
