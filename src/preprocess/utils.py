@@ -186,6 +186,17 @@ class SHPtoXarray:
         data_vals = ds[[d for d in ds.data_vars][0]].values
         unique_values = np.unique(data_vals[~np.isnan(data_vals)])
         unique_values = [str(int(v)) for v in unique_values]
+
+        # Check for None in keys/values
+        keys = [key
+            for key, value in zip(keys, values)
+            if (values is not None) & (keys is not None)
+        ]
+        values = [key
+            for key, value in zip(keys, values)
+            if (values is not None) & (keys is not None)
+        ]
+        # assign to attrs
         ds.attrs['keys'] = ', '.join(keys)
         ds.attrs['values'] = ', '.join(values)
         ds.attrs['unique_values'] = ', '.join(unique_values)
