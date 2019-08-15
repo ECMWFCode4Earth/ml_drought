@@ -14,7 +14,8 @@ from typing import Dict, List
 def annual_r2_scores(models: List[str],
                      experiment='one_month_forecast',
                      data_path: Path = Path('data'),
-                     pred_year: int = 2018) -> Dict[str, List[float]]:
+                     pred_year: int = 2018,
+                     target_var: str = 'VCI') -> Dict[str, List[float]]:
     """
     Aggregates monthly R2 scores over a `pred_year` of data
     """
@@ -24,7 +25,8 @@ def annual_r2_scores(models: List[str],
 
     for month in range(1, 13):
         scores = monthly_r2_score(month=month, models=models, data_path=data_path,
-                                  pred_year=pred_year, experiment=experiment)
+                                  pred_year=pred_year, experiment=experiment,
+                                  target_var=target_var)
 
         for model, score in scores.items():
             monthly_scores[model].append(score)
@@ -37,7 +39,8 @@ def monthly_r2_score(month: int,
                      models: List[str],
                      experiment='one_month_forecast',
                      data_path: Path = Path('data'),
-                     pred_year: int = 2018) -> Dict[str, float]:
+                     pred_year: int = 2018,
+                     target_var: str = 'VCI') -> Dict[str, float]:
     """
     Calculate the monthly R^2 score of the model. This is the same metric used by the
     [Kenya's operational drought monitoring](https://www.mdpi.com/2072-4292/11/9/1099)
@@ -59,7 +62,7 @@ def monthly_r2_score(month: int,
     model_files: Dict[str, xr.Dataset] = {}
     for model in models:
         pred_path = data_path / f'models/{experiment}/{model}/preds_{pred_year}_{month}.nc'
-        model_files[model] = xr.open_dataset(pred_path)
+        model_files[model] = xr.open_dataset(pred_path).isel(time=0)
 
     true_data = xr.open_dataset(data_path / f'features/{experiment}/test'
                                 f'/{pred_year}_{month}/y.nc').isel(time=0)
@@ -67,10 +70,10 @@ def monthly_r2_score(month: int,
     output_score: Dict[str, float] = {}
 
     for model, preds in model_files.items():
-        diff = (true_data.VHI - preds.preds)
+        diff = (true_data[target_var] - preds.preds)
         notnan = ~np.isnan(diff.values)
         joined = true_data.merge(preds, join='inner')
-        true_np = joined.VHI.values[notnan].flatten()
+        true_np = joined[target_var].values[notnan].flatten()
         preds_np = joined.preds.values[notnan].flatten()
         score = r2_score(true_np, preds_np)
         print(f'For month {month}, model {model} has r2 score {score}')
