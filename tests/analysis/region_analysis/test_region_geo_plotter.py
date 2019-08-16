@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from src.analysis.region_analysis import RegionGeoPlotter
-from src.preprocess import KenyaAdminPreprocessor
+from src.analysis.region_analysis.groupby_region import KenyaGroupbyRegion
 from tests.utils import CreateSHPFile
 
 
@@ -41,9 +41,15 @@ class TestRegionGeoPlotter:
 
     @pytest.mark.xfail(reason='geopandas not part of test environment')
     def test_init(self, tmp_path):
+        shp_filepath = (
+            tmp_path / 'raw' / 'boundaries' / 'kenya' /
+            'Admin2/KEN_admin2_2002_DEPHA.shp'
+        )
+        shp_filepath.parents[0].mkdir(parents=True, exist_ok=True)
+
         plotter = RegionGeoPlotter(tmp_path, country='kenya')
         assert isinstance(
-            plotter.country_preprocessor, KenyaAdminPreprocessor
+            plotter.country_region_grouper, KenyaGroupbyRegion
         )
 
     @pytest.mark.xfail(reason='geopandas not part of test environment')
