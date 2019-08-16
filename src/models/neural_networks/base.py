@@ -313,9 +313,8 @@ class NNBase(ModelBase):
                 torch.stack(output_ym),
                 torch.stack(output_static)]
 
-    @staticmethod
-    def _one_hot_months(indices: torch.Tensor) -> torch.Tensor:
-        return torch.eye(14)[indices.long()][:, 1:-1]
+    def _one_hot_months(self, indices: torch.Tensor) -> torch.Tensor:
+        return torch.eye(14, device=self.device)[indices.long()][:, 1:-1]
 
     def make_shap_input(self, x: TrainData, start_idx: int = 0,
                         num_inputs: int = 10) -> List[torch.Tensor]:
