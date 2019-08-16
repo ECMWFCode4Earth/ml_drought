@@ -8,6 +8,7 @@ from ..utils import get_ds_mask, create_shape_aligned_climatology
 rle = None
 longest_run = None
 
+
 class EventDetector:
     """A flexible method for detecting events and calculating the size of runs
     in a timeseries of interest.
