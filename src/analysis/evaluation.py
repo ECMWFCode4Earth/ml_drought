@@ -9,6 +9,26 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
 
 from typing import Dict, List
+from src.utils import get_ds_mask
+
+
+def spatial_rmse(true_da: xr.DataArray,
+                 pred_da: xr.DataArray) -> xr.DataArray:
+    """Calculate the RMSE collapsing the time dimension returning
+    a DataArray of the rmse values (spatially)
+    """
+    assert true_da.shape == pred_da.shape
+
+    vals = np.sqrt(
+        np.nansum((true_da.values - pred_da.values)**2, axis=0) / pred_da.shape[0]
+    )
+
+    da = xr.ones_like(pred_da).isel(time=0)
+    da.values = vals
+
+    # reapply the mask
+    da = da.where(~get_ds_mask(pred_da))
+    return da
 
 
 def annual_r2_scores(models: List[str],
