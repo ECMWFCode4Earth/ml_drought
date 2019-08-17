@@ -234,12 +234,13 @@ class NNBase(ModelBase):
                         val.x.latlons, val.x.current, val.x.yearly_aggs, val.x.static
                     )
                     preds_dict[key] = preds.numpy()
-                    test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons}
+                    test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons,
+                                             'time': val.target_time}
 
         return test_arrays_dict, preds_dict
 
     def _get_background(self,
-                        sample_size: int = 100) -> List[torch.Tensor]:
+                        sample_size: int = 150) -> List[torch.Tensor]:
 
         print('Extracting a sample of the training data')
 
