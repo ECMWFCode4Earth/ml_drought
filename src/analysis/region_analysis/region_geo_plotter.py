@@ -67,11 +67,14 @@ class RegionGeoPlotter:
             region_gdfs = {}
 
             for level in levels:
-                admin_boundary = self.country_region_grouper.get_admin_level(selection=level)
+                admin_boundary = self.country_region_grouper.get_admin_level(
+                    selection=level
+                )
                 path = admin_boundary.shp_filepath
                 if not path.exists():
                     print(
-                        f'{admin_boundary.shp_filepath} not found.Moving to next file'
+                        f'{admin_boundary.shp_filepath} not found.'\
+                        ' Moving to next file'
                     )
                     continue
 
@@ -231,36 +234,3 @@ class RegionGeoPlotter:
         ax = self.plot_metric(gdf=gdf, ax=ax, metric=metric)
 
         return fig, ax
-
-    @staticmethod
-    def _plot_single_gdf(ax: Axes,
-                         gdf: GeoDataFrame,
-                         column_to_plot: str,
-                         title: Optional[str] = None,
-                         cmap: Optional[str] = 'viridis',
-                         vmin: Optional[float] = None,
-                         vmax: Optional[float] = None) -> Axes:
-        # nicely format the colorbar
-        divider = make_axes_locatable(ax)
-        cax = divider.append_axes("right", size="5%", pad=0.1)
-
-        gdf.plot(
-            column_to_plot, ax=ax, legend=True,
-            cmap=cmap, vmin=vmin,
-            vmax=vmax, cax=cax
-        )
-        ax.set_title(title)
-        return ax
-
-    @staticmethod
-    def get_vrange(array1: Union[pd.Series, np.array],
-                   array2: Union[pd.Series, np.array],
-                   how: str = 'percentile') -> Tuple[float, float]:
-        if how == 'percentile':
-            vmin = min(np.nanpercentile(array1, 5), np.nanpercentile(array2, 5))
-            vmax = max(np.nanpercentile(array1, 95), np.nanpercentile(array2, 95))
-        else:
-            print('calculating vmin/vmax using `simple` method')
-            vmin = min(min(array1), min(array2))
-            vmax = max(max(array1), max(array2))
-        return vmin, vmax
