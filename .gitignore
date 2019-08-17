@@ -32,3 +32,6 @@ data/features/*
 data/models/*
 Code
 scripts/variables*.txt
+
+# tommy
+switch_data_dirs.sh
