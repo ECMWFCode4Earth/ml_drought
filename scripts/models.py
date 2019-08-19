@@ -2,15 +2,9 @@ import sys
 sys.path.append('..')
 
 from pathlib import Path
-import numpy as np
-import matplotlib.pyplot as plt
-import pickle
-
-from src.analysis import plot_shap_values
 from src.models import (Persistence, LinearRegression,
                         LinearNetwork, RecurrentNetwork,
                         EARecurrentNetwork, load_model)
-from src.models.data import DataLoader
 
 
 def parsimonious(
@@ -122,7 +116,7 @@ def earnn(
         predictor.evaluate(save_preds=True)
         predictor.save_model()
     else:
-        predictor = load_model(data_path / f'models/{experiment}/ealstm/model.pkl')
+        predictor = load_model(data_path / f'models/{experiment}/ealstm/model.pt')
 
     _ = predictor.explain(save_shap_values=True)
 

@@ -43,11 +43,10 @@ class TestEARecurrentNetwork:
         model.train()
         model.save_model()
 
-        assert (tmp_path / 'models/one_month_forecast/ealstm/model.pkl').exists(), \
+        assert (tmp_path / 'models/one_month_forecast/ealstm/model.pt').exists(), \
             f'Model not saved!'
 
-        with (model.model_dir / 'model.pkl').open('rb') as f:
-            model_dict = pickle.load(f)
+        model_dict = torch.load(model.model_dir / 'model.pt', map_location='cpu')
 
         for key, val in model_dict['model']['state_dict'].items():
             assert (model.model.state_dict()[key] == val).all()

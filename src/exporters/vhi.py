@@ -7,9 +7,9 @@ import re
 import pickle
 import warnings
 
-from pathos.multiprocessing import ProcessingPool as Pool
-
 from .base import BaseExporter
+
+Pool = None  # this requires the pathos libary
 
 
 class VHIExporter(BaseExporter):
@@ -18,6 +18,13 @@ class VHIExporter(BaseExporter):
     ftp.star.nesdis.noaa.gov
     """
     dataset = 'vhi'
+
+    def __init___(self, data_folder: Path = Path('data')) -> None:
+        super().__init__(data_folder)
+
+        global Pool
+        if Pool is None:
+            from pathos.multiprocessing import ProcessingPool as Pool
 
     @staticmethod
     def get_ftp_filenames(years: Optional[List]) -> List:
@@ -66,7 +73,7 @@ class VHIExporter(BaseExporter):
                     ) -> List:
 
         if n_parallel_processes > 1:
-            pool = Pool(processes=n_parallel_processes)
+            pool = Pool(processes=n_parallel_processes)  # type: ignore
 
             # split the filenames into batches of 100
             batches = [batch for batch in self.chunks(vhi_files, 100)]

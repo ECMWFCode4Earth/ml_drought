@@ -29,15 +29,24 @@ class NNBase(ModelBase):
                  include_yearly_aggs: bool = True,
                  surrounding_pixels: Optional[int] = None,
                  ignore_vars: Optional[List[str]] = None,
-                 include_static: bool = True) -> None:
+                 include_static: bool = True,
+                 device: str = 'cuda:0') -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
                          include_latlons, include_monthly_aggs, include_yearly_aggs,
                          surrounding_pixels, ignore_vars, include_static)
 
         # for reproducibility
+        if (device != 'cpu') and torch.cuda.is_available():
+            self.device = device
+        else:
+            self.device = 'cpu'
         torch.manual_seed(42)
 
         self.explainer: Optional[shap.DeepExplainer] = None
+
+    def to(self, device: str = 'cpu'):
+        # move the model onto the right device
+        raise NotImplementedError
 
     def explain(self, x: Optional[List[torch.Tensor]] = None,
                 var_names: Optional[List[str]] = None,
@@ -117,7 +126,8 @@ class NNBase(ModelBase):
                                           ignore_vars=self.ignore_vars,
                                           monthly_aggs=self.include_monthly_aggs,
                                           surrounding_pixels=self.surrounding_pixels,
-                                          static=self.include_static)
+                                          static=self.include_static,
+                                          device=self.device)
 
             val_dataloader = DataLoader(data_path=self.data_path,
                                         batch_file_size=self.batch_size,
@@ -129,7 +139,8 @@ class NNBase(ModelBase):
                                         ignore_vars=self.ignore_vars,
                                         monthly_aggs=self.include_monthly_aggs,
                                         surrounding_pixels=self.surrounding_pixels,
-                                        static=self.include_static)
+                                        static=self.include_static,
+                                        device=self.device)
 
             batches_without_improvement = 0
             best_val_score = np.inf
@@ -143,7 +154,8 @@ class NNBase(ModelBase):
                                           ignore_vars=self.ignore_vars,
                                           monthly_aggs=self.include_monthly_aggs,
                                           surrounding_pixels=self.surrounding_pixels,
-                                          static=self.include_static)
+                                          static=self.include_static,
+                                          device=self.device)
 
         # initialize the model
         if self.model is None:
@@ -173,7 +185,7 @@ class NNBase(ModelBase):
 
                     with torch.no_grad():
                         rmse = F.mse_loss(pred, y_batch)
-                        train_rmse.append(math.sqrt(rmse.item()))
+                        train_rmse.append(math.sqrt(rmse.cpu().item()))
 
                     train_l1.append(loss.item())
 
@@ -190,7 +202,7 @@ class NNBase(ModelBase):
                                                 x[5])
                         val_loss = F.mse_loss(val_pred_y, y)
 
-                        val_rmse.append(math.sqrt(val_loss.item()))
+                        val_rmse.append(math.sqrt(val_loss.cpu().item()))
 
             print(f'Epoch {epoch + 1}, train smooth L1: {np.mean(train_l1)}, '
                   f'RMSE: {np.mean(train_rmse)}')
@@ -218,7 +230,8 @@ class NNBase(ModelBase):
                                         ignore_vars=self.ignore_vars,
                                         monthly_aggs=self.include_monthly_aggs,
                                         surrounding_pixels=self.surrounding_pixels,
-                                        static=self.include_static)
+                                        static=self.include_static,
+                                        device=self.device)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -233,8 +246,9 @@ class NNBase(ModelBase):
                         val.x.historical, self._one_hot_months(val.x.pred_months),
                         val.x.latlons, val.x.current, val.x.yearly_aggs, val.x.static
                     )
-                    preds_dict[key] = preds.numpy()
-                    test_arrays_dict[key] = {'y': val.y.numpy(), 'latlons': val.latlons,
+                    preds_dict[key] = preds.cpu().numpy()
+                    test_arrays_dict[key] = {'y': val.y.cpu().numpy(),
+                                             'latlons': val.latlons,
                                              'time': val.target_time}
 
         return test_arrays_dict, preds_dict
@@ -252,7 +266,8 @@ class NNBase(ModelBase):
                                       ignore_vars=self.ignore_vars,
                                       monthly_aggs=self.include_monthly_aggs,
                                       surrounding_pixels=self.surrounding_pixels,
-                                      static=self.include_static)
+                                      static=self.include_static,
+                                      device=self.device)
 
         output_tensors: List[torch.Tensor] = []
         output_pm: List[torch.Tensor] = []
@@ -298,9 +313,8 @@ class NNBase(ModelBase):
                 torch.stack(output_ym),
                 torch.stack(output_static)]
 
-    @staticmethod
-    def _one_hot_months(indices: torch.Tensor) -> torch.Tensor:
-        return torch.eye(14)[indices.long()][:, 1:-1]
+    def _one_hot_months(self, indices: torch.Tensor) -> torch.Tensor:
+        return torch.eye(14, device=self.device)[indices.long()][:, 1:-1]
 
     def make_shap_input(self, x: TrainData, start_idx: int = 0,
                         num_inputs: int = 10) -> List[torch.Tensor]:
