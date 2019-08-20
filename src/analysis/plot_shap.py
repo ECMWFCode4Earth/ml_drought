@@ -188,5 +188,5 @@ def all_shap_for_file(test_file: Path,
     for output_type, shap_array in output_dict.items():
         np.save(file_id_folder / f'shap_value_{output_type}.npy', shap_array)
 
-    with (file_id_folder / 'input_ModelArray.pkl').open('rb') as f:
+    with (file_id_folder / 'input_ModelArray.pkl').open('wb') as f:
         pickle.dump(val, f)

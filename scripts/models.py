@@ -96,7 +96,7 @@ def rnn(
 def earnn(
     experiment='one_month_forecast',
     include_pred_month=True,
-    surrounding_pixels=1,
+    surrounding_pixels=None,
     pretrained=True
 ):
     # if the working directory is alread ml_drought don't need ../data
@@ -123,7 +123,7 @@ def earnn(
     assert test_file.exists()
     all_shap_for_file(test_file, predictor, data_path, experiment, surrounding_pixels,
                       ignore_vars=None, monthly_aggs=True, static=True,
-                      batch_size=10)
+                      batch_size=100)
 
 
 if __name__ == '__main__':
