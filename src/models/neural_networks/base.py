@@ -179,7 +179,7 @@ class NNBase(ModelBase):
                                       x_batch[3],
                                       x_batch[4],
                                       x_batch[5])
-                    loss = F.smooth_l1_loss(pred, y_batch)
+                    loss = F.mse_loss(pred, y_batch)
                     loss.backward()
                     optimizer.step()
 
