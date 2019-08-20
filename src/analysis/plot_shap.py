@@ -3,8 +3,13 @@ import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
 
 import numpy as np
+from pathlib import Path
+import pickle
 
 from typing import Dict, List, Tuple, Optional
+
+from ..models.data import DataLoader, idx_to_input
+from ..models.neural_networks.base import NNBase
 
 
 int2month = {
@@ -119,3 +124,69 @@ def plot_shap_values(x: np.ndarray,
     plt.draw()
     if show:
         plt.show()
+
+
+def all_shap_for_file(test_file: Path,
+                      model: NNBase,
+                      data_path: Path = Path('data'),
+                      experiment: str = 'one_month_forecast',
+                      surrounding_pixels: Optional[int] = None,
+                      ignore_vars: Optional[List[str]] = None,
+                      monthly_aggs: bool = True,
+                      static: bool = True,
+                      batch_size: int = 10) -> None:
+
+    test_arrays_loader = DataLoader(data_path=data_path, batch_file_size=1,
+                                    shuffle_data=True, mode='test', to_tensor=True,
+                                    static=static, experiment=experiment,
+                                    surrounding_pixels=surrounding_pixels,
+                                    ignore_vars=ignore_vars,
+                                    monthly_aggs=monthly_aggs)
+
+    test_arrays_loader.data_files = [test_file]
+
+    key, val = list(next(iter(test_arrays_loader)).items())[0]
+
+    output_dict: Dict[str, np.ndarray] = {}
+
+    num_inputs = val.x.historical.shape[0]
+    print(f'Calculating shap values for {num_inputs} instances')
+    start_idx = 0
+
+    while start_idx < num_inputs - batch_size:
+        print(f'Calculating shap values for indices {start_idx} to {start_idx + batch_size}')
+        var_names = None
+        if start_idx == 0:
+            var_names = val.x_vars
+        shap_inputs = model.make_shap_input(val.x, start_idx=start_idx,
+                                            num_inputs=batch_size)
+        explanations = model.explain(x=shap_inputs, var_names=var_names,
+                                     save_shap_values=False)
+
+        if start_idx == 0:
+            for idx, shap_array in enumerate(explanations):
+                output_dict[idx_to_input[idx]] = shap_array
+        else:
+            for idx, shap_array in enumerate(explanations):
+                output_dict[idx_to_input[idx]] = np.concatenate((output_dict[idx_to_input[idx]],
+                                                                 shap_array),
+                                                                axis=0)
+        start_idx = start_idx + batch_size
+
+    print('Saving results')
+
+    analysis_folder = model.model_dir / 'analysis'
+
+    # this assumes the test file was taken from the data directory, in which case the
+    # folder its in is a year_month identifier
+    file_id = test_file.parts[-1]
+    file_id_folder = analysis_folder / file_id
+
+    if not file_id_folder.exists():
+        file_id_folder.mkdir(parents=True)
+
+    for output_type, shap_array in output_dict.items():
+        np.save(file_id_folder / f'shap_value_{output_type}.npy', shap_array)
+
+    with (file_id_folder / 'input_ModelArray.pkl').open('rb') as f:
+        pickle.dump(val, f)

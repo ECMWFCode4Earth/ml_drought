@@ -5,6 +5,7 @@ from pathlib import Path
 from src.models import (Persistence, LinearRegression,
                         LinearNetwork, RecurrentNetwork,
                         EARecurrentNetwork, load_model)
+from src.analysis import all_shap_for_file
 
 
 def parsimonious(
@@ -118,7 +119,11 @@ def earnn(
     else:
         predictor = load_model(data_path / f'models/{experiment}/ealstm/model.pt')
 
-    _ = predictor.explain(save_shap_values=True)
+    test_file = data_path / f'features/{experiment}/test/2018_3'
+    assert test_file.exists()
+    all_shap_for_file(test_file, predictor, data_path, experiment, surrounding_pixels,
+                      ignore_vars=None, monthly_aggs=True, static=True,
+                      batch_size=10)
 
 
 if __name__ == '__main__':

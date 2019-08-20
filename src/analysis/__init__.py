@@ -1,5 +1,5 @@
 from .event_detector import EventDetector
-from .plot_shap import plot_shap_values
+from .plot_shap import plot_shap_values, all_shap_for_file
 from .evaluation import monthly_score, annual_scores, plot_predictions
 from .indices import (
     SPI,
@@ -22,7 +22,6 @@ __all__ = [
     'PercentNormalIndex', 'DroughtSeverityIndex',
     'ChinaZIndex', 'DecileIndex', 'AnomalyIndex',
     'monthly_score', 'annual_scores', 'plot_predictions', 'MovingAverage',
-    'VegetationDeficitIndex',
-    'LandcoverRegionAnalysis',
-    'AdministrativeRegionAnalysis',
+    'VegetationDeficitIndex', 'LandcoverRegionAnalysis',
+    'AdministrativeRegionAnalysis', 'all_shap_for_file',
 ]
