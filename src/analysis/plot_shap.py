@@ -8,7 +8,7 @@ import pickle
 
 from typing import Dict, List, Tuple, Optional
 
-from ..models.data import DataLoader, idx_to_input
+from ..models.data import DataLoader
 from ..models.neural_networks.base import NNBase
 
 
@@ -134,10 +134,10 @@ def all_shap_for_file(test_file: Path,
                       ignore_vars: Optional[List[str]] = None,
                       monthly_aggs: bool = True,
                       static: bool = True,
-                      batch_size: int = 10) -> None:
+                      batch_size: int = 100) -> None:
 
     test_arrays_loader = DataLoader(data_path=data_path, batch_file_size=1,
-                                    shuffle_data=True, mode='test', to_tensor=True,
+                                    shuffle_data=False, mode='test', to_tensor=True,
                                     static=static, experiment=experiment,
                                     surrounding_pixels=surrounding_pixels,
                                     ignore_vars=ignore_vars,
@@ -164,13 +164,13 @@ def all_shap_for_file(test_file: Path,
                                      save_shap_values=False)
 
         if start_idx == 0:
-            for idx, shap_array in enumerate(explanations):
-                output_dict[idx_to_input[idx]] = shap_array
+            for input_name, shap_array in explanations.items():
+                output_dict[input_name] = shap_array
         else:
-            for idx, shap_array in enumerate(explanations):
-                output_dict[idx_to_input[idx]] = np.concatenate((output_dict[idx_to_input[idx]],
-                                                                 shap_array),
-                                                                axis=0)
+            for input_name, shap_array in explanations.items():
+                output_dict[input_name] = np.concatenate((output_dict[input_name],
+                                                          shap_array),
+                                                         axis=0)
         start_idx = start_idx + batch_size
 
     print('Saving results')
