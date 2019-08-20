@@ -312,6 +312,13 @@ class NNBase(ModelBase):
                             torch.stack(output_ym),
                             torch.stack(output_static)]
 
+        return [torch.stack(output_tensors),  # type: ignore
+                torch.cat(output_pm, dim=0),
+                torch.stack(output_ll),
+                torch.stack(output_cur),
+                torch.stack(output_ym),
+                torch.stack(output_static)]
+
     def _one_hot_months(self, indices: torch.Tensor) -> torch.Tensor:
         return torch.eye(14, device=self.device)[indices.long()][:, 1:-1]
 
