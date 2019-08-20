@@ -153,7 +153,7 @@ def all_shap_for_file(test_file: Path,
     print(f'Calculating shap values for {num_inputs} instances')
     start_idx = 0
 
-    while start_idx < num_inputs - batch_size:
+    while start_idx < num_inputs:
         print(f'Calculating shap values for indices {start_idx} to {start_idx + batch_size}')
         var_names = None
         if start_idx == 0:
