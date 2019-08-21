@@ -50,6 +50,7 @@ class NNBase(ModelBase):
 
     def explain(self, x: Optional[List[torch.Tensor]] = None,
                 var_names: Optional[List[str]] = None,
+                background_size: int = 100,
                 save_shap_values: bool = True) -> Dict[str, np.ndarray]:
         """
         Expain the outputs of a trained model.
@@ -60,6 +61,7 @@ class NNBase(ModelBase):
             the test data
         var_names: The variable names of the historical inputs. If x is None, this
             will be calculated. Only necessary if the arrays are going to be saved
+        background_size: the size of the background to use
         save_shap_values: Whether or not to save the shap values
 
         Returns
@@ -69,7 +71,7 @@ class NNBase(ModelBase):
         assert self.model is not None, 'Model must be trained!'
 
         if self.explainer is None:
-            background_samples = self._get_background(sample_size=100)
+            background_samples = self._get_background(sample_size=background_size)
             self.explainer: shap.DeepExplainer = shap.DeepExplainer(
                 self.model, background_samples)
         if x is None:

@@ -128,6 +128,7 @@ def plot_shap_values(x: np.ndarray,
 
 def all_shap_for_file(test_folder: Path,
                       model: NNBase,
+                      background_size: int = 100,
                       batch_size: int = 100) -> None:
     """
     Calculate all the shap values for a single file (i.e. for all the
@@ -146,6 +147,8 @@ def all_shap_for_file(test_folder: Path,
     model: NNBase
         A neural network model object, as defined by the pipeline (i.e. an EALSTM, RNN
         or linear network)
+    background: int = 100
+        The number of background training samples to use
     batch_size: int = 100
         The size of the batches to use when calculating shap values. If you are getting memory
         errors, reducing this is a good place to start
@@ -183,7 +186,7 @@ def all_shap_for_file(test_folder: Path,
         shap_inputs = model.make_shap_input(val.x, start_idx=start_idx,
                                             num_inputs=batch_size)
         explanations = model.explain(x=shap_inputs, var_names=var_names,
-                                     save_shap_values=False)
+                                     save_shap_values=False, background_size=background_size)
 
         if start_idx == 0:
             for input_name, shap_array in explanations.items():
