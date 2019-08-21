@@ -108,8 +108,8 @@ def plot_shap_values(x: np.ndarray,
     host.set_ylabel(polished_value_name)
     par1.set_ylabel("Shap value")
 
-    p1, = host.plot(months, x_val, label=polished_value_name)
-    p2, = par1.plot(months, shap_val, label="shap value")
+    p1, = host.plot(months, x_val, label=polished_value_name, linestyle='dashed')
+    p2, = par1.plot(months, shap_val, label="Shap value")
 
     host.axis["left"].label.set_color(p1.get_color())
     par1.axis["right"].label.set_color(p2.get_color())
