@@ -121,9 +121,7 @@ def earnn(
 
     test_file = data_path / f'features/{experiment}/test/2018_3'
     assert test_file.exists()
-    all_shap_for_file(test_file, predictor, data_path, experiment, surrounding_pixels,
-                      ignore_vars=None, monthly_aggs=True, static=True,
-                      batch_size=100)
+    all_shap_for_file(test_file, predictor, batch_size=100)
 
 
 if __name__ == '__main__':
