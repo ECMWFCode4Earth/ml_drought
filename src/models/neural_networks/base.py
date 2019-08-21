@@ -11,6 +11,7 @@ import shap
 
 from typing import Dict, List, Optional, Tuple
 
+from .radam import RAdam
 from ..base import ModelBase
 from ..utils import chunk_array
 from ..data import DataLoader, train_val_mask, TrainData, idx_to_input
@@ -163,8 +164,8 @@ class NNBase(ModelBase):
             model = self._initialize_model(x_ref)
             self.model = model
 
-        optimizer = torch.optim.Adam([pam for pam in self.model.parameters()],
-                                     lr=learning_rate)
+        optimizer = RAdam([pam for pam in self.model.parameters()],
+                          lr=learning_rate)
 
         for epoch in range(num_epochs):
             train_rmse = []
