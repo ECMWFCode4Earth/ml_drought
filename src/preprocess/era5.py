@@ -93,7 +93,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
                     upsampling: bool = False,
                     filename: Optional[str] = None) -> None:
 
-        # first, static
+        # first, dynamic
         dynamic_filepaths = self.get_filepaths('interim', filter_type='dynamic')
         if len(dynamic_filepaths) > 0:
             ds_dyn = xr.open_mfdataset(dynamic_filepaths)
