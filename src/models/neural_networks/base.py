@@ -50,6 +50,7 @@ class NNBase(ModelBase):
 
     def explain(self, x: Optional[List[torch.Tensor]] = None,
                 var_names: Optional[List[str]] = None,
+                background_size: int = 100,
                 save_shap_values: bool = True) -> Dict[str, np.ndarray]:
         """
         Expain the outputs of a trained model.
@@ -60,6 +61,7 @@ class NNBase(ModelBase):
             the test data
         var_names: The variable names of the historical inputs. If x is None, this
             will be calculated. Only necessary if the arrays are going to be saved
+        background_size: the size of the background to use
         save_shap_values: Whether or not to save the shap values
 
         Returns
@@ -69,10 +71,9 @@ class NNBase(ModelBase):
         assert self.model is not None, 'Model must be trained!'
 
         if self.explainer is None:
-            background_samples = self._get_background(sample_size=100)
+            background_samples = self._get_background(sample_size=background_size)
             self.explainer: shap.DeepExplainer = shap.DeepExplainer(
                 self.model, background_samples)
-
         if x is None:
             # if no input is passed to explain, take 10 values and explain them
             test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=1,
@@ -279,32 +280,39 @@ class NNBase(ModelBase):
         samples_per_instance = max(1, sample_size // len(train_dataloader))
 
         for x, _ in train_dataloader:
-            while len(output_tensors) < sample_size:
-                for _ in range(samples_per_instance):
-                    idx = random.randint(0, x[0].shape[0] - 1)
-                    output_tensors.append(x[0][idx])
+            for _ in range(samples_per_instance):
+                idx = random.randint(0, x[0].shape[0] - 1)
+                output_tensors.append(x[0][idx])
 
-                    # one hot months
-                    one_hot_months = self._one_hot_months(x[1][idx: idx + 1])
-                    output_pm.append(one_hot_months)
+                # one hot months
+                one_hot_months = self._one_hot_months(x[1][idx: idx + 1])
+                output_pm.append(one_hot_months)
 
-                    # latlons
-                    output_ll.append(x[2][idx])
+                # latlons
+                output_ll.append(x[2][idx])
 
-                    # current array
-                    if x[3] is None:
-                        output_cur.append(torch.zeros(1))
-                    else:
-                        output_cur.append(x[3][idx])
+                # current array
+                if x[3] is None:
+                    output_cur.append(torch.zeros(1))
+                else:
+                    output_cur.append(x[3][idx])
 
-                    # yearly aggs
-                    output_ym.append(x[4][idx])
+                # yearly aggs
+                output_ym.append(x[4][idx])
 
-                    # static data
-                    if x[5] is None:
-                        output_static.append(torch.zeros(1))
-                    else:
-                        output_static.append(x[5][idx])
+                # static data
+                if x[5] is None:
+                    output_static.append(torch.zeros(1))
+                else:
+                    output_static.append(x[5][idx])
+
+                if len(output_tensors) >= sample_size:
+                    return [torch.stack(output_tensors),  # type: ignore
+                            torch.cat(output_pm, dim=0),
+                            torch.stack(output_ll),
+                            torch.stack(output_cur),
+                            torch.stack(output_ym),
+                            torch.stack(output_static)]
 
         return [torch.stack(output_tensors),  # type: ignore
                 torch.cat(output_pm, dim=0),
@@ -326,7 +334,7 @@ class NNBase(ModelBase):
         output_tensors.append(x.historical[start_idx: start_idx + num_inputs])
         # one hot months
         one_hot_months = self._one_hot_months(x.pred_months[start_idx: start_idx + num_inputs])
-        output_tensors.append(one_hot_months[start_idx: start_idx + num_inputs])
+        output_tensors.append(one_hot_months)
         output_tensors.append(x.latlons[start_idx: start_idx + num_inputs])
         if x.current is None:
             output_tensors.append(torch.zeros(num_inputs, 1))
