@@ -1,6 +1,7 @@
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 
 import numpy as np
 from pathlib import Path
@@ -36,7 +37,8 @@ def plot_shap_values(x: np.ndarray,
                      normalize_shap_plots: bool = True,
                      show: bool = False,
                      polished_value_name: Optional[str] = None,
-                     pred_date: Optional[Tuple[int, int]] = None) -> None:
+                     pred_date: Optional[Tuple[int, int]] = None,
+                     fig: Optional[Figure] = None) -> None:
     """Plots the denormalized values against their shap values, so that
     variations in the input features to the model can be compared to their effect
     on the model. For example plots, see notebooks/08_gt_recurrent_model.ipynb.
@@ -63,6 +65,9 @@ def plot_shap_values(x: np.ndarray,
     pred_month: Optional[Tuple[int, int]] = None
         If passed to the model, the x axis will contain actual months instead of the index.
         Note the tuple is [int_month, int_year]
+    fig: Optional[Figure] = None
+        The figure upon which to construct the plot. If None is passed, matplotlib will use
+        plt.gcf() to get the figure
     """
     # first, lets isolate the lists
     idx = val_list.index(value_to_plot)
@@ -90,9 +95,9 @@ def plot_shap_values(x: np.ndarray,
                 cur_year -= 1
             int_months.append(cur_month)
             int_years.append(cur_year)
-        str_dates = [f'{int2month[m]} {y}' for m, y in zip(int_months, int_years)][::-1]
+        str_dates = [f'{int2month[m]}{y}' for m, y in zip(int_months, int_years)][::-1]
 
-    host = host_subplot(111, axes_class=AA.Axes)
+    host = host_subplot(111, axes_class=AA.Axes, figure=fig)
     plt.subplots_adjust(right=0.75)
 
     par1 = host.twinx()
@@ -114,7 +119,7 @@ def plot_shap_values(x: np.ndarray,
     host.axis["left"].label.set_color(p1.get_color())
     par1.axis["right"].label.set_color(p2.get_color())
 
-    host.legend(loc=2)
+    host.legend(loc='lower left', framealpha=0.5)
 
     if pred_date is not None:
         modulo = (len(months) - 1) % 2
