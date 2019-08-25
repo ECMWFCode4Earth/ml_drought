@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from typing import List, Dict, Optional, Tuple, Union
+from typing import List, Dict, Optional, Tuple
 from collections import namedtuple
 
 from src.analysis.region_analysis.groupby_region import KenyaGroupbyRegion, GroupbyRegion
@@ -73,7 +73,7 @@ class RegionGeoPlotter:
                 path = admin_boundary.shp_filepath
                 if not path.exists():
                     print(
-                        f'{admin_boundary.shp_filepath} not found.'\
+                        f'{admin_boundary.shp_filepath} not found.'
                         ' Moving to next file'
                     )
                     continue

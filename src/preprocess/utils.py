@@ -188,12 +188,12 @@ class SHPtoXarray:
         unique_values = [str(int(v)) for v in unique_values]
 
         # Check for None in keys/values
-        keys = [key
-            for key, value in zip(keys, values)
+        keys = [
+            key for key, value in zip(keys, values)
             if (values is not None) & (keys is not None)
         ]
-        values = [key
-            for key, value in zip(keys, values)
+        values = [
+            key for key, value in zip(keys, values)
             if (values is not None) & (keys is not None)
         ]
         # assign to attrs

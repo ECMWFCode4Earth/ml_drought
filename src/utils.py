@@ -71,7 +71,10 @@ def get_ds_mask(ds: xr.Dataset) -> xr.Dataset:
     return mask
 
 
-def create_shape_aligned_climatology(ds, clim, variable, time_period):
+def create_shape_aligned_climatology(ds: xr.Dataset,
+                                     clim: xr.Dataset,
+                                     variable: str,
+                                     time_period: str):
     """match the time dimension of `clim` to the shape of `ds` so that can
     perform simple calculations / arithmetic on the values of clim
 

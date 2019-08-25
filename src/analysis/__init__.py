@@ -2,7 +2,7 @@ from .event_detector import EventDetector
 from .plot_shap import plot_shap_values
 from .evaluation import (
     monthly_r2_score, annual_r2_scores, plot_predictions,
-    spatial_rmse
+    spatial_rmse, spatial_r2
 )
 from .indices import (
     SPI,
@@ -29,5 +29,5 @@ __all__ = [
     'LandcoverRegionAnalysis',
     'AdministrativeRegionAnalysis',
     'monthly_r2_score', 'annual_r2_scores', 'plot_predictions',
-    'spatial_rmse'
+    'spatial_rmse', 'spatial_r2'
 ]

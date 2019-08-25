@@ -1,17 +1,14 @@
 """
 Scripts for plotting region objects
 """
-
-from pathlib import Path
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from typing import List, Dict, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
-import geopandas as gpd
 from geopandas.geodataframe import GeoDataFrame
 
 
