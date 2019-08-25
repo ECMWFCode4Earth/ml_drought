@@ -33,8 +33,8 @@ class TestExploration:
         da = calculate_seasonal_anomalies_spatial(ds, 'precip')
         assert da.name == 'anomaly'
         assert da.shape == (12, 30, 30)
-        n_years = len(np.unique(ds['time.year']))
-        assert len(da.time) == (len(ds.time) / n_years)
+        n_seasons = len(ds.resample(time='Q-DEC').mean().time)
+        assert len(da.time) == n_seasons
 
     def test_create_anomaly_df(self, tmp_path):
         _create_dummy_precip_data(tmp_path)
