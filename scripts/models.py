@@ -2,15 +2,10 @@ import sys
 sys.path.append('..')
 
 from pathlib import Path
-import numpy as np
-import matplotlib.pyplot as plt
-import pickle
-
-from src.analysis import plot_shap_values
 from src.models import (Persistence, LinearRegression,
                         LinearNetwork, RecurrentNetwork,
                         EARecurrentNetwork, load_model)
-from src.models.data import DataLoader
+from src.analysis import all_shap_for_file
 
 
 def parsimonious(
@@ -101,7 +96,7 @@ def rnn(
 def earnn(
     experiment='one_month_forecast',
     include_pred_month=True,
-    surrounding_pixels=1,
+    surrounding_pixels=None,
     pretrained=True
 ):
     # if the working directory is alread ml_drought don't need ../data
@@ -122,9 +117,11 @@ def earnn(
         predictor.evaluate(save_preds=True)
         predictor.save_model()
     else:
-        predictor = load_model(data_path / f'models/{experiment}/ealstm/model.pkl')
+        predictor = load_model(data_path / f'models/{experiment}/ealstm/model.pt')
 
-    _ = predictor.explain(save_shap_values=True)
+    test_file = data_path / f'features/{experiment}/test/2018_3'
+    assert test_file.exists()
+    all_shap_for_file(test_file, predictor, batch_size=100)
 
 
 if __name__ == '__main__':

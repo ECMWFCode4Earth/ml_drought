@@ -41,6 +41,7 @@ class Persistence(ModelBase):
                     raise e
 
                 preds_dict[key] = val.x.historical[:, -1, [target_idx]]
-                test_arrays_dict[key] = {'y': val.y, 'latlons': val.latlons}
+                test_arrays_dict[key] = {'y': val.y, 'latlons': val.latlons,
+                                         'time': val.target_time}
 
         return test_arrays_dict, preds_dict

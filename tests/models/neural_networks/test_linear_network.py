@@ -2,6 +2,7 @@ import pickle
 from copy import copy
 import pytest
 import xarray as xr
+import torch
 
 from src.models import LinearNetwork
 from src.models.neural_networks.linear_network import LinearModel
@@ -45,11 +46,10 @@ class TestLinearNetwork:
         model.save_model()
 
         assert (
-            tmp_path / 'models/one_month_forecast/linear_network/model.pkl'
+            tmp_path / 'models/one_month_forecast/linear_network/model.pt'
         ).exists(), f'Model not saved!'
 
-        with (model.model_dir / 'model.pkl').open('rb') as f:
-            model_dict = pickle.load(f)
+        model_dict = torch.load(model.model_dir / 'model.pt', map_location='cpu')
 
         for key, val in model_dict['model']['state_dict'].items():
             assert (model.model.state_dict()[key] == val).all()
