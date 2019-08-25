@@ -128,7 +128,6 @@ dependencies:
   - openblas-devel=0.3.6
   - openssl=1.1.1b
   - packaging=19.0
-  # - pandas=0.25.0
   - pandas=0.24.2
   - paramiko=2.4.2
   - parso=0.5.0
