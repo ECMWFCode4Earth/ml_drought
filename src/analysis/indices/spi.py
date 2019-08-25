@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Optional, Tuple
 from enum import Enum
 
-import climate_indices
-from climate_indices import indices
-
 from .base import BaseIndices
+
+climate_indices = None
+indices = None
 
 
 class SPI(BaseIndices):
@@ -60,15 +60,23 @@ class SPI(BaseIndices):
     def __init__(self, data_path: Path) -> None:
         super().__init__(data_path, resample_str=self.resample_str)
 
+        global indices
+        global climate_indices
+
+        if climate_indices is None:
+            import climate_indices
+        if indices is None:
+            from climate_indices import indices
+
     @staticmethod
     def stack_pixels(da: xr.DataArray) -> xr.DataArray:
         return da.stack(point=('lat', 'lon')).groupby('point')
 
     def init_distribution(self, distribution: str) -> Enum:
         if distribution == 'gamma':
-            dist = climate_indices.indices.Distribution.gamma
+            dist = climate_indices.indices.Distribution.gamma  # type: ignore
         elif distribution == 'pearson':
-            dist = climate_indices.indices.Distribution.pearson
+            dist = climate_indices.indices.Distribution.pearson  # type: ignore
         else:
             assert False, f"{distribution} is not a valid distribution fit for SPI"
 
@@ -112,9 +120,9 @@ class SPI(BaseIndices):
             periodicity = 'gamma'
 
         if periodicity == 'monthly':
-            period = climate_indices.compute.Periodicity.monthly
+            period = climate_indices.compute.Periodicity.monthly  # type: ignore
         elif periodicity == 'daily':
-            period = climate_indices.compute.Periodicity.daily
+            period = climate_indices.compute.Periodicity.daily  # type: ignore
         else:
             assert False, f"{periodicity} is not a valid periodicity for SPI"
 
@@ -216,7 +224,7 @@ class SPI(BaseIndices):
         )
 
         index = xr.apply_ufunc(
-            indices.spi, da, self.scale,
+            indices.spi, da, self.scale,  # type: ignore
             dist, self.data_start_year, self.calibration_year_initial,
             self.calibration_year_final, period
         )

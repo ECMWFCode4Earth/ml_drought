@@ -145,8 +145,13 @@ class ModelBase:
                 if len(preds.shape) > 1:
                     preds = preds.squeeze(-1)
 
+                # the prediction timestep
+                time = val['time']
+                times = [time for _ in range(len(preds))]
+
                 preds_xr = pd.DataFrame(data={
                     'preds': preds, 'lat': latlons[:, 0],
-                    'lon': latlons[:, 1]}).set_index(['lat', 'lon']).to_xarray()
+                    'lon': latlons[:, 1], 'time': times}
+                ).set_index(['lat', 'lon', 'time']).to_xarray()
 
                 preds_xr.to_netcdf(self.model_dir / f'preds_{key}.nc')

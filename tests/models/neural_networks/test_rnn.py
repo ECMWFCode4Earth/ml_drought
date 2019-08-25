@@ -2,6 +2,7 @@ import torch
 from torch import nn
 import numpy as np
 import pickle
+from copy import copy
 import pytest
 
 from src.models.neural_networks.rnn import UnrolledRNN, RNN
@@ -16,6 +17,7 @@ class TestRecurrentNetwork:
 
         features_per_month = 5
         dense_features = [10]
+        input_dense_features = copy(dense_features)
         hidden_size = 128
         rnn_dropout = 0.25
         include_pred_month = True
@@ -41,11 +43,10 @@ class TestRecurrentNetwork:
         model.train()
         model.save_model()
 
-        assert (tmp_path / 'models/one_month_forecast/rnn/model.pkl').exists(), \
+        assert (tmp_path / 'models/one_month_forecast/rnn/model.pt').exists(), \
             f'Model not saved!'
 
-        with (model.model_dir / 'model.pkl').open('rb') as f:
-            model_dict = pickle.load(f)
+        model_dict = torch.load(model.model_dir / 'model.pt', map_location='cpu')
 
         for key, val in model_dict['model']['state_dict'].items():
             assert (model.model.state_dict()[key] == val).all()
@@ -53,7 +54,7 @@ class TestRecurrentNetwork:
         assert model_dict['model']['features_per_month'] == features_per_month
         assert model_dict['hidden_size'] == hidden_size
         assert model_dict['rnn_dropout'] == rnn_dropout
-        assert model_dict['dense_features'] == dense_features
+        assert model_dict['dense_features'] == input_dense_features
         assert model_dict['include_pred_month'] == include_pred_month
         assert model_dict['experiment'] == experiment
         assert model_dict['ignore_vars'] == ignore_vars
@@ -67,9 +68,7 @@ class TestRecurrentNetwork:
         test_features = tmp_path / 'features/one_month_forecast/train/hello'
         test_features.mkdir(parents=True)
 
-        norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
-                             'std': np.ones(x.to_array().values.shape[:2])}
-                     }
+        norm_dict = {'VHI': {'mean': 0, 'std': 1}}
         with (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').open('wb') as f:
             pickle.dump(norm_dict, f)
 
@@ -115,9 +114,7 @@ class TestRecurrentNetwork:
         test_features = tmp_path / 'features/one_month_forecast/test/hello'
         test_features.mkdir(parents=True)
 
-        norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
-                             'std': np.ones(x.to_array().values.shape[:2])}
-                     }
+        norm_dict = {'VHI': {'mean': 0.0, 'std': 1.0}}
         with (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').open('wb') as f:
             pickle.dump(norm_dict, f)
 

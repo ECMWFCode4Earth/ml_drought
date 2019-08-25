@@ -89,8 +89,7 @@ class TestPlanetOSPreprocessor:
                              parallel=False)
 
         expected_out_path = tmp_path / 'interim/reanalysis-era5-single-levels-monthly-' \
-                                       'means_preprocessed/reanalysis-era5-single-levels-' \
-                                       'monthly-means_kenya.nc'
+                                       'means_preprocessed/data_kenya.nc'
         assert expected_out_path.exists(), \
             f'Expected processed file to be saved to {expected_out_path}'
 

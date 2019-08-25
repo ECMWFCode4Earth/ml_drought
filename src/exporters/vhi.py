@@ -7,9 +7,9 @@ import re
 import pickle
 import warnings
 
-from pathos.multiprocessing import ProcessingPool as Pool
-
 from .base import BaseExporter
+
+Pool = None  # this requires the pathos libary
 
 
 class VHIExporter(BaseExporter):
@@ -18,6 +18,13 @@ class VHIExporter(BaseExporter):
     ftp.star.nesdis.noaa.gov
     """
     dataset = 'vhi'
+
+    def __init___(self, data_folder: Path = Path('data')) -> None:
+        super().__init__(data_folder)
+
+        global Pool
+        if Pool is None:
+            from pathos.multiprocessing import ProcessingPool as Pool
 
     @staticmethod
     def get_ftp_filenames(years: Optional[List]) -> List:
@@ -62,11 +69,11 @@ class VHIExporter(BaseExporter):
 
     def _run_export(self,
                     vhi_files: List,
-                    num_processes: int = 100
+                    n_parallel_processes: int = 100
                     ) -> List:
 
-        if num_processes > 1:
-            pool = Pool(processes=num_processes)
+        if n_parallel_processes > 1:
+            pool = Pool(processes=n_parallel_processes)  # type: ignore
 
             # split the filenames into batches of 100
             batches = [batch for batch in self.chunks(vhi_files, 100)]
@@ -149,7 +156,7 @@ class VHIExporter(BaseExporter):
         return missing_filepaths
 
     def export(self, years: Optional[List] = None, repeats: int = 5,
-               num_processes: int = 100) -> List:
+               n_parallel_processes: int = 1) -> List:
         """Export VHI data from the ftp server.
         By default write output to raw/vhi/{YEAR}/{filename}
 
@@ -160,7 +167,7 @@ class VHIExporter(BaseExporter):
             be downloaded
         repeats: int = 5
             The number of times to retry downloads which failed
-        num_processes: int = 100
+        n_parallel_processes: int = 100
             The number of processes to run. If 1, the download happens serially
 
         Returns:
@@ -179,11 +186,11 @@ class VHIExporter(BaseExporter):
         vhi_files = self.get_ftp_filenames(years)
 
         # run the download steps in parallel
-        batches = self._run_export(vhi_files, num_processes)
+        batches = self._run_export(vhi_files, n_parallel_processes)
 
         for _ in range(repeats):
             missing_filepaths = self.get_missing_filepaths(vhi_files)
-            batches = self._run_export(missing_filepaths, num_processes)
+            batches = self._run_export(missing_filepaths, n_parallel_processes)
             print(f'**{_} of {repeats} VHI Downloads completed **')
 
         return batches

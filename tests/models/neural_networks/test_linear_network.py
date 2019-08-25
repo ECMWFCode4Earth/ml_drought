@@ -1,7 +1,8 @@
-import numpy as np
 import pickle
+from copy import copy
 import pytest
 import xarray as xr
+import torch
 
 from src.models import LinearNetwork
 from src.models.neural_networks.linear_network import LinearModel
@@ -14,6 +15,7 @@ class TestLinearNetwork:
     def test_save(self, tmp_path, monkeypatch):
 
         layer_sizes = [10]
+        input_layer_sizes = copy(layer_sizes)
         input_size = 10
         dropout = 0.25
         include_pred_month = True
@@ -44,17 +46,16 @@ class TestLinearNetwork:
         model.save_model()
 
         assert (
-            tmp_path / 'models/one_month_forecast/linear_network/model.pkl'
+            tmp_path / 'models/one_month_forecast/linear_network/model.pt'
         ).exists(), f'Model not saved!'
 
-        with (model.model_dir / 'model.pkl').open('rb') as f:
-            model_dict = pickle.load(f)
+        model_dict = torch.load(model.model_dir / 'model.pt', map_location='cpu')
 
         for key, val in model_dict['model']['state_dict'].items():
             assert (model.model.state_dict()[key] == val).all()
 
         assert model_dict['dropout'] == dropout
-        assert model_dict['layer_sizes'] == layer_sizes
+        assert model_dict['layer_sizes'] == input_layer_sizes
         assert model_dict['model']['input_size'] == input_size
         assert model_dict['include_pred_month'] == include_pred_month
         assert model_dict['include_latlons'] == include_latlons
@@ -80,12 +81,9 @@ class TestLinearNetwork:
         x_add2, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='temp')
         x = xr.merge([x, x_add1, x_add2])
 
-        norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                             'std': np.ones((1, x.to_array().values.shape[1]))},
-                     'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                'std': np.ones((1, x.to_array().values.shape[1]))},
-                     'temp': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                              'std': np.ones((1, x.to_array().values.shape[1]))}}
+        norm_dict = {'VHI': {'mean': 0, 'std': 1},
+                     'precip': {'mean': 0, 'std': 1},
+                     'temp': {'mean': 0, 'std': 1}}
 
         test_features = tmp_path / f'features/{experiment}/train/hello'
         test_features.mkdir(parents=True, exist_ok=True)
@@ -194,16 +192,11 @@ class TestLinearNetwork:
             x_add2, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='temp')
             x = xr.merge([x, x_add1, x_add2])
 
-            norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                 'std': np.ones((1, x.to_array().values.shape[1]))},
-                         'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                    'std': np.ones((1, x.to_array().values.shape[1]))},
-                         'temp': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                  'std': np.ones((1, x.to_array().values.shape[1]))}}
+            norm_dict = {'VHI': {'mean': 0, 'std': 1},
+                         'precip': {'mean': 0, 'std': 1},
+                         'temp': {'mean': 0, 'std': 1}}
         else:
-            norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
-                                 'std': np.ones(x.to_array().values.shape[:2])}
-                         }
+            norm_dict = {'VHI': {'mean': 0, 'std': 1}}
 
         with (
             tmp_path / f'features/{experiment}/normalizing_dict.pkl'
@@ -247,9 +240,7 @@ class TestLinearNetwork:
         x.to_netcdf(train_features / 'x.nc')
         y.to_netcdf(train_features / 'y.nc')
 
-        norm_dict = {'VHI': {'mean': np.zeros(x.to_array().values.shape[:2]),
-                             'std': np.ones(x.to_array().values.shape[:2])}
-                     }
+        norm_dict = {'VHI': {'mean': 0, 'std': 1}}
         with (
             tmp_path / 'features/one_month_forecast/normalizing_dict.pkl'
         ).open('wb') as f:

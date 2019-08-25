@@ -85,7 +85,7 @@ class TestGLEAMPreprocessor:
         processor = GLEAMPreprocessor(tmp_path)
         processor.preprocess(subset_str='kenya', regrid=regrid_path)
 
-        expected_out_path = tmp_path / 'interim/gleam_preprocessed/gleam_kenya.nc'
+        expected_out_path = tmp_path / 'interim/gleam_preprocessed/data_kenya.nc'
         assert expected_out_path.exists(), \
             f'Expected processed file to be saved to {expected_out_path}'
 
@@ -139,6 +139,6 @@ class TestGLEAMPreprocessor:
         processor = GLEAMPreprocessor(tmp_path)
         processor.preprocess(subset_str='ethiopia', regrid=regrid_path)
 
-        expected_out_path = tmp_path / 'interim/gleam_preprocessed/gleam_ethiopia.nc'
+        expected_out_path = tmp_path / 'interim/gleam_preprocessed/data_ethiopia.nc'
         assert expected_out_path.exists(), \
             f'Expected processed file to be saved to {expected_out_path}'
