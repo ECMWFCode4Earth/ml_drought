@@ -189,13 +189,14 @@ class RegionGeoPlotter:
         return lookup[selection]
 
     @staticmethod
-    def plot_metric(ax: Axes, metric: PlotMetric,
-                    gdf: GeoDataFrame) -> Axes:
+    def plot_metric(ax: Axes,
+                    metric: PlotMetric,
+                    gdf: GeoDataFrame) -> Axes:  # type: ignore
         # nicely format the colorbar
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.1)
 
-        gdf.plot(
+        gdf.plot(  # type: ignore
             metric.metric, ax=ax, legend=True,
             cmap=metric.cmap, vmin=metric.vmin,
             vmax=metric.vmax, cax=cax
@@ -203,11 +204,11 @@ class RegionGeoPlotter:
         ax.set_title(f'{metric.metric.upper()}')
         return ax
 
-    def plot_all_regional_error_metrics(self, gdf: GeoDataFrame,
+    def plot_all_regional_error_metrics(self, gdf: GeoDataFrame,  # type: ignore
                                         title: str = '') -> Tuple[Figure, List[Axes]]:
         """Plot area-based maps of the scores"""
-        assert np.isin(['rmse', 'mae', 'r2'], gdf.columns).all()
-        gdf = gdf.dropna(subset=['rmse', 'mae', 'r2'])
+        assert np.isin(['rmse', 'mae', 'r2'], gdf.columns).all()  # type: ignore
+        gdf = gdf.dropna(subset=['rmse', 'mae', 'r2'])  # type: ignore
 
         # get the PlotMetric objects
         rmse = self.get_metric('rmse')
@@ -223,12 +224,12 @@ class RegionGeoPlotter:
         fig.set_suptitle(title)
         return fig, axs
 
-    def plot_regional_error_metric(self, gdf: GeoDataFrame,
+    def plot_regional_error_metric(self, gdf: GeoDataFrame,  # type: ignore
                                    selection: str) -> Tuple[Figure, Axes]:
         valid_metrics = ['rmse', 'mae', 'r2']
         assert selection in valid_metrics, 'Expecting selection' \
             f' to be one of: {valid_metrics}'
-        gdf = gdf.dropna(subset=valid_metrics)
+        gdf = gdf.dropna(subset=valid_metrics)  # type: ignore
         metric = self.get_metric(selection)
         fig, ax = plt.subplots()
         ax = self.plot_metric(gdf=gdf, ax=ax, metric=metric)

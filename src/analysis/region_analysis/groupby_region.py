@@ -52,7 +52,7 @@ class GroupbyRegion:
         self.region_shp_path: Path
         self.region_data_path: Path
 
-        self.gpd: GeoDataFrame
+        self.gpd: GeoDataFrame  # type: ignore
         self.region_da: xr.DataArray
 
     @staticmethod
@@ -90,7 +90,7 @@ class GroupbyRegion:
     def analyze(self, da: xr.DataArray,
                 selection: str,
                 mean: bool = True,
-                save_data_fname: Optional[str] = None) -> GeoDataFrame:
+                save_data_fname: Optional[str] = None) -> GeoDataFrame:  # type: ignore
         """group the values in the DataArray
         by region, and return a GeoDataFrame allowing
         for spatial plotting and exploration of statistics
@@ -145,7 +145,7 @@ class GroupbyRegion:
                 admin_level_name=admin_level_name
             )
         else:
-            df = self.calculate_values_per_region(
+            df = self.get_values_for_region(
                 da=self.da, region_da=region_da, region_lookup=region_lookup,
                 admin_level_name=admin_level_name
             )
@@ -158,7 +158,7 @@ class GroupbyRegion:
 
         # 3. join to GeoDataFrame
         print('* Joining DataFrame and GeoDataFrame *')
-        gdf = gpd.read_file(self.admin_bound.shp_filepath)
+        gdf = gpd.read_file(self.admin_bound.shp_filepath)  # type: ignore
         gdf = self.join_dataframe_geodataframe(
             df, df_colname='region_name',
             gdf=gdf, gdf_colname=self.admin_bound.lookup_colname,
@@ -172,6 +172,8 @@ class GroupbyRegion:
                 save_data_fname += '.csv'
             # g_ = gdf.drop('geometry')
             gdf.to_csv(self.out_dir / save_data_fname)
+
+        return gdf
 
     @staticmethod
     def get_values_for_region(da: xr.DataArray,
@@ -207,14 +209,10 @@ class GroupbyRegion:
             'region_name': region_names,
             'all_value': all_values,
         })
-        return (
-            df.explode('all_values')
-            .rename(columns={'all_values': 'values'})
-            # NOTE: takes alot of compute power!
-            # .reset_index()
-        )
+        return (df.explode('all_values')
+                .rename(columns={'all_values': 'values'}))
 
-    def get_admin_level(self, selection: str) -> AdminBoundaries:
+    def get_admin_level(self, selection: str) -> AdminBoundaries:  # type: ignore
         # implemented by the child classes (specific for each country)
         assert NotImplementedError
 
@@ -258,13 +256,13 @@ class GroupbyRegion:
 
     @staticmethod
     def join_dataframe_geodataframe(df: pd.DataFrame,
-                                    gdf: GeoDataFrame,
+                                    gdf: GeoDataFrame,  # type: ignore
                                     gdf_colname: str,
-                                    df_colname: str) -> GeoDataFrame:
+                                    df_colname: str) -> GeoDataFrame:  # type: ignore
         """Join pd.DataFrame with GeoDataFrame to produce
         a GeoDataFrame.
         """
-        out_gdf = GeoDataFrame(
+        out_gdf = GeoDataFrame(  # type: ignore
             pd.merge(
                 df, gdf[[gdf_colname, 'geometry']],
                 left_on=df_colname, right_on=gdf_colname

@@ -89,7 +89,7 @@ def create_anomaly_df(anomaly_da: xr.DataArray,
         if not None then selects a maximum time (for selecting a date range)
     """
     df = (
-        anomaly_da.sel(time=slice(mintime, maxtime))
+        anomaly_da.sel(time=slice(mintime, maxtime))  # type: ignore
         .to_pandas()
         .to_frame('anomaly')
         .reset_index()
