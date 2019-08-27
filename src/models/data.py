@@ -119,7 +119,8 @@ class DataLoader:
                  surrounding_pixels: Optional[int] = None,
                  ignore_vars: Optional[List[str]] = None,
                  monthly_aggs: bool = True,
-                 static: bool = False) -> None:
+                 static: bool = False,
+                 device: str = 'cpu') -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
@@ -154,6 +155,7 @@ class DataLoader:
                 static_normalizer_path = data_path / 'features/static/normalizing_dict.pkl'
                 with static_normalizer_path.open('rb') as f:
                     self.static_normalizing_dict = pickle.load(f)
+        self.device = torch.device(device)
 
     def __iter__(self):
         if self.mode == 'train':
@@ -205,6 +207,7 @@ class _BaseIter:
         self.to_tensor = loader.to_tensor
         self.experiment = loader.experiment
         self.ignore_vars = loader.ignore_vars
+        self.device = loader.device
 
         self.static = loader.static
         self.static_normalizing_dict = loader.static_normalizing_dict
@@ -437,16 +440,20 @@ class _BaseIter:
             latlons = latlons[notnan_indices]
 
         if to_tensor:
-            train_data.historical = torch.from_numpy(train_data.historical).float()
-            train_data.pred_months = torch.from_numpy(train_data.pred_months).float()
-            train_data.latlons = torch.from_numpy(train_data.latlons).float()
-            train_data.yearly_aggs = torch.from_numpy(train_data.yearly_aggs).float()
+            train_data.historical = torch.from_numpy(train_data.historical).to(self.device).\
+                float()
+            train_data.pred_months = torch.from_numpy(train_data.pred_months).to(self.device).\
+                float()
+            train_data.latlons = torch.from_numpy(train_data.latlons).to(self.device).float()
+            train_data.yearly_aggs = torch.from_numpy(train_data.yearly_aggs).to(self.device).\
+                float()
             if train_data.static is not None:
-                train_data.static = torch.from_numpy(train_data.static).float()
-            y_np = torch.from_numpy(y_np).float()
+                train_data.static = torch.from_numpy(train_data.static).to(self.device).float()
+            y_np = torch.from_numpy(y_np).to(self.device).float()
 
             if self.experiment == 'nowcast':
-                train_data.current = torch.from_numpy(train_data.current).float()
+                train_data.current = torch.from_numpy(train_data.current).to(self.device).\
+                    float()
         return ModelArrays(x=train_data, y=y_np, x_vars=list(x.data_vars),
                            y_var=list(y.data_vars)[0], latlons=latlons,
                            target_time=target_time)
@@ -550,15 +557,15 @@ class _TrainIter(_BaseIter):
             final_y = np.concatenate(out_y, axis=0)
 
             if self.to_tensor:
-                final_x = torch.from_numpy(final_x).float()
-                final_x_add = torch.from_numpy(final_x_add).float()
-                final_x_latlon = torch.from_numpy(final_x_latlon).float()
-                final_x_ym = torch.from_numpy(final_x_ym).float()
+                final_x = torch.from_numpy(final_x).to(self.device).float()
+                final_x_add = torch.from_numpy(final_x_add).to(self.device).float()
+                final_x_latlon = torch.from_numpy(final_x_latlon).to(self.device).float()
+                final_x_ym = torch.from_numpy(final_x_ym).to(self.device).float()
                 if final_x_curr is not None:
-                    final_x_curr = torch.from_numpy(final_x_curr).float()
+                    final_x_curr = torch.from_numpy(final_x_curr).to(self.device).float()
                 if final_x_static is not None:
-                    final_x_static = torch.from_numpy(final_x_static).float()
-                final_y = torch.from_numpy(final_y).float()
+                    final_x_static = torch.from_numpy(final_x_static).to(self.device).float()
+                final_y = torch.from_numpy(final_y).to(self.device).float()
 
             if final_x.shape[0] == 0:
                 raise StopIteration()

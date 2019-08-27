@@ -102,6 +102,7 @@ class TestBaseIter:
                 self.surrounding_pixels = surrounding_pixels
                 self.ignore_vars = ['precip']
                 self.monthly_aggs = False
+                self.device = torch.device('cpu')
 
                 self.static = None
                 self.static_normalizing_dict = None
