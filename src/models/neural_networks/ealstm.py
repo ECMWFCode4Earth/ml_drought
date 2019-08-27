@@ -6,7 +6,7 @@ from copy import copy
 
 from typing import Dict, List, Optional, Tuple
 
-from .base import NNBase
+from .base import NNBase, OneHotMonthEncoder
 
 
 class EARecurrentNetwork(NNBase):
@@ -149,6 +149,7 @@ class EALSTM(nn.Module):
             self.include_static = True
             ea_static_size += static_size
         if include_pred_month:
+            self.month_encoder = OneHotMonthEncoder(12)
             ea_static_size += 12
 
         self.dropout = nn.Dropout(rnn_dropout)
@@ -198,7 +199,7 @@ class EALSTM(nn.Module):
         if self.include_static:
             static_x.append(static)
         if self.include_pred_month:
-            static_x.append(pred_month)
+            static_x.append(self.month_encoder(pred_month))
 
         hidden_state, cell_state = self.rnn(x, torch.cat(static_x, dim=-1))
 
