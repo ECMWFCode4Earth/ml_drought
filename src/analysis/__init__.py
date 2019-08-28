@@ -1,6 +1,6 @@
 from .event_detector import EventDetector
 from .plot_shap import plot_shap_values, all_shap_for_file
-from .evaluation import monthly_score, annual_scores, plot_predictions
+from .evaluation import monthly_score, annual_scores, plot_predictions, read_pred_data
 from .indices import (
     SPI,
     ZScoreIndex,
@@ -24,4 +24,5 @@ __all__ = [
     'monthly_score', 'annual_scores', 'plot_predictions', 'MovingAverage',
     'VegetationDeficitIndex', 'LandcoverRegionAnalysis',
     'AdministrativeRegionAnalysis', 'all_shap_for_file',
+    'read_pred_data',
 ]
