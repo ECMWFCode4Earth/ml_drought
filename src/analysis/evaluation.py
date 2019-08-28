@@ -5,10 +5,12 @@ import xarray as xr
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
+import pandas as pd
+from functools import reduce
 
 from sklearn.metrics import r2_score, mean_squared_error
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 
 def rmse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
@@ -24,7 +26,9 @@ def annual_scores(models: List[str],
                   data_path: Path = Path('data'),
                   pred_year: int = 2018,
                   target_var: str = 'VCI',
-                  verbose: bool = True) -> Dict[str, Dict[str, List[float]]]:
+                  verbose: bool = True,
+                  to_dataframe: bool = False,
+                  ) -> Union[Dict[str, Dict[str, List[float]]], pd.DataFrame]:
     """
     Aggregates monthly R2 scores over a `pred_year` of data
     """
@@ -49,7 +53,39 @@ def annual_scores(models: List[str],
         for metric in metrics:
             monthly_scores[metric]['month'].append(month)
 
-    return monthly_scores
+    if to_dataframe:
+        return annual_scores_to_dataframe(monthly_scores)
+    else:
+        return monthly_scores
+
+
+def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
+    df = pd.DataFrame(monthly_scores)
+
+    metric_dfs = []
+    # rename columns by metric
+    for metric in monthly_scores.keys():
+        metric_df = df[metric].apply(pd.Series).T
+        keys_ = [c for c in metric_df.columns if c != 'month']
+        vals_ = [f'{c}_{metric}' for c in metric_df.columns if c != 'month']
+        metric_df = metric_df.rename(columns=dict(zip(keys_, vals_)))
+        metric_dfs.append(metric_df)
+
+    # join columns into one dataframe
+    df = reduce(lambda left, right: pd.merge(left, right, on='month'), metric_dfs)
+    return df
+
+
+def read_pred_data(model: str,
+                   data_dir: Path = Path('data'),
+                   experiment: str = 'one_month_forecast'):
+    model_pred_dir = (data_dir / 'models' / experiment / model)
+    pred_ds = xr.open_mfdataset((model_pred_dir / '*.nc').as_posix())
+    pred_ds.sortby('time')
+    pred_da = pred_ds.preds
+    pred_da = pred_da.transpose('time', 'lat', 'lon')
+
+    return pred_ds, pred_da
 
 
 def monthly_score(month: int,
