@@ -21,19 +21,23 @@ class EARecurrentNetwork(NNBase):
                  experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
                  include_latlons: bool = False,
-                 include_pred_month: bool = True,
+                 pred_month_embedding_size: Optional[int] = 12,
                  include_monthly_aggs: bool = True,
                  include_yearly_aggs: bool = True,
                  surrounding_pixels: Optional[int] = None,
                  ignore_vars: Optional[List[str]] = None,
                  include_static: bool = True,
                  device: str = 'cuda:0') -> None:
+        include_pred_month = False
+        if pred_month_embedding_size is not None:
+            include_pred_month = True
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
                          include_latlons, include_monthly_aggs, include_yearly_aggs,
                          surrounding_pixels, ignore_vars, include_static, device)
 
         # to initialize and save the model
         self.hidden_size = hidden_size
+        self.pred_month_embedding_size = pred_month_embedding_size
         self.rnn_dropout = rnn_dropout
         self.input_dense = copy(dense_features)  # this is to make sure we can reload the model
         if dense_features is None: dense_features = []
@@ -58,11 +62,11 @@ class EARecurrentNetwork(NNBase):
             'hidden_size': self.hidden_size,
             'rnn_dropout': self.rnn_dropout,
             'dense_features': self.input_dense,
-            'include_pred_month': self.include_pred_month,
             'include_latlons': self.include_latlons,
             'surrounding_pixels': self.surrounding_pixels,
             'include_monthly_aggs': self.include_monthly_aggs,
             'include_yearly_aggs': self.include_yearly_aggs,
+            'pred_month_embedding_size': self.pred_month_embedding_size,
             'experiment': self.experiment,
             'ignore_vars': self.ignore_vars,
             'include_static': self.include_static,
@@ -82,7 +86,7 @@ class EARecurrentNetwork(NNBase):
                                     dense_features=self.dense_features,
                                     hidden_size=self.hidden_size,
                                     rnn_dropout=self.rnn_dropout,
-                                    include_pred_month=self.include_pred_month,
+                                    pred_month_embedding_size=self.pred_month_embedding_size,
                                     experiment=self.experiment,
                                     current_size=self.current_size,
                                     yearly_agg_size=self.yearly_agg_size,
@@ -114,7 +118,7 @@ class EARecurrentNetwork(NNBase):
                        dense_features=self.dense_features,
                        hidden_size=self.hidden_size,
                        rnn_dropout=self.rnn_dropout,
-                       include_pred_month=self.include_pred_month,
+                       pred_month_embedding_size=self.pred_month_embedding_size,
                        experiment=self.experiment,
                        yearly_agg_size=self.yearly_agg_size,
                        current_size=self.current_size,
@@ -126,13 +130,14 @@ class EARecurrentNetwork(NNBase):
 
 class EALSTM(nn.Module):
     def __init__(self, features_per_month, dense_features, hidden_size,
-                 rnn_dropout, include_latlons, include_pred_month,
+                 rnn_dropout, include_latlons, pred_month_embedding_size,
                  experiment, yearly_agg_size=None, current_size=None,
                  static_size=None):
         super().__init__()
 
         self.experiment = experiment
-        self.include_pred_month = include_pred_month
+        self.pred_month_embedding_size = pred_month_embedding_size
+        self.include_pred_month = False
         self.include_latlons = include_latlons
         self.include_yearly_agg = False
         self.include_static = False
@@ -148,9 +153,10 @@ class EALSTM(nn.Module):
         if static_size is not None:
             self.include_static = True
             ea_static_size += static_size
-        if include_pred_month:
-            self.month_encoder = OneHotMonthEncoder(12)
-            ea_static_size += 12
+        if pred_month_embedding_size is not None:
+            self.include_pred_month = True
+            self.month_encoder = OneHotMonthEncoder(pred_month_embedding_size)
+            ea_static_size += pred_month_embedding_size
 
         self.dropout = nn.Dropout(rnn_dropout)
         self.rnn = EALSTMCell(input_size_dyn=features_per_month,

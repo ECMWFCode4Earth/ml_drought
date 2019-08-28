@@ -20,13 +20,13 @@ class TestEARecurrentNetwork:
         hidden_size = 128
         rnn_dropout = 0.25
         include_latlons = True
-        include_pred_month = True
+        pred_month_embedding_size = 12
         include_yearly_aggs = True
         yearly_agg_size = 3
 
         def mocktrain(self):
             self.model = EALSTM(features_per_month, dense_features, hidden_size,
-                                rnn_dropout, include_latlons, include_pred_month,
+                                rnn_dropout, include_latlons, pred_month_embedding_size,
                                 experiment='one_month_forecast', yearly_agg_size=yearly_agg_size)
             self.features_per_month = features_per_month
             self.yearly_agg_size = yearly_agg_size
@@ -34,7 +34,7 @@ class TestEARecurrentNetwork:
         monkeypatch.setattr(EARecurrentNetwork, 'train', mocktrain)
 
         model = EARecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
-                                   include_pred_month=include_pred_month,
+                                   pred_month_embedding_size=pred_month_embedding_size,
                                    include_latlons=include_latlons,
                                    rnn_dropout=rnn_dropout, data_folder=tmp_path,
                                    include_yearly_aggs=include_yearly_aggs)
@@ -54,7 +54,7 @@ class TestEARecurrentNetwork:
         assert model_dict['hidden_size'] == hidden_size
         assert model_dict['rnn_dropout'] == rnn_dropout
         assert model_dict['dense_features'] == input_dense_features
-        assert model_dict['include_pred_month'] == include_pred_month
+        assert model_dict['pred_month_embedding_size'] == pred_month_embedding_size
         assert model_dict['include_latlons'] == include_latlons
         assert model_dict['include_yearly_aggs'] == include_yearly_aggs
         assert model_dict['experiment'] == 'one_month_forecast'
