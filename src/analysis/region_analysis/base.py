@@ -69,7 +69,7 @@ class RegionAnalysis:
         assert self.features_dir.exists(), 'Require {data_path}/features to have been'\
             'created by the pipeline.'
 
-        self.models: List[str] = [m.name for m in self.models_dir.iterdir()]
+        self.models: List[str] = [m.name for m in self.models_dir.iterdir() if m.name[0] != '.']
         if models is not None:
             self.models = self.models[np.isin(self.models, models)]
             assert self.models is not [], 'None of the `models` are here in ' \
@@ -257,19 +257,20 @@ class RegionAnalysis:
             'r2': r2s,
         })
 
-    def create_model_performance_by_region_geodataframe(self) -> None:
+    def create_model_performance_by_region_geodataframe(self) -> RegionGeoPlotter:
         """Join pd.DataFrame object stored in `RegionAnalysis.df` with the a
         GeoDataFrames for the admin_level at `RegionGeoPlotter.gdf` in order
         to create spatial plots of the model performances in different regions.
         """
-        assert self.df is not None, 'require ' \
+        assert self.regional_mean_metrics is not None, 'require ' \
             '`RegionAnalysis.df`. Has `RegionAnalysis.analyze`' \
             'been run? Run that first!'
 
         # create the region geoplotter object
         geoplotter = RegionGeoPlotter(data_folder=self.data_dir, country='kenya')
         geoplotter.read_shapefiles()
-        geoplotter.merge_all_model_performances_gdfs(all_models_df=self.df)
+        geoplotter.merge_all_model_performances_gdfs(all_models_df=self.regional_mean_metrics)
+        return geoplotter
 
     def _base_analyze_single(self, admin_level_name: str,
                              region_da: Optional[xr.DataArray] = None,
