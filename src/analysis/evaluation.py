@@ -153,7 +153,7 @@ def monthly_score(month: int,
 
 
 def plot_predictions(pred_month: int, model: str,
-                     target_var: str = 'VHI',
+                     target_var: str = 'VCI',
                      pred_year: int = 2018,
                      data_path: Path = Path('data'),
                      experiment: str = 'one_month_forecast'):
