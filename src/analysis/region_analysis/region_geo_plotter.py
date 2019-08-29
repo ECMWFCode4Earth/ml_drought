@@ -1,10 +1,14 @@
 from pathlib import Path
 import pandas as pd
-
-from typing import Any, List, Dict, Optional
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from typing import List, Dict, Optional, Tuple
 from collections import namedtuple
 
-from src.preprocess import KenyaAdminPreprocessor
+from src.analysis.region_analysis.groupby_region import KenyaGroupbyRegion, GroupbyRegion
 
 gpd = None
 GeoDataFrame = None
@@ -13,15 +17,18 @@ GeoDataFrame = None
 AdminLevelGeoDF = namedtuple('AdminLevelGeoDF', ['gdf', 'gdf_colname', 'admin_name'])
 
 
+PlotMetric = namedtuple('PlotMetric', ['metric', 'cmap', 'vmin', 'vmax'])
+
+
 class RegionGeoPlotter:
     def __init__(self, data_folder: Path = Path('data'),
                  country: str = 'kenya') -> None:
 
         self.data_folder = data_folder
-        print('The RegionGeoPlotter requires `geopandas` to be installed.')
         # try and import geopandas
         global gpd
         if gpd is None:
+            print('The RegionGeoPlotter requires `geopandas` to be installed.')
             import geopandas as gpd
 
         global GeoDataFrame
@@ -30,7 +37,9 @@ class RegionGeoPlotter:
 
         self.country = country
 
-        self.country_preprocessor = self.get_country_preprocessor(country_str=country)
+        self.country_region_grouper: GroupbyRegion = self.get_groupby_region(
+            country_str=country
+        )
 
         # Setup type hints without assignment
         self.region_gdfs: Dict[str, AdminLevelGeoDF] = {}
@@ -38,10 +47,10 @@ class RegionGeoPlotter:
         self.gdf: Optional[GeoDataFrame] = None  # type: ignore
         self.all_gdfs: List = []
 
-    def get_country_preprocessor(self, country_str: str) -> Any:
+    def get_groupby_region(self, country_str: str) -> GroupbyRegion:
         # if need a new country boundaries add example here
         country_lookup = {
-            'kenya': KenyaAdminPreprocessor,
+            'kenya': KenyaGroupbyRegion,
         }
         keys = [k for k in country_lookup.keys()]
         assert country_str in keys, 'Expect ' \
@@ -58,22 +67,28 @@ class RegionGeoPlotter:
             region_gdfs = {}
 
             for level in levels:
-                admin_boundary = self.country_preprocessor.get_admin_level(selection=level)
-                try:
-                    gdf = gpd.read_file(admin_boundary.shp_filepath)
-                    key = f'{admin_boundary.var_name}_{self.country}'
-                    region_gdfs[key] = AdminLevelGeoDF(
-                        gdf=gdf,
-                        gdf_colname=admin_boundary.lookup_colname,
-                        admin_name=key,
-                    )
-                except Exception:
+                admin_boundary = self.country_region_grouper.get_admin_level(
+                    selection=level
+                )
+                path = admin_boundary.shp_filepath
+                if not path.exists():
                     print(
                         f'{admin_boundary.shp_filepath} not found.'
-                        'Moving to next file'
+                        ' Moving to next file'
                     )
+                    continue
+
+                print(f'Reading file: {path.name}')
+                gdf = gpd.read_file(path)
+                key = f'{admin_boundary.var_name}_{self.country}'
+                region_gdfs[key] = AdminLevelGeoDF(
+                    gdf=gdf,
+                    gdf_colname=admin_boundary.lookup_colname,
+                    admin_name=key,
+                )
+
             self.region_gdfs = region_gdfs
-            print('* Read shapefiles and stored in `RegionGeoPlotter.region_gdfs`')
+            print('* Read shapefiles and stored in `RegionGeoPlotter.region_gdfs` *')
 
         else:
             raise NotImplementedError
@@ -101,22 +116,22 @@ class RegionGeoPlotter:
         gdf[gdf_colname] = gdf[gdf_colname].apply(str.rstrip).apply(str.lstrip)
 
         df_colname = 'region_name'
-        out_gdf = gpd.GeoDataFrame(  # type: ignore
+        out_gdf = GeoDataFrame(  # type: ignore
             pd.merge(
                 model_performance_df, gdf[[gdf_colname, 'geometry']],
                 left_on=df_colname, right_on=gdf_colname
             )
         )
-
         return out_gdf
 
     def merge_all_model_performances_gdfs(self, all_models_df: pd.DataFrame
                                           ) -> GeoDataFrame:  # type: ignore
         all_gdfs: List[GeoDataFrame] = []  # type: ignore
-        assert 'admin_level_name' in all_models_df.columns, f'Expect to find admin_region' \
+        assert 'admin_level_name' in all_models_df.columns, \
+            f'Expect to find admin_region' \
             f'in {all_models_df.columns}'
 
-        # join the geometry columns to make gpd.GeoDataFrames
+        # join the geometry columns to make GeoDataFrames
         for admin_name in all_models_df.admin_level_name.unique():
             admin_level_df = all_models_df.loc[all_models_df.admin_level_name == admin_name]
             all_gdfs.append(self.join_model_performances_to_geometry(
@@ -124,6 +139,7 @@ class RegionGeoPlotter:
             ))
 
         self.gdf = pd.concat(all_gdfs)
+
         # convert mean model outputs to float
         try:
             self.gdf = self.gdf.astype(  # type: ignore
@@ -133,10 +149,89 @@ class RegionGeoPlotter:
             self.gdf = self.gdf.astype(  # type: ignore
                 {'rmse': 'float64', 'mae': 'float64', 'r2': 'float64'}
             )
-
         print('* Assigned the complete GeoDataFrame to `RegionGeoPlotter.gdf`')
 
         if not isinstance(self.gdf, GeoDataFrame):  # type: ignore
             self.gdf = GeoDataFrame(self.gdf)  # type: ignore
 
         return self.gdf
+
+    @staticmethod
+    def get_metric(selection: str) -> PlotMetric:
+        rmse = PlotMetric(
+            metric='rmse',
+            cmap='viridis',
+            vmin=None,
+            vmax=10,
+        )
+        mae = PlotMetric(
+            metric='mae',
+            cmap='plasma',
+            vmin=None,
+            vmax=10,
+        )
+        r2 = PlotMetric(
+            metric='r2',
+            cmap='inferno_r',
+            vmin=0,
+            vmax=1.0,
+        )
+        lookup = {
+            'rmse': rmse,
+            'mae': mae,
+            'r2': r2,
+        }
+
+        assert selection in [k for k in lookup.keys()], \
+            'selection should be one of:' \
+            f'{[k for k in lookup.keys()]}'
+
+        return lookup[selection]
+
+    @staticmethod
+    def plot_metric(ax: Axes,
+                    metric: PlotMetric,
+                    gdf: GeoDataFrame) -> Axes:  # type: ignore
+        # nicely format the colorbar
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.1)
+
+        gdf.plot(  # type: ignore
+            metric.metric, ax=ax, legend=True,
+            cmap=metric.cmap, vmin=metric.vmin,
+            vmax=metric.vmax, cax=cax
+        )
+        ax.set_title(f'{metric.metric.upper()}')
+        return ax
+
+    def plot_all_regional_error_metrics(self, gdf: GeoDataFrame,  # type: ignore
+                                        title: str = '') -> Tuple[Figure, List[Axes]]:
+        """Plot area-based maps of the scores"""
+        assert np.isin(['rmse', 'mae', 'r2'], gdf.columns).all()  # type: ignore
+        gdf = gdf.dropna(subset=['rmse', 'mae', 'r2'])  # type: ignore
+
+        # get the PlotMetric objects
+        rmse = self.get_metric('rmse')
+        mae = self.get_metric('mae')
+        r2 = self.get_metric('r2')
+
+        # build multi-axis plot
+        fig, axs = plt.subplots(1, 3, figsize=(24, 6))
+        for i, metric in enumerate([rmse, mae, r2]):
+            ax = axs[i]
+            ax = self.plot_metric(gdf=gdf, ax=ax, metric=metric)
+
+        fig.set_suptitle(title)
+        return fig, axs
+
+    def plot_regional_error_metric(self, gdf: GeoDataFrame,  # type: ignore
+                                   selection: str) -> Tuple[Figure, Axes]:
+        valid_metrics = ['rmse', 'mae', 'r2']
+        assert selection in valid_metrics, 'Expecting selection' \
+            f' to be one of: {valid_metrics}'
+        gdf = gdf.dropna(subset=valid_metrics)  # type: ignore
+        metric = self.get_metric(selection)
+        fig, ax = plt.subplots()
+        ax = self.plot_metric(gdf=gdf, ax=ax, metric=metric)
+
+        return fig, ax
