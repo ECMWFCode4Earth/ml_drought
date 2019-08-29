@@ -69,7 +69,10 @@ class RegionAnalysis:
         assert self.features_dir.exists(), 'Require {data_path}/features to have been'\
             'created by the pipeline.'
 
-        self.models: List[str] = [m.name for m in self.models_dir.iterdir() if m.name[0] != '.']
+        self.models: List[str] = [
+            m.name for m in self.models_dir.iterdir()
+            if m.name[0] != '.'  # hidden files
+        ]
         if models is not None:
             self.models = self.models[np.isin(self.models, models)]
             assert self.models is not [], 'None of the `models` are here in ' \

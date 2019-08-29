@@ -9,8 +9,49 @@ import pandas as pd
 from functools import reduce
 
 from sklearn.metrics import r2_score, mean_squared_error
-
 from typing import Dict, List, Optional, Union
+from src.utils import get_ds_mask
+
+
+def spatial_rmse(true_da: xr.DataArray,
+                 pred_da: xr.DataArray) -> xr.DataArray:
+    """Calculate the RMSE collapsing the time dimension returning
+    a DataArray of the rmse values (spatially)
+    """
+    true_da_shape = (true_da.lat.shape[0], true_da.lon.shape[0])
+    pred_da_shape = (pred_da.lat.shape[0], pred_da.lon.shape[0])
+    assert true_da_shape == pred_da_shape
+
+    vals = np.sqrt(
+        np.nansum((true_da.values - pred_da.values)**2, axis=0) / pred_da.shape[0]
+    )
+
+    da = xr.ones_like(pred_da).isel(time=0)
+    da.values = vals
+
+    # reapply the mask
+    da = da.where(~get_ds_mask(pred_da))
+    return da
+
+
+def spatial_r2(true_da: xr.DataArray,
+               pred_da: xr.DataArray) -> xr.DataArray:
+    true_da_shape = (true_da.lat.shape[0], true_da.lon.shape[0])
+    pred_da_shape = (pred_da.lat.shape[0], pred_da.lon.shape[0])
+    assert true_da_shape == pred_da_shape
+
+    r2_vals = 1 - (
+        np.nansum((true_da.values - pred_da.values)**2, axis=0)
+    ) / (
+        np.nansum((true_da.values - np.nanmean(pred_da.values))**2, axis=0)
+    )
+
+    da = xr.ones_like(pred_da).isel(time=0)
+    da.values = r2_vals
+
+    # reapply the mask
+    da = da.where(~get_ds_mask(pred_da))
+    return da
 
 
 def rmse(y_true: np.ndarray, y_pred: np.ndarray) -> float:

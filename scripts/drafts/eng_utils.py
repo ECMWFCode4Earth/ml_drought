@@ -6,6 +6,7 @@
 * Lookup values from xarray in a dict
 * Extracting individual pixels
 * I/O
+* working with older versions
 """
 
 import xarray as xr
@@ -459,9 +460,9 @@ def apply_same_mask(ds, reference_ds):
     return get_unmasked_data(dataArray, dataMask)
 
 
-# ------------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Lookup values from xarray in a dict
-# ------------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 
 def replace_with_dict(ar, dic):
     """ Replace the values in an np.ndarray with a dictionary
@@ -542,9 +543,9 @@ def get_lookup_val(xr_obj, variable, new_variable, lookup_dict):
     return xr_obj
 
 
-# ------------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Extracting individual pixels
-# ------------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 
 def select_pixel(ds, loc):
     """ (lat,lon) """
@@ -557,9 +558,9 @@ def turn_tuple_to_point(loc):
     point = Point(loc[1], loc[0])
     return point
 
-# ------------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # I/O
-# ------------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 
 def merge_data_arrays(*DataArrays):
     das = [da.name for da in DataArrays]
@@ -602,3 +603,36 @@ def save_pickle(filepath, variable):
     with open(filepath, 'wb') as f:
         pickle.dump(variable, f)
     return
+
+# ------------------------------------------------------
+# working with older versions
+# ------------------------------------------------------
+
+def get_datetimes_from_files(files: List[Path]) -> List:
+    datetimes = []
+    for path in files:
+        year = path.name.replace('.nc', '').split('_')[-2]
+        month = path.name.replace('.nc', '').split('_')[-1]
+        day = calendar.monthrange(int(year), int(month))[-1]
+        dt = pd.to_datetime(f'{year}-{month}-{day}')
+        datetimes.append(dt)
+    return datetimes
+
+
+def open_pred_data(model: str,
+                   experiment: str = 'one_month_forecast'):
+    import calendar
+
+    files = [
+        f for f
+        in (data_dir / 'models' / 'one_month_forecast' / 'ealstm').glob('*.nc')
+    ]
+    files.sort(key=lambda path: int(path.name.split('_')[-1][:-3]))
+    times = get_datetimes_from_files(files)
+
+    pred_ds = xr.merge([
+        xr.open_dataset(f).assign_coords(time=times[i]).expand_dims('time')
+        for i, f in enumerate(files)
+    ])
+
+    return pred_ds
