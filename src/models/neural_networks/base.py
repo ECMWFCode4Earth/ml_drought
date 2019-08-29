@@ -5,6 +5,7 @@ import pickle
 import math
 
 import torch
+from torch import nn
 from torch.nn import functional as F
 
 import shap
@@ -348,3 +349,17 @@ class NNBase(ModelBase):
         else:
             output_tensors.append(x.static[start_idx: start_idx + num_inputs])
         return output_tensors
+
+
+class OneHotMonthEncoder(nn.Module):
+    """Since the months are one hot encoded, using a linear layer
+    is equivalent to the lookup action of an embedding layer.
+    """
+    def __init__(self, embedding_size: int = 12) -> None:
+        super().__init__()
+
+        self.encoder = nn.Linear(in_features=12, out_features=embedding_size,
+                                 bias=True)
+
+    def forward(self, x):
+        return self.encoder(x)

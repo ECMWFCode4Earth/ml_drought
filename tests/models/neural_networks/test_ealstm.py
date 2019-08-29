@@ -1,12 +1,10 @@
 import pickle
 import pytest
 from copy import copy
-import numpy as np
 
 import torch
-from torch import nn
 
-from src.models.neural_networks.ealstm import EALSTM, EALSTMCell, OrgEALSTMCell
+from src.models.neural_networks.ealstm import EALSTM
 from src.models import EARecurrentNetwork
 
 from tests.utils import _make_dataset
@@ -22,13 +20,13 @@ class TestEARecurrentNetwork:
         hidden_size = 128
         rnn_dropout = 0.25
         include_latlons = True
-        include_pred_month = True
+        pred_month_embedding_size = 12
         include_yearly_aggs = True
         yearly_agg_size = 3
 
         def mocktrain(self):
             self.model = EALSTM(features_per_month, dense_features, hidden_size,
-                                rnn_dropout, include_latlons, include_pred_month,
+                                rnn_dropout, include_latlons, pred_month_embedding_size,
                                 experiment='one_month_forecast', yearly_agg_size=yearly_agg_size)
             self.features_per_month = features_per_month
             self.yearly_agg_size = yearly_agg_size
@@ -36,7 +34,7 @@ class TestEARecurrentNetwork:
         monkeypatch.setattr(EARecurrentNetwork, 'train', mocktrain)
 
         model = EARecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
-                                   include_pred_month=include_pred_month,
+                                   pred_month_embedding_size=pred_month_embedding_size,
                                    include_latlons=include_latlons,
                                    rnn_dropout=rnn_dropout, data_folder=tmp_path,
                                    include_yearly_aggs=include_yearly_aggs)
@@ -56,7 +54,7 @@ class TestEARecurrentNetwork:
         assert model_dict['hidden_size'] == hidden_size
         assert model_dict['rnn_dropout'] == rnn_dropout
         assert model_dict['dense_features'] == input_dense_features
-        assert model_dict['include_pred_month'] == include_pred_month
+        assert model_dict['pred_month_embedding_size'] == pred_month_embedding_size
         assert model_dict['include_latlons'] == include_latlons
         assert model_dict['include_yearly_aggs'] == include_yearly_aggs
         assert model_dict['experiment'] == 'one_month_forecast'
@@ -151,53 +149,3 @@ class TestEARecurrentNetwork:
 
         # _make_dataset with const=True returns all ones
         assert (test_arrays_dict['hello']['y'] == 1).all()
-
-
-class TestEALSTMCell:
-    @staticmethod
-    def test_ealstm(monkeypatch):
-        """
-        We implement our own unrolled RNN, so that it can be explained with
-        shap. This test makes sure it roughly mirrors the behaviour of the pytorch
-        LSTM.
-        """
-
-        batch_size, hidden_size, timesteps, dyn_input, static_input = 3, 5, 2, 6, 4
-
-        @staticmethod
-        def i_init(layer):
-            nn.init.constant_(layer.weight.data, val=1)
-        monkeypatch.setattr(EALSTMCell, '_reset_i', i_init)
-
-        def org_init(self):
-            """Initialize all learnable parameters of the LSTM"""
-            nn.init.constant_(self.weight_ih.data, val=1)
-            nn.init.constant_(self.weight_sh, val=1)
-
-            weight_hh_data = torch.eye(self.hidden_size)
-            weight_hh_data = weight_hh_data.repeat(1, 3)
-            self.weight_hh.data = weight_hh_data
-
-            nn.init.constant_(self.bias.data, val=0)
-            nn.init.constant_(self.bias_s.data, val=0)
-        monkeypatch.setattr(OrgEALSTMCell, 'reset_parameters', org_init)
-
-        org_ealstm = OrgEALSTMCell(input_size_dyn=dyn_input,
-                                   input_size_stat=static_input,
-                                   hidden_size=hidden_size)
-
-        our_ealstm = EALSTMCell(input_size_dyn=dyn_input,
-                                input_size_stat=static_input,
-                                hidden_size=hidden_size)
-
-        static = torch.rand(batch_size, static_input)
-        dynamic = torch.rand(batch_size, timesteps, dyn_input)
-
-        with torch.no_grad():
-            org_hn, org_cn = org_ealstm(dynamic, static)
-            our_hn, our_cn = our_ealstm(dynamic, static)
-
-        assert np.isclose(org_hn.numpy(), our_hn.numpy(), 0.01).all(), \
-            "Difference in hidden state"
-        assert np.isclose(org_cn.numpy(), our_cn.numpy(), 0.01).all(), \
-            "Difference in cell state"
