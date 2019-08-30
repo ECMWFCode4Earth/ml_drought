@@ -42,5 +42,4 @@ dependencies:
   - xarray=0.12.3
   - xz=5.2.4
   - zlib=1.2.11
-prefix: /Users/gabrieltseng/anaconda3/envs/esowc-drought
 
