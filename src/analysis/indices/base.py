@@ -32,6 +32,7 @@ class BaseIndices:
         if resample_str is not None:
             self.resample = True
             self.resample_str = resample_str
+            self.ds = self.ds.sortby('time')
             self.ds = self.resample_ds_mean()
 
     def resample_ds_mean(self) -> xr.Dataset:

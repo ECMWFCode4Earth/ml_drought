@@ -216,12 +216,13 @@ class RegionGeoPlotter:
         r2 = self.get_metric('r2')
 
         # build multi-axis plot
-        fig, axs = plt.subplots(1, 3, figsize=(24, 6))
+        fig, axs = plt.subplots(1, 3, figsize=(12, 8))
         for i, metric in enumerate([rmse, mae, r2]):
             ax = axs[i]
             ax = self.plot_metric(gdf=gdf, ax=ax, metric=metric)
+            ax.axis('off')
 
-        fig.set_suptitle(title)
+        fig.suptitle(title)
         return fig, axs
 
     def plot_regional_error_metric(self, gdf: GeoDataFrame,  # type: ignore

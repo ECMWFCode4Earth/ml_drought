@@ -6,7 +6,6 @@ import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
-from functools import reduce
 
 from sklearn.metrics import r2_score, mean_squared_error
 from typing import Dict, List, Optional, Union
@@ -120,10 +119,10 @@ def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
 
 def read_pred_data(model: str,
                    data_dir: Path = Path('data'),
-                   experiment: str = 'one_month_forecast'):
+                   experiment: str = 'one_month_forecast') -> Union[xr.Dataset, xr.DataArray]:
     model_pred_dir = (data_dir / 'models' / experiment / model)
     pred_ds = xr.open_mfdataset((model_pred_dir / '*.nc').as_posix())
-    pred_ds.sortby('time')
+    pred_ds = pred_ds.sortby('time')
     pred_da = pred_ds.preds
     pred_da = pred_da.transpose('time', 'lat', 'lon')
 
