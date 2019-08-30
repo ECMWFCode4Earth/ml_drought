@@ -55,7 +55,10 @@ class _EngineerBase:
             warnings.warn('A static data file already exists!')
             return None
 
-        static_ds = self._make_dataset(static=True)
+        # here, we overwrite the dims because topography (a static variable)
+        # uses CDO for regridding, which yields very slightly different
+        # coordinates (it seems from rounding)
+        static_ds = self._make_dataset(static=True, overwrite_dims=True)
 
         normalization_values: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 
@@ -121,7 +124,8 @@ class _EngineerBase:
                 processed_files.extend(list(subfolder.glob('*.nc')))
         return processed_files
 
-    def _make_dataset(self, static: bool) -> xr.Dataset:
+    def _make_dataset(self, static: bool,
+                      overwrite_dims: bool = False) -> xr.Dataset:
 
         datasets = []
         dims = ['lon', 'lat']
@@ -135,8 +139,13 @@ class _EngineerBase:
                     coords[dim] = datasets[idx][dim].values
             else:
                 for dim in dims:
-                    assert np.array_equal(datasets[idx][dim].values, coords[dim]), \
-                        f'{dim} is different! Was this run using the preprocessor?'
+                    array_equal = np.array_equal(datasets[idx][dim].values, coords[dim])
+                    if (not overwrite_dims) and (not array_equal):
+                        assert np.array_equal(datasets[idx][dim].values, coords[dim]), \
+                            f'{dim} is different! Was this run using the preprocessor?'
+                    elif overwrite_dims and (not array_equal):
+                        assert len(datasets[idx][dim].values) == len(coords[dim])
+                        datasets[idx][dim] = coords[dim]
 
         # join all preprocessed datasets
         main_dataset = datasets[0]
