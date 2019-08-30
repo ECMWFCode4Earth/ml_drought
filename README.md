@@ -1,4 +1,4 @@
-![](https://imgur.com/8qjbXcD)
+<!-- ![](https://imgur.com/8qjbXcD) -->
 [![Build Status](https://travis-ci.com/esowc/ml_drought.svg?branch=master)](https://travis-ci.com/esowc/ml_drought)
 
 <!-- OVERVIEW -->
@@ -7,16 +7,11 @@
 
 This repository is an end-to-end pipeline for the creation, intercomparison and evaluation of machine learning methods in climate science.
 
-The pipeline carries out a number of tasks:
-1. downloads data.
-2. Preprocesses that data into a consistent unified data format.
-3. Splits the data into `train` and `test` sets.
-4. Implements a number of different machine learning methods.
-5. Enables the analysis of model outputs and intercomparison of methods.
+The pipeline carries out a number of tasks to create a unified-data format for training and testing machine learning methods.
 
-<!-- These are split into the different classes defined in the `src` folder and explained further below:
+These tasks are split into the different classes defined in the `src` folder and explained further below:
 
-<img src="https://raw.githubusercontent.com/username/projectname/branch/path/to/img.png" width="600"> -->
+<img src="https://raw.githubusercontent.com/esowc/ml_drought/readme_edit/imgs/pipeline_overview.png" width="600">
 
 NOTE: some basic working knowledge of Python is required to use this pipeline, although it is not too onerous
 
