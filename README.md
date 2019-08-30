@@ -11,7 +11,7 @@ The pipeline carries out a number of tasks to create a unified-data format for t
 
 These tasks are split into the different classes defined in the `src` folder and explained further below:
 
-<img src="https://github.com/esowc/ml_drought/blob/readme_edit/img/pipeline_overview.png" width="600">
+<img src="https://github.com/esowc/ml_drought/blob/readme_edit/img/pipeline_overview.png" width="600", style="margin: auto; width: 70%;">
 
 NOTE: some basic working knowledge of Python is required to use this pipeline, although it is not too onerous
 
