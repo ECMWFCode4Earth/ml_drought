@@ -3,7 +3,7 @@ from .evaluation import (
     plot_predictions,
     spatial_rmse, spatial_r2,
     monthly_score, annual_scores,
-    read_pred_data
+    read_pred_data, read_true_data
 )
 from .plot_shap import plot_shap_values, all_shap_for_file
 from .indices import (

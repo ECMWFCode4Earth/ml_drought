@@ -101,7 +101,7 @@ class ModelBase:
     def evaluate(self, save_results: bool = True,
                  save_preds: bool = False) -> None:
         """
-        Evaluate the trained model
+        Evaluate the trained model on the TEST data
 
         Arguments
         ----------

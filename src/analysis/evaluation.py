@@ -129,6 +129,19 @@ def read_pred_data(model: str,
     return pred_ds, pred_da
 
 
+def read_true_data(data_dir: Path = Path('data'),
+                   variable: str = 'VCI') -> Union[xr.Dataset, xr.DataArray]:
+    """Read the true test data from the data directory and
+    return the joined DataArray.
+
+    (Joined on the `time` dimension).
+    """
+    true_paths = [f for f in (data_dir / 'features' / 'one_month_forecast' / 'test').glob('*/y.nc')]
+    true_ds = xr.open_mfdataset(true_paths).sortby('time').compute()
+    true_da = true_ds[variable].transpose('time', 'lat', 'lon')
+    return true_da
+
+
 def monthly_score(month: int,
                   models: List[str],
                   metrics: List[str],
