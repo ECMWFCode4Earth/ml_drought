@@ -152,6 +152,57 @@ class TestEARecurrentNetwork:
         # _make_dataset with const=True returns all ones
         assert (test_arrays_dict['hello']['y'] == 1).all()
 
+    def test_predict_specific_date(self, tmp_path):
+        test_year = 2017
+        test_month = 3
+
+        x, _, _ = _make_dataset(
+            size=(5, 5), const=True, start_date='2017-03-31',
+            end_date='2018-01-01'
+        )
+        y = x.isel(time=[0])
+
+        test_features = train_features = tmp_path / 'features/one_month_forecast/train/2017_03'
+        train_features.mkdir(parents=True)
+
+        norm_dict = {'VHI': {'mean': 0.0, 'std': 1.0}}
+        with (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').open('wb') as f:
+            pickle.dump(norm_dict, f)
+
+        x.to_netcdf(test_features / 'x.nc')
+        y.to_netcdf(test_features / 'y.nc')
+
+        # static
+        x_static, _, _ = _make_dataset(size=(5, 5), add_times=False)
+        static_features = tmp_path / f'features/static'
+        static_features.mkdir(parents=True)
+        x_static.to_netcdf(static_features / 'data.nc')
+
+        static_norm_dict = {'VHI': {'mean': 0.0, 'std': 1.0}}
+        with (
+            tmp_path / f'features/static/normalizing_dict.pkl'
+        ).open('wb') as f:
+            pickle.dump(static_norm_dict, f)
+
+        dense_features = [10]
+        hidden_size = 128
+        rnn_dropout = 0.25
+
+        model = EARecurrentNetwork(
+            hidden_size=hidden_size,
+            dense_features=dense_features,
+            rnn_dropout=rnn_dropout,
+            data_folder=tmp_path
+        )
+        model.train()
+        test_arrays_dict, pred_dict = model.predict(
+            test_year=test_year,
+            test_month=test_month
+        )
+
+        assert (test_arrays_dict['2017_03']['y'] == 1).all()
+        assert ('2017_03' in pred_dict.keys()) and (len(pred_dict) == 1)
+
 
 class TestEALSTMCell:
     @staticmethod

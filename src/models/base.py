@@ -2,9 +2,10 @@ from pathlib import Path
 import numpy as np
 import json
 import pandas as pd
+import itertools
 from sklearn.metrics import mean_squared_error
 
-from typing import cast, Any, Dict, List, Optional, Tuple
+from typing import cast, Any, Dict, List, Optional, Tuple, Union
 
 
 class ModelBase:
@@ -98,6 +99,102 @@ class ModelBase:
     def save_model(self) -> None:
         raise NotImplementedError
 
+    def _run_evaluation_calculation(
+        self,
+        test_arrays_dict: Dict[str, Dict[str, np.ndarray]],
+        preds_dict: Dict[str, np.ndarray]
+    ) -> Union[Dict[str, int], List[np.ndarray], List[np.ndarray]]:
+        """Calculate RMSE for the true vs. predicted values"""
+        output_dict: Dict[str, int] = {}
+        total_preds: List[np.ndarray] = []
+        total_true: List[np.ndarray] = []
+        for key, vals in test_arrays_dict.items():
+            true = vals['y']
+            preds = preds_dict[key]
+
+            output_dict[key] = np.sqrt(mean_squared_error(true, preds)).item()
+
+            total_preds.append(preds)
+            total_true.append(true)
+
+        return output_dict, total_preds, total_true
+
+    def _save_preds(self,
+                    test_arrays_dict: Dict[str, Dict[str, np.ndarray]],
+                    preds_dict: Dict[str, np.ndarray],
+                    train: bool = False) -> None:
+        for key, val in test_arrays_dict.items():
+            latlons = cast(np.ndarray, val['latlons'])
+            preds = preds_dict[key]
+
+            if len(preds.shape) > 1:
+                preds = preds.squeeze(-1)
+
+            # the prediction timestep
+            time = val['time']
+            times = [time for _ in range(len(preds))]
+
+            preds_xr = pd.DataFrame(data={
+                'preds': preds, 'lat': latlons[:, 0],
+                'lon': latlons[:, 1], 'time': times}
+            ).set_index(['lat', 'lon', 'time']).to_xarray()
+
+            if train:
+                if not (self.model_dir / 'train').exists():
+                    (self.model_dir / 'train').mkdir(exist_ok=True, parents=True)
+                preds_xr.to_netcdf(self.model_dir / 'train' / f'preds_{key}.nc')
+            else:
+                preds_xr.to_netcdf(self.model_dir / f'preds_{key}.nc')
+
+    def evaluate_train_timesteps(self, years: List[int],
+                                 months: List[int],
+                                 save_results: bool = True,
+                                 save_preds: bool = False) -> None:
+        """Evaluate the trained model on the TRAIN data
+        for the given year / month combinations.
+        """
+        all_total_true: List[np.ndarray] = []
+        all_total_preds: List[np.ndarray] = []
+        all_rmse_dict: Dict[str, int] = {}
+        for test_year, test_month in itertools.product(years, months):
+            test_arrays_dict, preds_dict = self.predict(
+                    test_year=test_year, test_month=test_month
+            )
+            output_dict, total_preds, total_true = self._run_evaluation_calculation(
+                test_arrays_dict=test_arrays_dict,
+                preds_dict=preds_dict,
+            )
+            all_total_true.append(total_preds)
+            all_total_preds.append(total_true)
+            if save_results:
+                if not (self.model_dir / 'train').exists():
+                    (self.model_dir / 'train').mkdir(exist_ok=True, parents=True)
+                with (
+                    self.model_dir / 'train' /
+                    f'results_{test_year}_{test_month}.json'
+                ).open('w') as outfile:
+                    json.dump(output_dict, outfile)
+
+            if save_preds:
+                self._save_preds(
+                    test_arrays_dict=test_arrays_dict,
+                    preds_dict=preds_dict
+                )
+
+        # calculate the RMSE for all the training timesteps
+        all_rmse_dict['total'] = np.sqrt(
+            mean_squared_error(np.concatenate(all_total_true).flatten(),
+                               np.concatenate(all_total_preds).flatten())
+        ).item()
+        print(
+            f'RMSE for given timesteps ({years} - {months}): '
+            f'{all_rmse_dict["total"]}'
+        )
+
+        if save_results:
+            with (self.model_dir / 'train' / 'results.json').open('w') as outfile:
+                json.dump(all_rmse_dict, outfile)
+
     def evaluate(self, save_results: bool = True,
                  save_preds: bool = False) -> None:
         """
@@ -113,18 +210,10 @@ class ModelBase:
             self.model_dir / {year}_{month}.nc
         """
         test_arrays_dict, preds_dict = self.predict()
-
-        output_dict: Dict[str, int] = {}
-        total_preds: List[np.ndarray] = []
-        total_true: List[np.ndarray] = []
-        for key, vals in test_arrays_dict.items():
-            true = vals['y']
-            preds = preds_dict[key]
-
-            output_dict[key] = np.sqrt(mean_squared_error(true, preds)).item()
-
-            total_preds.append(preds)
-            total_true.append(true)
+        output_dict, total_preds, total_true = self._run_evaluation_calculation(
+            test_arrays_dict=test_arrays_dict,
+            preds_dict=preds_dict,
+        )
 
         output_dict['total'] = np.sqrt(
             mean_squared_error(np.concatenate(total_true),
@@ -138,20 +227,7 @@ class ModelBase:
                 json.dump(output_dict, outfile)
 
         if save_preds:
-            for key, val in test_arrays_dict.items():
-                latlons = cast(np.ndarray, val['latlons'])
-                preds = preds_dict[key]
-
-                if len(preds.shape) > 1:
-                    preds = preds.squeeze(-1)
-
-                # the prediction timestep
-                time = val['time']
-                times = [time for _ in range(len(preds))]
-
-                preds_xr = pd.DataFrame(data={
-                    'preds': preds, 'lat': latlons[:, 0],
-                    'lon': latlons[:, 1], 'time': times}
-                ).set_index(['lat', 'lon', 'time']).to_xarray()
-
-                preds_xr.to_netcdf(self.model_dir / f'preds_{key}.nc')
+            self._save_preds(
+                test_arrays_dict=test_arrays_dict,
+                preds_dict=preds_dict
+            )
