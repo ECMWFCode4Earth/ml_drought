@@ -1,82 +1,28 @@
-# ml_drought [![Build Status](https://travis-ci.com/esowc/ml_drought.svg?branch=master)](https://travis-ci.com/esowc/ml_drought)
+<!-- ![](https://imgur.com/8qjbXcD) -->
+[![Build Status](https://travis-ci.com/esowc/ml_drought.svg?branch=master)](https://travis-ci.com/esowc/ml_drought)
 
-Check out our companion repo with exploratory notebooks [here](https://github.com/tommylees112/esowc_notes)!
+<!-- OVERVIEW -->
 
-## ESoWC 2019 - Machine learning to better predict and understand drought.
+# A Machine Learning Pipeline for Climate Science
 
-Using [ECMWF/Copernicus open datasets](https://cds.climate.copernicus.eu/#!/home) to evaluate machine learning techniques for the **prediction of droughts**. This was a project proposal submitted to the ECMWF Summer of Weather Code [Challenge #12](https://github.com/esowc/challenges_2019/issues/14).
+This repository is an end-to-end pipeline for the creation, intercomparison and evaluation of machine learning methods in climate science.
 
-<!-- PROJECT SHIELDS -->
+The pipeline carries out a number of tasks to create a unified-data format for training and testing machine learning methods.
 
-<!-- PROJECT LOGO -->
+These tasks are split into the different classes defined in the `src` folder and explained further below:
 
-<!-- <br />
-<p align="center">
-  <a href="https://github.com/esowc/ml_drought">
-    <img src="logo.png" alt="Logo" width="80" height="80">
-  </a>
-</p> -->
+<img src="https://github.com/esowc/ml_drought/blob/readme_edit/img/pipeline_overview.png" width="600"  style="margin:auto; width:70%; padding:10px;">
 
-<!-- PROJECT TEAM MEMBERS -->
+NOTE: some basic working knowledge of Python is required to use this pipeline, although it is not too onerous
 
-__Team:__ [@tommylees112](https://github.com/tommylees112), [@gabrieltseng](https://github.com/gabrieltseng)
+<!-- HOW TO USE THE PIPELINE -->
 
-<!-- TABLE OF CONTENTS -->
-## Table of Contents
+## Using the Pipeline <a name="using"></a>
 
-* [About the Project](#about-the-project)
-* [Work in Progress](#work-in-progress)
-* [Pipeline](#pipeline)
-* [Setup](#setup)
-* [Acknowledgements](#acknowledgements)
+The major entrypoints to the repository are through the [`notebooks`](notebooks/docs) directory, and the [`scripts`](scripts/README.md).
 
-## About the Project <a name="about-the-project"></a>
-> The Summer of Weather Code(ESoWC) programme by the European Centre for Medium-Range Weather Forecasts (ECMWF) is a collabrative online programme to promote the development of weather-related open-source software.
-
-This is our contribution to the ECMWF Summer of Weather Code programme where we will be developing a pipeline for rapid experimentation of:
-- different machine learning algorithms
-- different input datasets (feature selection)
-- different measures of drought (meteorological, hydrological, agricultural)
-
-Our goals are as follows:
-- To build a robust, useful pipeline.
-- Usefully predict drought.
-- Understand the relationships between model inputs and outputs - *What is the model learning?*
-- Make the pipeline and results accessible.
-
-## Work in progress <a name="work-in-progress"></a>
-
-We will be documenting the progress of our pipeline as go.
-
-We have a **set of notebooks and scripts** that are very rough but represent the current state of our work [at this repo here](https://github.com/tommylees112/esowc_notes).
-
-For updates follow [@tommylees112](https://twitter.com/tommylees112) on twitter or look out for our blog posts!
-
-- [Blog 1: Great News!](https://tommylees112.github.io/posts/2019/1/esowc_kick_off)
-- [Blog 2: The Pipeline](https://medium.com/@gabrieltseng/a-machine-learning-pipeline-for-climate-research-ebf83b2b349a)
-
-## Pipeline <a name="pipeline"></a>
-
-A blog post describing the goals and design of the pipeline can be found 
+A blog post describing the goals and design of the pipeline can be found
 [here](https://medium.com/@gabrieltseng/a-machine-learning-pipeline-for-climate-research-ebf83b2b349a).
-
-Currently, the entrypoints into the pipeline are the scripts in the [scripts folder](scripts) - see the
-[scripts README](scripts/README.md) for more information.
-
-In the future, this will be replaced by the [`run.py`](run.py) file, with [json configurations](pipeline_config).
-<!---
-NOTE: RUN.PY AS DESCRIBED BELOW IS NOT FULLY IMPLEMENTED. IT IS COMMENTED OUT UNTIL THAT IS DONE. FOR NOW, THE ENTRYPOINT
-TO THE PIPELINE WILL BE THE SCRIPTS IN THE SCRIPTS FOLDER.
-
-The main entrypoint into the pipeline is [run.py](run.py). The configuration of the pipeline can be defined using a
-[configuration file](pipeline_config) - the desired configuration file can be passed as a command line argument:
-
-```bash
-python run.py --config <PATH_TO_CONFIG>
-```
-
-If no configuration file is passed, the pipeline's [default minimal configuration](pipeline_config/minimal.json) is used.
--->
 
 ## Setup <a name="setup"></a>
 
@@ -122,8 +68,24 @@ docker run -it \
 ml_drought /bin/bash
 ```
 
-This pipeline can be tested by running `pytest`. We use [mypy](https://github.com/python/mypy) for type checking.
-This can be run by running `mypy src` (this runs mypy on the `src` directory).
+### Testing  <a name="testing"></a>
+
+This pipeline can be tested by running `pytest`.
+
+We use [mypy](https://github.com/python/mypy) for type checking. This can be run by running `mypy src` (this runs mypy on the `src` directory).
+
+<!-- PROJECT TEAM MEMBERS -->
+
+__Team:__ [@tommylees112](https://github.com/tommylees112), [@gabrieltseng](https://github.com/gabrieltseng)
+
+For updates follow [@tommylees112](https://twitter.com/tommylees112) on twitter or look out for our blog posts!
+
+- [Blog 1: Great News!](https://tommylees112.github.io/posts/2019/1/esowc_kick_off)
+- [Blog 2: The Pipeline](https://medium.com/@gabrieltseng/a-machine-learning-pipeline-for-climate-research-ebf83b2b349a)
+
+<!-- ESoWC initial outline -->
 
 ## Acknowledgements <a name="acknowledgements"></a>
+This was a project completed as part of the ECMWF Summer of Weather Code [Challenge #12](https://github.com/esowc/challenges_2019/issues/14). The challenge was setup to use [ECMWF/Copernicus open datasets](https://cds.climate.copernicus.eu/#!/home) to evaluate machine learning techniques for the **prediction of droughts**.
+
 Huge thanks to @ECMWF for making this project possible!
