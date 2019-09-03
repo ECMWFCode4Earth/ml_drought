@@ -18,3 +18,27 @@ except ImportError:
     # so this is an easier solutuon then adding an xfail
     # to all the modules
     collect_ignore.append('preprocess')
+    # this also screws up the run.py tests, since they
+    # test for certain stdouts and get confused by
+    # the exceptions
+    collect_ignore.append('test_run.py')
+
+try:
+    import BeautifulSoup
+except ImportError:
+    collect_ignore.append('exporters/test_chirps.py')
+
+try:
+    import xclim
+except ImportError:
+    collect_ignore.append('analysis/test_event_detector.py')
+
+try:
+    import bottleneck
+except ImportError:
+    collect_ignore.append('analysis/indices')
+
+try:
+    import climate_indices
+except ImportError:
+    collect_ignore.append('analysis/indices/test_spi.py')

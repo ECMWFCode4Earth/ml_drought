@@ -73,7 +73,7 @@ class S5Exporter(CDSExporter):
         if dataset is None:
             self.dataset: str = self.get_dataset(self.granularity, self.pressure_level)
         else:
-            self.dataset: str = dataset
+            self.dataset: str = dataset  # type: ignore
 
         # get the reference dictionary that corresponds to that dataset
         self.dataset_reference = dataset_reference[self.dataset]
@@ -174,7 +174,7 @@ class S5Exporter(CDSExporter):
 
         if n_parallel_requests > 1:  # Run in parallel
             # p = multiprocessing.Pool(int(n_parallel_requests))
-            p = pool(int(n_parallel_requests))  # pathos seems to pickle classes
+            p = pool(int(n_parallel_requests))  # type: ignore
 
         output_paths = []
         if break_up:

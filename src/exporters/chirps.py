@@ -52,7 +52,7 @@ class CHIRPSExporter(BaseExporter):
         the_page = response.read()
 
         # use BeautifulSoup to parse the html source
-        page = str(BeautifulSoup(the_page, features="lxml"))
+        page = str(BeautifulSoup(the_page, features="lxml"))  # type: ignore
 
         # split the page to get the filenames as a list
         firstsplit = page.split('\r\n')  # split the newlines
