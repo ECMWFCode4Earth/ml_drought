@@ -1,4 +1,3 @@
-from bs4 import BeautifulSoup
 import urllib.request
 import os
 import warnings
@@ -7,6 +6,8 @@ from pathlib import Path
 from .base import BaseExporter
 
 from typing import List, Optional
+
+BeautifulSoup = None
 
 
 class CHIRPSExporter(BaseExporter):
@@ -20,6 +21,10 @@ class CHIRPSExporter(BaseExporter):
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
         super().__init__(data_folder)
+
+        global BeautifulSoup
+        if BeautifulSoup is None:
+            from bs4 import BeautifulSoup
 
         self.region_folder: Optional[Path] = None
 

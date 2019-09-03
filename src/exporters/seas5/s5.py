@@ -1,12 +1,13 @@
 from pathlib import Path
 import itertools
 import numpy as np
-from pathos.pools import _ThreadPool as pool
 
 from typing import cast, Dict, Optional, List
 from .all_valid_s5 import datasets as dataset_reference
 from ..base import get_kenya
 from ..cds import CDSExporter
+
+pool = None
 
 
 class S5Exporter(CDSExporter):
@@ -56,6 +57,10 @@ class S5Exporter(CDSExporter):
         - these are constant for one download
         """
         super().__init__(data_folder)
+
+        global pool
+        if pool is None:
+            from pathos.pools import _ThreadPool as pool
 
         # initialise attributes for this export
         self.pressure_level = pressure_level
