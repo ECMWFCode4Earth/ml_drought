@@ -158,7 +158,7 @@ class ModelBase:
         all_rmse_dict: Dict[str, int] = {}
         for test_year, test_month in itertools.product(years, months):
             test_arrays_dict, preds_dict = self.predict(
-                    test_year=test_year, test_month=test_month
+                test_year=test_year, test_month=test_month
             )
             output_dict, total_preds, total_true = self._run_evaluation_calculation(
                 test_arrays_dict=test_arrays_dict,

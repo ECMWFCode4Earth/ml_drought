@@ -223,7 +223,8 @@ class NNBase(ModelBase):
                         return None
 
     def predict(self, test_year: Optional[int] = None,
-                test_month: Optional[int] = None) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
+                test_month: Optional[int] = None
+                ) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         """Make predictions using the model.
 
         Arguments:
