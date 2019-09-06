@@ -103,7 +103,7 @@ class ModelBase:
         self,
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]],
         preds_dict: Dict[str, np.ndarray]
-    ) -> Union[Dict[str, int], List[np.ndarray], List[np.ndarray]]:
+    ) -> Tuple[Dict[str, int], List[np.ndarray], List[np.ndarray]]:
         """Calculate RMSE for the true vs. predicted values"""
         output_dict: Dict[str, int] = {}
         total_preds: List[np.ndarray] = []
@@ -157,7 +157,7 @@ class ModelBase:
         all_total_preds: List[np.ndarray] = []
         all_rmse_dict: Dict[str, int] = {}
         for test_year, test_month in itertools.product(years, months):
-            test_arrays_dict, preds_dict = self.predict(
+            test_arrays_dict, preds_dict = self.predict(  # type: ignore
                 test_year=test_year, test_month=test_month
             )
             output_dict, total_preds, total_true = self._run_evaluation_calculation(
