@@ -26,8 +26,17 @@ def get_kenya() -> Region:
 
 
 def get_ethiopia() -> Region:
-    return Region(name='ethiopia', lonmin=32.9975838, lonmax=47.9823797,
-                  latmin=3.397448, latmax=14.8940537)
+    return Region(
+        name='ethiopia', lonmin=32.9975838, lonmax=47.9823797,
+        latmin=3.397448, latmax=14.8940537
+    )
+
+
+def get_ethiopia_safe() -> Region:
+    return Region(
+        name='ethiopia_safe', lonmin=30, lonmax=50,
+        latmin=2, latmax=15
+    )
 
 
 def get_east_africa() -> Region:
@@ -181,5 +190,6 @@ def drop_nans_and_flatten(dataArray: xr.DataArray) -> np.ndarray:
 region_lookup = {
     "kenya": get_kenya(),
     "ethiopia": get_ethiopia(),
+    "ethiopia_safe": get_ethiopia_safe(),
     "east_africa": get_east_africa(),
 }

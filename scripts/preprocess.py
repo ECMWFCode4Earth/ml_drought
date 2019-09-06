@@ -9,7 +9,6 @@ from src.preprocess import (VHIPreprocessor, CHIRPSPreprocesser,
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
 
-
 def process_vci_2018():
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -127,11 +126,31 @@ def preprocess_era5():
     processor.preprocess(subset_str='kenya', regrid=regrid_path)
 
 
+def preprocess_icdc():
+    from src.preprocess.icdc import (
+        ModisNDVIPreprocessor,
+        ModisLSTPreprocessor,
+    )
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+    processor = ModisNDVIPreprocessor(data_path)
+    processor.preprocess(
+        subset_str='ethiopia_safe',
+    )
+
+    processor = ModisLSTPreprocessor(data_path)
+    processor.preprocess(
+        subset_str='ethiopia_safe'
+    )
+
 if __name__ == '__main__':
-    process_vci_2018()
-    process_precip_2018()
-    process_era5POS_2018()
-    process_gleam()
-    process_esa_cci_landcover()
-    preprocess_srtm()
-    preprocess_era5()
+    # process_vci_2018()
+    # process_precip_2018()
+    # process_era5POS_2018()
+    # process_gleam()
+    # process_esa_cci_landcover()
+    # preprocess_srtm()
+    # preprocess_era5()
+    preprocess_icdc()
