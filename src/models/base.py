@@ -5,7 +5,7 @@ import pandas as pd
 import itertools
 from sklearn.metrics import mean_squared_error
 
-from typing import cast, Any, Dict, List, Optional, Tuple, Union
+from typing import cast, Any, Dict, List, Optional, Tuple
 
 
 class ModelBase:
