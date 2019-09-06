@@ -51,6 +51,6 @@ class TestBase:
         )
 
         captured = capsys.readouterr()
-        expected_stdout = 'RMSE for given timesteps: 0.0'
+        expected_stdout = 'RMSE for given timesteps'
         assert expected_stdout in captured.out, \
             f'Expected stdout to be {expected_stdout}, got {captured.out}'
