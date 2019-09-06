@@ -7,7 +7,7 @@ from .base import BasePreProcessor
 
 
 class ICDCPreprocessor(BasePreProcessor):
-    """ For working with data on ICDC (SPECIFIC to one university Server)
+    """ For working with data on ICDC (SPECIFIC to Uni Server)
     """
     variable: str  # the name of the variable on icdc
     source: str  # {'land', 'atmosphere', 'climate_indices', 'ocean', 'ice_and_snow'}
