@@ -222,9 +222,21 @@ class NNBase(ModelBase):
                         self.model.load_state_dict(best_model_dict)
                         return None
 
-    def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
+    def predict(self, test_year: Optional[int] = None,
+                test_month: Optional[int] = None
+                ) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
+        """Make predictions using the model.
 
-        test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=self.batch_size,
+        Arguments:
+        ---------
+        test_year: Optional[int] = None
+            If None then use the TEST data
+        test_month: Optional[int] = None
+            If None then use the TEST data, otherwise use
+            the month/year defined in test_year, test_month
+        """
+        test_arrays_loader = DataLoader(data_path=self.data_path,
+                                        batch_file_size=self.batch_size,
                                         shuffle_data=False, mode='test',
                                         experiment=self.experiment,
                                         pred_months=self.pred_months, to_tensor=True,
@@ -232,8 +244,9 @@ class NNBase(ModelBase):
                                         monthly_aggs=self.include_monthly_aggs,
                                         surrounding_pixels=self.surrounding_pixels,
                                         static=self.include_static,
-                                        device=self.device)
-
+                                        device=self.device,
+                                        test_year=test_year,
+                                        test_month=test_month,)
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
 

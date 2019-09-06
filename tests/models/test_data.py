@@ -246,3 +246,59 @@ class TestBaseIter:
                 output_mean = x[f'spatial_mean_{data_var}'].isel(time=0, lon=0, lat=0).values
 
                 assert actual_mean == output_mean, f"Mean values don't match!"
+
+    def test_specific_time_pred(self, tmp_path):
+        # test if loading from specific data dir!
+        test_year = 2017
+        test_month = 3
+
+        x_pred, _, _ = _make_dataset(size=(5, 5))
+        x_coeff1, _, _ = _make_dataset(size=(5, 5), variable_name='precip')
+        x_coeff2, _, _ = _make_dataset(size=(5, 5), variable_name='soil_moisture')
+        x_coeff3, _, _ = _make_dataset(size=(5, 5), variable_name='temp')
+
+        x = xr.merge([x_pred, x_coeff1, x_coeff2, x_coeff3])
+        y = x_pred.isel(time=[0])
+
+        data_dir = (
+            tmp_path / 'one_month_forecast' / 'train' / f'{test_year}_{test_month:02}'
+        )
+        if not data_dir.exists():
+            data_dir.mkdir(parents=True, exist_ok=True)
+
+        x.to_netcdf(data_dir / 'x.nc')
+        y.to_netcdf(data_dir / 'y.nc')
+
+        norm_dict = {}
+        for var in x.data_vars:
+            norm_dict[var] = {
+                'mean': float(x[var].mean(dim=['lat', 'lon', 'time'], skipna=True).values),
+                'std': float(x[var].std(dim=['lat', 'lon', 'time'], skipna=True).values)
+            }
+
+        class MockLoader:
+            def __init__(self):
+                self.batch_file_size = None
+                self.mode = 'test'
+                self.shuffle = None
+                self.clear_nans = None
+                self.data_files = []
+                self.normalizing_dict = norm_dict
+                self.to_tensor = False
+                self.experiment = 'one_month_forecast'
+                self.surrounding_pixels = False
+                self.ignore_vars = ['precip']
+                self.monthly_aggs = False
+                self.device = torch.device('cpu')
+
+                self.static = None
+                self.static_normalizing_dict = None
+                self.test_year = test_year
+                self.test_month = test_month
+
+        base_iterator = _BaseIter(MockLoader())
+
+        arrays = base_iterator.ds_folder_to_np(data_dir, to_tensor=False)
+
+        x_test_data = arrays.x
+        assert isinstance(x_test_data, TrainData)

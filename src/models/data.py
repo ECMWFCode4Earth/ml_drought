@@ -79,6 +79,13 @@ class DataLoader:
         Whether to load testing or training data. This also affects the way the data is
         returned; for train, it is a concatenated array, but for test it is a dict with dates
         so that the netcdf file can easily be reconstructed
+    >>>>>>>>>CHANGE
+    test_year: Optional[int]
+    test_month: Optional[int]
+        The month that want to run the `test` for. In order to check
+        model performance in particular months it is also interesting to
+        explore the model performance on training data for specific months.
+    <<<<<<<<<
     shuffle_data: bool = True
         Whether or not to shuffle data
     clear_nans: bool = True
@@ -113,6 +120,8 @@ class DataLoader:
                  mode: str = 'train', shuffle_data: bool = True,
                  clear_nans: bool = True, normalize: bool = True,
                  experiment: str = 'one_month_forecast',
+                 test_year: Optional[int] = None,
+                 test_month: Optional[int] = None,
                  mask: Optional[List[bool]] = None,
                  pred_months: Optional[List[int]] = None,
                  to_tensor: bool = False,
@@ -127,9 +136,13 @@ class DataLoader:
         self.shuffle = shuffle_data
         self.clear_nans = clear_nans
         self.experiment = experiment
+        self.test_year = test_year
+        self.test_month = test_month
+
         self.data_files = self._load_datasets(
             data_path=data_path, mode=mode, shuffle_data=shuffle_data,
-            experiment=experiment, mask=mask, pred_months=pred_months
+            experiment=experiment, mask=mask, pred_months=pred_months,
+            test_year=test_year, test_month=test_month
         )
 
         self.normalizing_dict = None
@@ -170,10 +183,21 @@ class DataLoader:
     def _load_datasets(data_path: Path, mode: str,
                        shuffle_data: bool, experiment: str,
                        mask: Optional[List[bool]] = None,
-                       pred_months: Optional[List[int]] = None) -> List[Path]:
+                       pred_months: Optional[List[int]] = None,
+                       test_year: Optional[int] = None,
+                       test_month: Optional[int] = None) -> List[Path]:
 
-        data_folder = data_path / f'features/{experiment}/{mode}'
+        if (test_year is None) and (test_month is None):
+            data_folder = data_path / f'features/{experiment}/{mode}'
+        else:
+            data_folder = (
+                data_path / 'features' / experiment /
+                'train'
+            )
         output_paths: List[Path] = []
+        assert data_folder.exists(), 'Expect ' \
+            f'{data_folder} to exist! Are you sure that' \
+            f'`{test_year}_{test_month:02}/` folder exists?'
 
         for subtrain in data_folder.iterdir():
             if (subtrain / 'x.nc').exists() and (subtrain / 'y.nc').exists():
@@ -184,6 +208,12 @@ class DataLoader:
                     if month in pred_months:
                         output_paths.append(subtrain)
 
+        if (test_year is not None) and (test_month is not None):
+            # SELECT only the test_year test_month from the `train` data
+            output_paths = [
+                f for f in output_paths
+                if f.parts[-1] == f'{test_year}_{test_month:02}'
+            ]
         if mask is not None:
             output_paths.sort()
             assert len(output_paths) == len(mask), \
