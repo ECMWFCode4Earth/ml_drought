@@ -138,13 +138,11 @@ def preprocess_icdc():
     processor = ModisNDVIPreprocessor(data_path)
     processor.preprocess(
         subset_str='ethiopia_safe',
-        regrid=regrid_path
     )
 
     processor = ModisLSTPreprocessor(data_path)
     processor.preprocess(
-        subset_str='ethiopia_safe',
-        regrid=regrid_path
+        subset_str='ethiopia_safe'
     )
 
 if __name__ == '__main__':
