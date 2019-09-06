@@ -33,7 +33,8 @@ class ICDCPreprocessor(BasePreProcessor):
                 return filepaths
 
             else:
-                filepaths.extend((dir).glob('**/*.nc'))
+                # HACKY: for the lst dataset
+                filepaths.extend((dir).glob('MONTHLY/*.nc'))
                 return filepaths
 
     @staticmethod
