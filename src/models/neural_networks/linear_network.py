@@ -1,5 +1,5 @@
 from pathlib import Path
-import pickle
+from copy import copy
 
 import torch
 from torch import nn
@@ -24,11 +24,13 @@ class LinearNetwork(NNBase):
                  include_yearly_aggs: bool = True,
                  surrounding_pixels: Optional[int] = None,
                  ignore_vars: Optional[List[str]] = None,
-                 include_static: bool = True) -> None:
+                 include_static: bool = True,
+                 device: str = 'cuda:0') -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
                          include_latlons, include_monthly_aggs, include_yearly_aggs,
-                         surrounding_pixels, ignore_vars, include_static)
+                         surrounding_pixels, ignore_vars, include_static, device)
 
+        self.input_layer_sizes = copy(layer_sizes)
         if type(layer_sizes) is int:
             layer_sizes = cast(List[int], [layer_sizes])
 
@@ -45,7 +47,7 @@ class LinearNetwork(NNBase):
             'batch_size': self.batch_size,
             'model': {'state_dict': self.model.state_dict(),
                       'input_size': self.input_size},
-            'layer_sizes': self.layer_sizes,
+            'layer_sizes': self.input_layer_sizes,
             'dropout': self.dropout,
             'include_pred_month': self.include_pred_month,
             'include_latlons': self.include_latlons,
@@ -54,11 +56,11 @@ class LinearNetwork(NNBase):
             'ignore_vars': self.ignore_vars,
             'include_monthly_aggs': self.include_monthly_aggs,
             'include_yearly_aggs': self.include_yearly_aggs,
-            'include_static': self.include_static
+            'include_static': self.include_static,
+            'device': self.device
         }
 
-        with (self.model_dir / 'model.pkl').open('wb') as f:
-            pickle.dump(model_dict, f)
+        torch.save(model_dict, self.model_dir / 'model.pt')
 
     def load(self, state_dict: Dict, input_size: int) -> None:
 
@@ -71,6 +73,7 @@ class LinearNetwork(NNBase):
                                               include_yearly_aggs=self.include_yearly_aggs,
                                               experiment=self.experiment,
                                               include_static=self.include_static)
+        self.model.to(torch.device(self.device))
         self.model.load_state_dict(state_dict)
 
     def _initialize_model(self, x_ref: Optional[Tuple[torch.Tensor, ...]]) -> nn.Module:
@@ -88,14 +91,15 @@ class LinearNetwork(NNBase):
                 input_size += static_tensor.shape[-1]
             self.input_size = input_size
 
-        return LinearModel(input_size=self.input_size,
-                           layer_sizes=self.layer_sizes,
-                           dropout=self.dropout,
-                           include_pred_month=self.include_pred_month,
-                           include_latlons=self.include_latlons,
-                           include_yearly_aggs=self.include_yearly_aggs,
-                           experiment=self.experiment,
-                           include_static=self.include_static)
+        model = LinearModel(input_size=self.input_size,
+                            layer_sizes=self.layer_sizes,
+                            dropout=self.dropout,
+                            include_pred_month=self.include_pred_month,
+                            include_latlons=self.include_latlons,
+                            include_yearly_aggs=self.include_yearly_aggs,
+                            experiment=self.experiment,
+                            include_static=self.include_static)
+        return model.to(torch.device(self.device))
 
 
 class LinearModel(nn.Module):

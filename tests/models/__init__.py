@@ -42,6 +42,7 @@ class TestLoadModels:
         for key, val in new_model.model.state_dict.items():
             assert (model.model.state_dict()[key] == val).all()
 
+        assert new_model.dense_features == model.dense_features
         assert new_model.features_per_month == model.features_per_month
         assert new_model.hidden_size == model.hidden_size
         assert new_model.rnn_dropout == model.rnn_dropout
@@ -82,6 +83,7 @@ class TestLoadModels:
         for key, val in new_model.model.state_dict.items():
             assert (model.model.state_dict()[key] == val).all()
 
+        assert new_model.dense_features == model.dense_features
         assert new_model.features_per_month == model.features_per_month
         assert new_model.hidden_size == model.hidden_size
         assert new_model.rnn_dropout == model.rnn_dropout
@@ -122,6 +124,7 @@ class TestLoadModels:
         for key, val in new_model.model.state_dict.items():
             assert (model.model.state_dict()[key] == val).all()
 
+        assert new_model.dense_features == model.dense_features
         assert new_model.features_per_month == model.input_size
         assert new_model.hidden_size == model.dropout
         assert new_model.include_pred_month == model.include_pred_month

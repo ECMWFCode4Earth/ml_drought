@@ -1,5 +1,5 @@
 from pathlib import Path
-import pickle
+import torch
 
 from typing import cast, Optional, Union
 
@@ -14,9 +14,11 @@ __all__ = ['Persistence', 'LinearRegression', 'LinearNetwork',
 
 
 def load_model(model_path: Path, data_path: Optional[Path] = None,
-               model_type: Optional[str] = None) -> Union[RecurrentNetwork,
-                                                          LinearNetwork,
-                                                          LinearRegression]:
+               model_type: Optional[str] = None,
+               device: Optional[str] = 'cpu') -> Union[RecurrentNetwork,
+                                                       LinearNetwork,
+                                                       LinearRegression,
+                                                       EARecurrentNetwork]:
     """
     This function loads models from the output `.pkl` files generated when
     calling model.save()
@@ -31,6 +33,8 @@ def load_model(model_path: Path, data_path: Optional[Path] = None,
     model_type: Optional[str] = None
         The type of model to load. If None, the function infers this from the
         model_path (assuming it was saved as part of the pipeline)
+    device: str
+        The device to load the model onto
 
     Returns
     ----------
@@ -41,7 +45,8 @@ def load_model(model_path: Path, data_path: Optional[Path] = None,
     str_to_model = {
         'rnn': RecurrentNetwork,
         'linear_network': LinearNetwork,
-        'linear_regression': LinearRegression
+        'linear_regression': LinearRegression,
+        'ealstm': EARecurrentNetwork
     }
 
     # The assumption that model type is index -2 and that the data path
@@ -50,18 +55,21 @@ def load_model(model_path: Path, data_path: Optional[Path] = None,
     if model_type is None:
         model_type = cast(str, str(model_path.parts[-2]))
     if data_path is None:
-        data_path = cast(Path, model_path.parts[-5])
+        data_path = cast(Path, model_path.parents[3])
 
-    with model_path.open('rb') as f:
-        model_dict = pickle.load(f)
+    model_dict = torch.load(model_path, map_location=device)
 
     init_kwargs = {'data_folder': data_path}
     for key, val in model_dict.items():
+        if key == 'device':
+            if device is not None:
+                init_kwargs[key] = device  # type: ignore
+            else:
+                init_kwargs[key] = val
         if key != 'model':
             init_kwargs[key] = val
 
     model = str_to_model[model_type](**init_kwargs)
-
     model.load(**model_dict['model'])
 
     return model

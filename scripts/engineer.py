@@ -15,7 +15,7 @@ def engineer(experiment='one_month_forecast', process_static=True,
 
     engineer = Engineer(data_path, experiment=experiment, process_static=process_static)
     engineer.engineer(
-        test_year=2018, target_variable='VHI',
+        test_year=2018, target_variable='VCI',
         pred_months=pred_months, expected_length=pred_months,
     )
 

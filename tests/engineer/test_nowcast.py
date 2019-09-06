@@ -93,17 +93,9 @@ class TestNowcastEngineer:
         for key, val in norm_dict.items():
             assert key in {'a', 'b'}, f'Unexpected key!'
             # TODO: fix how to test for the final (12th) value
-            if key == 'a':
-                assert (norm_dict[key]['mean'] == 1)[:-1].all(), \
-                    f'Mean incorrectly calculated!'
-                assert (norm_dict[key]['mean'][-1] == -9999), \
-                    f'Mean incorrectly calculated!'
-            else:
-                assert (norm_dict[key]['mean'] == 1).all(), \
-                    f'Mean incorrectly calculated!'
-            assert len(norm_dict[key]['mean']) == 12,\
-                f'Mean should be of length 12'
-            assert (norm_dict[key]['std'] == 0).all(), \
+            assert norm_dict[key]['mean'] == 1, \
+                f'Mean incorrectly calculated!'
+            assert norm_dict[key]['std'] == 0, \
                 f'Std incorrectly calculated!'
 
     def test_stratify(self, tmp_path):

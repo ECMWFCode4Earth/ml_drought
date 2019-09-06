@@ -85,8 +85,8 @@ class TestBaseIter:
         norm_dict = {}
         for var in x.data_vars:
             norm_dict[var] = {
-                'mean': x[var].mean(dim=['lat', 'lon'], skipna=True).values,
-                'std': x[var].std(dim=['lat', 'lon'], skipna=True).values
+                'mean': float(x[var].mean(dim=['lat', 'lon', 'time'], skipna=True).values),
+                'std': float(x[var].std(dim=['lat', 'lon', 'time'], skipna=True).values)
             }
 
         class MockLoader:
@@ -102,6 +102,7 @@ class TestBaseIter:
                 self.surrounding_pixels = surrounding_pixels
                 self.ignore_vars = ['precip']
                 self.monthly_aggs = False
+                self.device = torch.device('cpu')
 
                 self.static = None
                 self.static_normalizing_dict = None

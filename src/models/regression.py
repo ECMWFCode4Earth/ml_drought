@@ -122,27 +122,35 @@ class LinearRegression(ModelBase):
                         self.model.intercept_ = best_intercept
                         return None
 
-    def explain(self, data: TrainData) -> Tuple[np.ndarray, ...]:
+    def explain(self, x: Optional[TrainData] = None,
+                save_shap_values: bool = True) -> np.ndarray:
 
         assert self.model is not None, 'Model must be trained!'
 
         if self.explainer is None:
             mean = self._calculate_big_mean()
-            self.explainer: shap.LinearExplainer = shap.LinearExplainer(
+            self.explainer: shap.LinearExplainer = shap.LinearExplainer(  # type: ignore
                 self.model, (mean, None), feature_dependence='independent')
 
-        x = data.historical
-        batch, timesteps, dims = x.shape[0], x.shape[1], x.shape[2]
-        reshaped_x = self._concatenate_data(data)
+        if x is None:
+            test_arrays_loader = DataLoader(data_path=self.data_path, batch_file_size=1,
+                                            experiment=self.experiment,
+                                            shuffle_data=False, mode='test')
+            _, val = list(next(iter(test_arrays_loader)).items())[0]
+            x = val.x
 
+        reshaped_x = self._concatenate_data(x)
         explanations = self.explainer.shap_values(reshaped_x)
 
-        historical = explanations[:, :timesteps * dims]
-        additional = explanations[:, timesteps * dims:]
+        if save_shap_values:
+            analysis_folder = self.model_dir / 'analysis'
+            if not analysis_folder.exists():
+                analysis_folder.mkdir()
 
-        # TODO: properly split the additional arrays
+            np.save(analysis_folder / f'shap_values.npy', explanations)
+            np.save(analysis_folder / f'input.npy', reshaped_x)
 
-        return historical.reshape(batch, timesteps, dims), additional
+        return explanations
 
     def save_model(self) -> None:
 
@@ -166,7 +174,7 @@ class LinearRegression(ModelBase):
             pickle.dump(model_data, f)
 
     def load(self, coef: np.ndarray, intercept: np.ndarray) -> None:
-        self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
+        self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()  # type: ignore
         self.model.coef_ = coef
         self.model.intercept_ = intercept
 
@@ -189,7 +197,9 @@ class LinearRegression(ModelBase):
                 x = self._concatenate_data(val.x)
                 preds = self.model.predict(x)
                 preds_dict[key] = preds
-                test_arrays_dict[key] = {'y': val.y, 'latlons': val.latlons}
+                test_arrays_dict[key] = {
+                    'y': val.y, 'latlons': val.latlons, 'time': val.target_time
+                }
 
         return test_arrays_dict, preds_dict
 
@@ -205,23 +215,11 @@ class LinearRegression(ModelBase):
                                       pred_months=self.pred_months,
                                       shuffle_data=False, mode='train',
                                       surrounding_pixels=self.surrounding_pixels,
-                                      ignore_vars=self.ignore_vars,
-                                      monthly_aggs=self.include_monthly_aggs,
-                                      static=self.include_static)
+                                      ignore_vars=self.ignore_vars)
 
         means, sizes = [], []
         for x, _ in train_dataloader:
-            # first, flatten x
-            x_in = x[0].reshape(x[0].shape[0], x[0].shape[1] * x[0].shape[2])
-            if self.include_pred_month:
-                pred_months = x[1]
-                # one hot encoding, should be num_classes + 1, but
-                # for us its + 2, since 0 is not a class either
-                pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
-                x_in = np.concatenate((x_in, pred_months_onehot), axis=-1)
-            if self.experiment == 'nowcast':
-                current = x[3]
-                x_in = np.concatenate((x_in, current), axis=-1)
+            x_in = self._concatenate_data(x)
             sizes.append(x_in.shape[0])
             means.append(x_in.mean(axis=0))
 

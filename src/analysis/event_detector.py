@@ -1,10 +1,12 @@
 import xarray as xr
 import numpy as np
 from pathlib import Path
-from xclim.run_length import rle, longest_run  # , windowed_run_events
 from typing import Tuple, Optional, Any
 import warnings
 from ..utils import get_ds_mask, create_shape_aligned_climatology
+
+rle = None
+longest_run = None
 
 
 class EventDetector:
@@ -22,6 +24,13 @@ class EventDetector:
     """
     def __init__(self,
                  path_to_data: Path) -> None:
+
+        global rle
+        global longest_run
+        if rle is None:
+            from xclim.run_length import rle
+        if longest_run is None:
+            from xclim.run_length import longest_run
 
         assert path_to_data.exists(), f"{path_to_data} does not point to an existing file!"
         self.path_to_data = path_to_data
@@ -276,7 +285,7 @@ class EventDetector:
             Expected exceedences to be an array of boolean type.\
              Got {self.exceedences.dtype}"
 
-        runs = rle(self.exceedences).load()
+        runs = rle(self.exceedences).load()  # type: ignore
 
         # apply the same mask as TIME=0 (e.g. for the sea-land mask)
         mask = get_ds_mask(self.ds[self.variable])
@@ -288,4 +297,4 @@ class EventDetector:
                               resample_str: Optional[str] = None) -> xr.Dataset:
         """ Calculate the longest run in the dataset
         TODO: fix this argument to work with other resample_str """
-        return longest_run(self.exceedences, dim='time').load()
+        return longest_run(self.exceedences, dim='time').load()  # type: ignore

@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 from pathlib import Path
-import pickle
+from copy import copy
 
 from typing import Dict, List, Optional, Tuple
 
@@ -26,14 +26,16 @@ class EARecurrentNetwork(NNBase):
                  include_yearly_aggs: bool = True,
                  surrounding_pixels: Optional[int] = None,
                  ignore_vars: Optional[List[str]] = None,
-                 include_static: bool = True) -> None:
+                 include_static: bool = True,
+                 device: str = 'cuda:0') -> None:
         super().__init__(data_folder, batch_size, experiment, pred_months, include_pred_month,
                          include_latlons, include_monthly_aggs, include_yearly_aggs,
-                         surrounding_pixels, ignore_vars, include_static)
+                         surrounding_pixels, ignore_vars, include_static, device)
 
         # to initialize and save the model
         self.hidden_size = hidden_size
         self.rnn_dropout = rnn_dropout
+        self.input_dense = copy(dense_features)  # this is to make sure we can reload the model
         if dense_features is None: dense_features = []
         self.dense_features = dense_features
 
@@ -55,7 +57,7 @@ class EARecurrentNetwork(NNBase):
             'batch_size': self.batch_size,
             'hidden_size': self.hidden_size,
             'rnn_dropout': self.rnn_dropout,
-            'dense_features': self.dense_features,
+            'dense_features': self.input_dense,
             'include_pred_month': self.include_pred_month,
             'include_latlons': self.include_latlons,
             'surrounding_pixels': self.surrounding_pixels,
@@ -63,11 +65,11 @@ class EARecurrentNetwork(NNBase):
             'include_yearly_aggs': self.include_yearly_aggs,
             'experiment': self.experiment,
             'ignore_vars': self.ignore_vars,
-            'include_static': self.include_static
+            'include_static': self.include_static,
+            'device': self.device
         }
 
-        with (self.model_dir / 'model.pkl').open('wb') as f:
-            pickle.dump(model_dict, f)
+        torch.save(model_dict, self.model_dir / 'model.pt')
 
     def load(self, state_dict: Dict, features_per_month: int, current_size: Optional[int],
              yearly_agg_size: Optional[int], static_size: Optional[int]) -> None:
@@ -86,6 +88,7 @@ class EARecurrentNetwork(NNBase):
                                     yearly_agg_size=self.yearly_agg_size,
                                     include_latlons=self.include_latlons,
                                     static_size=self.static_size)
+        self.model.to(torch.device(self.device))
         self.model.load_state_dict(state_dict)
 
     def _initialize_model(self, x_ref: Optional[Tuple[torch.Tensor, ...]]) -> nn.Module:
@@ -107,16 +110,18 @@ class EARecurrentNetwork(NNBase):
                 assert x_ref is not None
                 self.static_size = x_ref[5].shape[-1]
 
-        return EALSTM(features_per_month=self.features_per_month,
-                      dense_features=self.dense_features,
-                      hidden_size=self.hidden_size,
-                      rnn_dropout=self.rnn_dropout,
-                      include_pred_month=self.include_pred_month,
-                      experiment=self.experiment,
-                      yearly_agg_size=self.yearly_agg_size,
-                      current_size=self.current_size,
-                      include_latlons=self.include_latlons,
-                      static_size=self.static_size)
+        model = EALSTM(features_per_month=self.features_per_month,
+                       dense_features=self.dense_features,
+                       hidden_size=self.hidden_size,
+                       rnn_dropout=self.rnn_dropout,
+                       include_pred_month=self.include_pred_month,
+                       experiment=self.experiment,
+                       yearly_agg_size=self.yearly_agg_size,
+                       current_size=self.current_size,
+                       include_latlons=self.include_latlons,
+                       static_size=self.static_size)
+
+        return model.to(torch.device(self.device))
 
 
 class EALSTM(nn.Module):
@@ -143,18 +148,18 @@ class EALSTM(nn.Module):
         if static_size is not None:
             self.include_static = True
             ea_static_size += static_size
+        if include_pred_month:
+            ea_static_size += 12
 
         self.dropout = nn.Dropout(rnn_dropout)
-        self.rnn = EALSTMCell(input_size_dyn=features_per_month,
-                              input_size_stat=ea_static_size,
-                              hidden_size=hidden_size,
-                              batch_first=True)
+        self.rnn = OrgEALSTMCell(input_size_dyn=features_per_month,
+                                 input_size_stat=ea_static_size,
+                                 hidden_size=hidden_size,
+                                 batch_first=True)
         self.hidden_size = hidden_size
         self.rnn_dropout = nn.Dropout(rnn_dropout)
 
         dense_input_size = hidden_size
-        if include_pred_month:
-            dense_input_size += 12
         if experiment == 'nowcast':
             assert current_size is not None
             dense_input_size += current_size
@@ -192,13 +197,13 @@ class EALSTM(nn.Module):
             static_x.append(yearly_aggs)
         if self.include_static:
             static_x.append(static)
+        if self.include_pred_month:
+            static_x.append(pred_month)
 
         hidden_state, cell_state = self.rnn(x, torch.cat(static_x, dim=-1))
 
         x = self.rnn_dropout(hidden_state[:, -1, :])
 
-        if self.include_pred_month:
-            x = torch.cat((x, pred_month), dim=-1)
         if self.experiment == 'nowcast':
             assert current is not None
             x = torch.cat((x, current), dim=-1)
@@ -209,10 +214,131 @@ class EALSTM(nn.Module):
 
 
 class EALSTMCell(nn.Module):
+    """See below. Implemented using modules so it can be explained with shap
+    """
+    def __init__(self,
+                 input_size_dyn: int,
+                 input_size_stat: int,
+                 hidden_size: int,
+                 batch_first: bool = True):
+        super().__init__()
+
+        self.input_size_dyn = input_size_dyn
+        self.input_size_stat = input_size_stat
+        self.hidden_size = hidden_size
+        self.batch_first = batch_first
+
+        self.forget_gate_i = nn.Linear(in_features=input_size_dyn,
+                                       out_features=hidden_size, bias=False)
+        self.forget_gate_h = nn.Linear(in_features=hidden_size, out_features=hidden_size,
+                                       bias=True)
+
+        self.update_gate = nn.Sequential(*[
+            nn.Linear(in_features=input_size_stat, out_features=hidden_size),
+            nn.Sigmoid()
+        ])
+
+        self.update_candidates_i = nn.Linear(in_features=input_size_dyn, out_features=hidden_size,
+                                             bias=False)
+        self.update_candidates_h = nn.Linear(in_features=hidden_size, out_features=hidden_size,
+                                             bias=True)
+
+        self.output_gate_i = nn.Linear(in_features=input_size_dyn, out_features=hidden_size,
+                                       bias=False)
+        self.output_gate_h = nn.Linear(in_features=hidden_size, out_features=hidden_size,
+                                       bias=True)
+
+        self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        self._reset_i(self.forget_gate_i)
+        self._reset_i(self.update_candidates_i)
+        self._reset_i(self.output_gate_i)
+        self._reset_i(self.update_gate[0])
+        nn.init.constant_(self.update_gate[0].bias.data, val=0)
+
+        self._reset_h(self.forget_gate_h, self.hidden_size)
+        self._reset_h(self.update_candidates_h, self.hidden_size)
+        self._reset_h(self.output_gate_h, self.hidden_size)
+
+    @staticmethod
+    def _reset_i(layer):
+        nn.init.orthogonal(layer.weight.data)
+
+    @staticmethod
+    def _reset_h(layer, hidden_size):
+        weight_hh_data = torch.eye(hidden_size)
+        layer.weight.data = weight_hh_data
+        nn.init.constant_(layer.bias.data, val=0)
+
+    def forward(self, x_d, x_s):
+        """[summary]
+        Parameters
+        ----------
+        x_d : torch.Tensor
+            Tensor, containing a batch of sequences of the dynamic features. Shape has to match
+            the format specified with batch_first.
+        x_s : torch.Tensor
+            Tensor, containing a batch of static features.
+        Returns
+        -------
+        h_n : torch.Tensor
+            The hidden states of each time step of each sample in the batch.
+        c_n : torch.Tensor
+            The cell states of each time step of each sample in the batch.
+        """
+        if self.batch_first:
+            x_d = x_d.transpose(0, 1)
+
+        seq_len, batch_size, _ = x_d.size()
+
+        h_0 = x_d.data.new(batch_size, self.hidden_size).zero_()
+        c_0 = x_d.data.new(batch_size, self.hidden_size).zero_()
+        h_x = (h_0, c_0)
+
+        # empty lists to temporally store all intermediate hidden/cell states
+        h_n, c_n = [], []
+
+        # calculate input gate only once because inputs are static
+        i = self.update_gate(x_s)
+
+        # perform forward steps over input sequence
+        for t in range(seq_len):
+            h_0, c_0 = h_x
+
+            forget_state = self.sigmoid(self.forget_gate_i(x_d[t]) + self.forget_gate_h(h_0))
+            cell_candidates = self.tanh(self.update_candidates_i(x_d[t]) +
+                                        self.update_candidates_h(h_0))
+            output_state = self.sigmoid(self.output_gate_i(x_d[t]) + self.output_gate_h(h_0))
+
+            c_1 = forget_state * c_0 + i * cell_candidates
+            h_1 = output_state * self.tanh(c_1)
+
+            # store intermediate hidden/cell state in list
+            h_n.append(h_1)
+            c_n.append(c_1)
+
+            h_x = (h_1, c_1)
+
+        h_n = torch.stack(h_n, 0)
+        c_n = torch.stack(c_n, 0)
+
+        if self.batch_first:
+            h_n = h_n.transpose(0, 1)
+            c_n = c_n.transpose(0, 1)
+
+        return h_n, c_n
+
+
+class OrgEALSTMCell(nn.Module):
     """Implementation of the Entity-Aware-LSTM (EA-LSTM)
 
     This code was copied from
     https://github.com/kratzert/ealstm_regional_modeling/blob/master/papercode/ealstm.py
+    and is currently used just to test our implementation of the EALSTMCell
 
     Parameters
     ----------
@@ -252,6 +378,10 @@ class EALSTMCell(nn.Module):
                                                         hidden_size))  # type: ignore
         self.bias = nn.Parameter(torch.FloatTensor(3 * hidden_size))  # type: ignore
         self.bias_s = nn.Parameter(torch.FloatTensor(hidden_size))  # type: ignore
+
+        # module activations for shap
+        self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
 
         # initialize parameters
         self.reset_parameters()
@@ -304,7 +434,7 @@ class EALSTMCell(nn.Module):
 
         # calculate input gate only once because inputs are static
         bias_s_batch = (self.bias_s.unsqueeze(0).expand(batch_size, *self.bias_s.size()))
-        i = torch.sigmoid(torch.addmm(bias_s_batch, x_s, self.weight_sh))
+        i = self.sigmoid(torch.addmm(bias_s_batch, x_s, self.weight_sh))
 
         # perform forward steps over input sequence
         for t in range(seq_len):
@@ -315,8 +445,8 @@ class EALSTMCell(nn.Module):
                      torch.mm(x_d[t], self.weight_ih))
             f, o, g = gates.chunk(3, 1)
 
-            c_1 = torch.sigmoid(f) * c_0 + i * torch.tanh(g)
-            h_1 = torch.sigmoid(o) * torch.tanh(c_1)
+            c_1 = self.sigmoid(f) * c_0 + i * self.tanh(g)
+            h_1 = self.sigmoid(o) * self.tanh(c_1)
 
             # store intermediate hidden/cell state in list
             h_n.append(h_1)

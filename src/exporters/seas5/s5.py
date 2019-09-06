@@ -1,12 +1,13 @@
 from pathlib import Path
 import itertools
 import numpy as np
-from pathos.pools import _ThreadPool as pool
 
 from typing import cast, Dict, Optional, List
 from .all_valid_s5 import datasets as dataset_reference
 from ..base import get_kenya
 from ..cds import CDSExporter
+
+pool = None
 
 
 class S5Exporter(CDSExporter):
@@ -57,6 +58,10 @@ class S5Exporter(CDSExporter):
         """
         super().__init__(data_folder)
 
+        global pool
+        if pool is None:
+            from pathos.pools import _ThreadPool as pool
+
         # initialise attributes for this export
         self.pressure_level = pressure_level
         self.granularity = granularity
@@ -68,7 +73,7 @@ class S5Exporter(CDSExporter):
         if dataset is None:
             self.dataset: str = self.get_dataset(self.granularity, self.pressure_level)
         else:
-            self.dataset: str = dataset
+            self.dataset: str = dataset  # type: ignore
 
         # get the reference dictionary that corresponds to that dataset
         self.dataset_reference = dataset_reference[self.dataset]
@@ -169,7 +174,7 @@ class S5Exporter(CDSExporter):
 
         if n_parallel_requests > 1:  # Run in parallel
             # p = multiprocessing.Pool(int(n_parallel_requests))
-            p = pool(int(n_parallel_requests))  # pathos seems to pickle classes
+            p = pool(int(n_parallel_requests))  # type: ignore
 
         output_paths = []
         if break_up:
