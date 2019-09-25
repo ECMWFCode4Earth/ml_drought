@@ -10,6 +10,7 @@ from src.analysis import all_shap_for_file
 
 def parsimonious(
     experiment='one_month_forecast',
+    ignore_vars=None,
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -24,7 +25,8 @@ def parsimonious(
 def regression(
     experiment='one_month_forecast',
     include_pred_month=True,
-    surrounding_pixels=1
+    surrounding_pixels=1,
+    ignore_vars=None,
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -47,7 +49,8 @@ def regression(
 def linear_nn(
     experiment='one_month_forecast',
     include_pred_month=True,
-    surrounding_pixels=1
+    surrounding_pixels=1,
+    ignore_vars=None,
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -71,7 +74,8 @@ def linear_nn(
 def rnn(
     experiment='one_month_forecast',
     include_pred_month=True,
-    surrounding_pixels=1
+    surrounding_pixels=1,
+    ignore_vars=None,
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -97,7 +101,8 @@ def earnn(
     experiment='one_month_forecast',
     include_pred_month=True,
     surrounding_pixels=None,
-    pretrained=True
+    pretrained=True,
+    ignore_vars=None,
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -125,8 +130,8 @@ def earnn(
 
 
 if __name__ == '__main__':
-    # parsimonious()
-    # regression()
+    parsimonious()
+    regression()
     # linear_nn()
     # rnn()
-    earnn(pretrained=True)
+    # earnn()
