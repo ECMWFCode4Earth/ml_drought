@@ -128,8 +128,8 @@ def preprocess_era5():
 
 
 if __name__ == '__main__':
-    process_vci_2018()
     process_precip_2018()
+    process_vci_2018()
     # process_era5POS_2018()
     # process_gleam()
     process_esa_cci_landcover()
