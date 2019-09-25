@@ -26,7 +26,6 @@ def engineer_static():
         data_path = Path('data')
     else:
         data_path = Path('../data')
-
     Engineer.engineer_static_only(data_path)
 
 

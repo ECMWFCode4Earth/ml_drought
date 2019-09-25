@@ -12,7 +12,9 @@ class SRTMPreprocessor(BasePreProcessor):
     dataset = 'srtm'
     static = True
 
-    def regrid(self, ds: xr.Dataset, regrid: Path, method: str = 'remapbil') -> xr.Dataset:
+    def regrid(self, ds: xr.Dataset,  # type: ignore
+               regrid: Path,
+               method: str = 'remapbil') -> xr.Dataset:
 
         acceptable_methods = {'remapbil', 'remapbic', 'remapnn', 'remapdis',
                               'remapycon', 'remapcon', 'remapcon2', 'remaplaf'}

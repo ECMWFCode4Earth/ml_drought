@@ -80,7 +80,9 @@ class BasePreProcessor:
     def regrid(self,
                ds: xr.Dataset,
                reference_ds: xr.Dataset,
-               method: str = "nearest_s2d") -> xr.Dataset:
+               method: str = "nearest_s2d",
+               reuse_weights: bool = False,
+               clean: bool = True) -> xr.Dataset:
         """ Use xEMSF package to regrid ds to the same grid as reference_ds
 
         Arguments:
@@ -115,8 +117,13 @@ class BasePreProcessor:
 
         # The weight file should be deleted by regridder.clean_weight_files(), but in case
         # something goes wrong and its not, lets use a descriptive filename
-        filename = f'{method}_{shape_in[0]}x{shape_in[1]}_\
-        {shape_out[0]}x{shape_out[1]}_{uid}.nc'.replace(' ', '')
+        if reuse_weights:
+            # if not running in parallel can save time by reusing weights
+            filename = f'{method}_{shape_in[0]}x{shape_in[1]}_\
+            {shape_out[0]}x{shape_out[1]}.nc'.replace(' ', '')
+        else:
+            filename = f'{method}_{shape_in[0]}x{shape_in[1]}_\
+            {shape_out[0]}x{shape_out[1]}_{uid}.nc'.replace(' ', '')
         savedir = self.preprocessed_folder / filename
 
         regridder = xesmf.Regridder(ds, ds_out, method,  # type: ignore
@@ -133,7 +140,8 @@ class BasePreProcessor:
         print(f'Regridded from {(regridder.Ny_in, regridder.Nx_in)} '
               f'to {(regridder.Ny_out, regridder.Nx_out)}')
 
-        regridder.clean_weight_file()
+        if clean:
+            regridder.clean_weight_file()
 
         return ds
 
@@ -153,12 +161,13 @@ class BasePreProcessor:
     @staticmethod
     def resample_time(ds: xr.Dataset,
                       resample_length: str = 'M',
-                      upsampling: bool = False) -> xr.Dataset:
+                      upsampling: bool = False,
+                      time_coord: str = 'time') -> xr.Dataset:
 
         # TODO: would be nice to programmatically get upsampling / not
-        ds = ds.sortby('time')
+        ds = ds.sortby(time_coord)
 
-        resampler = ds.resample(time=resample_length)
+        resampler = ds.resample({time_coord: resample_length})
 
         if not upsampling:
             return resampler.mean()

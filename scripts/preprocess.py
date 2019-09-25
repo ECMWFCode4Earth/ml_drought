@@ -4,6 +4,7 @@ import sys
 sys.path.append('..')
 from src.preprocess import (VHIPreprocessor, CHIRPSPreprocesser,
                             PlanetOSPreprocessor, GLEAMPreprocessor,
+                            S5Preprocessor,
                             ESACCIPreprocessor, SRTMPreprocessor,
                             ERA5MonthlyMeanPreprocessor)
 
@@ -66,6 +67,19 @@ def process_gleam():
 
     processor = GLEAMPreprocessor(data_path)
 
+    processor.preprocess(subset_str='kenya', regrid=regrid_path,
+                         resample_time='M', upsampling=False)
+
+def process_seas5():
+    # if the working directory is alread ml_drought don't need ../data
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+    regrid_path = data_path / 'interim/chirps_preprocessed/chirps_kenya.nc'
+    assert regrid_path.exists(), f'{regrid_path} not available'
+
+    processor = S5Preprocessor(data_path)
     processor.preprocess(subset_str='kenya', regrid=regrid_path,
                          resample_time='M', upsampling=False)
 
