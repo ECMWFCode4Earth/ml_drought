@@ -129,7 +129,7 @@ class LinearRegression(ModelBase):
 
         if self.explainer is None:
             mean = self._calculate_big_mean()
-            self.explainer: shap.LinearExplainer = shap.LinearExplainer(
+            self.explainer: shap.LinearExplainer = shap.LinearExplainer(  # type: ignore
                 self.model, (mean, None), feature_dependence='independent')
 
         if x is None:
@@ -174,7 +174,7 @@ class LinearRegression(ModelBase):
             pickle.dump(model_data, f)
 
     def load(self, coef: np.ndarray, intercept: np.ndarray) -> None:
-        self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
+        self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()  # type: ignore
         self.model.coef_ = coef
         self.model.intercept_ = intercept
 

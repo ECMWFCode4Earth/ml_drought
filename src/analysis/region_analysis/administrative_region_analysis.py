@@ -19,7 +19,24 @@ class AdministrativeRegionAnalysis(RegionAnalysis):
             admin_boundaries=self.admin_boundaries
         )
 
-    def load_region_data(self, region_data_path: Path) -> Tuple[xr.DataArray, Dict, str]:
+    @staticmethod
+    def load_region_data(region_data_path: Path) -> Tuple[xr.DataArray, Dict, str]:
+        """Load the preprocessed `region_data` from the
+        `data/analysis/boundaries_preprocessed` directory. This will
+        not only return the categorical DataArray but also the
+        associated lookup data (stored in the `attrs`).
+
+        Returns:
+        -------
+        :xr.DataArray
+            the categorical xr.DataArray with the region data (same shape)
+
+        :Dict
+            the lookup dictionary with the keys referring to the
+            values in the xr.DataArray and the values the names
+            of the regions (for joining to the shapefile data)
+
+        """
         # LOAD in region lookup DataArray
         assert 'analysis' in region_data_path.parts, 'Only preprocessed' \
             'region files (as netcdf) should be used' \
@@ -39,7 +56,7 @@ class AdministrativeRegionAnalysis(RegionAnalysis):
                                 pred_da: xr.DataArray,
                                 true_da: xr.DataArray,
                                 datetime: datetime) -> Tuple[List, List, List, List]:
-        """
+        """compute the mean values in the DataArray for each
         Returns:
         --------
         datetimes: List
@@ -57,6 +74,15 @@ class AdministrativeRegionAnalysis(RegionAnalysis):
         predicted_mean_value: List = []
         true_mean_value: List = []
         datetimes: List = []
+
+        # check the shapes match
+        pred_latlon_shape = (pred_da.lat.shape[0], pred_da.lon.shape[0])
+        true_latlon_shape = (true_da.lat.shape[0], true_da.lon.shape[0])
+        assert true_latlon_shape == true_latlon_shape == region_da.shape,\
+            'Expect the lat/lon shapes to match in all input DataArrays' \
+            f'{pred_latlon_shape} == {true_latlon_shape} == {region_da.shape}. '\
+            'are you sure these have all been run with the same experiment' \
+            ' and the same reference_nc_file to regrid onto same reference_grid'
 
         for valid_region_id in valid_region_ids:
             region_names.append(region_lookup[valid_region_id])
@@ -123,7 +149,9 @@ class AdministrativeRegionAnalysis(RegionAnalysis):
         print('* Assigned all region dfs to `self.df` *')
 
         # compute error metrics for each model globally
-        self.compute_metrics(compute_global_errors, compute_regional_errors)
+        self.compute_metrics(
+            compute_global_errors, compute_regional_errors
+        )
 
         if save_all_df:
             self.df.to_csv(

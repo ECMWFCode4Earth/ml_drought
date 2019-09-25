@@ -138,7 +138,6 @@ class ModelBase:
                 json.dump(output_dict, outfile)
 
         if save_preds:
-            # TODO: assign time to preds
             for key, val in test_arrays_dict.items():
                 latlons = cast(np.ndarray, val['latlons'])
                 preds = preds_dict[key]

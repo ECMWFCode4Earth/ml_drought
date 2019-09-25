@@ -1,6 +1,5 @@
 from pathlib import Path
 import xarray as xr
-import xesmf as xe
 import numpy as np
 
 from typing import List, Optional
@@ -9,6 +8,8 @@ from ..utils import Region, region_lookup
 from .utils import select_bounding_box
 
 __all__ = ['BasePreProcessor', 'Region']
+
+xesmf = None
 
 
 class BasePreProcessor:
@@ -32,6 +33,10 @@ class BasePreProcessor:
 
     def __init__(self, data_folder: Path = Path('data'),
                  output_name: Optional[str] = None) -> None:
+
+        global xesmf
+        if xesmf is None:
+            import xesmf
         self.data_folder = data_folder
         self.raw_folder = self.data_folder / 'raw'
         self.preprocessed_folder = self.data_folder / 'interim'
@@ -121,9 +126,9 @@ class BasePreProcessor:
             {shape_out[0]}x{shape_out[1]}_{uid}.nc'.replace(' ', '')
         savedir = self.preprocessed_folder / filename
 
-        regridder = xe.Regridder(ds, ds_out, method,
-                                 filename=str(savedir),
-                                 reuse_weights=reuse_weights)
+        regridder = xesmf.Regridder(ds, ds_out, method,  # type: ignore
+                                    filename=str(savedir),
+                                    reuse_weights=False)
 
         variables = list(ds.var().variables)
         output_dict = {}

@@ -1,4 +1,5 @@
 import unittest
+import unittest.mock
 import pytest
 
 from src.exporters import SRTMExporter
