@@ -19,6 +19,7 @@ def process_vci_2018():
 
     processor = VHIPreprocessor(data_path, 'VCI')
     regrid_path = data_path / 'interim/chirps_preprocessed/chirps_kenya.nc'
+    assert regrid_path.exists(), f'{regrid_path} not available'
 
     processor.preprocess(subset_str='kenya',
                          regrid=regrid_path,
@@ -31,8 +32,6 @@ def process_precip_2018():
         data_path = Path('data')
     else:
         data_path = Path('../data')
-
-    assert regrid_path.exists(), f'{regrid_path} not available'
 
     processor = CHIRPSPreprocesser(data_path)
 
