@@ -140,6 +140,6 @@ def earnn(
 if __name__ == '__main__':
     parsimonious()
     # regression(include_static=False)
-    linear_nn(include_static=False)
-    # rnn()
+    # linear_nn(include_static=False)
+    rnn(include_static=False)
     # earnn()
