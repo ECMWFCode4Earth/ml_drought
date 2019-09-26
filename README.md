@@ -82,6 +82,7 @@ For updates follow [@tommylees112](https://twitter.com/tommylees112) on twitter 
 
 - [Blog 1: Great News!](https://tommylees112.github.io/posts/2019/1/esowc_kick_off)
 - [Blog 2: The Pipeline](https://medium.com/@gabrieltseng/a-machine-learning-pipeline-for-climate-research-ebf83b2b349a)
+= [Blog 3: The Close of the Project!](https://tommylees112.github.io/posts/2019/2/esowc_final)
 
 <!-- ESoWC initial outline -->
 
