@@ -27,6 +27,7 @@ def regression(
     include_pred_month=True,
     surrounding_pixels=1,
     ignore_vars=None,
+    include_static=True
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -37,7 +38,8 @@ def regression(
     predictor = LinearRegression(
         data_path, experiment=experiment,
         include_pred_month=include_pred_month,
-        surrounding_pixels=surrounding_pixels
+        surrounding_pixels=surrounding_pixels,
+        include_static=include_static,
     )
     predictor.train()
     predictor.evaluate(save_preds=True)
@@ -51,6 +53,7 @@ def linear_nn(
     include_pred_month=True,
     surrounding_pixels=1,
     ignore_vars=None,
+    include_static=True,
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -62,7 +65,8 @@ def linear_nn(
         layer_sizes=[100], data_folder=data_path,
         experiment=experiment,
         include_pred_month=include_pred_month,
-        surrounding_pixels=surrounding_pixels
+        surrounding_pixels=surrounding_pixels,
+        include_static=include_static,
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
@@ -76,6 +80,7 @@ def rnn(
     include_pred_month=True,
     surrounding_pixels=1,
     ignore_vars=None,
+    include_static=True,
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -88,7 +93,8 @@ def rnn(
         data_folder=data_path,
         experiment=experiment,
         include_pred_month=include_pred_month,
-        surrounding_pixels=surrounding_pixels
+        surrounding_pixels=surrounding_pixels,
+        include_static=include_static,
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
@@ -103,6 +109,7 @@ def earnn(
     surrounding_pixels=None,
     pretrained=True,
     ignore_vars=None,
+    include_static=True,
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -116,7 +123,8 @@ def earnn(
             data_folder=data_path,
             experiment=experiment,
             include_pred_month=include_pred_month,
-            surrounding_pixels=surrounding_pixels
+            surrounding_pixels=surrounding_pixels,
+            include_static=include_static,
         )
         predictor.train(num_epochs=50, early_stopping=5)
         predictor.evaluate(save_preds=True)
@@ -131,7 +139,7 @@ def earnn(
 
 if __name__ == '__main__':
     parsimonious()
-    regression()
-    # linear_nn()
+    # regression(include_static=False)
+    linear_nn(include_static=False)
     # rnn()
     # earnn()
