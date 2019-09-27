@@ -1,12 +1,13 @@
 import numpy as np
 from pathlib import Path
-import xgboost as xgb
 import pickle
 
 from typing import Dict, List, Tuple, Optional
 
 from .base import ModelBase
 from .data import DataLoader, train_val_mask, TrainData
+
+xgb = None
 
 
 class GBDT(ModelBase):
@@ -33,6 +34,10 @@ class GBDT(ModelBase):
                          include_static)
 
         self.early_stopping = False
+
+        global xgb
+        if xgb is None:
+            import XGBoost as xgb
 
     def train(self, early_stopping: Optional[int] = None,
               val_split: float = 0.1) -> None:
@@ -75,7 +80,7 @@ class GBDT(ModelBase):
                                           monthly_aggs=self.include_monthly_aggs,
                                           surrounding_pixels=self.surrounding_pixels,
                                           static=self.include_static)
-        self.model: xgb.XGBRegressor = xgb.XGBRegressor()
+        self.model: xgb.XGBRegressor = xgb.XGBRegressor()  # type: ignore
 
         # first, we need to collect all the data into arrays
         input_train_x, input_train_y = [], []
@@ -122,7 +127,7 @@ class GBDT(ModelBase):
 
         reshaped_x = self._concatenate_data(x)
 
-        pred_x = xgb.DMatrix(reshaped_x)
+        pred_x = xgb.DMatrix(reshaped_x)  # type: ignore
 
         input_dict = {'data': pred_x, 'pred_contribs': True,
                       'validate_features': False}
@@ -163,7 +168,7 @@ class GBDT(ModelBase):
         with (self.model_dir / 'model.pkl').open('wb') as f:
             pickle.dump(model_data, f)
 
-    def load(self, model: xgb.XGBRegressor, early_stopping: bool) -> None:
+    def load(self, model: xgb.XGBRegressor, early_stopping: bool) -> None:  # type: ignore
         self.model = model
         self.early_stopping = early_stopping
 
