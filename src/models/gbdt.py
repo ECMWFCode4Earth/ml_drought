@@ -172,7 +172,7 @@ class GBDT(ModelBase):
             pickle.dump(model_data, f)
 
     def load(self, model: Any, early_stopping: bool) -> None:
-        assert isinstance(model, xgb.XGBRegressor)
+        assert isinstance(model, xgb.XGBRegressor)  # type: ignore
         self.model = model
         self.early_stopping = early_stopping
 

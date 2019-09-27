@@ -10,7 +10,7 @@ from ..utils import _make_dataset
 
 class TestGBDT:
 
-    # @pytest.mark.xfail(reason='XGBoost not part of the test environment')
+    @pytest.mark.xfail(reason='XGBoost not part of the test environment')
     @pytest.mark.parametrize('use_pred_months,experiment,monthly_agg',
                              [(True, 'one_month_forecast', True),
                               (True, 'nowcast', False),
