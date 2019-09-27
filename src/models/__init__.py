@@ -5,12 +5,13 @@ from typing import cast, Optional, Union
 
 from .parsimonious import Persistence
 from .regression import LinearRegression
+from .gbdt import GBDT
 from .neural_networks.linear_network import LinearNetwork
 from .neural_networks.rnn import RecurrentNetwork
 from .neural_networks.ealstm import EARecurrentNetwork
 
 __all__ = ['Persistence', 'LinearRegression', 'LinearNetwork',
-           'RecurrentNetwork', 'EARecurrentNetwork']
+           'RecurrentNetwork', 'EARecurrentNetwork', 'GBDT']
 
 
 def load_model(model_path: Path, data_path: Optional[Path] = None,
@@ -18,7 +19,8 @@ def load_model(model_path: Path, data_path: Optional[Path] = None,
                device: Optional[str] = 'cpu') -> Union[RecurrentNetwork,
                                                        LinearNetwork,
                                                        LinearRegression,
-                                                       EARecurrentNetwork]:
+                                                       EARecurrentNetwork,
+                                                       GBDT]:
     """
     This function loads models from the output `.pkl` files generated when
     calling model.save()
@@ -46,7 +48,8 @@ def load_model(model_path: Path, data_path: Optional[Path] = None,
         'rnn': RecurrentNetwork,
         'linear_network': LinearNetwork,
         'linear_regression': LinearRegression,
-        'ealstm': EARecurrentNetwork
+        'ealstm': EARecurrentNetwork,
+        'gbdt': GBDT
     }
 
     # The assumption that model type is index -2 and that the data path

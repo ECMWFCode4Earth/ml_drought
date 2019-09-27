@@ -2,7 +2,7 @@ import numpy as np
 from pathlib import Path
 import pickle
 
-from typing import Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional
 
 from .base import ModelBase
 from .data import DataLoader, train_val_mask, TrainData
@@ -37,10 +37,10 @@ class GBDT(ModelBase):
 
         global xgb
         if xgb is None:
-            import XGBoost as xgb
+            import xgboost as xgb
 
     def train(self, early_stopping: Optional[int] = None,
-              val_split: float = 0.1) -> None:
+              val_split: float = 0.1, **xgbkwargs) -> None:
         print(f'Training {self.model_name} for experiment {self.experiment}')
 
         if early_stopping is not None:
@@ -80,7 +80,10 @@ class GBDT(ModelBase):
                                           monthly_aggs=self.include_monthly_aggs,
                                           surrounding_pixels=self.surrounding_pixels,
                                           static=self.include_static)
-        self.model: xgb.XGBRegressor = xgb.XGBRegressor()  # type: ignore
+
+        if 'objective' not in xgbkwargs:
+            xgbkwargs['objective'] = 'reg:squarederror'
+        self.model: xgb.XGBRegressor = xgb.XGBRegressor(**xgbkwargs)  # type: ignore
 
         # first, we need to collect all the data into arrays
         input_train_x, input_train_y = [], []
@@ -89,7 +92,7 @@ class GBDT(ModelBase):
             input_train_x.append(self._concatenate_data(x))
             input_train_y.append(y)
 
-        input_train_x_np = np.stack(input_train_x)
+        input_train_x_np = np.concatenate(input_train_x, axis=0)
         input_train_y_np = np.concatenate(input_train_y)
 
         fit_inputs = {'X': input_train_x_np, 'y': input_train_y_np}
@@ -101,7 +104,7 @@ class GBDT(ModelBase):
                 input_val_x.append(self._concatenate_data(val_x))
                 input_val_y.append(val_y)
 
-            input_val_x_np = np.stack(input_val_x)
+            input_val_x_np = np.concatenate(input_val_x, axis=0)
             input_val_y_np = np.concatenate(input_val_y)
 
             fit_val_inputs = {
@@ -168,7 +171,8 @@ class GBDT(ModelBase):
         with (self.model_dir / 'model.pkl').open('wb') as f:
             pickle.dump(model_data, f)
 
-    def load(self, model: xgb.XGBRegressor, early_stopping: bool) -> None:  # type: ignore
+    def load(self, model: Any, early_stopping: bool) -> None:
+        assert isinstance(model, xgb.XGBRegressor)
         self.model = model
         self.early_stopping = early_stopping
 
