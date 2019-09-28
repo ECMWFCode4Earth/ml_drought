@@ -136,7 +136,11 @@ def read_true_data(data_dir: Path = Path('data'),
 
     (Joined on the `time` dimension).
     """
-    true_paths = [f for f in (data_dir / 'features' / 'one_month_forecast' / 'test').glob('*/y.nc')]
+    true_paths = [
+        f for f in (
+            data_dir / 'features' / 'one_month_forecast' / 'test'
+        ).glob('*/y.nc')
+    ]
     true_ds = xr.open_mfdataset(true_paths).sortby('time').compute()
     true_da = true_ds[variable].transpose('time', 'lat', 'lon')
     return true_da

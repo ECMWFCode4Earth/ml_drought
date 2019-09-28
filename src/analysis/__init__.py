@@ -32,5 +32,5 @@ __all__ = [
     'AdministrativeRegionAnalysis',
     'all_shap_for_file',
     'spatial_rmse', 'spatial_r2',
-    'plot_predictions', 'read_pred_data',
+    'plot_predictions', 'read_pred_data', 'read_true_data'
 ]
