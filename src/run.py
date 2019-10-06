@@ -2,8 +2,10 @@ from pathlib import Path
 
 from typing import Dict
 
-from src.exporters import ERA5Exporter, VHIExporter, ERA5ExporterPOS
-from src.preprocess import VHIPreprocessor
+from src.exporters import (ERA5Exporter, VHIExporter, ERA5ExporterPOS, GLEAMExporter,
+                           CHIRPSExporter)
+from src.preprocess import (VHIPreprocessor, ERA5MonthlyMeanPreprocessor,
+                            GLEAMPreprocessor, CHIRPSPreprocesser)
 
 
 class DictWithDefaults:
@@ -16,7 +18,7 @@ class DictWithDefaults:
     def _check_keys(self) -> None:
 
         # To be updated as the pipeline grows
-        expected_keys = {'data', 'export', 'preprocess'}
+        expected_keys = {'data', 'export', 'preprocess', 'engineer'}
 
         for key in expected_keys:
             try:
@@ -62,6 +64,8 @@ class Run:
             'era5': ERA5Exporter,
             'vhi': VHIExporter,
             'era5POS': ERA5ExporterPOS,
+            'gleam': GLEAMExporter,
+            'chirps': CHIRPSExporter
         }
 
         for dataset, variables in export_args.items():
@@ -90,6 +94,9 @@ class Run:
         """
         dataset2preprocessor = {
             'vhi': VHIPreprocessor,
+            'gleam': GLEAMPreprocessor,
+            'reanalysis-era5-single-levels-monthly-means': ERA5MonthlyMeanPreprocessor,
+            'chirps': CHIRPSPreprocesser
         }
 
         for dataset, variables in preprocess_args.items():
@@ -109,3 +116,4 @@ class Run:
     def run(self, config: DictWithDefaults) -> None:
 
         self.export(config['export'])
+        self.process(config['preprocess'])
