@@ -1,9 +1,12 @@
 import numpy as np
 
+import pytest
+
 from src.models.neural_networks.rnn import RNN, RecurrentNetwork
 from src.models.neural_networks.linear_network import LinearNetwork, LinearModel
 from src.models.neural_networks.ealstm import EALSTM, EARecurrentNetwork
 from src.models.regression import LinearRegression
+from src.models.gbdt import GBDT
 from src.models import load_model
 
 
@@ -162,6 +165,30 @@ class TestLoadModels:
 
         assert model.model.coef_ == coef_array
         assert model.model.intercept_ == intercept_array
+        assert new_model.include_pred_month == model.include_pred_month
+        assert new_model.experiment == model.experiment
+        assert new_model.surrounding_pixels == model.surrounding_pixels
+
+    @pytest.mark.xfail(reason='XGB is not installed in the test env')
+    def test_xgboost(self, tmp_path, monkeypatch):
+
+        import xgboost as xgb
+
+        def mocktrain(self):
+            self.model = xgb.XGBRegressor()
+
+        monkeypatch.setattr(GBDT, 'train', mocktrain)
+
+        model = GBDT(tmp_path, experiment='one_month_forecast')
+        model.train()
+        model.save_model()
+
+        model_path = tmp_path / 'models/one_month_forecast/gbdt/model.pkl'
+        assert model_path.exists(), f'Model not saved!'
+
+        new_model = load_model(model_path)
+        assert type(new_model) == GBDT
+
         assert new_model.include_pred_month == model.include_pred_month
         assert new_model.experiment == model.experiment
         assert new_model.surrounding_pixels == model.surrounding_pixels
