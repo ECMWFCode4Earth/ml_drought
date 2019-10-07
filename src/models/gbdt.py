@@ -11,8 +11,11 @@ xgb = None
 
 
 class GBDT(ModelBase):
+    """Trains a GBDT, using the XGBoost implementation.
 
-    """This only really works if you have a lot of memory
+    The XGBoost regressor requires all the training data to
+    be in memory, so this model needs to be trained on a very
+    big machine, or on a subset of the data.
     """
 
     model_name = 'gbdt'

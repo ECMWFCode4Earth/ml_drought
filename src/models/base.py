@@ -160,6 +160,9 @@ class ModelBase:
 
     def _concatenate_data(self, x: Union[Tuple[Optional[np.ndarray], ...],
                                          TrainData]) -> np.ndarray:
+        """Takes a TrainData object, and flattens all the features the model
+        is using as predictors into a np.ndarray
+        """
 
         if type(x) is tuple:
             x_his, x_pm, x_latlons, x_cur, x_ym, x_static = x  # type: ignore
