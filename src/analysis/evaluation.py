@@ -92,6 +92,7 @@ def annual_scores(models: List[str],
                 monthly_scores[metric][model].append(score)
         for metric in metrics:
             monthly_scores[metric]['month'].append(month)
+            monthly_scores[metric]['year'].append(pred_year)
 
     if to_dataframe:
         return annual_scores_to_dataframe(monthly_scores)
