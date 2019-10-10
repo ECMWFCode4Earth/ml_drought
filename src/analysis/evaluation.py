@@ -77,7 +77,7 @@ def annual_scores(models: List[str],
         metrics = ['rmse', 'r2']
     monthly_scores: Dict[str, Dict[str, List[float]]] = {}
     for metric in metrics:
-        monthly_scores[metric] = {'month': []}
+        monthly_scores[metric] = {'month': [], 'year': []}
         for model in models:
             monthly_scores[metric][model] = []
 
