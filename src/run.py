@@ -1,6 +1,6 @@
 from pathlib import Path
-
-from typing import Dict
+from collections import OrderedDict
+from itertools import dropwhile
 
 from src.exporters import (ERA5Exporter, VHIExporter, ERA5ExporterPOS, GLEAMExporter,
                            CHIRPSExporter)
@@ -9,7 +9,7 @@ from src.preprocess import (VHIPreprocessor, ERA5MonthlyMeanPreprocessor,
 from src.engineer import Engineer
 import src.models
 
-from typing import Optional
+from typing import Dict, Optional
 
 
 class DictWithDefaults:
@@ -148,9 +148,14 @@ class Run:
         assert dataset in dataset_dict, \
             f'{dataset} is not supported! Supported datasets are {dataset_dict.keys()}'
 
-    def run(self, config: DictWithDefaults) -> None:
+    def run(self, config: DictWithDefaults, run_from: str) -> None:
 
-        self.export(config['export'])
-        self.process(config['preprocess'])
-        self.engineer(config['engineer'])
-        self.train_models(config['models'])
+        run_steps = OrderedDict({
+            'export': self.export,
+            'preprocess': self.process,
+            'engineer': self.engineer,
+            'models': self.train_models
+        })
+
+        for key, run_func in dropwhile(lambda k: k != run_from, run_steps):
+            run_func(config[key])
