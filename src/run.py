@@ -157,5 +157,6 @@ class Run:
             'models': self.train_models
         })
 
-        for key, run_func in dropwhile(lambda k: k != run_from, run_steps):
+        for key in dropwhile(lambda k: k != run_from, run_steps):
+            run_func = run_steps[key]
             run_func(config[key])
