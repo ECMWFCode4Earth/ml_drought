@@ -109,7 +109,7 @@ class Run:
             preprocessor = dataset2preprocessor[dataset](self.data)
 
             for variable in variables:
-                preprocessor.preprocess(**variable)
+                preprocessor.preprocess(**variable)  # type: ignore
 
     def engineer(self, engineer_args: Dict) -> None:
         """Run the engineer on the data
@@ -119,7 +119,7 @@ class Run:
 
     def train_models(self, model_args: Dict) -> None:
 
-        for model_name, args in model_args.dict():
+        for model_name, args in model_args.items():
 
             try:
                 model_class = getattr(src.models, model_name)
