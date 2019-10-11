@@ -98,8 +98,9 @@ class Run:
         }
 
         def process_dataset(data: Path, dataset: str, args: Dict) -> None:
-            preprocessor = dataset2preprocessor[dataset](data)
-            preprocessor.preprocess(**args)  # type: ignore
+            args['init_args']['data_folder'] = data
+            preprocessor = dataset2preprocessor[dataset](**args['init_args'])
+            preprocessor.preprocess(**args['run_args'])  # type: ignore
 
         try:
             regrid_dataset = preprocess_args.pop('regrid_dataset')
@@ -115,12 +116,13 @@ class Run:
 
         for dataset, args in preprocess_args.items():
             self._check_dataset(dataset, dataset2preprocessor)
-            args['regrid'] = regrid_file
+            args['run_args']['regrid'] = regrid_file
             process_dataset(self.data, dataset, args)
 
     def engineer(self, engineer_args: Dict) -> None:
         """Run the engineer on the data
         """
+        engineer_args['init_args']['data_folder'] = self.data
         engineer = Engineer(**engineer_args['init_args'])
         engineer.engineer(**engineer_args['run_args'])
 
@@ -133,6 +135,7 @@ class Run:
             except AttributeError:
                 print(f'{model_name} not a model class! Skipping')
                 continue
+            args['init_args']['data_folder'] = self.data
             model = model_class(**args['init_args'])
             model.train(**args['train_args'])
 
