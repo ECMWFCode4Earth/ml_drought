@@ -6,6 +6,8 @@ from src.exporters import (ERA5Exporter, VHIExporter, ERA5ExporterPOS, GLEAMExpo
                            CHIRPSExporter)
 from src.preprocess import (VHIPreprocessor, ERA5MonthlyMeanPreprocessor,
                             GLEAMPreprocessor, CHIRPSPreprocesser)
+from src.engineer import Engineer
+import src.models
 
 
 class DictWithDefaults:
@@ -87,10 +89,6 @@ class Run:
 
         subset; assign coordinates (latitude/longitude/time); regrid;
         resample timesteps;
-
-        Arguments
-        --------
-        preprocess_args:
         """
         dataset2preprocessor = {
             'vhi': VHIPreprocessor,
@@ -113,7 +111,31 @@ class Run:
             for variable in variables:
                 preprocessor.preprocess(**variable)
 
+    def engineer(self, engineer_args: Dict) -> None:
+        """Run the engineer on the data
+        """
+        engineer = Engineer(**engineer_args['init_args'])
+        engineer.engineer(**engineer_args['run_args'])
+
+    def train_models(self, model_args: Dict) -> None:
+
+        for model_name, args in model_args.dict():
+
+            try:
+                model_class = getattr(src.models, model_name)
+            except AttributeError:
+                print(f'{model_name} not a model class! Skipping')
+                continue
+            model = model_class(**args['init_args'])
+            model.train(**args['train_args'])
+
+            if 'evaluate_args' in args:
+                model.evaluate(**args['evaluate_args'])
+            model.save_model()
+
     def run(self, config: DictWithDefaults) -> None:
 
         self.export(config['export'])
         self.process(config['preprocess'])
+        self.engineer(config['engineer'])
+        self.train_models(config['models'])
