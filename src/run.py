@@ -3,9 +3,9 @@ from collections import OrderedDict
 from itertools import dropwhile
 
 from src.exporters import (ERA5Exporter, VHIExporter, ERA5ExporterPOS, GLEAMExporter,
-                           CHIRPSExporter)
+                           CHIRPSExporter, SRTMExporter)
 from src.preprocess import (VHIPreprocessor, ERA5MonthlyMeanPreprocessor,
-                            GLEAMPreprocessor, CHIRPSPreprocesser)
+                            GLEAMPreprocessor, CHIRPSPreprocesser, SRTMPreprocessor)
 from src.engineer import Engineer
 import src.models
 
@@ -69,7 +69,8 @@ class Run:
             'vhi': VHIExporter,
             'era5POS': ERA5ExporterPOS,
             'gleam': GLEAMExporter,
-            'chirps': CHIRPSExporter
+            'chirps': CHIRPSExporter,
+            'srtm': SRTMExporter
         }
 
         for dataset, variables in export_args.items():
@@ -97,7 +98,8 @@ class Run:
             'vhi': VHIPreprocessor,
             'gleam': GLEAMPreprocessor,
             'reanalysis-era5-single-levels-monthly-means': ERA5MonthlyMeanPreprocessor,
-            'chirps': CHIRPSPreprocesser
+            'chirps': CHIRPSPreprocesser,
+            'srtm': SRTMPreprocessor
         }
 
         def process_dataset(data: Path, dataset: str, args: Dict) -> None:
