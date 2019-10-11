@@ -135,3 +135,6 @@ if __name__ == '__main__':
     process_esa_cci_landcover()
     preprocess_srtm()
     preprocess_era5()
+    preprocess_kenya_boundaries(selection='level_1')
+    preprocess_kenya_boundaries(selection='level_2')
+    preprocess_kenya_boundaries(selection='level_3')
