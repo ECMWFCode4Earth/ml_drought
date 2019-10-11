@@ -79,10 +79,13 @@ class Run:
             assert type(variables) is list, \
                 f'Expected {dataset} values to be a list. Got {type(variables)} instead'
 
-            exporter = dataset2exporter[dataset](self.data)
+            try:
+                exporter = dataset2exporter[dataset](self.data)
 
-            for variable in variables:
-                _ = exporter.export(**variable)  # type: ignore
+                for variable in variables:
+                    _ = exporter.export(**variable)  # type: ignore
+            except Exception as e:
+                print(f'Exception {e} raised for {dataset}')
 
     def process(self, preprocess_args: Dict) -> None:
         """preprocess the data
@@ -115,9 +118,12 @@ class Run:
             regrid_file = None
 
         for dataset, args in preprocess_args.items():
-            self._check_dataset(dataset, dataset2preprocessor)
-            args['run_args']['regrid'] = regrid_file
-            process_dataset(self.data, dataset, args)
+            try:
+                self._check_dataset(dataset, dataset2preprocessor)
+                args['run_args']['regrid'] = regrid_file
+                process_dataset(self.data, dataset, args)
+            except Exception as e:
+                print(f'Exception {e} raised for {dataset}')
 
     def engineer(self, engineer_args: Dict) -> None:
         """Run the engineer on the data
