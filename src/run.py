@@ -3,10 +3,9 @@ from collections import OrderedDict
 from itertools import dropwhile
 
 from src.exporters import (ERA5Exporter, VHIExporter, ERA5ExporterPOS, GLEAMExporter,
-                           CHIRPSExporter, SRTMExporter, KenyaAdminExporter)
+                           CHIRPSExporter, SRTMExporter)
 from src.preprocess import (VHIPreprocessor, ERA5MonthlyMeanPreprocessor,
-                            GLEAMPreprocessor, CHIRPSPreprocesser, SRTMPreprocessor,
-                            KenyaAdminPreprocessor)
+                            GLEAMPreprocessor, CHIRPSPreprocesser, SRTMPreprocessor)
 from src.engineer import Engineer
 import src.models
 
