@@ -3,9 +3,10 @@ from collections import OrderedDict
 from itertools import dropwhile
 
 from src.exporters import (ERA5Exporter, VHIExporter, ERA5ExporterPOS, GLEAMExporter,
-                           CHIRPSExporter, SRTMExporter)
+                           CHIRPSExporter, SRTMExporter, KenyaAdminExporter)
 from src.preprocess import (VHIPreprocessor, ERA5MonthlyMeanPreprocessor,
-                            GLEAMPreprocessor, CHIRPSPreprocesser, SRTMPreprocessor)
+                            GLEAMPreprocessor, CHIRPSPreprocesser, SRTMPreprocessor,
+                            KenyaAdminPreprocessor)
 from src.engineer import Engineer
 import src.models
 
@@ -70,7 +71,8 @@ class Run:
             'era5POS': ERA5ExporterPOS,
             'gleam': GLEAMExporter,
             'chirps': CHIRPSExporter,
-            'srtm': SRTMExporter
+            'srtm': SRTMExporter,
+            'kenya': KenyaAdminExporter
         }
 
         for dataset, variables in export_args.items():
@@ -99,7 +101,8 @@ class Run:
             'gleam': GLEAMPreprocessor,
             'reanalysis-era5-single-levels-monthly-means': ERA5MonthlyMeanPreprocessor,
             'chirps': CHIRPSPreprocesser,
-            'srtm': SRTMPreprocessor
+            'srtm': SRTMPreprocessor,
+            'kenya': KenyaAdminPreprocessor
         }
 
         def process_dataset(data: Path, dataset: str, args: Dict) -> None:
