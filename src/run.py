@@ -72,7 +72,6 @@ class Run:
             'gleam': GLEAMExporter,
             'chirps': CHIRPSExporter,
             'srtm': SRTMExporter,
-            'kenya': KenyaAdminExporter
         }
 
         for dataset, variables in export_args.items():
@@ -102,7 +101,6 @@ class Run:
             'reanalysis-era5-single-levels-monthly-means': ERA5MonthlyMeanPreprocessor,
             'chirps': CHIRPSPreprocesser,
             'srtm': SRTMPreprocessor,
-            'kenya': KenyaAdminPreprocessor
         }
 
         def process_dataset(data: Path, dataset: str, args: Dict) -> None:
