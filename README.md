@@ -19,7 +19,10 @@ NOTE: some basic working knowledge of Python is required to use this pipeline, a
 
 ## Using the Pipeline <a name="using"></a>
 
-The major entrypoints to the repository are through the [`notebooks`](notebooks/docs) directory, and the [`scripts`](scripts/README.md).
+There are three entrypoints to the pipeline:
+* [run.py](run.py)
+* [notebooks](notebooks/docs)
+* [scripts](scripts/README.md)
 
 A blog post describing the goals and design of the pipeline can be found
 [here](https://medium.com/@gabrieltseng/a-machine-learning-pipeline-for-climate-research-ebf83b2b349a).
