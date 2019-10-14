@@ -5,9 +5,10 @@ import xarray as xr
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from sklearn.metrics import r2_score, mean_squared_error
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 from src.utils import get_ds_mask
 
 
@@ -65,7 +66,9 @@ def annual_scores(models: List[str],
                   data_path: Path = Path('data'),
                   pred_year: int = 2018,
                   target_var: str = 'VCI',
-                  verbose: bool = True) -> Dict[str, Dict[str, List[float]]]:
+                  verbose: bool = True,
+                  to_dataframe: bool = False,
+                  ) -> Union[Dict[str, Dict[str, List[float]]], pd.DataFrame]:
     """
     Aggregates monthly R2 scores over a `pred_year` of data
     """
@@ -74,7 +77,7 @@ def annual_scores(models: List[str],
         metrics = ['rmse', 'r2']
     monthly_scores: Dict[str, Dict[str, List[float]]] = {}
     for metric in metrics:
-        monthly_scores[metric] = {'month': []}
+        monthly_scores[metric] = {'month': [], 'year': []}
         for model in models:
             monthly_scores[metric][model] = []
 
@@ -89,8 +92,59 @@ def annual_scores(models: List[str],
                 monthly_scores[metric][model].append(score)
         for metric in metrics:
             monthly_scores[metric]['month'].append(month)
+            monthly_scores[metric]['year'].append(pred_year)
 
-    return monthly_scores
+    if to_dataframe:
+        return annual_scores_to_dataframe(monthly_scores)
+    else:
+        return monthly_scores
+
+
+def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
+    """Convert the dictionary from annual_scores to a pd.DataFrame
+    """
+    df = pd.DataFrame(monthly_scores)
+
+    metric_dfs = []
+    # rename columns by metric
+    for metric in monthly_scores.keys():
+        metric_df = df[metric].apply(pd.Series).T
+        metric_df['metric'] = metric
+        metric_dfs.append(metric_df)
+
+    # join columns into one dataframe
+    df = pd.concat(metric_dfs)
+
+    return df
+
+
+def read_pred_data(model: str,
+                   data_dir: Path = Path('data'),
+                   experiment: str = 'one_month_forecast') -> Union[xr.Dataset, xr.DataArray]:
+    model_pred_dir = (data_dir / 'models' / experiment / model)
+    pred_ds = xr.open_mfdataset((model_pred_dir / '*.nc').as_posix())
+    pred_ds = pred_ds.sortby('time')
+    pred_da = pred_ds.preds
+    pred_da = pred_da.transpose('time', 'lat', 'lon')
+
+    return pred_ds, pred_da
+
+
+def read_true_data(data_dir: Path = Path('data'),
+                   variable: str = 'VCI') -> Union[xr.Dataset, xr.DataArray]:
+    """Read the true test data from the data directory and
+    return the joined DataArray.
+
+    (Joined on the `time` dimension).
+    """
+    true_paths = [
+        f for f in (
+            data_dir / 'features' / 'one_month_forecast' / 'test'
+        ).glob('*/y.nc')
+    ]
+    true_ds = xr.open_mfdataset(true_paths).sortby('time').compute()
+    true_da = true_ds[variable].transpose('time', 'lat', 'lon')
+    return true_da
 
 
 def monthly_score(month: int,
@@ -158,7 +212,7 @@ def monthly_score(month: int,
 
 
 def plot_predictions(pred_month: int, model: str,
-                     target_var: str = 'VHI',
+                     target_var: str = 'VCI',
                      pred_year: int = 2018,
                      data_path: Path = Path('data'),
                      experiment: str = 'one_month_forecast'):
