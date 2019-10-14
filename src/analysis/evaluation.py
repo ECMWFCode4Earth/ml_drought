@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from sklearn.metrics import r2_score, mean_squared_error
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Tuple
 from src.utils import get_ds_mask
 
 
@@ -118,6 +118,13 @@ def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
     return df
 
 
+def _read_multi_data_paths(train_data_paths: List[Path]) -> xr.Dataset:
+    train_ds = xr.open_mfdataset(train_data_paths).sortby('time').compute()
+    train_ds = train_ds.transpose('time', 'lat', 'lon')
+
+    return train_ds
+
+
 def read_pred_data(model: str,
                    data_dir: Path = Path('data'),
                    experiment: str = 'one_month_forecast') -> Union[xr.Dataset, xr.DataArray]:
@@ -142,8 +149,8 @@ def read_true_data(data_dir: Path = Path('data'),
             data_dir / 'features' / 'one_month_forecast' / 'test'
         ).glob('*/y.nc')
     ]
-    true_ds = xr.open_mfdataset(true_paths).sortby('time').compute()
-    true_da = true_ds[variable].transpose('time', 'lat', 'lon')
+    true_ds = _read_multi_data_paths(true_paths)
+    true_da = true_ds[variable]
     return true_da
 
 
@@ -244,3 +251,34 @@ def plot_predictions(pred_month: int, model: str,
     model_ds.preds.plot(vmin=0, vmax=100, ax=ax[1], add_colorbar=False)
     ax[1].set_title(model)
     plt.show()
+
+
+def read_train_data(data_dir: Path = Path('data'),
+                    remove_duplicates: bool = True) -> Tuple[xr.Dataset, xr.Dataset]:
+    """Read the training data from the data directory and return the joined DataArray.
+
+    (Joined on the `time` dimension).
+    """
+    # LOAD the y files
+    y_data_paths = [
+        f for f in (
+            data_dir / 'features' / 'one_month_forecast' / 'train'
+        ).glob('*/y.nc')
+    ]
+    train_y_ds = _read_multi_data_paths(y_data_paths)
+
+    # LOAD the X files
+    X_data_paths = [
+        f for f in (
+            data_dir / 'features' / 'one_month_forecast' / 'train'
+        ).glob('*/X.nc')
+    ]
+    train_X_ds = _read_multi_data_paths(X_data_paths)
+
+    if remove_duplicates:
+        # remove duplicate times from the X ds
+        # https://stackoverflow.com/a/51077784/9940782
+        _, index = np.unique(train_X_ds['time'], return_index=True)
+        train_X_ds = train_X_ds.isel(time=index)
+
+    return train_X_ds, train_y_ds
