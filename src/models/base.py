@@ -4,7 +4,9 @@ import json
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 
-from typing import cast, Any, Dict, List, Optional, Tuple
+from .data import TrainData
+
+from typing import cast, Any, Dict, List, Optional, Union, Tuple
 
 
 class ModelBase:
@@ -155,3 +157,38 @@ class ModelBase:
                 ).set_index(['lat', 'lon', 'time']).to_xarray()
 
                 preds_xr.to_netcdf(self.model_dir / f'preds_{key}.nc')
+
+    def _concatenate_data(self, x: Union[Tuple[Optional[np.ndarray], ...],
+                                         TrainData]) -> np.ndarray:
+        """Takes a TrainData object, and flattens all the features the model
+        is using as predictors into a np.ndarray
+        """
+
+        if type(x) is tuple:
+            x_his, x_pm, x_latlons, x_cur, x_ym, x_static = x  # type: ignore
+        elif type(x) == TrainData:
+            x_his, x_pm, x_latlons = x.historical, x.pred_months, x.latlons  # type: ignore
+            x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
+            x_static = x.static  # type: ignore
+
+        assert x_his is not None, \
+            'x[0] should be historical data, and therefore should not be None'
+        x_in = x_his.reshape(x_his.shape[0], x_his.shape[1] * x_his.shape[2])
+
+        if self.include_pred_month:
+            # one hot encoding, should be num_classes + 1, but
+            # for us its + 2, since 0 is not a class either
+            pred_months_onehot = np.eye(14)[x_pm][:, 1:-1]
+            x_in = np.concatenate(
+                (x_in, pred_months_onehot), axis=-1
+            )
+        if self.include_latlons:
+            x_in = np.concatenate((x_in, x_latlons), axis=-1)
+        if self.experiment == 'nowcast':
+            x_in = np.concatenate((x_in, x_cur), axis=-1)
+        if self.include_yearly_aggs:
+            x_in = np.concatenate((x_in, x_ym), axis=-1)
+        if self.include_static:
+            x_in = np.concatenate((x_in, x_static), axis=-1)
+
+        return x_in

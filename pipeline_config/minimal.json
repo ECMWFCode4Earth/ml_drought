@@ -1,6 +1,6 @@
 {
-    "data":"data",
-   "export":{
+  "data":"data",
+  "export":{
       "vhi": [
             {"years": [
                         2017,
@@ -16,6 +16,13 @@
       ]
   },
   "preprocess":{
-      "vhi": [{"subset_str": "kenya"}]
-  }
+      "regrid_dataset": "vhi",
+      "vhi": {"init_args": {"var":  "VCI"}, "run_args": {"subset_str": "kenya"}},
+      "era5POS": {"init_args":  {}, "run_args": {"subset_str":  "kenya"}}
+  },
+  "engineer": {
+    "init_args": {"process_static":  true},
+    "run_args": {"test_year":  2018}
+  },
+  "models": {"Persistence": {"init_args":  {"experiment":  "one_month_forecast"}, "train_args":  {}}}
 }

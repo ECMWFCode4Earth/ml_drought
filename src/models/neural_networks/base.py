@@ -72,7 +72,7 @@ class NNBase(ModelBase):
 
         if self.explainer is None:
             background_samples = self._get_background(sample_size=background_size)
-            self.explainer: shap.DeepExplainer = shap.DeepExplainer(
+            self.explainer: shap.DeepExplainer = shap.DeepExplainer(  # type: ignore
                 self.model, background_samples)
         if x is None:
             # if no input is passed to explain, take 10 values and explain them
