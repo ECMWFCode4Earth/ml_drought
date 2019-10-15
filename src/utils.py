@@ -178,6 +178,10 @@ def drop_nans_and_flatten(dataArray: xr.DataArray) -> np.ndarray:
     return dataArray.values[~np.isnan(dataArray.values)]
 
 
+def _sort_lat_lons(da: xr.DataArray) -> xr.DataArray:
+    return da.sortby(['time', 'lat', 'lon'])
+
+
 # dictionary lookup of regions
 region_lookup = {
     "kenya": get_kenya(),

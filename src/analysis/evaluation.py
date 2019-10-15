@@ -9,7 +9,7 @@ import pandas as pd
 
 from sklearn.metrics import r2_score, mean_squared_error
 from typing import Dict, List, Optional, Union, Tuple
-from src.utils import get_ds_mask
+from src.utils import get_ds_mask, _sort_lat_lons
 
 
 def spatial_rmse(true_da: xr.DataArray,
@@ -20,6 +20,14 @@ def spatial_rmse(true_da: xr.DataArray,
     true_da_shape = (true_da.lat.shape[0], true_da.lon.shape[0])
     pred_da_shape = (pred_da.lat.shape[0], pred_da.lon.shape[0])
     assert true_da_shape == pred_da_shape
+    assert true_da.dims == pred_da.dims, f'Expect' \
+    'the dimensions to be the same. Currently: ' \
+    f'True: {true_da.dims} Preds: {pred_da.dims}. ' \
+    'Have you tried da.transpose("time", "lat", "lon")'
+
+    # sort the lat/lons correctly just to be sure
+    pred_da = _sort_lat_lons(pred_da)
+    true_da = _sort_lat_lons(true_da)
 
     vals = np.sqrt(
         np.nansum((true_da.values - pred_da.values)**2, axis=0) / pred_da.shape[0]
