@@ -29,12 +29,13 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
 
-  - conda env create -f environment.ubuntu.cpu.yml
+  - conda env create -f environment.yml
   - source activate esowc-drought
 
 script:
   - mypy src
   - pytest
+  - codecov src
 
 notifications:
   slack:

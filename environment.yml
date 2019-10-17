@@ -1,0 +1,19 @@
+name: esowc-drought2
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - pytorch
+  - shap
+  - python=3.7.3
+  - xarray
+  - pandas
+  - scikit-learn
+  - matplotlib
+  - numpy
+  - tqdm
+  - pytest
+  - pytest-flake8
+  - mypy
+  - codecov
