@@ -33,7 +33,7 @@ A blog post describing the goals and design of the pipeline can be found
 with an environment, install Anaconda from the link above, and (from this directory) run
 
 ```bash
-conda env create -f environment.{mac, ubuntu.cpu}.yml
+conda env create -f environment.yml
 ```
 This will create an environment named `esowc-drought` with all the necessary packages to run the code. To
 activate this environment, run
