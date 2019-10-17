@@ -1,4 +1,4 @@
-name: esowc-drought2
+name: esowc-drought
 channels:
   - pytorch
   - conda-forge
