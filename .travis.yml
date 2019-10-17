@@ -35,7 +35,6 @@ install:
 script:
   - mypy src
   - pytest
-  - codecov src
 
 notifications:
   slack:
