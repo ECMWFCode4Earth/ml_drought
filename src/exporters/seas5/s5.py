@@ -179,13 +179,10 @@ class S5Exporter(CDSExporter):
 
         output_paths = []
         if break_up:
-            # SPLIT THE API CALLS INTO MONTHS (speed up downloads)
-            for year, month in itertools.product(
-                processed_selection_request["year"], processed_selection_request["month"]
-            ):
+            # SPLIT THE API CALLS INTO YEARS (speed up downloads)
+            for year in processed_selection_request["year"]:
                 updated_request = processed_selection_request.copy()
                 updated_request["year"] = [year]
-                updated_request["month"] = [month]
 
                 if n_parallel_requests > 1:  # Run in parallel
                     # multiprocessing of the paths
