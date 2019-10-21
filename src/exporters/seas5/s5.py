@@ -1,5 +1,4 @@
 from pathlib import Path
-import itertools
 import numpy as np
 
 from typing import cast, Dict, Optional, List
