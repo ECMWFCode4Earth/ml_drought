@@ -130,7 +130,7 @@ class BasePreProcessor:
                                     filename=str(savedir),
                                     reuse_weights=False)
 
-        variables = list(ds.var().variables)
+        variables = [v for v in ds.data_vars]
         output_dict = {}
         for var in variables:
             print(f'- regridding var {var} -')
