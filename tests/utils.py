@@ -45,7 +45,7 @@ def _create_dummy_precip_data(tmp_path,
         (30, 30), variable_name='precip',
         start_date=start_date, end_date=end_date
     )
-    precip.to_netcdf(data_dir / 'chirps_kenya.nc')
+    precip.to_netcdf(data_dir / 'data_kenya.nc')
 
     return data_dir
 
