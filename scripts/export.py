@@ -130,7 +130,7 @@ def export_s5():
     else:
         data_path = Path('../data')
 
-    granularity = 'hourly'
+    granularity = 'monthly'
     pressure_level = False
 
     exporter = S5Exporter(
@@ -138,25 +138,28 @@ def export_s5():
         granularity=granularity,
         pressure_level=pressure_level,
     )
-    variable = 'total_precipitation'
+    variables = ['total_precipitation', '2m_temperature', 'evaporation']
     min_year = 1993
-    max_year = 2014
+    max_year = 2019
     min_month = 1
     max_month = 12
     max_leadtime = None
-    pressure_levels = [200, 500, 925]
-    n_parallel_requests = 20
+    pressure_levels = None
+    n_parallel_requests = 1
 
-    exporter.export(
-        variable=variable,
-        min_year=min_year,
-        max_year=max_year,
-        min_month=min_month,
-        max_month=max_month,
-        max_leadtime=max_leadtime,
-        pressure_levels=pressure_levels,
-        n_parallel_requests=n_parallel_requests,
-    )
+    for variable in variables:
+        print(f"\n\nWORKING ON: {variable}\n\n")
+        exporter.export(
+            variable=variable,
+            min_year=min_year,
+            max_year=max_year,
+            min_month=min_month,
+            max_month=max_month,
+            max_leadtime=max_leadtime,
+            pressure_levels=pressure_levels,
+            n_parallel_requests=n_parallel_requests,
+            break_up=False
+        )
 
 
 def export_kenya_boundaries():
