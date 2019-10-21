@@ -137,7 +137,7 @@ class S5Preprocessor(BasePreProcessor):
             # merge the variables into one dataset
             ds = xr.merge(all_vars).sortby('initialisation_date')
 
-        if not self.ouce_server:
+        if not 'initialisation_date' in [d for d in ds.dims]:
             # add initialisation_date as a dimension
             ds = ds.expand_dims(dim='initialisation_date')
 
