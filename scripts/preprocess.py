@@ -90,10 +90,11 @@ def process_seas5():
         ]
 
         for variable in variables:
-            processor = S5Preprocessor(data_path)
-            processor.preprocess(subset_str='kenya', regrid=regrid_path,
-                                resample_time='M', upsampling=False,
-                                variable=variable)
+            if variable == 'total_precipitation':
+                processor = S5Preprocessor(data_path)
+                processor.preprocess(subset_str='kenya', regrid=regrid_path,
+                                    resample_time='M', upsampling=False,
+                                    variable=variable)
 
 
 def process_esa_cci_landcover():
@@ -156,13 +157,14 @@ def preprocess_era5():
 
 
 if __name__ == '__main__':
-    process_vci_2018()
-    process_precip_2018()
-    process_era5POS_2018()
-    process_gleam()
-    process_esa_cci_landcover()
-    preprocess_srtm()
-    preprocess_era5()
-    preprocess_kenya_boundaries(selection='level_1')
-    preprocess_kenya_boundaries(selection='level_2')
-    preprocess_kenya_boundaries(selection='level_3')
+    # process_vci_2018()
+    # process_precip_2018()
+    # process_era5POS_2018()
+    # process_gleam()
+    # process_esa_cci_landcover()
+    # preprocess_srtm()
+    # preprocess_era5()
+    # preprocess_kenya_boundaries(selection='level_1')
+    # preprocess_kenya_boundaries(selection='level_2')
+    # preprocess_kenya_boundaries(selection='level_3')
+    process_seas5()
