@@ -148,8 +148,7 @@ class S5Preprocessor(BasePreProcessor):
     def merge_and_resample(self,
                            variable: str,
                            resample_str: Optional[str] = 'M',
-                           upsampling: bool = False,
-                           subset_str: Optional[str] = None) -> Path:
+                           upsampling: bool = False) -> xr.Dataset:
         # open all interim processed files (all variables?)
         ds = xr.open_mfdataset((self.interim / variable).as_posix() + "/*.nc")
         ds = ds.sortby('initialisation_date')
@@ -160,12 +159,27 @@ class S5Preprocessor(BasePreProcessor):
                 ds, resample_str, upsampling,
                 time_coord='initialisation_date'
             )
+        return ds
 
-        # save to preprocessed netcdf
-        out_path = self.out_dir / f"{self.dataset}_{variable}_{subset_str}.nc"
-        ds.to_netcdf(out_path)
+    def create_valid_time_ds(self, ds: xr.Dataset) -> xr.Dataset:
+        """"""
+        # calculate the valid times from the FH/ID
+        forecast_horizon = ds.forecast_horizon.values
+        initialisation_date = ds.initialisation_date.values
+        valid_time = initialisation_date[:, np.newaxis] + forecast_horizon
 
-        return out_path
+        # create new dimension in the dataset object
+        stacked = ds.stack(
+            time=('initialisation_date', 'forecast_horizon')
+        )
+        stacked['time'] = (['initialisation_date', 'forecast_horizon'], valid_time)
+        stacked['forecast_horizon'] = forecast_horizon
+        stacked['initialisation_date'] = initialisation_date
+        ds['_time'] = (['initialisation_date', 'forecast_horizon'], valid_time)
+        ds = ds.assign_coords(valid_time=ds._time)
+        ds = ds.drop('_time')
+
+        return ds
 
     def preprocess(self, variable: str,
                    regrid: Optional[Path] = None,
@@ -242,7 +256,7 @@ class S5Preprocessor(BasePreProcessor):
 
         else:
             # Not implemented parallel yet
-            pool = multiprocessing.Pool(processes=100)
+            pool = multiprocessing.Pool(processes=5)
             outputs = pool.map(
                 partial(self._preprocess,
                         ouce_server=self.ouce_server,
@@ -254,9 +268,13 @@ class S5Preprocessor(BasePreProcessor):
         # merge all of the timesteps for S5 data
         for var in np.unique(variables):
             cast(str, var)
-            self.merge_and_resample(
-                var, resample_time, upsampling, subset_str
+            ds = self.merge_and_resample(
+                var, resample_time, upsampling
             )
+
+            # save to preprocessed netcdf
+            out_path = self.out_dir / f"{self.dataset}_{var}_{subset_str}.nc"
+            ds.to_netcdf(out_path)
 
         if cleanup:
             rmtree(self.interim)
