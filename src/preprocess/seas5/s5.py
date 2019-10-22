@@ -129,14 +129,14 @@ class S5Preprocessor(BasePreProcessor):
                         ds[var].to_dataset(name=var), regrid,
                         clean=True, reuse_weights=False
                     )
-                    d_ = d_.assign_coords(time=time)
+                    d_ = d_.assign_coords(valid_time=time)
                 else:
                     time = ds[var].time
                     d_ = self.regrid(
                         ds[var].to_dataset(name=var), regrid,
                         clean=False, reuse_weights=True,
                     )
-                    d_ = d_.assign_coords(time=time)
+                    d_ = d_.assign_coords(valid_time=time)
                 all_vars.append(d_)
             # merge the variables into one dataset
             ds = xr.merge(all_vars).sortby('initialisation_date')
@@ -157,12 +157,14 @@ class S5Preprocessor(BasePreProcessor):
         ds = xr.open_mfdataset((self.interim / variable).as_posix() + "/*.nc")
         ds = ds.sortby('initialisation_date')
 
-        # resample
+        # resample (NOTE: resample func removes the 'time' coord by default)
         if resample_str is not None:
+            time = ds[variable].time
             ds = self.resample_time(
                 ds, resample_str, upsampling,
                 time_coord='initialisation_date'
             )
+            ds = ds.assign_coords(valid_time=time)
         return ds
 
     def preprocess(self, variable: str,
