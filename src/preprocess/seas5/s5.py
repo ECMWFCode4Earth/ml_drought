@@ -124,15 +124,19 @@ class S5Preprocessor(BasePreProcessor):
             for var in vars:
                 if self.parallel:
                     # if parallel need to recreate new file each time
+                    time = ds[var].time
                     d_ = self.regrid(
                         ds[var].to_dataset(name=var), regrid,
                         clean=True, reuse_weights=False
                     )
+                    d_ = d_.assign_coords(time=time)
                 else:
+                    time = ds[var].time
                     d_ = self.regrid(
                         ds[var].to_dataset(name=var), regrid,
                         clean=False, reuse_weights=True,
                     )
+                    d_ = d_.assign_coords(time=time)
                 all_vars.append(d_)
             # merge the variables into one dataset
             ds = xr.merge(all_vars).sortby('initialisation_date')
@@ -160,7 +164,6 @@ class S5Preprocessor(BasePreProcessor):
                 time_coord='initialisation_date'
             )
         return ds
-
 
     def preprocess(self, variable: str,
                    regrid: Optional[Path] = None,
