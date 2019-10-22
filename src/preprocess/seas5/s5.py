@@ -167,7 +167,7 @@ class S5Preprocessor(BasePreProcessor):
             ds = ds.assign_coords(valid_time=time)
         return ds
 
-    def assign_true_time(ds: xr.Dataset) -> Tuple(xr.Dataset, np.array, np.array):
+    def assign_true_time(ds: xr.Dataset) -> Tuple[xr.Dataset, np.array, np.array]:
         """ Use the forecast horizon / initialisation date
         to create a dataset with 3 dimensions for subsetting
         the forecast data.
@@ -204,11 +204,11 @@ class S5Preprocessor(BasePreProcessor):
         Returns:
         -------
         ds: xr.Dataset
-            dateset with a flattened time as an index 
-        
+            dateset with a flattened time as an index
+
         initialisation_dates: np.array
             the intialisation dates as a flat numpy array
-        
+
         forecast_horizons: np.array
             the forecast horizons as a flat numpy array
         """
