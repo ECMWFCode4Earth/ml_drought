@@ -167,6 +167,55 @@ class S5Preprocessor(BasePreProcessor):
             ds = ds.assign_coords(valid_time=time)
         return ds
 
+    def assign_true_time(ds: xr.Dataset) -> xr.Dataset:
+        """ Use the forecast horizon / initialisation date
+        to create a dataset with 3 dimensions for subsetting
+        the forecast data.
+
+        Required to subset by the TRUE TIME (what time the forecast is of).
+        I.e. a forecast initialised on 01-01-1994 for one month ahead has
+        a TRUE TIME of 01-02-1994.
+
+        e.g.
+        IN:
+            <xarray.Dataset>
+            Dimensions:
+            Coordinates:
+            * initialisation_date  (initialisation_date)
+            * forecast_horizon     (forecast_horizon)
+            * lon                  (lon)
+            * lat                  (lat)
+              time                 (initialisation_date, forecast_horizon)
+            Data variables:
+                tprate               (initialisation_date, forecast_horizon, lat, lon)
+
+        OUT:
+            <xarray.Dataset>
+            Dimensions:
+            Coordinates:
+            * lon                   (lon)
+            * lat                   (lat)
+            * time                  (time)
+            * initialisation_dates  (initialisation_dates)
+            * forecast_horizons     (forecast_horizons)
+            Data variables:
+                tprate                (lat, lon, time)
+        """
+        stacked = ds.stack(time=('initialisation_date', 'forecast_horizon'))
+        t = stacked.time.values
+
+        # flatten the 2D time array [(timestamp, delta), ...]
+        initialisation_dates = np.array(list(zip(*t))[0])
+        forecast_horizons = np.array(list(zip(*t))[1])
+        times = initialisation_dates + forecast_horizons
+
+        # store as dimensions
+        stacked['time'] = times
+        stacked['initialisation_dates'] = initialisation_dates
+        stacked['forecast_horizons'] = forecast_horizons
+
+        return stacked
+
     def preprocess(self, variable: str,
                    regrid: Optional[Path] = None,
                    subset_str: Optional[str] = 'kenya',
