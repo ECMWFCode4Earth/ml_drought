@@ -165,9 +165,10 @@ class S5Preprocessor(BasePreProcessor):
                 time_coord='initialisation_date'
             )
             ds = ds.assign_coords(valid_time=time)
+
         return ds
 
-    def assign_true_time(ds: xr.Dataset) -> Tuple[xr.Dataset, np.array, np.array]:
+    def stack_time(ds: xr.Dataset) -> xr.Dataset:
         """ Use the forecast horizon / initialisation date
         to create a dataset with 3 dimensions for subsetting
         the forecast data.
@@ -222,8 +223,15 @@ class S5Preprocessor(BasePreProcessor):
 
         # store as dimensions
         stacked['time'] = times
+        stacked = stacked.assign_coords(initialisation_date=('time', initialisation_dates))
+        stacked = stacked.assign_coords(forecast_horizon=('time', forecast_horizons))
+        if 'valid_time' in [c for c in stacked.coords]:
+            stacked = stacked.drop('valid_time')
+        
+        # remove all the non-valid timesteps (i.e. not the first of the month)
+        stacked = stacked.where(stacked['time.day'] == 1, drop=True)
 
-        return stacked, initialisation_dates, forecast_horizons
+        return stacked
 
     def preprocess(self, variable: str,
                    regrid: Optional[Path] = None,
@@ -315,6 +323,10 @@ class S5Preprocessor(BasePreProcessor):
             ds = self.merge_and_resample(
                 var, resample_time, upsampling
             )
+
+            # only want valid_time not time
+            if 'time' in [c for c in ds.coords]:
+                ds = ds.drop('time')
 
             # save to preprocessed netcdf
             out_path = self.out_dir / f"{self.dataset}_{var}_{subset_str}.nc"
