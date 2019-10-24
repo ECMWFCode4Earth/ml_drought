@@ -94,7 +94,7 @@ def process_seas5():
             if variable == 'total_precipitation':
                 processor = S5Preprocessor(data_path)
                 processor.preprocess(subset_str='kenya', regrid=regrid_path,
-                                    resample_time='M', upsampling=False,
+                                    resample_time=None, upsampling=False,
                                     variable=variable)
 
 
