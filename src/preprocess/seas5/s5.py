@@ -1,5 +1,6 @@
 import numpy as np
 from pathlib import Path
+import pandas as pd
 import xarray as xr
 from functools import partial
 import multiprocessing
@@ -169,7 +170,35 @@ class S5Preprocessor(BasePreProcessor):
         return ds
 
     @staticmethod
-    def stack_time(ds: xr.Dataset) -> xr.Dataset:
+    def _map_forecast_horizon_to_months_ahead(stacked: xr.Dataset) -> xr.Dataset:
+        assert [d for d in stacked.dims] == ['lat', 'lon', 'time'], 'Expect the' \
+            '`stacked` dataset to only have 3 dimensions of lat, lon, time'
+        assert 'forecast_horizon' in [c for c in stacked.coords], 'Expect the' \
+            '`stacked` dataset object to have `forecast_horizon` as a coord'
+
+        # map forecast horizons to months ahead
+        map_ = {
+            pd.Timedelta('28 days 00:00:00'): 1,
+            pd.Timedelta('29 days 00:00:00'): 1,
+            pd.Timedelta('30 days 00:00:00'): 1,
+            pd.Timedelta('31 days 00:00:00'): 1,
+            pd.Timedelta('59 days 00:00:00'): 2,
+            pd.Timedelta('60 days 00:00:00'): 2,
+            pd.Timedelta('61 days 00:00:00'): 2,
+            pd.Timedelta('62 days 00:00:00'): 2,
+            pd.Timedelta('89 days 00:00:00'): 3,
+            pd.Timedelta('90 days 00:00:00'): 3,
+            pd.Timedelta('91 days 00:00:00'): 3,
+            pd.Timedelta('92 days 00:00:00'): 3,
+        }
+
+        fhs = [pd.Timedelta(fh) for fh in stacked.forecast_horizon.values]
+        months = [map_[fh] for fh in fhs]
+        stacked = stacked.assign_coords(months_ahead=('time', months))
+        
+        return stacked
+
+    def stack_time(self, ds: xr.Dataset) -> xr.Dataset:
         """ Use the forecast horizon / initialisation date
         to create a dataset with 3 dimensions for subsetting
         the forecast data.
@@ -232,12 +261,15 @@ class S5Preprocessor(BasePreProcessor):
         # remove all of the nan timesteps
         stacked = stacked.dropna(dim='time', how='all')
 
+        # create months ahead coord
+        stacked = self._map_forecast_horizon_to_months_ahead(stacked)
+
         return stacked
 
     def preprocess(self, variable: str,
                    regrid: Optional[Path] = None,
                    subset_str: Optional[str] = 'kenya',
-                   resample_time: Optional[str] = 'M',
+                   resample_time: Optional[str] = None,
                    upsampling: bool = False,
                    cleanup: bool = False,
                    **kwargs) -> None:
@@ -251,8 +283,10 @@ class S5Preprocessor(BasePreProcessor):
         regrid: Optional[Path] = None
             whether to regrid to the same lat/lon grid as the `regrid` ds
 
-        resample_time: Optional[str] = 'M'
-            whether to resample the timesteps to a given `frequency`
+        resample_time: Optional[str] = None
+            whether to resample the timesteps to a given `frequency` e.g. 'M'
+            Coded differently to other preprocessors because the 'initialisation_date'
+            which is stored initially as 'time' is important for calculating the 'valid_time'
 
         upsampling: bool = False
             are you upsampling the time frequency (e.g. monthly -> daily)
@@ -328,6 +362,10 @@ class S5Preprocessor(BasePreProcessor):
             # only want valid_time not time
             if 'time' in [c for c in ds.coords]:
                 ds = ds.drop('time')
+
+            # stack the timesteps to get a more standard dataset format
+            # dims = ('lat', 'lon', 'time')
+            ds = self.stack_time(ds)
 
             # save to preprocessed netcdf
             out_path = self.out_dir / f"{self.dataset}_{var}_{subset_str}.nc"
