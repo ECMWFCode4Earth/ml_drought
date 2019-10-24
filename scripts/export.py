@@ -193,4 +193,4 @@ if __name__ == '__main__':
     # export_esa()
     # export_s5()
     # export_kenya_boundaries()
-    export_era5_single_var(var='precip')
+    export_era5_single_var(variable='precip')
