@@ -193,7 +193,7 @@ class S5Preprocessor(BasePreProcessor):
         fhs = [pd.Timedelta(fh) for fh in stacked.forecast_horizon.values]
         months = [map_[fh] for fh in fhs]
         stacked = stacked.assign_coords(months_ahead=('time', months))
-        
+
         return stacked
 
     def stack_time(self, ds: xr.Dataset) -> xr.Dataset:
@@ -255,7 +255,7 @@ class S5Preprocessor(BasePreProcessor):
         stacked = stacked.assign_coords(forecast_horizon=('time', forecast_horizons))
         if 'valid_time' in [c for c in stacked.coords]:
             stacked = stacked.drop('valid_time')
-        
+
         # remove all of the nan timesteps
         stacked = stacked.dropna(dim='time', how='all')
 
