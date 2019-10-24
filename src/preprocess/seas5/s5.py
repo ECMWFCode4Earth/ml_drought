@@ -363,11 +363,11 @@ class S5Preprocessor(BasePreProcessor):
             ds = self.merge_all_interim_files(var)
 
             # resample time (N.B. changes initialisation_date ...)
-            if resample_time is not None:
-                print('WARNING: resampling time will alter the initialisation_dates')
-                ds = self.resample_timesteps(
-                    ds, var, resample_time, upsampling
-                )
+            # if resample_time is not None:
+            #     print('WARNING: resampling time will alter the initialisation_dates')
+            #     ds = self.resample_timesteps(
+            #         ds, var, resample_time, upsampling
+            #     )
 
             # only want valid_time not time
             if 'time' in [c for c in ds.coords]:
