@@ -271,6 +271,30 @@ class S5Preprocessor(BasePreProcessor):
 
         return stacked
 
+    @staticmethod
+    def select_n_ensemble_members(ds: xr.Dataset, n: int = 25) -> xr.Dataset:
+        """because the CDS data only has data for 25 ensemble members for the
+        most recent dates (after 2000) there are a large number of nan values
+        in the 26-51st ensemble members.
+
+        Note: `number` dimension is the ensemble member
+
+        Proportion of null values:
+        array([0.        , 0.        , 0.        , 0.        , 0.        ,
+               0.        , 0.        , 0.        , 0.        , 0.        ,
+               0.        , 0.        , 0.        , 0.        , 0.        ,
+               0.        , 0.        , 0.        , 0.        , 0.        ,
+               0.        , 0.        , 0.        , 0.        , 0.        ,
+               0.92307692, 0.92307692, 0.92307692, 0.92307692, 0.92307692,
+               0.92307692, 0.92307692, 0.92307692, 0.92307692, 0.92307692,
+               0.92307692, 0.92307692, 0.92307692, 0.92307692, 0.92307692,
+               0.92307692, 0.92307692, 0.92307692, 0.92307692, 0.92307692,
+               0.92307692, 0.92307692, 0.92307692, 0.92307692, 0.92307692,
+               0.92307692])
+        """
+        ds = ds.isel(number=slice(0, n))
+        return ds
+
     def preprocess(self, variable: str,
                    regrid: Optional[Path] = None,
                    subset_str: Optional[str] = 'kenya',
@@ -357,7 +381,7 @@ class S5Preprocessor(BasePreProcessor):
                 filepaths)
             print("\nOutputs (errors):\n\t", outputs)
 
-        # merge all of the timesteps for S5 data
+        # merge all of the preprocessed interim timesteps (../s5_interim/)
         for var in np.unique(variables):
             cast(str, var)
             ds = self.merge_all_interim_files(var)
@@ -369,16 +393,19 @@ class S5Preprocessor(BasePreProcessor):
             #         ds, var, resample_time, upsampling
             #     )
 
-            # only want valid_time not time
+            # remove 'time' from raw data (calculate from initialisation_date/forecast_horizon)
             if 'time' in [c for c in ds.coords]:
                 ds = ds.drop('time')
 
             # stack the timesteps to get a more standard dataset format
-            # dims = ('lat', 'lon', 'time')
+            # ('forecast_horizon', 'initialisation_date', 'lat', 'lon', 'number')
+            # --> dims = ('lat', 'lon', 'time', 'number')
             ds = self.stack_time(ds)
 
+            # select first 25 ensemble members (complete dataset)
+            ds = self.select_n_ensemble_members(ds, n=25)
+
             # save to preprocessed netcdf
-            assert False
             out_path = self.out_dir / f"{self.dataset}_{var}_{subset_str}.nc"
             ds.to_netcdf(out_path)
 
