@@ -229,8 +229,8 @@ class S5Preprocessor(BasePreProcessor):
         if 'valid_time' in [c for c in stacked.coords]:
             stacked = stacked.drop('valid_time')
         
-        # remove all the non-valid timesteps (i.e. not the first of the month)
-        stacked = stacked.where(stacked['time.day'] == 1, drop=True)
+        # remove all of the nan timesteps
+        stacked = stacked.dropna(dim='time', how='all')
 
         return stacked
 
