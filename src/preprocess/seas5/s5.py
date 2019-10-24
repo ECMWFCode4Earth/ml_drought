@@ -152,6 +152,7 @@ class S5Preprocessor(BasePreProcessor):
 
     def merge_all_interim_files(self, variable: str) -> xr.Dataset:
         # open all interim processed files (one variable)
+        print('Reading and merging all interim .nc files')
         ds = xr.open_mfdataset((self.interim / variable).as_posix() + "/*.nc")
         ds = ds.sortby('initialisation_date')
 
@@ -163,6 +164,7 @@ class S5Preprocessor(BasePreProcessor):
                            resample_str: Optional[str] = 'M',
                            upsampling: bool = False) -> xr.Dataset:
         # resample (NOTE: resample func removes the 'time' coord by default)
+        print('Resampling the timesteps (initialisation_date)')
         if resample_str is not None:
             time = ds[variable].time
             ds = self.resample_time(
@@ -245,6 +247,7 @@ class S5Preprocessor(BasePreProcessor):
         forecast_horizons: np.array
             the forecast horizons as a flat numpy array
         """
+        print('Stacking the [initialisation_date, forecast_horizon] coords')
         stacked = ds.stack(time=('initialisation_date', 'forecast_horizon'))
         t = stacked.time.values
 
@@ -358,6 +361,8 @@ class S5Preprocessor(BasePreProcessor):
         for var in np.unique(variables):
             cast(str, var)
             ds = self.merge_all_interim_files(var)
+
+            assert False
 
             # resample time (N.B. changes initialisation_date ...)
             if resample_time is not None:
