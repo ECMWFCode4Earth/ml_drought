@@ -378,6 +378,7 @@ class S5Preprocessor(BasePreProcessor):
             ds = self.stack_time(ds)
 
             # save to preprocessed netcdf
+            assert False
             out_path = self.out_dir / f"{self.dataset}_{var}_{subset_str}.nc"
             ds.to_netcdf(out_path)
 
