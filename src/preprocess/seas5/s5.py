@@ -158,7 +158,7 @@ class S5Preprocessor(BasePreProcessor):
 
         return ds
 
-    def merge_and_resample(self,
+    def resample_timesteps(self,
                            ds: xr.Dataset,
                            variable: str,
                            resample_str: Optional[str] = 'M',
@@ -362,11 +362,10 @@ class S5Preprocessor(BasePreProcessor):
             cast(str, var)
             ds = self.merge_all_interim_files(var)
 
-            assert False
-
             # resample time (N.B. changes initialisation_date ...)
             if resample_time is not None:
-                ds = self.merge_and_resample(
+                print('WARNING: resampling time will alter the initialisation_dates')
+                ds = self.resample_timesteps(
                     ds, var, resample_time, upsampling
                 )
 
