@@ -57,7 +57,7 @@ def export_era5():
         exporter.export(variable=variable, granularity='monthly')
 
 
-def export_era5_single_var(variable='precip'):
+def export_era5_single_var(variable='total_precipitation'):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
@@ -193,4 +193,4 @@ if __name__ == '__main__':
     # export_esa()
     # export_s5()
     # export_kenya_boundaries()
-    export_era5_single_var(variable='precip')
+    export_era5_single_var(variable='total_precipitation')
