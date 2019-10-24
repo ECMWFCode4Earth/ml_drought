@@ -57,6 +57,17 @@ def export_era5():
         exporter.export(variable=variable, granularity='monthly')
 
 
+def export_era5_single_var(variable='precip'):
+    # if the working directory is alread ml_drought don't need ../data
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+
+    exporter = ERA5Exporter(data_path)
+    exporter.export(variable=variable, granularity='monthly')
+
+
 def export_vhi():
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -174,11 +185,12 @@ def export_kenya_boundaries():
 
 
 if __name__ == '__main__':
-    export_era5()
-    export_vhi()
-    export_chirps()
-    export_era5POS()
-    export_gleam()
-    export_esa()
-    export_s5()
-    export_kenya_boundaries()
+    # export_era5()
+    # export_vhi()
+    # export_chirps()
+    # export_era5POS()
+    # export_gleam()
+    # export_esa()
+    # export_s5()
+    # export_kenya_boundaries()
+    export_era5_single_var(var='precip')
