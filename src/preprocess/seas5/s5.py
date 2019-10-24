@@ -158,6 +158,7 @@ class S5Preprocessor(BasePreProcessor):
         return ds
 
     def merge_and_resample(self,
+                           ds: xr.Dataset,
                            variable: str,
                            resample_str: Optional[str] = 'M',
                            upsampling: bool = False) -> xr.Dataset:
@@ -361,7 +362,7 @@ class S5Preprocessor(BasePreProcessor):
             # resample time (N.B. changes initialisation_date ...)
             if resample_time is not None:
                 ds = self.merge_and_resample(
-                    var, resample_time, upsampling
+                    ds, var, resample_time, upsampling
                 )
 
             # only want valid_time not time
