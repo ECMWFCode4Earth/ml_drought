@@ -171,8 +171,6 @@ class S5Preprocessor(BasePreProcessor):
 
     @staticmethod
     def _map_forecast_horizon_to_months_ahead(stacked: xr.Dataset) -> xr.Dataset:
-        assert [d for d in stacked.dims] == ['lat', 'lon', 'time'], 'Expect the' \
-            '`stacked` dataset to only have 3 dimensions of lat, lon, time'
         assert 'forecast_horizon' in [c for c in stacked.coords], 'Expect the' \
             '`stacked` dataset object to have `forecast_horizon` as a coord'
 
