@@ -168,6 +168,7 @@ class S5Preprocessor(BasePreProcessor):
 
         return ds
 
+    @staticmethod
     def stack_time(ds: xr.Dataset) -> xr.Dataset:
         """ Use the forecast horizon / initialisation date
         to create a dataset with 3 dimensions for subsetting
