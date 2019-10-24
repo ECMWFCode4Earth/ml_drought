@@ -150,14 +150,17 @@ class S5Preprocessor(BasePreProcessor):
         ds.to_netcdf(output_path)
         return output_path, variable
 
+    def merge_all_interim_files(self, variable: str) -> xr.Dataset:
+        # open all interim processed files (one variable)
+        ds = xr.open_mfdataset((self.interim / variable).as_posix() + "/*.nc")
+        ds = ds.sortby('initialisation_date')
+
+        return ds
+
     def merge_and_resample(self,
                            variable: str,
                            resample_str: Optional[str] = 'M',
                            upsampling: bool = False) -> xr.Dataset:
-        # open all interim processed files (all variables?)
-        ds = xr.open_mfdataset((self.interim / variable).as_posix() + "/*.nc")
-        ds = ds.sortby('initialisation_date')
-
         # resample (NOTE: resample func removes the 'time' coord by default)
         if resample_str is not None:
             time = ds[variable].time
@@ -353,9 +356,13 @@ class S5Preprocessor(BasePreProcessor):
         # merge all of the timesteps for S5 data
         for var in np.unique(variables):
             cast(str, var)
-            ds = self.merge_and_resample(
-                var, resample_time, upsampling
-            )
+            ds = self.merge_all_interim_files(var)
+
+            # resample time (N.B. changes initialisation_date ...)
+            if resample_time is not None:
+                ds = self.merge_and_resample(
+                    var, resample_time, upsampling
+                )
 
             # only want valid_time not time
             if 'time' in [c for c in ds.coords]:
