@@ -157,6 +157,19 @@ def preprocess_era5():
     processor.preprocess(subset_str='kenya', regrid=regrid_path)
 
 
+def preprocess_s5_ouce():
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+    variable = 'total_precipitation'
+    daily_s5_dir = Path('/soge-home/data/model/seas5/1.0x1.0/daily')
+    s = S5Preprocessor(data_path, ouce_server=True)
+    s.preprocess(
+        variable=variable, regrid=None, resample_time=None, **{'ouce_dir': daily_s5_dir}
+    )
+
+
 if __name__ == '__main__':
     # process_vci_2018()
     # process_precip_2018()
@@ -169,3 +182,4 @@ if __name__ == '__main__':
     # preprocess_kenya_boundaries(selection='level_2')
     # preprocess_kenya_boundaries(selection='level_3')
     process_seas5()
+    # preprocess_s5_ouce()
