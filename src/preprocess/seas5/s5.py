@@ -135,7 +135,10 @@ class S5Preprocessor(BasePreProcessor):
                     )
                 all_vars.append(d_)
             # merge the variables into one dataset
-            ds = xr.merge(all_vars).sortby('initialisation_date')
+            try:
+                ds = xr.merge(all_vars).sortby('initialisation_date')
+            except ValueError:
+                ds = xr.merge(all_vars)
 
         if not self.ouce_server:
             # add initialisation_date as a dimension
