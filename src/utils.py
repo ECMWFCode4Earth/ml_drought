@@ -60,6 +60,7 @@ def minus_months(cur_year: int, cur_month: int, diff_months: int,
 
 def get_ds_mask(ds: xr.Dataset) -> xr.Dataset:
     """ Return a boolean Dataset which is a mask of the first timestep in `ds`
+
     NOTE:
         assumes that all of the null values from `ds` are valid null values (e.g.
         water bodies). Could also be invalid nulls due to poor data processing /
@@ -71,7 +72,10 @@ def get_ds_mask(ds: xr.Dataset) -> xr.Dataset:
     return mask
 
 
-def create_shape_aligned_climatology(ds, clim, variable, time_period):
+def create_shape_aligned_climatology(ds: xr.Dataset,
+                                     clim: xr.Dataset,
+                                     variable: str,
+                                     time_period: str):
     """match the time dimension of `clim` to the shape of `ds` so that can
     perform simple calculations / arithmetic on the values of clim
 

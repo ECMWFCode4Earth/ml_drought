@@ -61,12 +61,9 @@ class TestLinearRegression:
         x_add2, _, _ = _make_dataset(size=(5, 5), const=True, variable_name='temp')
         x = xr.merge([x, x_add1, x_add2])
 
-        norm_dict = {'VHI': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                             'std': np.ones((1, x.to_array().values.shape[1]))},
-                     'precip': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                                'std': np.ones((1, x.to_array().values.shape[1]))},
-                     'temp': {'mean': np.zeros((1, x.to_array().values.shape[1])),
-                              'std': np.ones((1, x.to_array().values.shape[1]))}}
+        norm_dict = {'VHI': {'mean': 0, 'std': 1},
+                     'precip': {'mean': 0, 'std': 1},
+                     'temp': {'mean': 0, 'std': 1}}
 
         static_norm_dict = {'VHI': {'mean': 0.0,
                             'std': 1.0}}
@@ -128,6 +125,17 @@ class TestLinearRegression:
             test_arrays_dict['hello']['y'].size == preds_dict['hello'].shape[0]
         ), 'Expected length of test arrays to be the same as the predictions'
 
+        # test saving the model outputs
+        model.evaluate(save_preds=True)
+
+        save_path = model.data_path / 'models' / experiment / 'linear_regression'
+        assert (save_path / 'preds_hello.nc').exists()
+        assert (save_path / 'results.json').exists()
+
+        pred_ds = xr.open_dataset(save_path / 'preds_hello.nc')
+        assert np.isin(['lat', 'lon', 'time'], [c for c in pred_ds.coords]).all()
+        assert y.time == pred_ds.time
+
     def test_big_mean(self, tmp_path, monkeypatch):
 
         def mockiter(self):
@@ -143,13 +151,15 @@ class TestLinearRegression:
                     if self.idx < self.max_idx:
                         # batch_size = 10, timesteps = 2, num_features = 1
                         self.idx += 1
-                        return (np.ones((10, 2, 1)), np.ones((10, ), dtype=np.int8)), None
+                        return (np.ones((10, 2, 1)), np.ones((10, ), dtype=np.int8),
+                                np.ones((10, 2)), np.ones((10, 2)), np.ones((10, 2)),
+                                np.ones((10, 2))), None
                     else:
                         raise StopIteration()
             return MockIterator()
 
         def do_nothing(self, data_path, batch_file_size, shuffle_data, mode, pred_months,
-                       surrounding_pixels, monthly_aggs, ignore_vars, static):
+                       surrounding_pixels, ignore_vars):
 
             pass
 
@@ -160,7 +170,8 @@ class TestLinearRegression:
         calculated_mean = model._calculate_big_mean()
 
         # 1 for the 2 features and for the first month, 0 for the rest
-        expected_mean = np.array([1., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+        expected_mean = np.array([1., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                                  1., 1., 1., 1.])
 
         # np.isclose because of rounding
         assert np.isclose(calculated_mean, expected_mean).all()

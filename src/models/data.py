@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import numpy as np
 import pandas as pd
+from pandas import Timestamp
 from random import shuffle
 from pathlib import Path
 import pickle
@@ -30,10 +31,24 @@ class ModelArrays:
     x_vars: List[str]
     y_var: str
     latlons: Optional[np.ndarray] = None
+    target_time: Optional[Timestamp] = None
+
+
+# The dict below maps the indices of the arrays returned
+# by the training iterator to their name. It should be updated
+# if new inputs are added
+idx_to_input = {
+    0: 'historical',
+    1: 'pred_months',
+    2: 'latlons',
+    3: 'current',
+    4: 'yearly_aggs',
+    5: 'static'
+}
 
 
 def train_val_mask(mask_len: int, val_ratio: float = 0.3) -> Tuple[List[bool], List[bool]]:
-    """Makes a trainining and validation mask which can be passed to the dataloader
+    """Makes a training and validation mask which can be passed to the dataloader
     Arguments
     ----------
     mask_len: int
@@ -104,7 +119,8 @@ class DataLoader:
                  surrounding_pixels: Optional[int] = None,
                  ignore_vars: Optional[List[str]] = None,
                  monthly_aggs: bool = True,
-                 static: bool = False) -> None:
+                 static: bool = False,
+                 device: str = 'cpu') -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
@@ -139,6 +155,7 @@ class DataLoader:
                 static_normalizer_path = data_path / 'features/static/normalizing_dict.pkl'
                 with static_normalizer_path.open('rb') as f:
                     self.static_normalizing_dict = pickle.load(f)
+        self.device = torch.device(device)
 
     def __iter__(self):
         if self.mode == 'train':
@@ -190,9 +207,12 @@ class _BaseIter:
         self.to_tensor = loader.to_tensor
         self.experiment = loader.experiment
         self.ignore_vars = loader.ignore_vars
+        self.device = loader.device
 
         self.static = loader.static
         self.static_normalizing_dict = loader.static_normalizing_dict
+
+        self.static_array: Optional[np.ndarray] = None
 
         if self.shuffle:
             # makes sure they are shuffled every epoch
@@ -230,32 +250,20 @@ class _BaseIter:
         })
         return normalizing_array
 
-    def calculate_normalizing_array(self, data_vars: List[str],
-                                    yearly_agg: bool = False) -> Dict[str, np.ndarray]:
+    def calculate_normalizing_array(self, data_vars: List[str]) -> Dict[str, np.ndarray]:
         # If we've made it here, normalizing_dict is definitely not None
-        self.normalizing_dict = cast(Dict[str, Dict[str, np.ndarray]], self.normalizing_dict)
+        self.normalizing_dict = cast(Dict[str, Dict[str, float]], self.normalizing_dict)
 
         mean, std = [], []
         normalizing_dict_keys = self.normalizing_dict.keys()
         for var in data_vars:
             for norm_var in normalizing_dict_keys:
                 if var.endswith(norm_var):
-                    var_mean = self.normalizing_dict[norm_var]['mean']
-                    var_std = self.normalizing_dict[norm_var]['std']
-                    if yearly_agg:
-                        var_mean = np.mean(var_mean)
-                        var_std = np.mean(var_std)
-                    mean.append(var_mean)
-                    std.append(var_std)
+                    mean.append(self.normalizing_dict[norm_var]['mean'])
+                    std.append(self.normalizing_dict[norm_var]['std'])
                     break
 
-        mean_np, std_np = np.vstack(mean), np.vstack(std)
-
-        if yearly_agg:
-            mean_np, std_np = mean_np.squeeze(1), std_np.squeeze(1)
-        else:
-            # swapaxes so that its [timesteps, features], not [features, timesteps]
-            mean_np, std_np = mean_np.swapaxes(0, 1), std_np.swapaxes(0, 1)
+        mean_np, std_np = np.asarray(mean), np.asarray(std)
 
         normalizing_array = cast(Dict[str, np.ndarray], {
             'mean': mean_np,
@@ -269,7 +277,7 @@ class _BaseIter:
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
             self.normalizing_array_ym = self.calculate_normalizing_array(
-                list(yearly_mean.data_vars), yearly_agg=True)
+                list(yearly_mean.data_vars))
 
         if self.normalizing_array_ym is not None:
             yearly_agg = (yearly_agg - self.normalizing_array_ym['mean']) / \
@@ -292,7 +300,7 @@ class _BaseIter:
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
             self.normalizing_array = self.calculate_normalizing_array(
-                list(x.data_vars), yearly_agg=False)
+                list(x.data_vars))
             x_np = (x_np - self.normalizing_array['mean']) / (self.normalizing_array['std'])
 
         return x_np, y_np
@@ -322,18 +330,21 @@ class _BaseIter:
         return latlons, train_latlons
 
     def _calculate_static(self, num_instances: int) -> np.ndarray:
-        static_np = self.static.to_array().values  # type: ignore
-        static_np = static_np.reshape(static_np.shape[0], static_np.shape[1] * static_np.shape[2])
-        static_np = np.moveaxis(static_np, -1, 0)
-        assert static_np.shape[0] == num_instances
+        if self.static_array is None:
+            static_np = self.static.to_array().values  # type: ignore
+            static_np = static_np.reshape(static_np.shape[0],
+                                          static_np.shape[1] * static_np.shape[2])
+            static_np = np.moveaxis(static_np, -1, 0)
+            assert static_np.shape[0] == num_instances
 
-        if self.static_normalizing_dict is not None:
-            static_vars = list(self.static.data_vars)  # type: ignore
-            self.static_normalizing_array = self.calculate_static_normalizing_array(static_vars)
+            if self.static_normalizing_dict is not None:
+                vars = list(self.static.data_vars)  # type: ignore
+                self.static_normalizing_array = self.calculate_static_normalizing_array(vars)
 
-            static_np = (static_np - self.static_normalizing_array['mean']) / \
-                self.static_normalizing_array['std']
-        return static_np
+                static_np = (static_np - self.static_normalizing_array['mean']) / \
+                    self.static_normalizing_array['std']
+            self.static_array = static_np
+        return self.static_array
 
     def ds_folder_to_np(self,
                         folder: Path,
@@ -347,6 +358,7 @@ class _BaseIter:
         if self.ignore_vars is not None:
             x = x.drop(self.ignore_vars)
 
+        target_time = pd.to_datetime(y.time.values[0])
         yearly_agg = self._calculate_aggs(x)  # before to avoid aggs from surrounding pixels
         x_np, y_np = self._calculate_historical(x, y)
         x_months = self._calculate_target_months(y, x_np.shape[0])
@@ -428,18 +440,23 @@ class _BaseIter:
             latlons = latlons[notnan_indices]
 
         if to_tensor:
-            train_data.historical = torch.from_numpy(train_data.historical).float()
-            train_data.pred_months = torch.from_numpy(train_data.pred_months).float()
-            train_data.latlons = torch.from_numpy(train_data.latlons).float()
-            train_data.yearly_aggs = torch.from_numpy(train_data.yearly_aggs).float()
+            train_data.historical = torch.from_numpy(train_data.historical).to(self.device).\
+                float()
+            train_data.pred_months = torch.from_numpy(train_data.pred_months).to(self.device).\
+                float()
+            train_data.latlons = torch.from_numpy(train_data.latlons).to(self.device).float()
+            train_data.yearly_aggs = torch.from_numpy(train_data.yearly_aggs).to(self.device).\
+                float()
             if train_data.static is not None:
-                train_data.static = torch.from_numpy(train_data.static).float()
-            y_np = torch.from_numpy(y_np).float()
+                train_data.static = torch.from_numpy(train_data.static).to(self.device).float()
+            y_np = torch.from_numpy(y_np).to(self.device).float()
 
             if self.experiment == 'nowcast':
-                train_data.current = torch.from_numpy(train_data.current).float()
+                train_data.current = torch.from_numpy(train_data.current).to(self.device).\
+                    float()
         return ModelArrays(x=train_data, y=y_np, x_vars=list(x.data_vars),
-                           y_var=list(y.data_vars)[0], latlons=latlons)
+                           y_var=list(y.data_vars)[0], latlons=latlons,
+                           target_time=target_time)
 
     @staticmethod
     def _add_extra_dims(x: xr.Dataset, surrounding_pixels: Optional[int],
@@ -540,15 +557,15 @@ class _TrainIter(_BaseIter):
             final_y = np.concatenate(out_y, axis=0)
 
             if self.to_tensor:
-                final_x = torch.from_numpy(final_x).float()
-                final_x_add = torch.from_numpy(final_x_add).float()
-                final_x_latlon = torch.from_numpy(final_x_latlon).float()
-                final_x_ym = torch.from_numpy(final_x_ym).float()
+                final_x = torch.from_numpy(final_x).to(self.device).float()
+                final_x_add = torch.from_numpy(final_x_add).to(self.device).float()
+                final_x_latlon = torch.from_numpy(final_x_latlon).to(self.device).float()
+                final_x_ym = torch.from_numpy(final_x_ym).to(self.device).float()
                 if final_x_curr is not None:
-                    final_x_curr = torch.from_numpy(final_x_curr).float()
+                    final_x_curr = torch.from_numpy(final_x_curr).to(self.device).float()
                 if final_x_static is not None:
-                    final_x_static = torch.from_numpy(final_x_static).float()
-                final_y = torch.from_numpy(final_y).float()
+                    final_x_static = torch.from_numpy(final_x_static).to(self.device).float()
+                final_y = torch.from_numpy(final_y).to(self.device).float()
 
             if final_x.shape[0] == 0:
                 raise StopIteration()

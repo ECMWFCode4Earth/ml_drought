@@ -226,7 +226,7 @@ class TestS5Exporter:
 
         expected_filepath = (
             tmp_path / "raw/seasonal-monthly-single-levels/\
-            total_precipitation/2017_2018/M01_12.grib"
+            total_precipitation/2017_2018/Y2017_2018_M01_12.grib"
         ).as_posix()
         expected_filepath = expected_filepath.replace(' ', '')
 

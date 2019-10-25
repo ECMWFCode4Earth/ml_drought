@@ -1,47 +1,37 @@
 # Pipeline configurations
 
-The pipeline is configured using `json` objects. 
-The pipeline consists of the following steps (the default configuration is used as an example):
+The pipeline is configured using `json` objects - see the [minimal configuration](minimal.json) for
+an example. The pipeline consists of the following steps:
 
-### 1. Export
+#### 1. Export
 
 The export step consists of downloading data from remote datasets to a local folder.
 
 The format for exporter configurations is `{dataset: [list of variable configurations]}`.
 
-The following exporters have been implemented:
+#### 2. Preprocess
 
-#### 1.a. ERA5
+Preprocess exported files.
 
-Download ERA5 reanalysis data from the [climate data store](https://cds.climate.copernicus.eu/#!/home).
-For more complete documentation on the inputs, see the [`ERA5 exporter docstring`](../src/exporters/cds.py)
+#### 3. Engineer
 
-```
-"era5": [
-         {
-            "variable":"precipitation",
-            "selection_request": {
-                "year": List of ints between 1979 and 2019, default: all,
-                "month": List of ints between 1 and 12, default: all,
-                "day": List of ints between 1 and 31, default: all,
-                "time": List of strings between "00:00" and "23:00" incrementing one hour, default: all
-                                  }
-            "granularity": string, {"hourly", "monthly"}, granularity of the data, default: "hourly"
-            "show_api_request": boolean, whether to print the request made to the cdsapi, default: true
-            "break_up": boolean, break up request into monthly chunks, default: true
-            
-         }]
-```
+Engineer the preprocessed files into a `.nc` files ready to be input into the machine learning
+models.
 
-#### 1.b VHI
+#### 4. Models
 
-Download vegetation health index data from the NOAA 
-[Center for Satellite Applications and Research](https://www.star.nesdis.noaa.gov/smcd/emb/vci/VH/vh_browse.php).
+Train models
 
-For more complete documentation on the inputs, see the [`VHI exporter docstring`](../src/exporters/vhi.py)
+## Implemented configurations
 
-```
-"vhi": [
-        {"years": List of ints between 1981 and 2019, default: all}
-    ]
-```
+The following configurations have been implemented:
+
+#### [minimal](minimal.json)
+
+A minimal example configuration, in which VHI and ERA5 data are used. The VHI data is put through
+the parsimonious persistence model.
+
+#### [era5_forecast](era5_forecast.json)
+
+A variety of datasets are downloaded and regridded onto the ERA5 grid. Those datasets are then
+used to train an EA-LSTM to predict vegetation health one month in the future.

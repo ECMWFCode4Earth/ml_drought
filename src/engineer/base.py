@@ -35,9 +35,6 @@ class _EngineerBase:
             if not self.static_output_folder.exists():
                 self.static_output_folder.mkdir(parents=True)
 
-        self.num_normalization_values: int = 0
-        self.normalization_values: DefaultDict[str, Dict[str, np.ndarray]] = defaultdict(dict)
-
     def engineer(self, test_year: Union[int, List[int]],
                  target_variable: str = 'VHI',
                  pred_months: int = 12,
@@ -54,9 +51,14 @@ class _EngineerBase:
         # lat and lon
 
         output_file = self.static_output_folder / 'data.nc'
-        assert not output_file.exists(), 'A static data file already exists!'
+        if output_file.exists():
+            warnings.warn('A static data file already exists!')
+            return None
 
-        static_ds = self._make_dataset(static=True)
+        # here, we overwrite the dims because topography (a static variable)
+        # uses CDO for regridding, which yields very slightly different
+        # coordinates (it seems from rounding)
+        static_ds = self._make_dataset(static=True, overwrite_dims=True)
 
         normalization_values: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 
@@ -99,19 +101,17 @@ class _EngineerBase:
             expected_length=expected_length,
         )
 
+        normalization_values = self._calculate_normalization_values(train_ds)
+
         # split train_ds into x, y for each year-month before `test_year` & save
         self._stratify_training_data(
             train_ds=train_ds, target_variable=target_variable,
             pred_months=pred_months, expected_length=expected_length
         )
 
-        for var in self.normalization_values.keys():
-            self.normalization_values[var]['mean'] /= self.num_normalization_values
-            self.normalization_values[var]['std'] /= self.num_normalization_values
-
         savepath = self.output_folder / 'normalizing_dict.pkl'
         with savepath.open('wb') as f:
-            pickle.dump(self.normalization_values, f)
+            pickle.dump(normalization_values, f)
 
     def _get_preprocessed_files(self, static: bool) -> List[Path]:
         processed_files = []
@@ -124,7 +124,8 @@ class _EngineerBase:
                 processed_files.extend(list(subfolder.glob('*.nc')))
         return processed_files
 
-    def _make_dataset(self, static: bool) -> xr.Dataset:
+    def _make_dataset(self, static: bool,
+                      overwrite_dims: bool = False) -> xr.Dataset:
 
         datasets = []
         dims = ['lon', 'lat']
@@ -138,8 +139,13 @@ class _EngineerBase:
                     coords[dim] = datasets[idx][dim].values
             else:
                 for dim in dims:
-                    assert np.array_equal(datasets[idx][dim].values, coords[dim]), \
-                        f'{dim} is different! Was this run using the preprocessor?'
+                    array_equal = np.array_equal(datasets[idx][dim].values, coords[dim])
+                    if (not overwrite_dims) and (not array_equal):
+                        assert np.array_equal(datasets[idx][dim].values, coords[dim]), \
+                            f'{dim} is different! Was this run using the preprocessor?'
+                    elif overwrite_dims and (not array_equal):
+                        assert len(datasets[idx][dim].values) == len(coords[dim])
+                        datasets[idx][dim] = coords[dim]
 
         # join all preprocessed datasets
         main_dataset = datasets[0]
@@ -173,7 +179,6 @@ class _EngineerBase:
                 expected_length=expected_length,
             )
             if arrays is not None:
-                self._calculate_normalization_values(arrays['x'])
                 self._save(
                     arrays, year=cur_pred_year, month=cur_pred_month,
                     dataset_type='train'
@@ -251,21 +256,17 @@ class _EngineerBase:
             print(f'Saving data to {output_location.as_posix()}/{x_or_y}.nc')
             output_ds.to_netcdf(output_location / f'{x_or_y}.nc')
 
-    def _calculate_normalization_values(self, x_data: xr.Dataset) -> None:
+    def _calculate_normalization_values(self,
+                                        x_data: xr.Dataset) -> DefaultDict[str, Dict[str, float]]:
+        normalization_values: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 
         for var in x_data.data_vars:
-            mean = x_data[var].mean(dim=['lat', 'lon'], skipna=True).values
-            std = x_data[var].std(dim=['lat', 'lon'], skipna=True).values
+            mean = float(x_data[var].mean(dim=['lat', 'lon', 'time'], skipna=True).values)
+            std = float(x_data[var].std(dim=['lat', 'lon', 'time'], skipna=True).values)
+            normalization_values[var]['mean'] = mean
+            normalization_values[var]['std'] = std
 
-            if not (np.isnan(mean).any() or np.isnan(std).any()):
-                if var in self.normalization_values:
-                    self.normalization_values[var]['mean'] += mean
-                    self.normalization_values[var]['std'] += std
-                else:
-                    self.normalization_values[var]['mean'] = mean
-                    self.normalization_values[var]['std'] = std
-
-        self.num_normalization_values += 1
+        return normalization_values
 
     @staticmethod
     def _make_fill_value_dataset(ds: Union[xr.Dataset, xr.DataArray],
