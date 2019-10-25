@@ -166,7 +166,8 @@ def preprocess_s5_ouce():
     daily_s5_dir = Path('/soge-home/data/model/seas5/1.0x1.0/daily')
     s = S5Preprocessor(data_path, ouce_server=True)
     s.preprocess(
-        variable=variable, regrid=None, resample_time=None, **{'ouce_dir': daily_s5_dir}
+        variable=variable, regrid=None, resample_time=None,
+        **{'ouce_dir': daily_s5_dir, 'infer': True},
     )
 
 
@@ -181,5 +182,5 @@ if __name__ == '__main__':
     # preprocess_kenya_boundaries(selection='level_1')
     # preprocess_kenya_boundaries(selection='level_2')
     # preprocess_kenya_boundaries(selection='level_3')
-    process_seas5()
-    # preprocess_s5_ouce()
+    # process_seas5()
+    preprocess_s5_ouce()
