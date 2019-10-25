@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import List, Optional
-from bs4 import BeautifulSoup
 import urllib.request
 import numpy as np
 import os
@@ -9,6 +8,7 @@ import multiprocessing
 import re
 
 from .base import BaseExporter
+BeautifulSoup = None
 
 
 class NDVIExporter(BaseExporter):
@@ -18,6 +18,10 @@ class NDVIExporter(BaseExporter):
     """
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
+        global BeautifulSoup
+        if BeautifulSoup is None:
+            from bs4 import BeautifulSoup
+
         super().__init__(data_folder)
 
         self.ndvi_folder = self.raw_folder / "ndvi"
@@ -27,6 +31,7 @@ class NDVIExporter(BaseExporter):
         self.base_url = 'https://www.ncei.noaa.gov/data/' \
             'avhrr-land-normalized-difference-vegetation-index/' \
             'access'.replace(' ', '')
+
 
     @staticmethod
     def beautiful_soup_url(url: str) -> BeautifulSoup:
