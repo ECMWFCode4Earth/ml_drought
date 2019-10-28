@@ -4,7 +4,9 @@ import json
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 
-from typing import cast, Any, Dict, List, Optional, Tuple
+from .data import TrainData
+
+from typing import cast, Any, Dict, List, Optional, Union, Tuple
 
 
 class ModelBase:
@@ -20,6 +22,17 @@ class ModelBase:
         The months the model should predict. If None, all months are predicted
     include_pred_month: bool = True
         Whether to include the prediction month to the model's training data
+    surrounding_pixels: Optional[int] = None
+        How many surrounding pixels to add to the input data. e.g. if the input is 1, then in
+        addition to the pixels on the prediction point, the neighbouring (spatial) pixels will
+        be included too, up to a distance of one pixel away
+    ignore_vars: Optional[List[str]] = None
+        A list of variables to ignore. If None, all variables in the data_path will be included
+    include_latlons: bool = True
+        Whether to include prediction pixel latitudes and longitudes in the model's
+        training data
+    include_static: bool = True
+        Whether to include static data
     """
 
     model_name: str  # to be added by the model classes
@@ -29,15 +42,25 @@ class ModelBase:
                  experiment: str = 'one_month_forecast',
                  pred_months: Optional[List[int]] = None,
                  include_pred_month: bool = True,
-                 surrounding_pixels: Optional[int] = None) -> None:
+                 include_latlons: bool = False,
+                 include_monthly_aggs: bool = True,
+                 include_yearly_aggs: bool = True,
+                 surrounding_pixels: Optional[int] = None,
+                 ignore_vars: Optional[List[str]] = None,
+                 include_static: bool = True) -> None:
 
         self.batch_size = batch_size
         self.include_pred_month = include_pred_month
+        self.include_latlons = include_latlons
+        self.include_monthly_aggs = include_monthly_aggs
+        self.include_yearly_aggs = include_yearly_aggs
         self.data_path = data_folder
         self.experiment = experiment
         self.pred_months = pred_months
         self.models_dir = data_folder / 'models' / self.experiment
         self.surrounding_pixels = surrounding_pixels
+        self.ignore_vars = ignore_vars
+        self.include_static = include_static
 
         if not self.models_dir.exists():
             self.models_dir.mkdir(parents=True, exist_ok=False)
@@ -80,7 +103,7 @@ class ModelBase:
     def evaluate(self, save_results: bool = True,
                  save_preds: bool = False) -> None:
         """
-        Evaluate the trained model
+        Evaluate the trained model on the TEST data
 
         Arguments
         ----------
@@ -124,8 +147,48 @@ class ModelBase:
                 if len(preds.shape) > 1:
                     preds = preds.squeeze(-1)
 
+                # the prediction timestep
+                time = val['time']
+                times = [time for _ in range(len(preds))]
+
                 preds_xr = pd.DataFrame(data={
                     'preds': preds, 'lat': latlons[:, 0],
-                    'lon': latlons[:, 1]}).set_index(['lat', 'lon']).to_xarray()
+                    'lon': latlons[:, 1], 'time': times}
+                ).set_index(['lat', 'lon', 'time']).to_xarray()
 
                 preds_xr.to_netcdf(self.model_dir / f'preds_{key}.nc')
+
+    def _concatenate_data(self, x: Union[Tuple[Optional[np.ndarray], ...],
+                                         TrainData]) -> np.ndarray:
+        """Takes a TrainData object, and flattens all the features the model
+        is using as predictors into a np.ndarray
+        """
+
+        if type(x) is tuple:
+            x_his, x_pm, x_latlons, x_cur, x_ym, x_static = x  # type: ignore
+        elif type(x) == TrainData:
+            x_his, x_pm, x_latlons = x.historical, x.pred_months, x.latlons  # type: ignore
+            x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
+            x_static = x.static  # type: ignore
+
+        assert x_his is not None, \
+            'x[0] should be historical data, and therefore should not be None'
+        x_in = x_his.reshape(x_his.shape[0], x_his.shape[1] * x_his.shape[2])
+
+        if self.include_pred_month:
+            # one hot encoding, should be num_classes + 1, but
+            # for us its + 2, since 0 is not a class either
+            pred_months_onehot = np.eye(14)[x_pm][:, 1:-1]
+            x_in = np.concatenate(
+                (x_in, pred_months_onehot), axis=-1
+            )
+        if self.include_latlons:
+            x_in = np.concatenate((x_in, x_latlons), axis=-1)
+        if self.experiment == 'nowcast':
+            x_in = np.concatenate((x_in, x_cur), axis=-1)
+        if self.include_yearly_aggs:
+            x_in = np.concatenate((x_in, x_ym), axis=-1)
+        if self.include_static:
+            x_in = np.concatenate((x_in, x_static), axis=-1)
+
+        return x_in

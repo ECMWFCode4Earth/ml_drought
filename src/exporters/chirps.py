@@ -1,4 +1,3 @@
-from bs4 import BeautifulSoup
 import urllib.request
 import os
 import warnings
@@ -8,6 +7,8 @@ from .base import BaseExporter
 
 from typing import List, Optional
 
+BeautifulSoup = None
+
 
 class CHIRPSExporter(BaseExporter):
     """Exports precip from the Climate Hazards group site
@@ -16,13 +17,14 @@ class CHIRPSExporter(BaseExporter):
     # 0.25degree
     ftp://ftp.chg.ucsb.edu/pub/org/chg/products/CHIRPS-2.0/africa_pentad/tifs/
     """
+    dataset = 'chirps'
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
         super().__init__(data_folder)
 
-        self.chirps_folder = self.raw_folder / "chirps"
-        if not self.chirps_folder.exists():
-            self.chirps_folder.mkdir()
+        global BeautifulSoup
+        if BeautifulSoup is None:
+            from bs4 import BeautifulSoup
 
         self.region_folder: Optional[Path] = None
 
@@ -50,7 +52,7 @@ class CHIRPSExporter(BaseExporter):
         the_page = response.read()
 
         # use BeautifulSoup to parse the html source
-        page = str(BeautifulSoup(the_page, features="lxml"))
+        page = str(BeautifulSoup(the_page, features="lxml"))  # type: ignore
 
         # split the page to get the filenames as a list
         firstsplit = page.split('\r\n')  # split the newlines
@@ -68,6 +70,10 @@ class CHIRPSExporter(BaseExporter):
         return chirpsfiles
 
     def wget_file(self, filepath: str) -> None:
+        """
+        https://explainshell.com/explain?cmd=wget+-np+-nH+--cut
+        -dirs+7+www.google.come+-P+folder
+        """
         assert self.region_folder is not None, \
             f'A region folder must be defined and made'
         if (self.region_folder / filepath).exists():
@@ -80,17 +86,17 @@ class CHIRPSExporter(BaseExporter):
                               chirps_files: List[str],
                               region: str = 'africa',
                               period: str = 'monthly',
-                              parallel: bool = False) -> None:
+                              n_parallel_processes: int = 1) -> None:
         """ download the chirps files using wget """
-        # build the base url
+        n_parallel_processes = min(1, n_parallel_processes)
 
+        # build the base url
         url = self.get_url(region, period)
 
         filepaths = [url + f for f in chirps_files]
 
-        if parallel:
-            processes = min(100, len(chirps_files))
-            pool = multiprocessing.Pool(processes=processes)
+        if n_parallel_processes > 1:
+            pool = multiprocessing.Pool(processes=n_parallel_processes)
             pool.map(self.wget_file, filepaths)
         else:
             for file in filepaths:
@@ -99,7 +105,7 @@ class CHIRPSExporter(BaseExporter):
     def export(self, years: Optional[List[int]] = None,
                region: str = 'global',
                period: str = 'monthly',
-               parallel: bool = False) -> None:
+               n_parallel_processes: int = 1) -> None:
         """Export functionality for the CHIRPS precipitation product
         Arguments
         ----------
@@ -110,8 +116,8 @@ class CHIRPSExporter(BaseExporter):
             If africa, a tif file is downloaded
         period: str {'monthly', 'weekly', 'pentad'...}
             The period of the data being downloaded
-        parallel: bool, default = False
-            Whether to parallelize the downloading of data
+        n_parallel_processes: int, default = 1
+            Whether to n_parallel_processesize the downloading of data
         """
 
         if years is not None:
@@ -122,7 +128,7 @@ class CHIRPSExporter(BaseExporter):
                               f"But no files later than 2019")
 
         # write the region download to a unique file location
-        self.region_folder = self.chirps_folder / region
+        self.region_folder = self.output_folder / region
         if not self.region_folder.exists():
             self.region_folder.mkdir()
 
@@ -136,5 +142,5 @@ class CHIRPSExporter(BaseExporter):
         ]
         chirps_files = [f for f in chirps_files if f not in existing_files]
 
-        # download files in parallel
-        self.download_chirps_files(chirps_files, region, period, parallel)
+        # download files in n_parallel_processes
+        self.download_chirps_files(chirps_files, region, period, n_parallel_processes)

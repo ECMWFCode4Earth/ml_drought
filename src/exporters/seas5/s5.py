@@ -1,12 +1,13 @@
 from pathlib import Path
 import itertools
 import numpy as np
-from pathos.pools import _ThreadPool as pool
 
 from typing import cast, Dict, Optional, List
 from .all_valid_s5 import datasets as dataset_reference
 from ..base import get_kenya
 from ..cds import CDSExporter
+
+pool = None
 
 
 class S5Exporter(CDSExporter):
@@ -54,8 +55,13 @@ class S5Exporter(CDSExporter):
         makes decisions for the user based on their preferences in the args
         `pressure_level` and `granularity`.
         - these are constant for one download
+        - Outfile: 'data' / 'raw' / 's5' / 'temperature' / '2018' / '01.nc'
         """
         super().__init__(data_folder)
+
+        global pool
+        if pool is None:
+            from pathos.pools import _ThreadPool as pool
 
         # initialise attributes for this export
         self.pressure_level = pressure_level
@@ -66,9 +72,9 @@ class S5Exporter(CDSExporter):
         granularity: {granularity} and pressure_level: {pressure_level}"
 
         if dataset is None:
-            self.dataset = self.get_dataset(self.granularity, self.pressure_level)
+            self.dataset: str = self.get_dataset(self.granularity, self.pressure_level)
         else:
-            self.dataset = dataset
+            self.dataset: str = dataset  # type: ignore
 
         # get the reference dictionary that corresponds to that dataset
         self.dataset_reference = dataset_reference[self.dataset]
@@ -96,7 +102,7 @@ class S5Exporter(CDSExporter):
         n_parallel_requests: int = 3,
         show_api_request: bool = True,
         break_up: bool = True,
-    ):
+    ) -> List[Path]:
         """
         Arguments
         --------
@@ -169,7 +175,7 @@ class S5Exporter(CDSExporter):
 
         if n_parallel_requests > 1:  # Run in parallel
             # p = multiprocessing.Pool(int(n_parallel_requests))
-            p = pool(int(n_parallel_requests))  # pathos seems to pickle classes
+            p = pool(int(n_parallel_requests))  # type: ignore
 
         output_paths = []
         if break_up:
@@ -448,7 +454,7 @@ class S5Exporter(CDSExporter):
             )
 
     def make_filename(self, dataset: str, selection_request: Dict) -> Path:
-        """
+        """Called from the super class (CDSExporter)
         data/raw/seasonal-monthly-single-levels
          /total_precipitation/2017/M01-Vmonthly_mean-P.grib
         """
@@ -476,9 +482,9 @@ class S5Exporter(CDSExporter):
         if self.pressure_level:
             plevels = selection_request["pressure_level"]
             plevels = "_".join(plevels)
-            fname = f"M{months}-P{plevels}.grib"
+            fname = f"Y{years}_M{months}-P{plevels}.grib"
         else:
-            fname = f"M{months}.grib"
+            fname = f"Y{years}_M{months}.grib"
         output_filename = years_folder / fname
 
         return output_filename

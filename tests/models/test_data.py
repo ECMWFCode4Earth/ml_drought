@@ -85,8 +85,8 @@ class TestBaseIter:
         norm_dict = {}
         for var in x.data_vars:
             norm_dict[var] = {
-                'mean': x[var].mean(dim=['lat', 'lon'], skipna=True).values,
-                'std': x[var].std(dim=['lat', 'lon'], skipna=True).values
+                'mean': float(x[var].mean(dim=['lat', 'lon', 'time'], skipna=True).values),
+                'std': float(x[var].std(dim=['lat', 'lon', 'time'], skipna=True).values)
             }
 
         class MockLoader:
@@ -100,11 +100,16 @@ class TestBaseIter:
                 self.to_tensor = None
                 self.experiment = experiment
                 self.surrounding_pixels = surrounding_pixels
+                self.ignore_vars = ['precip']
+                self.monthly_aggs = False
+                self.device = torch.device('cpu')
+
+                self.static = None
+                self.static_normalizing_dict = None
 
         base_iterator = _BaseIter(MockLoader())
 
-        arrays = base_iterator.ds_folder_to_np(data_dir, return_latlons=True,
-                                               to_tensor=to_tensor)
+        arrays = base_iterator.ds_folder_to_np(data_dir, to_tensor=to_tensor)
 
         x_train_data, y_np, latlons = (
             arrays.x, arrays.y, arrays.latlons
@@ -113,27 +118,29 @@ class TestBaseIter:
         if not to_tensor:
             assert isinstance(y_np, np.ndarray)
 
-        expected_features = 4 if surrounding_pixels is None else 4 * 9
-        assert x_train_data.historical.shape[-1] == expected_features, "" \
-            "There should be" \
-            "4 historical variables (the final dimension):" \
-            f"{x_train_data.historical.shape}"
+        expected_features = 3 if surrounding_pixels is None else 3 * 9
+        assert x_train_data.historical.shape[-1] == expected_features, \
+            f'There should be 4 historical variables ' \
+            f'(the final dimension): {x_train_data.historical.shape}'
 
         if experiment == 'nowcast':
-            expected_shape = (25, 3) if surrounding_pixels is None else (9, 3 * 9)
-            assert x_train_data.current.shape == expected_shape, "" \
-                "Expecting multiple vars" \
-                "in the current timestep. Expect: (25, 3) "\
-                f"Got: {x_train_data.current.shape}"
+            expected_shape = (25, 2) if surrounding_pixels is None else (9, 2 * 9)
+            assert x_train_data.current.shape == expected_shape, \
+                f'Expecting multiple vars in the current timestep. ' \
+                f'Expect: (25, 5) Got: {x_train_data.current.shape}'
 
         expected_latlons = 25 if surrounding_pixels is None else 9
+
         assert latlons.shape == (expected_latlons, 2), "The shape of "\
+            "latlons should not change"\
+            f"Got: {latlons.shape}. Expecting: (25, 2)"
+        assert x_train_data.latlons.shape == (expected_latlons, 2), "The shape of "\
             "latlons should not change"\
             f"Got: {latlons.shape}. Expecting: (25, 2)"
 
         if normalize and (experiment == 'nowcast') and (not to_tensor):
-            assert x_train_data.current.max() < 6, f"The current data should be" \
-                f" normalized. Currently: {x_train_data.current.flatten()}"
+            assert x_train_data.current.max() < 6, f'The current data should be' \
+                f' normalized. Currently: {x_train_data.current.flatten()}'
 
         if to_tensor:
             assert (
@@ -152,7 +159,7 @@ class TestBaseIter:
                 f"current ({x_train_data.current.shape[0]}) arrays."
 
             expected = (
-                x[['precip', 'soil_moisture', 'temp']]
+                x[['soil_moisture', 'temp']]
                 .sel(time=y.time)
                 .stack(dims=['lat', 'lon'])
                 .to_array().values.T[:, 0, :]
@@ -182,10 +189,10 @@ class TestBaseIter:
 
         if (not normalize) and (experiment == 'nowcast') and (surrounding_pixels is None):
             # test that we are getting the right `current` data
-            relevant_features = ['precip', 'soil_moisture', 'temp']
+            relevant_features = ['soil_moisture', 'temp']
             target_time = y.time
             expected = (
-                x[relevant_features]   # all vars except target_var
+                x[relevant_features]   # all vars except target_var and the ignored var
                 .sel(time=target_time)  # select the target_time
                 .stack(dims=['lat', 'lon'])  # stack lat,lon so shape = (lat*lon, time, dims)
                 .to_array().values[:, 0, :].T  # extract numpy array, transpose and drop dim
@@ -194,27 +201,48 @@ class TestBaseIter:
             assert np.all(x_train_data.current == expected), f"Expected to " \
                 "find the target_time data for the non target variables"
 
-    def test_surrounding_pixels(self):
+        # n_variables should be 3 because `ignoring` precip
+        assert x_train_data.yearly_aggs.shape[1] == 3
+
+        if (not normalize) and (not to_tensor):
+            mean_temp = x_coeff3.temp.mean(dim=['time', 'lat', 'lon']).values
+            assert (mean_temp == x_train_data.yearly_aggs).any()
+
+    @pytest.mark.parametrize(
+        'surrounding_pixels,monthly_agg',
+        [(1, True), (1, False), (None, True), (None, False)])
+    def test_additional_dims_pixels(self, surrounding_pixels, monthly_agg):
         x, _, _ = _make_dataset(size=(10, 10))
         org_vars = list(x.data_vars)
 
-        x_with_more = _BaseIter._add_surrounding(x, 1)
-        shifted_vars = x_with_more.data_vars
+        x_with_more = _BaseIter._add_extra_dims(x, surrounding_pixels, monthly_agg)
+        shifted_agg_vars = x_with_more.data_vars
 
         for data_var in org_vars:
-            for lat in [-1, 0, 1]:
-                for lon in [-1, 0, 1]:
-                    if lat == lon == 0:
-                        assert f'lat_{lat}_lon_{lon}_{data_var}' not in shifted_vars, \
-                            f'lat_{lat}_lon_{lon}_{data_var} should not ' \
-                            f'be in the shifted variables'
-                    else:
-                        shifted_var_name = f'lat_{lat}_lon_{lon}_{data_var}'
-                        assert shifted_var_name in shifted_vars, \
-                            f'{shifted_var_name} is not in the shifted variables'
+            if surrounding_pixels is not None:
+                for lat in [-1, 0, 1]:
+                    for lon in [-1, 0, 1]:
+                        if lat == lon == 0:
+                            assert f'lat_{lat}_lon_{lon}_{data_var}' not in shifted_agg_vars, \
+                                f'lat_{lat}_lon_{lon}_{data_var} should not ' \
+                                f'be in the shifted variables'
+                        else:
+                            shifted_var_name = f'lat_{lat}_lon_{lon}_{data_var}'
+                            assert shifted_var_name in shifted_agg_vars, \
+                                f'{shifted_var_name} is not in the shifted variables'
 
-                        org = x_with_more.VHI.isel(time=0, lon=5, lat=5).values
-                        shifted = x_with_more[shifted_var_name].isel(time=0,
-                                                                     lon=5 + lon,
-                                                                     lat=5 + lat).values
-                        assert org == shifted, f"Shifted values don't match!"
+                            org = x_with_more.VHI.isel(time=0, lon=5, lat=5).values
+                            shifted = x_with_more[shifted_var_name].isel(time=0,
+                                                                         lon=5 + lon,
+                                                                         lat=5 + lat).values
+                            assert org == shifted, f"Shifted values don't match!"
+
+            if monthly_agg:
+                mean_var_name = f'spatial_mean_{data_var}'
+                assert mean_var_name in shifted_agg_vars, \
+                    f'{mean_var_name} is not in the shifted variables'
+
+                actual_mean = x[data_var].isel(time=0).mean(dim=['lat', 'lon']).values
+                output_mean = x[f'spatial_mean_{data_var}'].isel(time=0, lon=0, lat=0).values
+
+                assert actual_mean == output_mean, f"Mean values don't match!"

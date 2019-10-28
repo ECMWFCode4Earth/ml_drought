@@ -1,14 +1,14 @@
-import boto3
-import botocore
-from botocore.client import Config
 from itertools import product
 from pathlib import Path
 import warnings
 
-
 from typing import List, Optional
 
 from .base import BaseExporter
+
+boto3 = None
+botocore = None
+Config = None
 
 
 class ERA5ExporterPOS(BaseExporter):
@@ -16,16 +16,24 @@ class ERA5ExporterPOS(BaseExporter):
 
     https://github.com/planet-os/notebooks/blob/master/aws/era5-pds.md
     """
+    dataset = 'era5POS'
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
         super().__init__(data_folder)
 
-        self.era5_folder = self.raw_folder / 'era5POS'
-        if not self.era5_folder.exists():
-            self.era5_folder.mkdir()
+        global boto3
+        if boto3 is None:
+            import boto3
+        global botocore
+        global Config
+        if botocore is None:
+            import botocore
+            from botocore.client import Config
 
         self.era5_bucket = 'era5-pds'
-        self.client = boto3.client('s3', config=Config(signature_version=botocore.UNSIGNED))
+        self.client = boto3.client('s3',  # type: ignore
+                                   config=Config(  # type: ignore
+                                       signature_version=botocore.UNSIGNED))  # type: ignore
 
     def get_variables(self, year: int, month: int) -> List[str]:
         target_prefix = f'{year}/{month:02d}/data'
@@ -96,7 +104,7 @@ class ERA5ExporterPOS(BaseExporter):
         for year, month in product(years, months):
             target_key = f'{year}/{month:02d}/data/{variable}.nc'
 
-            target_folder = self.era5_folder / f'{year}/{month:02d}'
+            target_folder = self.output_folder / f'{year}/{month:02d}'
             target_folder.mkdir(parents=True, exist_ok=True)
             target_output = target_folder / f'{variable}.nc'
 
@@ -110,7 +118,7 @@ class ERA5ExporterPOS(BaseExporter):
                                           str(target_output))
                 output_files.append(target_output)
                 print(f'Exported {target_key} to {target_folder}')
-            except botocore.exceptions.ClientError as e:
+            except botocore.exceptions.ClientError as e:  # type: ignore
                 if e.response['Error']['Code'] == "404":
                     possible_variables = self.get_variables(year, month)
                     possible_variables_str = '\n'.join(possible_variables)

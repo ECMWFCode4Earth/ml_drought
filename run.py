@@ -24,12 +24,14 @@ def main(input_args):
 
     data_path = Path(config['data'])
     runtask = Run(data_path)
-    runtask.run(config)
+    runtask.run(config, args.run_from)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run the drought prediction pipeline')
     parser.add_argument('--config', required=False,
                         help='path to configuration file describing the pipeline to be run')
+    parser.add_argument('--run-from', default='export',
+                        help='Which step to start the pipeline from')
     args = parser.parse_args()
     main(args)

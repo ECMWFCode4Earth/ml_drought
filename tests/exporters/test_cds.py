@@ -1,4 +1,5 @@
 from pathlib import Path
+import pytest
 from unittest.mock import patch, Mock
 
 from src.exporters.cds import CDSExporter, ERA5Exporter
@@ -7,6 +8,7 @@ from src.exporters.base import get_kenya
 
 class TestCDSExporter:
 
+    @pytest.mark.xfail(reason='cdsapi may not be installed')
     @patch('cdsapi.Client')
     def test_filename_multiple(self, cdsapi_mock, tmp_path):
         cdsapi_mock.return_value = Mock()
@@ -28,6 +30,7 @@ class TestCDSExporter:
         # then, we check all the files were correctly made
         assert expected.parents[0].exists(), 'Folders not correctly made!'
 
+    @pytest.mark.xfail(reason='cdsapi may not be installed')
     @patch('cdsapi.Client')
     def test_filename_single(self, cdsapi_mock, tmp_path):
         cdsapi_mock.return_value = Mock()
@@ -65,6 +68,7 @@ class TestCDSExporter:
         expected_str = '6.002/33.501/-5.202/42.283'
         assert kenya_str == expected_str, f'Got {kenya_str}, expected {expected_str}!'
 
+    @pytest.mark.xfail(reason='cdsapi may not be installed')
     @patch('cdsapi.Client')
     def test_default_selection_request(self, cdsapi_mock, tmp_path):
         cdsapi_mock.return_value = Mock()
@@ -91,6 +95,7 @@ class TestCDSExporter:
             default_val = default_selection_request[key]
             assert default_val == val, f'For {key}, expected {val}, got {default_val}'
 
+    @pytest.mark.xfail(reason='cdsapi may not be installed')
     @patch('cdsapi.Client')
     def test_user_defined_selection_requests(self, cdsapi_mock, tmp_path):
         cdsapi_mock.return_value = Mock()
@@ -117,6 +122,7 @@ class TestCDSExporter:
             default_val = default_selection_request[key]
             assert default_val == val, f'For {key}, expected {val}, got {default_val}'
 
+    @pytest.mark.xfail(reason='cdsapi may not be installed')
     @patch('cdsapi.Client')
     def test_break_up(self, cdsapi_mock, tmp_path):
         cdsapi_mock.return_value = Mock()

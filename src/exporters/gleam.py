@@ -1,9 +1,10 @@
-import paramiko
 from pathlib import Path
 
 from typing import cast, List, Union, Tuple
 
 from .base import BaseExporter
+
+paramiko = None
 
 
 class GLEAMExporter(BaseExporter):
@@ -12,22 +13,23 @@ class GLEAMExporter(BaseExporter):
 
     Access information can be found at gleam.eu
     """
+    dataset = 'gleam'
 
     def __init__(self, data_folder: Path = Path('data')) -> None:
         super().__init__(data_folder)
 
-        self.gleam_folder = self.raw_folder / 'gleam'
-        if not self.gleam_folder.exists():
-            self.gleam_folder.mkdir()
+        global paramiko
+        if paramiko is None:
+            import paramiko
 
         password = 'v33_GLEAM2019#aw'
         username = 'gleamuser'
         host = 'hydras.ugent.be'
         port = 2225
 
-        transport = paramiko.Transport((host, port))
+        transport = paramiko.Transport((host, port))  # type: ignore
         transport.connect(username=username, password=password)
-        self.sftp = paramiko.SFTPClient.from_transport(transport)
+        self.sftp = paramiko.SFTPClient.from_transport(transport)  # type: ignore
         self.base_sftp_path: str = '/data/v3.3a/'
 
     def get_granularities(self) -> List[str]:
@@ -69,7 +71,7 @@ class GLEAMExporter(BaseExporter):
 
         stem = sftppath[len(self.base_sftp_path):]
         filename = sftppath.split('/')[-1]
-        return self.gleam_folder / stem[:-len(filename)].strip('/'), filename
+        return self.output_folder / stem[:-len(filename)].strip('/'), filename
 
     def export(self,
                variables: Union[str, List[str]],

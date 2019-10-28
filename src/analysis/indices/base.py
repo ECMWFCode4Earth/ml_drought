@@ -32,16 +32,25 @@ class BaseIndices:
         if resample_str is not None:
             self.resample = True
             self.resample_str = resample_str
+            self.ds = self.ds.sortby('time')
             self.ds = self.resample_ds_mean()
 
     def resample_ds_mean(self) -> xr.Dataset:
         lookup = {
             'month': 'M',
+            'M': 'M',
             'year': 'Y',
+            'Y': 'Y',
             'season': 'Q-DEC',
+            'Q-DEC': 'Q-DEC',
             'daysofyear': 'D',
+            'daily': 'D',
+            'days': 'D',
+            'D': 'D',
             None: None,
         }
+        assert self.resample_str in [k for k in lookup.keys()], \
+            f'resample_str must be one of: {[k for k in lookup.keys()]}'
         return self.ds.resample(time=f'{lookup[self.resample_str]}').mean()
 
     def save(self, data_dir: Path = Path('data')):
