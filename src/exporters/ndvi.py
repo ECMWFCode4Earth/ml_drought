@@ -34,14 +34,14 @@ class NDVIExporter(BaseExporter):
 
 
     @staticmethod
-    def beautiful_soup_url(url: str) -> BeautifulSoup:
+    def beautiful_soup_url(url: str) -> BeautifulSoup:  # type: ignore
         # use urllib.request to read the page source
         req = urllib.request.Request(url)
         response = urllib.request.urlopen(req)
         the_page = response.read()
 
         # use BeautifulSoup to parse the html source
-        soup = BeautifulSoup(the_page, features="lxml")
+        soup = BeautifulSoup(the_page, features="lxml")  # type: ignore
 
         return soup
 
@@ -53,7 +53,7 @@ class NDVIExporter(BaseExporter):
         # find all links (to the years)
         years = [
             yrs.string.replace('/', '')
-            for yrs in soup.find_all('a')
+            for yrs in soup.find_all('a')  # type: ignore
             if re.match(r'[0-9]{4}', yrs.string)
         ]
 
@@ -70,7 +70,7 @@ class NDVIExporter(BaseExporter):
         # get the urls for the .nc files
         all_urls = []
         for url in year_urls:
-            links = self.beautiful_soup_url(url).find_all('a')
+            links = self.beautiful_soup_url(url).find_all('a')  # type: ignore
             nc_links = [
                 f'{url}/{l.string}'
                 for l in links
