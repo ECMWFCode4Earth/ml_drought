@@ -108,7 +108,7 @@ class NDVIPreprocessor(BasePreProcessor):
                    upsampling: bool = False,
                    parallel_processes: int = 1,
                    years_to_process: Optional[List[int]] = None,
-                   cleanup: bool = True) -> None:
+                   cleanup: bool = False) -> None:
         """Preprocess all of the NOAA NDVI .nc files to produce
         one subset file.
         Arguments
