@@ -1,5 +1,6 @@
 import urllib.request
 from unittest.mock import patch, MagicMock
+import pytest
 
 from src.exporters import CHIRPSExporter
 
@@ -8,6 +9,8 @@ class TestCHIRPSExporter:
 
     africa_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg/products/CHIRPS-2.0/africa_pentad/tifs/'
     global_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg/products/CHIRPS-2.0/global_pentad/netcdf/'
+    global_daily_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg/'\
+        'products/CHIRPS-2.0/global_daily/netcdf/p05/'
 
     def test_init(self, tmp_path):
         CHIRPSExporter(tmp_path)
@@ -40,7 +43,15 @@ class TestCHIRPSExporter:
             f'Expected Africa URL to be {self.africa_url}, got {exporter.get_url("africa")}'
 
         assert exporter.get_url('global', 'pentad') == self.global_url, \
-            f'Expected Africa URL to be {self.global_url}, got {exporter.get_url("global")}'
+            f'Expected Global URL to be {self.global_url}, got {exporter.get_url("global")}'
+
+        assert exporter.get_url('global', 'daily', 'p05') == self.global_daily_url, \
+            f'Expected Global URL to be {self.global_daily_url},' \
+            f' got {exporter.get_url("global", "daily", "p05")}'
+
+        with pytest.raises(AssertionError) as error:
+            exporter.get_url('global', 'daily', 'WRONG_RESOLUTION')
+        assert 'Resolution must be one of' in str(error.value)
 
     @patch('urllib.request.Request', autospec=True)
     def test_get_filenames(self, request_patch, monkeypatch, tmp_path):

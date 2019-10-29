@@ -30,21 +30,32 @@ class CHIRPSExporter(BaseExporter):
 
         self.base_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg'
 
-    def get_url(self, region: str = 'africa', period: str = 'monthly') -> str:
+    def get_url(self, region: str = 'africa', period: str = 'monthly',
+                resolution: Optional[str] = None) -> str:
+
+        if (region == 'global') & (period == 'daily'):
+            assert resolution is not None, 'resolution must be provided for '\
+                '`global_daily` data'
+
         filetype = 'tifs' if region == 'africa' else 'netcdf'
         url = f'/products/CHIRPS-2.0/{region}_{period}/{filetype}/'
+
+        if resolution is not None:
+            assert resolution in ['p05', 'p25'], 'Resolution must be one of `p05` / `p25`'
+            url += f'{resolution}/'
 
         return self.base_url + url
 
     def get_chirps_filenames(self, years: Optional[List[int]] = None,
                              region: str = 'africa',
-                             period: str = 'monthly') -> List[str]:
+                             period: str = 'monthly',
+                             resolution: Optional[str] = None) -> List[str]:
         """
         ftp://ftp.chg.ucsb.edu/pub/org/chg/products/
             CHIRPS-2.0/global_pentad/netcdf/
         https://github.com/datamission/WFP/blob/master/Datasets/CHIRPS/get_chirps.py
         """
-        url = self.get_url(region, period)
+        url = self.get_url(region, period, resolution)
 
         # use urllib.request to read the page source
         req = urllib.request.Request(url)
@@ -59,6 +70,10 @@ class CHIRPSExporter(BaseExporter):
         secondsplit = [x.split(' ') for x in firstsplit]  # split the spaces
         flatlist = [item for sublist in secondsplit for item in sublist]  # flatten
         chirpsfiles = [x for x in flatlist if 'chirps' in x]
+
+        assert chirpsfiles != [], 'The list of CHIRPS files is empty for the ' \
+            f'url: {url}. This is likely because you also need to specify the ' \
+            'pixel resolution: `p25` or `p05`.'
 
         # extract only the years of interest
         if years is not None:
@@ -105,8 +120,20 @@ class CHIRPSExporter(BaseExporter):
     def export(self, years: Optional[List[int]] = None,
                region: str = 'global',
                period: str = 'monthly',
+               resolution: Optional[str] = None,
                n_parallel_processes: int = 1) -> None:
         """Export functionality for the CHIRPS precipitation product
+
+        Note: there are a number of different possible datasets with different
+        required formats.
+
+        We recommend exporting the global daily data at 5km resolution.
+        e.g.
+        >>> export(
+        >>>    [y for y in range(1981, 2019)], region='global', period='daily',
+        >>>    resolution='p05'
+        >>> )
+
         Arguments
         ----------
         years: Optional list of ints, default = None
@@ -116,6 +143,8 @@ class CHIRPSExporter(BaseExporter):
             If africa, a tif file is downloaded
         period: str {'monthly', 'weekly', 'pentad'...}
             The period of the data being downloaded
+        resolution: str {'p05', 'p25'}
+            The resolution of the data being downloaded
         n_parallel_processes: int, default = 1
             Whether to n_parallel_processesize the downloading of data
         """
@@ -129,11 +158,15 @@ class CHIRPSExporter(BaseExporter):
 
         # write the region download to a unique file location
         self.region_folder = self.output_folder / region
+        if resolution is not None:
+            self.region_folder = self.region_folder / resolution
         if not self.region_folder.exists():
-            self.region_folder.mkdir()
+            self.region_folder.mkdir(parents=True, exist_ok=True)
 
         # get the filenames to be downloaded
-        chirps_files = self.get_chirps_filenames(years, region, period)
+        chirps_files = self.get_chirps_filenames(
+            years, region, period, resolution
+        )
 
         # check if they already exist
         existing_files = [
