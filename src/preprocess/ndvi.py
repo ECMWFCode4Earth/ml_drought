@@ -127,7 +127,7 @@ class NDVIPreprocessor(BasePreProcessor):
             If true, run the preprocessing in parallel
         years: Optional[List[int]] = None,
             which subset of years to process data for (selected
-            by using the years folders created bythe NDVIExporter)
+            by using the years folders created by the NDVIExporter)
         cleanup: bool = True
             If true, delete interim files created by the class
 
