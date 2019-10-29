@@ -82,7 +82,7 @@ class NDVIPreprocessor(BasePreProcessor):
 
         # 3. regrid to same spatial resolution
         if regrid is not None:
-            ds = self.regrid(ds, regrid)
+            ds = self.regrid(ds, regrid, selected_var='NDVI')
 
         # 5. extract the ndvi data (reduce storage use)
         # NOTE: discarding the quality flags here

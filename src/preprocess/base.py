@@ -82,6 +82,7 @@ class BasePreProcessor:
                reference_ds: xr.Dataset,
                method: str = "nearest_s2d",
                reuse_weights: bool = False,
+               selected_var: Optional[str],
                clean: bool = True) -> xr.Dataset:
         """ Use xEMSF package to regrid ds to the same grid as reference_ds
 
@@ -93,6 +94,8 @@ class BasePreProcessor:
             The reference dataset, onto which `ds` will be regridded
         method: str, {'bilinear', 'conservative', 'nearest_s2d', 'nearest_d2s', 'patch'}
             The method applied for the regridding
+        selected_var: Optional[str]
+            Option to select a single variable to be regridded (removes the others)
         """
 
         assert ('lat' in reference_ds.dims) & ('lon' in reference_ds.dims), \
@@ -131,6 +134,8 @@ class BasePreProcessor:
                                     reuse_weights=False)
 
         variables = [v for v in ds.data_vars]
+        if selected_var is not None:
+            variables = [v for v in variables if v == selected_var]
         output_dict = {}
         for var in variables:
             print(f'- regridding var {var} -')
