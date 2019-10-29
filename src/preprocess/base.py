@@ -75,6 +75,9 @@ class BasePreProcessor:
             target_folder = self.interim
         outfiles = list(target_folder.glob('**/*.nc'))
         outfiles.sort()
+
+        assert outfiles is not [], \
+            f'No files were found in {target_folder}/**/*.nc'
         return outfiles
 
     def regrid(self,

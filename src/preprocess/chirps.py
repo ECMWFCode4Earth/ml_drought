@@ -102,6 +102,11 @@ class CHIRPSPreprocesser(BasePreProcessor):
 
         # get the filepaths for all of the downloaded data
         nc_files = self.get_filepaths()
+        assert len(set([f.parents[0].name for f in nc_files])) == 1, \
+            'Expect only one CHIRPS dataset to be downloaded in the raw file ' \
+            f'Currently: {len(set([f.parents[0].name for f in nc_files]))} ' \
+            'You may want to move the directory which you DONT want to preprocess ' \
+            'to another location'
 
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)

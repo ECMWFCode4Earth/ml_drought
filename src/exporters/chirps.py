@@ -101,12 +101,13 @@ class CHIRPSExporter(BaseExporter):
                               chirps_files: List[str],
                               region: str = 'africa',
                               period: str = 'monthly',
+                              resolution: Optional[str] = None,
                               n_parallel_processes: int = 1) -> None:
         """ download the chirps files using wget """
         n_parallel_processes = min(1, n_parallel_processes)
 
         # build the base url
-        url = self.get_url(region, period)
+        url = self.get_url(region, period, resolution)
 
         filepaths = [url + f for f in chirps_files]
 
@@ -157,9 +158,10 @@ class CHIRPSExporter(BaseExporter):
                               f"But no files later than 2019")
 
         # write the region download to a unique file location
-        self.region_folder = self.output_folder / region
         if resolution is not None:
-            self.region_folder = self.region_folder / resolution
+            self.region_folder = self.output_folder / f'{region}_{resolution}'
+        else:
+            self.region_folder = self.output_folder / region
         if not self.region_folder.exists():
             self.region_folder.mkdir(parents=True, exist_ok=True)
 
@@ -176,4 +178,4 @@ class CHIRPSExporter(BaseExporter):
         chirps_files = [f for f in chirps_files if f not in existing_files]
 
         # download files in n_parallel_processes
-        self.download_chirps_files(chirps_files, region, period, n_parallel_processes)
+        self.download_chirps_files(chirps_files, region, period, resolution, n_parallel_processes)
