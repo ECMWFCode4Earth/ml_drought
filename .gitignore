@@ -34,3 +34,6 @@ Code
 scripts/variables*.txt
 
 switch_data_dirs.sh
+
+# pytest coverage files
+.coverage*
