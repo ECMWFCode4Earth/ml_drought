@@ -6,9 +6,12 @@ from .seas5.s5 import S5Exporter
 from .gleam import GLEAMExporter
 from .srtm import SRTMExporter
 from .esa_cci import ESACCIExporter
+from .ndvi import NDVIExporter
 from .admin_boundaries import KenyaAdminExporter
+
 
 __all__ = [
     'ERA5Exporter', 'VHIExporter', 'ERA5ExporterPOS',
     'CHIRPSExporter', 'S5Exporter', 'GLEAMExporter',
-    'SRTMExporter', 'ESACCIExporter', 'KenyaAdminExporter']
+    'NDVIExporter', 'SRTMExporter', 'ESACCIExporter',
+    'KenyaAdminExporter']

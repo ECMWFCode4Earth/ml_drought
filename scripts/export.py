@@ -1,11 +1,13 @@
 from pathlib import Path
+import numpy as np
 
 import sys
 sys.path.append('..')
 from src.exporters import (ERA5Exporter, VHIExporter,
                            CHIRPSExporter, ERA5ExporterPOS,
                            GLEAMExporter, ESACCIExporter,
-                           S5Exporter, SRTMExporter, KenyaAdminExporter)
+                           S5Exporter, SRTMExporter, KenyaAdminExporter,
+                           NDVIExporter)
 
 
 def export_era5():
@@ -170,12 +172,23 @@ def export_kenya_boundaries():
     exporter.export()
 
 
+def export_ndvi():
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+
+    exporter = NDVIExporter(data_path)
+    exporter.export()
+
+
 if __name__ == '__main__':
-    export_era5()
-    export_vhi()
-    export_chirps()
-    export_era5POS()
-    export_gleam()
-    export_esa()
-    export_s5()
-    export_kenya_boundaries()
+    # export_era5()
+    # export_vhi()
+    # export_chirps()
+    # export_era5POS()
+    # export_gleam()
+    # export_esa()
+    # export_s5()
+    # export_kenya_boundaries()
+    export_ndvi()
