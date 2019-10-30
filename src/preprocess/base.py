@@ -196,9 +196,20 @@ class BasePreProcessor:
     def merge_files(self, subset_str: Optional[str] = 'kenya',
                     resample_time: Optional[str] = 'M',
                     upsampling: bool = False,
-                    filename: Optional[str] = None) -> None:
+                    filename: Optional[str] = None,
+                    ignore_timesteps: Optional[List[str]] = None) -> None:
 
         ds = xr.open_mfdataset(self.get_filepaths('interim'))
+
+        if ignore_timesteps is not None:
+            ts = [pd.to_datetime(s) for s in ignore_timesteps]
+            print(f'Removing timesteps: {ts} from the dataset before resampling')
+            ds = ds.sel(
+                time=[
+                    t for t in ds.time.values
+                    if not np.isin(pd.to_datetime(t), ts)
+                ]
+            )
 
         if resample_time is not None:
             ds = self.resample_time(ds, resample_time, upsampling)

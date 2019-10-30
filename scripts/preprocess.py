@@ -141,7 +141,7 @@ def preprocess_era5():
     processor.preprocess(subset_str='kenya', regrid=regrid_path)
 
 
-def process_ndvi(years=None, regrid=True):
+def process_ndvi(years=None, regrid=True, ignore_timesteps=['2018-05-28', '2016-06-26']):
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
     else:
@@ -157,6 +157,7 @@ def process_ndvi(years=None, regrid=True):
     processor = NDVIPreprocessor(data_path)
     processor.preprocess(subset_str='kenya', regrid=regrid_path,
                         resample_time='M', upsampling=False,
+                         ignore_timesteps=ignore_timesteps,
                         years_to_process=years)
 
 

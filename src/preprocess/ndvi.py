@@ -108,6 +108,7 @@ class NDVIPreprocessor(BasePreProcessor):
                    upsampling: bool = False,
                    parallel_processes: int = 1,
                    years_to_process: Optional[List[int]] = None,
+                   ignore_timesteps: Optional[List[str]] = None,
                    cleanup: bool = False) -> None:
         """Preprocess all of the NOAA NDVI .nc files to produce
         one subset file.
@@ -128,6 +129,9 @@ class NDVIPreprocessor(BasePreProcessor):
         years: Optional[List[int]] = None,
             which subset of years to process data for (selected
             by using the years folders created by the NDVIExporter)
+        ignore_timesteps: Optional[List[str]] = None
+            Whether to remove any timesteps when merging dataset
+            (i.e. if data is corrupt this requires manually specifying)
         cleanup: bool = True
             If true, delete interim files created by the class
 
@@ -169,7 +173,8 @@ class NDVIPreprocessor(BasePreProcessor):
         self.merge_files(
             subset_str=subset_str,
             resample_time=resample_time,
-            upsampling=upsampling
+            upsampling=upsampling,
+            ignore_timesteps=ignore_timesteps,
         )
 
         if cleanup:
