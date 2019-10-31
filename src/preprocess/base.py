@@ -1,6 +1,7 @@
 from pathlib import Path
 import xarray as xr
 import numpy as np
+import pandas as pd
 
 from typing import List, Optional
 
