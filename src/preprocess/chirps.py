@@ -12,7 +12,7 @@ from typing import Optional
 from .base import BasePreProcessor
 
 
-class CHIRPSPreprocesser(BasePreProcessor):
+class CHIRPSPreprocessor(BasePreProcessor):
     """ Preprocesses the CHIRPS data """
 
     dataset = 'chirps'

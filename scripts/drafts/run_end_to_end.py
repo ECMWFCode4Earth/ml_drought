@@ -18,7 +18,7 @@ from src.exporters import (ERA5Exporter, VHIExporter,
 from src.exporters.srtm import SRTMExporter
 
 # 2. preprocessors
-from src.preprocess import (VHIPreprocessor, CHIRPSPreprocesser,
+from src.preprocess import (VHIPreprocessor, CHIRPSPreprocessor,
                             PlanetOSPreprocessor, GLEAMPreprocessor,
                             ESACCIPreprocessor)
 from src.preprocess.srtm import SRTMPreprocessor
@@ -99,7 +99,7 @@ def preprocess_data(data_path):
 
     # preprocess CHIRPS Rainfall
     print('** Preprocessing CHIRPS Precipitation **')
-    processor = CHIRPSPreprocesser(data_path)
+    processor = CHIRPSPreprocessor(data_path)
     processor.preprocess(
         subset_str='kenya', regrid=regrid_path,
         n_parallel_processes=1
