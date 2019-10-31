@@ -192,4 +192,5 @@ region_lookup = {
     "kenya": get_kenya(),
     "ethiopia": get_ethiopia(),
     "east_africa": get_east_africa(),
+    "indian_ocean": get_box_in_indian_ocean()
 }

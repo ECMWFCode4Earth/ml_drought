@@ -109,6 +109,8 @@ class NDVIPreprocessor(BasePreProcessor):
                    parallel_processes: int = 1,
                    years_to_process: Optional[List[int]] = None,
                    ignore_timesteps: Optional[List[str]] = None,
+                   drop_invalid: bool = True,
+                   nan_subset_str: Optional[str] = 'indian_ocean',
                    cleanup: bool = False) -> None:
         """Preprocess all of the NOAA NDVI .nc files to produce
         one subset file.
@@ -175,6 +177,8 @@ class NDVIPreprocessor(BasePreProcessor):
             resample_time=resample_time,
             upsampling=upsampling,
             ignore_timesteps=ignore_timesteps,
+            drop_invalid=drop_invalid,
+            nan_subset_str=nan_subset_str,
         )
 
         if cleanup:

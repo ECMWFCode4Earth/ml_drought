@@ -198,10 +198,34 @@ class BasePreProcessor:
                     resample_time: Optional[str] = 'M',
                     upsampling: bool = False,
                     filename: Optional[str] = None,
-                    ignore_timesteps: Optional[List[str]] = None) -> None:
+                    ignore_timesteps: Optional[List[str]] = None,
+                    drop_invalid: bool = False,
+                    nan_subset_str: Optional[str] = None,) -> None:
+        """
 
+        Arguments:
+        ---------
+        subset_str: Optional[str] = 'kenya'
+            the name of the subset ()
+        resample_time: Optional[str] = 'M',
+            the period string used to resample the xr.Dataset object
+            # https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries
+             .html#dateoffset-objects
+        upsampling: bool = False,
+            whether the timeseries is being UPSAMPLED (monthly -> daily)
+        filename: Optional[str] = None,
+            the name of the filename to save
+        ignore_timesteps: Optional[List[str]] = None,
+            manually remove invalid timesteps
+        drop_invalid: bool = False,
+            whether to automatically detect and remove invalid timesteps
+        nan_subset_str: Optional[str] = None,
+            the subset/Region object used to check for invalid timesteps
+            i.e. does the data have non-nan values inside this box?
+        """
         ds = xr.open_mfdataset(self.get_filepaths('interim'))
 
+        # add the ability to manually ignore timesteps
         if ignore_timesteps is not None:
             ts = [pd.to_datetime(s) for s in ignore_timesteps]
             print(f'Removing timesteps: {ts} from the dataset before resampling')
@@ -210,6 +234,18 @@ class BasePreProcessor:
                     t for t in ds.time.values
                     if not np.isin(pd.to_datetime(t), ts)
                 ]
+            )
+
+        # automatically detect errored timesteps
+        if drop_invalid:
+            assert nan_subset_str is not None, 'Require a subset_str value' \
+                'if automatically detecting errored timesteps!'
+            variables = [v for v in ds.data_vars]
+            assert len(variables) == 1, 'There should only be one variable for' \
+                'automatic detection of errors.'
+            variable = variables[0]
+            ds = self._fix_invalid_timesteps(
+                ds, variable=variable, subset_str=nan_subset_str
             )
 
         if resample_time is not None:
@@ -221,3 +257,51 @@ class BasePreProcessor:
 
         ds.to_netcdf(out)
         print(f"\n**** {out} Created! ****\n")
+
+
+    @staticmethod
+    def _fix_invalid_timesteps(ds: xr.Dataset,
+                               variable: str,
+                               subset_str: str = 'indian_ocean',
+                               invert_lat: bool = True) -> xr.Dataset:
+        """in the region_of_known_nans if the values are
+        NON-NAN then that timestep has an error.
+
+        We currently drop these values (safest). However, we
+        are working on functionality to check for and invert
+        latitudes.
+        """
+        region_of_known_nans = region_lookup[subset_str]
+
+        latmin = region_of_known_nans.latmin
+        latmax = region_of_known_nans.latmax
+        lonmin = region_of_known_nans.lonmin
+        lonmax = region_of_known_nans.lonmax
+
+        # create a boolean DataArray of the timesteps that are ALL NAN
+        # inside that bounding box.
+        if invert_lat:
+            boolean_da = (
+                ds.sel(lat=slice(latmax, latmin), lon=slice(lonmin, lonmax))[variable]
+                .isnull().mean(dim=['lat', 'lon']) == 1
+            )
+        else:
+            boolean_da = (
+                ds.sel(lat=slice(latmin, latmax), lon=slice(lonmin, lonmax))[variable]
+                .isnull().mean(dim=['lat', 'lon']) == 1
+            )
+
+        invalid_times = ds.sel(time=~boolean_da).time.values
+        if list(invalid_times) != []:
+            print(f'Invalid timesteps for variable {variable} removed:')
+            print(invalid_times)
+        else:
+            print(f'All timesteps for variable: {variable} valid! None removed.')
+
+        out_ds = ds.sel(time=boolean_da)
+        assert len(ds.time) != len(invalid_times), 'Not all timesteps should be '\
+            'removed as invalid. This has two causes: 1) the Region ' \
+            f'object: {subset_str} is not a valid ROI for your data ' \
+            '2) you need to toggle the `invert_lat` parameter. Try 2) first.'
+
+        return out_ds
