@@ -12,7 +12,6 @@ sys.path.append('..')
 
 def parsimonious(
     experiment='one_month_forecast',
-    ignore_vars=None
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -21,7 +20,7 @@ def parsimonious(
         data_path = Path('../data')
 
     predictor = Persistence(
-        data_path, experiment=experiment, ignore_vars=ignore_vars
+        data_path, experiment=experiment
     )
     predictor.evaluate(save_preds=True)
 
@@ -141,7 +140,7 @@ if __name__ == '__main__':
     ignore_vars = None
     ignore_vars = ['VCI', 'p84.162', 'sp', 'tp']
 
-    # parsimonious(ignore_vars=ignore_vars)
+    parsimonious()
     # regression(ignore_vars=ignore_vars)
     # linear_nn(ignore_vars=ignore_vars)
     # rnn(ignore_vars=ignore_vars)
