@@ -1,10 +1,11 @@
+import sys
+sys.path.append('..')
+
 from src.analysis import all_shap_for_file
 from src.models import (Persistence, LinearRegression,
                         LinearNetwork, RecurrentNetwork,
                         EARecurrentNetwork, load_model)
 from pathlib import Path
-import sys
-sys.path.append('..')
 
 
 # NOTE: p84.162 == 'vertical integral of moisture flux'
