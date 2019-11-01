@@ -13,6 +13,7 @@ from src.analysis.evaluation import (
     # monthly_score,
     # plot_predictions,
     read_train_data,
+    read_test_data
 )
 
 from ..utils import (
@@ -26,6 +27,14 @@ class TestEvaluation:
         _create_features_dir(tmp_path, train=True)
 
         X, y = read_train_data(tmp_path)
+        assert isinstance(X, xr.Dataset)
+        assert isinstance(y, xr.DataArray)
+
+    def test_read_test_data(self, tmp_path):
+        _create_features_dir(tmp_path, train=True)
+        _create_features_dir(tmp_path, train=False)
+
+        X, y = read_test_data(tmp_path)
         assert isinstance(X, xr.Dataset)
         assert isinstance(y, xr.DataArray)
 

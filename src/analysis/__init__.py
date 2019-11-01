@@ -4,7 +4,7 @@ from .evaluation import (
     spatial_rmse, spatial_r2,
     monthly_score, annual_scores,
     read_pred_data, read_true_data,
-    read_train_data
+    read_train_data, read_test_data
 )
 from .plot_shap import plot_shap_values, all_shap_for_file
 from .indices import (
@@ -33,5 +33,6 @@ __all__ = [
     'AdministrativeRegionAnalysis',
     'all_shap_for_file',
     'spatial_rmse', 'spatial_r2',
-    'plot_predictions', 'read_pred_data', 'read_true_data', 'read_train_data'
+    'plot_predictions', 'read_pred_data', 'read_true_data', 'read_train_data',
+    'read_test_data',
 ]
