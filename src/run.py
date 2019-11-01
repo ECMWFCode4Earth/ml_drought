@@ -5,7 +5,7 @@ from itertools import dropwhile
 from src.exporters import (ERA5Exporter, VHIExporter, ERA5ExporterPOS, GLEAMExporter,
                            CHIRPSExporter, SRTMExporter)
 from src.preprocess import (VHIPreprocessor, ERA5MonthlyMeanPreprocessor,
-                            GLEAMPreprocessor, CHIRPSPreprocesser, SRTMPreprocessor)
+                            GLEAMPreprocessor, CHIRPSPreprocessor, SRTMPreprocessor)
 from src.engineer import Engineer
 import src.models
 
@@ -98,7 +98,7 @@ class Run:
             'vhi': VHIPreprocessor,
             'gleam': GLEAMPreprocessor,
             'reanalysis-era5-single-levels-monthly-means': ERA5MonthlyMeanPreprocessor,
-            'chirps': CHIRPSPreprocesser,
+            'chirps': CHIRPSPreprocessor,
             'srtm': SRTMPreprocessor,
         }
 
