@@ -41,9 +41,7 @@ class SRTMExporter(BaseExporter):
     def _tif_to_nc(self, tif_file: Path, nc_file: Path) -> None:
         ds = gdal.Open(tif_file.resolve().as_posix())  # type: ignore
         _ = gdal.Translate(  # type: ignore
-            format="NetCDF",
-            srcDS=ds,
-            destName=nc_file.resolve().as_posix(),
+            format="NetCDF", srcDS=ds, destName=nc_file.resolve().as_posix(),
         )
 
     def export(

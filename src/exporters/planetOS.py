@@ -32,7 +32,7 @@ class ERA5ExporterPOS(BaseExporter):
             from botocore.client import Config
 
         self.era5_bucket = "era5-pds"
-        self.client = boto3.client(   # type: ignore
+        self.client = boto3.client(  # type: ignore
             "s3",
             config=Config(  # type: ignore
                 signature_version=botocore.UNSIGNED

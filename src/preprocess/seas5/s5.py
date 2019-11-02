@@ -24,10 +24,7 @@ class S5Preprocessor(BasePreProcessor):
         self.parallel = parallel
 
     def get_filepaths(  # type: ignore
-        self,
-        target_folder: Path,
-        variable: str,
-        grib: bool = True,
+        self, target_folder: Path, variable: str, grib: bool = True,
     ) -> List[Path]:
         # if target_folder.name == 'raw':
         #     target_folder = self.raw_folder
