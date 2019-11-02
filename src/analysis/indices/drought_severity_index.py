@@ -1,10 +1,7 @@
 import xarray as xr
 
 from .base import BaseIndices
-from .utils import (
-    rolling_cumsum,
-    apply_over_period
-)
+from .utils import rolling_cumsum, apply_over_period
 
 
 class DroughtSeverityIndex(BaseIndices):
@@ -35,32 +32,32 @@ class DroughtSeverityIndex(BaseIndices):
     2–4 June 2010,AGM-11, WMO/TD No. 1572, WAOB-2011, World Meteorological Organisation,
     Murcia, Spain, Geneva, Switzerland,182 pp.,2010.
     """
-    name = 'drought_severity_index'
+
+    name = "drought_severity_index"
 
     @staticmethod
-    def DSI(da: xr.DataArray,
-            dim: str = 'time') -> xr.DataArray:
+    def DSI(da: xr.DataArray, dim: str = "time") -> xr.DataArray:
         y = (da.rank(dim=dim) - 1.0) / (da.sizes[dim] - 1.0)
         z = 8.0 * (y - 0.5)
         return z
 
-    def fit(self, variable: str,
-            time_period: str = 'month',
-            rolling_window: int = 3) -> None:
+    def fit(
+        self, variable: str, time_period: str = "month", rolling_window: int = 3
+    ) -> None:
 
         print("Fitting Hutchinson Drought Severity Index")
         ds_window = rolling_cumsum(self.ds, rolling_window)
 
-        out_variable = 'DSI'
+        out_variable = "DSI"
         dsi = apply_over_period(
-            ds_window, func=self.DSI,
-            in_variable=variable, out_variable=out_variable,
+            ds_window,
+            func=self.DSI,
+            in_variable=variable,
+            out_variable=out_variable,
             time_str=time_period,
         )
-        ds_window = (
-            ds_window
-            .merge(dsi.drop('month'))
-            .rename({variable: f'{variable}_cumsum'})
+        ds_window = ds_window.merge(dsi.drop("month")).rename(
+            {variable: f"{variable}_cumsum"}
         )
 
         self.index = ds_window

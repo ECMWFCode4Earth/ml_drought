@@ -5,12 +5,12 @@ from tests.utils import _create_dummy_precip_data
 
 
 class TestAnomalyIndex:
-
     def test_initialisation(self, tmp_path):
         data_path = _create_dummy_precip_data(tmp_path)
-        a = AnomalyIndex(data_path / 'chirps_kenya.nc')
-        assert a.name == 'rainfall_anomaly_index', f"Expected name"\
-            f"to be `rainfall_anomaly_index` got: {a.name}"
+        a = AnomalyIndex(data_path / "chirps_kenya.nc")
+        assert a.name == "rainfall_anomaly_index", (
+            f"Expected name" f"to be `rainfall_anomaly_index` got: {a.name}"
+        )
 
         with pytest.raises(AttributeError):
             # assert error raised because haven't fit
@@ -18,10 +18,10 @@ class TestAnomalyIndex:
 
     def test_fit(self, tmp_path):
         data_path = _create_dummy_precip_data(
-            tmp_path, start_date='2000-01-01', end_date='2010-01-01'
+            tmp_path, start_date="2000-01-01", end_date="2010-01-01"
         )
-        ai = AnomalyIndex(data_path / 'chirps_kenya.nc')
-        variable = 'precip'
+        ai = AnomalyIndex(data_path / "chirps_kenya.nc")
+        variable = "precip"
         ai.fit(variable=variable)
 
         coords = [c for c in ai.index.coords]

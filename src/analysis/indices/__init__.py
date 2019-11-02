@@ -9,7 +9,13 @@ from .moving_average import MovingAverage
 from .vegetation_deficit_index import VegetationDeficitIndex
 
 __all__ = [
-    'SPI', 'ZScoreIndex', 'PercentNormalIndex', 'DroughtSeverityIndex',
-    'ChinaZIndex', 'DecileIndex', 'AnomalyIndex', 'MovingAverage',
-    'VegetationDeficitIndex'
+    "SPI",
+    "ZScoreIndex",
+    "PercentNormalIndex",
+    "DroughtSeverityIndex",
+    "ChinaZIndex",
+    "DecileIndex",
+    "AnomalyIndex",
+    "MovingAverage",
+    "VegetationDeficitIndex",
 ]

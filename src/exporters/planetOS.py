@@ -16,9 +16,10 @@ class ERA5ExporterPOS(BaseExporter):
 
     https://github.com/planet-os/notebooks/blob/master/aws/era5-pds.md
     """
-    dataset = 'era5POS'
 
-    def __init__(self, data_folder: Path = Path('data')) -> None:
+    dataset = "era5POS"
+
+    def __init__(self, data_folder: Path = Path("data")) -> None:
         super().__init__(data_folder)
 
         global boto3
@@ -30,21 +31,23 @@ class ERA5ExporterPOS(BaseExporter):
             import botocore
             from botocore.client import Config
 
-        self.era5_bucket = 'era5-pds'
-        self.client = boto3.client('s3',  # type: ignore
-                                   config=Config(  # type: ignore
-                                       signature_version=botocore.UNSIGNED))  # type: ignore
+        self.era5_bucket = "era5-pds"
+        self.client = boto3.client(
+            "s3",  # type: ignore
+            config=Config(  # type: ignore
+                signature_version=botocore.UNSIGNED
+            ),
+        )  # type: ignore
 
     def get_variables(self, year: int, month: int) -> List[str]:
-        target_prefix = f'{year}/{month:02d}/data'
+        target_prefix = f"{year}/{month:02d}/data"
 
         files = self.client.list_objects_v2(
-            Bucket=self.era5_bucket,
-            Prefix=target_prefix
+            Bucket=self.era5_bucket, Prefix=target_prefix
         )
         variables = []
-        for file in files['Contents']:
-            key = file['Key'].split('/')[-1].replace('.nc', '')
+        for file in files["Contents"]:
+            key = file["Key"].split("/")[-1].replace(".nc", "")
             variables.append(key)
 
         return variables
@@ -61,22 +64,24 @@ class ERA5ExporterPOS(BaseExporter):
         years: A list of years for which data is available
         """
         years = []
-        paginator = self.client.get_paginator('list_objects')
-        result = paginator.paginate(Bucket=self.era5_bucket, Delimiter='/')
-        for prefix in result.search('CommonPrefixes'):
+        paginator = self.client.get_paginator("list_objects")
+        result = paginator.paginate(Bucket=self.era5_bucket, Delimiter="/")
+        for prefix in result.search("CommonPrefixes"):
             try:
                 # the buckets have a backslash at the end which we want to
                 # remove
-                years.append(int(prefix.get('Prefix')[:-1]))
+                years.append(int(prefix.get("Prefix")[:-1]))
             except ValueError:
                 # one of the buckets is QA/
                 continue
         return years
 
-    def export(self,
-               variable: str,
-               years: Optional[List[int]] = None,
-               months: Optional[List[int]] = None) -> List[Path]:
+    def export(
+        self,
+        variable: str,
+        years: Optional[List[int]] = None,
+        months: Optional[List[int]] = None,
+    ) -> List[Path]:
         """Export data from Planet OS's S3 bucket
 
         Arguments
@@ -102,28 +107,30 @@ class ERA5ExporterPOS(BaseExporter):
 
         output_files = []
         for year, month in product(years, months):
-            target_key = f'{year}/{month:02d}/data/{variable}.nc'
+            target_key = f"{year}/{month:02d}/data/{variable}.nc"
 
-            target_folder = self.output_folder / f'{year}/{month:02d}'
+            target_folder = self.output_folder / f"{year}/{month:02d}"
             target_folder.mkdir(parents=True, exist_ok=True)
-            target_output = target_folder / f'{variable}.nc'
+            target_output = target_folder / f"{variable}.nc"
 
             if target_output.exists():
-                print(f'{target_output} already exists! Skipping')
+                print(f"{target_output} already exists! Skipping")
                 continue
 
             try:
-                self.client.download_file(self.era5_bucket,
-                                          target_key,
-                                          str(target_output))
+                self.client.download_file(
+                    self.era5_bucket, target_key, str(target_output)
+                )
                 output_files.append(target_output)
-                print(f'Exported {target_key} to {target_folder}')
+                print(f"Exported {target_key} to {target_folder}")
             except botocore.exceptions.ClientError as e:  # type: ignore
-                if e.response['Error']['Code'] == "404":
+                if e.response["Error"]["Code"] == "404":
                     possible_variables = self.get_variables(year, month)
-                    possible_variables_str = '\n'.join(possible_variables)
-                    warnings.warn(f'Key does not exist! '
-                                  f'Possible variables are: {possible_variables_str}')
+                    possible_variables_str = "\n".join(possible_variables)
+                    warnings.warn(
+                        f"Key does not exist! "
+                        f"Possible variables are: {possible_variables_str}"
+                    )
                 else:
                     raise e
         return output_files

@@ -12,7 +12,6 @@ from tests.utils import _make_dataset
 
 
 class TestRecurrentNetwork:
-
     def test_save(self, tmp_path, monkeypatch):
 
         features_per_month = 5
@@ -21,136 +20,154 @@ class TestRecurrentNetwork:
         hidden_size = 128
         rnn_dropout = 0.25
         include_pred_month = True
-        experiment = 'one_month_forecast'
-        ignore_vars = ['precip']
+        experiment = "one_month_forecast"
+        ignore_vars = ["precip"]
         include_latlons = True
 
         def mocktrain(self):
-            self.model = RNN(features_per_month, dense_features, hidden_size,
-                             rnn_dropout,
-                             include_pred_month, include_latlons,
-                             experiment='one_month_forecast')
+            self.model = RNN(
+                features_per_month,
+                dense_features,
+                hidden_size,
+                rnn_dropout,
+                include_pred_month,
+                include_latlons,
+                experiment="one_month_forecast",
+            )
             self.features_per_month = features_per_month
 
-        monkeypatch.setattr(RecurrentNetwork, 'train', mocktrain)
+        monkeypatch.setattr(RecurrentNetwork, "train", mocktrain)
 
-        model = RecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
-                                 rnn_dropout=rnn_dropout, data_folder=tmp_path,
-                                 ignore_vars=ignore_vars, experiment=experiment,
-                                 include_pred_month=include_pred_month,
-                                 include_latlons=include_latlons)
+        model = RecurrentNetwork(
+            hidden_size=hidden_size,
+            dense_features=dense_features,
+            rnn_dropout=rnn_dropout,
+            data_folder=tmp_path,
+            ignore_vars=ignore_vars,
+            experiment=experiment,
+            include_pred_month=include_pred_month,
+            include_latlons=include_latlons,
+        )
 
         model.train()
         model.save_model()
 
-        assert (tmp_path / 'models/one_month_forecast/rnn/model.pt').exists(), \
-            f'Model not saved!'
+        assert (
+            tmp_path / "models/one_month_forecast/rnn/model.pt"
+        ).exists(), f"Model not saved!"
 
-        model_dict = torch.load(model.model_dir / 'model.pt', map_location='cpu')
+        model_dict = torch.load(model.model_dir / "model.pt", map_location="cpu")
 
-        for key, val in model_dict['model']['state_dict'].items():
+        for key, val in model_dict["model"]["state_dict"].items():
             assert (model.model.state_dict()[key] == val).all()
 
-        assert model_dict['model']['features_per_month'] == features_per_month
-        assert model_dict['hidden_size'] == hidden_size
-        assert model_dict['rnn_dropout'] == rnn_dropout
-        assert model_dict['dense_features'] == input_dense_features
-        assert model_dict['include_pred_month'] == include_pred_month
-        assert model_dict['experiment'] == experiment
-        assert model_dict['ignore_vars'] == ignore_vars
-        assert model_dict['include_latlons'] == include_latlons
+        assert model_dict["model"]["features_per_month"] == features_per_month
+        assert model_dict["hidden_size"] == hidden_size
+        assert model_dict["rnn_dropout"] == rnn_dropout
+        assert model_dict["dense_features"] == input_dense_features
+        assert model_dict["include_pred_month"] == include_pred_month
+        assert model_dict["experiment"] == experiment
+        assert model_dict["ignore_vars"] == ignore_vars
+        assert model_dict["include_latlons"] == include_latlons
 
-    @pytest.mark.parametrize('use_pred_months', [True, False])
+    @pytest.mark.parametrize("use_pred_months", [True, False])
     def test_train(self, tmp_path, capsys, use_pred_months):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        test_features = tmp_path / 'features/one_month_forecast/train/hello'
+        test_features = tmp_path / "features/one_month_forecast/train/hello"
         test_features.mkdir(parents=True)
 
-        norm_dict = {'VHI': {'mean': 0, 'std': 1}}
-        with (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').open('wb') as f:
+        norm_dict = {"VHI": {"mean": 0, "std": 1}}
+        with (tmp_path / "features/one_month_forecast/normalizing_dict.pkl").open(
+            "wb"
+        ) as f:
             pickle.dump(norm_dict, f)
 
-        x.to_netcdf(test_features / 'x.nc')
-        y.to_netcdf(test_features / 'y.nc')
+        x.to_netcdf(test_features / "x.nc")
+        y.to_netcdf(test_features / "y.nc")
 
         # static
         x_static, _, _ = _make_dataset(size=(5, 5), add_times=False)
-        static_features = tmp_path / f'features/static'
+        static_features = tmp_path / f"features/static"
         static_features.mkdir(parents=True)
-        x_static.to_netcdf(static_features / 'data.nc')
+        x_static.to_netcdf(static_features / "data.nc")
 
-        static_norm_dict = {'VHI': {'mean': 0.0, 'std': 1.0}}
-        with (
-            tmp_path / f'features/static/normalizing_dict.pkl'
-        ).open('wb') as f:
+        static_norm_dict = {"VHI": {"mean": 0.0, "std": 1.0}}
+        with (tmp_path / f"features/static/normalizing_dict.pkl").open("wb") as f:
             pickle.dump(static_norm_dict, f)
 
         dense_features = [10]
         hidden_size = 128
         rnn_dropout = 0.25
 
-        model = RecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
-                                 rnn_dropout=rnn_dropout,
-                                 data_folder=tmp_path, include_monthly_aggs=True)
+        model = RecurrentNetwork(
+            hidden_size=hidden_size,
+            dense_features=dense_features,
+            rnn_dropout=rnn_dropout,
+            data_folder=tmp_path,
+            include_monthly_aggs=True,
+        )
         model.train()
 
         captured = capsys.readouterr()
-        expected_stdout = 'Epoch 1, train smooth L1:'
+        expected_stdout = "Epoch 1, train smooth L1:"
         assert expected_stdout in captured.out
 
-        assert type(model.model) == RNN, \
-            f'Model attribute not an RNN!'
+        assert type(model.model) == RNN, f"Model attribute not an RNN!"
 
-    @pytest.mark.parametrize('use_pred_months', [True, False])
+    @pytest.mark.parametrize("use_pred_months", [True, False])
     def test_predict(self, tmp_path, use_pred_months):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        train_features = tmp_path / 'features/one_month_forecast/train/hello'
+        train_features = tmp_path / "features/one_month_forecast/train/hello"
         train_features.mkdir(parents=True)
 
-        test_features = tmp_path / 'features/one_month_forecast/test/hello'
+        test_features = tmp_path / "features/one_month_forecast/test/hello"
         test_features.mkdir(parents=True)
 
-        norm_dict = {'VHI': {'mean': 0.0, 'std': 1.0}}
-        with (tmp_path / 'features/one_month_forecast/normalizing_dict.pkl').open('wb') as f:
+        norm_dict = {"VHI": {"mean": 0.0, "std": 1.0}}
+        with (tmp_path / "features/one_month_forecast/normalizing_dict.pkl").open(
+            "wb"
+        ) as f:
             pickle.dump(norm_dict, f)
 
-        x.to_netcdf(test_features / 'x.nc')
-        y.to_netcdf(test_features / 'y.nc')
+        x.to_netcdf(test_features / "x.nc")
+        y.to_netcdf(test_features / "y.nc")
 
-        x.to_netcdf(train_features / 'x.nc')
-        y.to_netcdf(train_features / 'y.nc')
+        x.to_netcdf(train_features / "x.nc")
+        y.to_netcdf(train_features / "y.nc")
 
         # static
         x_static, _, _ = _make_dataset(size=(5, 5), add_times=False)
-        static_features = tmp_path / f'features/static'
+        static_features = tmp_path / f"features/static"
         static_features.mkdir(parents=True)
-        x_static.to_netcdf(static_features / 'data.nc')
+        x_static.to_netcdf(static_features / "data.nc")
 
-        static_norm_dict = {'VHI': {'mean': 0.0, 'std': 1.0}}
-        with (
-            tmp_path / f'features/static/normalizing_dict.pkl'
-        ).open('wb') as f:
+        static_norm_dict = {"VHI": {"mean": 0.0, "std": 1.0}}
+        with (tmp_path / f"features/static/normalizing_dict.pkl").open("wb") as f:
             pickle.dump(static_norm_dict, f)
 
         dense_features = [10]
         hidden_size = 128
         rnn_dropout = 0.25
 
-        model = RecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
-                                 rnn_dropout=rnn_dropout, data_folder=tmp_path)
+        model = RecurrentNetwork(
+            hidden_size=hidden_size,
+            dense_features=dense_features,
+            rnn_dropout=rnn_dropout,
+            data_folder=tmp_path,
+        )
         model.train()
         test_arrays_dict, pred_dict = model.predict()
 
         # the foldername "hello" is the only one which should be in the dictionaries
-        assert ('hello' in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1)
-        assert ('hello' in pred_dict.keys()) and (len(pred_dict) == 1)
+        assert ("hello" in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1)
+        assert ("hello" in pred_dict.keys()) and (len(pred_dict) == 1)
 
         # _make_dataset with const=True returns all ones
-        assert (test_arrays_dict['hello']['y'] == 1).all()
+        assert (test_arrays_dict["hello"]["y"] == 1).all()
 
 
 class TestUnrolledRNN:
@@ -169,14 +186,16 @@ class TestUnrolledRNN:
         hidden_state = torch.zeros(1, x.shape[0], hidden_size)
         cell_state = torch.zeros(1, x.shape[0], hidden_size)
 
-        torch_rnn = nn.LSTM(input_size=features_per_month,
-                            hidden_size=hidden_size,
-                            batch_first=True,
-                            num_layers=1)
+        torch_rnn = nn.LSTM(
+            input_size=features_per_month,
+            hidden_size=hidden_size,
+            batch_first=True,
+            num_layers=1,
+        )
 
-        our_rnn = UnrolledRNN(input_size=features_per_month,
-                              hidden_size=hidden_size,
-                              batch_first=True)
+        our_rnn = UnrolledRNN(
+            input_size=features_per_month, hidden_size=hidden_size, batch_first=True
+        )
 
         for parameters in torch_rnn.all_weights:
             for pam in parameters:
@@ -190,5 +209,9 @@ class TestUnrolledRNN:
             o_out, (o_cell, o_hidden) = our_rnn(x, (hidden_state, cell_state))
             t_out, (t_cell, t_hidden) = torch_rnn(x, (hidden_state, cell_state))
 
-        assert np.isclose(o_out.numpy(), t_out.numpy(), 0.01).all(), "Difference in hidden state"
-        assert np.isclose(t_cell.numpy(), o_cell.numpy(), 0.01).all(), "Difference in cell state"
+        assert np.isclose(
+            o_out.numpy(), t_out.numpy(), 0.01
+        ).all(), "Difference in hidden state"
+        assert np.isclose(
+            t_cell.numpy(), o_cell.numpy(), 0.01
+        ).all(), "Difference in cell state"

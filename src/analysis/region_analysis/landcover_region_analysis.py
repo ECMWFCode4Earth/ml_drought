@@ -10,29 +10,34 @@ from .base import RegionAnalysis
 class LandcoverRegionAnalysis(RegionAnalysis):
     admin_boundaries = False
 
-    def __init__(self,
-                 data_dir: Path = Path('data'),
-                 experiment: str = 'one_month_forecast'):
+    def __init__(
+        self, data_dir: Path = Path("data"), experiment: str = "one_month_forecast"
+    ):
 
         super().__init__(
-            data_dir=data_dir, experiment=experiment,
-            admin_boundaries=self.admin_boundaries
+            data_dir=data_dir,
+            experiment=experiment,
+            admin_boundaries=self.admin_boundaries,
         )
 
     @staticmethod
     def create_lc_name(landcover_name: str) -> str:
-        rm_punctuation = str.maketrans('', '', string.punctuation)
-        return (landcover_name.lower()
-                .replace('_', ' ')
-                .translate(rm_punctuation).replace(' ', '_'))
+        rm_punctuation = str.maketrans("", "", string.punctuation)
+        return (
+            landcover_name.lower()
+            .replace("_", " ")
+            .translate(rm_punctuation)
+            .replace(" ", "_")
+        )
 
     def load_landcover_data(self, region_data_path: Path) -> List[xr.DataArray]:
         # load the one_hot_encoded preprocessed landcover data
         landcover_ds: xr.Dataset = xr.open_dataset(region_data_path)
-        if 'lc_class' in [d for d in landcover_ds.data_vars]:
-            landcover_ds = landcover_ds.drop('lc_class')
-        assert all(['one_hot' in var for var in landcover_ds.data_vars]), \
-            'This method only works with one_hot_encoded landcover data'
+        if "lc_class" in [d for d in landcover_ds.data_vars]:
+            landcover_ds = landcover_ds.drop("lc_class")
+        assert all(
+            ["one_hot" in var for var in landcover_ds.data_vars]
+        ), "This method only works with one_hot_encoded landcover data"
 
         # return a list of DataArrays (boolean masks)
         landcover_das = [landcover_ds[v] for v in landcover_ds.data_vars]
@@ -40,8 +45,11 @@ class LandcoverRegionAnalysis(RegionAnalysis):
         return landcover_das
 
     def compute_mean_statistics(
-        self, landcover_das: List[xr.DataArray], pred_da: xr.DataArray,
-        true_da: xr.DataArray, datetime: datetime
+        self,
+        landcover_das: List[xr.DataArray],
+        pred_da: xr.DataArray,
+        true_da: xr.DataArray,
+        datetime: datetime,
     ) -> Tuple[List, List, List, List]:
         """
         Returns:
@@ -65,12 +73,8 @@ class LandcoverRegionAnalysis(RegionAnalysis):
             lc_name = self.create_lc_name(landcover_da.name)
             region_names.append(lc_name)
             # because one-hot-encoded only select where value == 1
-            predicted_mean_value.append(
-                pred_da.where(landcover_da == 1).mean().values
-            )
-            true_mean_value.append(
-                true_da.where(landcover_da == 1).mean().values
-            )
+            predicted_mean_value.append(pred_da.where(landcover_da == 1).mean().values)
+            true_mean_value.append(true_da.where(landcover_da == 1).mean().values)
             # assert true_da.time == pred_da.time, 'time must be matching!'
             datetimes.append(datetime)
 
@@ -80,15 +84,17 @@ class LandcoverRegionAnalysis(RegionAnalysis):
     def _analyze_single(self, region_data_path: Path):
         landcover_das = self.load_landcover_data(region_data_path)
 
-        admin_level_name = 'landcover'
+        admin_level_name = "landcover"
         return self._base_analyze_single(
-            admin_level_name=admin_level_name,
-            landcover_das=landcover_das
+            admin_level_name=admin_level_name, landcover_das=landcover_das
         )
 
-    def analyze(self, compute_global_errors: bool = True,
-                compute_regional_errors: bool = True,
-                save_all_df: bool = True) -> None:
+    def analyze(
+        self,
+        compute_global_errors: bool = True,
+        compute_regional_errors: bool = True,
+        save_all_df: bool = True,
+    ) -> None:
         """For all preprocessed regions calculate the mean True value and
         mean predicted values. Also have the option to calculate global
         errors (across all regions (in an admin level) / landcover classes).
@@ -105,21 +111,18 @@ class LandcoverRegionAnalysis(RegionAnalysis):
         region_data_path = self.region_data_paths[0]
         df = self._analyze_single(region_data_path)
 
-        if 'index' in df.columns:
-            df = df.drop(columns='index')
-        if 'level_0' in df.columns:
-            df = df.drop(columns='level_0')
+        if "index" in df.columns:
+            df = df.drop(columns="index")
+        if "level_0" in df.columns:
+            df = df.drop(columns="level_0")
 
         self.df = df.astype(
-            {'predicted_mean_value': 'float64', 'true_mean_value': 'float64'}
+            {"predicted_mean_value": "float64", "true_mean_value": "float64"}
         )
-        print('* Assigned all region dfs to `self.df` *')
+        print("* Assigned all region dfs to `self.df` *")
 
         # compute error metrics for each model globally
         self.compute_metrics(compute_global_errors, compute_regional_errors)
 
         if save_all_df:
-            self.df.to_csv(
-                self.out_dir /
-                f'{self.experiment}_all_admin_regions.csv'
-            )
+            self.df.to_csv(self.out_dir / f"{self.experiment}_all_admin_regions.csv")
