@@ -245,10 +245,10 @@ class SPI(BaseIndices):
             "---------------\n",
         )
 
-        index = xr.apply_ufunc(
-            indices.spi,
+        index = xr.apply_ufunc(  # type: ignore
+            indices.spi,  # type: ignore
             da,
-            self.scale,  # type: ignore
+            self.scale,
             dist,
             self.data_start_year,
             self.calibration_year_initial,

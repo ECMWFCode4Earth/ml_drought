@@ -23,9 +23,9 @@ class S5Preprocessor(BasePreProcessor):
         self.ouce_server = ouce_server
         self.parallel = parallel
 
-    def get_filepaths(
+    def get_filepaths(  # type: ignore
         self,
-        target_folder: Path,  # type: ignore
+        target_folder: Path,
         variable: str,
         grib: bool = True,
     ) -> List[Path]:

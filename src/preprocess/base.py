@@ -148,10 +148,10 @@ class BasePreProcessor:
             )
         savedir = self.preprocessed_folder / filename
 
-        regridder = xesmf.Regridder(
+        regridder = xesmf.Regridder(  # type: ignore
             ds,
             ds_out,
-            method,  # type: ignore
+            method,
             filename=str(savedir),
             reuse_weights=False,
         )

@@ -194,8 +194,8 @@ class RegionGeoPlotter:
 
     @staticmethod
     def plot_metric(
-        ax: Axes, metric: PlotMetric, gdf: GeoDataFrame
-    ) -> Axes:  # type: ignore
+        ax: Axes, metric: PlotMetric, gdf: GeoDataFrame  # type: ignore
+    ) -> Axes:
         # nicely format the colorbar
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.1)

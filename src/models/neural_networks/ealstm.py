@@ -444,21 +444,21 @@ class OrgEALSTMCell(nn.Module):
         self.initial_forget_bias = initial_forget_bias
 
         # create tensors of learnable parameters
-        self.weight_ih = nn.Parameter(
-            torch.FloatTensor(
-                input_size_dyn,  # type: ignore
+        self.weight_ih = nn.Parameter(  # type: ignore
+            torch.FloatTensor(  # type: ignore
+                input_size_dyn,
                 3 * hidden_size,
             )
         )  # type: ignore
-        self.weight_hh = nn.Parameter(
-            torch.FloatTensor(
-                hidden_size,  # type: ignore
+        self.weight_hh = nn.Parameter(  # type: ignore
+            torch.FloatTensor(  # type: ignore
+                hidden_size,
                 3 * hidden_size,
             )
         )  # type: ignore
-        self.weight_sh = nn.Parameter(
-            torch.FloatTensor(
-                input_size_stat,  # type: ignore
+        self.weight_sh = nn.Parameter(  # type: ignore
+            torch.FloatTensor(  # type: ignore
+                input_size_stat,
                 hidden_size,
             )
         )  # type: ignore
