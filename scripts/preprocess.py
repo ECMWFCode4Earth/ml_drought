@@ -2,7 +2,7 @@ from pathlib import Path
 
 import sys
 sys.path.append('..')
-from src.preprocess import (VHIPreprocessor, CHIRPSPreprocesser,
+from src.preprocess import (VHIPreprocessor, CHIRPSPreprocessor,
                             PlanetOSPreprocessor, GLEAMPreprocessor,
                             S5Preprocessor, NDVIPreprocessor,
                             ESACCIPreprocessor, SRTMPreprocessor,
@@ -34,7 +34,7 @@ def process_precip_2018():
     regrid_path = data_path / 'interim/VCI_preprocessed/data_kenya.nc'
     assert regrid_path.exists(), f'{regrid_path} not available'
 
-    processor = CHIRPSPreprocesser(data_path)
+    processor = CHIRPSPreprocessor(data_path)
 
     processor.preprocess(subset_str='kenya',
                          regrid=regrid_path,

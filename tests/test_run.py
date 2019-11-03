@@ -11,7 +11,8 @@ class TestDictWithDefaults:
 
     default_dict = {"data": "data",
                     "export": {"era5": [{"variable": "precipitation"}]},
-                    "preprocess": ["vhi"]}
+                    "preprocess": ["vhi"],
+                    "engineer": {"init_args": {"process_static": True}}}
 
     def test_missing_key(self):
 

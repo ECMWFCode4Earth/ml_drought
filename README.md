@@ -27,6 +27,8 @@ There are three entrypoints to the pipeline:
 A blog post describing the goals and design of the pipeline can be found
 [here](https://medium.com/@gabrieltseng/a-machine-learning-pipeline-for-climate-research-ebf83b2b349a).
 
+View the initial presentation of our pipeline [here](https://www.youtube.com/watch?v=QVFiGERCiYs).
+
 ## Setup <a name="setup"></a>
 
 [Anaconda](https://www.anaconda.com/download/#macos) running python 3.7 is used as the package manager. To get set up

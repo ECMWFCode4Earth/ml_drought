@@ -35,5 +35,5 @@ scripts/variables*.txt
 
 switch_data_dirs.sh
 
-# coverage marginalia
+# pytest coverage files
 .coverage*
