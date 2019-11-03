@@ -11,7 +11,6 @@ from src.models import load_model
 
 
 class TestLoadModels:
-
     def test_ealstm(self, tmp_path, monkeypatch):
 
         features_per_month = 5
@@ -22,21 +21,31 @@ class TestLoadModels:
         include_pred_month = True
 
         def mocktrain(self):
-            self.model = EALSTM(features_per_month, dense_features, hidden_size,
-                                rnn_dropout, dense_dropout,
-                                include_pred_month, experiment='one_month_forecast')
+            self.model = EALSTM(
+                features_per_month,
+                dense_features,
+                hidden_size,
+                rnn_dropout,
+                dense_dropout,
+                include_pred_month,
+                experiment="one_month_forecast",
+            )
             self.features_per_month = features_per_month
 
-        monkeypatch.setattr(EARecurrentNetwork, 'train', mocktrain)
+        monkeypatch.setattr(EARecurrentNetwork, "train", mocktrain)
 
-        model = EARecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
-                                   rnn_dropout=rnn_dropout, data_folder=tmp_path)
+        model = EARecurrentNetwork(
+            hidden_size=hidden_size,
+            dense_features=dense_features,
+            rnn_dropout=rnn_dropout,
+            data_folder=tmp_path,
+        )
         model.train()
         model.save_model()
 
-        model_path = tmp_path / 'models/ealstm/rnn/model.pkl'
+        model_path = tmp_path / "models/ealstm/rnn/model.pkl"
 
-        assert model_path.exists(), 'Model not saved!'
+        assert model_path.exists(), "Model not saved!"
 
         new_model = load_model(model_path)
 
@@ -63,21 +72,31 @@ class TestLoadModels:
         include_pred_month = True
 
         def mocktrain(self):
-            self.model = RNN(features_per_month, dense_features, hidden_size,
-                             rnn_dropout, dense_dropout,
-                             include_pred_month, experiment='one_month_forecast')
+            self.model = RNN(
+                features_per_month,
+                dense_features,
+                hidden_size,
+                rnn_dropout,
+                dense_dropout,
+                include_pred_month,
+                experiment="one_month_forecast",
+            )
             self.features_per_month = features_per_month
 
-        monkeypatch.setattr(RecurrentNetwork, 'train', mocktrain)
+        monkeypatch.setattr(RecurrentNetwork, "train", mocktrain)
 
-        model = RecurrentNetwork(hidden_size=hidden_size, dense_features=dense_features,
-                                 rnn_dropout=rnn_dropout, data_folder=tmp_path)
+        model = RecurrentNetwork(
+            hidden_size=hidden_size,
+            dense_features=dense_features,
+            rnn_dropout=rnn_dropout,
+            data_folder=tmp_path,
+        )
         model.train()
         model.save_model()
 
-        model_path = tmp_path / 'models/one_month_forecast/rnn/model.pkl'
+        model_path = tmp_path / "models/one_month_forecast/rnn/model.pkl"
 
-        assert model_path.exists(), 'Model not saved!'
+        assert model_path.exists(), "Model not saved!"
 
         new_model = load_model(model_path)
 
@@ -107,18 +126,22 @@ class TestLoadModels:
             )
             self.input_size = input_size
 
-        monkeypatch.setattr(LinearNetwork, 'train', mocktrain)
+        monkeypatch.setattr(LinearNetwork, "train", mocktrain)
 
-        model = LinearNetwork(data_folder=tmp_path, layer_sizes=layer_sizes,
-                              dropout=dropout, experiment='one_month_forecast',
-                              include_pred_month=include_pred_month,
-                              surrounding_pixels=surrounding_pixels)
+        model = LinearNetwork(
+            data_folder=tmp_path,
+            layer_sizes=layer_sizes,
+            dropout=dropout,
+            experiment="one_month_forecast",
+            include_pred_month=include_pred_month,
+            surrounding_pixels=surrounding_pixels,
+        )
         model.train()
         model.save_model()
 
-        model_path = tmp_path / 'models/one_month_forecast/linear_network/model.pkl'
+        model_path = tmp_path / "models/one_month_forecast/linear_network/model.pkl"
 
-        assert model_path.exists(), 'Model not saved!'
+        assert model_path.exists(), "Model not saved!"
 
         new_model = load_model(model_path)
 
@@ -151,14 +174,14 @@ class TestLoadModels:
 
             self.model = MockModel()
 
-        monkeypatch.setattr(LinearRegression, 'train', mocktrain)
+        monkeypatch.setattr(LinearRegression, "train", mocktrain)
 
-        model = LinearRegression(tmp_path, experiment='one_month_forecast')
+        model = LinearRegression(tmp_path, experiment="one_month_forecast")
         model.train()
         model.save_model()
 
-        model_path = tmp_path / 'models/one_month_forecast/linear_regression/model.pkl'
-        assert model_path.exists(), f'Model not saved!'
+        model_path = tmp_path / "models/one_month_forecast/linear_regression/model.pkl"
+        assert model_path.exists(), f"Model not saved!"
 
         new_model = load_model(model_path)
         assert type(new_model) == LinearRegression
@@ -169,7 +192,7 @@ class TestLoadModels:
         assert new_model.experiment == model.experiment
         assert new_model.surrounding_pixels == model.surrounding_pixels
 
-    @pytest.mark.xfail(reason='XGB is not installed in the test env')
+    @pytest.mark.xfail(reason="XGB is not installed in the test env")
     def test_xgboost(self, tmp_path, monkeypatch):
 
         import xgboost as xgb
@@ -177,14 +200,14 @@ class TestLoadModels:
         def mocktrain(self):
             self.model = xgb.XGBRegressor()
 
-        monkeypatch.setattr(GBDT, 'train', mocktrain)
+        monkeypatch.setattr(GBDT, "train", mocktrain)
 
-        model = GBDT(tmp_path, experiment='one_month_forecast')
+        model = GBDT(tmp_path, experiment="one_month_forecast")
         model.train()
         model.save_model()
 
-        model_path = tmp_path / 'models/one_month_forecast/gbdt/model.pkl'
-        assert model_path.exists(), f'Model not saved!'
+        model_path = tmp_path / "models/one_month_forecast/gbdt/model.pkl"
+        assert model_path.exists(), f"Model not saved!"
 
         new_model = load_model(model_path)
         assert type(new_model) == GBDT

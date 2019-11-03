@@ -24,24 +24,22 @@ def calculate_seasonal_anomalies(ds: xr.Dataset, variable: str) -> xr.DataArray:
         the variable that you want to calculate anomalies from
     """
     # calculate seasonal values
-    resample_da = ds[variable].resample(time='Q-DEC').mean()
-    resample_da['season'] = resample_da['time.season']
+    resample_da = ds[variable].resample(time="Q-DEC").mean()
+    resample_da["season"] = resample_da["time.season"]
     # calculate climatology (of same shape)
-    climatology = resample_da.groupby('time.season').mean()
+    climatology = resample_da.groupby("time.season").mean()
     climatology_ = xr.ones_like(resample_da)
     climatology_.values = [
-        climatology.sel(season=season).values
-        for season in resample_da.season
+        climatology.sel(season=season).values for season in resample_da.season
     ]
-    climatology_.name = 'climatology'
+    climatology_.name = "climatology"
     # join to da
     ds = xr.merge([resample_da, climatology_])
-    anomaly = ds[variable] - ds['climatology']
-    return anomaly.rename('anomaly')
+    anomaly = ds[variable] - ds["climatology"]
+    return anomaly.rename("anomaly")
 
 
-def calculate_seasonal_anomalies_spatial(ds: xr.Dataset,
-                                         variable: str) -> xr.DataArray:
+def calculate_seasonal_anomalies_spatial(ds: xr.Dataset, variable: str) -> xr.DataArray:
     """create a DataArray of the SEASONAL anomalies (difference from seasonal
     mean).
 
@@ -54,25 +52,26 @@ def calculate_seasonal_anomalies_spatial(ds: xr.Dataset,
         the variable that you want to calculate anomalies from
     """
     # calculate seasonal values
-    resample_da = ds[variable].resample(time='Q-DEC').mean(dim='time')
-    resample_da['season'] = resample_da['time.season']
+    resample_da = ds[variable].resample(time="Q-DEC").mean(dim="time")
+    resample_da["season"] = resample_da["time.season"]
     # calculate climatology (of same shape)
-    climatology = resample_da.groupby('time.season').mean(dim='time')
+    climatology = resample_da.groupby("time.season").mean(dim="time")
     climatology_ = xr.ones_like(resample_da)
     climatology_.values = [
-        climatology.sel(season=season).values
-        for season in resample_da.season.values
+        climatology.sel(season=season).values for season in resample_da.season.values
     ]
-    climatology_.name = 'climatology'
+    climatology_.name = "climatology"
     # join to da
     ds = xr.merge([resample_da, climatology_])
-    anomaly = ds[variable] - ds['climatology']
-    return anomaly.rename('anomaly')
+    anomaly = ds[variable] - ds["climatology"]
+    return anomaly.rename("anomaly")
 
 
-def create_anomaly_df(anomaly_da: xr.DataArray,
-                      mintime: Optional[str] = None,
-                      maxtime: Optional[str] = None,) -> pd.DataFrame:
+def create_anomaly_df(
+    anomaly_da: xr.DataArray,
+    mintime: Optional[str] = None,
+    maxtime: Optional[str] = None,
+) -> pd.DataFrame:
     """From the anomaly xr.DataArray created in `calculate_seasonal_anomalies()`
     create an anomaly dataframe with `time` and `anomaly` columns. This is
     easier for working with the plotting functions in `src.analysis.evaluation`.
@@ -91,17 +90,20 @@ def create_anomaly_df(anomaly_da: xr.DataArray,
     df = (
         anomaly_da.sel(time=slice(mintime, maxtime))  # type: ignore
         .to_pandas()
-        .to_frame('anomaly')
+        .to_frame("anomaly")
         .reset_index()
-        .astype({'time': 'datetime64[ns]'})
+        .astype({"time": "datetime64[ns]"})
     )
     return df
 
 
-def plot_bar_anomalies(df: pd.DataFrame, variable: str = 'anomaly',
-                       ax: Optional[Axes] = None,
-                       positive_color: str = 'b',
-                       negative_color: str = 'r') -> Tuple[Axes, Figure]:
+def plot_bar_anomalies(
+    df: pd.DataFrame,
+    variable: str = "anomaly",
+    ax: Optional[Axes] = None,
+    positive_color: str = "b",
+    negative_color: str = "r",
+) -> Tuple[Axes, Figure]:
     """Plot the seasonal anomalies calculated in
     `create_anomaly_df()` with positive/negative
     anomalies as bars. Also with sensible xlabels
@@ -116,28 +118,28 @@ def plot_bar_anomalies(df: pd.DataFrame, variable: str = 'anomaly',
     """
     # https://stackoverflow.com/a/30135182/9940782 - format date xticks
     # https://stackoverflow.com/a/22311398/9940782 - color the bars
-    assert 'time' in df.columns
-    assert type(df['time'][0]) == pd._libs.tslibs.timestamps.Timestamp
+    assert "time" in df.columns
+    assert type(df["time"][0]) == pd._libs.tslibs.timestamps.Timestamp
 
     # create color
-    df['positive'] = df[variable] > 0
+    df["positive"] = df[variable] > 0
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 8))
     else:
         fig = plt.gcf()
 
     df.plot.bar(
-        x='time', y=variable, ax=ax,
-        color=df.positive.map(
-            {True: positive_color, False: negative_color}
-        )
+        x="time",
+        y=variable,
+        ax=ax,
+        color=df.positive.map({True: positive_color, False: negative_color}),
     )
 
     # fix the xaxis datelabels
     len_years = len(df.time.dt.year.unique())
-    ticklabels = [''] * len(df)
+    ticklabels = [""] * len(df)
     skip = len(df) // len_years
-    ticklabels[::skip] = df['time'].iloc[::skip].dt.strftime('%Y')
+    ticklabels[::skip] = df["time"].iloc[::skip].dt.strftime("%Y")
     ax.xaxis.set_major_formatter(mticker.FixedFormatter(ticklabels))
     fig.autofmt_xdate()
 

@@ -12,8 +12,7 @@ from typing import Dict, List, Optional, Union
 from src.utils import get_ds_mask
 
 
-def spatial_rmse(true_da: xr.DataArray,
-                 pred_da: xr.DataArray) -> xr.DataArray:
+def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     """Calculate the RMSE collapsing the time dimension returning
     a DataArray of the rmse values (spatially)
     """
@@ -22,7 +21,7 @@ def spatial_rmse(true_da: xr.DataArray,
     assert true_da_shape == pred_da_shape
 
     vals = np.sqrt(
-        np.nansum((true_da.values - pred_da.values)**2, axis=0) / pred_da.shape[0]
+        np.nansum((true_da.values - pred_da.values) ** 2, axis=0) / pred_da.shape[0]
     )
 
     da = xr.ones_like(pred_da).isel(time=0)
@@ -33,16 +32,13 @@ def spatial_rmse(true_da: xr.DataArray,
     return da
 
 
-def spatial_r2(true_da: xr.DataArray,
-               pred_da: xr.DataArray) -> xr.DataArray:
+def spatial_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     true_da_shape = (true_da.lat.shape[0], true_da.lon.shape[0])
     pred_da_shape = (pred_da.lat.shape[0], pred_da.lon.shape[0])
     assert true_da_shape == pred_da_shape
 
-    r2_vals = 1 - (
-        np.nansum((true_da.values - pred_da.values)**2, axis=0)
-    ) / (
-        np.nansum((true_da.values - np.nanmean(pred_da.values))**2, axis=0)
+    r2_vals = 1 - (np.nansum((true_da.values - pred_da.values) ** 2, axis=0)) / (
+        np.nansum((true_da.values - np.nanmean(pred_da.values)) ** 2, axis=0)
     )
 
     da = xr.ones_like(pred_da).isel(time=0)
@@ -60,39 +56,46 @@ def rmse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return np.sqrt(mean_squared_error(y_true, y_pred))
 
 
-def annual_scores(models: List[str],
-                  metrics: Optional[List[str]] = None,
-                  experiment='one_month_forecast',
-                  data_path: Path = Path('data'),
-                  pred_year: int = 2018,
-                  target_var: str = 'VCI',
-                  verbose: bool = True,
-                  to_dataframe: bool = False,
-                  ) -> Union[Dict[str, Dict[str, List[float]]], pd.DataFrame]:
+def annual_scores(
+    models: List[str],
+    metrics: Optional[List[str]] = None,
+    experiment="one_month_forecast",
+    data_path: Path = Path("data"),
+    pred_year: int = 2018,
+    target_var: str = "VCI",
+    verbose: bool = True,
+    to_dataframe: bool = False,
+) -> Union[Dict[str, Dict[str, List[float]]], pd.DataFrame]:
     """
     Aggregates monthly R2 scores over a `pred_year` of data
     """
     if metrics is None:
         # if None, use all
-        metrics = ['rmse', 'r2']
+        metrics = ["rmse", "r2"]
     monthly_scores: Dict[str, Dict[str, List[float]]] = {}
     for metric in metrics:
-        monthly_scores[metric] = {'month': [], 'year': []}
+        monthly_scores[metric] = {"month": [], "year": []}
         for model in models:
             monthly_scores[metric][model] = []
 
     for month in range(1, 13):
-        scores = monthly_score(month=month, metrics=metrics, models=models,
-                               data_path=data_path, pred_year=pred_year,
-                               experiment=experiment, target_var=target_var,
-                               verbose=verbose)
+        scores = monthly_score(
+            month=month,
+            metrics=metrics,
+            models=models,
+            data_path=data_path,
+            pred_year=pred_year,
+            experiment=experiment,
+            target_var=target_var,
+            verbose=verbose,
+        )
 
         for model, metric_scores in scores.items():
             for metric, score in metric_scores.items():
                 monthly_scores[metric][model].append(score)
         for metric in metrics:
-            monthly_scores[metric]['month'].append(month)
-            monthly_scores[metric]['year'].append(pred_year)
+            monthly_scores[metric]["month"].append(month)
+            monthly_scores[metric]["year"].append(pred_year)
 
     if to_dataframe:
         return annual_scores_to_dataframe(monthly_scores)
@@ -109,7 +112,7 @@ def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
     # rename columns by metric
     for metric in monthly_scores.keys():
         metric_df = df[metric].apply(pd.Series).T
-        metric_df['metric'] = metric
+        metric_df["metric"] = metric
         metric_dfs.append(metric_df)
 
     # join columns into one dataframe
@@ -118,43 +121,45 @@ def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
     return df
 
 
-def read_pred_data(model: str,
-                   data_dir: Path = Path('data'),
-                   experiment: str = 'one_month_forecast') -> Union[xr.Dataset, xr.DataArray]:
-    model_pred_dir = (data_dir / 'models' / experiment / model)
-    pred_ds = xr.open_mfdataset((model_pred_dir / '*.nc').as_posix())
-    pred_ds = pred_ds.sortby('time')
+def read_pred_data(
+    model: str, data_dir: Path = Path("data"), experiment: str = "one_month_forecast"
+) -> Union[xr.Dataset, xr.DataArray]:
+    model_pred_dir = data_dir / "models" / experiment / model
+    pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
+    pred_ds = pred_ds.sortby("time")
     pred_da = pred_ds.preds
-    pred_da = pred_da.transpose('time', 'lat', 'lon')
+    pred_da = pred_da.transpose("time", "lat", "lon")
 
     return pred_ds, pred_da
 
 
-def read_true_data(data_dir: Path = Path('data'),
-                   variable: str = 'VCI') -> Union[xr.Dataset, xr.DataArray]:
+def read_true_data(
+    data_dir: Path = Path("data"), variable: str = "VCI"
+) -> Union[xr.Dataset, xr.DataArray]:
     """Read the true test data from the data directory and
     return the joined DataArray.
 
     (Joined on the `time` dimension).
     """
     true_paths = [
-        f for f in (
-            data_dir / 'features' / 'one_month_forecast' / 'test'
-        ).glob('*/y.nc')
+        f
+        for f in (data_dir / "features" / "one_month_forecast" / "test").glob("*/y.nc")
     ]
-    true_ds = xr.open_mfdataset(true_paths).sortby('time').compute()
-    true_da = true_ds[variable].transpose('time', 'lat', 'lon')
+    true_ds = xr.open_mfdataset(true_paths).sortby("time").compute()
+    true_da = true_ds[variable].transpose("time", "lat", "lon")
     return true_da
 
 
-def monthly_score(month: int,
-                  models: List[str],
-                  metrics: List[str],
-                  experiment='one_month_forecast',
-                  data_path: Path = Path('data'),
-                  pred_year: int = 2018,
-                  target_var: str = 'VCI',
-                  verbose: bool = True) -> Dict[str, Dict[str, float]]:
+def monthly_score(
+    month: int,
+    models: List[str],
+    metrics: List[str],
+    experiment="one_month_forecast",
+    data_path: Path = Path("data"),
+    pred_year: int = 2018,
+    target_var: str = "VCI",
+    verbose: bool = True,
+) -> Dict[str, Dict[str, float]]:
     """
     Calculate the monthly R^2 (or RMSE) score of the model. R^2 is the same metric used by the
     [Kenya's operational drought monitoring](https://www.mdpi.com/2072-4292/11/9/1099)
@@ -176,25 +181,25 @@ def monthly_score(month: int,
     ----------
     output_score: A dict {model_name: {metric: score}} for that month's data
     """
-    metric2function = {
-        'r2': r2_score,
-        'rmse': rmse
-    }
+    metric2function = {"r2": r2_score, "rmse": rmse}
 
     model_files: Dict[str, xr.Dataset] = {}
     for model in models:
-        pred_path = data_path / f'models/{experiment}/{model}/preds_{pred_year}_{month}.nc'
+        pred_path = (
+            data_path / f"models/{experiment}/{model}/preds_{pred_year}_{month}.nc"
+        )
         model_files[model] = xr.open_dataset(pred_path).isel(time=0)
 
-    true_data = xr.open_dataset(data_path / f'features/{experiment}/test'
-                                f'/{pred_year}_{month}/y.nc').isel(time=0)
+    true_data = xr.open_dataset(
+        data_path / f"features/{experiment}/test" f"/{pred_year}_{month}/y.nc"
+    ).isel(time=0)
 
     output_score: Dict[str, Dict[str, float]] = {}
 
     for model, preds in model_files.items():
-        diff = (true_data[target_var] - preds.preds)
+        diff = true_data[target_var] - preds.preds
         notnan = ~np.isnan(diff.values)
-        joined = true_data.merge(preds, join='inner')
+        joined = true_data.merge(preds, join="inner")
         true_np = joined[target_var].values[notnan].flatten()
         preds_np = joined.preds.values[notnan].flatten()
 
@@ -207,32 +212,42 @@ def monthly_score(month: int,
             output_score[model][metric] = score
 
             if verbose:
-                print(f'For month {month}, model {model} has {metric} score {score}')
+                print(f"For month {month}, model {model} has {metric} score {score}")
     return output_score
 
 
-def plot_predictions(pred_month: int, model: str,
-                     target_var: str = 'VCI',
-                     pred_year: int = 2018,
-                     data_path: Path = Path('data'),
-                     experiment: str = 'one_month_forecast'):
+def plot_predictions(
+    pred_month: int,
+    model: str,
+    target_var: str = "VCI",
+    pred_year: int = 2018,
+    data_path: Path = Path("data"),
+    experiment: str = "one_month_forecast",
+):
 
-    true = xr.open_dataset(data_path / f'features/{experiment}/test'
-                           f'/{pred_year}_{pred_month}/y.nc').\
-        rename({target_var: 'preds'}).isel(time=0)
+    true = (
+        xr.open_dataset(
+            data_path / f"features/{experiment}/test" f"/{pred_year}_{pred_month}/y.nc"
+        )
+        .rename({target_var: "preds"})
+        .isel(time=0)
+    )
 
-    model_ds = xr.open_dataset(data_path / f'models/{experiment}/{model}/preds'
-                               f'_{pred_year}_{pred_month}.nc')
+    model_ds = xr.open_dataset(
+        data_path / f"models/{experiment}/{model}/preds" f"_{pred_year}_{pred_month}.nc"
+    )
 
     model_err = (model_ds - true).preds.values
     model_err = model_err[~np.isnan(model_err)]
     model_err = np.sqrt(model_err ** 2).mean()
 
-    print(f'For month {pred_month}, {model} error: {model_err}')
+    print(f"For month {pred_month}, {model} error: {model_err}")
 
     fig, ax = plt.subplots(1, 1, figsize=(7, 5))
-    true.preds.plot.hist(ax=ax, label='true', histtype='stepfilled', color='r', alpha=0.3)
-    model_ds.preds.plot.hist(ax=ax, label=model, histtype='step', color='black')
+    true.preds.plot.hist(
+        ax=ax, label="true", histtype="stepfilled", color="r", alpha=0.3
+    )
+    model_ds.preds.plot.hist(ax=ax, label=model, histtype="step", color="black")
     fig.legend()
     plt.show()
 
@@ -240,7 +255,7 @@ def plot_predictions(pred_month: int, model: str,
 
     fig, ax = plt.subplots(1, 2, figsize=(7, 3))
     true.preds.plot(vmin=0, vmax=100, ax=ax[0], add_colorbar=False)
-    ax[0].set_title('True')
+    ax[0].set_title("True")
     model_ds.preds.plot(vmin=0, vmax=100, ax=ax[1], add_colorbar=False)
     ax[1].set_title(model)
     plt.show()

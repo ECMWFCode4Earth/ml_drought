@@ -10,17 +10,22 @@ from .neural_networks.linear_network import LinearNetwork
 from .neural_networks.rnn import RecurrentNetwork
 from .neural_networks.ealstm import EARecurrentNetwork
 
-__all__ = ['Persistence', 'LinearRegression', 'LinearNetwork',
-           'RecurrentNetwork', 'EARecurrentNetwork', 'GBDT']
+__all__ = [
+    "Persistence",
+    "LinearRegression",
+    "LinearNetwork",
+    "RecurrentNetwork",
+    "EARecurrentNetwork",
+    "GBDT",
+]
 
 
-def load_model(model_path: Path, data_path: Optional[Path] = None,
-               model_type: Optional[str] = None,
-               device: Optional[str] = 'cpu') -> Union[RecurrentNetwork,
-                                                       LinearNetwork,
-                                                       LinearRegression,
-                                                       EARecurrentNetwork,
-                                                       GBDT]:
+def load_model(
+    model_path: Path,
+    data_path: Optional[Path] = None,
+    model_type: Optional[str] = None,
+    device: Optional[str] = "cpu",
+) -> Union[RecurrentNetwork, LinearNetwork, LinearRegression, EARecurrentNetwork, GBDT]:
     """
     This function loads models from the output `.pkl` files generated when
     calling model.save()
@@ -45,11 +50,11 @@ def load_model(model_path: Path, data_path: Optional[Path] = None,
     """
 
     str_to_model = {
-        'rnn': RecurrentNetwork,
-        'linear_network': LinearNetwork,
-        'linear_regression': LinearRegression,
-        'ealstm': EARecurrentNetwork,
-        'gbdt': GBDT
+        "rnn": RecurrentNetwork,
+        "linear_network": LinearNetwork,
+        "linear_regression": LinearRegression,
+        "ealstm": EARecurrentNetwork,
+        "gbdt": GBDT,
     }
 
     # The assumption that model type is index -2 and that the data path
@@ -62,17 +67,17 @@ def load_model(model_path: Path, data_path: Optional[Path] = None,
 
     model_dict = torch.load(model_path, map_location=device)
 
-    init_kwargs = {'data_folder': data_path}
+    init_kwargs = {"data_folder": data_path}
     for key, val in model_dict.items():
-        if key == 'device':
+        if key == "device":
             if device is not None:
                 init_kwargs[key] = device  # type: ignore
             else:
                 init_kwargs[key] = val
-        if key != 'model':
+        if key != "model":
             init_kwargs[key] = val
 
     model = str_to_model[model_type](**init_kwargs)
-    model.load(**model_dict['model'])
+    model.load(**model_dict["model"])
 
     return model

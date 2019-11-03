@@ -35,6 +35,7 @@ install:
 script:
   - mypy src
   - pytest
+  - black --check --diff .
 
 notifications:
   slack:

@@ -8,9 +8,14 @@ from .esa_cci import ESACCIPreprocessor
 from .srtm import SRTMPreprocessor
 from .admin_boundaries import KenyaAdminPreprocessor
 
-__all__ = ['VHIPreprocessor', 'CHIRPSPreprocessor',
-           'PlanetOSPreprocessor', 'GLEAMPreprocessor',
-           'S5Preprocessor',
-           'ERA5MonthlyMeanPreprocessor',
-           'ESACCIPreprocessor', 'SRTMPreprocessor',
-           'KenyaAdminPreprocessor']
+__all__ = [
+    "VHIPreprocessor",
+    "CHIRPSPreprocessor",
+    "PlanetOSPreprocessor",
+    "GLEAMPreprocessor",
+    "S5Preprocessor",
+    "ERA5MonthlyMeanPreprocessor",
+    "ESACCIPreprocessor",
+    "SRTMPreprocessor",
+    "KenyaAdminPreprocessor",
+]
