@@ -29,7 +29,8 @@ def parsimonious(
 def regression(
     experiment='one_month_forecast',
     include_pred_month=True,
-    surrounding_pixels=None
+    surrounding_pixels=None,
+    ignore_vars=None
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
