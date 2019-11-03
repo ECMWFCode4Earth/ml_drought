@@ -74,7 +74,7 @@ def linear_nn(
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
-    _ = predictor.explain(save_shap_values=True)
+    # _ = predictor.explain(save_shap_values=True)
 
 
 def rnn(
@@ -101,7 +101,7 @@ def rnn(
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
-    _ = predictor.explain(save_shap_values=True)
+    # _ = predictor.explain(save_shap_values=True)
 
 
 def earnn(
