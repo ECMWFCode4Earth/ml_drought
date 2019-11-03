@@ -16,8 +16,17 @@ from typing import Optional, Tuple
 Region = namedtuple('Region', ['name', 'lonmin', 'lonmax', 'latmin', 'latmax'])
 
 
+def get_box_in_indian_ocean() -> Region:
+    """In order to check that the data is not corrupt (i.e. there are
+    no land surface values (NDVI) over the oceans) we use
+    this region to check that there are no values within this box
+    """
+    return Region(name='indian_ocean_box', lonmin=41, lonmax=42,
+                  latmin=-5, latmax=-4)
+
+
 def get_kenya() -> Region:
-    """This pipeline is focused on drought prediction in Kenya.
+    """This pipeline uses a case study on drought prediction in Kenya.
     This function allows Kenya's bounding box to be easily accessed
     by all exporters.
     """
@@ -183,4 +192,5 @@ region_lookup = {
     "kenya": get_kenya(),
     "ethiopia": get_ethiopia(),
     "east_africa": get_east_africa(),
+    "indian_ocean": get_box_in_indian_ocean()
 }

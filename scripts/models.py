@@ -1,11 +1,14 @@
 import sys
 sys.path.append('..')
 
-from pathlib import Path
+from src.analysis import all_shap_for_file
 from src.models import (Persistence, LinearRegression,
                         LinearNetwork, RecurrentNetwork,
                         EARecurrentNetwork, load_model)
-from src.analysis import all_shap_for_file
+from pathlib import Path
+
+
+# NOTE: p84.162 == 'vertical integral of moisture flux'
 
 
 def parsimonious(
@@ -17,14 +20,17 @@ def parsimonious(
     else:
         data_path = Path('../data')
 
-    predictor = Persistence(data_path, experiment=experiment)
+    predictor = Persistence(
+        data_path, experiment=experiment
+    )
     predictor.evaluate(save_preds=True)
 
 
 def regression(
     experiment='one_month_forecast',
     include_pred_month=True,
-    surrounding_pixels=1
+    surrounding_pixels=None,
+    ignore_vars=None
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -35,7 +41,8 @@ def regression(
     predictor = LinearRegression(
         data_path, experiment=experiment,
         include_pred_month=include_pred_month,
-        surrounding_pixels=surrounding_pixels
+        surrounding_pixels=surrounding_pixels,
+        ignore_vars=ignore_vars,
     )
     predictor.train()
     predictor.evaluate(save_preds=True)
@@ -47,7 +54,8 @@ def regression(
 def linear_nn(
     experiment='one_month_forecast',
     include_pred_month=True,
-    surrounding_pixels=1
+    surrounding_pixels=None,
+    ignore_vars=None
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -59,7 +67,8 @@ def linear_nn(
         layer_sizes=[100], data_folder=data_path,
         experiment=experiment,
         include_pred_month=include_pred_month,
-        surrounding_pixels=surrounding_pixels
+        surrounding_pixels=surrounding_pixels,
+        ignore_vars=ignore_vars,
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
@@ -71,7 +80,8 @@ def linear_nn(
 def rnn(
     experiment='one_month_forecast',
     include_pred_month=True,
-    surrounding_pixels=1
+    surrounding_pixels=None,
+    ignore_vars=None
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -84,7 +94,8 @@ def rnn(
         data_folder=data_path,
         experiment=experiment,
         include_pred_month=include_pred_month,
-        surrounding_pixels=surrounding_pixels
+        surrounding_pixels=surrounding_pixels,
+        ignore_vars=ignore_vars,
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
@@ -97,7 +108,8 @@ def earnn(
     experiment='one_month_forecast',
     include_pred_month=True,
     surrounding_pixels=None,
-    pretrained=True
+    pretrained=True,
+    ignore_vars=None
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -111,13 +123,15 @@ def earnn(
             data_folder=data_path,
             experiment=experiment,
             include_pred_month=include_pred_month,
-            surrounding_pixels=surrounding_pixels
+            surrounding_pixels=surrounding_pixels,
+            ignore_vars=ignore_vars,
         )
         predictor.train(num_epochs=50, early_stopping=5)
         predictor.evaluate(save_preds=True)
         predictor.save_model()
     else:
-        predictor = load_model(data_path / f'models/{experiment}/ealstm/model.pt')
+        predictor = load_model(
+            data_path / f'models/{experiment}/ealstm/model.pt')
 
     test_file = data_path / f'features/{experiment}/test/2018_3'
     assert test_file.exists()
@@ -125,8 +139,11 @@ def earnn(
 
 
 if __name__ == '__main__':
+    ignore_vars = None
+    ignore_vars = ['VCI', 'p84.162', 'sp', 'tp']
+
     # parsimonious()
-    # regression()
-    # linear_nn()
-    # rnn()
-    earnn(pretrained=True)
+    regression(ignore_vars=ignore_vars)
+    # linear_nn(ignore_vars=ignore_vars)
+    # rnn(ignore_vars=ignore_vars)
+    # earnn(pretrained=False, ignore_vars=ignore_vars)

@@ -4,7 +4,7 @@ import sys
 sys.path.append('..')
 from src.preprocess import (VHIPreprocessor, CHIRPSPreprocessor,
                             PlanetOSPreprocessor, GLEAMPreprocessor,
-                            S5Preprocessor,
+                            S5Preprocessor, NDVIPreprocessor,
                             ESACCIPreprocessor, SRTMPreprocessor,
                             ERA5MonthlyMeanPreprocessor)
 
@@ -141,14 +141,35 @@ def preprocess_era5():
     processor.preprocess(subset_str='kenya', regrid=regrid_path)
 
 
+def process_ndvi(years=None, regrid=True, ignore_timesteps=['2018-05-28', '2016-08-26']):
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+
+    if regrid:
+        regrid_path = data_path / \
+            'interim/reanalysis-era5-single-levels-monthly-means_preprocessed/data_kenya.nc'
+        assert regrid_path.exists(), f'{regrid_path} not available'
+    else:
+        regrid_path = None
+
+    processor = NDVIPreprocessor(data_path)
+    processor.preprocess(subset_str='kenya', regrid=regrid_path,
+                        resample_time='M', upsampling=False,
+                        ignore_timesteps=ignore_timesteps,
+                        years_to_process=years)
+
+
 if __name__ == '__main__':
-    process_vci_2018()
-    process_precip_2018()
-    process_era5POS_2018()
-    process_gleam()
-    process_esa_cci_landcover()
-    preprocess_srtm()
-    preprocess_era5()
-    preprocess_kenya_boundaries(selection='level_1')
-    preprocess_kenya_boundaries(selection='level_2')
-    preprocess_kenya_boundaries(selection='level_3')
+    # process_vci_2018()
+    # process_precip_2018()
+    # process_era5POS_2018()
+    # process_gleam()
+    # process_esa_cci_landcover()
+    # preprocess_srtm()
+    # preprocess_era5()
+    # preprocess_kenya_boundaries(selection='level_1')
+    # preprocess_kenya_boundaries(selection='level_2')
+    # preprocess_kenya_boundaries(selection='level_3')
+    process_ndvi(regrid=True)
