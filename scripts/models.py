@@ -44,11 +44,11 @@ def regression(
         surrounding_pixels=surrounding_pixels,
         ignore_vars=ignore_vars,
     )
-    predictor.train()
+    predictor.train(early_stopping=5)
     predictor.evaluate(save_preds=True)
 
     # mostly to test it works
-    predictor.explain(save_shap_values=True)
+    # predictor.explain(save_shap_values=True)
 
 
 def linear_nn(
