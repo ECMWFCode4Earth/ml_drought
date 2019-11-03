@@ -38,7 +38,8 @@ class LinearRegression(ModelBase):
     def train(self, num_epochs: int = 1,
               early_stopping: Optional[int] = None,
               batch_size: int = 256,
-              val_split: float = 0.1) -> None:
+              val_split: float = 0.1,
+              initial_learning_rate: float = 1e-15) -> None:
         print(f'Training {self.model_name} for experiment {self.experiment}')
 
         if early_stopping is not None:
@@ -79,7 +80,9 @@ class LinearRegression(ModelBase):
                                           monthly_aggs=self.include_monthly_aggs,
                                           surrounding_pixels=self.surrounding_pixels,
                                           static=self.include_static)
-        self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
+        self.model: linear_model.SGDRegressor = linear_model.SGDRegressor(
+            eta0=initial_learning_rate
+        )
 
         for epoch in range(num_epochs):
             train_rmse = []
@@ -97,6 +100,7 @@ class LinearRegression(ModelBase):
                     train_rmse.append(
                         np.sqrt(mean_squared_error(batch_y, train_pred_y))
                     )
+                    print(mean_squared_error(batch_y, train_pred_y))
             if early_stopping is not None:
                 val_rmse = []
                 for x, y in val_dataloader:
