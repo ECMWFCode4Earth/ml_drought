@@ -18,3 +18,6 @@ dependencies:
   - pytest-cov
   - mypy=0.720
   - black
+  pip:
+    - ray[tune]
+    - filelock
