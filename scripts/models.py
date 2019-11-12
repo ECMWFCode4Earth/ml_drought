@@ -10,6 +10,7 @@ from src.models import (
     RecurrentNetwork,
     EARecurrentNetwork,
     load_model,
+    tune_model
 )
 from src.analysis import all_shap_for_file
 
@@ -40,11 +41,13 @@ def regression(
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
     )
-    predictor.train()
-    predictor.evaluate(save_preds=True)
 
-    # mostly to test it works
-    predictor.explain(save_shap_values=True)
+    print(tune_model(predictor, {"batch_size": [128, 256], "initial_learning_rate": [1e-15, 1e-14]}))
+    # predictor.train()
+    # predictor.evaluate(save_preds=True)
+    #
+    # # mostly to test it works
+    # predictor.explain(save_shap_values=True)
 
 
 def linear_nn(

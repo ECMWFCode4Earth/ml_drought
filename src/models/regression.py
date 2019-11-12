@@ -54,62 +54,53 @@ class LinearRegression(ModelBase):
         batch_size: int = 256,
         val_split: float = 0.1,
         initial_learning_rate: float = 1e-15,
-    ) -> None:
+    ) -> Tuple[float, float]:
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
-        if early_stopping is not None:
-            len_mask = len(
-                DataLoader._load_datasets(
-                    self.data_path,
-                    mode="train",
-                    shuffle_data=False,
-                    experiment=self.experiment,
-                )
-            )
-            train_mask, val_mask = train_val_mask(len_mask, val_split)
-
-            train_dataloader = DataLoader(
-                data_path=self.data_path,
-                batch_file_size=self.batch_size,
-                experiment=self.experiment,
-                shuffle_data=True,
+        len_mask = len(
+            DataLoader._load_datasets(
+                self.data_path,
                 mode="train",
-                pred_months=self.pred_months,
-                mask=train_mask,
-                ignore_vars=self.ignore_vars,
-                monthly_aggs=self.include_monthly_aggs,
-                surrounding_pixels=self.surrounding_pixels,
-                static=self.include_static,
-            )
-
-            val_dataloader = DataLoader(
-                data_path=self.data_path,
-                batch_file_size=self.batch_size,
-                experiment=self.experiment,
                 shuffle_data=False,
-                mode="train",
-                pred_months=self.pred_months,
-                mask=val_mask,
-                ignore_vars=self.ignore_vars,
-                monthly_aggs=self.include_monthly_aggs,
-                surrounding_pixels=self.surrounding_pixels,
-                static=self.include_static,
+                experiment=self.experiment,
             )
+        )
+        train_mask, val_mask = train_val_mask(len_mask, val_split)
+
+        train_dataloader = DataLoader(
+            data_path=self.data_path,
+            batch_file_size=self.batch_size,
+            experiment=self.experiment,
+            shuffle_data=True,
+            mode="train",
+            pred_months=self.pred_months,
+            mask=train_mask,
+            ignore_vars=self.ignore_vars,
+            monthly_aggs=self.include_monthly_aggs,
+            surrounding_pixels=self.surrounding_pixels,
+            static=self.include_static,
+        )
+
+        val_dataloader = DataLoader(
+            data_path=self.data_path,
+            batch_file_size=self.batch_size,
+            experiment=self.experiment,
+            shuffle_data=False,
+            mode="train",
+            pred_months=self.pred_months,
+            mask=val_mask,
+            ignore_vars=self.ignore_vars,
+            monthly_aggs=self.include_monthly_aggs,
+            surrounding_pixels=self.surrounding_pixels,
+            static=self.include_static,
+        )
+
+        if early_stopping is not None:
             batches_without_improvement = 0
             best_val_score = np.inf
-        else:
-            train_dataloader = DataLoader(
-                data_path=self.data_path,
-                experiment=self.experiment,
-                batch_file_size=self.batch_size,
-                pred_months=self.pred_months,
-                shuffle_data=True,
-                mode="train",
-                ignore_vars=self.ignore_vars,
-                monthly_aggs=self.include_monthly_aggs,
-                surrounding_pixels=self.surrounding_pixels,
-                static=self.include_static,
-            )
+
+        output_val_score, output_train_score = 0, 0
+
         self.model: linear_model.SGDRegressor = linear_model.SGDRegressor(
             eta0=initial_learning_rate
         )
@@ -129,14 +120,16 @@ class LinearRegression(ModelBase):
                         np.sqrt(mean_squared_error(batch_y, train_pred_y))
                     )
                     print(mean_squared_error(batch_y, train_pred_y))
-            if early_stopping is not None:
-                val_rmse = []
-                for x, y in val_dataloader:
-                    x_in = self._concatenate_data(x)
-                    val_pred_y = self.model.predict(x_in)
-                    val_rmse.append(np.sqrt(mean_squared_error(y, val_pred_y)))
+
+            val_rmse = []
+            for x, y in val_dataloader:
+                x_in = self._concatenate_data(x)
+                val_pred_y = self.model.predict(x_in)
+                val_rmse.append(np.sqrt(mean_squared_error(y, val_pred_y)))
 
             print(f"Epoch {epoch + 1}, train RMSE: {np.mean(train_rmse):.2f}")
+
+            output_val_score, output_train_score = np.mean(val_rmse), np.mean(train_rmse)
 
             if early_stopping is not None:
                 epoch_val_rmse = np.mean(val_rmse)
@@ -144,6 +137,7 @@ class LinearRegression(ModelBase):
                 if epoch_val_rmse < best_val_score:
                     batches_without_improvement = 0
                     best_val_score = epoch_val_rmse
+                    output_val_score = best_val_score
                     best_coef = self.model.coef_
                     best_intercept = self.model.intercept_
                 else:
@@ -152,7 +146,8 @@ class LinearRegression(ModelBase):
                         print("Early stopping!")
                         self.model.coef_ = best_coef
                         self.model.intercept_ = best_intercept
-                        return None
+                        return output_train_score, output_val_score
+        return output_train_score, output_val_score
 
     def explain(
         self, x: Optional[TrainData] = None, save_shap_values: bool = True

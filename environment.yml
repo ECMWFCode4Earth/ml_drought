@@ -18,6 +18,7 @@ dependencies:
   - pytest-cov
   - mypy=0.720
   - black
+  - requests # necessary for ray[tune]
   - pip:
     - ray[tune]
     - filelock

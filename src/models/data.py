@@ -48,7 +48,7 @@ idx_to_input = {
 
 
 def train_val_mask(
-    mask_len: int, val_ratio: float = 0.3
+    mask_len: int, val_ratio: float = 0.3, seed: Optional[int] = 42,
 ) -> Tuple[List[bool], List[bool]]:
     """Makes a training and validation mask which can be passed to the dataloader
     Arguments
@@ -58,10 +58,15 @@ def train_val_mask(
     val_ratio: float = 0.3
         The ratio of instances which should be True for the val mask and False for the train
         mask
+    seed: Optional[int] = 42
+        The (optional) seed to use to generate the random mask
     Returns
     ----------
     The train mask and the val mask, both as lists
     """
+    if seed is not None:
+        # allows the same mask to be recreated multiple times
+        np.random.seed(seed)
     assert val_ratio < 1, f"Val ratio must be smaller than 1"
     train_mask = np.random.rand(mask_len) < 1 - val_ratio
     val_mask = ~train_mask
