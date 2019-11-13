@@ -53,24 +53,27 @@ def linear_nn(
     experiment='one_month_forecast',
     include_pred_month=True,
     surrounding_pixels=None,
-    ignore_vars=None
+    ignore_vars=None,
+    pretrained=False
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
     else:
         data_path = Path('../data')
-
-    predictor = LinearNetwork(
-        layer_sizes=[100], data_folder=data_path,
-        experiment=experiment,
-        include_pred_month=include_pred_month,
-        surrounding_pixels=surrounding_pixels,
-        ignore_vars=ignore_vars,
-    )
-    predictor.train(num_epochs=50, early_stopping=5)
-    predictor.evaluate(save_preds=True)
-    predictor.save_model()
+    if not pretrained:
+        predictor = LinearNetwork(
+            layer_sizes=[100], data_folder=data_path,
+            experiment=experiment,
+            include_pred_month=include_pred_month,
+            surrounding_pixels=surrounding_pixels,
+            ignore_vars=ignore_vars,
+        )
+        predictor.train(num_epochs=50, early_stopping=5)
+        predictor.evaluate(save_preds=True)
+        predictor.save_model()
+    else:
+        predictor = load_model(data_path / f'models/{experiment}/ealstm/model.pt')
 
     _ = predictor.explain(save_shap_values=True)
 
@@ -79,25 +82,28 @@ def rnn(
     experiment='one_month_forecast',
     include_pred_month=True,
     surrounding_pixels=None,
-    ignore_vars=None
+    ignore_vars=None,
+    pretrained=True
 ):
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
     else:
         data_path = Path('../data')
-
-    predictor = RecurrentNetwork(
-        hidden_size=128,
-        data_folder=data_path,
-        experiment=experiment,
-        include_pred_month=include_pred_month,
-        surrounding_pixels=surrounding_pixels,
-        ignore_vars=ignore_vars,
-    )
-    predictor.train(num_epochs=50, early_stopping=5)
-    predictor.evaluate(save_preds=True)
-    predictor.save_model()
+    if not pretrained:
+        predictor = RecurrentNetwork(
+            hidden_size=128,
+            data_folder=data_path,
+            experiment=experiment,
+            include_pred_month=include_pred_month,
+            surrounding_pixels=surrounding_pixels,
+            ignore_vars=ignore_vars,
+        )
+        predictor.train(num_epochs=50, early_stopping=5)
+        predictor.evaluate(save_preds=True)
+        predictor.save_model()
+    else:
+        predictor = load_model(data_path / f'models/{experiment}/rnn/model.pt')
 
     _ = predictor.explain(save_shap_values=True)
 
