@@ -174,12 +174,12 @@ class NNBase(ModelBase):
             for x, y in train_dataloader:
                 for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
                     optimizer.zero_grad()
-                    pred = self.model(x_batch[0],
-                                      self._one_hot_months(x_batch[1]),  # type: ignore
-                                      x_batch[2],
-                                      x_batch[3],
-                                      x_batch[4],
-                                      x_batch[5])
+                    pred = self.model(x=x_batch[0],
+                                      pred_month=self._one_hot_months(x_batch[1]),  # type: ignore
+                                      latlons=x_batch[2],
+                                      current=x_batch[3],
+                                      yearly_aggs=x_batch[4],
+                                      static=x_batch[5])
                     loss = F.smooth_l1_loss(pred, y_batch)
                     loss.backward()
                     optimizer.step()
@@ -195,12 +195,12 @@ class NNBase(ModelBase):
                 val_rmse = []
                 with torch.no_grad():
                     for x, y in val_dataloader:
-                        val_pred_y = self.model(x[0],
-                                                self._one_hot_months(x[1]),
-                                                x[2],
-                                                x[3],
-                                                x[4],
-                                                x[5])
+                        val_pred_y = self.model(x=x[0],
+                                                pred_month=self._one_hot_months(x[1]),
+                                                latlons=x[2],
+                                                current=x[3],
+                                                yearly_aggs=x[4],
+                                                static=x[5])
                         val_loss = F.mse_loss(val_pred_y, y)
 
                         val_rmse.append(math.sqrt(val_loss.cpu().item()))
