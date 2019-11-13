@@ -157,18 +157,22 @@ class RegionGeoPlotter:
         return self.gdf
 
     @staticmethod
-    def get_metric(selection: str) -> PlotMetric:
+    def get_metric(selection: str, gdf: GeoDataFrame, **kwargs) -> PlotMetric:
+        rmse_vmin = kwargs['rmse_vmin'] if 'rmse_vmin' in kwargs else None
+        rmse_vmax = kwargs['rmse_vmax'] if 'rmse_vmax' in kwargs else np.nanpercentile(gdf.rmse, q=85)
         rmse = PlotMetric(
             metric='rmse',
             cmap='viridis',
-            vmin=None,
-            vmax=10,
+            vmin=rmse_vmin,
+            vmax=rmse_vmax
         )
+        mae_vmin = kwargs['mae_vmin'] if 'mae_vmin' in kwargs else None
+        mae_vmax = kwargs['mae_vmax'] if 'mae_vmax' in kwargs else np.nanpercentile(gdf.mae, q=85)
         mae = PlotMetric(
             metric='mae',
             cmap='plasma',
-            vmin=None,
-            vmax=10,
+            vmin=mae_vmin,
+            vmax=mae_vmax
         )
         r2 = PlotMetric(
             metric='r2',
@@ -205,15 +209,16 @@ class RegionGeoPlotter:
         return ax
 
     def plot_all_regional_error_metrics(self, gdf: GeoDataFrame,  # type: ignore
-                                        title: str = '') -> Tuple[Figure, List[Axes]]:
+                                        title: str = '',
+                                        **kwargs: Dict) -> Tuple[Figure, List[Axes]]:
         """Plot area-based maps of the scores"""
         assert np.isin(['rmse', 'mae', 'r2'], gdf.columns).all()  # type: ignore
         gdf = gdf.dropna(subset=['rmse', 'mae', 'r2'])  # type: ignore
 
         # get the PlotMetric objects
-        rmse = self.get_metric('rmse')
-        mae = self.get_metric('mae')
-        r2 = self.get_metric('r2')
+        rmse = self.get_metric('rmse', gdf, **kwargs)
+        mae = self.get_metric('mae', gdf, **kwargs)
+        r2 = self.get_metric('r2', gdf, **kwargs)
 
         # build multi-axis plot
         fig, axs = plt.subplots(1, 3, figsize=(12, 8))
@@ -226,12 +231,13 @@ class RegionGeoPlotter:
         return fig, axs
 
     def plot_regional_error_metric(self, gdf: GeoDataFrame,  # type: ignore
-                                   selection: str) -> Tuple[Figure, Axes]:
+                                   selection: str,
+                                   **kwargs: Dict) -> Tuple[Figure, Axes]:
         valid_metrics = ['rmse', 'mae', 'r2']
         assert selection in valid_metrics, 'Expecting selection' \
             f' to be one of: {valid_metrics}'
         gdf = gdf.dropna(subset=valid_metrics)  # type: ignore
-        metric = self.get_metric(selection)
+        metric = self.get_metric(selection, gdf, **kwargs)
         fig, ax = plt.subplots()
         ax = self.plot_metric(gdf=gdf, ax=ax, metric=metric)
 
