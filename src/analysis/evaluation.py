@@ -230,7 +230,8 @@ def plot_predictions(pred_month: int, model: str,
                      target_var: str = 'VCI',
                      pred_year: int = 2018,
                      data_path: Path = Path('data'),
-                     experiment: str = 'one_month_forecast'):
+                     experiment: str = 'one_month_forecast',
+                     **spatial_plot_kwargs):
 
     true = xr.open_dataset(data_path / f'features/{experiment}/test'
                            f'/{pred_year}_{pred_month}/y.nc').\
@@ -253,11 +254,16 @@ def plot_predictions(pred_month: int, model: str,
 
     plt.clf()
 
+    if 'vmin' not in spatial_plot_kwargs:
+        print('You have not provided a **kwargs dict with vmin / vmax')
+        print('Are you sure?')
     fig, ax = plt.subplots(1, 2, figsize=(7, 3))
-    true.preds.plot(vmin=0, vmax=100, ax=ax[0], add_colorbar=False)
+    true.preds.plot(ax=ax[0], add_colorbar=False, **spatial_plot_kwargs)
     ax[0].set_title('True')
-    model_ds.preds.plot(vmin=0, vmax=100, ax=ax[1], add_colorbar=False)
+    ax[0].set_axis_off()
+    model_ds.preds.plot(ax=ax[1], add_colorbar=False, **spatial_plot_kwargs)
     ax[1].set_title(model)
+    ax[1].set_axis_off()
     plt.show()
 
 
