@@ -15,14 +15,11 @@ from src.exporters import (
     KenyaAdminExporter,
 )
 
+from scripts.utils import get_data_path
+
 
 def export_era5():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
-    exporter = ERA5Exporter(data_path)
+    exporter = ERA5Exporter(get_data_path())
 
     # The ERA5 exporter downloads the data with wierd names.
     # A mapping of actual variables to the downloaded variable
@@ -76,83 +73,48 @@ def export_era5():
 
 
 def export_vhi():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
-    exporter = VHIExporter(data_path)
+    exporter = VHIExporter(get_data_path())
 
     exporter.export()
 
 
 def export_chirps():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
-    exporter = CHIRPSExporter(data_path)
+    exporter = CHIRPSExporter(get_data_path())
 
     exporter.export(years=None, region="global", period="monthly")
 
 
 def export_era5POS():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
-    exporter = ERA5ExporterPOS(data_path)
+    exporter = ERA5ExporterPOS(get_data_path())
 
     exporter.export(variable="precipitation_amount_1hour_Accumulation")
 
 
 def export_gleam():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
-
-    exporter = GLEAMExporter(data_folder=data_path)
+    exporter = GLEAMExporter(data_folder=get_data_path())
     exporter.export(["E", "SMroot", "SMsurf"], "monthly")
 
 
 def export_srtm():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
-
-    exporter = SRTMExporter(data_folder=data_path)
+    exporter = SRTMExporter(data_folder=get_data_path())
     exporter.export()
 
 
 def export_esa():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
 
-    exporter = ESACCIExporter(data_folder=data_path)
+    exporter = ESACCIExporter(data_folder=get_data_path())
     exporter.export()
 
 
 def export_s5():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
 
     granularity = "hourly"
     pressure_level = False
 
     exporter = S5Exporter(
-        data_folder=data_path, granularity=granularity, pressure_level=pressure_level,
+        data_folder=get_data_path(),
+        granularity=granularity,
+        pressure_level=pressure_level,
     )
     variable = "total_precipitation"
     min_year = 1993
@@ -176,13 +138,8 @@ def export_s5():
 
 
 def export_kenya_boundaries():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
 
-    exporter = KenyaAdminExporter(data_path)
+    exporter = KenyaAdminExporter(get_data_path())
     exporter.export()
 
 
