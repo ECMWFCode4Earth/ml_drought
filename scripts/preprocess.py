@@ -16,25 +16,18 @@ from src.preprocess import (
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
 
+from scripts.utils import get_data_path
+
 
 def process_vci_2018():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
 
-    processor = VHIPreprocessor(data_path, "VCI")
+    processor = VHIPreprocessor(get_data_path(), "VCI")
 
     processor.preprocess(subset_str="kenya", resample_time="M", upsampling=False)
 
 
 def process_precip_2018():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
+    data_path = get_data_path()
 
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
@@ -45,11 +38,7 @@ def process_precip_2018():
 
 
 def process_era5POS_2018():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
+    data_path = get_data_path()
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -65,11 +54,8 @@ def process_era5POS_2018():
 
 
 def process_gleam():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
+    data_path = get_data_path()
+
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -81,11 +67,8 @@ def process_gleam():
 
 
 def process_seas5():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
+    data_path = get_data_path()
+
     regrid_path = data_path / "interim/chirps_preprocessed/chirps_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -96,10 +79,8 @@ def process_seas5():
 
 
 def process_esa_cci_landcover():
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
+    data_path = get_data_path()
+
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -108,10 +89,8 @@ def process_esa_cci_landcover():
 
 
 def preprocess_srtm():
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
+    data_path = get_data_path()
+
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -130,10 +109,8 @@ def preprocess_kenya_boundaries(selection: str = "level_1"):
         f"level_{i}" for i in range(1, 6)
     ], f'selection must be one of {[f"level_{i}" for i in range(1,6)]}'
 
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
+    data_path = get_data_path()
+
     regrid_path = data_path / "interim/chirps_preprocessed/chirps_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -142,10 +119,8 @@ def preprocess_kenya_boundaries(selection: str = "level_1"):
 
 
 def preprocess_era5():
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
+    data_path = get_data_path()
+
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
 
