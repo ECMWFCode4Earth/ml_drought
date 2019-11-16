@@ -141,7 +141,12 @@ def preprocess_era5():
     processor.preprocess(subset_str='kenya', regrid=regrid_path)
 
 
-def process_ndvi(years=None, regrid=True, ignore_timesteps=['2018-05-28', '2016-08-26'], resample_time=None):
+def process_ndvi(
+    years=None,
+    regrid=True,
+    ignore_timesteps=['2018-05-28', '2016-08-26'],
+    resample_time=None,
+):
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
     else:
@@ -149,7 +154,8 @@ def process_ndvi(years=None, regrid=True, ignore_timesteps=['2018-05-28', '2016-
 
     if regrid:
         regrid_path = data_path / \
-            'interim/reanalysis-era5-single-levels-monthly-means_preprocessed/data_kenya.nc'
+            '/interim/precip/precip_doy.nc'
+            # 'interim/reanalysis-era5-single-levels-monthly-means_preprocessed/data_kenya.nc'
         assert regrid_path.exists(), f'{regrid_path} not available'
     else:
         regrid_path = None
