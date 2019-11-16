@@ -155,7 +155,7 @@ def process_ndvi(years=None, regrid=True, ignore_timesteps=['2018-05-28', '2016-
         regrid_path = None
 
     processor = NDVIPreprocessor(data_path)
-    processor.preprocess(subset_str='kenya', regrid=regrid_path,
+    processor.preprocess(subset_str='africa', regrid=regrid_path,
                         resample_time='M', upsampling=False,
                         ignore_timesteps=ignore_timesteps,
                         years_to_process=years)
