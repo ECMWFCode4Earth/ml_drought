@@ -71,9 +71,12 @@ class GBDT(ModelBase):
             )
             train_mask, val_mask = train_val_mask(len_mask, val_split)
 
-            train_dataloader = self.get_dataloader(mode="train", mask=train_mask,
-                                                   shuffle_data=True)
-            val_dataloader = self.get_dataloader(mode="train", mask=val_mask, shuffle_data=False)
+            train_dataloader = self.get_dataloader(
+                mode="train", mask=train_mask, shuffle_data=True
+            )
+            val_dataloader = self.get_dataloader(
+                mode="train", mask=val_mask, shuffle_data=False
+            )
 
         else:
             train_dataloader = self.get_dataloader(mode="train", shuffle_data=True)
@@ -120,7 +123,9 @@ class GBDT(ModelBase):
         assert self.model is not None, "Model must be trained!"
 
         if x is None:
-            test_arrays_loader = self.get_dataloader(mode="test", shuffle_data=False, batch_file_size=1)
+            test_arrays_loader = self.get_dataloader(
+                mode="test", shuffle_data=False, batch_file_size=1
+            )
             _, val = list(next(iter(test_arrays_loader)).items())[0]
             x = val.x
 
