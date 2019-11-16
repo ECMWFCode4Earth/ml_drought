@@ -8,6 +8,7 @@ from torch import nn
 
 from src.models.neural_networks.ealstm import EALSTM, EALSTMCell, OrgEALSTMCell
 from src.models import EARecurrentNetwork
+from src.models.data import TrainData
 
 from tests.utils import _make_dataset
 
@@ -169,6 +170,14 @@ class TestEARecurrentNetwork:
 
         # _make_dataset with const=True returns all ones
         assert (test_arrays_dict["hello"]["y"] == 1).all()
+
+        # test the Morris explanation works
+        test_dl = next(
+            iter(model.get_dataloader(mode="test", to_tensor=True, shuffle_data=False))
+        )
+        for key, val in test_dl.items():
+            output = model.get_morris_gradient(val.x)
+            assert type(output) is TrainData
 
 
 class TestEALSTMCell:

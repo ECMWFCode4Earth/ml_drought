@@ -366,6 +366,9 @@ class NNBase(ModelBase):
         self.model.eval()
         self.model.zero_grad()
 
+        for idx, (key, val) in enumerate(x.__dict__.items()):
+            if val is not None:
+                val.requires_grad = True
         outputs = self.model(
             x.historical,
             self._one_hot_months(x.pred_months),
@@ -376,14 +379,22 @@ class NNBase(ModelBase):
         )
 
         num_items = len(x.__dict__)
-        output_dict: Dict[str, np.ndarray] = {}
+        output_dict: Dict[str, Optional[np.ndarray]] = {}
         for idx, (key, val) in enumerate(x.__dict__.items()):
-            grad = torch.autograd.grad(
-                outputs,
-                val,
-                retain_graph=True if idx + 1 < num_items else None,
-                allow_unused=True,
-            )[0]
-            output_dict[key] = grad.detach().cpu().numpy()
+            if val is not None:
+                grad = torch.autograd.grad(
+                    outputs,
+                    val,
+                    retain_graph=True if idx + 1 < num_items else None,
+                    allow_unused=True,
+                    grad_outputs=torch.ones_like(outputs).to(self.device),
+                )[0]
+                if grad is not None:
+                    # this can be the case since allow_unused = True
+                    output_dict[key] = grad.detach().cpu().numpy()
+                else:
+                    output_dict[key] = None
+            else:
+                output_dict[key] = None
 
         return TrainData(**output_dict)
