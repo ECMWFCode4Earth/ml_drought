@@ -9,7 +9,6 @@ import pickle
 
 from typing import Dict, List, Tuple, Optional
 
-from ..models.data import DataLoader
 from ..models.neural_networks.base import NNBase
 
 
