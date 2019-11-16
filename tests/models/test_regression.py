@@ -180,11 +180,19 @@ class TestLinearRegression:
             self,
             data_path,
             batch_file_size,
-            shuffle_data,
             mode,
+            shuffle_data,
+            clear_nans,
+            normalize,
+            experiment,
+            mask,
             pred_months,
+            to_tensor,
             surrounding_pixels,
             ignore_vars,
+            monthly_aggs,
+            static,
+            device,
         ):
 
             pass
