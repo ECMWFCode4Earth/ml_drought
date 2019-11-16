@@ -82,7 +82,7 @@ class BasePreProcessor:
                ds: xr.Dataset,
                reference_ds: xr.Dataset,
                method: str = "nearest_s2d",
-               reuse_weights: bool = False,
+               reuse_weights: bool = True,
                selected_var: Optional[str] = None,
                clean: bool = True) -> xr.Dataset:
         """ Use xEMSF package to regrid ds to the same grid as reference_ds
