@@ -118,7 +118,7 @@ class TestEARecurrentNetwork:
         assert type(model.model) == EALSTM, f"Model attribute not an EALSTM!"
 
     @pytest.mark.parametrize("use_pred_months", [True, False])
-    def test_predict(self, tmp_path, use_pred_months):
+    def test_predict_and_explain(self, tmp_path, use_pred_months):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 

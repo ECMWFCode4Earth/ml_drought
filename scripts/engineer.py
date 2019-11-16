@@ -8,7 +8,9 @@ from scripts.utils import get_data_path
 
 def engineer(experiment="one_month_forecast", process_static=True, pred_months=12):
 
-    engineer = Engineer(get_data_path(), experiment=experiment, process_static=process_static)
+    engineer = Engineer(
+        get_data_path(), experiment=experiment, process_static=process_static
+    )
     engineer.engineer(
         test_year=2018,
         target_variable="VCI",

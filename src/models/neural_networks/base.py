@@ -422,7 +422,9 @@ class NNBase(ModelBase):
 
         Will return a train data object with the Morris gradients of the inputs
         """
-        assert self.model is not None, "Model must be trained before the Morris gradient can be calculated!"
+        assert (
+            self.model is not None
+        ), "Model must be trained before the Morris gradient can be calculated!"
 
         self.model.eval()
         self.model.zero_grad()
@@ -433,14 +435,18 @@ class NNBase(ModelBase):
             x.latlons,
             x.current,
             x.yearly_aggs,
-            x.static)
+            x.static,
+        )
 
         num_items = len(x.__dict__)
         output_dict: Dict[str, np.ndarray] = {}
         for idx, (key, val) in enumerate(x.__dict__.items()):
-            grad = torch.autograd.grad(outputs, val,
-                                       retain_graph=True if idx + 1 < num_items else None,
-                                       allow_unused=True)[0]
+            grad = torch.autograd.grad(
+                outputs,
+                val,
+                retain_graph=True if idx + 1 < num_items else None,
+                allow_unused=True,
+            )[0]
             output_dict[key] = grad.detach().cpu().numpy()
 
         return TrainData(**output_dict)
