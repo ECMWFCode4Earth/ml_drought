@@ -2,7 +2,6 @@ import sys
 
 sys.path.append("..")
 
-from pathlib import Path
 from src.models import (
     Persistence,
     LinearRegression,
