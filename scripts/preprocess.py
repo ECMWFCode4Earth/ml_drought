@@ -154,7 +154,7 @@ def process_ndvi(
 
     if regrid:
         regrid_path = data_path / \
-            '/interim/precip/precip_doy.nc'
+            'interim/precip/precip_doy.nc'
             # 'interim/reanalysis-era5-single-levels-monthly-means_preprocessed/data_kenya.nc'
         assert regrid_path.exists(), f'{regrid_path} not available'
     else:

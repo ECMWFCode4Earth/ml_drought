@@ -181,8 +181,8 @@ class SHPtoXarray:
         ds = self.rasterize(
             shapes=shapes, coords=da.coords, variable_name=var_name
         )
-        values = [value for value in gdf[lookup_colname].to_list()]
-        keys = [str(key) for key in gdf.index.to_list()]
+        values = [value for value in gdf[lookup_colname].tolist()]
+        keys = [str(key) for key in gdf.index.tolist()]
         data_vals = ds[[d for d in ds.data_vars][0]].values
         unique_values = np.unique(data_vals[~np.isnan(data_vals)])
         unique_values = [str(int(v)) for v in unique_values]
