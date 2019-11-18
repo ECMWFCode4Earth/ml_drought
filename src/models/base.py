@@ -4,7 +4,7 @@ import json
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 
-from .data import TrainData
+from .data import TrainData, DataLoader
 
 from typing import cast, Any, Dict, List, Optional, Union, Tuple
 
@@ -79,6 +79,10 @@ class ModelBase:
 
         self.model: Any = None  # to be added by the model classes
         self.data_vars: Optional[List[str]] = None  # to be added by the train step
+
+        # This can be overridden by any model which actually cares which device its run on
+        # by default, models which don't care will run on the CPU
+        self.device = "cpu"
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         # This method should return the test arrays as loaded by
@@ -203,3 +207,34 @@ class ModelBase:
             x_in = np.concatenate((x_in, x_static), axis=-1)
 
         return x_in
+
+    def get_dataloader(
+        self, mode: str, to_tensor: bool = False, shuffle_data: bool = False, **kwargs
+    ) -> DataLoader:
+        """
+        Return the correct dataloader for this model
+        """
+
+        default_args: Dict[str, Any] = {
+            "data_path": self.data_path,
+            "batch_file_size": self.batch_size,
+            "shuffle_data": shuffle_data,
+            "mode": mode,
+            "mask": None,
+            "experiment": self.experiment,
+            "pred_months": self.pred_months,
+            "to_tensor": to_tensor,
+            "ignore_vars": self.ignore_vars,
+            "monthly_aggs": self.include_monthly_aggs,
+            "surrounding_pixels": self.surrounding_pixels,
+            "static": self.include_static,
+            "device": self.device,
+            "clear_nans": True,
+            "normalize": True,
+        }
+
+        for key, val in kwargs.items():
+            # override the default args
+            default_args[key] = val
+
+        return DataLoader(**default_args)

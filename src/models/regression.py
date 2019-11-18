@@ -68,48 +68,18 @@ class LinearRegression(ModelBase):
             )
             train_mask, val_mask = train_val_mask(len_mask, val_split)
 
-            train_dataloader = DataLoader(
-                data_path=self.data_path,
-                batch_file_size=self.batch_size,
-                experiment=self.experiment,
-                shuffle_data=True,
-                mode="train",
-                pred_months=self.pred_months,
-                mask=train_mask,
-                ignore_vars=self.ignore_vars,
-                monthly_aggs=self.include_monthly_aggs,
-                surrounding_pixels=self.surrounding_pixels,
-                static=self.include_static,
+            train_dataloader = self.get_dataloader(
+                mode="train", mask=train_mask, shuffle_data=True
+            )
+            val_dataloader = self.get_dataloader(
+                mode="train", mask=val_mask, shuffle_data=False
             )
 
-            val_dataloader = DataLoader(
-                data_path=self.data_path,
-                batch_file_size=self.batch_size,
-                experiment=self.experiment,
-                shuffle_data=False,
-                mode="train",
-                pred_months=self.pred_months,
-                mask=val_mask,
-                ignore_vars=self.ignore_vars,
-                monthly_aggs=self.include_monthly_aggs,
-                surrounding_pixels=self.surrounding_pixels,
-                static=self.include_static,
-            )
             batches_without_improvement = 0
             best_val_score = np.inf
         else:
-            train_dataloader = DataLoader(
-                data_path=self.data_path,
-                experiment=self.experiment,
-                batch_file_size=self.batch_size,
-                pred_months=self.pred_months,
-                shuffle_data=True,
-                mode="train",
-                ignore_vars=self.ignore_vars,
-                monthly_aggs=self.include_monthly_aggs,
-                surrounding_pixels=self.surrounding_pixels,
-                static=self.include_static,
-            )
+            train_dataloader = self.get_dataloader(mode="train", shuffle_data=True)
+
         self.model: linear_model.SGDRegressor = linear_model.SGDRegressor(
             eta0=initial_learning_rate
         )
@@ -167,13 +137,10 @@ class LinearRegression(ModelBase):
             )
 
         if x is None:
-            test_arrays_loader = DataLoader(
-                data_path=self.data_path,
-                batch_file_size=1,
-                experiment=self.experiment,
-                shuffle_data=False,
-                mode="test",
+            test_arrays_loader = self.get_dataloader(
+                mode="test", batch_file_size=1, shuffle_data=False
             )
+
             _, val = list(next(iter(test_arrays_loader)).items())[0]
             x = val.x
 
@@ -216,18 +183,7 @@ class LinearRegression(ModelBase):
         self.model.intercept_ = intercept
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
-        test_arrays_loader = DataLoader(
-            data_path=self.data_path,
-            batch_file_size=self.batch_size,
-            experiment=self.experiment,
-            shuffle_data=False,
-            mode="test",
-            pred_months=self.pred_months,
-            surrounding_pixels=self.surrounding_pixels,
-            ignore_vars=self.ignore_vars,
-            monthly_aggs=self.include_monthly_aggs,
-            static=self.include_static,
-        )
+        test_arrays_loader = self.get_dataloader(mode="test", shuffle_data=False)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -254,14 +210,8 @@ class LinearRegression(ModelBase):
         since it wouldn't fit in memory either
         """
         print("Calculating the mean of the training data")
-        train_dataloader = DataLoader(
-            data_path=self.data_path,
-            batch_file_size=1,
-            pred_months=self.pred_months,
-            shuffle_data=False,
-            mode="train",
-            surrounding_pixels=self.surrounding_pixels,
-            ignore_vars=self.ignore_vars,
+        train_dataloader = self.get_dataloader(
+            mode="train", batch_file_size=1, shuffle_data=False
         )
 
         means, sizes = [], []

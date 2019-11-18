@@ -91,14 +91,8 @@ class NNBase(ModelBase):
             )
         if x is None:
             # if no input is passed to explain, take 10 values and explain them
-            test_arrays_loader = DataLoader(
-                data_path=self.data_path,
-                batch_file_size=1,
-                shuffle_data=True,
-                mode="test",
-                to_tensor=True,
-                static=True,
-                experiment=self.experiment,
+            test_arrays_loader = self.get_dataloader(
+                mode="test", shuffle=False, batch_file_size=1, to_tensor=True
             )
             key, val = list(next(iter(test_arrays_loader)).items())[0]
             x = self.make_shap_input(val.x, start_idx=0, num_inputs=10)
@@ -151,54 +145,18 @@ class NNBase(ModelBase):
             )
             train_mask, val_mask = train_val_mask(len_mask, val_split)
 
-            train_dataloader = DataLoader(
-                data_path=self.data_path,
-                batch_file_size=self.batch_size,
-                shuffle_data=True,
-                mode="train",
-                experiment=self.experiment,
-                mask=train_mask,
-                to_tensor=True,
-                pred_months=self.pred_months,
-                ignore_vars=self.ignore_vars,
-                monthly_aggs=self.include_monthly_aggs,
-                surrounding_pixels=self.surrounding_pixels,
-                static=self.include_static,
-                device=self.device,
+            train_dataloader = self.get_dataloader(
+                mode="train", mask=train_mask, to_tensor=True, shuffle_data=True
             )
-
-            val_dataloader = DataLoader(
-                data_path=self.data_path,
-                batch_file_size=self.batch_size,
-                shuffle_data=False,
-                mode="train",
-                experiment=self.experiment,
-                mask=val_mask,
-                to_tensor=True,
-                pred_months=self.pred_months,
-                ignore_vars=self.ignore_vars,
-                monthly_aggs=self.include_monthly_aggs,
-                surrounding_pixels=self.surrounding_pixels,
-                static=self.include_static,
-                device=self.device,
+            val_dataloader = self.get_dataloader(
+                mode="train", mask=val_mask, to_tensor=True, shuffle_data=False
             )
 
             batches_without_improvement = 0
             best_val_score = np.inf
         else:
-            train_dataloader = DataLoader(
-                data_path=self.data_path,
-                batch_file_size=self.batch_size,
-                shuffle_data=True,
-                mode="train",
-                experiment=self.experiment,
-                to_tensor=True,
-                pred_months=self.pred_months,
-                ignore_vars=self.ignore_vars,
-                monthly_aggs=self.include_monthly_aggs,
-                surrounding_pixels=self.surrounding_pixels,
-                static=self.include_static,
-                device=self.device,
+            train_dataloader = self.get_dataloader(
+                mode="train", to_tensor=True, shuffle_data=True
             )
 
         # initialize the model
@@ -269,19 +227,8 @@ class NNBase(ModelBase):
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
 
-        test_arrays_loader = DataLoader(
-            data_path=self.data_path,
-            batch_file_size=self.batch_size,
-            shuffle_data=False,
-            mode="test",
-            experiment=self.experiment,
-            pred_months=self.pred_months,
-            to_tensor=True,
-            ignore_vars=self.ignore_vars,
-            monthly_aggs=self.include_monthly_aggs,
-            surrounding_pixels=self.surrounding_pixels,
-            static=self.include_static,
-            device=self.device,
+        test_arrays_loader = self.get_dataloader(
+            mode="test", to_tensor=True, shuffle_data=False
         )
 
         preds_dict: Dict[str, np.ndarray] = {}
@@ -316,18 +263,8 @@ class NNBase(ModelBase):
 
         print("Extracting a sample of the training data")
 
-        train_dataloader = DataLoader(
-            data_path=self.data_path,
-            batch_file_size=self.batch_size,
-            shuffle_data=True,
-            mode="train",
-            pred_months=self.pred_months,
-            to_tensor=True,
-            ignore_vars=self.ignore_vars,
-            monthly_aggs=self.include_monthly_aggs,
-            surrounding_pixels=self.surrounding_pixels,
-            static=self.include_static,
-            device=self.device,
+        train_dataloader = self.get_dataloader(
+            mode="train", shuffle_data=True, to_tensor=True
         )
 
         output_tensors: List[torch.Tensor] = []
@@ -415,3 +352,49 @@ class NNBase(ModelBase):
         else:
             output_tensors.append(x.static[start_idx : start_idx + num_inputs])
         return output_tensors
+
+    def get_morris_gradient(self, x: TrainData) -> TrainData:
+        """
+        https://github.com/kratzert/ealstm_regional_modeling/blob/master/papercode/morris.py
+
+        Will return a train data object with the Morris gradients of the inputs
+        """
+        assert (
+            self.model is not None
+        ), "Model must be trained before the Morris gradient can be calculated!"
+
+        self.model.eval()
+        self.model.zero_grad()
+
+        for idx, (key, val) in enumerate(x.__dict__.items()):
+            if val is not None:
+                val.requires_grad = True
+        outputs = self.model(
+            x.historical,
+            self._one_hot_months(x.pred_months),
+            x.latlons,
+            x.current,
+            x.yearly_aggs,
+            x.static,
+        )
+
+        num_items = len(x.__dict__)
+        output_dict: Dict[str, Optional[np.ndarray]] = {}
+        for idx, (key, val) in enumerate(x.__dict__.items()):
+            if val is not None:
+                grad = torch.autograd.grad(
+                    outputs,
+                    val,
+                    retain_graph=True if idx + 1 < num_items else None,
+                    allow_unused=True,
+                    grad_outputs=torch.ones_like(outputs).to(self.device),
+                )[0]
+                if grad is not None:
+                    # this can be the case since allow_unused = True
+                    output_dict[key] = grad.detach().cpu().numpy()
+                else:
+                    output_dict[key] = None
+            else:
+                output_dict[key] = None
+
+        return TrainData(**output_dict)

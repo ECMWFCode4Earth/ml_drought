@@ -9,7 +9,6 @@ import pickle
 
 from typing import Dict, List, Tuple, Optional
 
-from ..models.data import DataLoader
 from ..models.neural_networks.base import NNBase
 
 
@@ -160,27 +159,15 @@ def all_shap_for_file(
         The size of the batches to use when calculating shap values. If you are getting memory
         errors, reducing this is a good place to start
     """
-    static = model.include_static
-    monthly_aggs = model.include_monthly_aggs
-    ignore_vars = model.ignore_vars
-    surrounding_pixels = model.surrounding_pixels
-    experiment = model.experiment
 
     data_path = test_folder.parents[3]
-
-    test_arrays_loader = DataLoader(
+    test_arrays_loader = model.get_dataloader(
         data_path=data_path,
-        batch_file_size=1,
-        shuffle_data=False,
         mode="test",
+        batch_file_size=1,
         to_tensor=True,
-        static=static,
-        experiment=experiment,
-        surrounding_pixels=surrounding_pixels,
-        ignore_vars=ignore_vars,
-        monthly_aggs=monthly_aggs,
+        shuffle_data=False,
     )
-
     test_arrays_loader.data_files = [test_folder]
 
     key, val = list(next(iter(test_arrays_loader)).items())[0]

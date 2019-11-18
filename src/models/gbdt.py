@@ -71,46 +71,15 @@ class GBDT(ModelBase):
             )
             train_mask, val_mask = train_val_mask(len_mask, val_split)
 
-            train_dataloader = DataLoader(
-                data_path=self.data_path,
-                batch_file_size=self.batch_size,
-                experiment=self.experiment,
-                shuffle_data=True,
-                mode="train",
-                pred_months=self.pred_months,
-                mask=train_mask,
-                ignore_vars=self.ignore_vars,
-                monthly_aggs=self.include_monthly_aggs,
-                surrounding_pixels=self.surrounding_pixels,
-                static=self.include_static,
+            train_dataloader = self.get_dataloader(
+                mode="train", mask=train_mask, shuffle_data=True
+            )
+            val_dataloader = self.get_dataloader(
+                mode="train", mask=val_mask, shuffle_data=False
             )
 
-            val_dataloader = DataLoader(
-                data_path=self.data_path,
-                batch_file_size=self.batch_size,
-                experiment=self.experiment,
-                shuffle_data=False,
-                mode="train",
-                pred_months=self.pred_months,
-                mask=val_mask,
-                ignore_vars=self.ignore_vars,
-                monthly_aggs=self.include_monthly_aggs,
-                surrounding_pixels=self.surrounding_pixels,
-                static=self.include_static,
-            )
         else:
-            train_dataloader = DataLoader(
-                data_path=self.data_path,
-                experiment=self.experiment,
-                batch_file_size=self.batch_size,
-                pred_months=self.pred_months,
-                shuffle_data=True,
-                mode="train",
-                ignore_vars=self.ignore_vars,
-                monthly_aggs=self.include_monthly_aggs,
-                surrounding_pixels=self.surrounding_pixels,
-                static=self.include_static,
-            )
+            train_dataloader = self.get_dataloader(mode="train", shuffle_data=True)
 
         if "objective" not in xgbkwargs:
             xgbkwargs["objective"] = "reg:squarederror"
@@ -154,12 +123,8 @@ class GBDT(ModelBase):
         assert self.model is not None, "Model must be trained!"
 
         if x is None:
-            test_arrays_loader = DataLoader(
-                data_path=self.data_path,
-                batch_file_size=1,
-                experiment=self.experiment,
-                shuffle_data=False,
-                mode="test",
+            test_arrays_loader = self.get_dataloader(
+                mode="test", shuffle_data=False, batch_file_size=1
             )
             _, val = list(next(iter(test_arrays_loader)).items())[0]
             x = val.x
@@ -212,18 +177,7 @@ class GBDT(ModelBase):
         self.early_stopping = early_stopping
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
-        test_arrays_loader = DataLoader(
-            data_path=self.data_path,
-            batch_file_size=self.batch_size,
-            experiment=self.experiment,
-            shuffle_data=False,
-            mode="test",
-            pred_months=self.pred_months,
-            surrounding_pixels=self.surrounding_pixels,
-            ignore_vars=self.ignore_vars,
-            monthly_aggs=self.include_monthly_aggs,
-            static=self.include_static,
-        )
+        test_arrays_loader = self.get_dataloader(mode="test", shuffle_data=False)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}

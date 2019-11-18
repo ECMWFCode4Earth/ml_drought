@@ -3,7 +3,6 @@ import numpy as np
 from typing import Dict, Tuple
 
 from .base import ModelBase
-from .data import DataLoader
 
 
 class Persistence(ModelBase):
@@ -24,14 +23,8 @@ class Persistence(ModelBase):
         self,
     ) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
 
-        test_arrays_loader = DataLoader(
-            data_path=self.data_path,
-            batch_file_size=self.batch_size,
-            experiment=self.experiment,
-            shuffle_data=False,
-            mode="test",
-            normalize=False,
-            pred_months=self.pred_months,
+        test_arrays_loader = self.get_dataloader(
+            mode="test", shuffle_data=False, normalize=False, static=False
         )
 
         preds_dict: Dict[str, np.ndarray] = {}
