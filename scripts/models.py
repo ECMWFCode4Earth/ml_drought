@@ -126,16 +126,16 @@ def earnn(
             surrounding_pixels=surrounding_pixels,
             ignore_vars=ignore_vars,
         )
-        predictor.train(num_epochs=50, early_stopping=5)
+        predictor.train(num_epochs=50, early_stopping=10)
         predictor.evaluate(save_preds=True)
         predictor.save_model()
     else:
         predictor = load_model(
             data_path / f'models/{experiment}/ealstm/model.pt')
 
-    test_file = data_path / f'features/{experiment}/test/2018_3'
-    assert test_file.exists()
-    all_shap_for_file(test_file, predictor, batch_size=100)
+    # test_file = data_path / f'features/{experiment}/test/2018_3'
+    # assert test_file.exists()
+    # all_shap_for_file(test_file, predictor, batch_size=100)
 
 
 if __name__ == '__main__':
