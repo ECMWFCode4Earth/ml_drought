@@ -1,3 +1,14 @@
+"""
+ERA5 path:
+data_dir / 'interim/reanalysis-era5-single-levels-monthly-means_preprocessed/data_kenya.nc'
+
+VCI path:
+data_dir / 'interim/VCI_preprocessed/data_kenya.nc'
+
+CHIRPS path:
+data_dir / 'interim/chirps_preprocessed/data_kenya.nc'
+"""
+
 from pathlib import Path
 
 import sys
@@ -134,11 +145,12 @@ def preprocess_era5():
         data_path = Path('data')
     else:
         data_path = Path('../data')
-    regrid_path = data_path / 'interim/VCI_preprocessed/data_kenya.nc'
-    assert regrid_path.exists(), f'{regrid_path} not available'
+    regrid_path = None
+    # regrid_path = data_path / 'interim/VCI_preprocessed/data_kenya.nc'
+    # assert regrid_path.exists(), f'{regrid_path} not available'
 
     processor = ERA5MonthlyMeanPreprocessor(data_path)
-    processor.preprocess(subset_str='kenya', regrid=regrid_path)
+    processor.preprocess(subset_str='kenya')
 
 
 def process_ndvi(
@@ -174,11 +186,11 @@ if __name__ == '__main__':
     # process_gleam()
     # process_esa_cci_landcover()
     # preprocess_srtm()
-    # preprocess_era5()
+    preprocess_era5()
     # preprocess_kenya_boundaries(selection='level_1')
     # preprocess_kenya_boundaries(selection='level_2')
     # preprocess_kenya_boundaries(selection='level_3')
-    process_ndvi(
-        regrid=True, resample_time=None,
-        years=[y for y in range(2010, 2019)]
-    )
+    # process_ndvi(
+    #     regrid=True, resample_time=None,
+    #     years=[y for y in range(2010, 2019)]
+    # )
