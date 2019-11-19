@@ -178,4 +178,7 @@ if __name__ == '__main__':
     # preprocess_kenya_boundaries(selection='level_1')
     # preprocess_kenya_boundaries(selection='level_2')
     # preprocess_kenya_boundaries(selection='level_3')
-    process_ndvi(regrid=True, resample_time=None, years=[y for y in range(2010, 2019)])
+    process_ndvi(
+        regrid=True, resample_time=None,
+        years=[y for y in range(2010, 2019)]
+    )

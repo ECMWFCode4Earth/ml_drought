@@ -140,10 +140,10 @@ def earnn(
 
 if __name__ == '__main__':
     ignore_vars = None
-    ignore_vars = ['VCI', 'p84.162', 'sp', 'tp']
+    ignore_vars = ['ndvi', 'p84.162', 'sp', 'tp']
 
-    # parsimonious()
+    parsimonious()
     regression(ignore_vars=ignore_vars)
-    # linear_nn(ignore_vars=ignore_vars)
+    linear_nn(ignore_vars=ignore_vars)
     # rnn(ignore_vars=ignore_vars)
     # earnn(pretrained=False, ignore_vars=ignore_vars)
