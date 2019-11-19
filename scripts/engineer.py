@@ -47,5 +47,5 @@ def engineer_static():
 
 if __name__ == '__main__':
     # engineer_NDVI(pred_months=12)
-    engineer_VCI(pred_months=12)
+    engineer_VCI(pred_months=3)
     # engineer_static()
