@@ -10,9 +10,10 @@ from shutil import rmtree
 
 from .base import BasePreProcessor
 
+# TODO: also look at https://ecocast.arc.nasa.gov/data/pub/gimms/3g.v0/
 
 class NDVIPreprocessor(BasePreProcessor):
-    """ Preprocesses the ESA CCI Landcover data """
+    """ Preprocesses the AVHRR NDVI data """
     dataset = 'ndvi'
 
     def create_filename(self, netcdf_filepath: str,
@@ -82,7 +83,7 @@ class NDVIPreprocessor(BasePreProcessor):
 
         # 3. regrid to same spatial resolution
         if regrid is not None:
-            ds = self.regrid(ds, regrid, selected_var='NDVI')
+            ds = self.regrid(ds, regrid, selected_var='NDVI', reuse_weights=True)
 
         # 5. extract the ndvi data (reduce storage use)
         # NOTE: discarding the quality flags here
