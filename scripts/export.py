@@ -43,14 +43,15 @@ def export_era5():
     }
 
     era5_variables = [
-        '10m_u_component_of_wind', '10m_v_component_of_wind', 'volumetric_soil_water_layer_1',
-        'volumetric_soil_water_layer_2', 'volumetric_soil_water_layer_3',
-        'volumetric_soil_water_layer_4', 'surface_pressure', 'surface_sensible_heat_flux',
-        'surface_latent_heat_flux', 'soil_temperature_level_1', '2m_temperature',
-        'mean_eastward_turbulent_surface_stress', 'mean_northward_turbulent_surface_stress',
-        'surface_net_solar_radiation_clear_sky', 'surface_net_thermal_radiation_clear_sky',
-        'vertical_integral_of_divergence_of_moisture_flux', 'potential_evaporation',
-        'evaporation'
+        # '10m_u_component_of_wind', '10m_v_component_of_wind',
+        'volumetric_soil_water_layer_1', 'volumetric_soil_water_layer_2',
+        'volumetric_soil_water_layer_3', 'volumetric_soil_water_layer_4',
+        # 'surface_pressure', 'surface_sensible_heat_flux',
+        # 'surface_latent_heat_flux', 'soil_temperature_level_1', '2m_temperature',
+        # 'mean_eastward_turbulent_surface_stress', 'mean_northward_turbulent_surface_stress',
+        # 'surface_net_solar_radiation_clear_sky', 'surface_net_thermal_radiation_clear_sky',
+        # 'vertical_integral_of_divergence_of_moisture_flux', 'potential_evaporation',
+        # 'evaporation'
     ]
 
     for variable in era5_variables:
@@ -172,10 +173,10 @@ def export_kenya_boundaries():
 
 if __name__ == '__main__':
     export_era5()
-    export_vhi()
-    export_chirps()
-    export_era5POS()
-    export_gleam()
-    export_esa()
-    export_s5()
-    export_kenya_boundaries()
+    # export_vhi()
+    # export_chirps()
+    # export_era5POS()
+    # export_gleam()
+    # export_esa()
+    # export_s5()
+    # export_kenya_boundaries()
