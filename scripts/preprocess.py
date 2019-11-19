@@ -73,7 +73,8 @@ def process_gleam():
         data_path = Path('data')
     else:
         data_path = Path('../data')
-    regrid_path = data_path / 'interim/VCI_preprocessed/data_kenya.nc'
+    regrid_path = data_path / \
+        'interim/reanalysis-era5-single-levels-monthly-means_preprocessed/data_kenya.nc'
     assert regrid_path.exists(), f'{regrid_path} not available'
 
     processor = GLEAMPreprocessor(data_path)
