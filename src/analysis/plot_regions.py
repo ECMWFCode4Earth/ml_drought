@@ -12,34 +12,36 @@ from typing import List, Optional, Tuple, Union
 from geopandas.geodataframe import GeoDataFrame
 
 
-def _plot_single_gdf(ax: Axes,
-                     gdf: GeoDataFrame,
-                     column_to_plot: str,
-                     title: Optional[str] = None,
-                     cmap: Optional[str] = 'viridis',
-                     vmin: Optional[float] = None,
-                     vmax: Optional[float] = None) -> Axes:
+def _plot_single_gdf(
+    ax: Axes,
+    gdf: GeoDataFrame,
+    column_to_plot: str,
+    title: Optional[str] = None,
+    cmap: Optional[str] = "viridis",
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+) -> Axes:
     # nicely format the colorbar
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.1)
 
     gdf.plot(
-        column_to_plot, ax=ax, legend=True,
-        cmap=cmap, vmin=vmin,
-        vmax=vmax, cax=cax
+        column_to_plot, ax=ax, legend=True, cmap=cmap, vmin=vmin, vmax=vmax, cax=cax
     )
     ax.set_title(title)
     return ax
 
 
-def get_vrange(array1: Union[pd.Series, np.array],
-               array2: Union[pd.Series, np.array],
-               how: str = 'percentile') -> Tuple[float, float]:
-    if how == 'percentile':
+def get_vrange(
+    array1: Union[pd.Series, np.array],
+    array2: Union[pd.Series, np.array],
+    how: str = "percentile",
+) -> Tuple[float, float]:
+    if how == "percentile":
         vmin = min(np.nanpercentile(array1, 5), np.nanpercentile(array2, 5))
         vmax = max(np.nanpercentile(array1, 95), np.nanpercentile(array2, 95))
     else:
-        print('calculating vmin/vmax using `simple` method')
+        print("calculating vmin/vmax using `simple` method")
         vmin = min(min(array1), min(array2))
         vmax = max(max(array1), max(array2))
     return vmin, vmax
@@ -47,18 +49,18 @@ def get_vrange(array1: Union[pd.Series, np.array],
 
 def get_valid_metrics(gdf: GeoDataFrame) -> List[str]:
     valid_cols = [
-        c.split('_')[-1]
-        for c in gdf.columns
-        if ('true_' in c) or ('pred_' in c)
+        c.split("_")[-1] for c in gdf.columns if ("true_" in c) or ("pred_" in c)
     ]
     return np.unique(valid_cols)
 
 
-def plot_comparison_maps(gdf: GeoDataFrame,
-                         metric: str,
-                         vmin: Optional[float] = None,
-                         vmax: Optional[float] = None,
-                         suptitle: Optional[str] = None) -> Tuple[Figure, List[Axes]]:
+def plot_comparison_maps(
+    gdf: GeoDataFrame,
+    metric: str,
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+    suptitle: Optional[str] = None,
+) -> Tuple[Figure, List[Axes]]:
     """Plot the true / pred columns in a GeoDataFrame
 
     Arguments:
@@ -94,35 +96,31 @@ def plot_comparison_maps(gdf: GeoDataFrame,
     """
     # check the metric is a valid one
     valid_metrics = get_valid_metrics(gdf)
-    assert metric in valid_metrics, f'Try one of: {valid_metrics}'
+    assert metric in valid_metrics, f"Try one of: {valid_metrics}"
 
     # build the colname for that metric
-    true_data_colname = f'true_{metric}'
-    pred_data_colname = f'pred_{metric}'
+    true_data_colname = f"true_{metric}"
+    pred_data_colname = f"pred_{metric}"
 
     # consistent colorbar
     if vmin is None:
         vmin, _ = get_vrange(
-            gdf[true_data_colname], gdf[pred_data_colname],
-            how='percentile'
+            gdf[true_data_colname], gdf[pred_data_colname], how="percentile"
         )
     if vmax is None:
         _, vmax = get_vrange(
-            gdf[true_data_colname], gdf[pred_data_colname],
-            how='percentile'
+            gdf[true_data_colname], gdf[pred_data_colname], how="percentile"
         )
 
     fig, axs = plt.subplots(1, 2, figsize=(16, 6))
 
     # true and predicted column names
     for i, colname in enumerate([true_data_colname, pred_data_colname]):
-        assert colname in gdf.columns, \
-            f'Expecting to find {colname} in {gdf.columns}'
+        assert colname in gdf.columns, f"Expecting to find {colname} in {gdf.columns}"
 
         ax = axs[i]
         ax = _plot_single_gdf(
-            gdf=gdf, column_to_plot=colname, ax=ax, title=colname,
-            vmin=vmin, vmax=vmax
+            gdf=gdf, column_to_plot=colname, ax=ax, title=colname, vmin=vmin, vmax=vmax
         )
 
     if suptitle is not None:

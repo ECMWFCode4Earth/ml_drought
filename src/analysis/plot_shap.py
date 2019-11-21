@@ -9,36 +9,37 @@ import pickle
 
 from typing import Dict, List, Tuple, Optional
 
-from ..models.data import DataLoader
 from ..models.neural_networks.base import NNBase
 
 
 int2month = {
-    1: 'Jan',
-    2: 'Feb',
-    3: 'Mar',
-    4: 'Apr',
-    5: 'May',
-    6: 'Jun',
-    7: 'Jul',
-    8: 'Aug',
-    9: 'Sep',
-    10: 'Oct',
-    11: 'Nov',
-    12: 'Dec'
+    1: "Jan",
+    2: "Feb",
+    3: "Mar",
+    4: "Apr",
+    5: "May",
+    6: "Jun",
+    7: "Jul",
+    8: "Aug",
+    9: "Sep",
+    10: "Oct",
+    11: "Nov",
+    12: "Dec",
 }
 
 
-def plot_shap_values(x: np.ndarray,
-                     shap_values: np.ndarray,
-                     val_list: List[str],
-                     normalizing_dict: Dict[str, Dict[str, float]],
-                     value_to_plot: str,
-                     normalize_shap_plots: bool = True,
-                     show: bool = False,
-                     polished_value_name: Optional[str] = None,
-                     pred_date: Optional[Tuple[int, int]] = None,
-                     fig: Optional[Figure] = None) -> None:
+def plot_shap_values(
+    x: np.ndarray,
+    shap_values: np.ndarray,
+    val_list: List[str],
+    normalizing_dict: Dict[str, Dict[str, float]],
+    value_to_plot: str,
+    normalize_shap_plots: bool = True,
+    show: bool = False,
+    polished_value_name: Optional[str] = None,
+    pred_date: Optional[Tuple[int, int]] = None,
+    fig: Optional[Figure] = None,
+) -> None:
     """Plots the denormalized values against their shap values, so that
     variations in the input features to the model can be compared to their effect
     on the model. For example plots, see notebooks/08_gt_recurrent_model.ipynb.
@@ -77,8 +78,9 @@ def plot_shap_values(x: np.ndarray,
     # we also want to denormalize
     for norm_var in normalizing_dict.keys():
         if value_to_plot.endswith(norm_var):
-            x_val = (x_val * normalizing_dict[norm_var]['std']) + \
-                normalizing_dict[norm_var]['mean']
+            x_val = (x_val * normalizing_dict[norm_var]["std"]) + normalizing_dict[
+                norm_var
+            ]["mean"]
             break
 
     shap_val = shap_values[:, idx]
@@ -95,7 +97,7 @@ def plot_shap_values(x: np.ndarray,
                 cur_year -= 1
             int_months.append(cur_month)
             int_years.append(cur_year)
-        str_dates = [f'{int2month[m]}{y}' for m, y in zip(int_months, int_years)][::-1]
+        str_dates = [f"{int2month[m]}{y}" for m, y in zip(int_months, int_years)][::-1]
 
     host = host_subplot(111, axes_class=AA.Axes, figure=fig)
     plt.subplots_adjust(right=0.75)
@@ -113,13 +115,13 @@ def plot_shap_values(x: np.ndarray,
     host.set_ylabel(polished_value_name)
     par1.set_ylabel("Shap value")
 
-    p1, = host.plot(months, x_val, label=polished_value_name, linestyle='dashed')
-    p2, = par1.plot(months, shap_val, label="Shap value")
+    (p1,) = host.plot(months, x_val, label=polished_value_name, linestyle="dashed")
+    (p2,) = par1.plot(months, shap_val, label="Shap value")
 
     host.axis["left"].label.set_color(p1.get_color())
     par1.axis["right"].label.set_color(p2.get_color())
 
-    host.legend(loc='lower left', framealpha=0.5)
+    host.legend(loc="lower left", framealpha=0.5)
 
     if pred_date is not None:
         modulo = (len(months) - 1) % 2
@@ -131,10 +133,9 @@ def plot_shap_values(x: np.ndarray,
         plt.show()
 
 
-def all_shap_for_file(test_folder: Path,
-                      model: NNBase,
-                      background_size: int = 100,
-                      batch_size: int = 100) -> None:
+def all_shap_for_file(
+    test_folder: Path, model: NNBase, background_size: int = 100, batch_size: int = 100
+) -> None:
     """
     Calculate all the shap values for a single file (i.e. for all the
     data instances in that file).
@@ -158,21 +159,15 @@ def all_shap_for_file(test_folder: Path,
         The size of the batches to use when calculating shap values. If you are getting memory
         errors, reducing this is a good place to start
     """
-    static = model.include_static
-    monthly_aggs = model.include_monthly_aggs
-    ignore_vars = model.ignore_vars
-    surrounding_pixels = model.surrounding_pixels
-    experiment = model.experiment
 
     data_path = test_folder.parents[3]
-
-    test_arrays_loader = DataLoader(data_path=data_path, batch_file_size=1,
-                                    shuffle_data=False, mode='test', to_tensor=True,
-                                    static=static, experiment=experiment,
-                                    surrounding_pixels=surrounding_pixels,
-                                    ignore_vars=ignore_vars,
-                                    monthly_aggs=monthly_aggs)
-
+    test_arrays_loader = model.get_dataloader(
+        data_path=data_path,
+        mode="test",
+        batch_file_size=1,
+        to_tensor=True,
+        shuffle_data=False,
+    )
     test_arrays_loader.data_files = [test_folder]
 
     key, val = list(next(iter(test_arrays_loader)).items())[0]
@@ -180,32 +175,39 @@ def all_shap_for_file(test_folder: Path,
     output_dict: Dict[str, np.ndarray] = {}
 
     num_inputs = val.x.historical.shape[0]
-    print(f'Calculating shap values for {num_inputs} instances')
+    print(f"Calculating shap values for {num_inputs} instances")
     start_idx = 0
 
     while start_idx < num_inputs:
-        print(f'Calculating shap values for indices {start_idx} to {start_idx + batch_size}')
+        print(
+            f"Calculating shap values for indices {start_idx} to {start_idx + batch_size}"
+        )
         var_names = None
         if start_idx == 0:
             var_names = val.x_vars
-        shap_inputs = model.make_shap_input(val.x, start_idx=start_idx,
-                                            num_inputs=batch_size)
-        explanations = model.explain(x=shap_inputs, var_names=var_names,
-                                     save_shap_values=False, background_size=background_size)
+        shap_inputs = model.make_shap_input(
+            val.x, start_idx=start_idx, num_inputs=batch_size
+        )
+        explanations = model.explain(
+            x=shap_inputs,
+            var_names=var_names,
+            save_shap_values=False,
+            background_size=background_size,
+        )
 
         if start_idx == 0:
             for input_name, shap_array in explanations.items():
                 output_dict[input_name] = shap_array
         else:
             for input_name, shap_array in explanations.items():
-                output_dict[input_name] = np.concatenate((output_dict[input_name],
-                                                          shap_array),
-                                                         axis=0)
+                output_dict[input_name] = np.concatenate(
+                    (output_dict[input_name], shap_array), axis=0
+                )
         start_idx = start_idx + batch_size
 
-    print('Saving results')
+    print("Saving results")
 
-    analysis_folder = model.model_dir / 'analysis'
+    analysis_folder = model.model_dir / "analysis"
 
     # this assumes the test file was taken from the data directory, in which case the
     # folder its in is a year_month identifier
@@ -216,7 +218,7 @@ def all_shap_for_file(test_folder: Path,
         file_id_folder.mkdir(parents=True)
 
     for output_type, shap_array in output_dict.items():
-        np.save(file_id_folder / f'shap_value_{output_type}.npy', shap_array)
+        np.save(file_id_folder / f"shap_value_{output_type}.npy", shap_array)
 
-    with (file_id_folder / 'input_ModelArray.pkl').open('wb') as f:
+    with (file_id_folder / "input_ModelArray.pkl").open("wb") as f:
         pickle.dump(val, f)

@@ -12,14 +12,17 @@ from typing import Optional
 from .base import BasePreProcessor
 
 
-class CHIRPSPreprocesser(BasePreProcessor):
+class CHIRPSPreprocessor(BasePreProcessor):
     """ Preprocesses the CHIRPS data """
 
-    dataset = 'chirps'
+    dataset = "chirps"
 
-    def _preprocess_single(self, netcdf_filepath: Path,
-                           subset_str: Optional[str] = 'kenya',
-                           regrid: Optional[xr.Dataset] = None) -> None:
+    def _preprocess_single(
+        self,
+        netcdf_filepath: Path,
+        subset_str: Optional[str] = "kenya",
+        regrid: Optional[xr.Dataset] = None,
+    ) -> None:
         """Run the Preprocessing steps for the CHIRPS data
 
         Process:
@@ -29,9 +32,11 @@ class CHIRPSPreprocesser(BasePreProcessor):
         * create new dataset with these dimensions
         * Save the output file to new folder
         """
-        print(f'Starting work on {netcdf_filepath.name}')
+        print(f"Starting work on {netcdf_filepath.name}")
         # 1. read in the dataset
-        ds = xr.open_dataset(netcdf_filepath).rename({'longitude': 'lon', 'latitude': 'lat'})
+        ds = xr.open_dataset(netcdf_filepath).rename(
+            {"longitude": "lon", "latitude": "lat"}
+        )
 
         # 2. chop out EastAfrica
         if subset_str is not None:
@@ -41,12 +46,13 @@ class CHIRPSPreprocesser(BasePreProcessor):
             ds = self.regrid(ds, regrid)
 
         # 6. create the filepath and save to that location
-        assert netcdf_filepath.name[-3:] == '.nc', \
-            f'filepath name should be a .nc file. Currently: {netcdf_filepath.name}'
+        assert (
+            netcdf_filepath.name[-3:] == ".nc"
+        ), f"filepath name should be a .nc file. Currently: {netcdf_filepath.name}"
 
         filename = self.create_filename(
             netcdf_filepath.name,
-            subset_name=subset_str if subset_str is not None else None
+            subset_name=subset_str if subset_str is not None else None,
         )
         print(f"Saving to {self.interim}/{filename}")
         ds.to_netcdf(self.interim / filename)
@@ -54,14 +60,13 @@ class CHIRPSPreprocesser(BasePreProcessor):
         print(f"** Done for CHIRPS {netcdf_filepath.name} **")
 
     @staticmethod
-    def create_filename(netcdf_filepath: str,
-                        subset_name: Optional[str] = None) -> str:
+    def create_filename(netcdf_filepath: str, subset_name: Optional[str] = None) -> str:
         """
         chirps-v2.0.2009.pentads.nc
             =>
         chirps-v2.0.2009.pentads_kenya.nc
         """
-        if netcdf_filepath[-3:] == '.nc':
+        if netcdf_filepath[-3:] == ".nc":
             filename_stem = netcdf_filepath[:-3]
         else:
             filename_stem = netcdf_filepath
@@ -72,12 +77,15 @@ class CHIRPSPreprocesser(BasePreProcessor):
             new_filename = f"{filename_stem}.nc"
         return new_filename
 
-    def preprocess(self, subset_str: Optional[str] = 'kenya',
-                   regrid: Optional[Path] = None,
-                   resample_time: Optional[str] = 'M',
-                   upsampling: bool = False,
-                   parallel: bool = False,
-                   cleanup: bool = True) -> None:
+    def preprocess(
+        self,
+        subset_str: Optional[str] = "kenya",
+        regrid: Optional[Path] = None,
+        resample_time: Optional[str] = "M",
+        upsampling: bool = False,
+        parallel: bool = False,
+        cleanup: bool = True,
+    ) -> None:
         """ Preprocess all of the CHIRPS .nc files to produce
         one subset file.
 
@@ -98,7 +106,7 @@ class CHIRPSPreprocesser(BasePreProcessor):
         cleanup: bool = True
             If true, delete interim files created by the class
         """
-        print(f'Reading data from {self.raw_folder}. Writing to {self.interim}')
+        print(f"Reading data from {self.raw_folder}. Writing to {self.interim}")
 
         # get the filepaths for all of the downloaded data
         nc_files = self.get_filepaths()
@@ -109,10 +117,9 @@ class CHIRPSPreprocesser(BasePreProcessor):
         if parallel:
             pool = multiprocessing.Pool(processes=100)
             outputs = pool.map(
-                partial(self._preprocess_single,
-                        subset_str=subset_str,
-                        regrid=regrid),
-                nc_files)
+                partial(self._preprocess_single, subset_str=subset_str, regrid=regrid),
+                nc_files,
+            )
             print("\nOutputs (errors):\n\t", outputs)
         else:
             for file in nc_files:

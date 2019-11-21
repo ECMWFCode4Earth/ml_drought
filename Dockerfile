@@ -8,7 +8,7 @@ WORKDIR /ml_drought
 
 # COPY adds files from your Docker client’s current directory
 # copy the environment.yml file to the docker container and build conda env
-COPY environment.ubuntu.cpu.yml .
+COPY environment.yml .
 RUN conda env create -f ./environment.yml
 
 # copy the code to the docker container

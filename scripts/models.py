@@ -1,43 +1,35 @@
 import sys
-sys.path.append('..')
 
-from pathlib import Path
-from src.models import (Persistence, LinearRegression,
-                        LinearNetwork, RecurrentNetwork,
-                        EARecurrentNetwork, load_model)
+sys.path.append("..")
+
+from src.models import (
+    Persistence,
+    LinearRegression,
+    LinearNetwork,
+    RecurrentNetwork,
+    EARecurrentNetwork,
+    load_model,
+)
 from src.analysis import all_shap_for_file
 
-# NOTE: p84.162 == 'vertical integral of moisture flux'
+from scripts.utils import get_data_path
 
-def parsimonious(
-    experiment='one_month_forecast',
-    ignore_vars=None
-):
-    # if the working directory is alread ml_drought don't need ../data
-    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
-        data_path = Path('data')
-    else:
-        data_path = Path('../data')
 
-    predictor = Persistence(
-        data_path, experiment=experiment, ignore_vars=ignore_vars
-    )
+def parsimonious(experiment="one_month_forecast",):
+
+    predictor = Persistence(get_data_path(), experiment=experiment)
     predictor.evaluate(save_preds=True)
 
 
 def regression(
     experiment='one_month_forecast',
     include_pred_month=True,
-    surrounding_pixels=None
+    surrounding_pixels=None,
+    ignore_vars=None
 ):
-    # if the working directory is alread ml_drought don't need ../data
-    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
-        data_path = Path('data')
-    else:
-        data_path = Path('../data')
-
     predictor = LinearRegression(
-        data_path, experiment=experiment,
+        get_data_path(),
+        experiment=experiment,
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
         ignore_vars=ignore_vars,
@@ -50,30 +42,23 @@ def regression(
 
 
 def linear_nn(
-    experiment='one_month_forecast',
-    include_pred_month=True,
-    surrounding_pixels=None,
-    ignore_vars=None,
-    pretrained=False
+experiment = 'one_month_forecast',
+include_pred_month = True,
+surrounding_pixels = None,
+ignore_vars = None,
+pretrained = False
 ):
-    # if the working directory is alread ml_drought don't need ../data
-    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
-        data_path = Path('data')
-    else:
-        data_path = Path('../data')
-    if not pretrained:
-        predictor = LinearNetwork(
-            layer_sizes=[100], data_folder=data_path,
-            experiment=experiment,
-            include_pred_month=include_pred_month,
-            surrounding_pixels=surrounding_pixels,
-            ignore_vars=ignore_vars,
-        )
-        predictor.train(num_epochs=50, early_stopping=5)
-        predictor.evaluate(save_preds=True)
-        predictor.save_model()
-    else:
-        predictor = load_model(data_path / f'models/{experiment}/ealstm/model.pt')
+    predictor = LinearNetwork(
+        layer_sizes=[100],
+        data_folder=get_data_path(),
+        experiment=experiment,
+        include_pred_month=include_pred_month,
+        surrounding_pixels=surrounding_pixels,
+        ignore_vars = ignore_vars,
+    )
+    predictor.train(num_epochs=50, early_stopping=5)
+    predictor.evaluate(save_preds=True)
+    predictor.save_model()
 
     _ = predictor.explain(save_shap_values=True)
 
@@ -85,41 +70,29 @@ def rnn(
     ignore_vars=None,
     pretrained=True
 ):
-    # if the working directory is alread ml_drought don't need ../data
-    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
-        data_path = Path('data')
-    else:
-        data_path = Path('../data')
-    if not pretrained:
-        predictor = RecurrentNetwork(
-            hidden_size=128,
-            data_folder=data_path,
-            experiment=experiment,
-            include_pred_month=include_pred_month,
-            surrounding_pixels=surrounding_pixels,
-            ignore_vars=ignore_vars,
-        )
-        predictor.train(num_epochs=50, early_stopping=5)
-        predictor.evaluate(save_preds=True)
-        predictor.save_model()
-    else:
-        predictor = load_model(data_path / f'models/{experiment}/rnn/model.pt')
+    predictor = RecurrentNetwork(
+        hidden_size=128,
+        data_folder=get_data_path(),
+        experiment=experiment,
+        include_pred_month=include_pred_month,
+        surrounding_pixels=surrounding_pixels,
+        ignore_vars=ignore_vars,
+    )
+    predictor.train(num_epochs=50, early_stopping=5)
+    predictor.evaluate(save_preds=True)
+    predictor.save_model()
 
     _ = predictor.explain(save_shap_values=True)
 
 
 def earnn(
-    experiment='one_month_forecast',
+    experiment="one_month_forecast",
     include_pred_month=True,
     surrounding_pixels=None,
     pretrained=True,
     ignore_vars=None
 ):
-    # if the working directory is alread ml_drought don't need ../data
-    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
-        data_path = Path('data')
-    else:
-        data_path = Path('../data')
+    data_path = get_data_path()
 
     if not pretrained:
         predictor = EARecurrentNetwork(
@@ -134,9 +107,9 @@ def earnn(
         predictor.evaluate(save_preds=True)
         predictor.save_model()
     else:
-        predictor = load_model(data_path / f'models/{experiment}/ealstm/model.pt')
+        predictor = load_model(data_path / f"models/{experiment}/ealstm/model.pt")
 
-    test_file = data_path / f'features/{experiment}/test/2018_3'
+    test_file = data_path / f"features/{experiment}/test/2018_3"
     assert test_file.exists()
     all_shap_for_file(test_file, predictor, batch_size=100)
 

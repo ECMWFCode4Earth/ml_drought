@@ -2,10 +2,7 @@ import xarray as xr
 from typing import List, Optional
 
 from .base import BaseIndices
-from .utils import (
-    rolling_cumsum,
-    create_shape_aligned_climatology
-)
+from .utils import rolling_cumsum, create_shape_aligned_climatology
 
 
 class PercentNormalIndex(BaseIndices):
@@ -56,15 +53,17 @@ class PercentNormalIndex(BaseIndices):
     meteorological indices for drought monitoring in Iran. Int. J. Climatol.
     26, 971–985.
     """
-    name = 'percent_normal_index'
+
+    name = "percent_normal_index"
 
     @staticmethod
-    def calculatePNI(ds: xr.Dataset,
-                     variable: str,
-                     time_period: str,
-                     rolling_window: int = 3,
-                     clim_period: Optional[List[str]] = None,
-                     ) -> xr.DataArray:
+    def calculatePNI(
+        ds: xr.Dataset,
+        variable: str,
+        time_period: str,
+        rolling_window: int = 3,
+        clim_period: Optional[List[str]] = None,
+    ) -> xr.DataArray:
         """calculate Percent of Normal Index (PNI)
 
             Arguments:
@@ -87,11 +86,7 @@ class PercentNormalIndex(BaseIndices):
         ds_window = rolling_cumsum(ds, rolling_window)
 
         # calculate climatology based on time_period
-        mthly_climatology = (
-            ds_window
-            .groupby(f'time.{time_period}')
-            .mean(dim='time')
-        )
+        mthly_climatology = ds_window.groupby(f"time.{time_period}").mean(dim="time")
         clim = create_shape_aligned_climatology(
             ds_window, mthly_climatology, variable, time_period
         )
@@ -101,30 +96,33 @@ class PercentNormalIndex(BaseIndices):
         # drop the initial nans caused by the widnowed cumsum
         #  (e.g. window=3 the first 2 months)
         PNI = (
-            PNI
-            .dropna(dim='time', how='all')
-            .rename({variable: 'PNI'})
+            PNI.dropna(dim="time", how="all")
+            .rename({variable: "PNI"})
             .merge(ds_window)
-            .rename({variable: f'{variable}_cumsum'})
+            .rename({variable: f"{variable}_cumsum"})
         )
 
         return PNI, clim
 
-    def fit(self, variable: str,
-            rolling_window: int = 3,
-            time_str: str = 'month') -> None:
+    def fit(
+        self, variable: str, rolling_window: int = 3, time_str: str = "month"
+    ) -> None:
 
         coords = [c for c in self.ds.coords]
         vars = [v for v in self.ds.variables if v not in coords]
-        assert variable in vars, f"Must apply PNI to a \
+        assert (
+            variable in vars
+        ), f"Must apply PNI to a \
         variable in `self.ds`: {vars}"
 
         print(f"Fitting PNI for variable: {variable}")
-        PNI, clim = self.calculatePNI(self.ds,
-                                      variable=variable,
-                                      time_period=time_str,
-                                      rolling_window=rolling_window,
-                                      clim_period=None,)
+        PNI, clim = self.calculatePNI(
+            self.ds,
+            variable=variable,
+            time_period=time_str,
+            rolling_window=rolling_window,
+            clim_period=None,
+        )
 
         self.index = PNI
         self.climatology = clim

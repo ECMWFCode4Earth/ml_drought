@@ -67,7 +67,10 @@ class S5Exporter(CDSExporter):
         self.pressure_level = pressure_level
         self.granularity = granularity
 
-        assert self.granularity in ['hourly', 'monthly'], f"\
+        assert self.granularity in [
+            "hourly",
+            "monthly",
+        ], f"\
         No dataset can be created with \
         granularity: {granularity} and pressure_level: {pressure_level}"
 
@@ -181,7 +184,8 @@ class S5Exporter(CDSExporter):
         if break_up:
             # SPLIT THE API CALLS INTO MONTHS (speed up downloads)
             for year, month in itertools.product(
-                processed_selection_request["year"], processed_selection_request["month"]
+                processed_selection_request["year"],
+                processed_selection_request["month"],
             ):
                 updated_request = processed_selection_request.copy()
                 updated_request["year"] = [year]
@@ -218,8 +222,10 @@ class S5Exporter(CDSExporter):
         else:  # don't split by month
             output_paths.append(
                 self._export(
-                    self.dataset, processed_selection_request,
-                    show_api_request, in_parallel=False
+                    self.dataset,
+                    processed_selection_request,
+                    show_api_request,
+                    in_parallel=False,
                 )
             )
 
@@ -413,8 +419,11 @@ class S5Exporter(CDSExporter):
             processed_selection_request.update({"product_type": [self.product_type]})
 
         init_times_dict = self.get_s5_initialisation_times(
-            self.granularity, min_year=min_year, max_year=max_year,
-            min_month=min_month, max_month=max_month
+            self.granularity,
+            min_year=min_year,
+            max_year=max_year,
+            min_month=min_month,
+            max_month=max_month,
         )
 
         for key, val in init_times_dict.items():

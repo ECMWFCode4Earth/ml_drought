@@ -4,13 +4,20 @@ from random import shuffle as shuffle_list
 from typing import cast, Iterable, Union, Tuple, Optional
 
 
-def chunk_array(x: Union[Tuple[Union[torch.Tensor, np.ndarray, None], ...],
-                         Union[torch.Tensor, np.ndarray]],
-                y: Union[torch.Tensor, np.ndarray],
-                batch_size: int,
-                shuffle: bool = False) -> Iterable[Tuple[Tuple[Union[torch.Tensor,
-                                                                     np.ndarray, None], ...],
-                                                         Union[torch.Tensor, np.ndarray]]]:
+def chunk_array(
+    x: Union[
+        Tuple[Union[torch.Tensor, np.ndarray, None], ...],
+        Union[torch.Tensor, np.ndarray],
+    ],
+    y: Union[torch.Tensor, np.ndarray],
+    batch_size: int,
+    shuffle: bool = False,
+) -> Iterable[
+    Tuple[
+        Tuple[Union[torch.Tensor, np.ndarray, None], ...],
+        Union[torch.Tensor, np.ndarray],
+    ]
+]:
     """
     Chunk an array into batches of batch size `batch_size`
 
@@ -30,10 +37,12 @@ def chunk_array(x: Union[Tuple[Union[torch.Tensor, np.ndarray, None], ...],
     An iterator returning tuples of batches (x, y)
     """
     if type(x) is not tuple:
-        x = (x, )
+        x = (x,)
     x = cast(Tuple[Union[torch.Tensor, np.ndarray, None], ...], x)
 
-    assert x[0] is not None, f'x[0] should be historical data, and therefore should not be None'
+    assert (
+        x[0] is not None
+    ), f"x[0] should be historical data, and therefore should not be None"
     num_sections = max(1, x[0].shape[0] // batch_size)
 
     if type(x[0]) == np.ndarray:
@@ -42,10 +51,9 @@ def chunk_array(x: Union[Tuple[Union[torch.Tensor, np.ndarray, None], ...],
         return _chunk_tensor(x, y, num_sections, shuffle)
 
 
-def _chunk_ndarray(x: Tuple[Optional[np.ndarray], ...], y: np.ndarray,
-                   num_sections: int,
-                   shuffle: bool) -> Iterable[Tuple[Tuple[Optional[np.ndarray], ...],
-                                                    np.ndarray]]:
+def _chunk_ndarray(
+    x: Tuple[Optional[np.ndarray], ...], y: np.ndarray, num_sections: int, shuffle: bool
+) -> Iterable[Tuple[Tuple[Optional[np.ndarray], ...], np.ndarray]]:
 
     split_x = []
     for idx, x_section in enumerate(x):
@@ -61,10 +69,12 @@ def _chunk_ndarray(x: Tuple[Optional[np.ndarray], ...], y: np.ndarray,
     return [(chunk[:-1], chunk[-1]) for chunk in return_arrays]  # type: ignore
 
 
-def _chunk_tensor(x: Tuple[Optional[torch.Tensor], ...], y: torch.Tensor,
-                  num_sections: int,
-                  shuffle: bool) -> Iterable[Tuple[Tuple[Optional[torch.Tensor], ...],
-                                                   torch.Tensor]]:
+def _chunk_tensor(
+    x: Tuple[Optional[torch.Tensor], ...],
+    y: torch.Tensor,
+    num_sections: int,
+    shuffle: bool,
+) -> Iterable[Tuple[Tuple[Optional[torch.Tensor], ...], torch.Tensor]]:
     split_x = []
     for idx, x_section in enumerate(x):
         if x_section is not None:
