@@ -18,7 +18,7 @@ from pathlib import Path
 # NOTE: p84.162 == 'vertical integral of moisture flux'
 
 
-def rename_model_experiment_file(vars_: List[str]) -> None:
+def rename_model_experiment_file(vars_: List[str], data_dir: Path = Path('../data')) -> None:
     vars_joined = '_'.join(vars_)
     from_path = (data_dir / 'models' / 'one_month_forecast')
     to_path = (data_dir / 'models' / f'one_month_forecast_{vars_joined}')
