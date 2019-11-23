@@ -178,6 +178,7 @@ class TestEARecurrentNetwork:
         for key, val in test_dl.items():
             output = model.get_morris_gradient(val.x)
             assert type(output) is TrainData
+            assert (model.model_dir / "analysis/morris_value_historical.npy").exists()
 
 
 class TestEALSTMCell:

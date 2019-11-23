@@ -59,6 +59,12 @@ class NNBase(ModelBase):
         # move the model onto the right device
         raise NotImplementedError
 
+    def _make_analysis_folder(self) -> Path:
+        analysis_folder = self.model_dir / "analysis"
+        if not analysis_folder.exists():
+            analysis_folder.mkdir()
+        return analysis_folder
+
     def explain(
         self,
         x: Optional[List[torch.Tensor]] = None,
@@ -101,9 +107,7 @@ class NNBase(ModelBase):
         explain_arrays = self.explainer.shap_values(x)
 
         if save_shap_values:
-            analysis_folder = self.model_dir / "analysis"
-            if not analysis_folder.exists():
-                analysis_folder.mkdir()
+            analysis_folder = self._make_analysis_folder()
             for idx, shap_array in enumerate(explain_arrays):
                 np.save(
                     analysis_folder / f"shap_value_{idx_to_input[idx]}.npy", shap_array
@@ -353,7 +357,12 @@ class NNBase(ModelBase):
             output_tensors.append(x.static[start_idx : start_idx + num_inputs])
         return output_tensors
 
-    def get_morris_gradient(self, x: TrainData) -> TrainData:
+    def get_morris_gradient(
+        self,
+        x: TrainData,
+        save_explanations: bool = True,
+        var_names: Optional[List[str]] = None,
+    ) -> TrainData:
         """
         https://github.com/kratzert/ealstm_regional_modeling/blob/master/papercode/morris.py
 
@@ -396,5 +405,21 @@ class NNBase(ModelBase):
                     output_dict[key] = None
             else:
                 output_dict[key] = None
+
+        if save_explanations:
+            analysis_folder = self._make_analysis_folder()
+            for key, val in output_dict.items():
+                if val is not None:
+                    np.save(analysis_folder / f"morris_value_{key}.npy", val)
+                    np.save(
+                        analysis_folder / f"morris_input_{key}.npy",
+                        getattr(x, key).detach().cpu().numpy(),
+                    )
+            # save the variable names too
+            if var_names is not None:
+                with (analysis_folder / "morris_input_variable_names.pkl").open(
+                    "wb"
+                ) as f:
+                    pickle.dump(var_names, f)
 
         return TrainData(**output_dict)
