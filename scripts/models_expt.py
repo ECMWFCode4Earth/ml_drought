@@ -18,7 +18,12 @@ from pathlib import Path
 # NOTE: p84.162 == 'vertical integral of moisture flux'
 
 
-def rename_model_experiment_file(vars_: List[str], data_dir: Path = Path('../data')) -> None:
+def rename_model_experiment_file(vars_: List[str]) -> None:
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_dir = Path('data')
+    else:
+        data_dir = Path('../data')
+
     vars_joined = '_'.join(vars_)
     from_path = (data_dir / 'models' / 'one_month_forecast')
     to_path = (data_dir / 'models' / f'one_month_forecast_{vars_joined}')
@@ -166,7 +171,10 @@ if __name__ == '__main__':
     always_ignore_vars = ['ndvi', 'p84.162', 'sp', 'tp', 'Eb', ]
     all_vars = ['VCI', 'precip', 't2m', 'pev', 'E',
                 'SMsurf', 'SMroot', 'Eb', 'sp', 'tp', 'ndvi']
-    important_vars = ['VCI', 'precip', 't2m', 'pev', 'E', 'SMsurf', 'SMroot']
+    # important_vars = ['VCI', 'precip', 't2m', 'pev', 'E', 'SMsurf', 'SMroot']
+    # important_vars = ['precip', 't2m', 'pev', 'E', 'SMsurf', 'SMroot', 'VCI']
+    important_vars = ['t2m', 'pev', 'E', 'SMsurf', 'SMroot', 'VCI', 'precip']
+    # important_vars = ['VCI', 'precip', 't2m']
 
     # add variables in one at a time
     for i in range(len(important_vars)):
@@ -178,9 +186,10 @@ if __name__ == '__main__':
         vars_to_exclude = [v for v in important_vars if v not in vars_to_include]
         ignore_vars = always_ignore_vars + vars_to_exclude
         print(ignore_vars)
-
+        print(f'Experiment {vars_to_include}')
         # RUN EXPERIMENTS
         regression(ignore_vars=ignore_vars)
+
         linear_nn(ignore_vars=ignore_vars)
         rnn(ignore_vars=ignore_vars)
         earnn(pretrained=False, ignore_vars=ignore_vars)
@@ -188,6 +197,3 @@ if __name__ == '__main__':
         # RENAME DIRECTORY
         rename_model_experiment_file(vars_to_include)
         print(f'Experiment {vars_to_include} finished')
-
-
-
