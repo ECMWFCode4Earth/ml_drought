@@ -81,7 +81,11 @@ def export_era5_land():
     variables = ['total_precipitation',
                  '2m_temperature',
                  'evapotranspiration',
-                 'potential_evaporation']
+                 'potential_evaporation',
+                 'volumetric_soil_water_layer_1',
+                 'volumetric_soil_water_layer_2'
+                 'volumetric_soil_water_layer_3'
+                 'volumetric_soil_water_layer_4']
     for variable in variables:
         exporter.export(variable=variable,
                         break_up='yearly')
