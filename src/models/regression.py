@@ -100,7 +100,7 @@ class LinearRegression(ModelBase):
                     train_rmse.append(
                         np.sqrt(mean_squared_error(batch_y, train_pred_y))
                     )
-                    print(mean_squared_error(batch_y, train_pred_y))
+                    # print(mean_squared_error(batch_y, train_pred_y))
             if early_stopping is not None:
                 val_rmse = []
                 for x, y in val_dataloader:
