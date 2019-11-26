@@ -69,6 +69,7 @@ def export_era5():
     for variable in era5_variables:
         exporter.export(variable=variable, granularity="monthly")
 
+
 def export_era5_land():
     # if the working directory is alread ml_drought don't need ../data
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
@@ -77,9 +78,13 @@ def export_era5_land():
         data_path = Path('../data')
     exporter = ERA5LandExporter(data_path)
 
-    exporter.export(variable='2m_temperature',
-                    selection_request={'year': [2010], 'month': [1]},
-                    break_up='yearly')
+    variables = ['total_precipitation',
+                 '2m_temperature',
+                 'evapotranspiration',
+                 'potential_evaporation']
+    for variable in variables:
+        exporter.export(variable=variable,
+                        break_up='yearly')
 
 
 def export_vhi():
