@@ -37,3 +37,6 @@ switch_data_dirs.sh
 
 # pytest coverage files
 .coverage*
+
+# vscode settings
+.vscode
