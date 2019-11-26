@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Optional, Tuple
 from enum import Enum
 
-import climate_indices
-from climate_indices import indices
-
 from .base import BaseIndices
+
+climate_indices = None
+indices = None
 
 
 class SPI(BaseIndices):
@@ -51,24 +51,33 @@ class SPI(BaseIndices):
     A Multiscalar Drought Index Sensitive to Global Warming: The Standardized
     Precipitation Evapotranspiration Index. J. Climate, 23, 1696–1718.
     """
-    name = 'spi'
+
+    name = "spi"
 
     # SPI should be monthly so hardcoding this to avoid confusion
     resample = True
-    resample_str = 'month'
+    resample_str = "month"
 
     def __init__(self, data_path: Path) -> None:
         super().__init__(data_path, resample_str=self.resample_str)
 
+        global indices
+        global climate_indices
+
+        if climate_indices is None:
+            import climate_indices
+        if indices is None:
+            from climate_indices import indices
+
     @staticmethod
     def stack_pixels(da: xr.DataArray) -> xr.DataArray:
-        return da.stack(point=('lat', 'lon')).groupby('point')
+        return da.stack(point=("lat", "lon")).groupby("point")
 
     def init_distribution(self, distribution: str) -> Enum:
-        if distribution == 'gamma':
-            dist = climate_indices.indices.Distribution.gamma
-        elif distribution == 'pearson':
-            dist = climate_indices.indices.Distribution.pearson
+        if distribution == "gamma":
+            dist = climate_indices.indices.Distribution.gamma  # type: ignore
+        elif distribution == "pearson":
+            dist = climate_indices.indices.Distribution.pearson  # type: ignore
         else:
             assert False, f"{distribution} is not a valid distribution fit for SPI"
 
@@ -78,30 +87,41 @@ class SPI(BaseIndices):
 
     def init_start_year(self, data_start_year: Optional[int] = None) -> int:
         if data_start_year is None:
-            data_start_year = int(self.ds['time.year'].min().values)
+            data_start_year = int(self.ds["time.year"].min().values)
             print(f"Setting the data_start_year automatically: {data_start_year}")
 
-        assert isinstance(data_start_year, int), f"Expected data_start_year to be an integer"
+        assert isinstance(
+            data_start_year, int
+        ), f"Expected data_start_year to be an integer"
         return data_start_year
 
-    def init_calib_year(self, initial_yr: Optional[int],
-                        final_yr: Optional[int]) -> Tuple[int, int]:
+    def init_calib_year(
+        self, initial_yr: Optional[int], final_yr: Optional[int]
+    ) -> Tuple[int, int]:
         if initial_yr is None:
-            initial_yr = int(self.ds['time.year'].min().values)
+            initial_yr = int(self.ds["time.year"].min().values)
 
-            print(f"Setting the inital timeperiod for calibration manually:\n\
-            inital year: {initial_yr}")
+            print(
+                f"Setting the inital timeperiod for calibration manually:\n\
+            inital year: {initial_yr}"
+            )
 
         if final_yr is None:
-            final_yr = int(self.ds['time.year'].max().values)
+            final_yr = int(self.ds["time.year"].max().values)
 
-            print(f"Setting the final timeperiod for calibration manually:\n\
-            final year: {final_yr}")
+            print(
+                f"Setting the final timeperiod for calibration manually:\n\
+            final year: {final_yr}"
+            )
 
-        assert initial_yr >= int(self.ds['time.year'].min().values), f"intial_year\
+        assert initial_yr >= int(
+            self.ds["time.year"].min().values
+        ), f"intial_year\
         must be greater than the minimum year of the data\
         {initial_yr} >= {int(self.ds['time.year'].min().values)}"
-        assert final_yr <= int(self.ds['time.year'].max().values), f"final_year\
+        assert final_yr <= int(
+            self.ds["time.year"].max().values
+        ), f"final_year\
         must be less than the maximum year of the data .\
         {final_yr} <= {int(self.ds['time.year'].max().values)}"
 
@@ -109,12 +129,12 @@ class SPI(BaseIndices):
 
     def init_periodicity(self, periodicity: Optional[str]) -> Enum:
         if periodicity is None:
-            periodicity = 'gamma'
+            periodicity = "gamma"
 
-        if periodicity == 'monthly':
-            period = climate_indices.compute.Periodicity.monthly
-        elif periodicity == 'daily':
-            period = climate_indices.compute.Periodicity.daily
+        if periodicity == "monthly":
+            period = climate_indices.compute.Periodicity.monthly  # type: ignore
+        elif periodicity == "daily":
+            period = climate_indices.compute.Periodicity.daily  # type: ignore
         else:
             assert False, f"{periodicity} is not a valid periodicity for SPI"
 
@@ -122,40 +142,46 @@ class SPI(BaseIndices):
 
         return period
 
-    def initialise_params(self,
-                          scale: int,
-                          distribution: str,
-                          data_start_year: Optional[int],
-                          calibration_year_initial: Optional[int],
-                          calibration_year_final: Optional[int],
-                          periodicity: Optional[str]
-                          ) -> Tuple[int, Enum, int, int, int, int, Enum]:
+    def initialise_params(
+        self,
+        scale: int,
+        distribution: str,
+        data_start_year: Optional[int],
+        calibration_year_initial: Optional[int],
+        calibration_year_final: Optional[int],
+        periodicity: Optional[str],
+    ) -> Tuple[int, Enum, int, int, int, int, Enum]:
         self.scale = scale
         # distribution must be a climate_indices enum type
         dist = self.init_distribution(distribution)
         self.data_start_year = self.init_start_year(data_start_year)
-        self.calibration_year_initial, self.calibration_year_final = (
-            self.init_calib_year(
-                calibration_year_initial,
-                calibration_year_final
-            )
-        )
+        (
+            self.calibration_year_initial,
+            self.calibration_year_final,
+        ) = self.init_calib_year(calibration_year_initial, calibration_year_final)
         # period must be a climate_indices enum type
         period = self.init_periodicity(periodicity)
 
         return (  # type: ignore
-            self.scale, dist, self.data_start_year, self.calibration_year_initial,
-            self.calibration_year_final, self.init_calib_year, period
+            self.scale,
+            dist,
+            self.data_start_year,
+            self.calibration_year_initial,
+            self.calibration_year_final,
+            self.init_calib_year,
+            period,
         )
 
-    def fit(self,
-            variable: str,
-            scale: int = 3,
-            distribution: str = 'gamma',
-            data_start_year: Optional[int] = None,
-            calibration_year_initial: Optional[int] = None,
-            calibration_year_final: Optional[int] = None,
-            periodicity: Optional[str] = 'monthly',) -> None:
+    def fit(
+        self,
+        variable: str,
+        scale: int = 3,
+        distribution: str = "gamma",
+        data_start_year: Optional[int] = None,
+        calibration_year_initial: Optional[int] = None,
+        calibration_year_final: Optional[int] = None,
+        periodicity: Optional[str] = "monthly",
+    ) -> None:
         """fit the index to self.ds writing to new self.index `xr.Dataset`
 
         Arguments:
@@ -200,8 +226,12 @@ class SPI(BaseIndices):
 
         # initialise the parameters (including enums from climate_indices)
         _, dist, _, _, _, _, period = self.initialise_params(
-            scale, distribution, data_start_year, calibration_year_initial,
-            calibration_year_final, periodicity
+            scale,
+            distribution,
+            data_start_year,
+            calibration_year_initial,
+            calibration_year_final,
+            periodicity,
         )
 
         print(
@@ -215,12 +245,17 @@ class SPI(BaseIndices):
             "---------------\n",
         )
 
-        index = xr.apply_ufunc(
-            indices.spi, da, self.scale,
-            dist, self.data_start_year, self.calibration_year_initial,
-            self.calibration_year_final, period
+        index = xr.apply_ufunc(  # type: ignore
+            indices.spi,  # type: ignore
+            da,
+            self.scale,
+            dist,
+            self.data_start_year,
+            self.calibration_year_initial,
+            self.calibration_year_final,
+            period,
         )
 
-        self.index = index.unstack('point').to_dataset(name=f'SPI{scale}')
+        self.index = index.unstack("point").to_dataset(name=f"SPI{scale}")
 
         print("Fitted SPI and stored at `obj.index`")

@@ -1,0 +1,45 @@
+{
+  "data":"data",
+  "export":{
+    "vhi": [{}],
+    "era5POS": [
+       {  "granularity": "monthly",
+          "variable":"2m_temperature"
+       },
+       {  "granularity": "monthly",
+          "variable":"soil_temperature_level_1"
+       },
+       {  "granularity": "monthly",
+          "variable":"soil_type"
+       }
+      ],
+    "gleam": [{"granularity":  "monthly",
+               "variables": ["E", "SMroot", "SMsurf"]}],
+    "chirps": [{"region": "global", "period": "monthly"}],
+    "srtm": [{}]
+
+  },
+  "preprocess":{
+    "regrid_dataset": "reanalysis-era5-single-levels-monthly-means",
+    "vhi": {"init_args": {"var":  "VCI"}, "run_args": {"subset_str": "kenya"}},
+    "chirps": {"init_args": {}, "run_args": {"subset_str":  "kenya", "parallel": false}},
+    "reanalysis-era5-single-levels-monthly-means": {"init_args": {}, "run_args": {"subset_str":  "kenya"}},
+    "gleam": {"init_args": {}, "run_args": {"subset_str": "kenya", "resample_time": "M", "upsampling": false}},
+    "srtm": {"init_args": {}, "run_args": {}}
+  },
+  "engineer": {
+    "init_args": {"process_static":  true},
+    "run_args": {"test_year":  2018}
+  },
+  "models": {
+    "Persistence": {
+      "init_args":  {"experiment":  "one_month_forecast"},
+      "train_args":  {},
+      "evaluate_args": {"save_preds":  true}},
+    "EARecurrentNetwork": {
+      "init_args": {"hidden_size": 128, "experiment": "one_month_forecast", "include_pred_month": true},
+      "train_args": {"num_epochs": 50, "early_stopping": 5},
+      "evaluate_args": {"save_preds": true}
+    }
+  }
+}

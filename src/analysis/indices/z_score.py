@@ -44,37 +44,38 @@ class ZScoreIndex(BaseIndices):
     Z-Score. Int. J. Climatol.21, 745–758. http://dx.doi.org/10.1002/joc.658.
     """
 
-    name = 'z_score_index'
+    name = "z_score_index"
 
     @staticmethod
-    def ZSI(da: xr.DataArray,
-            dim: str = 'time',
-            **kwargs) -> xr.DataArray:
+    def ZSI(da: xr.DataArray, dim: str = "time", **kwargs) -> xr.DataArray:
         zsi = (da - da.median(dim=dim)) / da.std(dim=dim)
         return zsi
 
-    def fit(self, variable: str,
-            rolling_window: int = 3,
-            time_str: str = 'month') -> None:
+    def fit(
+        self, variable: str, rolling_window: int = 3, time_str: str = "month"
+    ) -> None:
         coords = [c for c in self.ds.coords]
         vars = [v for v in self.ds.variables if v not in coords]
-        assert variable in vars, f"Must apply ZSI to a \
+        assert (
+            variable in vars
+        ), f"Must apply ZSI to a \
         variable in `self.ds`: {vars}"
 
         print(f"Fitting ZSI for variable: {variable}")
         # 1. calculate a cumsum over `rolling_window` timesteps
         ds_window = rolling_cumsum(self.ds, rolling_window)
+
         # 2. calculate the ZSI for the variable
-        out_variable = 'ZSI'
+        out_variable = "ZSI"
         zsi = apply_over_period(
-            ds_window, func=self.ZSI,
-            in_variable=variable, out_variable=out_variable,
+            ds_window,
+            func=self.ZSI,
+            in_variable=variable,
+            out_variable=out_variable,
             time_str=time_str,
         )
-        ds_window = (
-            ds_window
-            .merge(zsi.drop('month'))
-            .rename({variable: f'{variable}_cumsum'})
+        ds_window = ds_window.merge(zsi.drop("month")).rename(
+            {variable: f"{variable}_cumsum"}
         )
 
         self.index = ds_window
