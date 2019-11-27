@@ -65,65 +65,6 @@ class NNBase(ModelBase):
             analysis_folder.mkdir()
         return analysis_folder
 
-    def explain(
-        self,
-        x: Optional[List[torch.Tensor]] = None,
-        var_names: Optional[List[str]] = None,
-        background_size: int = 100,
-        save_shap_values: bool = True,
-    ) -> Dict[str, np.ndarray]:
-        """
-        Expain the outputs of a trained model.
-
-        Arguments
-        ----------
-        x: The values to explain. If None, samples are randomly drawn from
-            the test data
-        var_names: The variable names of the historical inputs. If x is None, this
-            will be calculated. Only necessary if the arrays are going to be saved
-        background_size: the size of the background to use
-        save_shap_values: Whether or not to save the shap values
-
-        Returns
-        ----------
-        shap_dict: A dictionary of shap values for each of the model's input arrays
-        """
-        assert self.model is not None, "Model must be trained!"
-
-        if self.explainer is None:
-            background_samples = self._get_background(sample_size=background_size)
-            self.explainer: shap.DeepExplainer = shap.DeepExplainer(  # type: ignore
-                self.model, background_samples
-            )
-        if x is None:
-            # if no input is passed to explain, take 10 values and explain them
-            test_arrays_loader = self.get_dataloader(
-                mode="test", shuffle=False, batch_file_size=1, to_tensor=True
-            )
-            key, val = list(next(iter(test_arrays_loader)).items())[0]
-            x = self.make_shap_input(val.x, start_idx=0, num_inputs=10)
-            var_names = val.x_vars
-
-        explain_arrays = self.explainer.shap_values(x)
-
-        if save_shap_values:
-            analysis_folder = self._make_analysis_folder()
-            for idx, shap_array in enumerate(explain_arrays):
-                np.save(
-                    analysis_folder / f"shap_value_{idx_to_input[idx]}.npy", shap_array
-                )
-                np.save(
-                    analysis_folder / f"input_{idx_to_input[idx]}.npy",
-                    x[idx].cpu().numpy(),
-                )
-
-            # save the variable names too
-            if var_names is not None:
-                with (analysis_folder / "input_variable_names.pkl").open("wb") as f:
-                    pickle.dump(var_names, f)
-
-        return {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)}
-
     def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> torch.nn.Module:
         raise NotImplementedError
 
@@ -329,48 +270,108 @@ class NNBase(ModelBase):
     def _one_hot_months(self, indices: torch.Tensor) -> torch.Tensor:
         return torch.eye(14, device=self.device)[indices.long()][:, 1:-1]
 
-    def make_shap_input(
-        self, x: TrainData, start_idx: int = 0, num_inputs: int = 10
-    ) -> List[torch.Tensor]:
+    def explain(
+        self,
+        x: Optional[TrainData] = None,
+        var_names: Optional[List[str]] = None,
+        save_explanations: bool = True,
+        background_size: int = 100,
+        start_idx: int = 0,
+        num_inputs: int = 10,
+        method: str = "shap",
+    ) -> TrainData:
         """
-        Returns a list of tensors, as is required
-        by the shap explainer
-        """
-        output_tensors = []
-        output_tensors.append(x.historical[start_idx : start_idx + num_inputs])
-        # one hot months
-        one_hot_months = self._one_hot_months(
-            x.pred_months[start_idx : start_idx + num_inputs]
-        )
-        output_tensors.append(one_hot_months)
-        output_tensors.append(x.latlons[start_idx : start_idx + num_inputs])
-        if x.current is None:
-            output_tensors.append(torch.zeros(num_inputs, 1))
-        else:
-            output_tensors.append(x.current[start_idx : start_idx + num_inputs])
-        # yearly aggs
-        output_tensors.append(x.yearly_aggs[start_idx : start_idx + num_inputs])
-        # static data
-        if x.static is None:
-            output_tensors.append(torch.zeros(num_inputs, 1))
-        else:
-            output_tensors.append(x.static[start_idx : start_idx + num_inputs])
-        return output_tensors
+        Expain the outputs of a trained model.
 
-    def get_morris_gradient(
+        Arguments
+        ----------
+        x: The values to explain. If None, samples are randomly drawn from
+            the test data
+        var_names: The variable names of the historical inputs. If x is None, this
+            will be calculated. Only necessary if the arrays are going to be saved
+        background_size: the size of the background to use
+        save_shap_values: Whether or not to save the shap values
+
+        Returns
+        ----------
+        shap_dict: A dictionary of shap values for each of the model's input arrays
+        """
+
+        assert self.model is not None, "Model must be trained!"
+        if x is None:
+            # if no input is passed to explain, take 10 values and explain them
+            test_arrays_loader = self.get_dataloader(
+                mode="test", shuffle=False, batch_file_size=1, to_tensor=True
+            )
+            _, val = list(next(iter(test_arrays_loader)).items())[0]
+            var_names = val.var_names
+            x = val.x
+
+        if method == "shap":
+            explanations = self._get_shap_explanations(
+                x, background_size, start_idx, num_inputs
+            )
+        elif method == "morris":
+            explanations = self._get_morris_explanations(x)
+
+        if save_explanations:
+            analysis_folder = self._make_analysis_folder()
+            for idx, expl_array in enumerate(explanations):
+                org_array = x.__getattribute__(idx_to_input[idx])
+                if org_array is not None:
+                    np.save(
+                        analysis_folder / f"{method}_value_{idx_to_input[idx]}.npy",
+                        expl_array,
+                    )
+                    np.save(
+                        analysis_folder / f"{method}_{idx_to_input[idx]}.npy",
+                        org_array.detach().cpu().numpy(),
+                    )
+
+            # save the variable names too
+            if var_names is not None:
+                with (analysis_folder / "input_variable_names.pkl").open("wb") as f:
+                    pickle.dump(var_names, f)
+
+        return TrainData(**explanations)
+
+    def _get_shap_explanations(
         self,
         x: TrainData,
-        save_explanations: bool = True,
-        var_names: Optional[List[str]] = None,
-    ) -> TrainData:
+        background_size: int = 100,
+        start_idx: int = 0,
+        num_inputs: int = 10,
+    ) -> Dict[str, np.ndarray]:
+
+        if self.explainer is None:
+            background_samples = self._get_background(sample_size=background_size)
+            self.explainer: shap.DeepExplainer = shap.DeepExplainer(  # type: ignore
+                self.model, background_samples
+            )
+
+        # make val.x a list of tensors, as is required by the shap explainer
+        output_tensors = []
+
+        for _, val in sorted(idx_to_input.items()):
+            tensor = x.__getattribute__(val)
+            if tensor is not None:
+                if val == "pred_months":
+                    output_tensors.append(self._one_hot_months(tensor[start_idx : start_idx + num_inputs]))
+                else:
+                    output_tensors.append(tensor[start_idx : start_idx + num_inputs])
+            else:
+                output_tensors.append(torch.zeros(num_inputs, 1))
+
+        explain_arrays = self.explainer.shap_values(output_tensors)
+
+        return {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)}
+
+    def _get_morris_explanations(self, x: TrainData) -> Dict[str, np.ndarray]:
         """
         https://github.com/kratzert/ealstm_regional_modeling/blob/master/papercode/morris.py
 
         Will return a train data object with the Morris gradients of the inputs
         """
-        assert (
-            self.model is not None
-        ), "Model must be trained before the Morris gradient can be calculated!"
 
         self.model.eval()
         self.model.zero_grad()
@@ -406,20 +407,4 @@ class NNBase(ModelBase):
             else:
                 output_dict[key] = None
 
-        if save_explanations:
-            analysis_folder = self._make_analysis_folder()
-            for key, val in output_dict.items():
-                if val is not None:
-                    np.save(analysis_folder / f"morris_value_{key}.npy", val)
-                    np.save(
-                        analysis_folder / f"morris_input_{key}.npy",
-                        getattr(x, key).detach().cpu().numpy(),
-                    )
-            # save the variable names too
-            if var_names is not None:
-                with (analysis_folder / "morris_input_variable_names.pkl").open(
-                    "wb"
-                ) as f:
-                    pickle.dump(var_names, f)
-
-        return TrainData(**output_dict)
+        return output_dict

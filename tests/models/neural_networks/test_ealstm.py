@@ -175,10 +175,15 @@ class TestEARecurrentNetwork:
         test_dl = next(
             iter(model.get_dataloader(mode="test", to_tensor=True, shuffle_data=False))
         )
+
         for key, val in test_dl.items():
-            output = model.get_morris_gradient(val.x)
-            assert type(output) is TrainData
+            output_m = model.explain(val.x, save_explanations=True, method="morris")
+            assert type(output_m) is TrainData
             assert (model.model_dir / "analysis/morris_value_historical.npy").exists()
+
+            output_s = model.explain(val.x, save_explanations=True, method="shap")
+            assert type(output_s) is TrainData
+            assert (model.model_dir / "analysis/shap_value_historical.npy").exists()
 
 
 class TestEALSTMCell:
