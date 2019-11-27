@@ -356,7 +356,9 @@ class NNBase(ModelBase):
             tensor = x.__getattribute__(val)
             if tensor is not None:
                 if val == "pred_months":
-                    output_tensors.append(self._one_hot_months(tensor[start_idx : start_idx + num_inputs]))
+                    output_tensors.append(
+                        self._one_hot_months(tensor[start_idx : start_idx + num_inputs])
+                    )
                 else:
                     output_tensors.append(tensor[start_idx : start_idx + num_inputs])
             else:
