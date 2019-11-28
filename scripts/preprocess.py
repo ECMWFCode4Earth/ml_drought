@@ -93,7 +93,7 @@ def process_esa_cci_landcover():
     assert regrid_path.exists(), f'{regrid_path} not available'
 
     processor = ESACCIPreprocessor(data_path)
-    processor.preprocess(subset_str='kenya', regrid=regrid_path)
+    processor.preprocess(subset_str='kenya', regrid=regrid_path, cleanup=False)
 
 
 def preprocess_srtm():
@@ -142,13 +142,13 @@ def preprocess_era5():
 
 
 if __name__ == '__main__':
-    process_vci_2018()
-    process_precip_2018()
-    process_era5POS_2018()
-    process_gleam()
+    # process_vci_2018()
+    # process_precip_2018()
+    # process_era5POS_2018()
+    # process_gleam()
     process_esa_cci_landcover()
-    preprocess_srtm()
-    preprocess_era5()
-    preprocess_kenya_boundaries(selection='level_1')
-    preprocess_kenya_boundaries(selection='level_2')
-    preprocess_kenya_boundaries(selection='level_3')
+    # preprocess_srtm()
+    # preprocess_era5()
+    # preprocess_kenya_boundaries(selection='level_1')
+    # preprocess_kenya_boundaries(selection='level_2')
+    # preprocess_kenya_boundaries(selection='level_3')
