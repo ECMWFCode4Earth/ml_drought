@@ -3,6 +3,7 @@ import xarray as xr
 import pandas as pd
 from typing import Optional, List
 from shutil import rmtree
+import numpy as np
 
 from .base import BasePreProcessor
 from ..utils import get_modal_value_across_time
