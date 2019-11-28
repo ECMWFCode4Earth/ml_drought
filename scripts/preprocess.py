@@ -6,7 +6,7 @@ from src.preprocess import (VHIPreprocessor, CHIRPSPreprocessor,
                             PlanetOSPreprocessor, GLEAMPreprocessor,
                             S5Preprocessor,
                             ESACCIPreprocessor, SRTMPreprocessor,
-                            ERA5MonthlyMeanPreprocessor)
+                            ERA5MonthlyMeanPreprocessor, MODISNDVIPreprocessor)
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
 
@@ -141,14 +141,28 @@ def preprocess_era5():
     processor.preprocess(subset_str='kenya', regrid=regrid_path)
 
 
+def process_modis_ndvi(resample_time='M'):
+    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
+        data_path = Path('data')
+    else:
+        data_path = Path('../data')
+    regrid_path = data_path / 'interim/VCI_preprocessed/data_kenya.nc'
+    assert regrid_path.exists(), f'{regrid_path} not available'
+
+    processor = MODISNDVIPreprocessor(data_path)
+    processor.preprocess(subset_str='kenya',
+                         regrid=regrid_path, resample_time=resample_time)
+
 if __name__ == '__main__':
-    process_vci_2018()
-    process_precip_2018()
-    process_era5POS_2018()
-    process_gleam()
-    process_esa_cci_landcover()
-    preprocess_srtm()
-    preprocess_era5()
-    preprocess_kenya_boundaries(selection='level_1')
-    preprocess_kenya_boundaries(selection='level_2')
-    preprocess_kenya_boundaries(selection='level_3')
+    # process_vci_2018()
+    # process_precip_2018()
+    # process_era5POS_2018()
+    # process_gleam()
+    # process_esa_cci_landcover()
+    # preprocess_srtm()
+    # preprocess_era5()
+    # preprocess_kenya_boundaries(selection='level_1')
+    # preprocess_kenya_boundaries(selection='level_2')
+    # preprocess_kenya_boundaries(selection='level_3')
+    process_modis_ndvi(resample_time='M')
+
