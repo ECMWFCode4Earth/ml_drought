@@ -98,7 +98,7 @@ class ESACCIPreprocessor(BasePreProcessor):
 
         mapping = dict(mapping=dict(
             zip(list(legend.code), list(legend.group_value))))
-        ds['lc_class_group'] = xr.apply_ufunc(remap, ds, kwargs=mapping)
+        ds['lc_class_group'] = xr.apply_ufunc(remap, ds, kwargs=mapping).lc_class
 
         return ds
 
