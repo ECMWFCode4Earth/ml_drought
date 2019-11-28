@@ -175,6 +175,26 @@ class ESACCIPreprocessor(BasePreProcessor):
 
         print(f"** Done for ESA CCI landcover: {filename} **")
 
+    def _preprocess_interim_files(self, subset_str: Optional[str] = 'kenya',
+                                  one_hot_encode: bool = True,
+                                  group: bool = True) -> None:
+        ds = xr.open_mfdataset(self.get_filepaths('interim'))
+
+        ds = get_modal_value_across_time(ds.lc_class).to_dataset()
+
+        if one_hot_encode:
+            ds = self._one_hot_encode(ds, group=group)
+
+        filename = self.dataset
+        if subset_str is not None:
+            filename = f'{filename}{"_" + subset_str}'
+        if one_hot_encode:
+            filename = f'{filename}_one_hot'
+        filename = f'{filename}.nc'
+
+        out = self.out_dir / filename
+        ds.to_netcdf(out)
+
     def preprocess(self, subset_str: Optional[str] = 'kenya',
                    regrid: Optional[Path] = None,
                    years: Optional[List[int]] = None,
@@ -224,22 +244,11 @@ class ESACCIPreprocessor(BasePreProcessor):
         for file in nc_files:
             self._preprocess_single(file, subset_str, regrid)
 
-        ds = xr.open_mfdataset(self.get_filepaths('interim'))
-
-        ds = get_modal_value_across_time(ds.lc_class).to_dataset()
-
-        if one_hot_encode:
-            ds = self._one_hot_encode(ds, group=group)
-
-        filename = self.dataset
-        if subset_str is not None:
-            filename = f'{filename}{"_" + subset_str}'
-        if one_hot_encode:
-            filename = f'{filename}_one_hot'
-        filename = f'{filename}.nc'
-
-        out = self.out_dir / filename
-        ds.to_netcdf(out)
+        self._preprocess_interim_files(
+            subset_str=subset_str,
+            one_hot_encode=one_hot_encode,
+            group=group,
+        )
 
         if cleanup:
             rmtree(self.interim)
