@@ -215,7 +215,6 @@ class ESACCIPreprocessor(BasePreProcessor):
                 legend_df
             )
             lc_class_ds.to_netcdf(self.out_dir / 'lc_class.nc')
-            assert False
             legend_df.to_csv(self.out_dir / 'legend.csv')
 
         # write the OHE data (if used as static variables)
