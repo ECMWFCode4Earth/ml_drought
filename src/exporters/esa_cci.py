@@ -38,6 +38,7 @@ class ESACCIExporter(BaseExporter):
             .translate(rm_punctuation)
             .translate(rm_digits)
             .rstrip().replace('   ', ' ')
+            .replace(' ', '_')
         )
 
     def read_legend(self) -> pd.DataFrame:

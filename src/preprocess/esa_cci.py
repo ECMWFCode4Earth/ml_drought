@@ -35,15 +35,84 @@ class ESACCIPreprocessor(BasePreProcessor):
             new_filename = f"{year}_{filename_stem}.nc"
         return new_filename
 
-    def _one_hot_encode(self, ds: xr.Dataset) -> xr.Dataset:
+    @staticmethod
+    def _map_to_groups(df: pd.DataFrame) -> pd.DataFrame:
+        """ Reduce the number of landcover classes by grouping them together """
+        map_ = {
+            'No data': 'no_data',
+            'Cropland, rainfed': 'cropland_rainfed',
+            'Herbaceous cover': 'herbaceous_cover',
+            'Tree or shrub cover': 'tree_or_shrub_cover',
+            'Cropland, irrigated or post-flooding': 'cropland_irrigated_or_postflooding',
+            'Mosaic cropland (>50%) / natural vegetation (tree, shrub, herbaceous cover) (<50%)': 'cropland_rainfed',
+            'Mosaic natural vegetation (tree, shrub, herbaceous cover) (>50%) / cropland (<50%) ': 'tree_or_shrub_cover',
+            'Tree cover, broadleaved, evergreen, closed to open (>15%)': 'tree_cover',
+            'Tree cover, broadleaved, deciduous, closed to open (>15%)': 'tree_cover',
+            'Tree cover, broadleaved, deciduous, closed (>40%)': 'tree_cover',
+            'Tree cover, broadleaved, deciduous, open (15-40%)': 'tree_cover',
+            'Tree cover, needleleaved, evergreen, closed to open (>15%)': 'tree_cover',
+            'Tree cover, needleleaved, evergreen, closed (>40%)': 'tree_cover',
+            'Tree cover, needleleaved, evergreen, open (15-40%)': 'tree_cover',
+            'Tree cover, needleleaved, deciduous, closed to open (>15%)': 'tree_cover',
+            'Tree cover, needleleaved, deciduous, closed (>40%)': 'tree_cover',
+            'Tree cover, needleleaved, deciduous, open (15-40%)': 'tree_cover',
+            'Tree cover, mixed leaf type (broadleaved and needleleaved)': 'tree_cover',
+            'Mosaic tree and shrub (>50%) / herbaceous cover (<50%)': 'tree_or_shrub_cover',
+            'Mosaic herbaceous cover (>50%) / tree and shrub (<50%)': 'herbaceous_cover',
+            'Shrubland': 'shrubland',
+            'Shrubland evergreen': 'shrubland',
+            'Shrubland deciduous': 'shrubland',
+            'Grassland': 'grassland',
+            'Lichens and mosses': 'lichens_and_mosses',
+            'Sparse vegetation (tree, shrub, herbaceous cover) (<15%)': 'tree_or_shrub_cover',
+            'Sparse tree (<15%)': 'tree_cover',
+            'Sparse shrub (<15%)': 'shrubland',
+            'Sparse herbaceous cover (<15%)': 'herbaceous_cover',
+            'Tree cover, flooded, fresh or brakish water': 'tree_cover',
+            'Tree cover, flooded, saline water': 'tree_cover',
+            'Shrub or herbaceous cover, flooded, fresh/saline/brakish water': 'shrubland',
+            'Urban areas': 'urban_areas',
+            'Bare areas': 'bare_areas',
+            'Consolidated bare areas': 'bare_areas',
+            'Unconsolidated bare areas': 'bare_areas',
+            'Water bodies': 'water_bodies',
+            'Permanent snow and ice': 'permanent_snow_and_ice',
+        }
+        # map to the groups defined above
+        df['group_label'] = df.label.map(map_)
 
-        legend = pd.read_csv(self.raw_folder / self.dataset / 'legend.csv')
+        # create ids
+        keys = df['group_label'].unique()
+        values = [i for i in range(len(keys))]
+        df['group_value'] = df.group_label.map(dict(zip(keys, values)))
+
+        return df
+
+    def _one_hot_encode(self, ds: xr.Dataset, group: bool = True) -> xr.Dataset:
+
+        legend = pd.read_csv(self.raw_folder / self.dataset / "legend.csv")
         # no data should have a value of 0 in the legend
+        legend = self._map_to_groups(legend)
 
-        for idx, row in legend.iterrows():
-            value, label = row.code, row.label_text
-            ds[f'{label}_one_hot'] = ds.lc_class.where(ds.lc_class == value, 0).clip(min=0, max=1)
-        ds = ds.drop('lc_class')
+        if group:
+            for grouped_val in df.group_value.unique():
+                group_values = list(
+                    legend.loc[legend.group_value == grouped_val].code)
+                group_label = str(
+                    legend.loc[legend.group_value == grouped_val].group_label.unique()[
+                        0]
+                )
+                ds[f"{group_label}_one_hot"] = ds.lc_class.where(
+                    np.isin(ds.lc_class, group_values), 0
+                ).clip(min=0, max=1)
+
+        else:
+            for idx, row in legend.iterrows():
+                value, label = row.code, row.group_label
+                ds[f"{label}_one_hot"] = ds.lc_class.where(ds.lc_class == value, 0).clip(
+                    min=0, max=1
+                )
+        ds = ds.drop("lc_class")
         return ds
 
     def _preprocess_single(self, netcdf_filepath: Path,
@@ -109,7 +178,8 @@ class ESACCIPreprocessor(BasePreProcessor):
                    regrid: Optional[Path] = None,
                    years: Optional[List[int]] = None,
                    cleanup: bool = True,
-                   one_hot_encode: bool = True) -> None:
+                   one_hot_encode: bool = True,
+                   group: bool = True) -> None:
         """Preprocess all of the ESA CCI landcover .nc files to produce
         one subset file resampled to the timestep of interest.
         (downloaded as annual timesteps)
@@ -127,6 +197,9 @@ class ESACCIPreprocessor(BasePreProcessor):
             If true, delete interim files created by the class
         one_hot_encode: bool = True
             Whether to one hot encode the values
+        group: bool = True
+            Whether to group the landcover values
+            (defined by the `map_` dict object in `_map_to_groups()`)
 
         Note:
         ----
@@ -153,7 +226,7 @@ class ESACCIPreprocessor(BasePreProcessor):
         ds = get_modal_value_across_time(ds.lc_class).to_dataset()
 
         if one_hot_encode:
-            ds = self._one_hot_encode(ds)
+            ds = self._one_hot_encode(ds, group=group)
 
         filename = self.dataset
         if subset_str is not None:
