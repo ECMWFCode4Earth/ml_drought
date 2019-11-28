@@ -92,6 +92,7 @@ class ESACCIPreprocessor(BasePreProcessor):
     @staticmethod
     def _reassign_lc_class_to_groups(ds: xr.Dataset, legend: pd.DataFrame) -> xr.Dataset:
         """ https://github.com/pydata/xarray/issues/2568#issuecomment-441343812 """
+        print("Creating new DataArray with group values instead of original code")
 
         def remap(array, mapping):
             return np.array([mapping[k] for k in array.ravel()]).reshape(array.shape)
@@ -214,6 +215,7 @@ class ESACCIPreprocessor(BasePreProcessor):
                 legend_df
             )
             lc_class_ds.to_netcdf(self.out_dir / 'lc_class.nc')
+            assert False
             legend_df.to_csv(self.out_dir / 'legend.csv')
 
         # write the OHE data (if used as static variables)
