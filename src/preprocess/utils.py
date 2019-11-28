@@ -12,10 +12,9 @@ gpd = None
 Polygon = None
 
 
-def select_bounding_box(ds: xr.Dataset,
-                        region: Region,
-                        inverse_lat: bool = False,
-                        inverse_lon: bool = False) -> xr.Dataset:
+def select_bounding_box(
+    ds: xr.Dataset, region: Region, inverse_lat: bool = False, inverse_lon: bool = False
+) -> xr.Dataset:
     """ using the Region namedtuple defined in engineering.regions.py select
     the subset of the dataset that you have defined that region for.
 
@@ -37,38 +36,50 @@ def select_bounding_box(ds: xr.Dataset,
         Dataset with a subset of the whol region defined by the Region object
     """
     print(f"selecting region: {region.name} from ds")
-    assert isinstance(ds, xr.Dataset) or isinstance(ds, xr.DataArray), f"ds. " \
-        f"Must be an xarray object! currently: {type(ds)}"
+    assert isinstance(ds, xr.Dataset) or isinstance(ds, xr.DataArray), (
+        f"ds. " f"Must be an xarray object! currently: {type(ds)}"
+    )
 
     dims = list(ds.dims.keys())
     variables = [var for var in ds.variables if var not in dims]
 
-    latmin, latmax, lonmin, lonmax = region.latmin, region.latmax, region.lonmin, region.lonmax
+    latmin, latmax, lonmin, lonmax = (
+        region.latmin,
+        region.latmax,
+        region.lonmin,
+        region.lonmax,
+    )
 
-    if 'latitude' in dims and 'longitude' in dims:
+    if "latitude" in dims and "longitude" in dims:
         ds_slice = ds.sel(
             latitude=slice(latmax, latmin) if inverse_lat else slice(latmin, latmax),
-            longitude=slice(lonmax, lonmin) if inverse_lon else slice(lonmin, lonmax))
-    elif 'lat' in dims and 'lon' in dims:
+            longitude=slice(lonmax, lonmin) if inverse_lon else slice(lonmin, lonmax),
+        )
+    elif "lat" in dims and "lon" in dims:
         ds_slice = ds.sel(
             lat=slice(latmax, latmin) if inverse_lat else slice(latmin, latmax),
-            lon=slice(lonmax, lonmin) if inverse_lon else slice(lonmin, lonmax))
+            lon=slice(lonmax, lonmin) if inverse_lon else slice(lonmin, lonmax),
+        )
     else:
-        raise ValueError(f'Your `xr.ds` does not have lon / longitude in the '
-                         f'dimensions. Currently: {[dim for dim in ds.dims.keys()]}')
+        raise ValueError(
+            f"Your `xr.ds` does not have lon / longitude in the "
+            f"dimensions. Currently: {[dim for dim in ds.dims.keys()]}"
+        )
 
     for variable in variables:
-        assert ds_slice[variable].values.size != 0, f"Your slice has returned NO values. " \
-            f"Sometimes this means that the latmin, latmax are the wrong way around. " \
+        assert ds_slice[variable].values.size != 0, (
+            f"Your slice has returned NO values. "
+            f"Sometimes this means that the latmin, latmax are the wrong way around. "
             f"Try switching the order of latmin, latmax"
+        )
     return ds_slice
 
 
 class SHPtoXarray:
     def __init__(self):
         print(
-            'the SHPtoXarray functionality requires'
-            'rasterio, Affine, geopandas and shapely'
+            "the SHPtoXarray functionality requires"
+            "rasterio, Affine, geopandas and shapely"
         )
 
         global features
@@ -88,7 +99,9 @@ class SHPtoXarray:
             from shapely.geometry import Polygon
 
     @staticmethod
-    def transform_from_latlon(lat: xr.DataArray, lon: xr.DataArray) -> Affine:  # type: ignore
+    def transform_from_latlon(
+        lat: xr.DataArray, lon: xr.DataArray
+    ) -> Affine:  # type: ignore
         """ input 1D array of lat / lon and output an Affine transformation
         """
         lat = np.asarray(lat)
@@ -97,34 +110,42 @@ class SHPtoXarray:
         scale = Affine.scale(lon[1] - lon[0], lat[1] - lat[0])  # type: ignore
         return trans * scale
 
-    def rasterize(self, shapes: List[Polygon],  # type: ignore
-                  coords: DataArrayCoordinates,
-                  variable_name: str,
-                  **kwargs):
+    def rasterize(
+        self,
+        shapes: List[Polygon],  # type: ignore
+        coords: DataArrayCoordinates,
+        variable_name: str,
+        **kwargs,
+    ):
         """Rasterize a list of (geometry, fill_value) tuples onto the given
         xarray coordinates. This only works for 1d latitude and longitude
         arrays.
         """
         fill = np.nan
         transform: Affine = self.transform_from_latlon(  # type: ignore
-            coords['lat'], coords['lon']
+            coords["lat"], coords["lon"]
         )
-        out_shape: Tuple = (len(coords['lat']), len(coords['lon']))
+        out_shape: Tuple = (len(coords["lat"]), len(coords["lon"]))
         raster: np.ndarray = features.rasterize(  # type: ignore
-            shapes, out_shape=out_shape, fill=fill,
-            transform=transform, dtype=float, **kwargs
+            shapes,
+            out_shape=out_shape,
+            fill=fill,
+            transform=transform,
+            dtype=float,
+            **kwargs,
         )
-        spatial_coords: Dict = {
-            'lat': coords['lat'], 'lon': coords['lon']
-        }
-        dims = ['lat', 'lon']
+        spatial_coords: Dict = {"lat": coords["lat"], "lon": coords["lon"]}
+        dims = ["lat", "lon"]
 
         return xr.Dataset({variable_name: (dims, raster)}, coords=spatial_coords)
 
-    def shapefile_to_xarray(self, da: xr.DataArray,
-                            shp_path: Path,
-                            var_name: str = 'region',
-                            lookup_colname: Optional[str] = None) -> xr.Dataset:
+    def shapefile_to_xarray(
+        self,
+        da: xr.DataArray,
+        shp_path: Path,
+        var_name: str = "region",
+        lookup_colname: Optional[str] = None,
+    ) -> xr.Dataset:
         """ Create a new coord for the da indicating whether or not it
          is inside the shapefile
 
@@ -166,11 +187,12 @@ class SHPtoXarray:
 
         # allow the user to see the column headers
         if lookup_colname is None:
-            print('lookup_colname MUST be provided (see error message below)')
+            print("lookup_colname MUST be provided (see error message below)")
             print(gdf.head())
 
-        assert lookup_colname in gdf.columns, \
-            f'lookup_colname must be one of: {list(gdf.columns)}'
+        assert (
+            lookup_colname in gdf.columns
+        ), f"lookup_colname must be one of: {list(gdf.columns)}"
 
         # 2. create a list of tuples (shapely.geometry, id)
         # this allows for many different polygons within a .shp file
@@ -178,9 +200,7 @@ class SHPtoXarray:
         shapes = [(shape, n) for n, shape in enumerate(gdf.geometry)]
 
         # 3. create a new variable set to the id in `shapes` (same shape as da)
-        ds = self.rasterize(
-            shapes=shapes, coords=da.coords, variable_name=var_name
-        )
+        ds = self.rasterize(shapes=shapes, coords=da.coords, variable_name=var_name)
         values = [value for value in gdf[lookup_colname].to_list()]
         keys = [str(key) for key in gdf.index.to_list()]
         data_vals = ds[[d for d in ds.data_vars][0]].values
@@ -189,20 +209,22 @@ class SHPtoXarray:
 
         # Check for None in keys/values
         keys = [
-            key for key, value in zip(keys, values)
+            key
+            for key, value in zip(keys, values)
             if (values is not None) & (keys is not None)
         ]
         values = [
-            key for key, value in zip(keys, values)
+            key
+            for key, value in zip(keys, values)
             if (values is not None) & (keys is not None)
         ]
         # assign to attrs
-        ds.attrs['keys'] = ', '.join(keys)
-        ds.attrs['values'] = ', '.join(values)
-        ds.attrs['unique_values'] = ', '.join(unique_values)
+        ds.attrs["keys"] = ", ".join(keys)
+        ds.attrs["values"] = ", ".join(values)
+        ds.attrs["unique_values"] = ", ".join(unique_values)
 
         if ds[var_name].isnull().mean() <= 0.01:
-            print('NOTE: Only 1% of values overlap with shapes')
-            print('Are you certain the subset or shapefile are the correct region?')
+            print("NOTE: Only 1% of values overlap with shapes")
+            print("Are you certain the subset or shapefile are the correct region?")
 
         return ds

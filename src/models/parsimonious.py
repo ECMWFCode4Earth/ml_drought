@@ -12,22 +12,26 @@ class Persistence(ModelBase):
     for VHI in March 2018 will be VHI for February 2018 (assuming monthly time-granularity).
     """
 
-    model_name = 'previous_month'
+    model_name = "previous_month"
 
     def train(self) -> None:
         pass
 
     def save_model(self) -> None:
-        print('Move on! Nothing to save here!')
+        print("Move on! Nothing to save here!")
 
     def predict(
         self,
     ) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
 
         test_arrays_loader = DataLoader(
-            data_path=self.data_path, batch_file_size=self.batch_size,
-            experiment=self.experiment, shuffle_data=False, mode='test', normalize=False,
-            pred_months=self.pred_months
+            data_path=self.data_path,
+            batch_file_size=self.batch_size,
+            experiment=self.experiment,
+            shuffle_data=False,
+            mode="test",
+            normalize=False,
+            pred_months=self.pred_months,
         )
 
         preds_dict: Dict[str, np.ndarray] = {}
@@ -37,11 +41,14 @@ class Persistence(ModelBase):
                 try:
                     target_idx = val.x_vars.index(val.y_var)
                 except ValueError as e:
-                    print('Target variable not in prediction data!')
+                    print("Target variable not in prediction data!")
                     raise e
 
                 preds_dict[key] = val.x.historical[:, -1, [target_idx]]
-                test_arrays_dict[key] = {'y': val.y, 'latlons': val.latlons,
-                                         'time': val.target_time}
+                test_arrays_dict[key] = {
+                    "y": val.y,
+                    "latlons": val.latlons,
+                    "time": val.target_time,
+                }
 
         return test_arrays_dict, preds_dict

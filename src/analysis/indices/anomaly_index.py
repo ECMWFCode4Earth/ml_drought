@@ -2,10 +2,7 @@ import xarray as xr
 import numpy as np
 
 from .base import BaseIndices
-from .utils import (
-    rolling_cumsum,
-    apply_over_period,
-)
+from .utils import rolling_cumsum, apply_over_period
 
 
 class AnomalyIndex(BaseIndices):
@@ -42,14 +39,17 @@ class AnomalyIndex(BaseIndices):
 
     http://www.droughtmanagement.info/rainfall-anomaly-index-rai/
     """
-    name = 'rainfall_anomaly_index'
+
+    name = "rainfall_anomaly_index"
 
     @staticmethod
-    def assign_magnitudes(y: xr.Dataset,
-                          anom: xr.DataArray,
-                          rai_plus: xr.DataArray,
-                          rai_minus: xr.DataArray,
-                          variable: str) -> xr.Dataset:
+    def assign_magnitudes(
+        y: xr.Dataset,
+        anom: xr.DataArray,
+        rai_plus: xr.DataArray,
+        rai_minus: xr.DataArray,
+        variable: str,
+    ) -> xr.Dataset:
         """ assign magnitudes to positive and negative anomalies """
         # REVERSE boolean indexing
         # if anom values are NOT less than/equal than fill with PLUS values
@@ -71,20 +71,16 @@ class AnomalyIndex(BaseIndices):
         y_minus_np = np.ma.array(y_minus_np, mask=(~y_minus_m_np))
 
         # recombine masked arrays
-        rai_array = (
-            np.ma.array(
-                y_plus_np.filled(1) * y_minus_np.filled(1),
-                mask=(y_plus_np.mask * y_minus_np.mask)
-            )
+        rai_array = np.ma.array(
+            y_plus_np.filled(1) * y_minus_np.filled(1),
+            mask=(y_plus_np.mask * y_minus_np.mask),
         )
 
         rai = xr.ones_like(y)
-        rai[variable] = (['time', 'lat', 'lon'], rai_array)
+        rai[variable] = (["time", "lat", "lon"], rai_array)
         return rai
 
-    def RAI(self, da: xr.DataArray,
-            variable: str,
-            dim: str = 'time',) -> xr.DataArray:
+    def RAI(self, da: xr.DataArray, variable: str, dim: str = "time") -> xr.DataArray:
         """ Rainfall Anomaly Index """
         # calculations
         y = da.copy()
@@ -108,30 +104,27 @@ class AnomalyIndex(BaseIndices):
 
         return rai
 
-    def fit(self, variable: str,
-            time_period: str = 'month',
-            rolling_window: int = 3) -> None:
+    def fit(
+        self, variable: str, time_period: str = "month", rolling_window: int = 3
+    ) -> None:
 
         print("Fitting Rainfall Anomaly Index")
 
         # 1. calculate a cumsum over `rolling_window` timesteps
         ds_window = rolling_cumsum(self.ds, rolling_window)
 
-        out_variable = 'RAI'
+        out_variable = "RAI"
 
         rai = apply_over_period(  # type: ignore
-            ds_window, func=self.RAI,
+            ds_window,
+            func=self.RAI,
             in_variable=variable,
             out_variable=out_variable,
             time_str=time_period,
-            **{'variable': variable}
+            **{"variable": variable},
         )
-        rai = rai.drop('month')
-        ds_window = (
-            ds_window
-            .merge(rai)
-            .rename({variable: f'{variable}_cumsum'})
-        )
+        rai = rai.drop("month")
+        ds_window = ds_window.merge(rai).rename({variable: f"{variable}_cumsum"})
 
         self.index = ds_window
         print(f"Fitted Rainfall Anomaly Index and stored at `obj.index`")

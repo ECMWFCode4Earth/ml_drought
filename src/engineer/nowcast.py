@@ -25,7 +25,7 @@ class _NowcastEngineer(_EngineerBase):
     Where P is the `non_target_variable` and V is the `target_variable`.
     t=0 is the `target_timestep`.
     """
-    name = 'nowcast'
+    name = "nowcast"
 
     def _stratify_xy(
         self,
@@ -82,8 +82,10 @@ class _NowcastEngineer(_EngineerBase):
 
         # only expect ONE y timestamp
         if sum(y_target) != 1:
-            print(f"Wrong number of y values! Expected 1, got {sum(y_target)};\
-            returning None")
+            print(
+                f"Wrong number of y values! Expected 1, got {sum(y_target)};\
+            returning None"
+            )
             return None, cast(date, max_train_date)
 
         # create the target dataset `y_dataset` & the `x_non_target_dataset`
@@ -95,22 +97,24 @@ class _NowcastEngineer(_EngineerBase):
         # create the x_target_dataset with all -9999.0 at target time
         nan_target_variable = self._make_fill_value_dataset(y_dataset)
         x_target_dataset = (
-            ds[target_variable]
-            .isel(time=x_target)
-            .to_dataset(name=target_variable)
+            ds[target_variable].isel(time=x_target).to_dataset(name=target_variable)
         )
 
         if expected_length is not None:
             # filter for missing values in timesteps!
             if sum(x_target) != expected_length:
-                print(f"Wrong number of x values! Got {sum(x_target)} \
-                Returning None")
+                print(
+                    f"Wrong number of x values! Got {sum(x_target)} \
+                Returning None"
+                )
 
                 return None, cast(date, max_train_date)
 
             if sum(x_non_target) != expected_length + 1:
-                print(f"Wrong number of x values! Got {sum(x_target)}\
-                Returning None")
+                print(
+                    f"Wrong number of x values! Got {sum(x_target)}\
+                Returning None"
+                )
 
                 return None, cast(date, max_train_date)
 
@@ -121,9 +125,11 @@ class _NowcastEngineer(_EngineerBase):
 
         if x_dataset.time.size != cast(int, expected_length) + 1:
             # catch the errors as we get closer to the MINIMUM year
-            print("For the `nowcast` experiment we expect the\
+            print(
+                "For the `nowcast` experiment we expect the\
                   number of timesteps to be: {pred_months + 1}.\
-                  Currently: {x_dataset.time.size}")
+                  Currently: {x_dataset.time.size}"
+            )
             return None, cast(date, max_train_date)
 
         return {"x": x_dataset, "y": y_dataset}, cast(date, max_train_date)
