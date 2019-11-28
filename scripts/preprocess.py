@@ -151,7 +151,8 @@ def process_modis_ndvi(resample_time='M'):
 
     processor = MODISNDVIPreprocessor(data_path, resolution='1000')
     processor.preprocess(subset_str='kenya',
-                         regrid=regrid_path, resample_time=resample_time)
+                         regrid=regrid_path,
+                         resample_time=resample_time)
 
 if __name__ == '__main__':
     # process_vci_2018()

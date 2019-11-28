@@ -138,7 +138,7 @@ class MODISNDVIPreprocessor(BasePreProcessor):
         else:
             for file in nc_files:
                 self._preprocess_single(
-                    str(file), subset_str=subset_str, regrid=regrid)
+                    file, subset_str=subset_str, regrid=regrid)
 
         self.merge_files(subset_str=subset_str, resample_time=resample_time,
                          upsampling=upsampling)
