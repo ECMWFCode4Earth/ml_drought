@@ -95,7 +95,7 @@ class ESACCIPreprocessor(BasePreProcessor):
         legend = self._map_to_groups(legend)
 
         if group:
-            for grouped_val in df.group_value.unique():
+            for grouped_val in legend.group_value.unique():
                 group_values = list(
                     legend.loc[legend.group_value == grouped_val].code)
                 group_label = str(
