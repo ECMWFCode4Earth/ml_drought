@@ -89,7 +89,7 @@ class ESACCIPreprocessor(BasePreProcessor):
 
         return df
 
-    def _one_hot_encode(self, ds: xr.Dataset, group: bool = True) -> xr.Dataset:
+    def _one_hot_encode(self, ds: xr.Dataset, group: bool = True) -> Tuple[xr.Dataset, pd.DataFrame]:
 
         legend = pd.read_csv(self.raw_folder / self.dataset / "legend.csv")
         # no data should have a value of 0 in the legend
@@ -113,8 +113,8 @@ class ESACCIPreprocessor(BasePreProcessor):
                 ds[f"{label}_one_hot"] = ds.lc_class.where(ds.lc_class == value, 0).clip(
                     min=0, max=1
                 )
-        ds = ds.drop("lc_class")
-        return ds
+
+        return ds, legend
 
     def _preprocess_single(self, netcdf_filepath: Path,
                            subset_str: Optional[str] = 'kenya',
@@ -183,16 +183,25 @@ class ESACCIPreprocessor(BasePreProcessor):
         ds = get_modal_value_across_time(ds.lc_class).to_dataset()
 
         if one_hot_encode:
-            ds = self._one_hot_encode(ds, group=group)
+            ds, df = self._one_hot_encode(ds, group=group)
 
         filename = self.dataset
         if subset_str is not None:
             filename = f'{filename}{"_" + subset_str}'
         if one_hot_encode:
             filename = f'{filename}_one_hot'
-        filename = f'{filename}.nc'
 
+        filename = f'{filename}.nc'
         out = self.out_dir / filename
+
+        if one_hot_encode:
+            # write the output class (non-OHE map)
+            lc_class_ds = ds.lc_class
+            lc_class_ds.to_netcdf(self.out_dir / 'lc_class.nc')
+            df.to_csv(self.out_dir / 'legend.csv')
+
+        # write the OHE data (if used as static variables)
+        ds = ds.drop("lc_class")
         ds.to_netcdf(out)
 
     def preprocess(self, subset_str: Optional[str] = 'kenya',
