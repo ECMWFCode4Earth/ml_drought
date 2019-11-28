@@ -149,7 +149,7 @@ def process_modis_ndvi(resample_time='M'):
     regrid_path = data_path / 'interim/VCI_preprocessed/data_kenya.nc'
     assert regrid_path.exists(), f'{regrid_path} not available'
 
-    processor = MODISNDVIPreprocessor(data_path)
+    processor = MODISNDVIPreprocessor(data_path, resolution='1000')
     processor.preprocess(subset_str='kenya',
                          regrid=regrid_path, resample_time=resample_time)
 
