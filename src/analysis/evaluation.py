@@ -186,7 +186,9 @@ def monthly_score(
     ----------
     month: the month of data being evaluated
     models: A list of models to evaluate. These names must match the model.name attributes
-    experiment: The experiment being run, one of {'one_month_forecast', 'nowcast'}
+    experiment: The experiment being run, usually one of {'one_month_forecast', 'nowcast'}.
+    true_data_experiment: the name of the experiment (for one run of the Engineer),
+    one of {'one_month_forecast', 'nowcast'}. Defaults to the same as the `experiment` arg
     metrics: A list of metrics to calculate. If None, all (rmse, r2) are calculated.
     data_path: The location of the data directory
     pred_year: The year being predicted
