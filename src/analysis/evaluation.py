@@ -170,6 +170,7 @@ def monthly_score(
     models: List[str],
     metrics: List[str],
     experiment="one_month_forecast",
+    true_data_experiment: Optional[List] = None,
     data_path: Path = Path("data"),
     pred_year: int = 2018,
     target_var: str = "VCI",
@@ -205,9 +206,13 @@ def monthly_score(
         )
         model_files[model] = xr.open_dataset(pred_path).isel(time=0)
 
-    true_data = xr.open_dataset(
-        data_path / f"features/{experiment}/test" f"/{pred_year}_{month}/y.nc"
-    ).isel(time=0)
+    if true_data_experiment is None:
+        true_data_path = data_path / \
+            f"features/{experiment}/test" f"/{pred_year}_{month}/y.nc"
+    else:
+        true_data_path = data_path / \
+            f"features/{true_data_experiment}/test" f"/{pred_year}_{month}/y.nc"
+    true_data = xr.open_dataset(true_data_path).isel(time=0)
 
     output_score: Dict[str, Dict[str, float]] = {}
 
