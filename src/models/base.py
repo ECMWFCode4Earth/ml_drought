@@ -49,7 +49,7 @@ class ModelBase:
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
-        include_static: bool = True,
+        static: Optional[str] = "embedding",
     ) -> None:
 
         self.batch_size = batch_size
@@ -63,7 +63,10 @@ class ModelBase:
         self.models_dir = data_folder / "models" / self.experiment
         self.surrounding_pixels = surrounding_pixels
         self.ignore_vars = ignore_vars
-        self.include_static = include_static
+        self.static = static
+
+        # needs to be set by the train function
+        self.num_locations: Optional[int] = None
 
         if not self.models_dir.exists():
             self.models_dir.mkdir(parents=True, exist_ok=False)
@@ -195,7 +198,7 @@ class ModelBase:
         if self.include_pred_month:
             # one hot encoding, should be num_classes + 1, but
             # for us its + 2, since 0 is not a class either
-            pred_months_onehot = np.eye(14)[x_pm][:, 1:-1]
+            pred_months_onehot = self._one_hot(x_pm, 12)
             x_in = np.concatenate((x_in, pred_months_onehot), axis=-1)
         if self.include_latlons:
             x_in = np.concatenate((x_in, x_latlons), axis=-1)
@@ -203,10 +206,19 @@ class ModelBase:
             x_in = np.concatenate((x_in, x_cur), axis=-1)
         if self.include_yearly_aggs:
             x_in = np.concatenate((x_in, x_ym), axis=-1)
-        if self.include_static:
-            x_in = np.concatenate((x_in, x_static), axis=-1)
-
+        if self.static is not None:
+            if self.static == "features":
+                x_in = np.concatenate((x_in, x_static), axis=-1)
+            elif self.static == "embeddings":
+                assert type(self.num_locations) is int
+                x_s = self._one_hot(x_static, cast(int, self.num_locations))
+                x_in = np.concatenate((x_in, x_s), axis=-1)
         return x_in
+
+    def _one_hot(self, x: np.ndarray, num_vals: int):
+        if len(x.shape) > 1:
+            x = x.squeeze(-1)
+        return np.eye(num_vals + 2)[x][:, 1:-1]
 
     def get_dataloader(
         self, mode: str, to_tensor: bool = False, shuffle_data: bool = False, **kwargs
@@ -227,7 +239,7 @@ class ModelBase:
             "ignore_vars": self.ignore_vars,
             "monthly_aggs": self.include_monthly_aggs,
             "surrounding_pixels": self.surrounding_pixels,
-            "static": self.include_static,
+            "static": self.static,
             "device": self.device,
             "clear_nans": True,
             "normalize": True,
@@ -237,4 +249,8 @@ class ModelBase:
             # override the default args
             default_args[key] = val
 
-        return DataLoader(**default_args)
+        dl = DataLoader(**default_args)
+
+        if (self.static == "embeddings") and (self.num_locations is None):
+            self.num_locations = int(dl.max_loc_int)
+        return dl

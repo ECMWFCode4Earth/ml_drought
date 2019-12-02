@@ -29,6 +29,7 @@ def regression(
         experiment=experiment,
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
+        static="embeddings",
     )
     predictor.train()
     predictor.evaluate(save_preds=True)
