@@ -127,7 +127,7 @@ class DataLoader:
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         monthly_aggs: bool = True,
-        static: bool = False,
+        static: Optional[str] = "features",
         device: str = "cpu",
     ) -> None:
 
@@ -157,11 +157,11 @@ class DataLoader:
         self.to_tensor = to_tensor
         self.ignore_vars = ignore_vars
 
-        self.static = None
+        self.static: Union[xr.Dataset, Dict[Tuple[float, float], int], None] = None
         self.static_normalizing_dict = None
 
-        if static:
-            static_data_path = data_path / "features/static/data.nc"
+        static_data_path = data_path / "features/static/data.nc"
+        if static == "features":
             self.static = xr.open_dataset(static_data_path)
 
             if normalize:
@@ -170,6 +170,11 @@ class DataLoader:
                 )
                 with static_normalizer_path.open("rb") as f:
                     self.static_normalizing_dict = pickle.load(f)
+        if static == "embeddings":
+            self.static =  # TODO - return a dataset with one hot embedding for each latlon
+                            # or maybe an int
+
+
         self.device = torch.device(device)
 
     def __iter__(self):
