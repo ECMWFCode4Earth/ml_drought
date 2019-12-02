@@ -70,7 +70,7 @@ def annual_scores(
     experiment="one_month_forecast",
     true_data_experiment: Optional[str] = None,
     data_path: Path = Path("data"),
-    pred_year: int = 2018,
+    pred_years: List[int] = [2018],
     target_var: str = "VCI",
     verbose: bool = True,
     to_dataframe: bool = False,
@@ -87,30 +87,44 @@ def annual_scores(
         for model in models:
             monthly_scores[metric][model] = []
 
-    for month in range(1, 13):
-        scores = monthly_score(
-            month=month,
-            metrics=metrics,
-            models=models,
-            data_path=data_path,
-            pred_year=pred_year,
-            experiment=experiment,
-            target_var=target_var,
-            verbose=verbose,
-        )
+    out_dict = dict()
+    for pred_year in pred_years:
+        for month in range(1, 13):
+            scores = monthly_score(
+                month=month,
+                metrics=metrics,
+                models=models,
+                data_path=data_path,
+                pred_year=pred_year,
+                experiment=experiment,
+                true_data_experiment=true_data_experiment,
+                target_var=target_var,
+                verbose=verbose,
+            )
 
-        for model, metric_scores in scores.items():
-            for metric, score in metric_scores.items():
-                monthly_scores[metric][model].append(score)
-        for metric in metrics:
-            monthly_scores[metric]["month"].append(month)
-            monthly_scores[metric]["year"].append(pred_year)
+            for model, metric_scores in scores.items():
+                for metric, score in metric_scores.items():
+                    monthly_scores[metric][model].append(score)
+            for metric in metrics:
+                monthly_scores[metric]["month"].append(month)
+                monthly_scores[metric]["year"].append(pred_year)
+
+        if to_dataframe:
+            out_dict[pred_year] = annual_scores_to_dataframe(monthly_scores)
+        else:
+            out_dict[pred_year] = monthly_scores
 
     if to_dataframe:
-        return annual_scores_to_dataframe(monthly_scores)
-    else:
-        return monthly_scores
+        out_df = pd.DataFrame()
+        for k in out_dict.keys():
+            out_df = pd.concat([out_df, out_dict[k]])
 
+        out_df['time'] = out_df.apply(
+            lambda row: pd.to_datetime(f"{int(row.month)}-{int(row.year)}"), axis=1)
+
+        return out_df
+    else:
+        return out_dict
 
 def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
     """Convert the dictionary from annual_scores to a pd.DataFrame
