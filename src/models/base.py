@@ -252,5 +252,5 @@ class ModelBase:
         dl = DataLoader(**default_args)
 
         if (self.static == "embeddings") and (self.num_locations is None):
-            self.num_locations = int(dl.max_loc_int)
+            self.num_locations = cast(int, dl.max_loc_int)
         return dl

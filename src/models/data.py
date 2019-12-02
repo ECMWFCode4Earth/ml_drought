@@ -173,7 +173,9 @@ class DataLoader:
             if static == "embeddings":
                 # in case no static dataset was generated, we use the first
                 # historical dataset
-                self.static, self.max_loc_int = self._loc_to_int(xr.open_dataset(self.data_files[0] / "x.nc"))
+                self.static, self.max_loc_int = self._loc_to_int(
+                    xr.open_dataset(self.data_files[0] / "x.nc")
+                )
 
         self.device = torch.device(device)
 
@@ -198,10 +200,12 @@ class DataLoader:
         base_ds = base_ds[["lat", "lon"]]
 
         # next, we fill the values with unique integers
-        unique_values = np.arange(0, len(base_ds.lat) * len(base_ds.lon)).reshape((len(base_ds.lat), len(base_ds.lon)))
+        unique_values = np.arange(0, len(base_ds.lat) * len(base_ds.lon)).reshape(
+            (len(base_ds.lat), len(base_ds.lon))
+        )
         base_ds["encoding"] = (("lat", "lon"), unique_values)
 
-        return base_ds, unique_values.max()
+        return base_ds, int(unique_values.max())
 
     @staticmethod
     def _load_datasets(

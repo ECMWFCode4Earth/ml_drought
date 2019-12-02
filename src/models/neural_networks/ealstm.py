@@ -28,7 +28,7 @@ class EARecurrentNetwork(NNBase):
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
-        include_static: bool = True,
+        static: Optional[str] = "features",
         device: str = "cuda:0",
     ) -> None:
         super().__init__(
@@ -42,7 +42,7 @@ class EARecurrentNetwork(NNBase):
             include_yearly_aggs,
             surrounding_pixels,
             ignore_vars,
-            include_static,
+            static,
             device,
         )
 
@@ -84,7 +84,7 @@ class EARecurrentNetwork(NNBase):
             "include_yearly_aggs": self.include_yearly_aggs,
             "experiment": self.experiment,
             "ignore_vars": self.ignore_vars,
-            "include_static": self.include_static,
+            "static": self.static,
             "device": self.device,
         }
 
@@ -134,10 +134,13 @@ class EARecurrentNetwork(NNBase):
             if self.yearly_agg_size is None:
                 assert x_ref is not None
                 self.yearly_agg_size = x_ref[4].shape[-1]
-        if self.include_static:
+        if self.static:
             if self.static_size is None:
-                assert x_ref is not None
-                self.static_size = x_ref[5].shape[-1]
+                if self.static == "features":
+                    assert x_ref is not None
+                    self.static_size = x_ref[5].shape[-1]
+                elif self.static == "embeddings":
+                    self.static_size = self.num_locations
 
         model = EALSTM(
             features_per_month=self.features_per_month,

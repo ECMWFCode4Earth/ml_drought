@@ -6,7 +6,7 @@ import pickle
 
 import shap
 
-from typing import cast, Dict, List, Union, Tuple, Optional
+from typing import cast, Dict, List, Tuple, Optional
 
 from .base import ModelBase
 from .utils import chunk_array
