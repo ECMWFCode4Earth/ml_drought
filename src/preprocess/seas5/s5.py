@@ -391,18 +391,13 @@ class S5Preprocessor(BasePreProcessor):
         return xr.auto_combine(predict_ds_list)
 
     def _process_interim_files(self, variables: List[str],
-                               subset_str: Optional[str] = None) -> None:
+                               resample_time: Optional[str] = "M",
+                               upsampling: bool = False,
+                               subset_str: Optional[str] = 'kenya') -> None:
         # merge all of the preprocessed interim timesteps (../s5_interim/)
         for var in np.unique(variables):
             cast(str, var)
             ds = self.merge_all_interim_files(var)
-
-            # resample time (N.B. changes initialisation_date ...)
-            # if resample_time is not None:
-            #     print('WARNING: resampling time will alter the initialisation_dates')
-            #     ds = self.resample_timesteps(
-            #         ds, var, resample_time, upsampling
-            #     )
 
             # remove 'time' from raw data (calculate from initialisation_date/forecast_horizon)
             if 'time' in [c for c in ds.coords]:
@@ -421,6 +416,13 @@ class S5Preprocessor(BasePreProcessor):
 
             # calculate n_timestep ahead variables
             ds = self.create_variables_for_n_timesteps_predictions(ds)
+
+            # resample time (N.B. if done before stacking time changes initialisation_date ...)
+            if resample_time is not None:
+                # print('WARNING: resampling time will alter the initialisation_dates')
+                ds = self.resample_timesteps(
+                    ds, var, resample_time, upsampling
+                )
 
             # save to preprocessed netcdf
             out_path = self.out_dir / f"{self.dataset}_{var}_{subset_str}.nc"
@@ -523,7 +525,9 @@ class S5Preprocessor(BasePreProcessor):
             print("\nOutputs (errors):\n\t", outputs)
 
         # process the interim files (each timestep)
-        self._process_interim_files(variables, subset_str=subset_str)
+        self._process_interim_files(variables, subset_str=subset_str,
+                                    resample_time=resample_time,
+                                    upsampling=upsampling,)
 
         if cleanup:
             rmtree(self.interim)
