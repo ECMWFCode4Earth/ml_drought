@@ -337,8 +337,7 @@ class S5Preprocessor(BasePreProcessor):
 
         return xr.auto_combine(all_nstep_list)
 
-    @staticmethod
-    def create_variables_for_n_timesteps_predictions(ds: xr.Dataset,
+    def create_variables_for_n_timesteps_predictions(self, ds: xr.Dataset,
                                                      tstep_coord_name: str = 'months_ahead') -> xr.Dataset:
         """Drop the forecast_horizon & initialisation_date variables"""
         assert all(
