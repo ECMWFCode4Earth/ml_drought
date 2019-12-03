@@ -318,6 +318,111 @@ class S5Preprocessor(BasePreProcessor):
         ds = ds.isel(number=slice(0, n))
         return ds
 
+    @staticmethod
+    def get_n_timestep_ahead_data(ds: xr.Dataset, n_tstep: int,
+                                tstep_coord_name: str = 'months_ahead') -> xr.Dataset:
+        """ Get the data for the n timesteps ahead """
+        assert tstep_coord_name in [c for c in ds.coords], \
+            'expect the number of timesteps ahead to have been calculated' \
+            f' already. Coords: {[c for c in ds.coords]}'
+
+        variables = [v for v in ds.data_vars]
+        all_nstep_list = []
+        for var in variables:
+            d_nstep = (
+                ds.loc[dict(time=ds[tstep_coord_name] == n_tstep)]
+                .rename({var: var + f'_{n_tstep}'})
+            )
+            all_nstep_list.append(d_nstep)
+
+        return xr.auto_combine(all_nstep_list)
+
+    @staticmethod
+    def create_variables_for_n_timesteps_predictions(ds: xr.Dataset,
+                                                     tstep_coord_name: str = 'months_ahead') -> xr.Dataset:
+        """Drop the forecast_horizon & initialisation_date variables"""
+        assert all(
+            np.isin(
+                ['initialisation_date', 'forecast_horizon', tstep_coord_name],
+                [c for c in ds.coords]
+            )), 'Expecting to have ' \
+                f'initialisation_date forecast_horizon {tstep_coord_name} in ds.coords' \
+                f'currently: {[c for c in ds.coords]}'
+
+        timesteps = np.unique(ds[tstep_coord_name])
+
+        all_timesteps = []
+        for step in timesteps:
+            d = self.get_n_timestep_ahead_data(
+                ds, step, tstep_coord_name=tstep_coord_name)
+            d = d.drop(
+                ['initialisation_date', 'forecast_horizon', tstep_coord_name])
+            all_timesteps.append(d)
+
+        return xr.auto_combine(all_timesteps)
+
+    @staticmethod
+    def get_variance_and_mean_over_number(ds: xr.Dataset) -> xr.Dataset:
+        """Collapse the 'number' dimension (ensemble members) and return a
+        Dataset with (lat, lon, time) coords and two variables:
+        ['{var}_mean', '{var}_std']
+        """
+        variables = [v for v in ds.data_vars]
+
+        # ensure that 'number' still exists in the coords
+        assert 'number' in [c for c in ds.coords], 'require `number` to '\
+            'be a coord in the Dataset object to collapse by mean/std'
+
+        # calculate mean and std collapsing the 'number' coordinate
+        predict_ds_list = []
+        for var in variables:
+            print(f"Calculating the mean / std for forecast variable: {var}")
+            mean_std = []
+            mean_std.append(
+                ds.mean(dim='number').rename({var: var + '_mean'})
+            )
+            mean_std.append(
+                ds.std(dim='number').rename({var: var + '_std'})
+            )
+            predict_ds_list.append(xr.auto_combine(mean_std))
+
+        return xr.auto_combine(predict_ds_list)
+
+    def _process_interim_files(self, variables: List[str]) -> None:
+        # merge all of the preprocessed interim timesteps (../s5_interim/)
+        for var in np.unique(variables):
+            cast(str, var)
+            ds = self.merge_all_interim_files(var)
+
+            # resample time (N.B. changes initialisation_date ...)
+            # if resample_time is not None:
+            #     print('WARNING: resampling time will alter the initialisation_dates')
+            #     ds = self.resample_timesteps(
+            #         ds, var, resample_time, upsampling
+            #     )
+
+            # remove 'time' from raw data (calculate from initialisation_date/forecast_horizon)
+            if 'time' in [c for c in ds.coords]:
+                ds = ds.drop('time')
+
+            # stack the timesteps to get a more standard dataset format
+            # ('forecast_horizon', 'initialisation_date', 'lat', 'lon', 'number')
+            # --> dims = ('lat', 'lon', 'time', 'number')
+            ds = self.stack_time(ds)
+
+            # select first 25 ensemble members (complete dataset)
+            ds = self.select_n_ensemble_members(ds, n=25)
+
+            # calculate n_timestep ahead variables
+            ds = self.create_variables_for_n_timesteps_predictions(ds)
+
+            # calculate mean/std over 'number'
+            ds = self.get_variance_and_mean_over_number(ds)
+
+            # save to preprocessed netcdf
+            out_path = self.out_dir / f"{self.dataset}_{var}_{subset_str}.nc"
+            ds.to_netcdf(out_path)
+
     def preprocess(
         self,
         variable: str,
@@ -413,33 +518,8 @@ class S5Preprocessor(BasePreProcessor):
             )
             print("\nOutputs (errors):\n\t", outputs)
 
-        # merge all of the preprocessed interim timesteps (../s5_interim/)
-        for var in np.unique(variables):
-            cast(str, var)
-            ds = self.merge_all_interim_files(var)
-
-            # resample time (N.B. changes initialisation_date ...)
-            # if resample_time is not None:
-            #     print('WARNING: resampling time will alter the initialisation_dates')
-            #     ds = self.resample_timesteps(
-            #         ds, var, resample_time, upsampling
-            #     )
-
-            # remove 'time' from raw data (calculate from initialisation_date/forecast_horizon)
-            if 'time' in [c for c in ds.coords]:
-                ds = ds.drop('time')
-
-            # stack the timesteps to get a more standard dataset format
-            # ('forecast_horizon', 'initialisation_date', 'lat', 'lon', 'number')
-            # --> dims = ('lat', 'lon', 'time', 'number')
-            ds = self.stack_time(ds)
-
-            # select first 25 ensemble members (complete dataset)
-            ds = self.select_n_ensemble_members(ds, n=25)
-
-            # save to preprocessed netcdf
-            out_path = self.out_dir / f"{self.dataset}_{var}_{subset_str}.nc"
-            ds.to_netcdf(out_path)
+        # process the interim files (each timestep)
+        self._process_interim_files(variables)
 
         if cleanup:
             rmtree(self.interim)
