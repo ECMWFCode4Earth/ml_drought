@@ -424,7 +424,7 @@ class S5Preprocessor(BasePreProcessor):
 
             # save to preprocessed netcdf
             out_path = self.out_dir / f"{self.dataset}_{var}_{subset_str}.nc"
-            print(f"Saving data for variable: {variable} \nto: {out_path}")
+            print(f"Saving data for variable: {var} \nto: {out_path}")
             ds.to_netcdf(out_path)
 
     def preprocess(
