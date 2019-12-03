@@ -390,7 +390,8 @@ class S5Preprocessor(BasePreProcessor):
 
         return xr.auto_combine(predict_ds_list)
 
-    def _process_interim_files(self, variables: List[str]) -> None:
+    def _process_interim_files(self, variables: List[str],
+                               subset_str: Optional[str] = None) -> None:
         # merge all of the preprocessed interim timesteps (../s5_interim/)
         for var in np.unique(variables):
             cast(str, var)
@@ -521,7 +522,7 @@ class S5Preprocessor(BasePreProcessor):
             print("\nOutputs (errors):\n\t", outputs)
 
         # process the interim files (each timestep)
-        self._process_interim_files(variables)
+        self._process_interim_files(variables, subset_str=subset_str)
 
         if cleanup:
             rmtree(self.interim)
