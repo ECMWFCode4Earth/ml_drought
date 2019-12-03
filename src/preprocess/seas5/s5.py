@@ -412,11 +412,11 @@ class S5Preprocessor(BasePreProcessor):
             # select first 25 ensemble members (complete dataset)
             ds = self.select_n_ensemble_members(ds, n=25)
 
-            # calculate n_timestep ahead variables
-            ds = self.create_variables_for_n_timesteps_predictions(ds)
-
             # calculate mean/std over 'number'
             ds = self.get_variance_and_mean_over_number(ds)
+
+            # calculate n_timestep ahead variables
+            ds = self.create_variables_for_n_timesteps_predictions(ds)
 
             # save to preprocessed netcdf
             out_path = self.out_dir / f"{self.dataset}_{var}_{subset_str}.nc"
