@@ -349,6 +349,7 @@ class S5Preprocessor(BasePreProcessor):
                 f'currently: {[c for c in ds.coords]}'
 
         timesteps = np.unique(ds[tstep_coord_name])
+        variables = [v for v in ds.data_vars]
 
         all_timesteps = []
         for step in timesteps:
@@ -356,6 +357,8 @@ class S5Preprocessor(BasePreProcessor):
                 ds, step, tstep_coord_name=tstep_coord_name)
             d = d.drop(
                 ['initialisation_date', 'forecast_horizon', tstep_coord_name])
+            # drop the old variables too (so not duplicated)
+            d = d.drop(variables)
             all_timesteps.append(d)
 
         return xr.auto_combine(all_timesteps)
