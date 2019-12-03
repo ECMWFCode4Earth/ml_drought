@@ -424,11 +424,6 @@ class S5Preprocessor(BasePreProcessor):
                     ds=ds, resample_length=resample_time, upsampling=upsampling
                 )
 
-
-ds
-resample_length
-upsampling
-time_coord
             # save to preprocessed netcdf
             out_path = self.out_dir / f"{self.dataset}_{var}_{subset_str}.nc"
             print(f"Saving data for variable: {var} \nto: {out_path}")
