@@ -422,7 +422,7 @@ class S5Preprocessor(BasePreProcessor):
                 # print('WARNING: resampling time will alter the initialisation_dates')
                 d_list = []
                 for v_ in [v for v in ds.data_vars]:
-                    d_ = self.resample_timesteps(
+                    d_ = self.resample_time(
                         ds, v_, resample_time, upsampling
                     )
                     d_list.append(d_)
