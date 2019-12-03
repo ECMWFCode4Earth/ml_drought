@@ -18,7 +18,7 @@ class CDSExporter(BaseExporter):
     cds.climate.copernicus.eu
     """
 
-    def __init__(self, data_folder: Path = Path('data')) -> None:
+    def __init__(self, data_folder: Path = Path("data")) -> None:
         super().__init__(data_folder)
 
         global cdsapi
@@ -50,10 +50,12 @@ class CDSExporter(BaseExporter):
     @staticmethod
     def _filename_from_selection_request(time_array: List, time: str) -> str:
         if len(time_array) > 1:
-            warnings.warn(f'More than 1 {time} of data being exported! '
-                          'Export times may be significant.')
+            warnings.warn(
+                f"More than 1 {time} of data being exported! "
+                "Export times may be significant."
+            )
             time_array.sort()
-            time_array_str = f'{time_array[0]}_{time_array[-1]}'
+            time_array_str = f"{time_array[0]}_{time_array[-1]}"
         else:
             time_array_str = str(time_array[0])
         return time_array_str
@@ -69,38 +71,42 @@ class CDSExporter(BaseExporter):
         if not dataset_folder.exists():
             dataset_folder.mkdir()
 
-        variables = '_'.join(selection_request['variable'])
+        variables = "_".join(selection_request["variable"])
         variables_folder = dataset_folder / variables
         if not variables_folder.exists():
             variables_folder.mkdir()
 
-        years = self._filename_from_selection_request(selection_request['year'], 'year')
+        years = self._filename_from_selection_request(selection_request["year"], "year")
         years_folder = variables_folder / years
         if not years_folder.exists():
             years_folder.mkdir()
 
-        months = self._filename_from_selection_request(selection_request['month'], 'month')
-        output_filename = years_folder / f'{months}.nc'
+        months = self._filename_from_selection_request(
+            selection_request["month"], "month"
+        )
+        output_filename = years_folder / f"{months}.nc"
         return output_filename
 
     @staticmethod
-    def _print_api_request(dataset: str,
-                           selection_request: Dict,
-                           output_file: Path) -> None:
-        print('------------------------')
-        print(f'Dataset: {dataset}')
-        print('Selection Request:')
+    def _print_api_request(
+        dataset: str, selection_request: Dict, output_file: Path
+    ) -> None:
+        print("------------------------")
+        print(f"Dataset: {dataset}")
+        print("Selection Request:")
         pprint(selection_request)
-        print('------------------------')
-        print('Output Filename:')
+        print("------------------------")
+        print("Output Filename:")
         print(output_file)
-        print('------------------------')
+        print("------------------------")
 
-    def _export(self,
-                dataset: str,
-                selection_request: Dict,
-                show_api_request: bool = False,
-                in_parallel: bool = False) -> Path:
+    def _export(
+        self,
+        dataset: str,
+        selection_request: Dict,
+        show_api_request: bool = False,
+        in_parallel: bool = False,
+    ) -> Path:
         """Export CDS data
 
         Parameters
@@ -138,8 +144,9 @@ class ERA5Exporter(CDSExporter):
 
     cds.climate.copernicus.eu
     """
+
     @staticmethod
-    def get_era5_times(granularity: str = 'hourly') -> Dict:
+    def get_era5_times(granularity: str = "hourly") -> Dict:
         """Returns the era5 selection request arguments
         for the hourly or monthly data
 
@@ -155,38 +162,48 @@ class ERA5Exporter(CDSExporter):
             selection dict filled out
         """
         years = [str(year) for year in range(1979, 2019 + 1)]
-        months = ['{:02d}'.format(month) for month in range(1, 12 + 1)]
-        days = ['{:02d}'.format(day) for day in range(1, 31 + 1)]
-        times = ['{:02d}:00'.format(hour) for hour in range(24)]
+        months = ["{:02d}".format(month) for month in range(1, 12 + 1)]
+        days = ["{:02d}".format(day) for day in range(1, 31 + 1)]
+        times = ["{:02d}:00".format(hour) for hour in range(24)]
 
         selection_dict = {
-            'year': years,
-            'month': months,
-            'time': times,
+            "year": years,
+            "month": months,
+            "time": times,
         }
-        if granularity == 'hourly':
-            selection_dict['day'] = days
+        if granularity == "hourly":
+            selection_dict["day"] = days
         return selection_dict
 
     @staticmethod
-    def get_dataset(variable: str, granularity: str = 'hourly') -> str:
+    def get_dataset(variable: str, granularity: str = "hourly") -> str:
         pressure_level_variables = {
-            'divergence', 'fraction_of_cloud_cover', 'geopotential',
-            'ozone_mass_mixing_ratio', 'potential_vorticity', 'relative_humidity',
-            'specific_cloud_ice_water_content', 'specific_cloud_liquid_water_content',
-            'specific_humidity', 'specific_rain_water_content', 'specific_snow_water_content',
-            'temperature', 'u_component_of_wind', 'v_component_of_wind', 'vertical_velocity',
-            'vorticity'
+            "divergence",
+            "fraction_of_cloud_cover",
+            "geopotential",
+            "ozone_mass_mixing_ratio",
+            "potential_vorticity",
+            "relative_humidity",
+            "specific_cloud_ice_water_content",
+            "specific_cloud_liquid_water_content",
+            "specific_humidity",
+            "specific_rain_water_content",
+            "specific_snow_water_content",
+            "temperature",
+            "u_component_of_wind",
+            "v_component_of_wind",
+            "vertical_velocity",
+            "vorticity",
         }
 
         if variable in pressure_level_variables:
-            dataset_type = 'pressure-levels'
+            dataset_type = "pressure-levels"
         else:
-            dataset_type = 'single-levels'
+            dataset_type = "single-levels"
 
-        dataset = f'reanalysis-era5-{dataset_type}'
-        if granularity == 'monthly':
-            dataset = f'{dataset}-monthly-means'
+        dataset = f"reanalysis-era5-{dataset_type}"
+        if granularity == "monthly":
+            dataset = f"{dataset}-monthly-means"
 
         return dataset
 
@@ -195,23 +212,24 @@ class ERA5Exporter(CDSExporter):
         if type(value) is str:
 
             # check the string is correctly formatted
-            if key == 'time':
-                assert (re.match(r"\d{2}:0{2}", value)), \
-                    f'Expected time string {value} to be in hour:minute format, \
-                    e.g. 01:00. Minutes MUST be `00`'
+            if key == "time":
+                assert re.match(
+                    r"\d{2}:0{2}", value
+                ), f"Expected time string {value} to be in hour:minute format, \
+                    e.g. 01:00. Minutes MUST be `00`"
             return value
         else:
-            if key == 'year':
+            if key == "year":
                 return str(value)
-            elif key in {'month', 'day'}:
-                return '{:02d}'.format(value)
-            elif key == 'time':
-                return '{:02d}:00'.format(value)
+            elif key in {"month", "day"}:
+                return "{:02d}".format(value)
+            elif key == "time":
+                return "{:02d}:00".format(value)
         return str(value)
 
     @staticmethod
     def _check_iterable(value, key):
-        if (key == 'time') and (type(value) is str):
+        if (key == "time") and (type(value) is str):
             return [value]
         try:
             iter(value)
@@ -220,43 +238,53 @@ class ERA5Exporter(CDSExporter):
             value = [value]
         return value
 
-    def create_selection_request(self,
-                                 variable: str,
-                                 selection_request: Optional[Dict] = None,
-                                 granularity: str = 'hourly',) -> Dict:
+    def create_selection_request(
+        self,
+        variable: str,
+        selection_request: Optional[Dict] = None,
+        granularity: str = "hourly",
+    ) -> Dict:
         # setup the default selection request
-        product_type = f'{"monthly_averaged_" if granularity == "monthly" else ""}reanalysis'
+        product_type = (
+            f'{"monthly_averaged_" if granularity == "monthly" else ""}reanalysis'
+        )
         processed_selection_request = {
-            'product_type': product_type,
-            'format': 'netcdf',
-            'variable': [variable]
+            "product_type": product_type,
+            "format": "netcdf",
+            "variable": [variable],
         }
         for key, val in self.get_era5_times(granularity).items():
             processed_selection_request[key] = val
 
         # by default, we investigate Kenya
         kenya_region = get_kenya()
-        processed_selection_request['area'] = self.create_area(kenya_region)
+        processed_selection_request["area"] = self.create_area(kenya_region)
 
         # update with user arguments
         if selection_request is not None:
             for key, val in selection_request.items():
-                if key in {'day', 'hour'}:
-                    warnings.warn(f'Overriding default {key} values. '
-                                  f'The ERA5Exporter assumes all days '
-                                  f'and times (the default) are being downloaded')
+                if key in {"day", "hour"}:
+                    warnings.warn(
+                        f"Overriding default {key} values. "
+                        f"The ERA5Exporter assumes all days "
+                        f"and times (the default) are being downloaded"
+                    )
                 val = self._check_iterable(val, key)
-                processed_selection_request[key] = [self._correct_input(x, key) for x in val]
+                processed_selection_request[key] = [
+                    self._correct_input(x, key) for x in val
+                ]
         return processed_selection_request
 
-    def export(self,
-               variable: str,
-               dataset: Optional[str] = None,
-               granularity: str = 'hourly',
-               show_api_request: bool = True,
-               selection_request: Optional[Dict] = None,
-               break_up: bool = False,
-               n_parallel_requests: int = 3) -> List[Path]:
+    def export(
+        self,
+        variable: str,
+        dataset: Optional[str] = None,
+        granularity: str = "hourly",
+        show_api_request: bool = True,
+        selection_request: Optional[Dict] = None,
+        break_up: bool = False,
+        n_parallel_requests: int = 3,
+    ) -> List[Path]:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
 
@@ -290,14 +318,15 @@ class ERA5Exporter(CDSExporter):
         """
 
         # create the default template for the selection request
-        processed_selection_request = self.create_selection_request(variable,
-                                                                    selection_request,
-                                                                    granularity)
+        processed_selection_request = self.create_selection_request(
+            variable, selection_request, granularity
+        )
 
         if dataset is None:
             dataset = self.get_dataset(variable, granularity)
 
-        if n_parallel_requests < 1: n_parallel_requests = 1
+        if n_parallel_requests < 1:
+            n_parallel_requests = 1
 
         # break up by month
         if break_up:
@@ -305,18 +334,20 @@ class ERA5Exporter(CDSExporter):
                 p = multiprocessing.Pool(int(n_parallel_requests))
 
             output_paths = []
-            for year, month in itertools.product(processed_selection_request['year'],
-                                                 processed_selection_request['month']):
+            for year, month in itertools.product(
+                processed_selection_request["year"],
+                processed_selection_request["month"],
+            ):
                 updated_request = processed_selection_request.copy()
-                updated_request['year'] = [year]
-                updated_request['month'] = [month]
+                updated_request["year"] = [year]
+                updated_request["month"] = [month]
 
                 if n_parallel_requests > 1:  # Run in parallel
                     # multiprocessing of the paths
                     output_paths.append(
                         p.apply_async(
                             self._export,
-                            args=(dataset, updated_request, show_api_request, True)
+                            args=(dataset, updated_request, show_api_request, True),
                         )
                     )
                 else:  # run sequentially
@@ -328,6 +359,4 @@ class ERA5Exporter(CDSExporter):
                 p.join()
             return cast(List[Path], output_paths)
 
-        return [self._export(dataset,
-                             processed_selection_request,
-                             show_api_request)]
+        return [self._export(dataset, processed_selection_request, show_api_request)]

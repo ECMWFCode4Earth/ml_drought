@@ -15,16 +15,18 @@ class SRTMExporter(BaseExporter):
     SRTM topography data.
     """
 
-    dataset = 'srtm'
+    dataset = "srtm"
 
-    def __init__(self, data_folder: Path = Path('data')):
+    def __init__(self, data_folder: Path = Path("data")):
         super().__init__(data_folder)
 
         # try and import gdal
-        print('The SRTM exporter requires GDAL and the elevation python package. '
-              'The mac conda environment contains them.'
-              'In addition, a (finnicky) ubuntu environment contains them in '
-              'environment.ubuntu.cpu.gdal.yml')
+        print(
+            "The SRTM exporter requires GDAL and the elevation python package. "
+            "The mac conda environment contains them."
+            "In addition, a (finnicky) ubuntu environment contains them in "
+            "environment.ubuntu.cpu.gdal.yml"
+        )
         global gdal
         if gdal is None:
             from osgeo import gdal
@@ -38,12 +40,16 @@ class SRTMExporter(BaseExporter):
 
     def _tif_to_nc(self, tif_file: Path, nc_file: Path) -> None:
         ds = gdal.Open(tif_file.resolve().as_posix())  # type: ignore
-        _ = gdal.Translate(format='NetCDF', srcDS=ds,  # type: ignore
-                           destName=nc_file.resolve().as_posix())
+        _ = gdal.Translate(  # type: ignore
+            format="NetCDF", srcDS=ds, destName=nc_file.resolve().as_posix(),
+        )
 
-    def export(self, region_name: str = 'kenya',
-               product: str = 'SRTM3',
-               max_download_tiles: int = 15) -> None:
+    def export(
+        self,
+        region_name: str = "kenya",
+        product: str = "SRTM3",
+        max_download_tiles: int = 15,
+    ) -> None:
         """
         Export SRTm topography data
 
@@ -62,23 +68,25 @@ class SRTMExporter(BaseExporter):
 
         region = region_lookup[region_name]
 
-        output_tif = self.output_folder / f'{region_name}.tif'
+        output_tif = self.output_folder / f"{region_name}.tif"
 
         if not output_tif.exists():
-            print(f'Downloading tiles. Saving as tif to {output_tif}')
+            print(f"Downloading tiles. Saving as tif to {output_tif}")
             try:
-                elevation.clip(bounds=self._region_to_tuple(region),  # type: ignore
-                               output=output_tif.resolve().as_posix(),
-                               product=product,
-                               max_download_tiles=max_download_tiles,
-                               margin='1')
+                elevation.clip(  # type: ignore
+                    bounds=self._region_to_tuple(region),
+                    output=output_tif.resolve().as_posix(),
+                    product=product,
+                    max_download_tiles=max_download_tiles,
+                    margin="1",
+                )
             except Exception as e:
                 print(e)
 
             elevation.clean()  # type: ignore
 
-        output_nc = self.output_folder / f'{region_name}.nc'
+        output_nc = self.output_folder / f"{region_name}.nc"
 
         if not output_nc.exists():
-            print(f'Converting {output_tif} to NetCDF format ({output_nc})')
+            print(f"Converting {output_tif} to NetCDF format ({output_nc})")
             self._tif_to_nc(output_tif, output_nc)

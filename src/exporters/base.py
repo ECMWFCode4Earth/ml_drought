@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 from ..utils import Region, get_kenya
 
-__all__ = ['BaseExporter', 'Region', 'get_kenya']
+__all__ = ["BaseExporter", "Region", "get_kenya"]
 
 
 class BaseExporter:
@@ -17,10 +17,10 @@ class BaseExporter:
 
     dataset: Optional[str] = None
 
-    def __init__(self, data_folder: Path = Path('data')) -> None:
+    def __init__(self, data_folder: Path = Path("data")) -> None:
 
         self.data_folder = data_folder
-        self.raw_folder = self.data_folder / 'raw'
+        self.raw_folder = self.data_folder / "raw"
         if not self.raw_folder.exists():
             self.raw_folder.mkdir(exist_ok=True)
 

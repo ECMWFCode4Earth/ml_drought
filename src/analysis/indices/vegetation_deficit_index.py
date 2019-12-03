@@ -35,33 +35,35 @@ class VegetationDeficitIndex(BaseIndices):
     (ANN): Case of Kenya’s operational drought monitoring. Remote Sensing,
     11(9). https://doi.org/10.3390/rs11091099
     """
-    def __init__(self, file_path: Path,
-                 rolling_window: int = 3,
-                 resample_str: Optional[str] = 'month') -> None:
+
+    def __init__(
+        self,
+        file_path: Path,
+        rolling_window: int = 3,
+        resample_str: Optional[str] = "month",
+    ) -> None:
 
         if rolling_window != 3:
             print(
-                'This index is fit on a 3 month VCI moving average.'
-                f' Are you sure you want to fit for {rolling_window}?'
+                "This index is fit on a 3 month VCI moving average."
+                f" Are you sure you want to fit for {rolling_window}?"
             )
 
-        self.name: str = 'vegetation_deficit_index'
-        self.ma_name: str = f'{rolling_window}{resample_str}_moving_average'
+        self.name: str = "vegetation_deficit_index"
+        self.ma_name: str = f"{rolling_window}{resample_str}_moving_average"
         self.rolling_window: int = rolling_window
-        super().__init__(
-            file_path=file_path,
-            resample_str=resample_str
-        )
+        super().__init__(file_path=file_path, resample_str=resample_str)
 
-        if 'VCI' not in [v for v in self.ds.data_vars]:
+        if "VCI" not in [v for v in self.ds.data_vars]:
             print(
-                'This is a VCI specific index. Are you sure you want to fit?'
-                f' Found: {[v for v in self.ds.data_vars]}'
+                "This is a VCI specific index. Are you sure you want to fit?"
+                f" Found: {[v for v in self.ds.data_vars]}"
             )
 
     @staticmethod
-    def vegetation_index_classify(da: xr.DataArray,
-                                  new_variable_name: str) -> xr.DataArray:
+    def vegetation_index_classify(
+        da: xr.DataArray, new_variable_name: str
+    ) -> xr.DataArray:
         """use the numpy `np.digitize` function to bin the
         values to their associated labels
         https://stackoverflow.com/a/56514582/9940782
@@ -84,32 +86,23 @@ class VegetationDeficitIndex(BaseIndices):
              [(0, 10) (10, 20) (20, 35) (35, 50) (50, 100)]
         """
         # calculate the quintiles using `np.digitize`
-        bins = [0.0, 10., 20., 35., 50.]
+        bins = [0.0, 10.0, 20.0, 35.0, 50.0]
         result = xr.apply_ufunc(np.digitize, da, bins)
         result = result.rename(new_variable_name)
         return result
 
-    def fit(self, variable: str,
-            time_str: str = 'month') -> None:
+    def fit(self, variable: str, time_str: str = "month") -> None:
 
-        out_variable = f'VCI{self.rolling_window}M_index'
+        out_variable = f"VCI{self.rolling_window}M_index"
         print(f"Fitting {out_variable} for variable: {variable}")
 
         # 1. calculate a moving average
-        ds_window = rolling_mean(
-            self.ds, self.rolling_window
-        )
+        ds_window = rolling_mean(self.ds, self.rolling_window)
 
         # calculate the VegetationIndex on moving average
-        vci3m = self.vegetation_index_classify(
-            ds_window[variable], out_variable
-        )
-        ds_window = (
-            ds_window
-            .merge(vci3m.to_dataset(name=out_variable))
-            .rename(
-                {variable: f'{variable}{self.rolling_window}_moving_average'}
-            )
+        vci3m = self.vegetation_index_classify(ds_window[variable], out_variable)
+        ds_window = ds_window.merge(vci3m.to_dataset(name=out_variable)).rename(
+            {variable: f"{variable}{self.rolling_window}_moving_average"}
         )
 
         self.index = ds_window
