@@ -182,21 +182,21 @@ class S5Preprocessor(BasePreProcessor):
 
         return ds
 
-    def resample_timesteps(self,
-                           ds: xr.Dataset,
-                           variable: str,
-                           resample_str: Optional[str] = 'M',
-                           upsampling: bool = False) -> xr.Dataset:
-        # resample (NOTE: resample func removes the 'time' coord by default)
-        print('Resampling the timesteps (initialisation_date)')
-        if resample_str is not None:
-            time = ds[variable].time
-            ds = self.resample_time(
-                ds, resample_str, upsampling, time_coord="initialisation_date"
-            )
-            ds = ds.assign_coords(valid_time=time)
+    # def resample_timesteps(self,
+    #                        ds: xr.Dataset,
+    #                        variable: str,
+    #                        resample_str: Optional[str] = 'M',
+    #                        upsampling: bool = False) -> xr.Dataset:
+    #     # resample (NOTE: resample func removes the 'time' coord by default)
+    #     print('Resampling the timesteps (initialisation_date)')
+    #     if resample_str is not None:
+    #         time = ds[variable].time
+    #         ds = self.resample_time(
+    #             ds, resample_str, upsampling, time_coord="time"
+    #         )
+    #         ds = ds.assign_coords(valid_time=time)
 
-        return ds
+    #     return ds
 
     @staticmethod
     def _map_forecast_horizon_to_months_ahead(stacked: xr.Dataset) -> xr.Dataset:
