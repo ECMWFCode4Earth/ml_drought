@@ -420,14 +420,15 @@ class S5Preprocessor(BasePreProcessor):
             # resample time (N.B. if done before stacking time changes initialisation_date ...)
             if resample_time is not None:
                 # print('WARNING: resampling time will alter the initialisation_dates')
-                d_list = []
-                for v_ in [v for v in ds.data_vars]:
-                    d_ = self.resample_time(
-                        ds, v_, resample_time, upsampling
-                    )
-                    d_list.append(d_)
-                ds = xr.auto_combine(d_list)
+                ds = self.resample_time(
+                    ds=ds, resample_length=resample_time, upsampling=upsampling
+                )
 
+
+ds
+resample_length
+upsampling
+time_coord
             # save to preprocessed netcdf
             out_path = self.out_dir / f"{self.dataset}_{var}_{subset_str}.nc"
             print(f"Saving data for variable: {var} \nto: {out_path}")
