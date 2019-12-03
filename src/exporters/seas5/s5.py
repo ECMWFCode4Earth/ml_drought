@@ -66,7 +66,10 @@ class S5Exporter(CDSExporter):
         self.pressure_level = pressure_level
         self.granularity = granularity
 
-        assert self.granularity in ['hourly', 'monthly'], f"\
+        assert self.granularity in [
+            "hourly",
+            "monthly",
+        ], f"\
         No dataset can be created with \
         granularity: {granularity} and pressure_level: {pressure_level}"
 
@@ -412,8 +415,11 @@ class S5Exporter(CDSExporter):
             processed_selection_request.update({"product_type": [self.product_type]})
 
         init_times_dict = self.get_s5_initialisation_times(
-            self.granularity, min_year=min_year, max_year=max_year,
-            min_month=min_month, max_month=max_month
+            self.granularity,
+            min_year=min_year,
+            max_year=max_year,
+            min_month=min_month,
+            max_month=max_month,
         )
 
         for key, val in init_times_dict.items():

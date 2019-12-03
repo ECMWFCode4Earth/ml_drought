@@ -1,44 +1,38 @@
-from pathlib import Path
-
 import sys
-sys.path.append('..')
-from src.preprocess import (VHIPreprocessor, CHIRPSPreprocesser,
-                            PlanetOSPreprocessor, GLEAMPreprocessor,
-                            S5Preprocessor,
-                            ESACCIPreprocessor, SRTMPreprocessor,
-                            ERA5MonthlyMeanPreprocessor)
+
+sys.path.append("..")
+from src.preprocess import (
+    VHIPreprocessor,
+    CHIRPSPreprocessor,
+    PlanetOSPreprocessor,
+    GLEAMPreprocessor,
+    S5Preprocessor,
+    ESACCIPreprocessor,
+    SRTMPreprocessor,
+    ERA5MonthlyMeanPreprocessor,
+)
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
 
+from scripts.utils import get_data_path
+
 
 def process_vci_2018():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
-        data_path = Path('data')
-    else:
-        data_path = Path('../data')
 
-    processor = VHIPreprocessor(data_path, 'VCI')
+    processor = VHIPreprocessor(get_data_path(), "VCI")
 
-    processor.preprocess(subset_str='kenya',
-                         resample_time='M', upsampling=False)
+    processor.preprocess(subset_str="kenya", resample_time="M", upsampling=False)
 
 
 def process_precip_2018():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
-        data_path = Path('data')
-    else:
-        data_path = Path('../data')
+    data_path = get_data_path()
 
     regrid_path = data_path / 'interim/reanalysis-era5-single-levels-monthly-means_preprocessed/data_kenya.nc'
     assert regrid_path.exists(), f'{regrid_path} not available'
 
-    processor = CHIRPSPreprocesser(data_path)
+    processor = CHIRPSPreprocessor(data_path)
 
-    processor.preprocess(subset_str='kenya',
-                         regrid=regrid_path,
-                         parallel=False)
+    processor.preprocess(subset_str="kenya", regrid=regrid_path, parallel=False)
 
 
 def process_era5POS_2018():
@@ -52,8 +46,13 @@ def process_era5POS_2018():
 
     processor = PlanetOSPreprocessor(data_path)
 
-    processor.preprocess(subset_str='kenya', regrid=regrid_path,
-                         parallel=False, resample_time='M', upsampling=False)
+    processor.preprocess(
+        subset_str="kenya",
+        regrid=regrid_path,
+        parallel=False,
+        resample_time="M",
+        upsampling=False,
+    )
 
 
 def process_gleam():
@@ -67,8 +66,10 @@ def process_gleam():
 
     processor = GLEAMPreprocessor(data_path)
 
-    processor.preprocess(subset_str='kenya', regrid=regrid_path,
-                         resample_time='M', upsampling=False)
+    processor.preprocess(
+        subset_str="kenya", regrid=regrid_path, resample_time="M", upsampling=False
+    )
+
 
 def process_seas5():
     # if the working directory is alread ml_drought don't need ../data
@@ -107,7 +108,7 @@ def process_esa_cci_landcover():
     assert regrid_path.exists(), f'{regrid_path} not available'
 
     processor = ESACCIPreprocessor(data_path)
-    processor.preprocess(subset_str='kenya', regrid=regrid_path)
+    processor.preprocess(subset_str="kenya", regrid=regrid_path)
 
 
 def preprocess_srtm():
@@ -119,17 +120,23 @@ def preprocess_srtm():
         'interim/reanalysis-era5-single-levels-monthly-means_preprocessed/data_kenya.nc'
     assert regrid_path.exists(), f'{regrid_path} not available'
 
-    print('Warning: regridding with CDO using the VCI preprocessor data fails because'
-          'CDO reads the grid type as generic instead of latlon. This can be fixed '
-          'just by changing the grid type to latlon in the grid definition file.')
+    regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
+    assert regrid_path.exists(), f"{regrid_path} not available"
+
+    print(
+        "Warning: regridding with CDO using the VCI preprocessor data fails because"
+        "CDO reads the grid type as generic instead of latlon. This can be fixed "
+        "just by changing the grid type to latlon in the grid definition file."
+    )
 
     processor = SRTMPreprocessor(data_path)
-    processor.preprocess(subset_str='kenya', regrid=regrid_path)
+    processor.preprocess(subset_str="kenya", regrid=regrid_path)
 
 
-def preprocess_kenya_boundaries(selection: str = 'level_1'):
-    assert selection in [f'level_{i}' for i in range(1,6)], \
-        f'selection must be one of {[f"level_{i}" for i in range(1,6)]}'
+def preprocess_kenya_boundaries(selection: str = "level_1"):
+    assert selection in [
+        f"level_{i}" for i in range(1, 6)
+    ], f'selection must be one of {[f"level_{i}" for i in range(1,6)]}'
 
     if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
         data_path = Path('data')
@@ -140,9 +147,7 @@ def preprocess_kenya_boundaries(selection: str = 'level_1'):
     assert regrid_path.exists(), f'{regrid_path} not available'
 
     processor = KenyaAdminPreprocessor(data_path)
-    processor.preprocess(
-        reference_nc_filepath=regrid_path, selection=selection
-    )
+    processor.preprocess(reference_nc_filepath=regrid_path, selection=selection)
 
 
 def preprocess_era5():
@@ -154,7 +159,7 @@ def preprocess_era5():
     assert regrid_path.exists(), f'{regrid_path} not available'
 
     processor = ERA5MonthlyMeanPreprocessor(data_path)
-    processor.preprocess(subset_str='kenya', regrid=regrid_path)
+    processor.preprocess(subset_str="kenya", regrid=regrid_path)
 
 
 def preprocess_s5_ouce():

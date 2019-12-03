@@ -43,10 +43,8 @@ class OuceS5Data:
 
     @staticmethod
     def add_initialisation_date(ds: xr.Dataset, fname: Path) -> xr.Dataset:
-        date_from_fname = pd.to_datetime(fname.stem.split('_')[-1], format='%Y%m')
-        return ds.expand_dims(
-            {'initialisation_date': [date_from_fname]}
-        )
+        date_from_fname = pd.to_datetime(fname.stem.split("_")[-1], format="%Y%m")
+        return ds.expand_dims({"initialisation_date": [date_from_fname]})
 
     @staticmethod
     def create_forecast_horizon(ds: xr.Dataset, infer=False) -> xr.Dataset:
@@ -55,11 +53,13 @@ class OuceS5Data:
             # because calculates the forecast horizons differently
             fh = pd.to_timedelta(ds.time.values - ds.initialisation_date.values)
         else:
-            assert len(ds.time.values) == 860, f"The static forecast_horizon method\
+            assert (
+                len(ds.time.values) == 860
+            ), f"The static forecast_horizon method\
             only works when the forecast_horizon lengths are the same"
             fh = FH
-        ds['time'] = fh
-        return ds.rename({'time': 'forecast_horizon'})
+        ds["time"] = fh
+        return ds.rename({"time": "forecast_horizon"})
 
     @staticmethod
     def create_2D_time_coord(ds: xr.Dataset) -> xr.Dataset:
@@ -84,8 +84,9 @@ class OuceS5Data:
         ds = xr.open_dataset(path)
         return self.recreate_cds_s5(ds, fname=path, infer=infer)
 
-    def get_ouce_filepaths(self, variable: str,
-                           parent_dir: Optional[Path] = None) -> List[Path]:
+    def get_ouce_filepaths(
+        self, variable: str, parent_dir: Optional[Path] = None
+    ) -> List[Path]:
         """ For working on OUCE linux machine need to specify alternative
          path. We still want to write out the preprocessed data to
          the `self.data_dir / 'interim' / 'S5preprocessed'` but
@@ -93,11 +94,13 @@ class OuceS5Data:
          permissions from.
         """
         target_folder = self.hourly_s5_dir if parent_dir is None else parent_dir
-        valid_variables = [f.name for f in target_folder.glob('*')]
-        assert variable in valid_variables, f"Invalid variable selected\
+        valid_variables = [f.name for f in target_folder.glob("*")]
+        assert (
+            variable in valid_variables
+        ), f"Invalid variable selected\
         We currently only have:{valid_variables}\
         You requested: {variable}"
 
-        outfiles = list(target_folder.glob('**/*/*.nc'))
+        outfiles = list(target_folder.glob("**/*/*.nc"))
         outfiles.sort()
         return outfiles

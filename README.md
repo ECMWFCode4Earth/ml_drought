@@ -27,13 +27,15 @@ There are three entrypoints to the pipeline:
 A blog post describing the goals and design of the pipeline can be found
 [here](https://medium.com/@gabrieltseng/a-machine-learning-pipeline-for-climate-research-ebf83b2b349a).
 
+View the initial presentation of our pipeline [here](https://www.youtube.com/watch?v=QVFiGERCiYs).
+
 ## Setup <a name="setup"></a>
 
 [Anaconda](https://www.anaconda.com/download/#macos) running python 3.7 is used as the package manager. To get set up
 with an environment, install Anaconda from the link above, and (from this directory) run
 
 ```bash
-conda env create -f environment.{mac, ubuntu.cpu}.yml
+conda env create -f environment.yml
 ```
 This will create an environment named `esowc-drought` with all the necessary packages to run the code. To
 activate this environment, run
@@ -73,9 +75,11 @@ ml_drought /bin/bash
 
 ### Testing  <a name="testing"></a>
 
-This pipeline can be tested by running `pytest`.
+This pipeline can be tested by running `pytest`. [flake8](http://flake8.pycqa.org) is used for linting.
 
 We use [mypy](https://github.com/python/mypy) for type checking. This can be run by running `mypy src` (this runs mypy on the `src` directory).
+
+We use [black](https://black.readthedocs.io/en/stable/) for code formatting.
 
 <!-- PROJECT TEAM MEMBERS -->
 
