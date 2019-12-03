@@ -151,13 +151,13 @@ def export_kenya_boundaries():
     exporter.export()
 
 
-if __name__ == '__main__':
-    # export_era5()
-    # export_vhi()
-    # export_chirps()
-    # export_era5POS()
-    # export_gleam()
-    # export_esa()
-    # export_s5()
-    # export_kenya_boundaries()
-    export_era5_single_var(variable='total_precipitation')
+if __name__ == "__main__":
+    export_era5()
+    export_vhi()
+    export_chirps()
+    export_era5POS()
+    export_gleam()
+    export_esa()
+    export_s5()
+    export_kenya_boundaries()
+    # export_era5_single_var(variable='total_precipitation')
