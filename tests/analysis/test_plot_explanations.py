@@ -1,6 +1,6 @@
 import pickle
 
-from src.analysis.plot_explanations import npy_to_netcdf, all_explanations_for_file
+from src.analysis.plot_explanations import npy_to_netcdf
 from src.models import LinearNetwork
 
 from tests.utils import _make_dataset

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
 import xarray as xr
+import pandas as pd
 import numpy as np
 from pathlib import Path
 import pickle
@@ -236,7 +237,14 @@ def npy_to_netcdf(model_array: ModelArrays, data: np.ndarray, var_names: Optiona
     assert model_array.latlons.shape[0] == data.shape[0]
     assert data.shape[2] == len(var_names)
 
-    data_vars = {var_name: data[:, :, i] for var_name, i in zip(var_names, range(data.shape[2]))}
-    coords = {"lat": model_array.latlons[:, 0], "lon": model_array.latlons[:, 1],
-              "timesteps": list(range(data.shape[1]))}
-    return xr.Dataset(data_vars=data_vars, coords=coords)
+    all_xrs = []
+    for timestamp in range(data.shape[1]):
+        data_vars = {var_name: data[:, timestamp, i] for var_name, i in zip(var_names, range(data.shape[2]))}
+        data_vars.update({"lat": model_array.latlons[:, 0], "lon": model_array.latlons[:, 1]})
+        all_xrs.append((
+                    pd.DataFrame(data=data_vars)
+                    .set_index(["lat", "lon", "time"])
+                    .to_xarray()
+                ))
+
+    # TODO
