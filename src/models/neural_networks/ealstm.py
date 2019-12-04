@@ -29,6 +29,7 @@ class EARecurrentNetwork(NNBase):
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
+        static_embedding_size: Optional[int] = None,
         device: str = "cuda:0",
     ) -> None:
         super().__init__(
@@ -55,6 +56,11 @@ class EARecurrentNetwork(NNBase):
         if dense_features is None:
             dense_features = []
         self.dense_features = dense_features
+        if static_embedding_size is not None:
+            assert (
+                static is not None
+            ), "Can't have a static embedding without input static information!"
+        self.static_embedding_size = static_embedding_size
 
         self.features_per_month: Optional[int] = None
         self.current_size: Optional[int] = None
@@ -82,6 +88,7 @@ class EARecurrentNetwork(NNBase):
             "surrounding_pixels": self.surrounding_pixels,
             "include_monthly_aggs": self.include_monthly_aggs,
             "include_yearly_aggs": self.include_yearly_aggs,
+            "static_embedding_size": self.static_embedding_size,
             "experiment": self.experiment,
             "ignore_vars": self.ignore_vars,
             "static": self.static,
@@ -114,6 +121,7 @@ class EARecurrentNetwork(NNBase):
             yearly_agg_size=self.yearly_agg_size,
             include_latlons=self.include_latlons,
             static_size=self.static_size,
+            static_embedding_size=self.static_embedding_size,
         )
         self.model.to(torch.device(self.device))
         self.model.load_state_dict(state_dict)
@@ -153,6 +161,7 @@ class EARecurrentNetwork(NNBase):
             current_size=self.current_size,
             include_latlons=self.include_latlons,
             static_size=self.static_size,
+            static_embedding_size=self.static_embedding_size,
         )
 
         return model.to(torch.device(self.device))
@@ -171,6 +180,7 @@ class EALSTM(nn.Module):
         yearly_agg_size=None,
         current_size=None,
         static_size=None,
+        static_embedding_size=None,
     ):
         super().__init__()
 
@@ -196,6 +206,16 @@ class EALSTM(nn.Module):
             ea_static_size += static_size
         if include_pred_month:
             ea_static_size += 12
+
+        self.use_static_embedding = False
+        if static_embedding_size:
+            assert (
+                self.include_static is not None
+            ), "Can't have a static embedding without a static input!"
+            self.use_static_embedding = True
+            self.static_embedding = nn.Linear(ea_static_size, static_embedding_size)
+
+            ea_static_size = static_embedding_size
 
         self.dropout = nn.Dropout(rnn_dropout)
         self.rnn = OrgEALSTMCell(
@@ -259,7 +279,12 @@ class EALSTM(nn.Module):
         if self.include_pred_month:
             static_x.append(pred_month)
 
-        hidden_state, cell_state = self.rnn(x, torch.cat(static_x, dim=-1))
+        static_tensor = torch.cat(static_x, dim=-1)
+
+        if self.use_static_embedding:
+            static_tensor = self.static_embedding(static_tensor)
+
+        hidden_state, cell_state = self.rnn(x, static_tensor)
 
         x = self.rnn_dropout(hidden_state[:, -1, :])
 
