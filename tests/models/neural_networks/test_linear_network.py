@@ -136,41 +136,10 @@ class TestLinearNetwork:
             include_pred_month=use_pred_months,
             include_latlons=use_latlons,
             include_monthly_aggs=monthly_agg,
-            include_static=static,
+            static="embeddings",
         )
 
         model.train()
-
-        # check the number of input features is properly initialised
-        n_input_features = [p for p in model.model.dense_layers.parameters()][0].shape[
-            -1
-        ]
-
-        # Expect to have 12 more features if use_pred_months
-        if experiment == "nowcast":
-            n_expected = 107
-        else:
-            # NOTE: data hasn't been through `src.Engineer` therefore including
-            #  current data (hence why more features than `nowcast`)
-            n_expected = 108
-
-        if monthly_agg:
-            n_expected *= 2
-        if use_pred_months:
-            n_expected += 12
-        if use_latlons:
-            n_expected += 2
-
-        n_expected += 3  # +3 for the yearly means
-
-        if static:
-            n_expected += 1  # for the static variable
-
-        assert n_input_features == n_expected, (
-            "Expected the number"
-            f"of input features to be: {n_expected}"
-            f"Got: {n_input_features}"
-        )
 
         captured = capsys.readouterr()
         expected_stdout = "Epoch 1, train smooth L1: "
