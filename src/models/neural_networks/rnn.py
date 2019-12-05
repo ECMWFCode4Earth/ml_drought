@@ -29,7 +29,7 @@ class RecurrentNetwork(NNBase):
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
-        include_static: bool = True,
+        static: Optional[str] = "features",
         device: str = "cuda:0",
     ) -> None:
         super().__init__(
@@ -43,7 +43,7 @@ class RecurrentNetwork(NNBase):
             include_yearly_aggs,
             surrounding_pixels,
             ignore_vars,
-            include_static,
+            static,
             device,
         )
 
@@ -83,7 +83,7 @@ class RecurrentNetwork(NNBase):
             "include_monthly_aggs": self.include_monthly_aggs,
             "include_yearly_aggs": self.include_yearly_aggs,
             "experiment": self.experiment,
-            "include_static": self.include_static,
+            "static": self.static,
             "device": self.device,
         }
 
@@ -137,10 +137,13 @@ class RecurrentNetwork(NNBase):
                 ), f"x_ref can't be None if features_per_month or current_size is not defined"
                 self.yearly_agg_size = x_ref[4].shape[-1]
 
-        if self.include_static:
+        if self.static:
             if self.static_size is None:
-                assert x_ref is not None
-                self.static_size = x_ref[5].shape[-1]
+                if self.static == "features":
+                    assert x_ref is not None
+                    self.static_size = x_ref[5].shape[-1]
+                elif self.static == "embeddings":
+                    self.static_size = self.num_locations
 
         model = RNN(
             features_per_month=self.features_per_month,

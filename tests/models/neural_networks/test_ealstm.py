@@ -73,8 +73,10 @@ class TestEARecurrentNetwork:
         assert model_dict["include_yearly_aggs"] == include_yearly_aggs
         assert model_dict["experiment"] == "one_month_forecast"
 
-    @pytest.mark.parametrize("use_pred_months", [True, False])
-    def test_train(self, tmp_path, capsys, use_pred_months):
+    @pytest.mark.parametrize(
+        "use_pred_months,use_static_embedding", [(True, 10), (False, None)]
+    )
+    def test_train(self, tmp_path, capsys, use_pred_months, use_static_embedding):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -109,6 +111,7 @@ class TestEARecurrentNetwork:
             dense_features=dense_features,
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
+            static_embedding_size=use_static_embedding,
         )
         model.train()
 

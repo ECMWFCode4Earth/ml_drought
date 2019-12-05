@@ -127,7 +127,7 @@ class DataLoader:
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         monthly_aggs: bool = True,
-        static: bool = False,
+        static: Optional[str] = "features",
         device: str = "cpu",
     ) -> None:
 
@@ -157,19 +157,26 @@ class DataLoader:
         self.to_tensor = to_tensor
         self.ignore_vars = ignore_vars
 
-        self.static = None
+        self.static: Optional[xr.Dataset] = None
+        self.max_loc_int: Optional[int] = None
         self.static_normalizing_dict = None
 
-        if static:
-            static_data_path = data_path / "features/static/data.nc"
-            self.static = xr.open_dataset(static_data_path)
-
-            if normalize:
-                static_normalizer_path = (
-                    data_path / "features/static/normalizing_dict.pkl"
+        if static is not None:
+            if static == "features":
+                self.static = xr.open_dataset(data_path / "features/static/data.nc")
+                if normalize:
+                    static_normalizer_path = (
+                        data_path / "features/static/normalizing_dict.pkl"
+                    )
+                    with static_normalizer_path.open("rb") as f:
+                        self.static_normalizing_dict = pickle.load(f)
+            if static == "embeddings":
+                # in case no static dataset was generated, we use the first
+                # historical dataset
+                self.static, self.max_loc_int = self._loc_to_int(
+                    xr.open_dataset(self.data_files[0] / "x.nc")
                 )
-                with static_normalizer_path.open("rb") as f:
-                    self.static_normalizing_dict = pickle.load(f)
+
         self.device = torch.device(device)
 
     def __iter__(self):
@@ -180,6 +187,25 @@ class DataLoader:
 
     def __len__(self) -> int:
         return len(self.data_files) // self.batch_file_size
+
+    @staticmethod
+    def _loc_to_int(base_ds: xr.Dataset) -> Tuple[xr.Dataset, int]:
+        """
+        returns a dataset with the lat and lon coordinates preserved, and
+        a unique increasing integer for each lat-lon combination
+        """
+        assert {"lat", "lon"} <= set(
+            base_ds.dims
+        ), "Dimensions named lat and lon must be in the reference grid"
+        base_ds = base_ds[["lat", "lon"]]
+
+        # next, we fill the values with unique integers
+        unique_values = np.arange(0, len(base_ds.lat) * len(base_ds.lon)).reshape(
+            (len(base_ds.lat), len(base_ds.lon))
+        )
+        base_ds["encoding"] = (("lat", "lon"), unique_values)
+
+        return base_ds, int(unique_values.max())
 
     @staticmethod
     def _load_datasets(
