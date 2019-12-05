@@ -3,12 +3,15 @@ import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
+import xarray as xr
+import pandas as pd
 import numpy as np
 from pathlib import Path
 import pickle
 
 from typing import Dict, List, Tuple, Optional
 
+from ..models.data import ModelArrays
 from ..models.neural_networks.base import NNBase
 
 
@@ -225,3 +228,23 @@ def all_explanations_for_file(
 
     with (file_id_folder / "input_ModelArray.pkl").open("wb") as f:
         pickle.dump(val, f)
+
+
+def npy_to_netcdf(model_array: ModelArrays, data: np.ndarray, var_names: Optional[List[str]] = None) -> xr.Dataset:
+
+    if var_names is None:
+        var_names = model_array.x_vars
+    assert model_array.latlons.shape[0] == data.shape[0]
+    assert data.shape[2] == len(var_names)
+
+    all_xrs = []
+    for timestamp in range(data.shape[1]):
+        data_vars = {var_name: data[:, timestamp, i] for var_name, i in zip(var_names, range(data.shape[2]))}
+        data_vars.update({"lat": model_array.latlons[:, 0], "lon": model_array.latlons[:, 1]})
+        all_xrs.append((
+                    pd.DataFrame(data=data_vars)
+                    .set_index(["lat", "lon", "time"])
+                    .to_xarray()
+                ))
+
+    # TODO
