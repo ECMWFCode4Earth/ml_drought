@@ -32,7 +32,7 @@ class GBDT(ModelBase):
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
-        include_static: bool = True,
+        static: Optional[str] = "features",
     ) -> None:
         super().__init__(
             data_folder,
@@ -45,7 +45,7 @@ class GBDT(ModelBase):
             include_yearly_aggs,
             surrounding_pixels,
             ignore_vars,
-            include_static,
+            static,
         )
 
         self.early_stopping = False
@@ -164,7 +164,7 @@ class GBDT(ModelBase):
             "ignore_vars": self.ignore_vars,
             "include_monthly_aggs": self.include_monthly_aggs,
             "include_yearly_aggs": self.include_yearly_aggs,
-            "include_static": self.include_static,
+            "static": self.static,
             "early_stopping": self.early_stopping,
         }
 

@@ -26,7 +26,7 @@ class LinearNetwork(NNBase):
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
-        include_static: bool = True,
+        static: Optional[str] = "features",
         device: str = "cuda:0",
     ) -> None:
         super().__init__(
@@ -40,7 +40,7 @@ class LinearNetwork(NNBase):
             include_yearly_aggs,
             surrounding_pixels,
             ignore_vars,
-            include_static,
+            static,
             device,
         )
 
@@ -72,7 +72,7 @@ class LinearNetwork(NNBase):
             "ignore_vars": self.ignore_vars,
             "include_monthly_aggs": self.include_monthly_aggs,
             "include_yearly_aggs": self.include_yearly_aggs,
-            "include_static": self.include_static,
+            "static": self.static,
             "device": self.device,
         }
 
@@ -89,7 +89,7 @@ class LinearNetwork(NNBase):
             include_latlons=self.include_latlons,
             include_yearly_aggs=self.include_yearly_aggs,
             experiment=self.experiment,
-            include_static=self.include_static,
+            include_static=True if self.static is not None else False,
         )
         self.model.to(torch.device(self.device))
         self.model.load_state_dict(state_dict)
@@ -104,9 +104,11 @@ class LinearNetwork(NNBase):
             if self.include_yearly_aggs:
                 ym_tensor = x_ref[4]
                 input_size += ym_tensor.shape[-1]
-            if self.include_static:
-                static_tensor = x_ref[5]
-                input_size += static_tensor.shape[-1]
+            if self.static == "features":
+                assert x_ref is not None
+                input_size += x_ref[5].shape[-1]
+            elif self.static == "embeddings":
+                input_size += self.num_locations
             self.input_size = input_size
 
         model = LinearModel(
@@ -117,7 +119,7 @@ class LinearNetwork(NNBase):
             include_latlons=self.include_latlons,
             include_yearly_aggs=self.include_yearly_aggs,
             experiment=self.experiment,
-            include_static=self.include_static,
+            include_static=True if self.static is not None else False,
         )
         return model.to(torch.device(self.device))
 
