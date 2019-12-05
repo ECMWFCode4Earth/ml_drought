@@ -125,6 +125,10 @@ class GroupbyRegion:
         """
         # initialise attributes
         self.da = da
+        assert type(self.da) == xr.DataArray, 'This method only works' \
+            'with `xr.DataArray` not `xr.Dataset`. Make sure you select' \
+            'one variable for your '
+
         self.selection = selection
         self.admin_bound = self.get_admin_level(self.selection)
 
