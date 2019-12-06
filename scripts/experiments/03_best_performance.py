@@ -18,7 +18,7 @@ sys.path.append("..")
 
 def _rename_directory(from_path: Path, to_path: Path):
     shutil.move(from_path, to_path)
-    print(f'MOVED {from_path} to {to_path}')
+    print(f"MOVED {from_path} to {to_path}")
 
 
 def parsimonious(experiment="one_month_forecast",):
@@ -31,7 +31,7 @@ def regression(
     experiment="one_month_forecast",
     include_pred_month=True,
     surrounding_pixels=1,
-    static='features',
+    static="features",
 ):
     predictor = LinearRegression(
         get_data_path(),
@@ -51,7 +51,7 @@ def linear_nn(
     experiment="one_month_forecast",
     include_pred_month=True,
     surrounding_pixels=1,
-    static='features',
+    static="features",
 ):
     predictor = LinearNetwork(
         layer_sizes=[100],
@@ -72,7 +72,7 @@ def rnn(
     experiment="one_month_forecast",
     include_pred_month=True,
     surrounding_pixels=1,
-    static='features',
+    static="features",
 ):
     predictor = RecurrentNetwork(
         hidden_size=128,
@@ -94,7 +94,7 @@ def earnn(
     include_pred_month=True,
     surrounding_pixels=None,
     pretrained=True,
-    static='features',
+    static="features",
 ):
     data_path = get_data_path()
 
@@ -111,8 +111,7 @@ def earnn(
         predictor.evaluate(save_preds=True)
         predictor.save_model()
     else:
-        predictor = load_model(
-            data_path / f"models/{experiment}/ealstm/model.pt")
+        predictor = load_model(data_path / f"models/{experiment}/ealstm/model.pt")
 
     test_file = data_path / f"features/{experiment}/test/2018_3"
     assert test_file.exists()
@@ -129,6 +128,6 @@ if __name__ == "__main__":
     data_path = get_data_path()
 
     _rename_directory(
-        from_path=data_path / 'models' / 'one_month_forecast',
-        to_path=data_path / 'models' / 'one_month_forecast_BASE',
+        from_path=data_path / "models" / "one_month_forecast",
+        to_path=data_path / "models" / "one_month_forecast_BASE",
     )

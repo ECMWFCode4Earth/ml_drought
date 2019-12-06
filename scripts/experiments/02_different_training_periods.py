@@ -22,8 +22,10 @@ def parsimonious(experiment="one_month_forecast",):
 
 
 def regression(
-    experiment="one_month_forecast", include_pred_month=True, surrounding_pixels=1,
-    explain=False
+    experiment="one_month_forecast",
+    include_pred_month=True,
+    surrounding_pixels=1,
+    explain=False,
 ):
     predictor = LinearRegression(
         get_data_path(),
@@ -41,7 +43,9 @@ def regression(
 
 
 def linear_nn(
-    experiment="one_month_forecast", include_pred_month=True, surrounding_pixels=1,
+    experiment="one_month_forecast",
+    include_pred_month=True,
+    surrounding_pixels=1,
     explain=False,
 ):
     predictor = LinearNetwork(
@@ -101,8 +105,7 @@ def earnn(
         predictor.evaluate(save_preds=True)
         predictor.save_model()
     else:
-        predictor = load_model(
-            data_path / f"models/{experiment}/ealstm/model.pt")
+        predictor = load_model(data_path / f"models/{experiment}/ealstm/model.pt")
 
     if explain:
         test_file = data_path / f"features/{experiment}/test/2018_3"
@@ -110,12 +113,13 @@ def earnn(
         all_shap_for_file(test_file, predictor, batch_size=100)
 
 
-def gbdt(experiment="one_month_forecast",
-         include_pred_month=True,
-         surrounding_pixels=None,
-         pretrained=True,
-         explain=False
-         ):
+def gbdt(
+    experiment="one_month_forecast",
+    include_pred_month=True,
+    surrounding_pixels=None,
+    pretrained=True,
+    explain=False,
+):
     data_path = get_data_path()
 
     # initialise, train and save GBDT model
