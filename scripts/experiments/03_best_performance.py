@@ -10,6 +10,7 @@ from src.models import (
     RecurrentNetwork,
     EARecurrentNetwork,
     load_model,
+    GBDT
 )
 from pathlib import Path
 
