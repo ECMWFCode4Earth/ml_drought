@@ -43,12 +43,16 @@ def rename_model_experiment_file(vars_: List[str], static: bool) -> None:
 
 
 def run_all_models_as_experiments(
-    vars_to_include: List[str], ignore_vars: List[str], static: bool
+    vars_to_include: List[str],
+    ignore_vars: List[str],
+    static: bool,
+    run_regression: bool = True,
 ):
     print(f"Experiment {vars_to_include} Static: {static}")
 
     # RUN EXPERIMENTS
-    regression(ignore_vars=ignore_vars, include_static=static)
+    if run_regression:
+        regression(ignore_vars=ignore_vars, include_static=static)
 
     linear_nn(ignore_vars=ignore_vars, include_static=static)
     rnn(ignore_vars=ignore_vars, include_static=static)
@@ -233,4 +237,9 @@ if __name__ == "__main__":
 
         # run experiments
         for static in [True, False]:
-            run_all_models_as_experiments(vars_to_include, ignore_vars, static=static)
+            run_all_models_as_experiments(
+                vars_to_include,
+                ignore_vars,
+                static=static,
+                run_regression=False,
+            )
