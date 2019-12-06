@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 
 
@@ -10,3 +11,8 @@ def get_data_path() -> Path:
     else:
         data_path = Path("../data")
     return data_path
+
+
+def _rename_directory(from_path: Path, to_path: Path) -> None:
+    shutil.move(from_path, to_path)
+    print(f"MOVED {from_path} to {to_path}")

@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append("../..")
+
 from scripts.utils import get_data_path
 from src.analysis import all_shap_for_file
 from src.models import (
@@ -9,11 +13,11 @@ from src.models import (
     load_model,
     GBDT,
 )
-import sys
 
-sys.path.append("..")
 
-# def
+
+def get_training_years():
+    return
 
 
 def parsimonious(experiment="one_month_forecast",):

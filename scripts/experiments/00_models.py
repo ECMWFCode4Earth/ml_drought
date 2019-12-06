@@ -1,4 +1,8 @@
-from scripts.utils import get_data_path
+import sys
+
+sys.path.append("../..")
+
+from scripts.utils import get_data_path, _rename_directory
 from src.analysis import all_shap_for_file
 from src.models import (
     Persistence,
@@ -9,15 +13,6 @@ from src.models import (
     load_model,
     GBDT,
 )
-import sys
-import shutil
-
-sys.path.append("..")
-
-
-def _rename_directory(from_path: Path, to_path: Path):
-    shutil.move(from_path, to_path)
-    print(f"MOVED {from_path} to {to_path}")
 
 
 def parsimonious(experiment="one_month_forecast",):

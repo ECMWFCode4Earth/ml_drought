@@ -4,8 +4,13 @@ run_different_variables.py
 All vars:
 ['pev', 'sp', 't2m', 'tp', 'VCI', 'precip', 'ndvi', 'E', 'Eb', 'SMroot', 'SMsurf',]
 """
+import sys
+
+sys.path.append("../..")
 
 from pathlib import Path
+from typing import List
+
 from src.models import (
     Persistence,
     LinearRegression,
@@ -15,19 +20,10 @@ from src.models import (
     load_model,
 )
 from src.analysis import all_shap_for_file
-import shutil
-from typing import List
-import sys
-
-sys.path.append("..")
+from scripts.utils import get_data_path, _rename_directory
 
 
 # NOTE: p84.162 == 'vertical integral of moisture flux'
-
-
-def _rename_directory(from_path: Path, to_path: Path):
-    shutil.move(from_path, to_path)
-    print(f"MOVED {from_path} to {to_path}")
 
 
 def rename_model_experiment_file(vars_: List[str], static: bool) -> None:
