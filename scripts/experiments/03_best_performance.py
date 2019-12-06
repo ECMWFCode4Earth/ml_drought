@@ -106,13 +106,13 @@ def earnn(
 
     if not pretrained:
         predictor = EARecurrentNetwork(
-            hidden_size=248,
+            hidden_size=128,
             data_folder=data_path,
             experiment=experiment,
             include_pred_month=include_pred_month,
             surrounding_pixels=surrounding_pixels,
             static=static,
-            static_embedding_size=200,
+            static_embedding_size=10,
             ignore_vars=ignore_vars
         )
         predictor.train(num_epochs=50, early_stopping=5)
@@ -161,16 +161,16 @@ if __name__ == "__main__":
     always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb"]
 
     parsimonious()
-    # regression(ignore_vars=always_ignore_vars)
-    # gbdt(ignore_vars=always_ignore_vars)
-    # linear_nn(ignore_vars=always_ignore_vars)
+    regression(ignore_vars=always_ignore_vars)
+    gbdt(ignore_vars=always_ignore_vars)
+    linear_nn(ignore_vars=always_ignore_vars)
     # rnn(ignore_vars=always_ignore_vars)
-    # earnn(ignore_vars=always_ignore_vars)
+    earnn(ignore_vars=always_ignore_vars)
 
     # rename the output file
     data_path = get_data_path()
 
-    # _rename_directory(
-    #     from_path=data_path / "models" / "one_month_forecast",
-    #     to_path=data_path / "models" / "one_month_forecast_BASE",
-    # )
+    _rename_directory(
+        from_path=data_path / "models" / "one_month_forecast",
+        to_path=data_path / "models" / "one_month_forecast_BASE",
+    )
