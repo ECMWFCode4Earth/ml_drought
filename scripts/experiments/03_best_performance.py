@@ -162,7 +162,7 @@ if __name__ == "__main__":
     always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb"]
 
     parsimonious()
-    regression(ignore_vars=always_ignore_vars)
+    # regression(ignore_vars=always_ignore_vars)
     gbdt(ignore_vars=always_ignore_vars)
     linear_nn(ignore_vars=always_ignore_vars)
     # rnn(ignore_vars=always_ignore_vars)
