@@ -15,7 +15,6 @@ from src.models import (
 )
 
 
-
 def get_training_years():
     return
 

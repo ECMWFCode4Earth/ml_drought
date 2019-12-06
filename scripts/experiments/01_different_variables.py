@@ -4,12 +4,12 @@ run_different_variables.py
 All vars:
 ['pev', 'sp', 't2m', 'tp', 'VCI', 'precip', 'ndvi', 'E', 'Eb', 'SMroot', 'SMsurf',]
 """
+from itertools import combinations
+from pathlib import Path
+from typing import List
 import sys
 
 sys.path.append("../..")
-
-from pathlib import Path
-from typing import List
 
 from src.models import (
     Persistence,
@@ -206,41 +206,17 @@ if __name__ == "__main__":
         "sp",
         "tp",
         "ndvi",
+        "p84.162",
     ]
-    # important_vars = ['precip', 't2m', 'pev', 'E', 'SMsurf', 'SMroot', 'VCI']
-    # important_vars = ['t2m', 'pev', 'E', 'SMsurf', 'SMroot', 'VCI', 'precip']
-    # important_vars = ['VCI', 'precip', 't2m', 'pev']
     important_vars = ["VCI", "precip", "t2m", "pev", "E", "SMsurf", "SMroot"]
-    expts_to_run = [
-        ["VCI"],
-        ["precip"],
-        ["t2m"],
-        ["pev"],
-        ["E"],
-        ["SMsurf"],
-        ["SMroot"],
-        ["VCI", "precip"],
-        ["VCI", "t2m"],
-        ["VCI", "pev"],
-        ["VCI", "E"],
-        ["VCI", "SMsurf"],
-        ["VCI", "SMroot"],
-        ["VCI", "precip", "t2m"],
-        ["VCI", "precip", "pev"],
-        ["VCI", "precip", "E"],
-        ["VCI", "precip", "SMsurf"],
-        ["VCI", "precip", "SMroot"],
-        ["VCI", "precip", "t2m", "pev"],
-        ["VCI", "precip", "t2m", "E"],
-        ["VCI", "precip", "t2m", "SMsurf"],
-        ["VCI", "precip", "t2m", "SMroot"],
-        ["VCI", "precip", "t2m", "pev", "E"],
-        ["VCI", "precip", "t2m", "pev", "SMsurf"],
-        ["VCI", "precip", "t2m", "pev", "SMroot"],
-        ["VCI", "precip", "t2m", "pev", "E", "SMsurf"],
-        ["VCI", "precip", "t2m", "pev", "E", "SMroot"],
-        ["VCI", "precip", "t2m", "pev", "E", "SMsurf", "SMroot"],
-    ]
+    additional_vars = ["precip", "t2m", "pev", "E", "SMsurf", "SMroot"]
+
+    # create ALL combinations of features (VCI + ...)
+    expts_to_run = [["VCI"]]
+    for n_combinations in range(len(additional_vars)):
+        expts_to_run.extend(
+            [["VCI"] + list(c) for c in combinations(additional_vars, n_combinations)]
+        )
 
     # # add variables in one at a time
     # for i in range(len(important_vars)):
