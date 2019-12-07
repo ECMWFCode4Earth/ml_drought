@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append("../..")
 
 from scripts.utils import get_data_path, _rename_directory
@@ -10,7 +11,7 @@ from src.models import (
     RecurrentNetwork,
     EARecurrentNetwork,
     load_model,
-    GBDT
+    GBDT,
 )
 from pathlib import Path
 
@@ -50,7 +51,7 @@ def linear_nn(
     surrounding_pixels=1,
     explain=False,
     static="features",
-    ignore_vars=None
+    ignore_vars=None,
 ):
     predictor = LinearNetwork(
         layer_sizes=[100],
@@ -59,7 +60,7 @@ def linear_nn(
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
         static=static,
-        ignore_vars=ignore_vars
+        ignore_vars=ignore_vars,
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
@@ -75,7 +76,7 @@ def rnn(
     surrounding_pixels=1,
     explain=False,
     static="features",
-    ignore_vars=None
+    ignore_vars=None,
 ):
     predictor = RecurrentNetwork(
         hidden_size=128,
@@ -84,7 +85,7 @@ def rnn(
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
         static=static,
-        ignore_vars=ignore_vars
+        ignore_vars=ignore_vars,
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
@@ -101,7 +102,7 @@ def earnn(
     pretrained=False,
     explain=False,
     static="features",
-    ignore_vars=None
+    ignore_vars=None,
 ):
     data_path = get_data_path()
 
@@ -114,14 +115,13 @@ def earnn(
             surrounding_pixels=surrounding_pixels,
             static=static,
             static_embedding_size=10,
-            ignore_vars=ignore_vars
+            ignore_vars=ignore_vars,
         )
         predictor.train(num_epochs=50, early_stopping=5)
         predictor.evaluate(save_preds=True)
         predictor.save_model()
     else:
-        predictor = load_model(
-            data_path / f"models/{experiment}/ealstm/model.pt")
+        predictor = load_model(data_path / f"models/{experiment}/ealstm/model.pt")
 
     if explain:
         test_file = data_path / f"features/{experiment}/test/2018_3"
@@ -136,7 +136,7 @@ def gbdt(
     pretrained=True,
     explain=False,
     static="features",
-    ignore_vars=None
+    ignore_vars=None,
 ):
     data_path = get_data_path()
 
@@ -147,7 +147,7 @@ def gbdt(
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
         static=static,
-        ignore_vars=ignore_vars
+        ignore_vars=ignore_vars,
     )
     predictor.train(early_stopping=5)
     predictor.evaluate(save_preds=True)

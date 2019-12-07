@@ -238,8 +238,5 @@ if __name__ == "__main__":
         # run experiments
         for static in [True, False]:
             run_all_models_as_experiments(
-                vars_to_include,
-                ignore_vars,
-                static=static,
-                run_regression=False,
+                vars_to_include, ignore_vars, static=static, run_regression=False,
             )
