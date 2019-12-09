@@ -61,7 +61,13 @@ class _TripletIter(_BaseIter):
         super().__init__(loader)
         self.neighbouring_distance = loader.neighbouring_distance
 
-    def __next__(self) -> Tuple[TrainData, TrainData, TrainData]:
+    def __next__(
+        self,
+    ) -> Tuple[
+        Tuple[Optional[torch.Tensor], ...],
+        Tuple[Optional[torch.Tensor], ...],
+        Tuple[Optional[torch.Tensor], ...],
+    ]:
 
         global_modelarrays: Optional[ModelArrays] = None
 
@@ -101,7 +107,11 @@ class _TripletIter(_BaseIter):
                     distant.to_tensor(self.device)
                     global_modelarrays.to_tensor(self.device)
 
-                return anchor, neighbour, distant
+                return (
+                    anchor.return_tuple(),
+                    neighbour.return_tuple(),
+                    distant.return_tuple(),
+                )
             else:
                 raise StopIteration()
 
@@ -120,7 +130,9 @@ class _TripletIter(_BaseIter):
         neighbour_indices: List[int] = []
         distant_indices: List[int] = []
 
-        for latlon in x.latlons:
+        outer_distance = tuple(2 * val for val in distance)
+
+        for idx, latlon in enumerate(x.latlons):
             # to really emphasize the distance, we ensure the distant indices
             # are at least twice as far away as the neighbouring indices
             neighbours = np.where(
@@ -128,10 +140,11 @@ class _TripletIter(_BaseIter):
                 & (x.latlons >= latlon - distance).all(axis=1)
             )[0]
             distants = np.where(
-                (x.latlons > latlon + 2 * distance).all(axis=1)
-                | (x.latlons < latlon - 2 * distance).all(axis=1)
+                (x.latlons[:, 0] > latlon[0] + outer_distance[0])
+                | (x.latlons[:, 1] < latlon[1] - outer_distance[1])
+                | (x.latlons[:, 0] < latlon[0] - outer_distance[0])
+                | (x.latlons[:, 1] > latlon[1] + outer_distance[1])
             )[0]
-
             neighbour_indices.append(np.random.choice(neighbours))
             distant_indices.append(np.random.choice(distants))
 

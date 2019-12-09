@@ -113,6 +113,7 @@ class TestEARecurrentNetwork:
             data_folder=tmp_path,
             static_embedding_size=use_static_embedding,
         )
+        model.unsupervised_warm_up(neighbouring_distance=(10, 10))
         model.train()
 
         captured = capsys.readouterr()

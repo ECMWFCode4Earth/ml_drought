@@ -584,7 +584,6 @@ class NNBase(ModelBase):
             "data_path": self.data_path,
             "batch_file_size": self.batch_size,
             "shuffle_data": shuffle_data,
-            "mode": "train",
             "mask": None,
             "experiment": self.experiment,
             "pred_months": self.pred_months,

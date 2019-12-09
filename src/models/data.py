@@ -51,6 +51,16 @@ class TrainData:
                 output_dict[key] = None
         return TrainData(**output_dict)
 
+    def return_tuple(self) -> Tuple[Optional[torch.Tensor], ...]:
+        return (
+            self.historical,
+            self.pred_months,
+            self.latlons,
+            self.current,
+            self.yearly_aggs,
+            self.static,
+        )
+
 
 @dataclass
 class ModelArrays:
@@ -650,14 +660,7 @@ class _TrainIter(_BaseIter):
                     global_modelarrays.to_tensor(self.device)
 
                 return (
-                    (
-                        global_modelarrays.x.historical,
-                        global_modelarrays.x.pred_months,
-                        global_modelarrays.x.latlons,
-                        global_modelarrays.x.current,
-                        global_modelarrays.x.yearly_aggs,
-                        global_modelarrays.x.static,
-                    ),
+                    global_modelarrays.x.return_tuple(),
                     global_modelarrays.y,
                 )
             else:
