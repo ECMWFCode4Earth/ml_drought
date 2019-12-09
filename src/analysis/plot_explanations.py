@@ -28,9 +28,9 @@ int2month = {
 }
 
 
-def plot_shap_values(
+def plot_explanations(
     x: np.ndarray,
-    shap_values: np.ndarray,
+    explanations: np.ndarray,
     val_list: List[str],
     normalizing_dict: Dict[str, Dict[str, float]],
     value_to_plot: str,
@@ -47,8 +47,8 @@ def plot_shap_values(
     ----------
     x: np.array
         The input to a model for a single data instance
-    shap_values: np.array
-        The corresponding shap values (to x)
+    explanations: np.array
+        The corresponding shap / morris values (to x)
     val_list: list
         A list of the variable names, for axis labels
     normalizing_dict: dict
@@ -83,7 +83,7 @@ def plot_shap_values(
             ]["mean"]
             break
 
-    shap_val = shap_values[:, idx]
+    expl_val = explanations[:, idx]
 
     months = list(range(1, len(x_val) + 1))
 
@@ -106,7 +106,7 @@ def plot_shap_values(
     par1.axis["right"].toggle(all=True)
 
     if normalize_shap_plots:
-        par1.set_ylim(shap_values.min(), shap_values.max())
+        par1.set_ylim(explanations.min(), explanations.max())
 
     if polished_value_name is None:
         polished_value_name = value_to_plot
@@ -116,7 +116,7 @@ def plot_shap_values(
     par1.set_ylabel("Shap value")
 
     (p1,) = host.plot(months, x_val, label=polished_value_name, linestyle="dashed")
-    (p2,) = par1.plot(months, shap_val, label="Shap value")
+    (p2,) = par1.plot(months, expl_val, label="Shap value")
 
     host.axis["left"].label.set_color(p1.get_color())
     par1.axis["right"].label.set_color(p2.get_color())
@@ -133,8 +133,12 @@ def plot_shap_values(
         plt.show()
 
 
-def all_shap_for_file(
-    test_folder: Path, model: NNBase, background_size: int = 100, batch_size: int = 100
+def all_explanations_for_file(
+    test_folder: Path,
+    model: NNBase,
+    background_size: int = 100,
+    batch_size: int = 100,
+    method="shap",
 ) -> None:
     """
     Calculate all the shap values for a single file (i.e. for all the
@@ -175,33 +179,32 @@ def all_shap_for_file(
     output_dict: Dict[str, np.ndarray] = {}
 
     num_inputs = val.x.historical.shape[0]
-    print(f"Calculating shap values for {num_inputs} instances")
+    print(f"Calculating {method} values for {num_inputs} instances")
     start_idx = 0
 
     while start_idx < num_inputs:
         print(
-            f"Calculating shap values for indices {start_idx} to {start_idx + batch_size}"
+            f"Calculating {method} values for indices {start_idx} to {start_idx + batch_size}"
         )
         var_names = None
         if start_idx == 0:
             var_names = val.x_vars
-        shap_inputs = model.make_shap_input(
-            val.x, start_idx=start_idx, num_inputs=batch_size
-        )
         explanations = model.explain(
-            x=shap_inputs,
+            x=val.x,
             var_names=var_names,
-            save_shap_values=False,
+            save_explanations=False,
             background_size=background_size,
+            start_idx=start_idx,
+            num_inputs=num_inputs,
         )
 
         if start_idx == 0:
-            for input_name, shap_array in explanations.items():
-                output_dict[input_name] = shap_array
+            for input_name, expl_array in explanations.__dict__.items():
+                output_dict[input_name] = expl_array
         else:
-            for input_name, shap_array in explanations.items():
+            for input_name, expl_array in explanations.__dict__.items():
                 output_dict[input_name] = np.concatenate(
-                    (output_dict[input_name], shap_array), axis=0
+                    (output_dict[input_name], expl_array), axis=0
                 )
         start_idx = start_idx + batch_size
 
@@ -218,7 +221,7 @@ def all_shap_for_file(
         file_id_folder.mkdir(parents=True)
 
     for output_type, shap_array in output_dict.items():
-        np.save(file_id_folder / f"shap_value_{output_type}.npy", shap_array)
+        np.save(file_id_folder / f"{method}_value_{output_type}.npy", shap_array)
 
     with (file_id_folder / "input_ModelArray.pkl").open("wb") as f:
         pickle.dump(val, f)
