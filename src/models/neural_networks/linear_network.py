@@ -187,6 +187,7 @@ class LinearModel(nn.Module):
         current=None,
         yearly_aggs=None,
         static=None,
+        return_embedding=False,
     ):
         # flatten the final 2 dimensions (time / feature)
         x = x.contiguous().view(x.shape[0], -1)
@@ -208,6 +209,9 @@ class LinearModel(nn.Module):
         # pass the inputs through the layers
         for layer in self.dense_layers:
             x = layer(x)
+
+        if return_embedding:
+            return x
 
         # pass through the final layer for a scalar prediction
         return self.final_dense(x)

@@ -237,6 +237,7 @@ class RNN(nn.Module):
         current=None,
         yearly_aggs=None,
         static=None,
+        return_embedding=False,
     ):
 
         sequence_length = x.shape[1]
@@ -271,6 +272,9 @@ class RNN(nn.Module):
             x = torch.cat((x, yearly_aggs), dim=-1)
         if self.include_static:
             x = torch.cat((x, static), dim=-1)
+
+        if return_embedding:
+            return x
 
         for layer_number, dense_layer in enumerate(self.dense_layers):
             x = dense_layer(x)

@@ -261,6 +261,7 @@ class EALSTM(nn.Module):
         current=None,
         yearly_aggs=None,
         static=None,
+        return_embedding=False,
     ):
 
         assert (
@@ -287,6 +288,9 @@ class EALSTM(nn.Module):
         hidden_state, cell_state = self.rnn(x, static_tensor)
 
         x = self.rnn_dropout(hidden_state[:, -1, :])
+
+        if return_embedding:
+            return x
 
         if self.experiment == "nowcast":
             assert current is not None

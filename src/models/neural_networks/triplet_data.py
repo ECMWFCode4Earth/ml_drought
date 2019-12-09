@@ -189,7 +189,11 @@ def chunk_triplets(
     split_x3 = []
 
     for idx, (x1_section, x2_section, x3_section) in enumerate(zip(x1, x2, x3)):
-        if (x1_section is not None) and (x2_section is not None) and (x3_section is not None):
+        if (
+            (x1_section is not None)
+            and (x2_section is not None)
+            and (x3_section is not None)
+        ):
             split_x1.append(torch.chunk(x1_section, num_sections))
             split_x2.append(torch.chunk(x2_section, num_sections))
             split_x3.append(torch.chunk(x3_section, num_sections))
