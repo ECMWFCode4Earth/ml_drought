@@ -19,8 +19,7 @@ from src.models import (
     EARecurrentNetwork,
     load_model,
 )
-from src.analysis import all_shap_for_file
-from scripts.utils import get_data_path, _rename_directory
+from scripts.utils import _rename_directory
 
 
 # NOTE: p84.162 == 'vertical integral of moisture flux'
