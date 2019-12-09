@@ -1,9 +1,12 @@
 from pathlib import Path
 import numpy as np
+import torch
+from torch.nn import functional as F
+from random import shuffle as shuffle_list
 
 from ..data import DataLoader, _BaseIter, ModelArrays, TrainData
 
-from typing import Union, Tuple, Optional, List
+from typing import Union, Tuple, Optional, List, Iterable
 
 
 class TripletLoader(DataLoader):
@@ -133,3 +136,71 @@ class _TripletIter(_BaseIter):
             distant_indices.append(np.random.choice(distants))
 
         return x.x, x.x[neighbour_indices], x.x[distant_indices]
+
+
+def triplet_loss(
+    z_anchor: torch.Tensor,
+    z_neighbour: torch.Tensor,
+    z_distant: torch.Tensor,
+    margin: float = 0.1,
+    l2: float = 0,
+) -> torch.Tensor:
+    """
+    https://github.com/ermongroup/tile2vec/blob/master/src/resnet.py#L162
+    """
+    l_n = torch.sqrt(((z_anchor - z_neighbour) ** 2).sum(dim=1))
+    l_d = -torch.sqrt(((z_anchor - z_distant) ** 2).sum(dim=1))
+    loss = torch.mean(F.relu(l_n + l_d + margin))
+    if l2 != 0:
+        loss += l2 * (
+            torch.norm(z_anchor) + torch.norm(z_neighbour) + torch.norm(z_distant)
+        )
+    return loss
+
+
+def chunk_triplets(
+    x1: Tuple[Optional[torch.Tensor], ...],
+    x2: Tuple[Optional[torch.Tensor], ...],
+    x3: Tuple[Optional[torch.Tensor], ...],
+    batch_size: int,
+    shuffle: bool = False,
+) -> Iterable[
+    Tuple[
+        Tuple[Optional[torch.Tensor], ...],
+        Tuple[Optional[torch.Tensor], ...],
+        Tuple[Optional[torch.Tensor], ...],
+    ]
+]:
+    """
+    This function does the same thing as src.utils.models.chunk_array, but in the special case
+    of tensors. We could (should?) integrate the two functions
+    """
+    assert (
+        (x1[0] is not None) and (x2[0] is not None) and (x3[0] is not None)
+    ), f"x1[0] should be historical data, and therefore should not be None"
+    num_sections = max(1, x1[0].shape[0] // batch_size)
+
+    assert (
+        x1[0].shape == x2[0].shape == x3[0].shape
+    ), f"All inputs must have the same number of elements!"
+
+    split_x1 = []
+    split_x2 = []
+    split_x3 = []
+
+    for idx, (x1_section, x2_section, x3_section) in enumerate(zip(x1, x2, x3)):
+        if (x1_section is not None) and (x2_section is not None) and (x3_section is not None):
+            split_x1.append(torch.chunk(x1_section, num_sections))
+            split_x2.append(torch.chunk(x2_section, num_sections))
+            split_x3.append(torch.chunk(x3_section, num_sections))
+        else:
+            split_x1.append([None] * num_sections)  # type: ignore
+            split_x2.append([None] * num_sections)  # type: ignore
+            split_x3.append([None] * num_sections)  # type: ignore
+    return_arrays = list(zip(*split_x1, *split_x2, *split_x3))
+
+    chunk_lengths = len(split_x1)
+
+    if shuffle:
+        shuffle_list(return_arrays)
+    return [(chunk[:chunk_lengths], chunk[chunk_lengths : 2 * chunk_lengths], chunk[2 * chunk_lengths :]) for chunk in return_arrays]  # type: ignore
