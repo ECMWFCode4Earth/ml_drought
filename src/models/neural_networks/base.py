@@ -281,7 +281,7 @@ class NNBase(ModelBase):
                 self._one_hot(x.static, self.num_locations) if self.static == "embeddings" else x.static,  # type: ignore
             )
         else:
-            return (
+            return (  # type: ignore
                 x[0],  # type: ignore
                 self._one_hot(x[1], 12),  # type: ignore
                 x[2],  # type: ignore
