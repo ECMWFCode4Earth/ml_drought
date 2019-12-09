@@ -193,8 +193,8 @@ class NNBase(ModelBase):
 
     def unsupervised_warm_up(
         self,
-        neighbouring_distance: Union[float, Tuple[float, float]] = 5,
-        multiplier: int = 5,
+        neighbouring_distance: Union[float, Tuple[float, float]] = 1,
+        multiplier: int = 2,
         num_epochs: int = 1,
         early_stopping: Optional[int] = None,
         batch_size: int = 256,
