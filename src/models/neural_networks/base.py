@@ -245,6 +245,10 @@ class NNBase(ModelBase):
 
         return test_arrays_dict, preds_dict
 
+    def unsupervised_warm_up(self) -> None:
+        # TODO
+        raise NotImplementedError
+
     def _get_background(self, sample_size: int = 150) -> List[torch.Tensor]:
 
         print("Extracting a sample of the training data")
