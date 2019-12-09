@@ -367,44 +367,28 @@ class NNBase(ModelBase):
 
         # make val.x a list of tensors, as is required by the shap explainer
         output_tensors = []
-        output_tensors.append(x.historical[start_idx : start_idx + num_inputs])
-        # one hot months
-        one_hot_months = self._one_hot(
-            x.pred_months[start_idx : start_idx + num_inputs], 12
-        )
-        output_tensors.append(one_hot_months)
-        output_tensors.append(x.latlons[start_idx : start_idx + num_inputs])
-        if x.current is None:
-            output_tensors.append(torch.zeros(num_inputs, 1))
-        else:
-            output_tensors.append(x.current[start_idx : start_idx + num_inputs])
-        # yearly aggs
-        output_tensors.append(x.yearly_aggs[start_idx : start_idx + num_inputs])
-        # static data
-        if self.static == "features":
-            assert x.static is not None
-            output_tensors.append(x.static[start_idx : start_idx + num_inputs])
-        elif self.static == "embeddings":
-            assert x.static is not None
-            output_tensors.append(
-                self._one_hot(
-                    x.static[start_idx : start_idx + num_inputs],
-                    cast(int, self.num_locations),
-                )
-            )
-        else:
-            output_tensors.append(torch.zeros(num_inputs, 1))
-        return output_tensors
 
         for _, val in sorted(idx_to_input.items()):
             tensor = x.__getattribute__(val)
             if tensor is not None:
                 if val == "pred_months":
                     output_tensors.append(
-                        self._one_hot_months(tensor[start_idx : start_idx + num_inputs])
+                        self._one_hot(tensor[start_idx : start_idx + num_inputs], 12)
                     )
-                else:
-                    output_tensors.append(tensor[start_idx : start_idx + num_inputs])
+                elif val == "static":
+                    if self.static == "embeddings":
+                        assert x.static is not None
+                        output_tensors.append(
+                            self._one_hot(
+                                x.static[start_idx : start_idx + num_inputs],
+                                cast(int, self.num_locations),
+                            )
+                        )
+                    else:
+                        assert x.static is not None
+                        output_tensors.append(
+                            x.static[start_idx : start_idx + num_inputs]
+                        )
             else:
                 output_tensors.append(torch.zeros(num_inputs, 1))
 
