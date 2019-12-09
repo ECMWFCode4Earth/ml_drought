@@ -46,7 +46,9 @@ class TripletLoader(DataLoader):
             static,
             device,
         )
-        if isinstance(neighbouring_distance, float):
+        if isinstance(neighbouring_distance, float) or isinstance(
+            neighbouring_distance, int
+        ):
             neighbouring_distance = (neighbouring_distance, neighbouring_distance)
         self.neighbouring_distance = neighbouring_distance
         self.multiplier = multiplier
