@@ -131,7 +131,7 @@ class _TripletIter(_BaseIter):
         Given a single modelArray, returns a tuple containing
         [AnchorData, NeighbourData, DistantData]
         """
-
+        anchor_indices: List[int] = []
         neighbour_indices: List[int] = []
         distant_indices: List[int] = []
 
@@ -150,10 +150,17 @@ class _TripletIter(_BaseIter):
                 | (x.latlons[:, 0] < latlon[0] - outer_distance[0])
                 | (x.latlons[:, 1] > latlon[1] + outer_distance[1])
             )[0]
-            neighbour_indices.append(np.random.choice(neighbours))
-            distant_indices.append(np.random.choice(distants))
 
-        return x.x, x.x[neighbour_indices], x.x[distant_indices]
+            if len(distants) > 0:
+                print(f"No distant values found for {latlon}")
+            elif len(neighbours) > 0:
+                print(f"No near values found for {latlon}")
+            else:
+                neighbour_indices.append(np.random.choice(neighbours))
+                distant_indices.append(np.random.choice(distants))
+                anchor_indices.append(idx)
+
+        return x.x[anchor_indices], x.x[neighbour_indices], x.x[distant_indices]
 
 
 def triplet_loss(
