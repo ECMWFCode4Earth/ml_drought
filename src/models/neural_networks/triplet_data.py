@@ -151,9 +151,9 @@ class _TripletIter(_BaseIter):
                 | (x.latlons[:, 1] > latlon[1] + outer_distance[1])
             )[0]
 
-            if len(distants) > 0:
+            if len(distants) == 0:
                 print(f"No distant values found for {latlon}")
-            elif len(neighbours) > 0:
+            elif len(neighbours) == 0:
                 print(f"No near values found for {latlon}")
             else:
                 neighbour_indices.append(np.random.choice(neighbours))
