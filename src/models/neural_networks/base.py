@@ -193,13 +193,14 @@ class NNBase(ModelBase):
 
     def unsupervised_warm_up(
         self,
-        neighbouring_distance: Union[float, Tuple[float, float]],
+        neighbouring_distance: Union[float, Tuple[float, float]] = 2,
+        multiplier: int = 10,
         num_epochs: int = 1,
         early_stopping: Optional[int] = None,
         batch_size: int = 256,
         learning_rate: float = 1e-3,
         val_split: float = 0.1,
-        margin: float = 0.1,
+        margin: float = 50,
         l2: float = 0,
     ) -> None:
 
@@ -217,12 +218,14 @@ class NNBase(ModelBase):
 
             train_dataloader = self.get_triplet_dataloader(
                 neighbouring_distance=neighbouring_distance,
+                multiplier=multiplier,
                 mask=train_mask,
                 to_tensor=True,
                 shuffle_data=True,
             )
             val_dataloader = self.get_triplet_dataloader(
                 neighbouring_distance=neighbouring_distance,
+                multiplier=multiplier,
                 mask=val_mask,
                 to_tensor=True,
                 shuffle_data=True,
@@ -233,6 +236,7 @@ class NNBase(ModelBase):
         else:
             train_dataloader = self.get_triplet_dataloader(
                 neighbouring_distance=neighbouring_distance,
+                multiplier=multiplier,
                 to_tensor=True,
                 shuffle_data=True,
             )

@@ -12,7 +12,8 @@ from typing import Union, Tuple, Optional, List, Iterable
 class TripletLoader(DataLoader):
     def __init__(
         self,
-        neighbouring_distance: Union[float, Tuple[float, float]],
+        neighbouring_distance: Union[float, Tuple[float, float]] = 2,
+        multiplier: int = 10,
         data_path: Path = Path("data"),
         batch_file_size: int = 1,
         shuffle_data: bool = True,
@@ -48,6 +49,7 @@ class TripletLoader(DataLoader):
         if isinstance(neighbouring_distance, float):
             neighbouring_distance = (neighbouring_distance, neighbouring_distance)
         self.neighbouring_distance = neighbouring_distance
+        self.multiplier = multiplier
 
     def __iter__(self):
         return _TripletIter(self)
@@ -60,6 +62,7 @@ class _TripletIter(_BaseIter):
     def __init__(self, loader: TripletLoader) -> None:
         super().__init__(loader)
         self.neighbouring_distance = loader.neighbouring_distance
+        self.multiplier = loader.multiplier
 
     def __next__(
         self,
@@ -98,7 +101,7 @@ class _TripletIter(_BaseIter):
             if global_modelarrays is not None:
 
                 anchor, neighbour, distant = self.find_neighbours(
-                    global_modelarrays, self.neighbouring_distance
+                    global_modelarrays, self.neighbouring_distance, self.multiplier
                 )
 
                 if self.to_tensor:
@@ -120,7 +123,7 @@ class _TripletIter(_BaseIter):
 
     @staticmethod
     def find_neighbours(
-        x: ModelArrays, distance: Tuple[float, float]
+        x: ModelArrays, distance: Tuple[float, float], multiplier: int,
     ) -> Tuple[TrainData, TrainData, TrainData]:
         """
         Given a single modelArray, returns a tuple containing
@@ -130,7 +133,7 @@ class _TripletIter(_BaseIter):
         neighbour_indices: List[int] = []
         distant_indices: List[int] = []
 
-        outer_distance = tuple(2 * val for val in distance)
+        outer_distance = tuple(multiplier * val for val in distance)
 
         for idx, latlon in enumerate(x.latlons):
             # to really emphasize the distance, we ensure the distant indices
