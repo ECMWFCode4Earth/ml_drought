@@ -76,6 +76,7 @@ class NNBase(ModelBase):
         batch_size: int = 256,
         learning_rate: float = 1e-3,
         val_split: float = 0.1,
+        final_layer_only: bool = False,
     ) -> None:
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
@@ -111,9 +112,16 @@ class NNBase(ModelBase):
             model = self._initialize_model(x_ref)
             self.model = model
 
-        optimizer = torch.optim.Adam(
-            [pam for pam in self.model.parameters()], lr=learning_rate
-        )
+        if not final_layer_only:
+            parameters = [pam for pam in self.model.parameters()]
+        else:
+            parameters = [
+                pam
+                for name, pam in self.model.named_parameters()
+                if "final" not in name
+            ]
+
+        optimizer = torch.optim.Adam(parameters, lr=learning_rate)
 
         for epoch in range(num_epochs):
             train_rmse = []

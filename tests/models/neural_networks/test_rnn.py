@@ -108,7 +108,7 @@ class TestRecurrentNetwork:
             data_folder=tmp_path,
             include_monthly_aggs=True,
         )
-        model.train()
+        model.train(final_layer_only=True)
 
         captured = capsys.readouterr()
         expected_stdout = "Epoch 1, train smooth L1:"
