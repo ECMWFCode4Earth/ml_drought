@@ -49,9 +49,9 @@ def run_all_models_as_experiments(
 
     if static:
         # 'embeddings' or 'features'
-        linear_nn(ignore_vars=ignore_vars, static='embeddings')
-        rnn(ignore_vars=ignore_vars, static='embeddings')
-        earnn(pretrained=False, ignore_vars=ignore_vars, static='embeddings')
+        linear_nn(ignore_vars=ignore_vars, static="embeddings")
+        rnn(ignore_vars=ignore_vars, static="embeddings")
+        earnn(pretrained=False, ignore_vars=ignore_vars, static="embeddings")
     else:
         linear_nn(ignore_vars=ignore_vars, static=None)
         rnn(ignore_vars=ignore_vars, static=None)

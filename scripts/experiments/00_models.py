@@ -2,7 +2,7 @@ import sys
 
 sys.path.append("../..")
 
-from ._base_models import parsimonious, regression, linear_nn, rnn, earnn
+from _base_models import parsimonious, regression, linear_nn, rnn, earnn
 
 # if __name__ == "__main__":
 #     always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb", "E", "p0001"]
