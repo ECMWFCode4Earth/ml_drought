@@ -1,9 +1,3 @@
-import sys
-
-sys.path.append("../..")
-
-from scripts.utils import get_data_path, _rename_directory
-from src.analysis import all_shap_for_file
 from src.models import (
     Persistence,
     LinearRegression,
@@ -13,7 +7,11 @@ from src.models import (
     load_model,
     GBDT,
 )
-from pathlib import Path
+from src.analysis import all_explanations_for_file
+from scripts.utils import get_data_path, _rename_directory
+import sys
+
+sys.path.append("../..")
 
 
 def parsimonious(experiment="one_month_forecast",):
@@ -108,25 +106,26 @@ def earnn(
 
     if not pretrained:
         predictor = EARecurrentNetwork(
-            hidden_size=128,
+            hidden_size=256,
             data_folder=data_path,
             experiment=experiment,
             include_pred_month=include_pred_month,
             surrounding_pixels=surrounding_pixels,
             static=static,
-            static_embedding_size=10,
+            static_embedding_size=64,
             ignore_vars=ignore_vars,
         )
         predictor.train(num_epochs=50, early_stopping=5)
         predictor.evaluate(save_preds=True)
         predictor.save_model()
     else:
-        predictor = load_model(data_path / f"models/{experiment}/ealstm/model.pt")
+        predictor = load_model(
+            data_path / f"models/{experiment}/ealstm/model.pt")
 
     if explain:
         test_file = data_path / f"features/{experiment}/test/2018_3"
         assert test_file.exists()
-        all_shap_for_file(test_file, predictor, batch_size=100)
+        all_explanations_for_file(test_file, predictor, batch_size=100)
 
 
 def gbdt(
@@ -161,10 +160,10 @@ if __name__ == "__main__":
     important_vars = ["VCI", "precip", "t2m", "pev", "E", "SMsurf", "SMroot"]
     always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb"]
 
-    parsimonious()
+    # parsimonious()
     # regression(ignore_vars=always_ignore_vars)
-    gbdt(ignore_vars=always_ignore_vars)
-    linear_nn(ignore_vars=always_ignore_vars)
+    # gbdt(ignore_vars=always_ignore_vars)
+    # linear_nn(ignore_vars=always_ignore_vars)
     # rnn(ignore_vars=always_ignore_vars)
     earnn(ignore_vars=always_ignore_vars)
 
