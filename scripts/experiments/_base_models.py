@@ -61,7 +61,7 @@ def linear_nn(
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
         static=static,
-        ignore_vars=ignore_vars
+        ignore_vars=ignore_vars,
     )
     predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)
@@ -89,7 +89,7 @@ def rnn(
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
         static=static,
-        ignore_vars=ignore_vars
+        ignore_vars=ignore_vars,
     )
     predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)
@@ -123,14 +123,13 @@ def earnn(
             surrounding_pixels=surrounding_pixels,
             static=static,
             static_embedding_size=static_embedding_size,
-            ignore_vars=ignore_vars
+            ignore_vars=ignore_vars,
         )
         predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
         predictor.evaluate(save_preds=True)
         predictor.save_model()
     else:
-        predictor = load_model(
-            data_path / f"models/{experiment}/ealstm/model.pt")
+        predictor = load_model(data_path / f"models/{experiment}/ealstm/model.pt")
 
     if explain:
         test_file = data_path / f"features/{experiment}/test/2018_3"
@@ -145,7 +144,7 @@ def gbdt(
     pretrained=True,
     explain=False,
     static="features",
-    ignore_vars=None
+    ignore_vars=None,
 ):
     data_path = get_data_path()
 
@@ -156,9 +155,8 @@ def gbdt(
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
         static=static,
-        ignore_vars=ignore_vars
+        ignore_vars=ignore_vars,
     )
     predictor.train(early_stopping=5)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
-

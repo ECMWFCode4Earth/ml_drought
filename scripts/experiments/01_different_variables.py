@@ -14,13 +14,7 @@ import sys
 
 sys.path.append("../..")
 
-from ._base_models import (
-    parsimonious,
-    regression,
-    linear_nn,
-    rnn,
-    earnn,
-)
+from ._base_models import parsimonious, regression, linear_nn, rnn, earnn
 
 from scripts.utils import _rename_directory
 
@@ -105,5 +99,5 @@ if __name__ == "__main__":
         # run experiments
         for static in [True, False]:
             run_all_models_as_experiments(
-                vars_to_include, ignore_vars, static=static, run_regression=False,
+                vars_to_include, ignore_vars, static=static, run_regression=False
             )
