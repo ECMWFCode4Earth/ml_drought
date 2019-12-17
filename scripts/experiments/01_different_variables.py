@@ -47,9 +47,15 @@ def run_all_models_as_experiments(
     if run_regression:
         regression(ignore_vars=ignore_vars, include_static=static)
 
-    linear_nn(ignore_vars=ignore_vars, include_static=static)
-    rnn(ignore_vars=ignore_vars, include_static=static)
-    earnn(pretrained=False, ignore_vars=ignore_vars, include_static=static)
+    if static:
+        # 'embeddings' or 'features'
+        linear_nn(ignore_vars=ignore_vars, static='embeddings')
+        rnn(ignore_vars=ignore_vars, static='embeddings')
+        earnn(pretrained=False, ignore_vars=ignore_vars, static='embeddings')
+    else:
+        linear_nn(ignore_vars=ignore_vars, static=None)
+        rnn(ignore_vars=ignore_vars, static=None)
+        earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
 
     # RENAME DIRECTORY
     rename_model_experiment_file(vars_to_include, static)
