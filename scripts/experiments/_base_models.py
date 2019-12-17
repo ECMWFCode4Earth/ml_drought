@@ -7,7 +7,7 @@ from src.models import (
     load_model,
     GBDT,
 )
-from src.analysis import all_shap_for_file
+from src.analysis import all_explanations_for_file
 from scripts.utils import get_data_path
 import sys
 
@@ -134,7 +134,7 @@ def earnn(
     if explain:
         test_file = data_path / f"features/{experiment}/test/2018_3"
         assert test_file.exists()
-        all_shap_for_file(test_file, predictor, batch_size=100)
+        all_explanations_for_file(test_file, predictor, batch_size=100)
 
 
 def gbdt(
