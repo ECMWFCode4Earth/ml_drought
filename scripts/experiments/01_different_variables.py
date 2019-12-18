@@ -19,7 +19,9 @@ from _base_models import parsimonious, regression, linear_nn, rnn, earnn
 from scripts.utils import _rename_directory, get_data_path
 
 
-def rename_model_experiment_file(data_dir: Path, vars_: List[str], static: bool) -> None:
+def rename_model_experiment_file(
+    data_dir: Path, vars_: List[str], static: bool
+) -> None:
     vars_joined = "_".join(vars_)
     from_path = data_dir / "models" / "one_month_forecast"
     if static:
