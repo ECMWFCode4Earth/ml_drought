@@ -31,6 +31,7 @@ class RecurrentNetwork(NNBase):
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
         device: str = "cuda:0",
+        model_derivative: bool = False,
     ) -> None:
         super().__init__(
             data_folder,
@@ -45,6 +46,7 @@ class RecurrentNetwork(NNBase):
             ignore_vars,
             static,
             device,
+            model_derivative=model_derivative,
         )
 
         # to initialize and save the model

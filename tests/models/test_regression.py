@@ -193,6 +193,7 @@ class TestLinearRegression:
             monthly_aggs,
             static,
             device,
+            model_derivative,
         ):
 
             pass

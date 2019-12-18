@@ -63,7 +63,7 @@ class ModelArrays:
         if type(self.y) is np.ndarray:
             self.y = np.concatenate((self.y, x.y), axis=0)
         else:
-            self.y = torch.cat((self.y, x.y,), dim=0)
+            self.y = torch.cat((self.y, x.y), dim=0)
 
         if self.latlons is not None:
             self.latlons = np.concatenate((self.latlons, x.latlons), axis=0)
@@ -295,6 +295,7 @@ class _BaseIter:
         self.experiment = loader.experiment
         self.ignore_vars = loader.ignore_vars
         self.device = loader.device
+        self.model_derivative = loader.model_derivative
 
         self.static = loader.static
         self.static_normalizing_dict = loader.static_normalizing_dict
@@ -445,7 +446,9 @@ class _BaseIter:
             self.static_array = static_np
         return self.static_array
 
-    def _calculate_change(self, x: xr.Dataset, y: xr.Dataset, order: int = 1) -> xr.Dataset:
+    def _calculate_change(
+        self, x: xr.Dataset, y: xr.Dataset, order: int = 1
+    ) -> xr.Dataset:
         """Rather than predicting the raw VCI value, calculate the change
         in the VCI relative to the previous timestep (if order == 1).
 
@@ -465,7 +468,7 @@ class _BaseIter:
         prev_ts = x[y_var].isel(time=-order)
 
         # calculate the derivative
-        return (prev_ts - y[y_var]).to_dataset(y_var)
+        return (y[y_var] - prev_ts).to_dataset(y_var)
 
     def ds_folder_to_np(
         self, folder: Path, clear_nans: bool = True, to_tensor: bool = False
@@ -560,7 +563,9 @@ class _BaseIter:
                 train_data.current = train_data.current[notnan_indices]  # type: ignore
 
             train_data.historical = train_data.historical[notnan_indices]
-            train_data.pred_months = train_data.pred_months[notnan_indices]  # type: ignore
+            train_data.pred_months = train_data.pred_months[
+                notnan_indices
+            ]  # type: ignore
             train_data.latlons = train_data.latlons[notnan_indices]
             train_data.yearly_aggs = train_data.yearly_aggs[notnan_indices]
             if train_data.static is not None:

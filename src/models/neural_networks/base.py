@@ -31,19 +31,21 @@ class NNBase(ModelBase):
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
         device: str = "cuda:0",
+        model_derivative: bool = False,
     ) -> None:
         super().__init__(
-            data_folder,
-            batch_size,
-            experiment,
-            pred_months,
-            include_pred_month,
-            include_latlons,
-            include_monthly_aggs,
-            include_yearly_aggs,
-            surrounding_pixels,
-            ignore_vars,
-            static,
+            data_folder=data_folder,
+            batch_size=batch_size,
+            experiment=experiment,
+            pred_months=pred_months,
+            include_pred_month=include_pred_month,
+            include_latlons=include_latlons,
+            include_monthly_aggs=include_monthly_aggs,
+            include_yearly_aggs=include_yearly_aggs,
+            surrounding_pixels=surrounding_pixels,
+            ignore_vars=ignore_vars,
+            static=static,
+            model_derivative=model_derivative,
         )
 
         # for reproducibility
@@ -274,7 +276,9 @@ class NNBase(ModelBase):
                 x.latlons,  # type: ignore
                 x.current,  # type: ignore
                 x.yearly_aggs,  # type: ignore
-                self._one_hot(x.static, self.num_locations) if self.static == "embeddings" else x.static,  # type: ignore
+                self._one_hot(x.static, self.num_locations)
+                if self.static == "embeddings"
+                else x.static,  # type: ignore
             )
         else:
             return (
@@ -283,7 +287,9 @@ class NNBase(ModelBase):
                 x[2],  # type: ignore
                 x[3],  # type: ignore
                 x[4],  # type: ignore
-                self._one_hot(x[5], self.num_locations) if self.static == "embeddings" else x[5],  # type: ignore
+                self._one_hot(x[5], self.num_locations)
+                if self.static == "embeddings"
+                else x[5],  # type: ignore
             )
 
     def explain(

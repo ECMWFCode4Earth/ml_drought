@@ -28,6 +28,7 @@ class LinearNetwork(NNBase):
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
         device: str = "cuda:0",
+        model_derivative: bool = False,
     ) -> None:
         super().__init__(
             data_folder,
@@ -42,6 +43,7 @@ class LinearNetwork(NNBase):
             ignore_vars,
             static,
             device,
+            model_derivative=model_derivative,
         )
 
         self.input_layer_sizes = copy(layer_sizes)

@@ -31,6 +31,7 @@ class EARecurrentNetwork(NNBase):
         static: Optional[str] = "features",
         static_embedding_size: Optional[int] = None,
         device: str = "cuda:0",
+        model_derivative: bool = False,
     ) -> None:
         super().__init__(
             data_folder,
@@ -45,6 +46,7 @@ class EARecurrentNetwork(NNBase):
             ignore_vars,
             static,
             device,
+            model_derivative=model_derivative,
         )
 
         # to initialize and save the model
@@ -474,17 +476,17 @@ class OrgEALSTMCell(nn.Module):
         # create tensors of learnable parameters
         self.weight_ih = nn.Parameter(  # type: ignore
             torch.FloatTensor(  # type: ignore
-                input_size_dyn, 3 * hidden_size,
+                input_size_dyn, 3 * hidden_size
             )
         )  # type: ignore
         self.weight_hh = nn.Parameter(  # type: ignore
             torch.FloatTensor(  # type: ignore
-                hidden_size, 3 * hidden_size,
+                hidden_size, 3 * hidden_size
             )
         )  # type: ignore
         self.weight_sh = nn.Parameter(  # type: ignore
             torch.FloatTensor(  # type: ignore
-                input_size_stat, hidden_size,
+                input_size_stat, hidden_size
             )
         )  # type: ignore
         self.bias = nn.Parameter(torch.FloatTensor(3 * hidden_size))  # type: ignore

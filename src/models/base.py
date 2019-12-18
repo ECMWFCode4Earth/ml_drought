@@ -2,6 +2,7 @@ from pathlib import Path
 import numpy as np
 import json
 import pandas as pd
+import xarray as xr
 from sklearn.metrics import mean_squared_error
 
 from .data import TrainData, DataLoader
@@ -33,6 +34,9 @@ class ModelBase:
         training data
     include_static: bool = True
         Whether to include static data
+    model_derivative: bool = False
+        Whether to model the CHANGE in target variable rather than the
+        raw values
     """
 
     model_name: str  # to be added by the model classes
@@ -50,6 +54,7 @@ class ModelBase:
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "embedding",
+        model_derivative: bool = False,
     ) -> None:
 
         self.batch_size = batch_size
@@ -64,6 +69,7 @@ class ModelBase:
         self.surrounding_pixels = surrounding_pixels
         self.ignore_vars = ignore_vars
         self.static = static
+        self.model_derivative = model_derivative
 
         # needs to be set by the train function
         self.num_locations: Optional[int] = None
@@ -86,6 +92,18 @@ class ModelBase:
         # This can be overridden by any model which actually cares which device its run on
         # by default, models which don't care will run on the CPU
         self.device = "cpu"
+
+    def _convert_change_to_raw_values(
+        self, x: xr.Dataset, y: xr.Dataset, order: int = 1
+    ) -> xr.Dataset:
+        """When calculating the derivative we need to convert the change
+        to the raw value for our prediction.
+        """
+        y_var = [v for v in y.data_vars][0]
+        prev_ts = x[y_var].isel(time=-order)
+
+        # calculate the raw values
+        return (prev_ts + y[y_var]).to_dataset(y_var)
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         # This method should return the test arrays as loaded by
@@ -186,7 +204,11 @@ class ModelBase:
         if type(x) is tuple:
             x_his, x_pm, x_latlons, x_cur, x_ym, x_static = x  # type: ignore
         elif type(x) == TrainData:
-            x_his, x_pm, x_latlons = x.historical, x.pred_months, x.latlons  # type: ignore
+            x_his, x_pm, x_latlons = (
+                x.historical,
+                x.pred_months,
+                x.latlons,
+            )  # type: ignore
             x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
             x_static = x.static  # type: ignore
 
@@ -243,6 +265,7 @@ class ModelBase:
             "device": self.device,
             "clear_nans": True,
             "normalize": True,
+            "model_derivative": self.model_derivative,
         }
 
         for key, val in kwargs.items():

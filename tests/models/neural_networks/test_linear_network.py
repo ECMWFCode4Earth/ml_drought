@@ -73,12 +73,16 @@ class TestLinearNetwork:
         assert model_dict["ignore_vars"] == ignore_vars
 
     @pytest.mark.parametrize(
-        "use_pred_months,use_latlons,experiment,monthly_agg,static",
+        "use_pred_months,use_latlons,experiment,monthly_agg,static,model_derivative",
         [
-            (True, False, "one_month_forecast", True, False),
-            (False, True, "one_month_forecast", False, True),
-            (False, True, "nowcast", True, False),
-            (True, False, "nowcast", False, True),
+            (True, False, "one_month_forecast", True, False, True),
+            (False, True, "one_month_forecast", False, True, True),
+            (False, True, "nowcast", True, False, True),
+            (True, False, "nowcast", False, True, True),
+            (True, False, "one_month_forecast", True, False, False),
+            (False, True, "one_month_forecast", False, True, False),
+            (False, True, "nowcast", True, False, False),
+            (True, False, "nowcast", False, True, False),
         ],
     )
     def test_train(
@@ -90,6 +94,7 @@ class TestLinearNetwork:
         experiment,
         monthly_agg,
         static,
+        model_derivative,
     ):
         # make the x, y data (5*5 latlons, 36 timesteps, 3 features)
         x, _, _ = _make_dataset(size=(5, 5), const=True)
@@ -137,6 +142,7 @@ class TestLinearNetwork:
             include_latlons=use_latlons,
             include_monthly_aggs=monthly_agg,
             static="embeddings",
+            model_derivative=model_derivative,
         )
 
         model.train()
