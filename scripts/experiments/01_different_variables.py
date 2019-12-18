@@ -16,15 +16,10 @@ sys.path.append("../..")
 
 from _base_models import parsimonious, regression, linear_nn, rnn, earnn
 
-from scripts.utils import _rename_directory
+from scripts.utils import _rename_directory, get_data_path
 
 
-def rename_model_experiment_file(vars_: List[str], static: bool) -> None:
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_dir = Path("data")
-    else:
-        data_dir = Path("../data")
-
+def rename_model_experiment_file(data_dir: Path, vars_: List[str], static: bool) -> None:
     vars_joined = "_".join(vars_)
     from_path = data_dir / "models" / "one_month_forecast"
     if static:
@@ -58,7 +53,8 @@ def run_all_models_as_experiments(
         earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
 
     # RENAME DIRECTORY
-    rename_model_experiment_file(vars_to_include, static)
+    data_dir = get_data_path()
+    rename_model_experiment_file(data_dir, vars_to_include, static)
     print(f"Experiment {vars_to_include} finished")
 
 
