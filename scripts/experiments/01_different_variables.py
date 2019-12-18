@@ -55,7 +55,7 @@ def run_all_models_as_experiments(
         earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
 
     # RENAME DIRECTORY
-    data_dir = get_data_path()
+    data_dir = get_data_path().absolute()
     rename_model_experiment_file(data_dir, vars_to_include, static)
     print(f"Experiment {vars_to_include} finished")
 
