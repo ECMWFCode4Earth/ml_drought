@@ -145,6 +145,9 @@ class DataLoader:
         (and optionally current) arrays
     static: bool = True
         Whether to include static data
+    self.model_derivative: bool = False
+        Whether to model the CHANGE in the target variable relative to the previous timestep
+        rather than the target variable itself.
     """
 
     def __init__(
@@ -155,6 +158,7 @@ class DataLoader:
         shuffle_data: bool = True,
         clear_nans: bool = True,
         normalize: bool = True,
+        model_derivative: bool = False,
         experiment: str = "one_month_forecast",
         mask: Optional[List[bool]] = None,
         pred_months: Optional[List[int]] = None,
@@ -179,6 +183,7 @@ class DataLoader:
             mask=mask,
             pred_months=pred_months,
         )
+        self.model_derivative = model_derivative
 
         self.normalizing_dict = None
         if normalize:
@@ -440,11 +445,37 @@ class _BaseIter:
             self.static_array = static_np
         return self.static_array
 
+    def _calculate_change(self, x: xr.Dataset, y: xr.Dataset, order: int = 1) -> xr.Dataset:
+        """Rather than predicting the raw VCI value, calculate the change
+        in the VCI relative to the previous timestep (if order == 1).
+
+        Arguments:
+        ---------
+        x: xr.Dataset
+            the predictor timestep variables (including target variable)
+        y: xr.Dataset
+            the predicted timestep target variable
+        order: int = 1
+            the number of timesteps before the predicted timestep to calculate
+            the derivative. 1 means that we are calculating the change
+            from the previous timestep.
+        """
+        # get the last (#order) timestep from the X data
+        y_var = [v for v in y.data_vars][0]
+        prev_ts = x[y_var].isel(time=-order)
+
+        # calculate the derivative
+        return (prev_ts - y[y_var]).to_dataset(y_var)
+
     def ds_folder_to_np(
         self, folder: Path, clear_nans: bool = True, to_tensor: bool = False
     ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / "x.nc"), xr.open_dataset(folder / "y.nc")
+
+        if self.model_derivative:
+            y = self._calculate_change(x, y)
+
         assert len(list(y.data_vars)) == 1, (
             f"Expect only 1 target variable! " f"Got {len(list(y.data_vars))}"
         )
