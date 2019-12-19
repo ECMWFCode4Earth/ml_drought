@@ -52,7 +52,12 @@ def run_all_models_as_experiments(
     else:
         linear_nn(ignore_vars=ignore_vars, static=None)
         rnn(ignore_vars=ignore_vars, static=None)
-        earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
+        earnn(
+            pretrained=False,
+            ignore_vars=ignore_vars,
+            static=None,
+            static_embedding_size=None,
+        )
 
     # RENAME DIRECTORY
     data_dir = get_data_path().absolute()
