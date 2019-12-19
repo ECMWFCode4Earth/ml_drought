@@ -98,7 +98,7 @@ if __name__ == "__main__":
     #     if vars_to_include == []:
     #         continue
 
-    for vars_to_include in expts_to_run:
+    for vars_to_include in expts_to_run[1:]:
         print(f'\n{"-" * 10}\nRunning experiment with: {vars_to_include}\n{"-" * 10}')
 
         vars_to_exclude = [v for v in important_vars if v not in vars_to_include]
