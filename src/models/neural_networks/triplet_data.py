@@ -12,7 +12,7 @@ from typing import Union, Tuple, Optional, List, Iterable
 class TripletLoader(DataLoader):
     def __init__(
         self,
-        neighbouring_distance: Union[float, Tuple[float, float]] = 2,
+        neighbourhood_size: Union[float, Tuple[float, float]] = 2,
         multiplier: int = 10,
         data_path: Path = Path("data"),
         batch_file_size: int = 1,
@@ -46,11 +46,9 @@ class TripletLoader(DataLoader):
             static,
             device,
         )
-        if isinstance(neighbouring_distance, float) or isinstance(
-            neighbouring_distance, int
-        ):
-            neighbouring_distance = (neighbouring_distance, neighbouring_distance)
-        self.neighbouring_distance = neighbouring_distance
+        if isinstance(neighbourhood_size, float) or isinstance(neighbourhood_size, int):
+            neighbourhood_size = (neighbourhood_size, neighbourhood_size)
+        self.neighbourhood_size = neighbourhood_size
         self.multiplier = multiplier
 
     def __iter__(self):
@@ -63,7 +61,7 @@ class TripletLoader(DataLoader):
 class _TripletIter(_BaseIter):
     def __init__(self, loader: TripletLoader) -> None:
         super().__init__(loader)
-        self.neighbouring_distance = loader.neighbouring_distance
+        self.neighbourhood_size = loader.neighbourhood_size
         self.multiplier = loader.multiplier
 
     def __next__(
@@ -103,7 +101,7 @@ class _TripletIter(_BaseIter):
             if global_modelarrays is not None:
 
                 anchor, neighbour, distant = self.find_neighbours(
-                    global_modelarrays, self.neighbouring_distance, self.multiplier
+                    global_modelarrays, self.neighbourhood_size, self.multiplier
                 )
 
                 if self.to_tensor:

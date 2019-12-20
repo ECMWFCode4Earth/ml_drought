@@ -201,7 +201,7 @@ class NNBase(ModelBase):
 
     def unsupervised_warm_up(
         self,
-        neighbouring_distance: Union[float, Tuple[float, float]] = 1,
+        neighbourhood_size: Union[float, Tuple[float, float]] = 1,
         multiplier: int = 2,
         num_epochs: int = 1,
         early_stopping: Optional[int] = None,
@@ -225,14 +225,14 @@ class NNBase(ModelBase):
             train_mask, val_mask = train_val_mask(len_mask, val_split)
 
             train_dataloader = self.get_triplet_dataloader(
-                neighbouring_distance=neighbouring_distance,
+                neighbourhood_size=neighbourhood_size,
                 multiplier=multiplier,
                 mask=train_mask,
                 to_tensor=True,
                 shuffle_data=True,
             )
             val_dataloader = self.get_triplet_dataloader(
-                neighbouring_distance=neighbouring_distance,
+                neighbourhood_size=neighbourhood_size,
                 multiplier=multiplier,
                 mask=val_mask,
                 to_tensor=True,
@@ -243,7 +243,7 @@ class NNBase(ModelBase):
             best_val_score = np.inf
         else:
             train_dataloader = self.get_triplet_dataloader(
-                neighbouring_distance=neighbouring_distance,
+                neighbourhood_size=neighbourhood_size,
                 multiplier=multiplier,
                 to_tensor=True,
                 shuffle_data=True,
@@ -583,7 +583,7 @@ class NNBase(ModelBase):
 
     def get_triplet_dataloader(
         self,
-        neighbouring_distance: Union[float, Tuple[float, float]],
+        neighbourhood_size: Union[float, Tuple[float, float]],
         to_tensor: bool = False,
         shuffle_data: bool = False,
         **kwargs,
@@ -607,7 +607,7 @@ class NNBase(ModelBase):
             "device": self.device,
             "clear_nans": True,
             "normalize": True,
-            "neighbouring_distance": neighbouring_distance,
+            "neighbourhood_size": neighbourhood_size,
         }
 
         for key, val in kwargs.items():

@@ -30,7 +30,7 @@ def linear_nn(
         ignore_vars=ignore_vars,
     )
     predictor.unsupervised_warm_up(
-        num_epochs=50, early_stopping=5, neighbouring_distance=2, multiplier=10
+        num_epochs=50, early_stopping=5, neighbourhood_size=2, multiplier=10
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
@@ -58,7 +58,7 @@ def rnn(
         ignore_vars=ignore_vars,
     )
     predictor.unsupervised_warm_up(
-        num_epochs=50, early_stopping=5, neighbouring_distance=2, multiplier=10
+        num_epochs=50, early_stopping=5, neighbourhood_size=2, multiplier=10
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
@@ -91,7 +91,7 @@ def earnn(
             ignore_vars=ignore_vars,
         )
         predictor.unsupervised_warm_up(
-            num_epochs=50, early_stopping=5, neighbouring_distance=1, multiplier=2
+            num_epochs=50, early_stopping=5, neighbourhood_size=1, multiplier=2
         )
         predictor.train(num_epochs=50, early_stopping=5)
         predictor.evaluate(save_preds=True)
