@@ -32,6 +32,7 @@ def linear_nn(
     predictor.unsupervised_warm_up(
         num_epochs=50, early_stopping=5, neighbourhood_size=2, multiplier=10
     )
+    predictor.train(num_epochs=50, early_stopping=5, final_layer_only=True)
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
@@ -60,6 +61,7 @@ def rnn(
     predictor.unsupervised_warm_up(
         num_epochs=50, early_stopping=5, neighbourhood_size=2, multiplier=10
     )
+    predictor.train(num_epochs=50, early_stopping=5, final_layer_only=True)
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
@@ -81,7 +83,7 @@ def earnn(
 
     if not pretrained:
         predictor = EARecurrentNetwork(
-            hidden_size=128,
+            hidden_size=256,
             data_folder=data_path,
             experiment=experiment,
             include_pred_month=include_pred_month,
@@ -93,6 +95,7 @@ def earnn(
         predictor.unsupervised_warm_up(
             num_epochs=50, early_stopping=5, neighbourhood_size=1, multiplier=2
         )
+        predictor.train(num_epochs=50, early_stopping=5, final_layer_only=True)
         predictor.train(num_epochs=50, early_stopping=5)
         predictor.evaluate(save_preds=True)
         predictor.save_model()
