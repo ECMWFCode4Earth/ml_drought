@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import pandas as pd
 from random import shuffle as shuffle_list
 from typing import cast, Iterable, Union, Tuple, Optional
 
@@ -87,3 +88,9 @@ def _chunk_tensor(
     if shuffle:
         shuffle_list(return_arrays)
     return [(chunk[:-1], chunk[-1]) for chunk in return_arrays]  # type: ignore
+
+
+def _datetime_to_folder_time_str(date: np.datetime64) -> str:
+    date = pd.to_datetime(date)
+    return f'{date.year}_{date.month}'
+

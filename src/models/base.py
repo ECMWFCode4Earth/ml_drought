@@ -6,6 +6,7 @@ import xarray as xr
 from sklearn.metrics import mean_squared_error
 
 from .data import TrainData, DataLoader
+from .utils import _datetime_to_folder_time_str
 
 from typing import cast, Any, Dict, List, Optional, Union, Tuple
 
@@ -34,7 +35,7 @@ class ModelBase:
         training data
     include_static: bool = True
         Whether to include static data
-    model_derivative: bool = False
+    predict_delta: bool = False
         Whether to model the CHANGE in target variable rather than the
         raw values
     """
@@ -54,7 +55,7 @@ class ModelBase:
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "embedding",
-        model_derivative: bool = False,
+        predict_delta: bool = False,
     ) -> None:
 
         self.batch_size = batch_size
@@ -69,7 +70,7 @@ class ModelBase:
         self.surrounding_pixels = surrounding_pixels
         self.ignore_vars = ignore_vars
         self.static = static
-        self.model_derivative = model_derivative
+        self.predict_delta = predict_delta
 
         # needs to be set by the train function
         self.num_locations: Optional[int] = None
@@ -93,12 +94,13 @@ class ModelBase:
         # by default, models which don't care will run on the CPU
         self.device = "cpu"
 
-    def _convert_change_to_raw_values(
+    def _convert_delta_to_raw_values(
         self, x: xr.Dataset, y: xr.Dataset, order: int = 1
     ) -> xr.Dataset:
-        """When calculating the derivative we need to convert the change
+        """When calculating the derivative we need to convert the change/delta
         to the raw value for our prediction.
         """
+        # x.shape == (pixels, featurespreds)
         y_var = [v for v in y.data_vars][0]
         prev_ts = x[y_var].isel(time=-order)
 
@@ -168,6 +170,7 @@ class ModelBase:
                 json.dump(output_dict, outfile)
 
         if save_preds:
+            # convert from test_arrays_dict to xarray object
             for key, val in test_arrays_dict.items():
                 latlons = cast(np.ndarray, val["latlons"])
                 preds = preds_dict[key]
@@ -191,6 +194,26 @@ class ModelBase:
                     .set_index(["lat", "lon", "time"])
                     .to_xarray()
                 )
+
+                # if self.predict_delta:
+                # get the NON-NORMALIZED data (ModelArrays)
+                dl = self.get_dataloader(
+                    mode="test", shuffle_data=False, normalize=False
+                )
+                date_key = _datetime_to_folder_time_str(preds_xr.time.values)
+                date_key = 'hello'
+                test_data = [v for v in dl][0][date_key]
+
+                assert pd.to_datetime(preds_xr.time.values) == test_data.target_time, 'Expecting' \
+                    'to have collected the ModelArrays for the target_timestep: ' \
+                    f'{preds_xr.time.values}. Got: {test_data.target_time}'
+
+                # convert to xarray object
+                x_ds = test_data.to_xarray()
+                # convert delta to raw target_variable
+                preds_xr = self._convert_delta_to_raw_values(x=x_ds, y=preds_xr)
+
+                assert False
 
                 preds_xr.to_netcdf(self.model_dir / f"preds_{key}.nc")
 
@@ -265,7 +288,7 @@ class ModelBase:
             "device": self.device,
             "clear_nans": True,
             "normalize": True,
-            "model_derivative": self.model_derivative,
+            "predict_delta": self.predict_delta,
         }
 
         for key, val in kwargs.items():

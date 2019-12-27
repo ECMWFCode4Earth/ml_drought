@@ -69,7 +69,7 @@ class TestBaseIter:
             ), f"{month} not in {pred_months}, got {return_file}"
 
     @pytest.mark.parametrize(
-        "normalize,to_tensor,experiment,surrounding_pixels,model_derivative",
+        "normalize,to_tensor,experiment,surrounding_pixels,predict_delta",
         [
             (True, True, "one_month_forecast", 1, True),
             (True, False, "one_month_forecast", None, True),
@@ -96,7 +96,7 @@ class TestBaseIter:
         to_tensor,
         experiment,
         surrounding_pixels,
-        model_derivative,
+        predict_delta,
     ):
 
         x_pred, _, _ = _make_dataset(size=(5, 5))
@@ -136,7 +136,7 @@ class TestBaseIter:
                 self.to_tensor = None
                 self.experiment = experiment
                 self.surrounding_pixels = surrounding_pixels
-                self.model_derivative = model_derivative
+                self.predict_delta = predict_delta
                 self.ignore_vars = ["precip"]
                 self.monthly_aggs = False
                 self.device = torch.device("cpu")
@@ -266,14 +266,14 @@ class TestBaseIter:
             mean_temp = x_coeff3.temp.mean(dim=["time", "lat", "lon"]).values
             assert (mean_temp == x_train_data.yearly_aggs).any()
 
-        if model_derivative:
+        if predict_delta:
             # is this true? with randomly generated data no guarantee ...
             assert (y_np < 0).any(), (
                 "If calculating the derivatives"
                 "we expect at least one of the target variables to be"
                 "negative."
             )
-            assert base_iterator.model_derivative, (
+            assert base_iterator.predict_delta, (
                 "should have set model_" "derivative to True"
             )
 

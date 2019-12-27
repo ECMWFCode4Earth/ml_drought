@@ -31,7 +31,7 @@ class EARecurrentNetwork(NNBase):
         static: Optional[str] = "features",
         static_embedding_size: Optional[int] = None,
         device: str = "cuda:0",
-        model_derivative: bool = False,
+        predict_delta: bool = False,
     ) -> None:
         super().__init__(
             data_folder,
@@ -46,7 +46,7 @@ class EARecurrentNetwork(NNBase):
             ignore_vars,
             static,
             device,
-            model_derivative=model_derivative,
+            predict_delta=predict_delta,
         )
 
         # to initialize and save the model

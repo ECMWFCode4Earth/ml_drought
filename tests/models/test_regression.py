@@ -67,7 +67,9 @@ class TestLinearRegression:
         y = x.isel(time=[-1])
 
         x_add1, _, _ = _make_dataset(size=(5, 5), const=True, variable_name="precip")
+        x_add1 = x_add1 * 2
         x_add2, _, _ = _make_dataset(size=(5, 5), const=True, variable_name="temp")
+        x_add2 = x_add2 * 3
         x = xr.merge([x, x_add1, x_add2])
 
         norm_dict = {
@@ -193,7 +195,7 @@ class TestLinearRegression:
             monthly_aggs,
             static,
             device,
-            model_derivative,
+            predict_delta,
         ):
 
             pass

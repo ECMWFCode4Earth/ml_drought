@@ -71,10 +71,10 @@ class TestRecurrentNetwork:
         assert model_dict["include_latlons"] == include_latlons
 
     @pytest.mark.parametrize(
-        "use_pred_months,model_derivative",
+        "use_pred_months,predict_delta",
         [(True, True), (False, True), (True, False), (False, False)],
     )
-    def test_train(self, tmp_path, capsys, use_pred_months, model_derivative):
+    def test_train(self, tmp_path, capsys, use_pred_months, predict_delta):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -110,7 +110,7 @@ class TestRecurrentNetwork:
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
             include_monthly_aggs=True,
-            model_derivative=model_derivative,
+            predict_delta=predict_delta,
         )
         model.train()
 

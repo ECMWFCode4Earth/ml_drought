@@ -30,7 +30,7 @@ class LinearRegression(ModelBase):
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
-        model_derivative: bool = False,
+        predict_delta: bool = False,
     ) -> None:
         super().__init__(
             data_folder,
@@ -44,7 +44,7 @@ class LinearRegression(ModelBase):
             surrounding_pixels,
             ignore_vars,
             static,
-            model_derivative=model_derivative,
+            predict_delta=predict_delta,
         )
 
         self.explainer: Optional[shap.LinearExplainer] = None

@@ -51,6 +51,7 @@ class ModelArrays:
     y_var: str
     latlons: Optional[np.ndarray] = None
     target_time: Optional[Timestamp] = None
+    historical_times: Optional[List[Timestamp]] = None
 
     def to_tensor(self, device) -> None:
         self.x.to_tensor(device)
@@ -67,6 +68,32 @@ class ModelArrays:
 
         if self.latlons is not None:
             self.latlons = np.concatenate((self.latlons, x.latlons), axis=0)
+
+    def to_xarray(self) -> xr.Dataset:
+        assert self.latlons.shape[0] == self.x.historical.shape[0], 'first dim is # pixels'
+        assert self.latlons.shape[0] == self.x.historical.shape[1], 'second dim is # timesteps'
+        assert len(self.x_vars) == self.x.historical.shape[2], 'final dim is # variables'
+        variables = self.x_vars
+
+        ds = xr.Dataset(
+            {
+                variables[i]:
+                (['lat', 'lon', 'time'],
+                test_data.x.historical[:, :, i].reshape(
+                    len(self.latlons[:, 0]),
+                    len(self.latlons[:, 1]),
+                    len(self.historical_times)
+                ) for i in range(len(variables)))
+            }
+            coords={
+                "lon": self.latlons[:, 0],
+                "lat": self.latlons[:, 1],
+                "time": self.historical_times,
+            },
+
+        )
+
+        return ds
 
 
 # The dict below maps the indices of the arrays returned
@@ -145,7 +172,7 @@ class DataLoader:
         (and optionally current) arrays
     static: bool = True
         Whether to include static data
-    self.model_derivative: bool = False
+    self.predict_delta: bool = False
         Whether to model the CHANGE in the target variable relative to the previous timestep
         rather than the target variable itself.
     """
@@ -158,7 +185,7 @@ class DataLoader:
         shuffle_data: bool = True,
         clear_nans: bool = True,
         normalize: bool = True,
-        model_derivative: bool = False,
+        predict_delta: bool = False,
         experiment: str = "one_month_forecast",
         mask: Optional[List[bool]] = None,
         pred_months: Optional[List[int]] = None,
@@ -183,7 +210,7 @@ class DataLoader:
             mask=mask,
             pred_months=pred_months,
         )
-        self.model_derivative = model_derivative
+        self.predict_delta = predict_delta
 
         self.normalizing_dict = None
         if normalize:
@@ -295,7 +322,7 @@ class _BaseIter:
         self.experiment = loader.experiment
         self.ignore_vars = loader.ignore_vars
         self.device = loader.device
-        self.model_derivative = loader.model_derivative
+        self.predict_delta = loader.predict_delta
 
         self.static = loader.static
         self.static_normalizing_dict = loader.static_normalizing_dict
@@ -476,7 +503,7 @@ class _BaseIter:
 
         x, y = xr.open_dataset(folder / "x.nc"), xr.open_dataset(folder / "y.nc")
 
-        if self.model_derivative:
+        if self.predict_delta:
             y = self._calculate_change(x, y)
 
         assert len(list(y.data_vars)) == 1, (
@@ -486,9 +513,13 @@ class _BaseIter:
             x = x.drop(self.ignore_vars)
 
         target_time = pd.to_datetime(y.time.values[0])
+        x_datetimes = [pd.to_datetime(time) for time in x.time.values]
+
         yearly_agg = self._calculate_aggs(
             x
         )  # before to avoid aggs from surrounding pixels
+
+        # calculate normalized values in these functions
         x_np, y_np = self._calculate_historical(x, y)
         x_months = self._calculate_target_months(y, x_np.shape[0])
         yearly_agg = np.vstack([yearly_agg] * x_np.shape[0])
@@ -582,6 +613,7 @@ class _BaseIter:
             y_var=list(y.data_vars)[0],
             latlons=latlons,
             target_time=target_time,
+            historical_times=x_datetimes,
         )
 
         if to_tensor:

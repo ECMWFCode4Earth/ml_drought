@@ -81,7 +81,7 @@ if __name__ == "__main__":
     additional_vars = ["precip", "t2m", "pev", "E", "SMsurf", "SMroot"]
 
     # create ALL combinations of features (VCI + ...)
-    expts_to_run = [["VCI"]]
+    expts_to_run = []
     for n_combinations in range(len(additional_vars)):
         expts_to_run.extend(
             [["VCI"] + list(c) for c in combinations(additional_vars, n_combinations)]

@@ -122,10 +122,10 @@ class TestEARecurrentNetwork:
         assert type(model.model) == EALSTM, f"Model attribute not an EALSTM!"
 
     @pytest.mark.parametrize(
-        "use_pred_months,model_derivative",
+        "use_pred_months,predict_delta",
         [(True, True), (False, True), (True, False), (False, False)],
     )
-    def test_predict_and_explain(self, tmp_path, use_pred_months, model_derivative):
+    def test_predict_and_explain(self, tmp_path, use_pred_months, predict_delta):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -166,7 +166,7 @@ class TestEARecurrentNetwork:
             dense_features=dense_features,
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
-            model_derivative=model_derivative,
+            predict_delta=predict_delta,
         )
         model.train()
         test_arrays_dict, pred_dict = model.predict()
@@ -175,11 +175,11 @@ class TestEARecurrentNetwork:
         assert ("hello" in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1)
         assert ("hello" in pred_dict.keys()) and (len(pred_dict) == 1)
 
-        if not model_derivative:
+        if not predict_delta:
             # _make_dataset with const=True returns all ones
             assert (test_arrays_dict["hello"]["y"] == 1).all()
         else:
-            # _make_dataset with const=True & model_derivative
+            # _make_dataset with const=True & predict_delta
             # returns a change of 0
             assert (test_arrays_dict["hello"]["y"] == 0).all()
 
