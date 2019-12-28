@@ -53,15 +53,21 @@ class TestLinearRegression:
         ), "Different experiment saved!"
 
     @pytest.mark.parametrize(
-        "use_pred_months,experiment,monthly_agg",
+        "use_pred_months,experiment,monthly_agg,predict_delta",
         [
-            (True, "one_month_forecast", True),
-            (True, "nowcast", False),
-            (False, "one_month_forecast", False),
-            (False, "nowcast", True),
+            (True, "one_month_forecast", True, True),
+            (True, "nowcast", False, True),
+            (False, "one_month_forecast", False, True),
+            (False, "nowcast", True, True),
+            (True, "one_month_forecast", True, False),
+            (True, "nowcast", False, False),
+            (False, "one_month_forecast", False, False),
+            (False, "nowcast", True, False),
         ],
     )
-    def test_train(self, tmp_path, capsys, use_pred_months, experiment, monthly_agg):
+    def test_train(
+        self, tmp_path, capsys, use_pred_months, experiment, monthly_agg, predict_delta
+    ):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         x_static, _, _ = _make_dataset(size=(5, 5), add_times=False)
         y = x.isel(time=[-1])
@@ -104,6 +110,7 @@ class TestLinearRegression:
             include_pred_month=use_pred_months,
             experiment=experiment,
             include_monthly_aggs=monthly_agg,
+            predict_delta=predict_delta,
         )
         model.train()
 

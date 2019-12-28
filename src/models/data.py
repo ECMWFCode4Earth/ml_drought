@@ -69,31 +69,98 @@ class ModelArrays:
         if self.latlons is not None:
             self.latlons = np.concatenate((self.latlons, x.latlons), axis=0)
 
-    def to_xarray(self) -> xr.Dataset:
-        assert self.latlons.shape[0] == self.x.historical.shape[0], 'first dim is # pixels'
-        assert self.latlons.shape[0] == self.x.historical.shape[1], 'second dim is # timesteps'
-        assert len(self.x_vars) == self.x.historical.shape[2], 'final dim is # variables'
+    def to_xarray(self) -> Tuple[xr.Dataset, xr.Dataset, Optional[xr.Dataset]]:
+        assert (
+            self.latlons.shape[0] == self.x.historical.shape[0]
+        ), "first dim is # pixels"  # type: ignore
+        assert (
+            len(self.x_vars) == self.x.historical.shape[2]
+        ), "final dim is # variables"
+
+        # if experiment == 'nowcast'
+        if self.x.current is not None:
+            # NOTE: historical times is one less for nowcast?
+            assert (
+                len(self.historical_times) == self.x.historical.shape[1]
+            ), "second dim is # timesteps"  # type: ignore
+        else:
+            assert (
+                len(self.historical_times) == self.x.historical.shape[1]
+            ), "second dim is # timesteps"  # type: ignore
+
         variables = self.x_vars
+        latitudes = np.unique(self.latlons[:, 0])  # type: ignore
+        longitudes = np.unique(self.latlons[:, 1])  # type: ignore
+        times = self.historical_times
 
-        ds = xr.Dataset(
+        ds_list = []
+        for i, variable in enumerate(variables):
+            # for each variable create the indexed Dataset
+            # from the x.historical array
+            data_np = self.x.historical[:, :, i]
+            ds_list.append(
+                xr.Dataset(
+                    {
+                        variable: (
+                            ["lat", "lon", "time"],
+                            # unflatten the (pixel, time) array -> (lat, lon, time)
+                            data_np.reshape(
+                                len(latitudes),
+                                len(longitudes),
+                                len(times),  # type: ignore
+                            ),
+                        )
+                    },
+                    coords={"lat": latitudes, "lon": longitudes, "time": times},
+                )
+            )
+
+        # TODO: create the static Dataset too!
+        historical_ds = xr.auto_combine(ds_list)
+
+        # create the target_ds
+        target_ds = xr.Dataset(
             {
-                variables[i]:
-                (['lat', 'lon', 'time'],
-                test_data.x.historical[:, :, i].reshape(
-                    len(self.latlons[:, 0]),
-                    len(self.latlons[:, 1]),
-                    len(self.historical_times)
-                ) for i in range(len(variables)))
-            }
-            coords={
-                "lon": self.latlons[:, 0],
-                "lat": self.latlons[:, 1],
-                "time": self.historical_times,
+                self.y_var: (
+                    ["lat", "lon", "time"],
+                    self.y.reshape(len(latitudes), len(longitudes), 1),
+                )
             },
-
+            coords={"lat": latitudes, "lon": longitudes, "time": [self.target_time]},
         )
 
-        return ds
+        # if experiment == 'nowcast'
+        if self.x.current is not None:
+            # get the current variables only
+            current_vars = [
+                (i - 1, v)
+                for i, v in enumerate(self.x_vars)
+                if (not v == self.y_var) & ("mean" not in v)
+            ]
+            current_ds_list = []
+            for i, current_var in current_vars:
+                current_ds_list.append(
+                    xr.Dataset(
+                        {
+                            current_var: (
+                                ["lat", "lon", "time"],
+                                self.x.current[:, i].reshape(
+                                    len(latitudes), len(longitudes), 1
+                                ),
+                            )
+                        },
+                        coords={
+                            "lat": latitudes,
+                            "lon": longitudes,
+                            "time": [self.target_time],
+                        },
+                    )
+                )
+            current_ds = xr.auto_combine(current_ds_list)
+        else:  # one_month_forecast
+            current_ds = None
+
+        return historical_ds, target_ds, current_ds
 
 
 # The dict below maps the indices of the arrays returned
@@ -513,7 +580,14 @@ class _BaseIter:
             x = x.drop(self.ignore_vars)
 
         target_time = pd.to_datetime(y.time.values[0])
-        x_datetimes = [pd.to_datetime(time) for time in x.time.values]
+        if self.experiment == "nowcast":
+            x_datetimes = [
+                pd.to_datetime(time)
+                for time in x.time.values
+                if pd.to_datetime(time) != target_time
+            ]
+        else:
+            x_datetimes = [pd.to_datetime(time) for time in x.time.values]
 
         yearly_agg = self._calculate_aggs(
             x

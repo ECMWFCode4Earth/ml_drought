@@ -276,7 +276,7 @@ class NNBase(ModelBase):
                 x.latlons,  # type: ignore
                 x.current,  # type: ignore
                 x.yearly_aggs,  # type: ignore
-                self._one_hot(x.static, self.num_locations)
+                self._one_hot(x.static, self.num_locations)  # type: ignore
                 if self.static == "embeddings"
                 else x.static,  # type: ignore
             )
@@ -287,7 +287,7 @@ class NNBase(ModelBase):
                 x[2],  # type: ignore
                 x[3],  # type: ignore
                 x[4],  # type: ignore
-                self._one_hot(x[5], self.num_locations)
+                self._one_hot(x[5], self.num_locations)  # type: ignore
                 if self.static == "embeddings"
                 else x[5],  # type: ignore
             )

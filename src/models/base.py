@@ -95,17 +95,16 @@ class ModelBase:
         self.device = "cpu"
 
     def _convert_delta_to_raw_values(
-        self, x: xr.Dataset, y: xr.Dataset, order: int = 1
+        self, x: xr.Dataset, y: xr.Dataset, y_var: str, order: int = 1
     ) -> xr.Dataset:
         """When calculating the derivative we need to convert the change/delta
         to the raw value for our prediction.
         """
         # x.shape == (pixels, featurespreds)
-        y_var = [v for v in y.data_vars][0]
         prev_ts = x[y_var].isel(time=-order)
 
         # calculate the raw values
-        return (prev_ts + y[y_var]).to_dataset(y_var)
+        return prev_ts + y["preds"]  # .to_dataset(name_of_preds_var)
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         # This method should return the test arrays as loaded by
@@ -195,25 +194,34 @@ class ModelBase:
                     .to_xarray()
                 )
 
-                # if self.predict_delta:
-                # get the NON-NORMALIZED data (ModelArrays)
-                dl = self.get_dataloader(
-                    mode="test", shuffle_data=False, normalize=False
-                )
-                date_key = _datetime_to_folder_time_str(preds_xr.time.values)
-                date_key = 'hello'
-                test_data = [v for v in dl][0][date_key]
+                if self.predict_delta:
+                    # get the NON-NORMALIZED data (ModelArrays)
+                    dl = self.get_dataloader(
+                        mode="test", shuffle_data=False, normalize=False
+                    )
+                    date_key = _datetime_to_folder_time_str(preds_xr.time.values)
+                    date_key = "hello"
+                    test_data = [v for v in dl][0][date_key]
 
-                assert pd.to_datetime(preds_xr.time.values) == test_data.target_time, 'Expecting' \
-                    'to have collected the ModelArrays for the target_timestep: ' \
-                    f'{preds_xr.time.values}. Got: {test_data.target_time}'
+                    assert (
+                        pd.to_datetime(preds_xr.time.values) == test_data.target_time
+                    ), (
+                        "Expecting"
+                        "to have collected the ModelArrays for the target_timestep: "
+                        f"{preds_xr.time.values}. Got: {test_data.target_time}"
+                    )
 
-                # convert to xarray object
-                x_ds = test_data.to_xarray()
-                # convert delta to raw target_variable
-                preds_xr = self._convert_delta_to_raw_values(x=x_ds, y=preds_xr)
+                    # convert to xarray object
+                    historical_ds, target_ds, _ = test_data.to_xarray()
+                    # convert delta to raw target_variable
+                    y_var = [v for v in target_ds.data_vars][0]
+                    cast(str, y_var)
+                    preds_xr = self._convert_delta_to_raw_values(
+                        x=historical_ds, y=preds_xr, y_var=y_var
+                    )
 
-                assert False
+                    if not isinstance(preds_xr, xr.Dataset):
+                        preds_xr = preds_xr.to_dataset("preds")
 
                 preds_xr.to_netcdf(self.model_dir / f"preds_{key}.nc")
 
@@ -228,9 +236,9 @@ class ModelBase:
             x_his, x_pm, x_latlons, x_cur, x_ym, x_static = x  # type: ignore
         elif type(x) == TrainData:
             x_his, x_pm, x_latlons = (
-                x.historical,
-                x.pred_months,
-                x.latlons,
+                x.historical,  # type: ignore
+                x.pred_months,  # type: ignore
+                x.latlons,  # type: ignore
             )  # type: ignore
             x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
             x_static = x.static  # type: ignore

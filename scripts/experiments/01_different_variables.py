@@ -6,6 +6,71 @@ All vars:
 
 # NOTE: p84.162 == 'vertical integral of moisture flux'
 
+Experiment ['VCI', 'E'] Static: False
+
+Training rnn for experiment one_month_forecast
+/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/xarray/core/nanops.py:159: RuntimeWarning: Mean of empty slice
+  return np.nanmean(a, axis=axis, dtype=dtype)
+../../data/features/one_month_forecast/train/1985_3 returns no values. Skipping
+/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/xarray/core/nanops.py:159: RuntimeWarning: Mean of empty slice
+  return np.nanmean(a, axis=axis, dtype=dtype)
+../../data/features/one_month_forecast/train/2004_6 returns no values. Skipping
+/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/xarray/core/nanops.py:159: RuntimeWarning: Mean of empty slice
+  return np.nanmean(a, axis=axis, dtype=dtype)
+../../data/features/one_month_forecast/train/1995_3 returns no values. Skipping
+/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/xarray/core/nanops.py:159: RuntimeWarning: Mean of empty slice
+  return np.nanmean(a, axis=axis, dtype=dtype)
+../../data/features/one_month_forecast/train/1994_11 returns no values. Skipping
+/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/xarray/core/nanops.py:159: RuntimeWarning: Mean of empty slice
+  return np.nanmean(a, axis=axis, dtype=dtype)
+../../data/features/one_month_forecast/train/1994_12 returns no values. Skipping
+../../data/features/one_month_forecast/train/1985_1 returns no values. Skipping
+/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/xarray/core/nanops.py:159: RuntimeWarning: Mean of empty slice
+  return np.nanmean(a, axis=axis, dtype=dtype)
+../../data/features/one_month_forecast/train/1995_2 returns no values. Skipping
+/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/xarray/core/nanops.py:159: RuntimeWarning: Mean of empty slice
+  return np.nanmean(a, axis=axis, dtype=dtype)
+../../data/features/one_month_forecast/train/1985_2 returns no values. Skipping
+../../data/features/one_month_forecast/train/1994_10 returns no values. Skipping
+/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/xarray/core/nanops.py:159: RuntimeWarning: Mean of empty slice
+  return np.nanmean(a, axis=axis, dtype=dtype)
+../../data/features/one_month_forecast/train/1985_5 returns no values. Skipping
+/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/xarray/core/nanops.py:159: RuntimeWarning: Mean of empty slice
+  return np.nanmean(a, axis=axis, dtype=dtype)
+../../data/features/one_month_forecast/train/1985_4 returns no values. Skipping
+../../data/features/one_month_forecast/train/2004_4 returns no values. Skipping
+/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/xarray/core/nanops.py:159: RuntimeWarning: Mean of empty slice
+  return np.nanmean(a, axis=axis, dtype=dtype)
+../../data/features/one_month_forecast/train/2004_8 returns no values. Skipping
+/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/xarray/core/nanops.py:159: RuntimeWarning: Mean of empty slice
+  return np.nanmean(a, axis=axis, dtype=dtype)
+../../data/features/one_month_forecast/train/1995_1 returns no values. Skipping
+/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/xarray/core/nanops.py:159: RuntimeWarning: Mean of empty slice
+  return np.nanmean(a, axis=axis, dtype=dtype)
+../../data/features/one_month_forecast/train/2004_5 returns no values. Skipping
+/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/xarray/core/nanops.py:159: RuntimeWarning: Mean of empty slice
+  return np.nanmean(a, axis=axis, dtype=dtype)
+../../data/features/one_month_forecast/train/2004_7 returns no values. Skipping
+Traceback (most recent call last):
+  File "01_different_variables.py", line 113, in <module>
+    vars_to_include, ignore_vars, static=static, run_regression=False
+  File "01_different_variables.py", line 54, in run_all_models_as_experiments
+    rnn(ignore_vars=ignore_vars, static=None)
+  File "/data/ml_drought/scripts/experiments/_base_models.py", line 94, in rnn
+    predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
+  File "../../src/models/neural_networks/base.py", line 125, in train
+    *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
+  File "/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/torch/nn/modules/module.py", line 493, in __call__
+    result = self.forward(*input, **kwargs)
+  File "../../src/models/neural_networks/rnn.py", line 276, in forward
+    x = dense_layer(x)
+  File "/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/torch/nn/modules/module.py", line 493, in __call__
+    result = self.forward(*input, **kwargs)
+  File "/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/torch/nn/modules/linear.py", line 92, in forward
+    return F.linear(input, self.weight, self.bias)
+  File "/home/cdsuser/miniconda3/envs/esowc-drought/lib/python3.7/site-packages/torch/nn/functional.py", line 1406, in linear
+    ret = torch.addmm(bias, input, weight.t())
+RuntimeError: invalid argument 13: ldc should be at least max(1, m=0), but have 0 at /opt/conda/conda-bld/pytorch-cpu_1556653114183/work/aten/src/TH/generic/THBlas.cpp:367
 """
 from itertools import combinations
 from pathlib import Path
