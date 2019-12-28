@@ -562,7 +562,7 @@ class _BaseIter:
         prev_ts = x[y_var].isel(time=-order)
 
         # calculate the derivative
-        return (y[y_var] - prev_ts).to_dataset(y_var)
+        return (y[y_var] - prev_ts).to_dataset(name=y_var)
 
     def ds_folder_to_np(
         self, folder: Path, clear_nans: bool = True, to_tensor: bool = False
