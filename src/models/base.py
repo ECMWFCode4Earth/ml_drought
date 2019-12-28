@@ -200,7 +200,6 @@ class ModelBase:
                         mode="test", shuffle_data=False, normalize=False
                     )
                     date_key = _datetime_to_folder_time_str(preds_xr.time.values)
-                    date_key = "hello"
                     test_data = [v for v in dl][0][date_key]
 
                     assert (

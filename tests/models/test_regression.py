@@ -86,9 +86,9 @@ class TestLinearRegression:
 
         static_norm_dict = {"VHI": {"mean": 0.0, "std": 1.0}}
 
-        test_features = tmp_path / f"features/{experiment}/train/hello"
+        test_features = tmp_path / f"features/{experiment}/train/2001_12"
         test_features.mkdir(parents=True)
-        pred_features = tmp_path / f"features/{experiment}/test/hello"
+        pred_features = tmp_path / f"features/{experiment}/test/2001_12"
         pred_features.mkdir(parents=True)
         static_features = tmp_path / f"features/static"
         static_features.mkdir(parents=True)
@@ -141,17 +141,17 @@ class TestLinearRegression:
 
         test_arrays_dict, preds_dict = model.predict()
         assert (
-            test_arrays_dict["hello"]["y"].size == preds_dict["hello"].shape[0]
+            test_arrays_dict["2001_12"]["y"].size == preds_dict["2001_12"].shape[0]
         ), "Expected length of test arrays to be the same as the predictions"
 
         # test saving the model outputs
         model.evaluate(save_preds=True)
 
         save_path = model.data_path / "models" / experiment / "linear_regression"
-        assert (save_path / "preds_hello.nc").exists()
+        assert (save_path / "preds_2001_12.nc").exists()
         assert (save_path / "results.json").exists()
 
-        pred_ds = xr.open_dataset(save_path / "preds_hello.nc")
+        pred_ds = xr.open_dataset(save_path / "preds_2001_12.nc")
         assert np.isin(["lat", "lon", "time"], [c for c in pred_ds.coords]).all()
         assert y.time == pred_ds.time
 
