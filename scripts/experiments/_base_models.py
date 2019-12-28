@@ -1,3 +1,6 @@
+import sys
+
+sys.path.append("../..")
 from src.models import (
     Persistence,
     LinearRegression,
@@ -9,9 +12,6 @@ from src.models import (
 )
 from src.analysis import all_explanations_for_file
 from scripts.utils import get_data_path
-import sys
-
-sys.path.append("../..")
 
 
 def parsimonious(experiment="one_month_forecast",):
