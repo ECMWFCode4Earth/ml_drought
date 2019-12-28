@@ -26,7 +26,7 @@ def regression(
     explain=False,
     static="features",
     ignore_vars=None,
-    predict_delta=False
+    predict_delta=False,
 ):
     predictor = LinearRegression(
         get_data_path(),

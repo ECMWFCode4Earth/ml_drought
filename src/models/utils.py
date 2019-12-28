@@ -92,4 +92,4 @@ def _chunk_tensor(
 
 def _datetime_to_folder_time_str(date: np.datetime64) -> str:
     date = pd.to_datetime(date)
-    return f'{date.year}_{date.month}'
+    return f"{date.year}_{date.month}"

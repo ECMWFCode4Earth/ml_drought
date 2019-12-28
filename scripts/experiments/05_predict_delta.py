@@ -9,7 +9,6 @@ if __name__ == "__main__":
     important_vars = ["VCI", "precip", "t2m", "pev", "E", "SMsurf", "SMroot"]
     always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb"]
 
-
     # parsimonious()
     # regression(ignore_vars=always_ignore_vars, predict_delta=True)
     # gbdt(ignore_vars=always_ignore_vars, predict_delta=True)
@@ -27,7 +26,7 @@ if __name__ == "__main__":
         early_stopping=5,
         hidden_size=256,
         static_embedding_size=64,
-        predict_delta=True
+        predict_delta=True,
     )
 
     # rename the output file

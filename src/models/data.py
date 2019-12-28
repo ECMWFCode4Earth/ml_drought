@@ -71,8 +71,8 @@ class ModelArrays:
 
     def to_xarray(self) -> Tuple[xr.Dataset, xr.Dataset, Optional[xr.Dataset]]:
         assert (
-            self.latlons.shape[0] == self.x.historical.shape[0]
-        ), "first dim is # pixels"  # type: ignore
+            self.latlons.shape[0] == self.x.historical.shape[0]  # type: ignore
+        ), "first dim is # pixels"
         assert (
             len(self.x_vars) == self.x.historical.shape[2]
         ), "final dim is # variables"
@@ -81,13 +81,12 @@ class ModelArrays:
         if self.x.current is not None:
             # NOTE: historical times is one less for nowcast?
             assert (
-                len(self.historical_times) == self.x.historical.shape[1]
-            ), "second dim is # timesteps"  # type: ignore
+                len(self.historical_times) == self.x.historical.shape[1]  # type: ignore
+            ), "second dim is # timesteps"
         else:
             assert (
-                len(self.historical_times) == self.x.historical.shape[1]
-            ), "second dim is # timesteps"  # type: ignore
-
+                len(self.historical_times) == self.x.historical.shape[1]  # type: ignore
+            ), "second dim is # timesteps"
         variables = self.x_vars
         latitudes = np.unique(self.latlons[:, 0])  # type: ignore
         longitudes = np.unique(self.latlons[:, 1])  # type: ignore
@@ -571,6 +570,7 @@ class _BaseIter:
         x, y = xr.open_dataset(folder / "x.nc"), xr.open_dataset(folder / "y.nc")
 
         if self.predict_delta:
+            # TODO: do this ONCE not at each read-in of the data
             y = self._calculate_change(x, y)
 
         assert len(list(y.data_vars)) == 1, (
