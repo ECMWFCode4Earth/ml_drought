@@ -88,6 +88,7 @@ class ModelArrays:
                 len(self.historical_times) == self.x.historical.shape[1]  # type: ignore
             ), "second dim is # timesteps"
         variables = self.x_vars
+        # TODO: HOW TO CATCH ERRORS OF MISSING DATA?
         latitudes = np.unique(self.latlons[:, 0])  # type: ignore
         longitudes = np.unique(self.latlons[:, 1])  # type: ignore
         times = self.historical_times
