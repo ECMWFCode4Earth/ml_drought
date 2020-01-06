@@ -196,7 +196,6 @@ class ModelBase:
 
                 if self.predict_delta:
                     # get the NON-NORMALIZED data (from ModelArrays.historical_target)
-                    date_key = _datetime_to_folder_time_str(preds_xr.time.values)
                     historical_y = val["historical_target"]
                     y_var = val["y_var"]
                     cast(str, y_var)
