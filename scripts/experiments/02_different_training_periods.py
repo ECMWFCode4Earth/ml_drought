@@ -1,7 +1,9 @@
 import sys
 
-sys.path.append("..")
+sys.path.append("../..")
 
+from scripts.utils import get_data_path
+from src.analysis import all_explanations_for_file
 from src.models import (
     Persistence,
     LinearRegression,
@@ -9,45 +11,45 @@ from src.models import (
     RecurrentNetwork,
     EARecurrentNetwork,
     load_model,
+    GBDT,
 )
-from src.analysis import all_explanations_for_file
 
-from scripts.utils import get_data_path
+
+def get_training_years():
+    return
 
 
 def parsimonious(experiment="one_month_forecast",):
-
     predictor = Persistence(get_data_path(), experiment=experiment)
     predictor.evaluate(save_preds=True)
 
 
 def regression(
-    experiment='one_month_forecast',
+    experiment="one_month_forecast",
     include_pred_month=True,
-    surrounding_pixels=None,
-    ignore_vars=None
+    surrounding_pixels=1,
+    explain=False,
 ):
     predictor = LinearRegression(
         get_data_path(),
         experiment=experiment,
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
-        ignore_vars=ignore_vars,
         static="embeddings",
     )
     predictor.train()
     predictor.evaluate(save_preds=True)
 
     # mostly to test it works
-    predictor.explain(save_shap_values=True)
+    if explain:
+        predictor.explain(save_shap_values=True)
 
 
 def linear_nn(
-experiment = 'one_month_forecast',
-include_pred_month = True,
-surrounding_pixels = None,
-ignore_vars = None,
-pretrained = False
+    experiment="one_month_forecast",
+    include_pred_month=True,
+    surrounding_pixels=1,
+    explain=False,
 ):
     predictor = LinearNetwork(
         layer_sizes=[100],
@@ -55,21 +57,20 @@ pretrained = False
         experiment=experiment,
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
-        ignore_vars = ignore_vars,
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
-    _ = predictor.explain(save_shap_values=True)
+    if explain:
+        _ = predictor.explain(save_shap_values=True)
 
 
 def rnn(
-    experiment='one_month_forecast',
+    experiment="one_month_forecast",
     include_pred_month=True,
-    surrounding_pixels=None,
-    ignore_vars=None,
-    pretrained=True
+    surrounding_pixels=1,
+    explain=False,
 ):
     predictor = RecurrentNetwork(
         hidden_size=128,
@@ -77,13 +78,13 @@ def rnn(
         experiment=experiment,
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
-        ignore_vars=ignore_vars,
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
-    _ = predictor.explain(save_shap_values=True)
+    if explain:
+        _ = predictor.explain(save_shap_values=True)
 
 
 def earnn(
@@ -91,7 +92,7 @@ def earnn(
     include_pred_month=True,
     surrounding_pixels=None,
     pretrained=True,
-    ignore_vars=None
+    explain=False,
 ):
     data_path = get_data_path()
 
@@ -102,7 +103,6 @@ def earnn(
             experiment=experiment,
             include_pred_month=include_pred_month,
             surrounding_pixels=surrounding_pixels,
-            ignore_vars=ignore_vars,
         )
         predictor.train(num_epochs=50, early_stopping=5)
         predictor.evaluate(save_preds=True)
@@ -110,17 +110,38 @@ def earnn(
     else:
         predictor = load_model(data_path / f"models/{experiment}/ealstm/model.pt")
 
-    test_file = data_path / f"features/{experiment}/test/2018_3"
-    assert test_file.exists()
-    all_explanations_for_file(test_file, predictor, batch_size=100)
+    if explain:
+        test_file = data_path / f"features/{experiment}/test/2018_3"
+        assert test_file.exists()
+        all_explanations_for_file(test_file, predictor, batch_size=100)
 
 
-if __name__ == '__main__':
-    ignore_vars = None
-    ignore_vars = ['VCI', 'p84.162', 'sp', 'tp']
+def gbdt(
+    experiment="one_month_forecast",
+    include_pred_month=True,
+    surrounding_pixels=None,
+    pretrained=True,
+    explain=False,
+):
+    data_path = get_data_path()
 
-    # parsimonious(ignore_vars=ignore_vars)
-    # regression(ignore_vars=ignore_vars)
-    # linear_nn(ignore_vars=ignore_vars)
-    # rnn(ignore_vars=ignore_vars)
-    earnn(pretrained=False, ignore_vars=ignore_vars)
+    # initialise, train and save GBDT model
+    predictor = GBDT(
+        data_folder=data_path,
+        experiment=experiment,
+        include_pred_month=include_pred_month,
+        surrounding_pixels=surrounding_pixels,
+        static="embedding",
+    )
+    predictor.train(early_stopping=5)
+    predictor.evaluate(save_preds=True)
+    predictor.save_model()
+
+
+if __name__ == "__main__":
+    parsimonious()
+    regression()
+    linear_nn()
+    rnn()
+    earnn()
+    # gbdt()

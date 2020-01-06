@@ -69,9 +69,7 @@ def export_data(data_path):
     # temperature
     print("** Exporting ERA5 Temperature **")
     exporter = ERA5Exporter(data_path)
-    exporter.export(
-        variable="2m_temperature", granularity="monthly",
-    )
+    exporter.export(variable="2m_temperature", granularity="monthly")
     del exporter
 
     # evaporation

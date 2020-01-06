@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import datetime
 import numpy as np
@@ -23,6 +25,23 @@ class TrainData:
     yearly_aggs: Union[np.ndarray, torch.Tensor]
     static: Union[np.ndarray, torch.Tensor, None]
 
+    def to_tensor(self, device: torch.device) -> None:
+        for key, val in self.__dict__.items():
+            if val is not None:
+                if type(val) is np.ndarray:
+                    setattr(self, key, torch.from_numpy(val).to(device).float())
+
+    def concatenate(self, x: TrainData):
+        # Note this function will only concatenate values from x
+        # which are not None in self
+        for key, val in self.__dict__.items():
+            if val is not None:
+                if type(val) is np.ndarray:
+                    newval = np.concatenate((val, getattr(x, key)), axis=0)
+                else:
+                    newval = torch.cat((val, getattr(x, key)), dim=0)
+                setattr(self, key, newval)
+
 
 @dataclass
 class ModelArrays:
@@ -32,6 +51,22 @@ class ModelArrays:
     y_var: str
     latlons: Optional[np.ndarray] = None
     target_time: Optional[Timestamp] = None
+
+    def to_tensor(self, device) -> None:
+        self.x.to_tensor(device)
+        if type(self.y) is np.ndarray:
+            self.y = torch.from_numpy(self.y).to(device).float()
+
+    def concatenate(self, x: ModelArrays) -> None:
+        self.x.concatenate(x.x)
+
+        if type(self.y) is np.ndarray:
+            self.y = np.concatenate((self.y, x.y), axis=0)
+        else:
+            self.y = torch.cat((self.y, x.y,), dim=0)
+
+        if self.latlons is not None:
+            self.latlons = np.concatenate((self.latlons, x.latlons), axis=0)
 
 
 # The dict below maps the indices of the arrays returned
@@ -127,7 +162,7 @@ class DataLoader:
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         monthly_aggs: bool = True,
-        static: bool = False,
+        static: Optional[str] = "features",
         device: str = "cpu",
     ) -> None:
 
@@ -157,19 +192,26 @@ class DataLoader:
         self.to_tensor = to_tensor
         self.ignore_vars = ignore_vars
 
-        self.static = None
+        self.static: Optional[xr.Dataset] = None
+        self.max_loc_int: Optional[int] = None
         self.static_normalizing_dict = None
 
-        if static:
-            static_data_path = data_path / "features/static/data.nc"
-            self.static = xr.open_dataset(static_data_path)
-
-            if normalize:
-                static_normalizer_path = (
-                    data_path / "features/static/normalizing_dict.pkl"
+        if static is not None:
+            if static == "features":
+                self.static = xr.open_dataset(data_path / "features/static/data.nc")
+                if normalize:
+                    static_normalizer_path = (
+                        data_path / "features/static/normalizing_dict.pkl"
+                    )
+                    with static_normalizer_path.open("rb") as f:
+                        self.static_normalizing_dict = pickle.load(f)
+            if static == "embeddings":
+                # in case no static dataset was generated, we use the first
+                # historical dataset
+                self.static, self.max_loc_int = self._loc_to_int(
+                    xr.open_dataset(self.data_files[0] / "x.nc")
                 )
-                with static_normalizer_path.open("rb") as f:
-                    self.static_normalizing_dict = pickle.load(f)
+
         self.device = torch.device(device)
 
     def __iter__(self):
@@ -180,6 +222,25 @@ class DataLoader:
 
     def __len__(self) -> int:
         return len(self.data_files) // self.batch_file_size
+
+    @staticmethod
+    def _loc_to_int(base_ds: xr.Dataset) -> Tuple[xr.Dataset, int]:
+        """
+        returns a dataset with the lat and lon coordinates preserved, and
+        a unique increasing integer for each lat-lon combination
+        """
+        assert {"lat", "lon"} <= set(
+            base_ds.dims
+        ), "Dimensions named lat and lon must be in the reference grid"
+        base_ds = base_ds[["lat", "lon"]]
+
+        # next, we fill the values with unique integers
+        unique_values = np.arange(0, len(base_ds.lat) * len(base_ds.lon)).reshape(
+            (len(base_ds.lat), len(base_ds.lon))
+        )
+        base_ds["encoding"] = (("lat", "lon"), unique_values)
+
+        return base_ds, int(unique_values.max())
 
     @staticmethod
     def _load_datasets(
@@ -478,30 +539,7 @@ class _BaseIter:
 
             latlons = latlons[notnan_indices]
 
-        if to_tensor:
-            train_data.historical = (
-                torch.from_numpy(train_data.historical).to(self.device).float()
-            )
-            train_data.pred_months = (
-                torch.from_numpy(train_data.pred_months).to(self.device).float()
-            )
-            train_data.latlons = (
-                torch.from_numpy(train_data.latlons).to(self.device).float()
-            )
-            train_data.yearly_aggs = (
-                torch.from_numpy(train_data.yearly_aggs).to(self.device).float()
-            )
-            if train_data.static is not None:
-                train_data.static = (
-                    torch.from_numpy(train_data.static).to(self.device).float()
-                )
-            y_np = torch.from_numpy(y_np).to(self.device).float()
-
-            if self.experiment == "nowcast":
-                train_data.current = (
-                    torch.from_numpy(train_data.current).to(self.device).float()
-                )
-        return ModelArrays(
+        model_arrays = ModelArrays(
             x=train_data,
             y=y_np,
             x_vars=list(x.data_vars),
@@ -509,6 +547,11 @@ class _BaseIter:
             latlons=latlons,
             target_time=target_time,
         )
+
+        if to_tensor:
+            model_arrays.to_tensor(self.device)
+
+        return model_arrays
 
     @staticmethod
     def _add_extra_dims(
@@ -567,10 +610,9 @@ class _TrainIter(_BaseIter):
         Tuple[Union[np.ndarray, torch.Tensor], ...], Union[np.ndarray, torch.Tensor]
     ]:
 
+        global_modelarrays: Optional[ModelArrays] = None
+
         if self.idx < self.max_idx:
-            out_x, out_x_add, out_x_curr, out_x_latlon = [], [], [], []
-            out_x_ym, out_x_static = [], []
-            out_y = []
 
             cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
             while self.idx < cur_max_idx:
@@ -588,60 +630,29 @@ class _TrainIter(_BaseIter):
 
                     cur_max_idx = min(cur_max_idx + 1, self.max_idx)
 
-                out_x.append(arrays.x.historical)
-                if arrays.x.current is not None:
-                    out_x_curr.append(arrays.x.current)
-                if arrays.x.static is not None:
-                    out_x_static.append(arrays.x.static)
-                out_x_add.append(arrays.x.pred_months)
-                out_x_latlon.append(arrays.x.latlons)
-                out_x_ym.append(arrays.x.yearly_aggs)
-                out_y.append(arrays.y)
+                if global_modelarrays is None:
+                    global_modelarrays = arrays
+                else:
+                    global_modelarrays.concatenate(arrays)
+
                 self.idx += 1
+            if global_modelarrays is not None:
+                if self.to_tensor:
+                    global_modelarrays.to_tensor(self.device)
 
-            final_x = np.concatenate(out_x, axis=0)
-            final_x_curr = (
-                np.concatenate(out_x_curr, axis=0) if out_x_curr != [] else None
-            )
-            final_x_static = (
-                np.concatenate(out_x_static, axis=0) if out_x_static != [] else None
-            )
-            final_x_add = np.concatenate(out_x_add, axis=0)
-            final_x_latlon = np.concatenate(out_x_latlon, axis=0)
-            final_x_ym = np.concatenate(out_x_ym, axis=0)
-            final_y = np.concatenate(out_y, axis=0)
-
-            if self.to_tensor:
-                final_x = torch.from_numpy(final_x).to(self.device).float()
-                final_x_add = torch.from_numpy(final_x_add).to(self.device).float()
-                final_x_latlon = (
-                    torch.from_numpy(final_x_latlon).to(self.device).float()
+                return (
+                    (
+                        global_modelarrays.x.historical,
+                        global_modelarrays.x.pred_months,
+                        global_modelarrays.x.latlons,
+                        global_modelarrays.x.current,
+                        global_modelarrays.x.yearly_aggs,
+                        global_modelarrays.x.static,
+                    ),
+                    global_modelarrays.y,
                 )
-                final_x_ym = torch.from_numpy(final_x_ym).to(self.device).float()
-                if final_x_curr is not None:
-                    final_x_curr = (
-                        torch.from_numpy(final_x_curr).to(self.device).float()
-                    )
-                if final_x_static is not None:
-                    final_x_static = (
-                        torch.from_numpy(final_x_static).to(self.device).float()
-                    )
-                final_y = torch.from_numpy(final_y).to(self.device).float()
-
-            if final_x.shape[0] == 0:
+            else:
                 raise StopIteration()
-
-            return (
-                (
-                    final_x,
-                    final_x_add,
-                    final_x_latlon,
-                    final_x_curr,
-                    final_x_ym,
-                    final_x_static,
-                ),
-                final_y,
-            )
 
         else:  # final_x_curr >= self.max_idx
             raise StopIteration()

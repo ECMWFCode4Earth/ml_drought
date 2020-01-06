@@ -73,8 +73,10 @@ class TestEARecurrentNetwork:
         assert model_dict["include_yearly_aggs"] == include_yearly_aggs
         assert model_dict["experiment"] == "one_month_forecast"
 
-    @pytest.mark.parametrize("use_pred_months", [True, False])
-    def test_train(self, tmp_path, capsys, use_pred_months):
+    @pytest.mark.parametrize(
+        "use_pred_months,use_static_embedding", [(True, 10), (False, None)]
+    )
+    def test_train(self, tmp_path, capsys, use_pred_months, use_static_embedding):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -109,6 +111,7 @@ class TestEARecurrentNetwork:
             dense_features=dense_features,
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
+            static_embedding_size=use_static_embedding,
         )
         model.train()
 
@@ -175,9 +178,16 @@ class TestEARecurrentNetwork:
         test_dl = next(
             iter(model.get_dataloader(mode="test", to_tensor=True, shuffle_data=False))
         )
+
         for key, val in test_dl.items():
-            output = model.get_morris_gradient(val.x)
-            assert type(output) is TrainData
+            output_m = model.explain(val.x, save_explanations=True, method="morris")
+            assert type(output_m) is TrainData
+            assert (model.model_dir / "analysis/morris_value_historical.npy").exists()
+
+            # TODO fix a bug in shap preventing this from passing
+            # output_s = model.explain(val.x, save_explanations=True, method="shap")
+            # assert type(output_s) is TrainData
+            # assert (model.model_dir / "analysis/shap_value_historical.npy").exists()
 
 
 class TestEALSTMCell:
