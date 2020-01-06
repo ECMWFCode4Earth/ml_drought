@@ -174,19 +174,19 @@ class RegionGeoPlotter:
         return self.gdf
 
     @staticmethod
-    def get_metric(selection: str, gdf: GeoDataFrame, **kwargs) -> PlotMetric:
+    def get_metric(selection: str, gdf: GeoDataFrame, **kwargs) -> PlotMetric:  # type: ignore
         rmse_vmin = kwargs["rmse_vmin"] if "rmse_vmin" in kwargs else None
         rmse_vmax = (
             kwargs["rmse_vmax"]
             if "rmse_vmax" in kwargs
-            else np.nanpercentile(gdf.rmse, q=85)
+            else np.nanpercentile(gdf.rmse, q=85)  # type: ignore
         )
         rmse = PlotMetric(metric="rmse", cmap="viridis", vmin=rmse_vmin, vmax=rmse_vmax)
         mae_vmin = kwargs["mae_vmin"] if "mae_vmin" in kwargs else None
         mae_vmax = (
             kwargs["mae_vmax"]
             if "mae_vmax" in kwargs
-            else np.nanpercentile(gdf.mae, q=85)
+            else np.nanpercentile(gdf.mae, q=85)  # type: ignore
         )
         mae = PlotMetric(metric="mae", cmap="plasma", vmin=mae_vmin, vmax=mae_vmax)
         r2 = PlotMetric(metric="r2", cmap="inferno_r", vmin=0, vmax=1.0)
