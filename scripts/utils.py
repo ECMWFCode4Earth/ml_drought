@@ -14,5 +14,5 @@ def get_data_path() -> Path:
 
 
 def _rename_directory(from_path: Path, to_path: Path) -> None:
-    shutil.move(from_path, to_path)
+    shutil.move(from_path.as_posix(), to_path.as_posix())
     print(f"MOVED {from_path} to {to_path}")
