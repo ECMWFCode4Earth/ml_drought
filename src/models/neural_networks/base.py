@@ -267,6 +267,17 @@ class NNBase(ModelBase):
     def _input_to_tuple(
         self, x: Union[Tuple[torch.Tensor, ...], TrainData]
     ) -> Tuple[torch.Tensor, ...]:
+        """
+        Returns:
+        --------
+        Tuple:
+            [0] historical data
+            [1] months (one hot encoded)
+            [2] latlons
+            [3] current data
+            [4] yearly aggregations
+            [5] static data
+        """
         # mypy totally fails to handle what's going on here
 
         if type(x) is TrainData:  # type: ignore
