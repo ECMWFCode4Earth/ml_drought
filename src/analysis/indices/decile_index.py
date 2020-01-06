@@ -80,7 +80,7 @@ class DecileIndex(BaseIndices):
         return (ds.rank(dim=dim) - 1) / (ds.sizes[dim] - 1) * 100
 
     def fit(
-        self, variable: str, time_period: str = "month", rolling_window: int = 3,
+        self, variable: str, time_period: str = "month", rolling_window: int = 3
     ) -> None:
         print("Fitting Decile Index")
         # 1. calculate a cumsum over `rolling_window` timesteps

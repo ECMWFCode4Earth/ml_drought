@@ -12,12 +12,10 @@ from src.analysis.evaluation import (
     # monthly_score,
     # plot_predictions,
     read_train_data,
-    read_test_data
+    read_test_data,
 )
 
-from ..utils import (
-    _create_features_dir,
-)
+from ..utils import _create_features_dir
 
 
 class TestEvaluation:
@@ -29,7 +27,7 @@ class TestEvaluation:
         assert isinstance(y, xr.Dataset)
 
         assert X.time.shape[0] == y.time.shape[0] == 36
-        assert all(np.isin(['vci', 'precip'], [v for v in X.data_vars]))
+        assert all(np.isin(["vci", "precip"], [v for v in X.data_vars]))
 
     def test_read_test_data(self, tmp_path):
         _create_features_dir(tmp_path, train=False)

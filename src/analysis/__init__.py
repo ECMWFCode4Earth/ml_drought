@@ -8,7 +8,7 @@ from .evaluation import (
     read_pred_data,
     read_true_data,
     read_train_data,
-    read_test_data
+    read_test_data,
 )
 from .plot_shap import plot_shap_values, all_shap_for_file
 from .indices import (
@@ -47,6 +47,6 @@ __all__ = [
     "plot_predictions",
     "read_pred_data",
     "read_true_data",
-    'read_train_data',
-    'read_test_data',
+    "read_train_data",
+    "read_test_data",
 ]
