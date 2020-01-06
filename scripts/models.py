@@ -1,3 +1,4 @@
+from pathlib import Path
 import sys
 
 sys.path.append("..")
@@ -28,7 +29,7 @@ def regression(
     ignore_vars=None
 ):
     predictor = LinearRegression(
-        get_data_path(),
+        Path("/Volumes/Lees_Extend/data/ecmwf_sowc/data"),  # get_data_path(),
         experiment=experiment,
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,

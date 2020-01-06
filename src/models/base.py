@@ -2,6 +2,7 @@ from pathlib import Path
 import numpy as np
 import json
 import pandas as pd
+import xarray as xr
 from sklearn.metrics import mean_squared_error
 
 from .data import TrainData, DataLoader
@@ -33,6 +34,9 @@ class ModelBase:
         training data
     include_static: bool = True
         Whether to include static data
+    predict_delta: bool = False
+        Whether to model the CHANGE in target variable rather than the
+        raw values
     """
 
     model_name: str  # to be added by the model classes
@@ -50,6 +54,7 @@ class ModelBase:
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "embedding",
+        predict_delta: bool = False,
     ) -> None:
 
         self.batch_size = batch_size
@@ -64,6 +69,7 @@ class ModelBase:
         self.surrounding_pixels = surrounding_pixels
         self.ignore_vars = ignore_vars
         self.static = static
+        self.predict_delta = predict_delta
 
         # needs to be set by the train function
         self.num_locations: Optional[int] = None
@@ -86,6 +92,18 @@ class ModelBase:
         # This can be overridden by any model which actually cares which device its run on
         # by default, models which don't care will run on the CPU
         self.device = "cpu"
+
+    def _convert_delta_to_raw_values(
+        self, x: xr.Dataset, y: xr.Dataset, y_var: str, order: int = 1
+    ) -> xr.Dataset:
+        """When calculating the derivative we need to convert the change/delta
+        to the raw value for our prediction.
+        """
+        # x.shape == (pixels, featurespreds)
+        prev_ts = x[y_var].isel(time=-order)
+
+        # calculate the raw values
+        return prev_ts + y["preds"]  # .to_dataset(name_of_preds_var)
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         # This method should return the test arrays as loaded by
@@ -150,6 +168,7 @@ class ModelBase:
                 json.dump(output_dict, outfile)
 
         if save_preds:
+            # convert from test_arrays_dict to xarray object
             for key, val in test_arrays_dict.items():
                 latlons = cast(np.ndarray, val["latlons"])
                 preds = preds_dict[key]
@@ -174,6 +193,32 @@ class ModelBase:
                     .to_xarray()
                 )
 
+                if self.predict_delta:
+                    # get the NON-NORMALIZED data (from ModelArrays.historical_target)
+                    historical_y = val["historical_target"]
+                    y_var = val["y_var"]
+                    cast(str, y_var)
+                    historical_ds = (
+                        pd.DataFrame(
+                            data={
+                                y_var: historical_y,
+                                "lat": latlons[:, 0],
+                                "lon": latlons[:, 1],
+                                "time": times,
+                            }
+                        )
+                        .set_index(["lat", "lon", "time"])
+                        .to_xarray()
+                    )
+
+                    # convert delta to raw target_variable
+                    preds_xr = self._convert_delta_to_raw_values(
+                        x=historical_ds, y=preds_xr, y_var=y_var
+                    )
+
+                    if not isinstance(preds_xr, xr.Dataset):
+                        preds_xr = preds_xr.to_dataset("preds")
+
                 preds_xr.to_netcdf(self.model_dir / f"preds_{key}.nc")
 
     def _concatenate_data(
@@ -186,7 +231,11 @@ class ModelBase:
         if type(x) is tuple:
             x_his, x_pm, x_latlons, x_cur, x_ym, x_static = x  # type: ignore
         elif type(x) == TrainData:
-            x_his, x_pm, x_latlons = x.historical, x.pred_months, x.latlons  # type: ignore
+            x_his, x_pm, x_latlons = (
+                x.historical,  # type: ignore
+                x.pred_months,  # type: ignore
+                x.latlons,  # type: ignore
+            )  # type: ignore
             x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
             x_static = x.static  # type: ignore
 
@@ -243,6 +292,7 @@ class ModelBase:
             "device": self.device,
             "clear_nans": True,
             "normalize": True,
+            "predict_delta": self.predict_delta,
         }
 
         for key, val in kwargs.items():

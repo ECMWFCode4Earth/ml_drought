@@ -53,21 +53,29 @@ class TestLinearRegression:
         ), "Different experiment saved!"
 
     @pytest.mark.parametrize(
-        "use_pred_months,experiment,monthly_agg",
+        "use_pred_months,experiment,monthly_agg,predict_delta",
         [
-            (True, "one_month_forecast", True),
-            (True, "nowcast", False),
-            (False, "one_month_forecast", False),
-            (False, "nowcast", True),
+            (True, "one_month_forecast", True, True),
+            (True, "nowcast", False, True),
+            (False, "one_month_forecast", False, True),
+            (False, "nowcast", True, True),
+            (True, "one_month_forecast", True, False),
+            (True, "nowcast", False, False),
+            (False, "one_month_forecast", False, False),
+            (False, "nowcast", True, False),
         ],
     )
-    def test_train(self, tmp_path, capsys, use_pred_months, experiment, monthly_agg):
+    def test_train(
+        self, tmp_path, capsys, use_pred_months, experiment, monthly_agg, predict_delta
+    ):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         x_static, _, _ = _make_dataset(size=(5, 5), add_times=False)
         y = x.isel(time=[-1])
 
         x_add1, _, _ = _make_dataset(size=(5, 5), const=True, variable_name="precip")
+        x_add1 = x_add1 * 2
         x_add2, _, _ = _make_dataset(size=(5, 5), const=True, variable_name="temp")
+        x_add2 = x_add2 * 3
         x = xr.merge([x, x_add1, x_add2])
 
         norm_dict = {
@@ -78,9 +86,9 @@ class TestLinearRegression:
 
         static_norm_dict = {"VHI": {"mean": 0.0, "std": 1.0}}
 
-        test_features = tmp_path / f"features/{experiment}/train/hello"
+        test_features = tmp_path / f"features/{experiment}/train/2001_12"
         test_features.mkdir(parents=True)
-        pred_features = tmp_path / f"features/{experiment}/test/hello"
+        pred_features = tmp_path / f"features/{experiment}/test/2001_12"
         pred_features.mkdir(parents=True)
         static_features = tmp_path / f"features/static"
         static_features.mkdir(parents=True)
@@ -102,6 +110,7 @@ class TestLinearRegression:
             include_pred_month=use_pred_months,
             experiment=experiment,
             include_monthly_aggs=monthly_agg,
+            predict_delta=predict_delta,
         )
         model.train()
 
@@ -132,17 +141,17 @@ class TestLinearRegression:
 
         test_arrays_dict, preds_dict = model.predict()
         assert (
-            test_arrays_dict["hello"]["y"].size == preds_dict["hello"].shape[0]
+            test_arrays_dict["2001_12"]["y"].size == preds_dict["2001_12"].shape[0]
         ), "Expected length of test arrays to be the same as the predictions"
 
         # test saving the model outputs
         model.evaluate(save_preds=True)
 
         save_path = model.data_path / "models" / experiment / "linear_regression"
-        assert (save_path / "preds_hello.nc").exists()
+        assert (save_path / "preds_2001_12.nc").exists()
         assert (save_path / "results.json").exists()
 
-        pred_ds = xr.open_dataset(save_path / "preds_hello.nc")
+        pred_ds = xr.open_dataset(save_path / "preds_2001_12.nc")
         assert np.isin(["lat", "lon", "time"], [c for c in pred_ds.coords]).all()
         assert y.time == pred_ds.time
 
@@ -193,6 +202,7 @@ class TestLinearRegression:
             monthly_aggs,
             static,
             device,
+            predict_delta,
         ):
 
             pass
