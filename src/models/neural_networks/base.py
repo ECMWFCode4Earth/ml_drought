@@ -191,7 +191,7 @@ class NNBase(ModelBase):
                         "y_var": val.y_var,
                     }
                     if self.predict_delta:
-                        assert val.historical_target.shape == val.y.shape, (
+                        assert val.historical_target.shape[0] == val.y.shape[0], (
                             "Expect"
                             f"the shape of the y ({val.y.shape})"
                             f" and historical_target ({val.historical_target.shape})"
