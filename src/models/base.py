@@ -6,7 +6,6 @@ import xarray as xr
 from sklearn.metrics import mean_squared_error
 
 from .data import TrainData, DataLoader
-from .utils import _datetime_to_folder_time_str
 
 from typing import cast, Any, Dict, List, Optional, Union, Tuple
 
