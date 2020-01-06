@@ -94,7 +94,7 @@ def rename_model_experiment_file(
     else:
         to_path = data_dir / "models" / f"one_month_forecast_{vars_joined}_NOstatic"
 
-    _rename_directory(from_path, to_path)
+    _rename_directory(from_path, to_path, with_datetime=True)
 
 
 def run_all_models_as_experiments(
@@ -111,13 +111,40 @@ def run_all_models_as_experiments(
 
     if static:
         # 'embeddings' or 'features'
-        linear_nn(ignore_vars=ignore_vars, static="embeddings")
-        rnn(ignore_vars=ignore_vars, static="embeddings")
-        earnn(pretrained=False, ignore_vars=ignore_vars, static="embeddings")
+        try:
+          linear_nn(ignore_vars=ignore_vars, static="embeddings")
+        except RuntimeError:
+            print(f"\n{'*'*10}\n FAILED: LinearNN for vars={vars_to_include} static={static}\n{'*'*10}\n")
+
+        try:
+            rnn(ignore_vars=ignore_vars, static="embeddings")
+        except RuntimeError:
+            print(f"\n{'*'*10}\n FAILED: RNN for vars={vars_to_include} static={static}\n{'*'*10}\n")
+
+        try:
+          earnn(pretrained=False, ignore_vars=ignore_vars, static="embeddings")
+        except RuntimeError:
+            print(f"\n{'*'*10}\n FAILED: EALSTM for vars={vars_to_include} static={static}\n{'*'*10}\n")
+
     else:
-        linear_nn(ignore_vars=ignore_vars, static=None)
-        rnn(ignore_vars=ignore_vars, static=None)
-        earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
+        try:
+          linear_nn(ignore_vars=ignore_vars, static=None)
+        except RuntimeError:
+            print(
+                f"\n{'*'*10}\n FAILED: LinearNN for vars={vars_to_include} static={static}\n{'*'*10}\n")
+
+        try:
+            rnn(ignore_vars=ignore_vars, static=None)
+        except RuntimeError:
+            print(
+                f"\n{'*'*10}\n FAILED: RNN for vars={vars_to_include} static={static}\n{'*'*10}\n")
+
+        try:
+          earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
+        except RuntimeError:
+            print(
+                f"\n{'*'*10}\n FAILED: EALSTM for vars={vars_to_include} static={static}\n{'*'*10}\n")
+
 
     # RENAME DIRECTORY
     data_dir = get_data_path()
@@ -167,6 +194,9 @@ if __name__ == "__main__":
 
         # run experiments
         for static in [True, False]:
+          try:
             run_all_models_as_experiments(
                 vars_to_include, ignore_vars, static=static, run_regression=False
             )
+          except:
+            print(f'\n{"-" * 10}\Experiment FAILED: {vars_to_include} static:{static}\n{"-" * 10}')
