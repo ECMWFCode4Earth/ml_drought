@@ -19,10 +19,12 @@ def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     true_da_shape = (true_da.lat.shape[0], true_da.lon.shape[0])
     pred_da_shape = (pred_da.lat.shape[0], pred_da.lon.shape[0])
     assert true_da_shape == pred_da_shape
-    assert tuple(true_da.dims) == tuple(pred_da.dims), f'Expect' \
-    'the dimensions to be the same. Currently: ' \
-    f'True: {tuple(true_da.dims)} Preds: {tuple(pred_da.dims)}. ' \
-    'Have you tried da.transpose("time", "lat", "lon")'
+    assert tuple(true_da.dims) == tuple(pred_da.dims), (
+        f"Expect"
+        "the dimensions to be the same. Currently: "
+        f"True: {tuple(true_da.dims)} Preds: {tuple(pred_da.dims)}. "
+        'Have you tried da.transpose("time", "lat", "lon")'
+    )
 
     # sort the lat/lons correctly just to be sure
     pred_da = _sort_lat_lons(pred_da)
@@ -119,12 +121,14 @@ def annual_scores(
         for k in out_dict.keys():
             out_df = pd.concat([out_df, out_dict[k]])
 
-        out_df['time'] = out_df.apply(
-            lambda row: pd.to_datetime(f"{int(row.month)}-{int(row.year)}"), axis=1)
+        out_df["time"] = out_df.apply(
+            lambda row: pd.to_datetime(f"{int(row.month)}-{int(row.year)}"), axis=1
+        )
 
         return out_df
     else:
         return out_dict
+
 
 def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
     """Convert the dictionary from annual_scores to a pd.DataFrame
@@ -145,8 +149,8 @@ def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
 
 
 def _read_multi_data_paths(train_data_paths: List[Path]) -> xr.Dataset:
-    train_ds = xr.open_mfdataset(train_data_paths).sortby('time').compute()
-    train_ds = train_ds.transpose('time', 'lat', 'lon')
+    train_ds = xr.open_mfdataset(train_data_paths).sortby("time").compute()
+    train_ds = train_ds.transpose("time", "lat", "lon")
 
     return train_ds
 
@@ -224,11 +228,14 @@ def monthly_score(
         model_files[model] = xr.open_dataset(pred_path).isel(time=0)
 
     if true_data_experiment is None:
-        true_data_path = data_path / \
-            f"features/{experiment}/test" f"/{pred_year}_{month}/y.nc"
+        true_data_path = (
+            data_path / f"features/{experiment}/test" f"/{pred_year}_{month}/y.nc"
+        )
     else:
-        true_data_path = data_path / \
-            f"features/{true_data_experiment}/test" f"/{pred_year}_{month}/y.nc"
+        true_data_path = (
+            data_path / f"features/{true_data_experiment}/test"
+            f"/{pred_year}_{month}/y.nc"
+        )
     true_data = xr.open_dataset(true_data_path).isel(time=0)
 
     output_score: Dict[str, Dict[str, float]] = {}
@@ -253,16 +260,23 @@ def monthly_score(
     return output_score
 
 
-def plot_predictions(pred_month: int, model: str,
-                     target_var: str = 'VCI',
-                     pred_year: int = 2018,
-                     data_path: Path = Path('data'),
-                     experiment: str = 'one_month_forecast',
-                     **spatial_plot_kwargs):
+def plot_predictions(
+    pred_month: int,
+    model: str,
+    target_var: str = "VCI",
+    pred_year: int = 2018,
+    data_path: Path = Path("data"),
+    experiment: str = "one_month_forecast",
+    **spatial_plot_kwargs,
+):
 
-    true = xr.open_dataset(data_path / f'features/{experiment}/test'
-                           f'/{pred_year}_{pred_month}/y.nc').\
-        rename({target_var: 'preds'}).isel(time=0)
+    true = (
+        xr.open_dataset(
+            data_path / f"features/{experiment}/test" f"/{pred_year}_{pred_month}/y.nc"
+        )
+        .rename({target_var: "preds"})
+        .isel(time=0)
+    )
 
     model_ds = xr.open_dataset(
         data_path / f"models/{experiment}/{model}/preds" f"_{pred_year}_{pred_month}.nc"
@@ -284,12 +298,12 @@ def plot_predictions(pred_month: int, model: str,
 
     plt.clf()
 
-    if 'vmin' not in spatial_plot_kwargs:
-        print('You have not provided a **kwargs dict with vmin / vmax')
-        print('Are you sure?')
+    if "vmin" not in spatial_plot_kwargs:
+        print("You have not provided a **kwargs dict with vmin / vmax")
+        print("Are you sure?")
     fig, ax = plt.subplots(1, 2, figsize=(7, 3))
     true.preds.plot(ax=ax[0], add_colorbar=False, **spatial_plot_kwargs)
-    ax[0].set_title('True')
+    ax[0].set_title("True")
     ax[0].set_axis_off()
     model_ds.preds.plot(ax=ax[1], add_colorbar=False, **spatial_plot_kwargs)
     ax[1].set_title(model)
@@ -297,35 +311,41 @@ def plot_predictions(pred_month: int, model: str,
     plt.show()
 
 
-def _read_data(data_dir: Path = Path('data'),
-               train_or_test: str = 'test',
-               remove_duplicates: bool = True) -> Tuple[xr.Dataset, xr.Dataset]:
+def _read_data(
+    data_dir: Path = Path("data"),
+    train_or_test: str = "test",
+    remove_duplicates: bool = True,
+) -> Tuple[xr.Dataset, xr.Dataset]:
     # LOAD the y files
     y_data_paths = [
-        f for f in (
-            data_dir / 'features' / 'one_month_forecast' / train_or_test
-        ).glob('*/y.nc')
+        f
+        for f in (data_dir / "features" / "one_month_forecast" / train_or_test).glob(
+            "*/y.nc"
+        )
     ]
     y_ds = _read_multi_data_paths(y_data_paths)
 
     # LOAD the X files
     X_data_paths = [
-        f for f in (
-            data_dir / 'features' / 'one_month_forecast' / train_or_test
-        ).glob('*/X.nc')
+        f
+        for f in (data_dir / "features" / "one_month_forecast" / train_or_test).glob(
+            "*/X.nc"
+        )
     ]
     X_ds = _read_multi_data_paths(X_data_paths)
 
     if remove_duplicates:
         # remove duplicate times from the X ds
         # https://stackoverflow.com/a/51077784/9940782
-        _, index = np.unique(X_ds['time'], return_index=True)
+        _, index = np.unique(X_ds["time"], return_index=True)
         X_ds = X_ds.isel(time=index)
 
     return X_ds, y_ds
 
-def read_train_data(data_dir: Path = Path('data'),
-                    remove_duplicates: bool = True) -> Tuple[xr.Dataset, xr.Dataset]:
+
+def read_train_data(
+    data_dir: Path = Path("data"), remove_duplicates: bool = True
+) -> Tuple[xr.Dataset, xr.Dataset]:
     """Read the training data from the data directory and return the joined DataArray.
 
     (Joined on the `time` dimension).
@@ -336,13 +356,14 @@ def read_train_data(data_dir: Path = Path('data'),
     y_train: xr.Dataset
     """
     train_X_ds, train_y_ds = _read_data(
-        data_dir, train_or_test='train', remove_duplicates=remove_duplicates
+        data_dir, train_or_test="train", remove_duplicates=remove_duplicates
     )
     return train_X_ds, train_y_ds
 
 
-def read_test_data(data_dir: Path = Path('data'),
-                   remove_duplicates: bool = True) -> Tuple[xr.Dataset, xr.Dataset]:
+def read_test_data(
+    data_dir: Path = Path("data"), remove_duplicates: bool = True
+) -> Tuple[xr.Dataset, xr.Dataset]:
     """Read the test data from the data directory and return the joined DataArray.
 
     (Joined on the `time` dimension).
@@ -353,7 +374,7 @@ def read_test_data(data_dir: Path = Path('data'),
     y_test: xr.Dataset
     """
     test_X_ds, test_y_ds = _read_data(
-        data_dir, train_or_test='test', remove_duplicates=remove_duplicates
+        data_dir, train_or_test="test", remove_duplicates=remove_duplicates
     )
 
     return test_X_ds, test_y_ds

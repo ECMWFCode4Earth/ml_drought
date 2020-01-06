@@ -108,8 +108,9 @@ def _create_features_dir(tmp_path,
     for date in dates:
         # get the previous time
         prev_dt = pd.to_datetime(date) - pd.DateOffset(months=1)
-        dir_name = f'{prev_dt.year}_{prev_dt.month}'
-        prev_date = f'{prev_dt.year}-{prev_dt.month}-{prev_dt.day}'
+        prev_dt = pd.Series([0], index=[prev_dt]).resample('M').mean().index
+        dir_name = f'{prev_dt.year[0]}_{prev_dt.month[0]}'
+        prev_date = f'{prev_dt.year[0]}-{prev_dt.month[0]:02}-{prev_dt.day[0]:02}'
 
         # make the directory
         (features_dir / dir_name).mkdir(exist_ok=True, parents=True)
@@ -123,5 +124,9 @@ def _create_features_dir(tmp_path,
             (30, 30), variable_name='precip',
             start_date=prev_date, end_date=prev_date
         )
-        ds = xr.merge([vci, precip])
+        ds = xr.auto_combine([vci, precip])
+        # if dir_name != '1998_12':
+            # assert False
+
         ds.to_netcdf(features_dir / dir_name / 'X.nc')
+
