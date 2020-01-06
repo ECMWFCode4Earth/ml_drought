@@ -35,4 +35,5 @@ if __name__ == "__main__":
     _rename_directory(
         from_path=data_path / "models" / "one_month_forecast",
         to_path=data_path / "models" / "one_month_forecast_predict_delta",
+        with_datetime=False
     )
