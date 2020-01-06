@@ -122,6 +122,7 @@ class NNBase(ModelBase):
             self.model.train()
             for x, y in train_dataloader:
                 for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
+                    assert False
                     optimizer.zero_grad()
                     pred = self.model(
                         *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
