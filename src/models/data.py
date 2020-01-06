@@ -240,9 +240,9 @@ class DataLoader:
         (and optionally current) arrays
     static: bool = True
         Whether to include static data
-    self.predict_delta: bool = False
-        Whether to model the CHANGE in the target variable relative to the previous timestep
-        rather than the target variable itself.
+    predict_delta: bool = False
+        Whether to predict the CHANGE in the target variable relative to the previous timestep
+        instead of the raw target variable.
     """
 
     def __init__(

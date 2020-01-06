@@ -2,146 +2,101 @@ import sys
 
 sys.path.append("../..")
 
-from scripts.utils import get_data_path
+from typing import List
 from src.analysis import all_explanations_for_file
-from src.models import (
-    Persistence,
-    LinearRegression,
-    LinearNetwork,
-    RecurrentNetwork,
-    EARecurrentNetwork,
-    load_model,
-    GBDT,
-)
+from scripts.utils import get_data_path
+from _base_models import parsimonious, regression, linear_nn, rnn, earnn
+
+import pandas as pd
+import numpy as np
+
+def sort_by_median_target_variable(target_variable: str = 'VCI'):
+
+    sorted_list = df.sortby('VCI').
+    return sorted_list
 
 
-def get_training_years():
+def get_training_years(length: int, hilo: str):
+    assert hilo in ['high', 'low', 'middle']
     return
 
 
-def parsimonious(experiment="one_month_forecast",):
-    predictor = Persistence(get_data_path(), experiment=experiment)
-    predictor.evaluate(save_preds=True)
+def rename_model_experiment_file(
+    data_dir: Path,
+    test_years: List[int],
+    train_years: List[int],
+    static: bool
+) -> None:
+    from_path = data_dir / "models" / "one_month_forecast"
+    to_path = data_dir / "models" / \
+        f"one_month_forecast_{}{}"
+
+    # with_datetime ensures that unique
+    _rename_directory(from_path, to_path, with_datetime=True)
 
 
-def regression(
-    experiment="one_month_forecast",
-    include_pred_month=True,
-    surrounding_pixels=1,
-    explain=False,
+def run_all_models_as_experiments(
+    test_years: List[int],
+    train_years: List[int],
+    static: bool,
+    run_regression: bool = True,
 ):
-    predictor = LinearRegression(
-        get_data_path(),
-        experiment=experiment,
-        include_pred_month=include_pred_month,
-        surrounding_pixels=surrounding_pixels,
-        static="embeddings",
-    )
-    predictor.train()
-    predictor.evaluate(save_preds=True)
+    print(f"Experiment Static: {static}")
 
-    # mostly to test it works
-    if explain:
-        predictor.explain(save_shap_values=True)
+    # RUN EXPERIMENTS
+    if run_regression:
+        regression(ignore_vars=ignore_vars, include_static=static)
 
+    if static:
+        # 'embeddings' or 'features'
+        try:
+            linear_nn(ignore_vars=ignore_vars, static="embeddings")
+        except RuntimeError:
+            print(
+                f"\n{'*'*10}\n FAILED: LinearNN \n{'*'*10}\n"
+            )
 
-def linear_nn(
-    experiment="one_month_forecast",
-    include_pred_month=True,
-    surrounding_pixels=1,
-    explain=False,
-):
-    predictor = LinearNetwork(
-        layer_sizes=[100],
-        data_folder=get_data_path(),
-        experiment=experiment,
-        include_pred_month=include_pred_month,
-        surrounding_pixels=surrounding_pixels,
-    )
-    predictor.train(num_epochs=50, early_stopping=5)
-    predictor.evaluate(save_preds=True)
-    predictor.save_model()
+        try:
+            rnn(ignore_vars=ignore_vars, static="embeddings")
+        except RuntimeError:
+            print(
+                f"\n{'*'*10}\n FAILED: RNN \n{'*'*10}\n"
+            )
 
-    if explain:
-        _ = predictor.explain(save_shap_values=True)
+        try:
+            earnn(pretrained=False, ignore_vars=ignore_vars, static="embeddings")
+        except RuntimeError:
+            print(
+                f"\n{'*'*10}\n FAILED: EALSTM \n{'*'*10}\n"
+            )
 
-
-def rnn(
-    experiment="one_month_forecast",
-    include_pred_month=True,
-    surrounding_pixels=1,
-    explain=False,
-):
-    predictor = RecurrentNetwork(
-        hidden_size=128,
-        data_folder=get_data_path(),
-        experiment=experiment,
-        include_pred_month=include_pred_month,
-        surrounding_pixels=surrounding_pixels,
-    )
-    predictor.train(num_epochs=50, early_stopping=5)
-    predictor.evaluate(save_preds=True)
-    predictor.save_model()
-
-    if explain:
-        _ = predictor.explain(save_shap_values=True)
-
-
-def earnn(
-    experiment="one_month_forecast",
-    include_pred_month=True,
-    surrounding_pixels=None,
-    pretrained=True,
-    explain=False,
-):
-    data_path = get_data_path()
-
-    if not pretrained:
-        predictor = EARecurrentNetwork(
-            hidden_size=128,
-            data_folder=data_path,
-            experiment=experiment,
-            include_pred_month=include_pred_month,
-            surrounding_pixels=surrounding_pixels,
-        )
-        predictor.train(num_epochs=50, early_stopping=5)
-        predictor.evaluate(save_preds=True)
-        predictor.save_model()
     else:
-        predictor = load_model(data_path / f"models/{experiment}/ealstm/model.pt")
+        try:
+            linear_nn(ignore_vars=ignore_vars, static=None)
+        except RuntimeError:
+            print(
+                f"\n{'*'*10}\n FAILED: LinearNN \n{'*'*10}\n"
+            )
 
-    if explain:
-        test_file = data_path / f"features/{experiment}/test/2018_3"
-        assert test_file.exists()
-        all_explanations_for_file(test_file, predictor, batch_size=100)
+        try:
+            rnn(ignore_vars=ignore_vars, static=None)
+        except RuntimeError:
+            print(
+                f"\n{'*'*10}\n FAILED: RNN \n{'*'*10}\n"
+            )
 
+        try:
+            earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
+        except RuntimeError:
+            print(
+                f"\n{'*'*10}\n FAILED: EALSTM \n{'*'*10}\n"
+            )
 
-def gbdt(
-    experiment="one_month_forecast",
-    include_pred_month=True,
-    surrounding_pixels=None,
-    pretrained=True,
-    explain=False,
-):
-    data_path = get_data_path()
-
-    # initialise, train and save GBDT model
-    predictor = GBDT(
-        data_folder=data_path,
-        experiment=experiment,
-        include_pred_month=include_pred_month,
-        surrounding_pixels=surrounding_pixels,
-        static="embedding",
-    )
-    predictor.train(early_stopping=5)
-    predictor.evaluate(save_preds=True)
-    predictor.save_model()
+    # RENAME DIRECTORY
+    data_dir = get_data_path()
+    rename_model_experiment_file(data_dir)
+    print(f"Experiment finished")
 
 
 if __name__ == "__main__":
-    parsimonious()
-    regression()
-    linear_nn()
-    rnn()
-    earnn()
-    # gbdt()
+    pass
