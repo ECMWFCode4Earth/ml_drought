@@ -209,5 +209,9 @@ if __name__ == "__main__":
                 )
             except:
                 print(
-                    f'\n{"-" * 10}\Experiment FAILED: {vars_to_include} static:{static}\n{"-" * 10}'
+                    f'\n{"-" * 10}\nExperiment FAILED: {vars_to_include} static:{static}\n{"-" * 10}'
                 )
+                # SAVE DIRECTORY anyway (some models may have run)
+                data_dir = get_data_path()
+                rename_model_experiment_file(data_dir, vars_to_include, static)
+                print(f"Experiment {vars_to_include} finished")
