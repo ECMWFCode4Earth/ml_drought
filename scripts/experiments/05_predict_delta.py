@@ -22,8 +22,8 @@ if __name__ == "__main__":
         explain=False,
         static="features",
         ignore_vars=always_ignore_vars,
-        num_epochs=50,
-        early_stopping=5,
+        num_epochs=1,  # 50
+        early_stopping=1,  # 5
         hidden_size=256,
         static_embedding_size=64,
         predict_delta=True,
