@@ -195,23 +195,21 @@ class ModelBase:
                 )
 
                 if self.predict_delta:
-                    # get the NON-NORMALIZED data (ModelArrays)
-                    dl = self.get_dataloader(
-                        mode="test", shuffle_data=False, normalize=False
-                    )
+                    # get the NON-NORMALIZED data (from ModelArrays.historical_target)
                     date_key = _datetime_to_folder_time_str(preds_xr.time.values)
-                    test_data = [v for v in dl][0][date_key]
+                    historical_ds = preds_dict['historical_target']
+                    # test_data = [v for v in dl][0][date_key]
 
-                    assert (
-                        pd.to_datetime(preds_xr.time.values) == test_data.target_time
-                    ), (
-                        "Expecting"
-                        "to have collected the ModelArrays for the target_timestep: "
-                        f"{preds_xr.time.values}. Got: {test_data.target_time}"
-                    )
+                    # assert (
+                    #     pd.to_datetime(preds_xr.time.values) == test_data.target_time
+                    # ), (
+                    #     "Expecting"
+                    #     "to have collected the ModelArrays for the target_timestep: "
+                    #     f"{preds_xr.time.values}. Got: {test_data.target_time}"
+                    # )
 
-                    # convert to xarray object
-                    historical_ds, target_ds, _ = test_data.to_xarray()
+                    # convert ..data.TestData object to xarray
+                    # historical_ds, target_ds, _ = test_data.to_xarray()
                     # convert delta to raw target_variable
                     y_var = [v for v in target_ds.data_vars][0]
                     cast(str, y_var)
