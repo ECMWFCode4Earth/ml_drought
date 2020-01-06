@@ -711,7 +711,9 @@ class _BaseIter:
         if self.predict_delta:
             # NOTE: data is not normalised in this function
             model_arrays.predict_delta = True
-            model_arrays.historical_target = self._calculate_historical_target(x, y_var)
+            historical_target_np = self._calculate_historical_target(x, y_var)
+            historical_target_np = historical_target_np[notnan_indices]
+            model_arrays.historical_target = historical_target_np
         return model_arrays
 
     @staticmethod
