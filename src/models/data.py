@@ -52,6 +52,8 @@ class ModelArrays:
     latlons: Optional[np.ndarray] = None
     target_time: Optional[Timestamp] = None
     historical_times: Optional[List[Timestamp]] = None
+    predict_delta: bool = False
+    historical_target: Optional[xr.DataArray] = None
 
     def to_tensor(self, device) -> None:
         self.x.to_tensor(device)
@@ -681,11 +683,12 @@ class _BaseIter:
 
             latlons = latlons[notnan_indices]
 
+        y_var = list(y.data_vars)[0]
         model_arrays = ModelArrays(
             x=train_data,
             y=y_np,
             x_vars=list(x.data_vars),
-            y_var=list(y.data_vars)[0],
+            y_var=y_var,
             latlons=latlons,
             target_time=target_time,
             historical_times=x_datetimes,
@@ -693,6 +696,11 @@ class _BaseIter:
 
         if to_tensor:
             model_arrays.to_tensor(self.device)
+
+        if self.predict_delta:
+            # NOTE: only the numpy data is normalized
+            model_arrays.predict_delta = True
+            model_arrays.historical_target = x[y_var]
 
         return model_arrays
 
