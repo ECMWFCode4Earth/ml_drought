@@ -90,7 +90,6 @@ class ModelArrays:
                 len(self.historical_times) == self.x.historical.shape[1]  # type: ignore
             ), "second dim is # timesteps"
         variables = self.x_vars
-        # TODO: HOW TO CATCH ERRORS OF MISSING DATA?
         latitudes = np.unique(self.latlons[:, 0])  # type: ignore
         longitudes = np.unique(self.latlons[:, 1])  # type: ignore
         times = self.historical_times
@@ -542,6 +541,19 @@ class _BaseIter:
             self.static_array = static_np
         return self.static_array
 
+    def _calculate_historical_target(self, x: xr.Dataset, y_var: str) -> np.ndarray:
+        """Calculate the previous timestep for the target_variable
+            (used in predict_delta experiment).
+        """
+        # get teh previous timestep
+        # NOTE: hardcoding order=1 for predict_delta
+        order = 1
+        x_np = x[y_var].isel(time=-order).values
+        x_np = x_np.reshape(x_np.shape[0] * x_np.shape[1], 1)
+        # x_np = np.moveaxis(np.moveaxis(x_np, 0, 1), -1, 0)
+        return x_np
+
+
     def _calculate_change(
         self, x: xr.Dataset, y: xr.Dataset, order: int = 1
     ) -> xr.Dataset:
@@ -698,10 +710,9 @@ class _BaseIter:
             model_arrays.to_tensor(self.device)
 
         if self.predict_delta:
-            # NOTE: only the numpy data is normalized
+            # NOTE: data is not normalised in this function
             model_arrays.predict_delta = True
-            model_arrays.historical_target = x[y_var]
-
+            model_arrays.historical_target = self._calculate_historical_target(x, y_var)
         return model_arrays
 
     @staticmethod
