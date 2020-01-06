@@ -165,7 +165,7 @@ class TestRecurrentNetwork:
             dense_features=dense_features,
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
-            predict_delta=predict_delta
+            predict_delta=predict_delta,
         )
         model.train()
         test_arrays_dict, pred_dict = model.predict()

@@ -553,7 +553,6 @@ class _BaseIter:
         # x_np = np.moveaxis(np.moveaxis(x_np, 0, 1), -1, 0)
         return x_np
 
-
     def _calculate_change(
         self, x: xr.Dataset, y: xr.Dataset, order: int = 1
     ) -> xr.Dataset:

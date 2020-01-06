@@ -190,11 +190,15 @@ class NNBase(ModelBase):
                         "time": val.target_time,
                     }
                     if self.predict_delta:
-                        assert val.historical_target.shape == val.y.shape, 'Expect' \
-                            f'the shape of the y ({val.y.shape})' \
-                            f' and historical_target ({val.historical_target.shape})' \
-                            ' to be the same!'
-                        test_arrays_dict[key]['historical_target'] = val.historical_target
+                        assert val.historical_target.shape == val.y.shape, (
+                            "Expect"
+                            f"the shape of the y ({val.y.shape})"
+                            f" and historical_target ({val.historical_target.shape})"
+                            " to be the same!"
+                        )
+                        test_arrays_dict[key][
+                            "historical_target"
+                        ] = val.historical_target
 
         return test_arrays_dict, preds_dict
 
