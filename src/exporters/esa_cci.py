@@ -2,6 +2,7 @@ import os
 import string
 import pandas as pd
 from pathlib import Path
+import zipfile
 
 from .base import BaseExporter
 
@@ -67,9 +68,9 @@ class ESACCIExporter(BaseExporter):
         assert fname.exists()
         print(f"Unzipping {fname.name}")
         if python_only:
-            with zipfile.ZipFile(fname, 'r') as zip_ref:
+            with zipfile.ZipFile(fname, "r") as zip_ref:
                 zip_ref.extractall(fname.parents[0])
-        else:  # ECMWF machine doesn't have the bash `unzip` utility
+        else:  # ECMWF machine doesn't have the bash `unzip` utility
             os.system(
                 f"unzip {fname.as_posix()} -d {self.landcover_folder.resolve().as_posix()}"
             )
