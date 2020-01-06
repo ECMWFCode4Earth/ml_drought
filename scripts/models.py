@@ -23,10 +23,10 @@ def parsimonious(experiment="one_month_forecast",):
 
 
 def regression(
-    experiment='one_month_forecast',
+    experiment="one_month_forecast",
     include_pred_month=True,
     surrounding_pixels=None,
-    ignore_vars=None
+    ignore_vars=None,
 ):
     predictor = LinearRegression(
         Path("/Volumes/Lees_Extend/data/ecmwf_sowc/data"),  # get_data_path(),
@@ -44,11 +44,11 @@ def regression(
 
 
 def linear_nn(
-experiment = 'one_month_forecast',
-include_pred_month = True,
-surrounding_pixels = None,
-ignore_vars = None,
-pretrained = False
+    experiment="one_month_forecast",
+    include_pred_month=True,
+    surrounding_pixels=None,
+    ignore_vars=None,
+    pretrained=False,
 ):
     predictor = LinearNetwork(
         layer_sizes=[100],
@@ -56,7 +56,7 @@ pretrained = False
         experiment=experiment,
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
-        ignore_vars = ignore_vars,
+        ignore_vars=ignore_vars,
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
@@ -66,11 +66,11 @@ pretrained = False
 
 
 def rnn(
-    experiment='one_month_forecast',
+    experiment="one_month_forecast",
     include_pred_month=True,
     surrounding_pixels=None,
     ignore_vars=None,
-    pretrained=True
+    pretrained=True,
 ):
     predictor = RecurrentNetwork(
         hidden_size=128,
@@ -92,7 +92,7 @@ def earnn(
     include_pred_month=True,
     surrounding_pixels=None,
     pretrained=True,
-    ignore_vars=None
+    ignore_vars=None,
 ):
     data_path = get_data_path()
 
@@ -116,9 +116,9 @@ def earnn(
     all_explanations_for_file(test_file, predictor, batch_size=100)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     ignore_vars = None
-    ignore_vars = ['VCI', 'p84.162', 'sp', 'tp']
+    ignore_vars = ["VCI", "p84.162", "sp", "tp"]
 
     # parsimonious(ignore_vars=ignore_vars)
     # regression(ignore_vars=ignore_vars)

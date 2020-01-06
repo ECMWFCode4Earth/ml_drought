@@ -41,8 +41,7 @@ def get_east_africa() -> Region:
 
 
 def get_africa() -> Region:
-    return Region(name='africa', lonmin=-31.6, lonmax=51.8,
-                  latmin=-35.8, latmax=37.2)
+    return Region(name="africa", lonmin=-31.6, lonmax=51.8, latmin=-35.8, latmax=37.2)
 
 
 def minus_months(
@@ -137,7 +136,7 @@ def create_shape_aligned_climatology(
     # copy that forward in time
     new_clim = xr.Dataset(
         {variable: (["time", "lat", "lon"], new_clim_vals)},
-        coords={"lat": clim.lat, "lon": clim.lon, "time": ds.time,},
+        coords={"lat": clim.lat, "lon": clim.lon, "time": ds.time},
     )
 
     return new_clim
@@ -188,7 +187,7 @@ def drop_nans_and_flatten(dataArray: xr.DataArray) -> np.ndarray:
 
 
 def _sort_lat_lons(da: xr.DataArray) -> xr.DataArray:
-    return da.sortby(['time', 'lat', 'lon'])
+    return da.sortby(["time", "lat", "lon"])
 
 
 # dictionary lookup of regions
