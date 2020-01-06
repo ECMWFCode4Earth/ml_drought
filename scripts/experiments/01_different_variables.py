@@ -113,39 +113,47 @@ def run_all_models_as_experiments(
     if static:
         # 'embeddings' or 'features'
         try:
-          linear_nn(ignore_vars=ignore_vars, static="embeddings")
+            linear_nn(ignore_vars=ignore_vars, static="embeddings")
         except RuntimeError:
-            print(f"\n{'*'*10}\n FAILED: LinearNN for vars={vars_to_include} static={static}\n{'*'*10}\n")
+            print(
+                f"\n{'*'*10}\n FAILED: LinearNN for vars={vars_to_include} static={static}\n{'*'*10}\n"
+            )
 
         try:
             rnn(ignore_vars=ignore_vars, static="embeddings")
         except RuntimeError:
-            print(f"\n{'*'*10}\n FAILED: RNN for vars={vars_to_include} static={static}\n{'*'*10}\n")
+            print(
+                f"\n{'*'*10}\n FAILED: RNN for vars={vars_to_include} static={static}\n{'*'*10}\n"
+            )
 
         try:
-          earnn(pretrained=False, ignore_vars=ignore_vars, static="embeddings")
+            earnn(pretrained=False, ignore_vars=ignore_vars, static="embeddings")
         except RuntimeError:
-            print(f"\n{'*'*10}\n FAILED: EALSTM for vars={vars_to_include} static={static}\n{'*'*10}\n")
+            print(
+                f"\n{'*'*10}\n FAILED: EALSTM for vars={vars_to_include} static={static}\n{'*'*10}\n"
+            )
 
     else:
         try:
-          linear_nn(ignore_vars=ignore_vars, static=None)
+            linear_nn(ignore_vars=ignore_vars, static=None)
         except RuntimeError:
             print(
-                f"\n{'*'*10}\n FAILED: LinearNN for vars={vars_to_include} static={static}\n{'*'*10}\n")
+                f"\n{'*'*10}\n FAILED: LinearNN for vars={vars_to_include} static={static}\n{'*'*10}\n"
+            )
 
         try:
             rnn(ignore_vars=ignore_vars, static=None)
         except RuntimeError:
             print(
-                f"\n{'*'*10}\n FAILED: RNN for vars={vars_to_include} static={static}\n{'*'*10}\n")
+                f"\n{'*'*10}\n FAILED: RNN for vars={vars_to_include} static={static}\n{'*'*10}\n"
+            )
 
         try:
-          earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
+            earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
         except RuntimeError:
             print(
-                f"\n{'*'*10}\n FAILED: EALSTM for vars={vars_to_include} static={static}\n{'*'*10}\n")
-
+                f"\n{'*'*10}\n FAILED: EALSTM for vars={vars_to_include} static={static}\n{'*'*10}\n"
+            )
 
     # RENAME DIRECTORY
     data_dir = get_data_path()
@@ -195,9 +203,11 @@ if __name__ == "__main__":
 
         # run experiments
         for static in [True, False]:
-          try:
-            run_all_models_as_experiments(
-                vars_to_include, ignore_vars, static=static, run_regression=False
-            )
-          except:
-            print(f'\n{"-" * 10}\Experiment FAILED: {vars_to_include} static:{static}\n{"-" * 10}')
+            try:
+                run_all_models_as_experiments(
+                    vars_to_include, ignore_vars, static=static, run_regression=False
+                )
+            except:
+                print(
+                    f'\n{"-" * 10}\Experiment FAILED: {vars_to_include} static:{static}\n{"-" * 10}'
+                )
