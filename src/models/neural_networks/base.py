@@ -188,6 +188,7 @@ class NNBase(ModelBase):
                         "y": val.y.cpu().numpy(),
                         "latlons": val.latlons,
                         "time": val.target_time,
+                        "y_var": val.y_var,
                     }
                     if self.predict_delta:
                         assert val.historical_target.shape == val.y.shape, (

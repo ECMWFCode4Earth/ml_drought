@@ -200,6 +200,7 @@ class LinearRegression(ModelBase):
                     "y": val.y,
                     "latlons": val.latlons,
                     "time": val.target_time,
+                    "y_var": val.y_var,
                 }
                 if self.predict_delta:
                     assert val.historical_target.shape == val.y.shape, (

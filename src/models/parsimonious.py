@@ -42,6 +42,7 @@ class Persistence(ModelBase):
                     "y": val.y,
                     "latlons": val.latlons,
                     "time": val.target_time,
+                    "y_var": val.y_var,
                 }
 
         return test_arrays_dict, preds_dict
