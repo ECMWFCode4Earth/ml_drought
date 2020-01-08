@@ -17,8 +17,7 @@ def sort_by_median_target_variable(
     target_data: Union[xr.Dataset, xr.DataArray]
 ) -> Tuple[np.array, pd.DataFrame]:
     target_variable = [v for v in target_data.data_vars][0]
-    median_data = target_data.resample(
-        time="Y").median().median(dim=["lat", "lon"])
+    median_data = target_data.resample(time="Y").median().median(dim=["lat", "lon"])
 
     median_data = median_data.to_dataframe()
     median_data["year"] = median_data.index.year
@@ -47,10 +46,10 @@ def get_experiment_years(
 ) -> Tuple[np.array, np.array]:
     test_length = max(1, test_length)
     assert train_length >= 1, "Must have at least one year for training"
-    assert (
-        train_length <= len(sorted_years) - test_length
-    ), "Cannot have more test_years than total - test_length" \
+    assert train_length <= len(sorted_years) - test_length, (
+        "Cannot have more test_years than total - test_length"
         f"{train_length} > {len(sorted_years) - test_length}"
+    )
     assert train_hilo in [
         "high",
         "low",
@@ -66,8 +65,7 @@ def get_experiment_years(
     test_dict = _calculate_hilo_dict(sorted_years)
 
     # 2. select randomly the TEST years from these groups
-    test_years = np.random.choice(test_dict[test_hilo], test_length,
-                                  replace=False)
+    test_years = np.random.choice(test_dict[test_hilo], test_length, replace=False)
     # test_indexes = np.array(
     #     [np.where(test_dict[test_hilo] == i) for i in test_years]
     # ).flatten()
@@ -115,8 +113,7 @@ def get_experiment_years(
             # e.g. {low=[1991], med=[1992], high=[]}
             # and we want high training years, select from other groups
             if len(train_dict[train_hilo]) == 0:
-                print(
-                    "not enough {train_hilo} years left! Selecting from other groups")
+                print("not enough {train_hilo} years left! Selecting from other groups")
                 train_years = np.append(
                     train_years, np.random.choice(leftover_years, 1)
                 )
@@ -153,8 +150,7 @@ def rename_model_experiment_file(
     str_test_years = "_".join(test_years)
     str_train_years = "_".join(train_years)
     to_path = (
-        data_dir / "models" /
-        f"one_month_forecast_{str_test_years}_{str_train_years}"
+        data_dir / "models" / f"one_month_forecast_{str_test_years}_{str_train_years}"
     )
 
     # with_datetime ensures that unique
@@ -232,18 +228,16 @@ class Experiment:
     test_hilo: str
     """
 
-    def __init__(self, train_length: int,
-                 train_hilo: str,
-                 test_hilo: str,
-                 test_length: int = 3,
-                 ):
+    def __init__(
+        self, train_length: int, train_hilo: str, test_hilo: str, test_length: int = 3
+    ):
         self.train_length = train_length
         self.train_hilo = train_hilo
         self.test_hilo = test_hilo
         self.test_length = test_length
 
-        assert train_hilo in ['high', 'med', 'low']
-        assert test_hilo in ['high', 'med', 'low']
+        assert train_hilo in ["high", "med", "low"]
+        assert test_hilo in ["high", "med", "low"]
 
 
 def run_training_period_experiments():
@@ -254,15 +248,15 @@ def run_training_period_experiments():
     sorted_years, _ = sort_by_median_target_variable(target_data)
 
     # get all experiments
-    hilos = ['high', 'med', 'low']
+    hilos = ["high", "med", "low"]
     train_lengths = [5, 10, 20]
     experiments = [
         Experiment(
-            train_length=train_length,
-            train_hilo=train_hilo,
-            test_hilo=test_hilo
-        ) for train_hilo, test_hilo, train_length
-        in itertools.product(hilos, hilos, train_lengths)
+            train_length=train_length, train_hilo=train_hilo, test_hilo=test_hilo
+        )
+        for train_hilo, test_hilo, train_length in itertools.product(
+            hilos, hilos, train_lengths
+        )
     ]
 
     for experiment in experiments:
@@ -271,23 +265,29 @@ def run_training_period_experiments():
             experiment.train_length,
             experiment.test_hilo,
             experiment.train_hilo,
-            test_length=3
+            test_length=3,
         )
 
         debug = False
         if debug:
-            print(experiment.train_length,
-                  experiment.test_hilo,
-                  experiment.train_hilo,
-                  "train_years:\n", train_years, "\n",
-                  "test_years:\n", test_years, "\n",)
+            print(
+                experiment.train_length,
+                experiment.test_hilo,
+                experiment.train_hilo,
+                "train_years:\n",
+                train_years,
+                "\n",
+                "test_years:\n",
+                test_years,
+                "\n",
+            )
 
         engineer = Engineer(
             get_data_path(),
             experiment="one_month_forecast",
             process_static=True,
             test_year=test_years,
-            train_years=train_years
+            train_years=train_years,
         )
 
     pass
