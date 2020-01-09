@@ -117,6 +117,8 @@ def run_all_models_as_experiments(
         # 'embeddings' or 'features'
         try:
             linear_nn(ignore_vars=ignore_vars, static="embeddings")
+        except KeyboardInterrupt:
+          raise
         except Exception as e:
             logging.debug(
                 f"\n{'*'*10}\n FAILED: LinearNN for vars={vars_to_include} static={static}\n{'*'*10}\n"
@@ -125,6 +127,8 @@ def run_all_models_as_experiments(
 
         try:
             rnn(ignore_vars=ignore_vars, static="embeddings")
+        except KeyboardInterrupt:
+          raise
         except Exception as e:
             logging.debug(
                 f"\n{'*'*10}\n FAILED: RNN for vars={vars_to_include} static={static}\n{'*'*10}\n"
@@ -133,6 +137,8 @@ def run_all_models_as_experiments(
 
         try:
             earnn(pretrained=False, ignore_vars=ignore_vars, static="embeddings")
+        except KeyboardInterrupt:
+          raise
         except Exception as e:
             logging.debug(
                 f"\n{'*'*10}\n FAILED: EALSTM for vars={vars_to_include} static={static}\n{'*'*10}\n"
@@ -142,6 +148,8 @@ def run_all_models_as_experiments(
     else:
         try:
             linear_nn(ignore_vars=ignore_vars, static=None)
+        except KeyboardInterrupt:
+          raise
         except Exception as e:
             logging.debug(
                 f"\n{'*'*10}\n FAILED: LinearNN for vars={vars_to_include} static={static}\n{'*'*10}\n"
@@ -150,6 +158,8 @@ def run_all_models_as_experiments(
 
         try:
             rnn(ignore_vars=ignore_vars, static=None)
+        except KeyboardInterrupt:
+          raise
         except Exception as e:
             logging.debug(
                 f"\n{'*'*10}\n FAILED: RNN for vars={vars_to_include} static={static}\n{'*'*10}\n"
@@ -158,6 +168,8 @@ def run_all_models_as_experiments(
 
         try:
             earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
+        except KeyboardInterrupt:
+          raise
         except Exception as e:
             logging.debug(
                 f"\n{'*'*10}\n FAILED: EALSTM for vars={vars_to_include} static={static}\n{'*'*10}\n"
@@ -216,6 +228,8 @@ if __name__ == "__main__":
                 run_all_models_as_experiments(
                     vars_to_include, ignore_vars, static=static, run_regression=False
                 )
+            except KeyboardInterrupt:
+              raise
             except Exception as e:
                 print(
                     f'\n{"-" * 10}\nExperiment FAILED: {vars_to_include} static:{static}\n{"-" * 10}'
