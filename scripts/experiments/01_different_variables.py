@@ -82,6 +82,9 @@ sys.path.append("../..")
 from _base_models import parsimonious, regression, linear_nn, rnn, earnn
 
 from scripts.utils import _rename_directory, get_data_path
+import logging
+
+logging.basicConfig(filename='01_different_variables.log', level=logging.DEBUG)
 
 
 def rename_model_experiment_file(
@@ -114,46 +117,52 @@ def run_all_models_as_experiments(
         # 'embeddings' or 'features'
         try:
             linear_nn(ignore_vars=ignore_vars, static="embeddings")
-        except RuntimeError:
-            print(
+        except Exception as e:
+            logging.debug(
                 f"\n{'*'*10}\n FAILED: LinearNN for vars={vars_to_include} static={static}\n{'*'*10}\n"
             )
+            logging.debug(e)
 
         try:
             rnn(ignore_vars=ignore_vars, static="embeddings")
-        except RuntimeError:
-            print(
+        except Exception as e:
+            logging.debug(
                 f"\n{'*'*10}\n FAILED: RNN for vars={vars_to_include} static={static}\n{'*'*10}\n"
             )
+            logging.debug(e)
 
         try:
             earnn(pretrained=False, ignore_vars=ignore_vars, static="embeddings")
-        except RuntimeError:
-            print(
+        except Exception as e:
+            logging.debug(
                 f"\n{'*'*10}\n FAILED: EALSTM for vars={vars_to_include} static={static}\n{'*'*10}\n"
             )
+            logging.debug(e)
 
     else:
         try:
             linear_nn(ignore_vars=ignore_vars, static=None)
-        except RuntimeError:
-            print(
+        except Exception as e:
+            logging.debug(
                 f"\n{'*'*10}\n FAILED: LinearNN for vars={vars_to_include} static={static}\n{'*'*10}\n"
             )
+            logging.debug(e)
 
         try:
             rnn(ignore_vars=ignore_vars, static=None)
-        except RuntimeError:
-            print(
+        except Exception as e:
+            logging.debug(
                 f"\n{'*'*10}\n FAILED: RNN for vars={vars_to_include} static={static}\n{'*'*10}\n"
             )
+            logging.debug(e)
 
         try:
             earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
-        except RuntimeError:
-            print(
+        except Exception as e:
+            logging.debug(
                 f"\n{'*'*10}\n FAILED: EALSTM for vars={vars_to_include} static={static}\n{'*'*10}\n"
             )
+            logging.debug(e)
 
     # RENAME DIRECTORY
     data_dir = get_data_path()
@@ -207,10 +216,15 @@ if __name__ == "__main__":
                 run_all_models_as_experiments(
                     vars_to_include, ignore_vars, static=static, run_regression=False
                 )
-            except:
+            except Exception as e:
                 print(
                     f'\n{"-" * 10}\nExperiment FAILED: {vars_to_include} static:{static}\n{"-" * 10}'
                 )
+                logging.debug(
+                    f'\n{"-" * 10}\nExperiment FAILED: {vars_to_include} static:{static}\n{"-" * 10}'
+                )
+                logging.debug(e)
+
                 # SAVE DIRECTORY anyway (some models may have run)
                 data_dir = get_data_path()
                 rename_model_experiment_file(data_dir, vars_to_include, static)
