@@ -43,9 +43,15 @@ class _EngineerBase:
         target_variable: str = "VHI",
         pred_months: int = 12,
         expected_length: Optional[int] = 12,
+        train_years: Optional[List[int]] = None,
     ) -> None:
 
-        self._process_dynamic(test_year, target_variable, pred_months, expected_length)
+        self._process_dynamic(
+            test_year,
+            target_variable,
+            pred_months,
+            expected_length,
+            train_years)
         if self.process_static:
             self._process_static()
 
@@ -84,12 +90,12 @@ class _EngineerBase:
         with savepath.open("wb") as f:
             pickle.dump(normalization_values, f)
 
-    def _process_dynamic(
-        self,
+    def _process_dynamic(self,
         test_year: Union[int, List[int]],
         target_variable: str = "VHI",
         pred_months: int = 12,
         expected_length: Optional[int] = 12,
+        train_years: Optional[List[int]] = None
     ) -> None:
         if expected_length is None:
             warnings.warn(
@@ -107,11 +113,20 @@ class _EngineerBase:
         # save test data (x, y) and return the train_ds (subset of `data`)
         train_ds = self._train_test_split(
             ds=data,
-            years=cast(List, test_year),
+            test_years=cast(List, test_year),
             target_variable=target_variable,
             pred_months=pred_months,
             expected_length=expected_length,
         )
+        assert train_ds.time.shape[0] > 0, 'Expect the train_ds to have' \
+            f'`time` dimension. \n{train_ds}'
+
+        if train_years is not None:
+            # select only the TRAINING years in train_years
+            ds_years = train_ds['time.year'].values
+            bool_train_years = [y in train_years for y in ds_years]
+            train_ds.sel(time=bool_train_years)
+            assert False
 
         normalization_values = self._calculate_normalization_values(train_ds)
 
@@ -208,19 +223,19 @@ class _EngineerBase:
     def _train_test_split(
         self,
         ds: xr.Dataset,
-        years: List[int],
+        test_years: List[int],
         target_variable: str,
         pred_months: int,
         expected_length: Optional[int],
     ) -> xr.Dataset:
         """save the test data and return the training dataset"""
 
-        years.sort()
+        test_years.sort()
 
         # for the first `year` Jan calculate the xy_test dictionary and min date
         xy_test, min_test_date = self._stratify_xy(
             ds=ds,
-            year=years[0],
+            year=test_years[0],
             target_variable=target_variable,
             target_month=1,
             pred_months=pred_months,
@@ -233,12 +248,12 @@ class _EngineerBase:
 
         # save the xy_test dictionary
         if xy_test is not None:
-            self._save(xy_test, year=years[0], month=1, dataset_type="test")
+            self._save(xy_test, year=test_years[0], month=1, dataset_type="test")
 
         # each month in test_year produce an x,y pair for testing
-        for year in years:
+        for year in test_years:
             for month in range(1, 13):
-                if year > years[0] or month > 1:
+                if year > test_years[0] or month > 1:
                     # prevents the initial test set from being recalculated
                     xy_test, _ = self._stratify_xy(
                         ds=ds,

@@ -1,6 +1,3 @@
-from src.engineer import Engineer
-from src.analysis import read_train_data, read_test_data
-from src.analysis import all_explanations_for_file
 from scripts.utils import get_data_path
 from _base_models import parsimonious, regression, linear_nn, rnn, earnn
 import numpy as np
@@ -11,6 +8,10 @@ from typing import List, Union, Tuple, Dict
 import sys
 
 sys.path.append("../..")
+
+from src.engineer import Engineer
+from src.analysis import read_train_data, read_test_data
+from src.analysis import all_explanations_for_file
 
 
 def sort_by_median_target_variable(
@@ -268,24 +269,26 @@ def run_training_period_experiments():
             test_length=3,
         )
 
-        debug = False
+        debug = True
         if debug:
             print(
-                experiment.train_length,
-                experiment.test_hilo,
-                experiment.train_hilo,
-                "train_years:\n",
-                train_years,
-                "\n",
-                "test_years:\n",
-                test_years,
-                "\n",
+                '\n' + '-' * 10 + '\n',
+                "train_length: " + str(experiment.train_length),
+                "test_hilo: " + experiment.test_hilo,
+                "train_hilo: " + experiment.train_hilo,
+                "train_years:\n", train_years, "\n",
+                "test_years:\n", test_years,
+                '\n' + '-' * 10 + '\n',
             )
 
+        # have to recreate each engineer for the experiment
+        # TODO: definite inefficiency
         engineer = Engineer(
             get_data_path(),
             experiment="one_month_forecast",
             process_static=True,
+        )
+        engineer.engineer(
             test_year=test_years,
             train_years=train_years,
         )
