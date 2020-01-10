@@ -69,11 +69,10 @@ class _OneMonthForecastEngineer(_EngineerBase):
         if (x_dataset.time.size != expected_length):
             # catch the errors as we get closer to the MINIMUM year
             print(
-                f"For the `nowcast` experiment we expect the\
-                number of timesteps to be: {pred_months}.\
-                Currently: {x_dataset.time.size}\
-                You provided the argument expected_length: {expected_length}\
-                "
+                "For the `nowcast` experiment we expect the"\
+                f"number of timesteps to be: {pred_months}."\
+                f"Currently: {x_dataset.time.size}"\
+                f"You provided the argument expected_length: {expected_length}"
             )
             return None, cast(date, max_train_date)
 
