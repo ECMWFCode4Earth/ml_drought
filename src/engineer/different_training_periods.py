@@ -139,7 +139,8 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             # train on the years defined
             train_dates = [
                 int(y.values) in train_years for y in ds["time.year"]]
-        train_ds = ds.isel(time=train_dates)
+        # train_ds = ds.isel(time=train_dates)
+        train_ds = ds
 
         # save the xy_test dictionary
         if xy_test is not None:
@@ -172,3 +173,44 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
 
                         self._save(xy_test, year=year, month=month, dataset_type="test")
         return train_ds
+
+    def _stratify_training_data(
+        self,
+        train_ds: xr.Dataset,
+        target_variable: str,
+        pred_months: int,
+        expected_length: Optional[int],
+        train_years: Optional[List[int]] = None,
+    ) -> None:
+        """split `train_ds` into x, y and save the outputs to
+        self.output_folder (data/features) """
+
+        min_date = self._get_datetime(train_ds.time.values.min())
+        max_date = self._get_datetime(train_ds.time.values.max())
+
+        cur_pred_year, cur_pred_month = max_date.year, max_date.month
+
+        # for every month-year create & save the x, y datasets for training
+        cur_min_date = max_date
+        while cur_min_date >= min_date:
+
+            # each iteration count down one month (02 -> 01 -> 12 ...)
+            arrays, cur_min_date = self._stratify_xy(
+                ds=train_ds,
+                year=cur_pred_year,
+                target_variable=target_variable,
+                target_month=cur_pred_month,
+                pred_months=pred_months,
+                expected_length=expected_length,
+            )
+
+            # only save if that year is in train_years
+            if cur_pred_year in train_years:
+                if arrays is not None:
+                    self._save(
+                        arrays,
+                        year=cur_pred_year,
+                        month=cur_pred_month,
+                        dataset_type="train",
+                    )
+                cur_pred_year, cur_pred_month = cur_min_date.year, cur_min_date.month
