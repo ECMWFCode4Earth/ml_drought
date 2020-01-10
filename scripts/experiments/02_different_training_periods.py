@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from pathlib import Path
+import itertools
 from typing import List, Union, Tuple, Dict
 
 import sys
