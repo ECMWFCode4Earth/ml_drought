@@ -70,8 +70,11 @@ class TestRecurrentNetwork:
         assert model_dict["ignore_vars"] == ignore_vars
         assert model_dict["include_latlons"] == include_latlons
 
-    @pytest.mark.parametrize("use_pred_months", [True, False])
-    def test_train(self, tmp_path, capsys, use_pred_months):
+    @pytest.mark.parametrize(
+        "use_pred_months,predict_delta",
+        [(True, True), (False, True), (True, False), (False, False)],
+    )
+    def test_train(self, tmp_path, capsys, use_pred_months, predict_delta):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -107,6 +110,7 @@ class TestRecurrentNetwork:
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
             include_monthly_aggs=True,
+            predict_delta=predict_delta,
         )
         model.train()
 
@@ -116,8 +120,11 @@ class TestRecurrentNetwork:
 
         assert type(model.model) == RNN, f"Model attribute not an RNN!"
 
-    @pytest.mark.parametrize("use_pred_months", [True, False])
-    def test_predict(self, tmp_path, use_pred_months):
+    @pytest.mark.parametrize(
+        "use_pred_months,predict_delta",
+        [(True, True), (False, True), (True, False), (False, False)],
+    )
+    def test_predict(self, tmp_path, use_pred_months, predict_delta):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -158,6 +165,7 @@ class TestRecurrentNetwork:
             dense_features=dense_features,
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
+            predict_delta=predict_delta,
         )
         model.train()
         test_arrays_dict, pred_dict = model.predict()
@@ -166,8 +174,9 @@ class TestRecurrentNetwork:
         assert ("hello" in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1)
         assert ("hello" in pred_dict.keys()) and (len(pred_dict) == 1)
 
-        # _make_dataset with const=True returns all ones
-        assert (test_arrays_dict["hello"]["y"] == 1).all()
+        if not predict_delta:
+            # _make_dataset with const=True returns all ones
+            assert (test_arrays_dict["hello"]["y"] == 1).all()
 
 
 class TestUnrolledRNN:
