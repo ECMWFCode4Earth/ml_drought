@@ -309,6 +309,7 @@ def run_training_period_experiments(pred_months: int = 3):
             train_years=train_years,
             pred_months=pred_months,
             expected_length=expected_length,
+            target_variable='VCI'
         )
 
         break
