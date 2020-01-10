@@ -66,7 +66,7 @@ class _OneMonthForecastEngineer(_EngineerBase):
         x_dataset = ds.isel(time=x)
         y_dataset = ds.isel(time=y)[target_variable].to_dataset(name=target_variable)
 
-        if x_dataset.time.size != expected_length:
+        if (expected_length is not None) & (x_dataset.time.size != expected_length):
             # catch the errors as we get closer to the MINIMUM year
             warnings.warn(
                 "For the `nowcast` experiment we expect the\
