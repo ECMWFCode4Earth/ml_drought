@@ -203,6 +203,20 @@ if __name__ == "__main__":
 
         # run experiments
         for static in [True, False]:
+            vars_joined = "_".join(vars_to_include)
+            already_run = [
+                m
+                for m in (data_dir / "models").glob(
+                    f"*{vars_joined}_{'YES' if static else 'NO'}static"
+                )
+            ]
+            # CHECK if experiment has already been run
+            if already_run != []:
+                print(
+                    f'\n{"-" * 10}\Experiment ALREADY RUN: {vars_to_include} static:{static}\n{"-" * 10}'
+                )
+                continue
+
             try:
                 run_all_models_as_experiments(
                     vars_to_include, ignore_vars, static=static, run_regression=False
