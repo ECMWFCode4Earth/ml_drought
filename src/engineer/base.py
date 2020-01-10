@@ -43,15 +43,9 @@ class _EngineerBase:
         target_variable: str = "VHI",
         pred_months: int = 12,
         expected_length: Optional[int] = 12,
-        train_years: Optional[List[int]] = None,
     ) -> None:
 
-        self._process_dynamic(
-            test_year,
-            target_variable,
-            pred_months,
-            expected_length,
-            train_years)
+        self._process_dynamic(test_year, target_variable, pred_months, expected_length)
         if self.process_static:
             self._process_static()
 
@@ -90,12 +84,12 @@ class _EngineerBase:
         with savepath.open("wb") as f:
             pickle.dump(normalization_values, f)
 
-    def _process_dynamic(self,
+    def _process_dynamic(
+        self,
         test_year: Union[int, List[int]],
         target_variable: str = "VHI",
         pred_months: int = 12,
         expected_length: Optional[int] = 12,
-        train_years: Optional[List[int]] = None
     ) -> None:
         if expected_length is None:
             warnings.warn(
@@ -118,15 +112,9 @@ class _EngineerBase:
             pred_months=pred_months,
             expected_length=expected_length,
         )
-        assert train_ds.time.shape[0] > 0, 'Expect the train_ds to have' \
-            f'`time` dimension. \n{train_ds}'
-
-        if train_years is not None:
-            # select only the TRAINING years in train_years
-            ds_years = train_ds['time.year'].values
-            bool_train_years = [y in train_years for y in ds_years]
-            train_ds.sel(time=bool_train_years)
-            assert False
+        assert train_ds.time.shape[0] > 0, (
+            "Expect the train_ds to have" f"`time` dimension. \n{train_ds}"
+        )
 
         normalization_values = self._calculate_normalization_values(train_ds)
 
@@ -313,7 +301,7 @@ class _EngineerBase:
 
     @staticmethod
     def _make_fill_value_dataset(
-        ds: Union[xr.Dataset, xr.DataArray], fill_value: Union[int, float] = -9999.0,
+        ds: Union[xr.Dataset, xr.DataArray], fill_value: Union[int, float] = -9999.0
     ) -> Union[xr.Dataset, xr.DataArray]:
         nan_ds = xr.full_like(ds, fill_value)
         return nan_ds

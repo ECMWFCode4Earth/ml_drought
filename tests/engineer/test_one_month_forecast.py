@@ -5,7 +5,6 @@ import xarray as xr
 import datetime as dt
 
 from src.engineer import _OneMonthForecastEngineer as OneMonthForecastEngineer
-from src.engineer.different_training_periods import _DifferentTrainingPeriodsEngineer
 from ..utils import _make_dataset
 from .test_base import _setup
 
@@ -96,11 +95,11 @@ class TestOneMonthForecastEngineer:
         for month in range(1, 13):
             self._check_folder(
                 tmp_path / f"features/one_month_forecast/test/2001_{month}",
-                expected_length=expected_length
+                expected_length=expected_length,
             )
             self._check_folder(
                 tmp_path / f"features/one_month_forecast/train/2000_{month}",
-                expected_length=expected_length
+                expected_length=expected_length,
             )
 
         assert (
@@ -125,10 +124,10 @@ class TestOneMonthForecastEngineer:
         _setup(tmp_path)
         engineer = OneMonthForecastEngineer(tmp_path)
         ds_target, _, _ = _make_dataset(
-            size=(20, 20), start_date="1999-01-01", end_date="2001-12-31",
+            size=(20, 20), start_date="1999-01-01", end_date="2001-12-31"
         )
         ds_predictor, _, _ = _make_dataset(
-            size=(20, 20), start_date="1999-01-01", end_date="2001-12-31",
+            size=(20, 20), start_date="1999-01-01", end_date="2001-12-31"
         )
         ds_predictor = ds_predictor.rename({"VHI": "predictor"})
         ds = ds_predictor.merge(ds_target)
@@ -152,42 +151,3 @@ class TestOneMonthForecastEngineer:
         ), f"\
         the max_train_date should be one month before the `target_month`,\
         `year`"
-
-    def test_stratify_with_non_sequential_test_train_years(self, tmp_path):
-        _setup(tmp_path)
-        engineer = _DifferentTrainingPeriodsEngineer(tmp_path)
-        ds_target, _, _ = _make_dataset(size=(20, 20))
-        ds_predictor, _, _ = _make_dataset(size=(20, 20))
-        ds_predictor = ds_predictor.rename({"VHI": "predictor"})
-        ds = ds_predictor.merge(ds_target)
-
-        expected_length = 3
-
-        engineer._process_dynamic(
-            test_year=[1999],
-            target_variable='a',
-            pred_months=3,
-            expected_length=3,
-            train_years=[2000]
-        )
-
-        for month in range(1, 13):
-            self._check_folder(
-                tmp_path / f"features/one_month_forecast/test/1999_{month}",
-                expected_length=expected_length
-            )
-            self._check_folder(
-                tmp_path / f"features/one_month_forecast/train/2001_{month}",
-                expected_length=expected_length
-            )
-
-        xy_dict, max_train_date = engineer._stratify_xy(
-            ds=ds,
-            year=1999,
-            target_variable="VHI",
-            target_month=4,
-            pred_months=3,
-            expected_length=3,
-        )
-
-        assert False
