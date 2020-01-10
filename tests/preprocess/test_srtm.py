@@ -21,7 +21,7 @@ class TestSRTMPreprocessor:
         Band1 = np.random.randint(10, size=size)
 
         # make datast with correct attrs
-        ds = xr.Dataset({"crs": (dims, crs), "Band1": (dims, Band1),}, coords=coords)
+        ds = xr.Dataset({"crs": (dims, crs), "Band1": (dims, Band1)}, coords=coords)
         return ds
 
     def test_init(self, tmp_path):

@@ -12,6 +12,7 @@ sys.path.append("../..")
 from src.engineer import Engineer
 from src.analysis import read_train_data, read_test_data
 from src.analysis import all_explanations_for_file
+from src.engineer import Engineer
 
 
 def sort_by_median_target_variable(
@@ -287,6 +288,7 @@ def run_training_period_experiments():
             get_data_path(),
             experiment="one_month_forecast",
             process_static=True,
+            different_training_periods = True
         )
         engineer.engineer(
             test_year=test_years,

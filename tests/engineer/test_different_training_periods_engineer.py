@@ -1,5 +1,5 @@
 import xarray as xr
-from src.engineer.different_training_periods import _DifferentTrainingPeriodsEngineer
+from src.engineer import Engineer
 from .test_base import _setup
 
 
@@ -21,14 +21,19 @@ class TestDifferentTrainingPeriodsEngineer:
 
     def test_stratify_with_non_sequential_test_train_years(self, tmp_path):
         _setup(tmp_path)
-        engineer = _DifferentTrainingPeriodsEngineer(tmp_path)
+        engineer = Engineer(
+            tmp_path,
+            experiment="one_month_forecast",
+            process_static=True,
+            different_training_periods=True,
+        )
 
         expected_length = 3
 
         # -------------------------------
         # test a first test/train option
         # -------------------------------
-        engineer._process_dynamic(
+        engineer.engineer_class._process_dynamic(
             test_year=[1999],
             target_variable="a",
             pred_months=3,
@@ -66,7 +71,7 @@ class TestDifferentTrainingPeriodsEngineer:
         # -------------------------------
         # test a second test/train option
         # -------------------------------
-        engineer._process_dynamic(
+        engineer.engineer_class._process_dynamic(
             test_year=[2000],
             target_variable="a",
             pred_months=3,
