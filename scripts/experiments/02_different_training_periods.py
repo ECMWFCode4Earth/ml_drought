@@ -306,10 +306,10 @@ def run_training_period_experiments(pred_months: int = 3):
             different_training_periods=True,
         )
         engineer.engineer_class.engineer(
-            test_year=test_years,
-            train_years=train_years,
-            pred_months=pred_months,
-            expected_length=expected_length,
+            test_year=test_years,  # defined by experiment
+            train_years=train_years,  # defined by experiment
+            pred_months=pred_months,  # 3 by default
+            expected_length=None,  # == pred_month by default
             target_variable="VCI",
         )
 
