@@ -80,6 +80,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             ds_years = train_ds["time.year"].values
             bool_train_years = [y in train_years for y in ds_years]
             train_ds = train_ds.sel(time=bool_train_years)
+        assert False
 
         normalization_values = self._calculate_normalization_values(train_ds)
 
