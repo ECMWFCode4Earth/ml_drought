@@ -204,8 +204,7 @@ if __name__ == "__main__":
         # run experiments
         for static in [True, False]:
             vars_joined = "_".join(vars_to_include)
-            already_run = [
-                m
+            already_run = [m
                 for m in (data_dir / "models").glob(
                     f"*{vars_joined}_{'YES' if static else 'NO'}static"
                 )
@@ -213,7 +212,9 @@ if __name__ == "__main__":
             # CHECK if experiment has already been run
             if already_run != []:
                 print(
-                    f'\n{"-" * 10}\Experiment ALREADY RUN: {vars_to_include} static:{static}\n{"-" * 10}'
+                    f'\n{"-" * 10}\Experiment ALREADY RUN: {vars_to_include} static:{static}\n{"-" * 10}',
+                    'Skipping to next experiment ...'
+
                 )
                 continue
 
