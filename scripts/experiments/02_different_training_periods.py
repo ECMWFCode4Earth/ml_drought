@@ -246,18 +246,18 @@ def run_training_period_experiments(pred_months: int = 3):
     expected_length = pred_months
 
     # Read the target data
-    print('** Reading the target data **')
+    print("** Reading the target data **")
     data_dir = get_data_path()
     target_data = xr.open_dataset(
         data_dir / "interim" / "VCI_preprocessed" / "data_kenya.nc"
     )
     # sort by the annual median (across pixels/time)
-    print('** Sorting the target data **')
+    print("** Sorting the target data **")
     sorted_years, _ = sort_by_median_target_variable(target_data)
-    print(f'** sorted_years: {sorted_years} **')
+    print(f"** sorted_years: {sorted_years} **")
 
     # create all experiments
-    print('** Creating all experiments **')
+    print("** Creating all experiments **")
     hilos = ["high", "med", "low"]
     train_lengths = [5, 10, 20]
     experiments = [
@@ -269,7 +269,7 @@ def run_training_period_experiments(pred_months: int = 3):
         )
     ]
 
-    print('** Running all experiments **')
+    print("** Running all experiments **")
     for experiment in experiments:
         test_years, train_years = get_experiment_years(
             sorted_years,
@@ -282,13 +282,16 @@ def run_training_period_experiments(pred_months: int = 3):
         debug = True
         if debug:
             print(
-                '\n' + '-' * 10 + '\n',
+                "\n" + "-" * 10 + "\n",
                 "train_length: " + str(experiment.train_length),
                 "test_hilo: " + experiment.test_hilo,
                 "train_hilo: " + experiment.train_hilo,
-                "train_years:\n", train_years, "\n",
-                "test_years:\n", test_years,
-                '\n' + '-' * 10 + '\n',
+                "train_years:\n",
+                train_years,
+                "\n",
+                "test_years:\n",
+                test_years,
+                "\n" + "-" * 10 + "\n",
             )
 
         # have to recreate each engineer for the experiment
@@ -297,7 +300,7 @@ def run_training_period_experiments(pred_months: int = 3):
             get_data_path(),
             experiment="one_month_forecast",
             process_static=True,
-            different_training_periods = True
+            different_training_periods=True,
         )
         engineer.engineer(
             test_year=test_years,
@@ -307,7 +310,6 @@ def run_training_period_experiments(pred_months: int = 3):
         )
 
         break
-
 
 
 if __name__ == "__main__":
