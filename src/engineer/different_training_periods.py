@@ -135,7 +135,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             train_dates = ds.time.values <= np.datetime64(str(min_test_date))
         else:
             # train on the years defined
-            train_dates = [y in train_years.values for y in ds["time.year"]]
+            train_dates = [y.values[0] in train_years for y in ds["time.year"]]
         train_ds = ds.isel(time=train_dates)
 
         # save the xy_test dictionary
