@@ -304,7 +304,7 @@ def run_training_period_experiments(pred_months: int = 3):
             process_static=True,
             different_training_periods=True,
         )
-        engineer.engineer(
+        engineer.engineer_class.engineer(
             test_year=test_years,
             train_years=train_years,
             pred_months=pred_months,
