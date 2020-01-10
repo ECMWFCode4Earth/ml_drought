@@ -47,10 +47,10 @@ def get_experiment_years(
 ) -> Tuple[np.array, np.array]:
     test_length = max(1, test_length)
     assert train_length >= 1, "Must have at least one year for training"
-    assert (
-        train_length <= len(sorted_years) - test_length
-    ), "Cannot have more test_years than total - test_length" \
-    f"{train_length} > {len(sorted_years) - test_length}"
+    assert train_length <= len(sorted_years) - test_length, (
+        "Cannot have more test_years than total - test_length"
+        f"{train_length} > {len(sorted_years) - test_length}"
+    )
     assert train_hilo in [
         "high",
         "low",
@@ -66,8 +66,7 @@ def get_experiment_years(
     test_dict = _calculate_hilo_dict(sorted_years)
 
     # 2. select randomly the TEST years from these groups
-    test_years = np.random.choice(test_dict[test_hilo], test_length,
-                                  replace=False)
+    test_years = np.random.choice(test_dict[test_hilo], test_length, replace=False)
     # test_indexes = np.array(
     #     [np.where(test_dict[test_hilo] == i) for i in test_years]
     # ).flatten()
@@ -229,18 +228,17 @@ class Experiment:
     train_hilo: str
     test_hilo: str
     """
-    def __init__(self, train_length: int,
-                 train_hilo: str,
-                 test_hilo: str,
-                 test_length: int = 3,
-                 ):
+
+    def __init__(
+        self, train_length: int, train_hilo: str, test_hilo: str, test_length: int = 3
+    ):
         self.train_length = train_length
         self.train_hilo = train_hilo
         self.test_hilo = test_hilo
         self.test_length = test_length
 
-        assert train_hilo in ['high', 'med', 'low']
-        assert test_hilo in ['high', 'med', 'low']
+        assert train_hilo in ["high", "med", "low"]
+        assert test_hilo in ["high", "med", "low"]
 
 
 def run_training_period_experiments():
@@ -251,17 +249,16 @@ def run_training_period_experiments():
     sorted_years, _ = sort_by_median_target_variable(target_data)
 
     # get all experiments
-    hilos = ['high', 'med', 'low']
+    hilos = ["high", "med", "low"]
     train_lengths = [5, 10, 20]
     experiments = [
         Experiment(
-            train_length=train_length,
-            train_hilo=train_hilo,
-            test_hilo=test_hilo
-        ) for train_hilo, test_hilo, train_length
-        in itertools.product(hilos, hilos, train_lengths)
+            train_length=train_length, train_hilo=train_hilo, test_hilo=test_hilo
+        )
+        for train_hilo, test_hilo, train_length in itertools.product(
+            hilos, hilos, train_lengths
+        )
     ]
-
 
     for experiment in experiments:
         test_years, train_years = get_experiment_years(
@@ -269,23 +266,29 @@ def run_training_period_experiments():
             experiment.train_length,
             experiment.test_hilo,
             experiment.train_hilo,
-            test_length=3
+            test_length=3,
         )
 
         debug = False
         if debug:
-            print(experiment.train_length,
+            print(
+                experiment.train_length,
                 experiment.test_hilo,
                 experiment.train_hilo,
-                "train_years:\n", train_years, "\n",
-                "test_years:\n", test_years, "\n",)
+                "train_years:\n",
+                train_years,
+                "\n",
+                "test_years:\n",
+                test_years,
+                "\n",
+            )
 
         engineer = Engineer(
             get_data_path(),
             experiment="one_month_forecast",
             process_static=True,
             test_year=test_years,
-            train_years=train_years
+            train_years=train_years,
         )
 
     pass
