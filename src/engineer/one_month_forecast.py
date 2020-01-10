@@ -72,7 +72,7 @@ class _OneMonthForecastEngineer(_EngineerBase):
                 f"For the `nowcast` experiment we expect the\
                 number of timesteps to be: {pred_months}.\
                 Currently: {x_dataset.time.size}\
-                You provided the argument expected_length: {expected_length}
+                You provided the argument expected_length: {expected_length}\
                 "
             )
             return None, cast(date, max_train_date)
