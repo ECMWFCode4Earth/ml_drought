@@ -257,6 +257,7 @@ def run_training_period_experiments(pred_months: int = 3):
     print("** Sorting the target data **")
     sorted_years, _ = sort_by_median_target_variable(target_data)
     print(f"** sorted_years: {sorted_years} **")
+    print(f"** min_year: {min(sorted_years)} max_year: {max(sorted_years)} **")
 
     # create all experiments
     print("** Creating all experiments **")
@@ -317,4 +318,5 @@ def run_training_period_experiments(pred_months: int = 3):
 
 if __name__ == "__main__":
     pred_months = 3
-    run_training_period_experiments(pred_months=3)
+
+    run_training_period_experiments(pred_months=pred_months)
