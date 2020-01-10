@@ -242,14 +242,18 @@ class Experiment:
         assert test_hilo in ["high", "med", "low"]
 
 
-def run_training_period_experiments():
+def run_training_period_experiments(pred_months: int = 3):
+    expected_length = pred_months
+
+    # Read the target data
     data_dir = get_data_path()
     target_data = xr.open_dataset(
         data_dir / "interim" / "VCI_preprocessed" / "data_kenya.nc"
     )
+    # sort by the annual median (across pixels/time)
     sorted_years, _ = sort_by_median_target_variable(target_data)
 
-    # get all experiments
+    # create all experiments
     hilos = ["high", "med", "low"]
     train_lengths = [5, 10, 20]
     experiments = [
@@ -283,7 +287,7 @@ def run_training_period_experiments():
             )
 
         # have to recreate each engineer for the experiment
-        # TODO: definite inefficiency
+        # TODO: definite inefficiency should this be in DataLoader?
         engineer = Engineer(
             get_data_path(),
             experiment="one_month_forecast",
@@ -293,10 +297,14 @@ def run_training_period_experiments():
         engineer.engineer(
             test_year=test_years,
             train_years=train_years,
+            pred_months=pred_months,
+            expected_length=expected_length,
         )
 
-    pass
+        break
+
 
 
 if __name__ == "__main__":
-    run_training_period_experiments()
+    pred_months = 3
+    run_training_period_experiments(pred_months=3)
