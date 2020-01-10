@@ -115,6 +115,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             # then minimum target month should be `pred_months + 1`
             # e.g. x = 1984 Jan/Feb/Mar, y = 1984 April
             init_target_month = pred_months + months[0]
+            print("\n*  *\n")
         else:
             init_target_month = 1
 
