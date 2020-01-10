@@ -135,7 +135,8 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             train_dates = ds.time.values <= np.datetime64(str(min_test_date))
         else:
             # train on the years defined
-            train_dates = [int(y.values) in train_years for y in ds["time.year"]]
+            train_dates = [
+                int(y.values) in train_years for y in ds["time.year"]]
         train_ds = ds.isel(time=train_dates)
 
         # save the xy_test dictionary
@@ -147,8 +148,8 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
                 dataset_type="test",
             )
 
-        # check for data leakage
-        self.check_data_leakage(train_ds, xy_test)
+            # check for data leakage
+            self.check_data_leakage(train_ds, xy_test)
 
         # each month in test_year produce an x,y pair for testing
         for year in test_years:
