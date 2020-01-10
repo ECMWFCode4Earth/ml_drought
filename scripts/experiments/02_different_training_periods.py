@@ -289,7 +289,7 @@ def run_training_period_experiments(pred_months: int = 3):
                 "train_length: " + str(experiment.train_length),
                 "test_hilo: " + experiment.test_hilo,
                 "train_hilo: " + experiment.train_hilo,
-                "train_years:\n",
+                "\ntrain_years:\n",
                 train_years,
                 "\n",
                 "test_years:\n",
