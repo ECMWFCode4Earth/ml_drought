@@ -30,7 +30,7 @@ def sort_by_median_target_variable(
     sorted_df = median_data.sort_values(target_variable)
     sorted_years = sorted_df.year
 
-    return sorted_years.values, sorted_df
+    return sorted_years.values, sorted_dfrun_training_period_experiments
 
 
 def _calculate_hilo_dict(sorted_years: np.array) -> Dict[str, np.array]:
@@ -328,7 +328,9 @@ def run_training_period_experiments(pred_months: int = 3):
         # add extra years if selected the first year in timeseries (often not 12months)
         # e.g. 1981_11 is the first valid month in our dataset
 
-        # Run the models
+        # Run the models\
+        always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb"]
+        ignore_vars = always_ignore_vars
         run_all_models_as_experiments(train_hilo=experiment.train_hilo,
                                       test_hilo=experiment.test_hilo,
                                       train_length=len(train_years),
