@@ -1,3 +1,4 @@
+from scripts.utils import get_data_path, _rename_directory
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -13,7 +14,6 @@ from src.engineer import Engineer
 from src.analysis import read_train_data, read_test_data
 from src.analysis import all_explanations_for_file
 from src.engineer import Engineer
-from scripts.utils import get_data_path, _rename_directory
 from _base_models import parsimonious, regression, linear_nn, rnn, earnn
 
 
@@ -320,12 +320,15 @@ def run_training_period_experiments(pred_months: int = 3):
             target_variable="VCI",
         )
 
+        # TODO:
         # add extra years if selected the first year in timeseries (often not 12months)
         # e.g. 1981_11 is the first valid month in our dataset
 
 
+        # rename the features/one_month_forecast directory
         rename_experiment_dir(
-            data_dir, train_hilo=train_hilo, test_hilo=test_hilo, train_length=train_length,
+            data_dir, train_hilo=experiment.train_hilo,
+            test_hilo=experiment.test_hilo, train_length=train_length,
             dir_='features'
         )
 
