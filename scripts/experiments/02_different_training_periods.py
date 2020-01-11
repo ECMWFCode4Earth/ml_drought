@@ -336,7 +336,8 @@ def run_training_period_experiments(pred_months: int = 3):
                                       train_length=len(train_years),
                                       ignore_vars=ignore_vars,
                                       run_regression=False,
-                                      all_models=False
+                                      all_models=False,
+                                      static=True,
                                       )
 
         # rename the features/one_month_forecast directory
@@ -345,7 +346,6 @@ def run_training_period_experiments(pred_months: int = 3):
             train_hilo=experiment.train_hilo,
             test_hilo=experiment.test_hilo,
             train_length=len(train_years),
-            static=True,
             dir_="features",
         )
 
