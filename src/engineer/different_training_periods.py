@@ -162,7 +162,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             for month in range(init_target_month, 13):
                 if (month == 1) & (year != test_years[0]):
                     assert False
-                if (month > init_target_month) & (year != test_years[0]):
+                if (month > init_target_month) | (year != test_years[0]):
                     # prevents the initial test set from being recalculated
                     xy_test, _ = self._stratify_xy(
                         ds=ds,
