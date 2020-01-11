@@ -63,7 +63,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             test_year = [cast(int, test_year)]
 
         # save test data (x, y) and return the train_ds (subset of `data`)
-        train_ds = self._train_test_split(
+        train_ds, test_dts = self._train_test_split(
             ds=data,
             test_years=cast(List, test_year),
             target_variable=target_variable,
@@ -74,7 +74,6 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         assert train_ds.time.shape[0] > 0, (
             "Expect the train_ds to have" f"`time` dimension. \n{train_ds}"
         )
-        test_dts =
 
         if train_years is not None:
             # select only the TRAINING years in train_years
