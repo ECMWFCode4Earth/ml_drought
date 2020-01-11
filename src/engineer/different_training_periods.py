@@ -206,7 +206,6 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
 
             # only save if that year is in train_years
             if cur_pred_year in train_years:
-                assert False
                 if arrays is not None:
                     self._save(
                         arrays,
@@ -215,3 +214,5 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
                         dataset_type="train",
                     )
                 cur_pred_year, cur_pred_month = cur_min_date.year, cur_min_date.month
+            else:
+                continue
