@@ -324,11 +324,13 @@ def run_training_period_experiments(pred_months: int = 3):
         # add extra years if selected the first year in timeseries (often not 12months)
         # e.g. 1981_11 is the first valid month in our dataset
 
+        #
+
 
         # rename the features/one_month_forecast directory
         rename_experiment_dir(
             data_dir, train_hilo=experiment.train_hilo,
-            test_hilo=experiment.test_hilo, train_length=train_length,
+            test_hilo=experiment.test_hilo, train_length=len(train_years),
             dir_='features'
         )
 
