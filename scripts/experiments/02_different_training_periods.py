@@ -1,4 +1,3 @@
-from scripts.utils import get_data_path, _rename_directory
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -10,6 +9,7 @@ import sys
 
 sys.path.append("../..")
 
+from scripts.utils import get_data_path, _rename_directory
 from src.engineer import Engineer
 from src.analysis import read_train_data, read_test_data
 from src.analysis import all_explanations_for_file
