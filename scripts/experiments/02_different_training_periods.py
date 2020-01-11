@@ -3,7 +3,7 @@ import pandas as pd
 import xarray as xr
 from pathlib import Path
 import itertools
-from typing import List, Union, Tuple, Dict
+from typing import List, Union, Tuple, Dict, Optional
 
 import sys
 
