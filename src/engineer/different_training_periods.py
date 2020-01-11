@@ -201,6 +201,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
                 target_month=cur_pred_month,
                 pred_months=pred_months,
                 expected_length=expected_length,
+                train_years=train_years
             )
 
             # only save if that year is in train_years
