@@ -124,7 +124,6 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
 
         # NOTE: the test year is
         # for the first `year` calculate the xy_test dictionary and min date
-        assert False
         xy_test, min_test_date = self._stratify_xy(
             ds=ds,
             year=test_years[0],
@@ -133,6 +132,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             pred_months=pred_months,
             expected_length=expected_length,
         )
+        assert False
 
         # NOTE: relax assumption that train_ds MUST BEFORE before test date
         if train_years is None:
