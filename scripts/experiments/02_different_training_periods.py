@@ -176,7 +176,9 @@ def run_all_models_as_experiments(
     all_models: bool = False,
 ):
     # run baseline model
+    print("\n\nBASELINE MODEL:")
     parsimonious()
+    print("\n\n")
 
     # RUN EXPERIMENTS
     if run_regression:
@@ -325,17 +327,18 @@ def run_training_period_experiments(pred_months: int = 3):
         # add extra years if selected the first year in timeseries (often not 12months)
         # e.g. 1981_11 is the first valid month in our dataset
 
-        # Run the models\
+        # Run the models
         always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb"]
         ignore_vars = always_ignore_vars
-        run_all_models_as_experiments(train_hilo=experiment.train_hilo,
-                                      test_hilo=experiment.test_hilo,
-                                      train_length=len(train_years),
-                                      ignore_vars=ignore_vars,
-                                      run_regression=False,
-                                      all_models=False,
-                                      static=True,
-                                      )
+        run_all_models_as_experiments(
+            train_hilo=experiment.train_hilo,
+            test_hilo=experiment.test_hilo,
+            train_length=len(train_years),
+            ignore_vars=ignore_vars,
+            run_regression=False,
+            all_models=False,
+            static=True,
+        )
 
         # rename the features/one_month_forecast directory
         rename_experiment_dir(
