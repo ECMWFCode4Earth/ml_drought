@@ -37,7 +37,9 @@ class Engineer:
         engineer: _EngineerBase
         if experiment == "one_month_forecast":
             if different_training_periods:
-                engineer = _DifferentTrainingPeriodsEngineer(data_folder, process_static)
+                engineer = _DifferentTrainingPeriodsEngineer(
+                    data_folder, process_static
+                )
             else:
                 engineer = _OneMonthForecastEngineer(data_folder, process_static)
         elif experiment == "nowcast":

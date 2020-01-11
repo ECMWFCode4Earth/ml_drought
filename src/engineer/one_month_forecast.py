@@ -2,7 +2,6 @@ import numpy as np
 import calendar
 from datetime import date
 import xarray as xr
-import warnings
 
 from typing import cast, Dict, Optional, Tuple
 
@@ -66,12 +65,12 @@ class _OneMonthForecastEngineer(_EngineerBase):
         x_dataset = ds.isel(time=x)
         y_dataset = ds.isel(time=y)[target_variable].to_dataset(name=target_variable)
 
-        if (x_dataset.time.size != expected_length):
+        if x_dataset.time.size != expected_length:
             # catch the errors as we get closer to the MINIMUM year
             print(
-                "For the `nowcast` experiment we expect the "\
-                f"number of timesteps to be: {pred_months}. "\
-                f"Currently: {x_dataset.time.size} "\
+                "For the `nowcast` experiment we expect the "
+                f"number of timesteps to be: {pred_months}. "
+                f"Currently: {x_dataset.time.size} "
                 f"You provided the argument expected_length: {expected_length}"
             )
             return None, cast(date, max_train_date)

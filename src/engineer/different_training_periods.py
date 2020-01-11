@@ -90,7 +90,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             target_variable=target_variable,
             pred_months=pred_months,
             expected_length=expected_length,
-            train_years=train_years
+            train_years=train_years,
         )
 
         savepath = self.output_folder / "normalizing_dict.pkl"
@@ -146,7 +146,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
 
         # save the xy_test dictionary
         if xy_test is not None:
-            test_dts.append(self._get_datetime(xy_test['y'].time.values[0]))
+            test_dts.append(self._get_datetime(xy_test["y"].time.values[0]))
             self._save(
                 xy_test,
                 year=test_years[0],
@@ -174,12 +174,11 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
                     if xy_test is not None:
                         # check for data leakage
                         # self.check_data_leakage(train_ds, xy_test)
-                        test_dts.append(self._get_datetime(
-                            xy_test['y'].time.values[0]))
+                        test_dts.append(self._get_datetime(xy_test["y"].time.values[0]))
                         self._save(xy_test, year=year, month=month, dataset_type="test")
         return train_ds, test_dts
 
-    def _stratify_training_data(
+    def _stratify_training_data(  # type: ignore
         self,
         train_ds: xr.Dataset,
         test_dts: List[date],
@@ -214,7 +213,9 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             # only save if that year is in train_years
             # and that month is not in test_dts
             if arrays is not None:
-                if (cur_pred_year in train_years) and (self._get_datetime(arrays['y'].time.values[0]) not in test_dts):
+                if (cur_pred_year in train_years) and (
+                    self._get_datetime(arrays["y"].time.values[0]) not in test_dts
+                ):
                     self._save(
                         arrays,
                         year=cur_pred_year,
