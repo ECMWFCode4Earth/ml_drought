@@ -349,8 +349,6 @@ def run_training_period_experiments(pred_months: int = 3):
             dir_="features",
         )
 
-        break
-
 
 if __name__ == "__main__":
     pred_months = 3
