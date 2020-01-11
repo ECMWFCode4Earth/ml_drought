@@ -288,8 +288,6 @@ def run_training_period_experiments(pred_months: int = 3):
 
         # 1981 = max, 1982 = 12, 1997 = 1-9, 2001 = 1-9, 2006 = 12,
         # test missing: 2000_1, 2002_1
-        # train missing: 1997_1, 1997_2, 1997_3, 2001_1,
-        #   2001_2, 2001_3, 2006_1, 2006_2, 2006_3
 
         debug = True
         if debug:

@@ -74,6 +74,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         assert train_ds.time.shape[0] > 0, (
             "Expect the train_ds to have" f"`time` dimension. \n{train_ds}"
         )
+        test_dts =
 
         if train_years is not None:
             # select only the TRAINING years in train_years
@@ -86,6 +87,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         # split train_ds into x, y for each year-month before `test_year` & save
         self._stratify_training_data(
             train_ds=train_ds,
+            test_dts=test_dts,
             target_variable=target_variable,
             pred_months=pred_months,
             expected_length=expected_length,
@@ -104,7 +106,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         pred_months: int,
         expected_length: Optional[int],
         train_years: Optional[List[int]] = None,
-    ) -> xr.Dataset:
+    ) -> Tuple[xr.Dataset, List[date]]:
         """save the test data and return the training dataset"""
 
         test_years.sort()
@@ -143,6 +145,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         train_ds = ds
 
         # save the xy_test dictionary
+        assert False
         if xy_test is not None:
             self._save(
                 xy_test,
@@ -172,11 +175,12 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
                         # self.check_data_leakage(train_ds, xy_test)
 
                         self._save(xy_test, year=year, month=month, dataset_type="test")
-        return train_ds
+        return train_ds, test_dts
 
     def _stratify_training_data(
         self,
         train_ds: xr.Dataset,
+        test_dts: List[date],
         target_variable: str,
         pred_months: int,
         expected_length: Optional[int],
