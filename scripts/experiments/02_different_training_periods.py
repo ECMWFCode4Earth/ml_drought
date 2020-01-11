@@ -345,6 +345,7 @@ def run_training_period_experiments(pred_months: int = 3):
             train_hilo=experiment.train_hilo,
             test_hilo=experiment.test_hilo,
             train_length=len(train_years),
+            static=True,
             dir_="features",
         )
 
