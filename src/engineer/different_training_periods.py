@@ -212,8 +212,8 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             # Preventing data leakage:
             # only save if that year is in train_years
             # and that month is not in test_dts
-            if (cur_pred_year in train_years) and (self._get_datetime(arrays['y'].time.values[0]) not in test_dts):
-                if arrays is not None:
+            if arrays is not None:
+                if (cur_pred_year in train_years) and (self._get_datetime(arrays['y'].time.values[0]) not in test_dts):
                     self._save(
                         arrays,
                         year=cur_pred_year,
