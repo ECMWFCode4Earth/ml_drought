@@ -213,6 +213,4 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
                         month=cur_pred_month,
                         dataset_type="train",
                     )
-                cur_pred_year, cur_pred_month = cur_min_date.year, cur_min_date.month
-            else:
-                continue
+            cur_pred_year, cur_pred_month = cur_min_date.year, cur_min_date.month
