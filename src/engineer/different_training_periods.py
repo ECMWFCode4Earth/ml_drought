@@ -109,6 +109,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         """save the test data and return the training dataset"""
 
         test_years.sort()
+        test_dts = []
 
         months = ds["time.month"].values
 
@@ -144,8 +145,8 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         train_ds = ds
 
         # save the xy_test dictionary
-        assert False
         if xy_test is not None:
+            test_dts.append(self._get_datetime(xy_test['y'].time.values[0]))
             self._save(
                 xy_test,
                 year=test_years[0],
@@ -172,7 +173,8 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
                     if xy_test is not None:
                         # check for data leakage
                         # self.check_data_leakage(train_ds, xy_test)
-
+                        test_dts.append(self._get_datetime(
+                            xy_test['y'].time.values[0]))
                         self._save(xy_test, year=year, month=month, dataset_type="test")
         return train_ds, test_dts
 
@@ -208,7 +210,8 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             )
 
             # only save if that year is in train_years
-            if cur_pred_year in train_years:
+            assert False
+            if (cur_pred_year in train_years) and (cur_pred_year not in test_dts):
                 if arrays is not None:
                     self._save(
                         arrays,
