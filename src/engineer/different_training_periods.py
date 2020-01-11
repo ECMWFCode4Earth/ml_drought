@@ -132,14 +132,6 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             pred_months=pred_months,
             expected_length=expected_length,
         )
-        if self._get_datetime(xy_test['y'].time.values[0]) == date(2000, 1, 31):
-            assert False
-        if self._get_datetime(xy_test['y'].time.values[0]) == date(2001, 1, 31):
-            assert False
-        if self._get_datetime(xy_test['y'].time.values[0]) == date(2000, 2, 29):
-            assert False
-        if self._get_datetime(xy_test['y'].time.values[0]) == date(2001, 2, 28):
-            assert False
 
         # NOTE: relax assumption that train_ds MUST BEFORE before test date
         if train_years is None:
@@ -167,7 +159,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
 
         # each month in test_year produce an x,y pair for testing
         for year in test_years:
-            for month in range(1, 13):
+            for month in range(init_target_month, 13):
                 if month > init_target_month:
                     # prevents the initial test set from being recalculated
                     xy_test, _ = self._stratify_xy(
@@ -178,6 +170,17 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
                         pred_months=pred_months,
                         expected_length=expected_length,
                     )
+                    if _ == date(1999, 12, 31):
+                        assert False
+                    if self._get_datetime(xy_test['y'].time.values[0]) == date(2000, 1, 31):
+                        assert False
+                    if self._get_datetime(xy_test['y'].time.values[0]) == date(2001, 1, 31):
+                        assert False
+                    if self._get_datetime(xy_test['y'].time.values[0]) == date(2000, 2, 29):
+                        assert False
+                    if self._get_datetime(xy_test['y'].time.values[0]) == date(2001, 2, 28):
+                        assert False
+
                     if xy_test is not None:
                         # check for data leakage
                         # self.check_data_leakage(train_ds, xy_test)
