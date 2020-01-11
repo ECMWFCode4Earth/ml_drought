@@ -171,7 +171,7 @@ def run_all_models_as_experiments(
     test_hilo: str,
     train_length: int,
     static: bool,
-    ignore_vars: Opstional[List[str]] = None,
+    ignore_vars: Optional[List[str]] = None,
     run_regression: bool = True,
     all_models: bool = False,
 ):
