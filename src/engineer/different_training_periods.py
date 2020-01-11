@@ -209,9 +209,10 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
                 expected_length=expected_length,
             )
 
+            # Preventing data leakage:
             # only save if that year is in train_years
-            assert False
-            if (cur_pred_year in train_years) and (cur_pred_year not in test_dts):
+            # and that month is not in test_dts
+            if (cur_pred_year in train_years) and (self._get_datetime(arrays['y'].time.values[0]) not in test_dts):
                 if arrays is not None:
                     self._save(
                         arrays,
