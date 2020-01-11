@@ -148,12 +148,18 @@ def get_experiment_years(
 
 
 def rename_experiment_dir(
-    data_dir: Path, train_hilo: str, test_hilo: str, train_length: int, dir_: str = 'models'
+    data_dir: Path,
+    train_hilo: str,
+    test_hilo: str,
+    train_length: int,
+    dir_: str = "models",
 ) -> None:
     from_path = data_dir / dir_ / "one_month_forecast"
 
     to_path = (
-        data_dir / dir_ / f"one_month_forecast_TR{train_hilo}_TE{test_hilo}_LEN{train_length}"
+        data_dir
+        / dir_
+        / f"one_month_forecast_TR{train_hilo}_TE{test_hilo}_LEN{train_length}"
     )
 
     # with_datetime ensures that unique
@@ -161,11 +167,13 @@ def rename_experiment_dir(
 
 
 def run_all_models_as_experiments(
-    test_years: List[int],
-    train_years: List[int],
-    ignore_vars: List[str],
+    train_hilo: str,
+    test_hilo: str,
+    train_length: int,
+    ignore_vars: Optional[List[str]] = None,
     static: bool,
     run_regression: bool = True,
+    all_models: bool = False,
 ):
     print(f"Experiment Static: {static}")
 
@@ -176,39 +184,38 @@ def run_all_models_as_experiments(
     if static:
         # 'embeddings' or 'features'
         try:
-            linear_nn(ignore_vars=ignore_vars, static="embeddings")
-        except RuntimeError:
-            print(f"\n{'*'*10}\n FAILED: LinearNN \n{'*'*10}\n")
-
-        try:
-            rnn(ignore_vars=ignore_vars, static="embeddings")
-        except RuntimeError:
-            print(f"\n{'*'*10}\n FAILED: RNN \n{'*'*10}\n")
-        try:
-
             earnn(pretrained=False, ignore_vars=ignore_vars, static="embeddings")
         except RuntimeError:
             print(f"\n{'*'*10}\n FAILED: EALSTM \n{'*'*10}\n")
 
-    else:
-        try:
-            linear_nn(ignore_vars=ignore_vars, static=None)
-        except RuntimeError:
-            print(f"\n{'*'*10}\n FAILED: LinearNN \n{'*'*10}\n")
+        if all_models:  # run all other models ?
+            try:
+                linear_nn(ignore_vars=ignore_vars, static="embeddings")
+            except RuntimeError:
+                print(f"\n{'*'*10}\n FAILED: LinearNN \n{'*'*10}\n")
 
+            try:
+                rnn(ignore_vars=ignore_vars, static="embeddings")
+            except RuntimeError:
+                print(f"\n{'*'*10}\n FAILED: RNN \n{'*'*10}\n")
+
+    else:  # NO STATIC data
         try:
             rnn(ignore_vars=ignore_vars, static=None)
         except RuntimeError:
             print(f"\n{'*'*10}\n FAILED: RNN \n{'*'*10}\n")
 
-        try:
-            earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
-        except RuntimeError:
-            print(f"\n{'*'*10}\n FAILED: EALSTM \n{'*'*10}\n")
+        if all_models:  # run all other models ?
+            try:
+                linear_nn(ignore_vars=ignore_vars, static=None)
+            except RuntimeError:
+                print(f"\n{'*'*10}\n FAILED: LinearNN \n{'*'*10}\n")
 
     # RENAME DIRECTORY
     data_dir = get_data_path()
-    rename_experiment_dir(data_dir, train_hilo=train_hilo, test_hilo=test_hilo, train_length=train_length)
+    rename_experiment_dir(
+        data_dir, train_hilo=train_hilo, test_hilo=test_hilo, train_length=train_length
+    )
     print(f"Experiment finished")
 
 
@@ -283,11 +290,8 @@ def run_training_period_experiments(pred_months: int = 3):
         )
 
         # TODO: DELETE this
-        # test_years = [1998, 2001, 2002]
-        # train_years = [1981, 1982, 1997, 2001, 2006]
-
-        # 1981 = max, 1982 = 12, 1997 = 1-9, 2001 = 1-9, 2006 = 12,
-        # test missing: 2000_1, 2002_1
+        test_years = [1998, 2001, 2002]
+        train_years = [1981, 1982, 1997, 2001, 2006]
 
         debug = True
         if debug:
@@ -324,14 +328,22 @@ def run_training_period_experiments(pred_months: int = 3):
         # add extra years if selected the first year in timeseries (often not 12months)
         # e.g. 1981_11 is the first valid month in our dataset
 
-        #
-
+        # Run the models
+        run_all_models_as_experiments(train_hilo=experiment.train_hilo,
+                                      test_hilo=experiment.test_hilo,
+                                      train_length=len(train_years),
+                                      ignore_vars=ignore_vars,
+                                      run_regression=False,
+                                      all_models=False
+                                      )
 
         # rename the features/one_month_forecast directory
         rename_experiment_dir(
-            data_dir, train_hilo=experiment.train_hilo,
-            test_hilo=experiment.test_hilo, train_length=len(train_years),
-            dir_='features'
+            data_dir,
+            train_hilo=experiment.train_hilo,
+            test_hilo=experiment.test_hilo,
+            train_length=len(train_years),
+            dir_="features",
         )
 
         break

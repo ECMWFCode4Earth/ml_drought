@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import calendar
 from datetime import date
 import xarray as xr
 import warnings
@@ -8,7 +7,6 @@ import pickle
 
 from typing import cast, Dict, Optional, Tuple, List, Union
 
-from ..utils import minus_months
 from .one_month_forecast import _OneMonthForecastEngineer
 
 
@@ -75,12 +73,6 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             "Expect the train_ds to have" f"`time` dimension. \n{train_ds}"
         )
 
-        if train_years is not None:
-            # select only the TRAINING years in train_years
-            ds_years = train_ds["time.year"].values
-            bool_train_years = [y in train_years for y in ds_years]
-            # train_ds = train_ds.sel(time=bool_train_years)
-
         normalization_values = self._calculate_normalization_values(train_ds)
 
         # split train_ds into x, y for each year-month before `test_year` & save
@@ -133,15 +125,6 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             expected_length=expected_length,
         )
 
-        # NOTE: relax assumption that train_ds MUST BEFORE before test date
-        if train_years is None:
-            # get the years BEFORE the test_year
-            train_dates = ds.time.values <= np.datetime64(str(min_test_date))
-        else:
-            # train on the years defined
-            # train_dates = [int(y.values) in train_years for y in ds["time.year"]]
-            pass
-        # train_ds = ds.isel(time=train_dates)
         train_ds = ds
 
         # save the xy_test dictionary
