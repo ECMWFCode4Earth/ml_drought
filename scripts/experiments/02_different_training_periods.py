@@ -147,14 +147,13 @@ def get_experiment_years(
     return test_years, train_years
 
 
-def rename_model_experiment_file(
-    data_dir: Path, test_years: List[int], train_years: List[int], static: bool
+def rename_experiment_dir(
+    data_dir: Path, train_hilo: str, test_hilo: str, train_length: int, dir_: str = 'models'
 ) -> None:
-    from_path = data_dir / "models" / "one_month_forecast"
-    str_test_years = "_".join(test_years)
-    str_train_years = "_".join(train_years)
+    from_path = data_dir / dir_ / "one_month_forecast"
+
     to_path = (
-        data_dir / "models" / f"one_month_forecast_{str_test_years}_{str_train_years}"
+        data_dir / dir_ / f"one_month_forecast_TR{train_hilo}_TE{test_hilo}_LEN{train_length}"
     )
 
     # with_datetime ensures that unique
@@ -164,6 +163,7 @@ def rename_model_experiment_file(
 def run_all_models_as_experiments(
     test_years: List[int],
     train_years: List[int],
+    ignore_vars: List[str],
     static: bool,
     run_regression: bool = True,
 ):
@@ -208,7 +208,7 @@ def run_all_models_as_experiments(
 
     # RENAME DIRECTORY
     data_dir = get_data_path()
-    rename_model_experiment_file(data_dir)
+    rename_experiment_dir(data_dir, train_hilo=train_hilo, test_hilo=test_hilo, train_length=train_length)
     print(f"Experiment finished")
 
 
@@ -283,8 +283,8 @@ def run_training_period_experiments(pred_months: int = 3):
         )
 
         # TODO: DELETE this
-        test_years = [1998, 2001, 2002]
-        train_years = [1981, 1982, 1997, 2001, 2006]
+        # test_years = [1998, 2001, 2002]
+        # train_years = [1981, 1982, 1997, 2001, 2006]
 
         # 1981 = max, 1982 = 12, 1997 = 1-9, 2001 = 1-9, 2006 = 12,
         # test missing: 2000_1, 2002_1
@@ -321,7 +321,13 @@ def run_training_period_experiments(pred_months: int = 3):
         )
 
         # add extra years if selected the first year in timeseries (often not 12months)
-        # e.g. 1981_11 is the first valid month in our dataset5
+        # e.g. 1981_11 is the first valid month in our dataset
+
+
+        rename_experiment_dir(
+            data_dir, train_hilo=train_hilo, test_hilo=test_hilo, train_length=train_length,
+            dir_='features'
+        )
 
         break
 
