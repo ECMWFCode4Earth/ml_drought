@@ -283,7 +283,7 @@ def run_training_period_experiments(pred_months: int = 3):
         )
 
         # TODO: DELETE this
-        test_years = [1998, 2010, 2002]
+        test_years = [1998, 2001, 2002]
         train_years = [1981, 1982, 1997, 2001, 2006]
 
         # 1981 = max, 1982 = 12, 1997 = 1-9, 2001 = 1-9, 2006 = 12,

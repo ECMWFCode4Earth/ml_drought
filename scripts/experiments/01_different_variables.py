@@ -161,6 +161,16 @@ def run_all_models_as_experiments(
     print(f"Experiment {vars_to_include} finished")
 
 
+def get_already_run(data_dir: Path, vars_joined: str, static: bool):
+    already_run = [m
+                   for m in (data_dir / "models").glob(
+                       f"*{vars_joined}_{'YES' if static else 'NO'}static"
+                   )
+                   ]
+
+    return already_run
+
+
 if __name__ == "__main__":
     ignore_vars = None
     always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb"]
@@ -204,17 +214,12 @@ if __name__ == "__main__":
         # run experiments
         for static in [True, False]:
             vars_joined = "_".join(vars_to_include)
-            already_run = [m
-                for m in (data_dir / "models").glob(
-                    f"*{vars_joined}_{'YES' if static else 'NO'}static"
-                )
-            ]
+            already_run = get_already_run(data_dir, vars_joined, static)
             # CHECK if experiment has already been run
             if already_run != []:
                 print(
                     f'\n{"-" * 10}\Experiment ALREADY RUN: {vars_to_include} static:{static}\n{"-" * 10}',
                     'Skipping to next experiment ...'
-
                 )
                 continue
 
