@@ -194,18 +194,18 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         cur_min_date = max_date
         while cur_min_date >= min_date:
 
-            if cur_pred_year in train_years:
-                # each iteration count down one month (02 -> 01 -> 12 ...)
-                arrays, cur_min_date = self._stratify_xy(
-                    ds=train_ds,
-                    year=cur_pred_year,
-                    target_variable=target_variable,
-                    target_month=cur_pred_month,
-                    pred_months=pred_months,
-                    expected_length=expected_length,
-                )
+            # each iteration count down one month (02 -> 01 -> 12 ...)
+            arrays, cur_min_date = self._stratify_xy(
+                ds=train_ds,
+                year=cur_pred_year,
+                target_variable=target_variable,
+                target_month=cur_pred_month,
+                pred_months=pred_months,
+                expected_length=expected_length,
+            )
 
-                # only save if that year is in train_years
+            # only save if that year is in train_years
+            if cur_pred_year in train_years:
                 if arrays is not None:
                     self._save(
                         arrays,
@@ -213,4 +213,4 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
                         month=cur_pred_month,
                         dataset_type="train",
                     )
-                cur_pred_year, cur_pred_month = cur_min_date.year, cur_min_date.month
+            cur_pred_year, cur_pred_month = cur_min_date.year, cur_min_date.month
