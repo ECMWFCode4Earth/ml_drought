@@ -175,7 +175,8 @@ def run_all_models_as_experiments(
     run_regression: bool = True,
     all_models: bool = False,
 ):
-    print(f"Experiment Static: {static}")
+    # run baseline model
+    parsimonious()
 
     # RUN EXPERIMENTS
     if run_regression:
@@ -288,10 +289,6 @@ def run_training_period_experiments(pred_months: int = 3):
             experiment.train_hilo,
             test_length=3,
         )
-
-        # TODO: DELETE this
-        test_years = [1998, 2001, 2002]
-        train_years = [1981, 1982, 1997, 2001, 2006]
 
         debug = True
         if debug:
