@@ -13,7 +13,7 @@ from src.engineer import Engineer
 from src.analysis import read_train_data, read_test_data
 from src.analysis import all_explanations_for_file
 from src.engineer import Engineer
-from scripts.utils import get_data_path
+from scripts.utils import get_data_path, _rename_directory
 from _base_models import parsimonious, regression, linear_nn, rnn, earnn
 
 
