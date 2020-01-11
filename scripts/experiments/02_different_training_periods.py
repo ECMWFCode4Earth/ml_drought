@@ -30,7 +30,7 @@ def sort_by_median_target_variable(
     sorted_df = median_data.sort_values(target_variable)
     sorted_years = sorted_df.year
 
-    return sorted_years.values, sorted_dfrun_training_period_experiments
+    return sorted_years.values, sorted_df
 
 
 def _calculate_hilo_dict(sorted_years: np.array) -> Dict[str, np.array]:
