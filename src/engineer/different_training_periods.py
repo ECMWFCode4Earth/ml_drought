@@ -167,7 +167,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
 
         # each month in test_year produce an x,y pair for testing
         for year in test_years:
-            for month in range(init_target_month, 13):
+            for month in range(1, 13):
                 if month > init_target_month:
                     # prevents the initial test set from being recalculated
                     xy_test, _ = self._stratify_xy(
