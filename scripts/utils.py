@@ -3,6 +3,8 @@ from pathlib import Path
 import time
 import json
 import pandas as pd
+import re
+from datetime import datetime
 
 
 def get_data_path() -> Path:
@@ -29,20 +31,35 @@ def _rename_directory(
     print(f"MOVED {from_path} to {to_path}")
 
 
-def get_results(dir_: Path, print: bool = True) -> pd.DataFrame:
+def get_results(model_dir: Path, print: bool = True) -> pd.DataFrame:
     """ Display the results from the results.json """
 
     def _get_persistence_for_group(x):
         return x.loc[x.model == "previous_month"].total_rmse
 
     # create a dataframe for the results in results.json
-    result_paths = [p for p in dir_.glob("*/*/results.json")]
+    result_paths = [p for p in model_dir.glob("*/*/results.json")]
     experiments = [re.sub(date_regex, "", p.parents[1].name) for p in result_paths]
     df = pd.DataFrame({"experiment": experiments})
 
     # match the date_str if in the experiment name
     date_regex = r"\d{4}_\d{2}_\d{2}:\d{6}_"
-    df["time"] = [re.match(date_regex, p.parents[1].name) for p in result_paths]
+    date_matches = [
+        re.match(date_regex, p.parents[1].name)
+        for p in result_paths
+    ]
+
+    datetimes = []
+    for dt in date_matches:
+        if dt is None:
+            datetimes.append(None)
+        else:
+            datetimes.append(
+                pd.to_datetime(datetime.strptime(dt.group(), "%Y_%m_%d:%H%M%S_"))
+            )
+
+    df["time"] = datetimes
+
     df["model"] = [p.parents[0].name for p in result_paths]
     result_dicts = [json.load(open(p, "rb")) for p in result_paths]
     df["total_rmse"] = [d["total"] for d in result_dicts]
