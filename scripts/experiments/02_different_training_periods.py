@@ -65,11 +65,17 @@ def get_experiment_years(
         "med",
     ], "hilo must be one of ['high', 'low', 'med']"
 
+    minimum_year = min(sorted_years)
+
     # 1. split into low, med, high groups
     test_dict = _calculate_hilo_dict(sorted_years)
 
     # 2. select randomly the TEST years from these groups
-    test_years = np.random.choice(test_dict[test_hilo], test_length, replace=False)
+    # DON'T ALLOW the minimum year to be in test set because limits number of test
+    # months
+    test_years = [minimum_year, minimum_year, minimum_year]
+    while minimum_year in test_years:
+        test_years = np.random.choice(test_dict[test_hilo], test_length, replace=False)
     # test_indexes = np.array(
     #     [np.where(test_dict[test_hilo] == i) for i in test_years]
     # ).flatten()
@@ -219,7 +225,14 @@ def run_experiments(
     rename_experiment_dir(
         data_dir, train_hilo=train_hilo, test_hilo=test_hilo, train_length=train_length
     )
-    print(f"Experiment finished")
+    print(
+        f"\n**Experiment finished**\n",
+        "train_length: " + str(train_length),
+        "test_hilo: " + test_hilo,
+        "train_hilo: " + train_hilo,
+        "\ntrain_years:\n", train_years, "\n",
+        "test_years:\n", test_years,
+    )
 
 
 class Experiment:
@@ -240,6 +253,8 @@ class Experiment:
     test_length: int = 3
     train_hilo: str
     test_hilo: str
+
+    TODO: put the get_experiment_years function inside this class!
     """
 
     def __init__(
@@ -252,6 +267,7 @@ class Experiment:
 
         assert train_hilo in ["high", "med", "low"]
         assert test_hilo in ["high", "med", "low"]
+
 
 
 def run_training_period_experiments(pred_months: int = 3):
@@ -284,7 +300,7 @@ def run_training_period_experiments(pred_months: int = 3):
     ]
 
     print("** Running all experiments **")
-    for experiment in experiments[4:]:
+    for experiment in experiments[7:]:
         test_years, train_years = get_experiment_years(
             sorted_years,
             experiment.train_length,
