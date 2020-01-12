@@ -166,7 +166,7 @@ def rename_experiment_dir(
     _rename_directory(from_path, to_path, with_datetime=True)
 
 
-def run_all_models_as_experiments(
+def run_experiments(
     train_hilo: str,
     test_hilo: str,
     train_length: int,
@@ -270,6 +270,7 @@ def run_training_period_experiments(pred_months: int = 3):
     print(f"** min_year: {min(sorted_years)} max_year: {max(sorted_years)} **")
 
     # create all experiments
+    # train_hilo(9), test_hilo(3), train_length(1)
     print("** Creating all experiments **")
     hilos = ["high", "med", "low"]
     train_lengths = [5, 10, 20]
@@ -283,7 +284,7 @@ def run_training_period_experiments(pred_months: int = 3):
     ]
 
     print("** Running all experiments **")
-    for experiment in experiments:
+    for experiment in experiments[4:]:
         test_years, train_years = get_experiment_years(
             sorted_years,
             experiment.train_length,
@@ -330,7 +331,7 @@ def run_training_period_experiments(pred_months: int = 3):
         # Run the models
         always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb"]
         ignore_vars = always_ignore_vars
-        run_all_models_as_experiments(
+        run_experiments(
             train_hilo=experiment.train_hilo,
             test_hilo=experiment.test_hilo,
             train_length=len(train_years),

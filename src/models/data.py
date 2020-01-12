@@ -193,8 +193,13 @@ def train_val_mask(
     The train mask and the val mask, both as lists
     """
     assert val_ratio < 1, f"Val ratio must be smaller than 1"
-    train_mask = np.random.rand(mask_len) < 1 - val_ratio
-    val_mask = ~train_mask
+    train_mask = np.ones(mask_len).astype('bool')
+    val_mask = np.zeros(mask_len).astype('bool')
+
+    # We don't want ALL values in train and none in val
+    while all(np.array(train_mask)) and all(~np.array(val_mask)):
+        train_mask = np.random.rand(mask_len) < 1 - val_ratio
+        val_mask = ~train_mask
 
     return train_mask.tolist(), val_mask.tolist()
 
