@@ -44,10 +44,7 @@ def get_results(model_dir: Path, print_output: bool = True) -> pd.DataFrame:
     df = pd.DataFrame({"experiment": experiments})
 
     # match the date_str if in the experiment name
-    date_matches = [
-        re.match(date_regex, p.parents[1].name)
-        for p in result_paths
-    ]
+    date_matches = [re.match(date_regex, p.parents[1].name) for p in result_paths]
 
     datetimes = []
     for dt in date_matches:
@@ -66,6 +63,11 @@ def get_results(model_dir: Path, print_output: bool = True) -> pd.DataFrame:
 
     persistence_rmses = (
         df.groupby("experiment").apply(_get_persistence_for_group).reset_index()
+    )
+
+    # merge values for that experiment
+    df = df.merge(persistence_rmses.drop(columns="level_1"), on="experiment").rename(
+        columns=dict(total_rmse_y="previous_month_score")
     )
 
     if print_output:
