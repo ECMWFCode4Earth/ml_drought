@@ -70,6 +70,9 @@ def get_results(model_dir: Path, print_output: bool = True) -> pd.DataFrame:
         columns=dict(total_rmse_y="previous_month_score")
     )
 
+    #
+    df["outperform_baseline"] = df.total_rmse_x < df.previous_month_score
+
     if print_output:
         for i, row in df.iterrows():
             persistence_score = (

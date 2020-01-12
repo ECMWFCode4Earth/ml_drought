@@ -37,5 +37,5 @@ if __name__ == "__main__":
     _rename_directory(
         from_path=data_path / "models" / "nowcast",
         to_path=data_path / "models" / "nowcast_tommy",
-        with_datetime=True
+        with_datetime=True,
     )
