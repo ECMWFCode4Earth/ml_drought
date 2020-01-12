@@ -12,7 +12,7 @@ if __name__ == "__main__":
     important_vars = ["VCI", "precip", "t2m", "pev", "E", "SMsurf", "SMroot"]
     always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb"]
 
-    parsimonious()
+    parsimonious(experiment="nowcast")
     # regression(ignore_vars=always_ignore_vars)
     # gbdt(ignore_vars=always_ignore_vars)
     # linear_nn(ignore_vars=always_ignore_vars)
