@@ -31,7 +31,7 @@ def _rename_directory(
     print(f"MOVED {from_path} to {to_path}")
 
 
-def get_results(model_dir: Path, print: bool = True) -> pd.DataFrame:
+def get_results(model_dir: Path, print_output: bool = True) -> pd.DataFrame:
     """ Display the results from the results.json """
 
     def _get_persistence_for_group(x):
@@ -68,7 +68,7 @@ def get_results(model_dir: Path, print: bool = True) -> pd.DataFrame:
         df.groupby("experiment").apply(_get_persistence_for_group).reset_index()
     )
 
-    if print:
+    if print_output:
         for i, row in df.iterrows():
             persistence_score = (
                 persistence_rmses["total_rmse"]
