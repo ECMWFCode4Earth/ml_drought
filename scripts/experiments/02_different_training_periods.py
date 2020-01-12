@@ -1,8 +1,56 @@
+"""
+
+RERUN:
+========
+chose 8 test years?
+test_hilo: high / train_hilo: high / train_length: 5
+_one_month_forecast_TRhigh_TEhigh_LEN5/test
+
+chose 5 test years
+test_hilo: med / train_hilo: high / train_length: 10
+one_month_forecast_TRhigh_TEmed_LEN10/test
+
+chose 2 test years
+test_hilo: low / train_hilo: high / train_length: 20
+one_month_forecast_TRhigh_TElow_LEN20/
+
+chose 5 test years
+test_hilo: med / train_hilo: high / train_length: 10
+one_month_forecast_TRhigh_TEmed_LEN10/
+
+DIDN'T RUN
+test_hilo: med / train_hilo: high / train_length: 5
+one_month_forecast_TRhigh_TEmed_LEN5/
+
+
+
+
+chose 1981 as a test year
+test_hilo: high / train_hilo: med / train_length: 20
+one_month_forecast_TRmed_TEhigh_LEN20/test
+
+ealstm failed
+test_hilo: low / train_hilo: med / train_length: 10
+*one_month_forecast_TRmed_TElow_LEN10/ealstm
+
+only chose 2 test years
+test_hilo: low / train_hilo: med / train_length: 20
+one_month_forecast_TRmed_TElow_LEN20
+
+
+
+chose 1981 as a test year
+test_hilo: high / train_hilo: low / train_length: 5
+one_month_forecast_TRlow_TEhigh_LEN5
+
+
+"""
 import numpy as np
 import pandas as pd
 import xarray as xr
 from pathlib import Path
 import itertools
+import json
 from typing import List, Union, Tuple, Dict, Optional
 
 import sys
@@ -230,8 +278,11 @@ def run_experiments(
         "train_length: " + str(train_length),
         "test_hilo: " + test_hilo,
         "train_hilo: " + train_hilo,
-        "\ntrain_years:\n", train_years, "\n",
-        "test_years:\n", test_years,
+        "\ntrain_years:\n",
+        train_years,
+        "\n",
+        "test_years:\n",
+        test_years,
     )
 
 
@@ -267,7 +318,6 @@ class Experiment:
 
         assert train_hilo in ["high", "med", "low"]
         assert test_hilo in ["high", "med", "low"]
-
 
 
 def run_training_period_experiments(pred_months: int = 3):
@@ -356,6 +406,18 @@ def run_training_period_experiments(pred_months: int = 3):
             all_models=False,
             static=True,
         )
+
+        # save some key facts about the experiment to an experiment.json file
+        expt_dict = dict(
+            train_hilo=experiment.train_hilo,
+            test_hilo=experiment.test_hilo,
+            train_length=len(train_years),
+            ignore_vars=ignore_vars,
+            train_years=train_years,
+            test_years=test_years,
+        )
+        with open(data_dir / "models/one_month_forecast/experiment.json", "wb") as fp:
+            json.dump(expt_dict, fp, sort_keys=True, indent=4)
 
         # rename the features/one_month_forecast directory
         rename_experiment_dir(
