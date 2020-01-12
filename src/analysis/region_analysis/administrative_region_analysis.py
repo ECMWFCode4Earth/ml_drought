@@ -13,12 +13,16 @@ class AdministrativeRegionAnalysis(RegionAnalysis):
     admin_boundaries = True
 
     def __init__(
-        self, data_dir: Path = Path("data"), experiment: str = "one_month_forecast"
+        self,
+        data_dir: Path = Path("data"),
+        experiment: str = "one_month_forecast",
+        models_experiment_dir: Optional[str] = None,
     ):
         super().__init__(
             data_dir=data_dir,
             experiment=experiment,
             admin_boundaries=self.admin_boundaries,
+            models_experiment_dir=models_experiment_dir,
         )
 
     @staticmethod

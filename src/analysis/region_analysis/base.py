@@ -46,6 +46,7 @@ class RegionAnalysis:
         experiment: str = "one_month_forecast",
         models: Union[List[str], None] = None,
         admin_boundaries: bool = True,
+        models_experiment_dir: Optional[str] = None,
     ):
         """Base RegionAnalysis class.
 
@@ -65,7 +66,11 @@ class RegionAnalysis:
         self.true_variable: Optional[str] = None
 
         self.data_dir: Path = data_dir
-        self.models_dir: Path = data_dir / "models" / experiment
+
+        if models_experiment_dir is None:
+            models_experiment_dir = experiment
+
+        self.models_dir: Path = data_dir / "models" / models_experiment_dir
         self.features_dir: Path = data_dir / "features" / experiment / "test"
         assert self.models_dir.exists(), (
             "Require {data_path}/models to have been" "created by the pipeline."
