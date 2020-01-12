@@ -39,11 +39,11 @@ def get_results(model_dir: Path, print: bool = True) -> pd.DataFrame:
 
     # create a dataframe for the results in results.json
     result_paths = [p for p in model_dir.glob("*/*/results.json")]
+    date_regex = r"\d{4}_\d{2}_\d{2}:\d{6}_"
     experiments = [re.sub(date_regex, "", p.parents[1].name) for p in result_paths]
     df = pd.DataFrame({"experiment": experiments})
 
     # match the date_str if in the experiment name
-    date_regex = r"\d{4}_\d{2}_\d{2}:\d{6}_"
     date_matches = [
         re.match(date_regex, p.parents[1].name)
         for p in result_paths
