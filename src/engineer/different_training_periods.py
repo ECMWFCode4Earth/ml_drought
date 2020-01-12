@@ -190,6 +190,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
                 target_month=cur_pred_month,
                 pred_months=pred_months,
                 expected_length=expected_length,
+                print_status=False
             )
 
             # Preventing data leakage:

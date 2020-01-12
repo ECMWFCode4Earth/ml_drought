@@ -20,14 +20,15 @@ class _OneMonthForecastEngineer(_EngineerBase):
         target_month: int,
         pred_months: int = 11,
         expected_length: Optional[int] = 11,
+        print_status: bool = False,
     ) -> Tuple[Optional[Dict[str, xr.Dataset]], date]:
         """
         Note: expected_length should be the same as pred_months when the timesteps
         are monthly, but should be more if the timesteps are at shorter resolution
         than monthly.
         """
-
-        print(f"Generating data for year: {year}, target month: {target_month}")
+        if print_status:
+            print(f"Generating data for year: {year}, target month: {target_month}")
 
         max_date = date(year, target_month, calendar.monthrange(year, target_month)[-1])
         mx_year, mx_month, max_train_date = minus_months(
@@ -41,10 +42,11 @@ class _OneMonthForecastEngineer(_EngineerBase):
         max_date_np = np.datetime64(str(max_date))
         max_train_date_np = np.datetime64(str(max_train_date))
 
-        print(
-            f"Max date: {str(max_date)}, max input date: {str(max_train_date)}, "
-            f"min input date: {str(min_date)}"
-        )
+        if print_status:
+            print(
+                f"Max date: {str(max_date)}, max input date: {str(max_train_date)}, "
+                f"min input date: {str(min_date)}"
+            )
 
         # boolean array indexing the timestamps to filter `ds`
         x = (ds.time.values > min_date_np) & (ds.time.values <= max_train_date_np)
