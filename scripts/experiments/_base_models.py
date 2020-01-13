@@ -60,6 +60,7 @@ def linear_nn(
     early_stopping=5,
     layer_sizes=[100],
     predict_delta=False,
+    learning_rate=1e-3,
 ):
     print('\n\n** Linear Network **')
     predictor = LinearNetwork(
@@ -72,7 +73,10 @@ def linear_nn(
         ignore_vars=ignore_vars,
         predict_delta=predict_delta,
     )
-    predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
+    predictor.train(
+        num_epochs=num_epochs, early_stopping=early_stopping
+        learning_rate=learning_rate,
+    )
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
@@ -91,6 +95,7 @@ def rnn(
     early_stopping=5,
     hidden_size=128,
     predict_delta=False,
+    learning_rate=1e-3,
 ):
     print('\n\n** RNN **')
     predictor = RecurrentNetwork(
@@ -103,7 +108,10 @@ def rnn(
         ignore_vars=ignore_vars,
         predict_delta=predict_delta,
     )
-    predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
+    predictor.train(
+        num_epochs=num_epochs, early_stopping=early_stopping,
+        learning_rate=learning_rate,
+    )
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
@@ -125,6 +133,7 @@ def earnn(
     static_embedding_size=10,
     hidden_size=128,
     predict_delta=False,
+    learning_rate=1e-3,
 ):
     print('\n\n** EALSTM **')
     data_path = get_data_path()
@@ -141,7 +150,10 @@ def earnn(
             ignore_vars=ignore_vars,
             predict_delta=predict_delta,
         )
-        predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
+        predictor.train(
+            num_epochs=num_epochs, early_stopping=early_stopping,
+            learning_rate=learning_rate
+        )
         predictor.evaluate(save_preds=True)
         predictor.save_model()
     else:

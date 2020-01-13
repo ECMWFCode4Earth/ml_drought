@@ -462,8 +462,11 @@ class _BaseIter:
         )
         return normalizing_array
 
-    def _calculate_aggs(self, x: xr.Dataset, x_datetimes: List[pd.Timestamp]) -> np.ndarray:
-        yearly_mean = x.sel(time=x_datetimes).mean(dim=["time", "lat", "lon"])
+    def _calculate_aggs(self, x: xr.Dataset) -> np.ndarray:
+        # SET -9999 to np.nan
+        x = x.where(x[target_var] != -9999.)
+
+        yearly_mean = x.mean(dim=["time", "lat", "lon"])
         yearly_agg = yearly_mean.to_array().values
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
@@ -480,9 +483,12 @@ class _BaseIter:
     def _calculate_historical(
         self, x: xr.Dataset, y: xr.Dataset
     ) -> Tuple[np.ndarray, np.ndarray]:
-        x = self._add_extra_dims(x, self.surrounding_pixels, self.monthly_aggs)
-
+        # NOTE: for nowcast need to set these to nan so not calculating aggs
+        # set all -9999 values to np.nan
+        x = x.where(x[target_var] != -9999.)
         x_np, y_np = x.to_array().values, y.to_array().values
+
+        x = self._add_extra_dims(x, self.surrounding_pixels, self.monthly_aggs)
 
         # first, x
         x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
@@ -628,7 +634,7 @@ class _BaseIter:
             x_datetimes = [pd.to_datetime(time) for time in x.time.values]
 
         yearly_agg = self._calculate_aggs(
-            x, x_datetimes
+            x
         )  # before to avoid aggs from surrounding pixels
 
         # calculate normalized values in these functions
