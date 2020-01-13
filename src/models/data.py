@@ -605,7 +605,8 @@ class _BaseIter:
             if target_var in [v for v in x.data_vars]:
                 # set all -9999 values to np.nan
                 # (BUT then all pixels are declared to have missing)
-                x = x.where(x[target_var] != -9999.)
+                pass
+                # x = x.where(x[target_var] != -9999.)
                 # TODO: test this tests/models/test_data.py:test_ds_to_np
                 # assert x.isel(time=-1)[target_var].isnull().mean() == 1
 
