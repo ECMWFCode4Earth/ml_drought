@@ -602,11 +602,14 @@ class _BaseIter:
             f"Expect only 1 target variable! " f"Got {len(list(y.data_vars))}"
         )
 
-        if any(np.isin(self.ignore_vars, [v for v in x.data_vars])):
-            _ignore_vars = np.array(self.ignore_vars)[
-                np.isin(self.ignore_vars, [v for v in x.data_vars])
-            ]
-            x = x.drop(_ignore_vars)
+        if (self.ignore_vars is not None):
+            if (any(np.isin(self.ignore_vars, [v for v in x.data_vars]))):
+                _ignore_vars = np.array(self.ignore_vars)[
+                    np.isin(self.ignore_vars, [v for v in x.data_vars])
+                ]
+                x = x.drop(_ignore_vars)
+            else:
+                print(f"{self.ignore_vars} not found in x data")
 
         if self.experiment == "nowcast":
             target_var = [v for v in y.data_vars][0]
