@@ -623,6 +623,8 @@ class _BaseIter:
             x, x_datetimes
         )  # before to avoid aggs from surrounding pixels
 
+        assert False
+
         # calculate normalized values in these functions
         x_np, y_np = self._calculate_historical(x, y)
         x_months = self._calculate_target_months(y, x_np.shape[0])
