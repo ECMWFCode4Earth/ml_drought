@@ -613,7 +613,7 @@ class _BaseIter:
 
         if self.experiment == "nowcast":
             # only if the target variable is actually in the X data
-            if target_var in [v for v in x.data_vars]:
+            if self.target_var in [v for v in x.data_vars]:
                 # get the CURRENT / HISTORICAL data
                 # target_x = x[target_var].isel(time=slice(0, -1))
                 # x = x.drop(target_var)
