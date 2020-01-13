@@ -9,14 +9,14 @@ from scripts.engineer import engineer
 
 def run_engineer() -> None:
     engineer(
-        pred_months=12,
+        pred_months=3,
         experiment="nowcast",
         test_years=[y for y in range(2011, 2019)]
     )
 
 
 if __name__ == "__main__":
-
+    run_engineer()
     # NOTE: why have we downloaded 2 variables for ERA5 evaporaton
     # important_vars = ["VCI", "precip", "t2m", "pev", "p0005", "SMsurf", "SMroot"]
     # always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb", "E", "p0001"]
