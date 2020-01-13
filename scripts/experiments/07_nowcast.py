@@ -9,9 +9,7 @@ from scripts.engineer import engineer
 
 def run_engineer() -> None:
     engineer(
-        pred_months=3,
-        experiment="nowcast",
-        test_years=[y for y in range(2011, 2019)]
+        pred_months=3, experiment="nowcast", test_years=[y for y in range(2011, 2019)]
     )
 
 

@@ -15,10 +15,10 @@ from scripts.utils import get_data_path
 
 
 def parsimonious(experiment="one_month_forecast",):
-    print('\n\n** Baseline **')
+    print("\n\n** Baseline **")
     predictor = Persistence(get_data_path(), experiment=experiment)
     predictor.evaluate(save_preds=True)
-    print('\n\n')
+    print("\n\n")
 
 
 def regression(
@@ -30,7 +30,7 @@ def regression(
     ignore_vars=None,
     predict_delta=False,
 ):
-    print('\n\n** Regression **')
+    print("\n\n** Regression **")
     predictor = LinearRegression(
         get_data_path(),
         experiment=experiment,
@@ -46,7 +46,7 @@ def regression(
     # mostly to test it works
     if explain:
         predictor.explain(save_shap_values=True)
-    print('\n\n')
+    print("\n\n")
 
 
 def linear_nn(
@@ -62,7 +62,7 @@ def linear_nn(
     predict_delta=False,
     learning_rate=1e-3,
 ):
-    print('\n\n** Linear Network **')
+    print("\n\n** Linear Network **")
     predictor = LinearNetwork(
         layer_sizes=layer_sizes,
         data_folder=get_data_path(),
@@ -74,7 +74,8 @@ def linear_nn(
         predict_delta=predict_delta,
     )
     predictor.train(
-        num_epochs=num_epochs, early_stopping=early_stopping
+        num_epochs=num_epochs,
+        early_stopping=early_stopping,
         learning_rate=learning_rate,
     )
     predictor.evaluate(save_preds=True)
@@ -82,7 +83,8 @@ def linear_nn(
 
     if explain:
         _ = predictor.explain(save_shap_values=True)
-    print('\n\n')
+    print("\n\n")
+
 
 def rnn(
     experiment="one_month_forecast",
@@ -97,7 +99,7 @@ def rnn(
     predict_delta=False,
     learning_rate=1e-3,
 ):
-    print('\n\n** RNN **')
+    print("\n\n** RNN **")
     predictor = RecurrentNetwork(
         hidden_size=hidden_size,
         data_folder=get_data_path(),
@@ -109,7 +111,8 @@ def rnn(
         predict_delta=predict_delta,
     )
     predictor.train(
-        num_epochs=num_epochs, early_stopping=early_stopping,
+        num_epochs=num_epochs,
+        early_stopping=early_stopping,
         learning_rate=learning_rate,
     )
     predictor.evaluate(save_preds=True)
@@ -117,7 +120,7 @@ def rnn(
 
     if explain:
         _ = predictor.explain(save_shap_values=True)
-    print('\n\n')
+    print("\n\n")
 
 
 def earnn(
@@ -135,7 +138,7 @@ def earnn(
     predict_delta=False,
     learning_rate=1e-3,
 ):
-    print('\n\n** EALSTM **')
+    print("\n\n** EALSTM **")
     data_path = get_data_path()
 
     if not pretrained:
@@ -151,8 +154,9 @@ def earnn(
             predict_delta=predict_delta,
         )
         predictor.train(
-            num_epochs=num_epochs, early_stopping=early_stopping,
-            learning_rate=learning_rate
+            num_epochs=num_epochs,
+            early_stopping=early_stopping,
+            learning_rate=learning_rate,
         )
         predictor.evaluate(save_preds=True)
         predictor.save_model()
@@ -163,7 +167,7 @@ def earnn(
         test_file = data_path / f"features/{experiment}/test/2018_3"
         assert test_file.exists()
         all_explanations_for_file(test_file, predictor, batch_size=100)
-    print('\n\n')
+    print("\n\n")
 
 
 def gbdt(
@@ -176,7 +180,7 @@ def gbdt(
     ignore_vars=None,
     # predict_delta=False,
 ):
-    print('\n\n** GBDT **')
+    print("\n\n** GBDT **")
     data_path = get_data_path()
 
     # initialise, train and save GBDT model
@@ -191,4 +195,4 @@ def gbdt(
     predictor.train(early_stopping=5)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
-    print('\n\n')
+    print("\n\n")
