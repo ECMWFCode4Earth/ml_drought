@@ -464,7 +464,7 @@ class _BaseIter:
 
     def _calculate_aggs(self, x: xr.Dataset) -> np.ndarray:
         # SET -9999 to np.nan
-        # x = x.where(x[target_var] != -9999.)
+        # x = x.where(x[self.target_var] != -9999.)
 
         yearly_mean = x.mean(dim=["time", "lat", "lon"])
         yearly_agg = yearly_mean.to_array().values
@@ -485,7 +485,7 @@ class _BaseIter:
     ) -> Tuple[np.ndarray, np.ndarray]:
         # NOTE: for nowcast need to set these to nan so not calculating aggs
         # set all -9999 values to np.nan
-        # x = x.where(x[target_var] != -9999.)
+        # x = x.where(x[self.target_var] != -9999.)
         x_np, y_np = x.to_array().values, y.to_array().values
 
         x = self._add_extra_dims(x, self.surrounding_pixels, self.monthly_aggs)
@@ -594,6 +594,7 @@ class _BaseIter:
 
         x, y = xr.open_dataset(folder / "x.nc"), xr.open_dataset(folder / "y.nc")
         self.target_var = [v for v in y.data_vars][0]
+
         if self.predict_delta:
             # TODO: do this ONCE not at each read-in of the data
             y = self._calculate_change(x, y)
