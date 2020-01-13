@@ -600,15 +600,16 @@ class _BaseIter:
 
         if self.experiment == "nowcast":
             target_var = [v for v in y.data_vars][0]
-            # get the CURRENT / HISTORICAL data
-            x = x.drop(target_var)
-            target_x = x[target_var].isel(time=slice(0, -1))
             # only if the target variable is actually in the X data
             if target_var in [v for v in x.data_vars]:
+                # get the CURRENT / HISTORICAL data
+                target_x = x[target_var].isel(time=slice(0, -1))
+                x = x.drop(target_var)
+
                 # set all -9999 values to np.nan
                 # (BUT then all pixels are declared to have missing)
                 pass
-                # x = x.where(x[target_var] != -9999.)
+                x = x.where(x[target_var] != -9999.)
                 # TODO: test this tests/models/test_data.py:test_ds_to_np
                 # assert x.isel(time=-1)[target_var].isnull().mean() == 1
 
