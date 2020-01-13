@@ -30,6 +30,7 @@ def regression(
     ignore_vars=None,
     predict_delta=False,
 ):
+    print('\n\n** Regression **')
     predictor = LinearRegression(
         get_data_path(),
         experiment=experiment,
@@ -45,6 +46,7 @@ def regression(
     # mostly to test it works
     if explain:
         predictor.explain(save_shap_values=True)
+    print('\n\n')
 
 
 def linear_nn(
@@ -59,6 +61,7 @@ def linear_nn(
     layer_sizes=[100],
     predict_delta=False,
 ):
+    print('\n\n** Linear Network **')
     predictor = LinearNetwork(
         layer_sizes=layer_sizes,
         data_folder=get_data_path(),
@@ -75,7 +78,7 @@ def linear_nn(
 
     if explain:
         _ = predictor.explain(save_shap_values=True)
-
+    print('\n\n')
 
 def rnn(
     experiment="one_month_forecast",
@@ -89,6 +92,7 @@ def rnn(
     hidden_size=128,
     predict_delta=False,
 ):
+    print('\n\n** RNN **')
     predictor = RecurrentNetwork(
         hidden_size=hidden_size,
         data_folder=get_data_path(),
@@ -105,6 +109,7 @@ def rnn(
 
     if explain:
         _ = predictor.explain(save_shap_values=True)
+    print('\n\n')
 
 
 def earnn(
@@ -121,6 +126,7 @@ def earnn(
     hidden_size=128,
     predict_delta=False,
 ):
+    print('\n\n** EALSTM **')
     data_path = get_data_path()
 
     if not pretrained:
@@ -145,6 +151,7 @@ def earnn(
         test_file = data_path / f"features/{experiment}/test/2018_3"
         assert test_file.exists()
         all_explanations_for_file(test_file, predictor, batch_size=100)
+    print('\n\n')
 
 
 def gbdt(
@@ -157,6 +164,7 @@ def gbdt(
     ignore_vars=None,
     # predict_delta=False,
 ):
+    print('\n\n** GBDT **')
     data_path = get_data_path()
 
     # initialise, train and save GBDT model
@@ -171,3 +179,4 @@ def gbdt(
     predictor.train(early_stopping=5)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
+    print('\n\n')
