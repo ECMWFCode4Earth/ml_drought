@@ -20,6 +20,13 @@ def sort_by_median_target_variable(
     target_variable = [v for v in target_data.data_vars][0]
     median_data = target_data.resample(time="Y").median().median(dim=["lat", "lon"])
 
+    
+def sort_by_median_target_variable(
+    target_data: Union[xr.Dataset, xr.DataArray]
+) -> Tuple[np.array, pd.DataFrame]:
+    target_variable = [v for v in target_data.data_vars][0]
+    median_data = target_data.resample(time="Y").median().median(dim=["lat", "lon"])
+
     median_data = median_data.to_dataframe()
     median_data["year"] = median_data.index.year
 
