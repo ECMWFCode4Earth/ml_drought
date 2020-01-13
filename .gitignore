@@ -39,6 +39,7 @@ switch_data_dirs.sh
 .coverage*
 
 # vscode settings
-.vscode
+.vscode/*
+.vscode/settings.json
 # vscode options
 settings.json
