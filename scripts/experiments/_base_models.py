@@ -15,8 +15,10 @@ from scripts.utils import get_data_path
 
 
 def parsimonious(experiment="one_month_forecast",):
+    print('\n\n** Baseline **')
     predictor = Persistence(get_data_path(), experiment=experiment)
     predictor.evaluate(save_preds=True)
+    print('\n\n')
 
 
 def regression(
