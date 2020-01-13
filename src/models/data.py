@@ -595,8 +595,14 @@ class _BaseIter:
         assert len(list(y.data_vars)) == 1, (
             f"Expect only 1 target variable! " f"Got {len(list(y.data_vars))}"
         )
-        if self.ignore_vars is not None:
-            x = x.drop(self.ignore_vars)
+        if (self.ignore_vars is not None):
+            if (any(np.isin(self.ignore_vars, [v for v in x.data_vars]))):
+                _ignore_vars = np.array(self.ignore_vars)[
+                    np.isin(self.ignore_vars, [v for v in x.data_vars])
+                ]
+                x = x.drop(_ignore_vars)
+            else:
+                print(f"{self.ignore_vars} not found in x data")
 
         target_time = pd.to_datetime(y.time.values[0])
         if self.experiment == "nowcast":
