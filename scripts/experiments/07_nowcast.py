@@ -30,12 +30,12 @@ if __name__ == "__main__":
         "sp",
         "tp",
         "Eb",
-        "tprate_std_1",
-        "tprate_mean_1",
-        "tprate_std_2",
-        "tprate_mean_2",
-        "tprate_std_3",
-        "tprate_mean_3",
+        # "tprate_std_1",
+        # "tprate_mean_1",
+        # "tprate_std_2",
+        # "tprate_mean_2",
+        # "tprate_std_3",
+        # "tprate_mean_3",
     ]
 
     parsimonious(experiment="nowcast")
