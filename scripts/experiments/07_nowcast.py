@@ -52,7 +52,7 @@ if __name__ == "__main__":
         explain=False,
         static="features",
         ignore_vars=ignore_vars,
-        num_epochs=1,  #  50,
+        num_epochs=1,  #   50,
         early_stopping=5,
         hidden_size=256,
         static_embedding_size=64,
