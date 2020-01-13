@@ -10,10 +10,20 @@ from _base_models import parsimonious, regression, linear_nn, rnn, earnn
 import pandas as pd
 import numpy as np
 
-def sort_by_median_target_variable(target_variable: str = 'VCI'):
+def sort_by_median_target_variable(
+    target_data: Union[xr.Dataset, xr.DataArray]
+) -> Tuple[np.array, pd.DataFrame]:
+    target_variable = [v for v in target_data.data_vars][0]
+    median_data = target_data.resample(time="Y").median().median(dim=["lat", "lon"])
 
-    sorted_list = df.sortby('VCI').
-    return sorted_list
+    median_data = median_data.to_dataframe()
+    median_data["year"] = median_data.index.year
+
+    # sorted low to high
+    sorted_df = median_data.sort_values(target_variable)
+    sorted_years = sorted_df.year
+
+    return sorted_years.values, sorted_df
 
 
 def get_training_years(length: int, hilo: str):
