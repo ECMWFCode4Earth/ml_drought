@@ -16,7 +16,7 @@ def run_engineer() -> None:
 
 
 if __name__ == "__main__":
-    run_engineer()
+    # run_engineer()
 
     # NOTE: why have we downloaded 2 variables for ERA5 evaporaton
     # important_vars = ["VCI", "precip", "t2m", "pev", "p0005", "SMsurf", "SMroot"]
