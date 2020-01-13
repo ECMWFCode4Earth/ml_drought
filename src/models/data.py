@@ -597,7 +597,7 @@ class _BaseIter:
         )
 
         if any(np.isin(self.ignore_vars, [v for v in x.data_vars])):
-            _ignore_vars = self.ignore_vars[
+            _ignore_vars = np.array(self.ignore_vars)[
                 np.isin(self.ignore_vars, [v for v in x.data_vars])
             ]
             x = x.drop(_ignore_vars)
