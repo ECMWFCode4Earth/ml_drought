@@ -462,8 +462,8 @@ class _BaseIter:
         )
         return normalizing_array
 
-    def _calculate_aggs(self, x: xr.Dataset) -> np.ndarray:
-        yearly_mean = x.mean(dim=["time", "lat", "lon"])
+    def _calculate_aggs(self, x: xr.Dataset, x_datetimes: List[pd.Timestamp]) -> np.ndarray:
+        yearly_mean = x.sel(time=x_datetimes).mean(dim=["time", "lat", "lon"])
         yearly_agg = yearly_mean.to_array().values
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
@@ -588,14 +588,6 @@ class _BaseIter:
 
         x, y = xr.open_dataset(folder / "x.nc"), xr.open_dataset(folder / "y.nc")
 
-        if self.experiment == "nowcast":
-            target_var = [v for v in y.data_vars][0]
-            # set all -9999 values to np.nan
-            # (BUT then all pixels are declared to have missing)
-            x = x.where(x[target_var] != -9999.)
-            # TODO: test this tests/models/test_data.py:test_ds_to_np
-            # assert x.isel(time=-1)[target_var].isnull().mean() == 1
-
         if self.predict_delta:
             # TODO: do this ONCE not at each read-in of the data
             y = self._calculate_change(x, y)
@@ -605,6 +597,17 @@ class _BaseIter:
         )
         if self.ignore_vars is not None:
             x = x.drop(self.ignore_vars)
+
+        if self.experiment == "nowcast":
+            target_var = [v for v in y.data_vars][0]
+
+            # only if the target variable is actually in the X data
+            if target_var in [v for v in x.data_vars]:
+                # set all -9999 values to np.nan
+                # (BUT then all pixels are declared to have missing)
+                x = x.where(x[target_var] != -9999.)
+                # TODO: test this tests/models/test_data.py:test_ds_to_np
+                # assert x.isel(time=-1)[target_var].isnull().mean() == 1
 
         target_time = pd.to_datetime(y.time.values[0])
         if self.experiment == "nowcast":
@@ -617,7 +620,7 @@ class _BaseIter:
             x_datetimes = [pd.to_datetime(time) for time in x.time.values]
 
         yearly_agg = self._calculate_aggs(
-            x
+            x, x_datetimes
         )  # before to avoid aggs from surrounding pixels
 
         # calculate normalized values in these functions
