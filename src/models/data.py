@@ -591,6 +591,7 @@ class _BaseIter:
         if self.experiment == "nowcast":
             target_var = [v for v in y.data_vars][0]
             # set all -9999 values to np.nan
+            # (BUT then all pixels are declared to have missing)
             x = x.where(x[target_var] != -9999.)
             # TODO: test this tests/models/test_data.py:test_ds_to_np
             # assert x.isel(time=-1)[target_var].isnull().mean() == 1
@@ -846,7 +847,6 @@ class _TestIter(_BaseIter):
                     subfolder, clear_nans=self.clear_nans, to_tensor=self.to_tensor
                 )
                 if arrays.x.historical.shape[0] == 0:
-                    assert False
                     print(f"{subfolder} returns no values. Skipping")
                     # remove the empty element from the list
                     self.data_files.pop(self.idx)

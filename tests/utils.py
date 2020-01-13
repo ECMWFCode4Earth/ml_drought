@@ -121,7 +121,5 @@ def _create_features_dir(
             (30, 30), variable_name="precip", start_date=prev_date, end_date=prev_date
         )
         ds = xr.auto_combine([vci, precip])
-        # if dir_name != '1998_12':
-        # assert False
 
         ds.to_netcdf(features_dir / dir_name / "X.nc")
