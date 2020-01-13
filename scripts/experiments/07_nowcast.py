@@ -8,7 +8,11 @@ from scripts.engineer import engineer
 
 
 def run_engineer() -> None:
-    engineer(pred_months=12, experiment="nowcast")
+    engineer(
+        pred_months=12,
+        experiment="nowcast",
+        test_years=[y for y in range(2011, 2019)]
+    )
 
 
 if __name__ == "__main__":
