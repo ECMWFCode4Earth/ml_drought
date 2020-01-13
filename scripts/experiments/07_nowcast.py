@@ -10,7 +10,13 @@ if __name__ == "__main__":
     # important_vars = ["VCI", "precip", "t2m", "pev", "p0005", "SMsurf", "SMroot"]
     # always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb", "E", "p0001"]
     important_vars = ["VCI", "precip", "t2m", "pev", "E", "SMsurf", "SMroot"]
-    always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb"]
+
+    # IGNORE the forecast precip too (to begin with)!
+    always_ignore_vars = [
+        "ndvi", "p84.162", "sp", "tp", "Eb",
+        "tprate_std_1", "tprate_mean_1", "tprate_std_2", "tprate_mean_2",
+        "tprate_std_3", "tprate_mean_3",
+    ]
 
     parsimonious(experiment="nowcast")
     # regression(ignore_vars=always_ignore_vars)
@@ -25,7 +31,7 @@ if __name__ == "__main__":
         explain=False,
         static="features",
         ignore_vars=always_ignore_vars,
-        num_epochs=50,
+        num_epochs=1,  # 50,
         early_stopping=5,
         hidden_size=256,
         static_embedding_size=64,
