@@ -4,7 +4,7 @@ sys.path.append("../..")
 
 from scripts.utils import _rename_directory, get_data_path
 from _base_models import parsimonious, regression, linear_nn, rnn, earnn
-from srcipts.engineer import engineer
+from scripts.engineer import engineer
 
 
 def run_engineer() -> None:
