@@ -600,7 +600,9 @@ class _BaseIter:
 
         if self.experiment == "nowcast":
             target_var = [v for v in y.data_vars][0]
-
+            # get the CURRENT / HISTORICAL data
+            x = x.drop(target_var)
+            target_x = x[target_var].isel(time=slice(0, -1))
             # only if the target variable is actually in the X data
             if target_var in [v for v in x.data_vars]:
                 # set all -9999 values to np.nan
@@ -623,8 +625,6 @@ class _BaseIter:
         yearly_agg = self._calculate_aggs(
             x, x_datetimes
         )  # before to avoid aggs from surrounding pixels
-
-        assert False
 
         # calculate normalized values in these functions
         x_np, y_np = self._calculate_historical(x, y)
