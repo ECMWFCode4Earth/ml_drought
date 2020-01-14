@@ -101,6 +101,8 @@ def run_all_models_as_experiments(
             logging.debug(e)
 
         try:
+            # NO NEED to run the EALSTM without static data because
+            # just equivalent to the RNN
             earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
         except KeyboardInterrupt:
             raise
@@ -111,7 +113,7 @@ def run_all_models_as_experiments(
             logging.debug(e)
 
     # RENAME DIRECTORY
-    data_dir = get_data_path()
+    data_dir = get_data_path().absolute()
     rename_model_experiment_file(data_dir, vars_to_include, static)
     print(f"Experiment {vars_to_include} finished")
 

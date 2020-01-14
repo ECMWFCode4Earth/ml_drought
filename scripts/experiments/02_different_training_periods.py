@@ -1,6 +1,5 @@
 """
 RERUN:
-========
 chose 8 test years?
 test_hilo: high / train_hilo: high / train_length: 5
 _one_month_forecast_TRhigh_TEhigh_LEN5/test
@@ -29,11 +28,6 @@ chose 1981 as a test year
 test_hilo: high / train_hilo: low / train_length: 5
 one_month_forecast_TRlow_TEhigh_LEN5
 """
-from _base_models import parsimonious, regression, linear_nn, rnn, earnn
-from src.analysis import all_explanations_for_file
-from src.analysis import read_train_data, read_test_data
-from src.engineer import Engineer
-from scripts.utils import get_data_path, _rename_directory
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -45,6 +39,12 @@ from typing import List, Union, Tuple, Dict, Optional
 import sys
 
 sys.path.append("../..")
+
+from _base_models import parsimonious, regression, linear_nn, rnn, earnn
+from src.analysis import all_explanations_for_file
+from src.analysis import read_train_data, read_test_data
+from src.engineer import Engineer
+from scripts.utils import get_data_path, _rename_directory
 
 
 def sort_by_median_target_variable(
@@ -201,6 +201,12 @@ def rename_experiment_dir(
     # with_datetime ensures that unique
     _rename_directory(from_path, to_path, with_datetime=True)
 
+    # 2. select randomly the TEST years from these groups
+    test_years = np.random.choice(test_dict[test_hilo], test_length, replace=False)
+    # test_indexes = np.array(
+    #     [np.where(test_dict[test_hilo] == i) for i in test_years]
+    # ).flatten()
+
 
 def run_experiments(
     train_hilo: str,
@@ -298,6 +304,11 @@ class Experiment:
 
         assert train_hilo in ["high", "med", "low"]
         assert test_hilo in ["high", "med", "low"]
+
+        try:
+            earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
+        except RuntimeError:
+            print(f"\n{'*'*10}\n FAILED: EALSTM \n{'*'*10}\n")
 
 
 def run_training_period_experiments(pred_months: int = 3):
