@@ -18,5 +18,5 @@ __all__ = [
     "ESACCIPreprocessor",
     "SRTMPreprocessor",
     "KenyaAdminPreprocessor",
-    "KenyaASALMask"
+    "KenyaASALMask",
 ]

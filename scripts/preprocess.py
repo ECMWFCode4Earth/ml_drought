@@ -10,7 +10,7 @@ from src.preprocess import (
     ESACCIPreprocessor,
     SRTMPreprocessor,
     ERA5MonthlyMeanPreprocessor,
-    KenyaASALMask
+    KenyaASALMask,
 )
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor

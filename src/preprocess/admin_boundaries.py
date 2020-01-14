@@ -47,7 +47,7 @@ class OCHAAdminBoundariesPreprocesser(BasePreProcessor):
         reference_nc_filepath: Path,
         var_name: str,
         lookup_colname: str,
-        save: bool = True
+        save: bool = True,
     ) -> Optional[xr.Dataset]:
         """ Preprocess .shp admin boundary files into an `.nc`
         file with the same shape as reference_nc_filepath.
@@ -79,7 +79,7 @@ class OCHAAdminBoundariesPreprocesser(BasePreProcessor):
                 "process again then move or delete existing file"
                 f" at: {(self.out_dir / filename).as_posix()}"
             )
-            return
+            return None
 
         assert "interim" in reference_nc_filepath.parts, (
             "Expected " "the target data to have been preprocessed by the pipeline"
@@ -105,12 +105,15 @@ class OCHAAdminBoundariesPreprocesser(BasePreProcessor):
 
             if self.analysis is True:
                 assert self.out_dir.parts[-2] == "analysis", (
-                    "self.analysis should" "be True and the output directory should be analysis"
+                    "self.analysis should"
+                    "be True and the output directory should be analysis"
                 )
 
             ds.to_netcdf(self.out_dir / filename)
 
             print(f"** {(self.out_dir / filename).as_posix()} saved! **")
+
+            return None
         else:
             return ds
 
@@ -197,9 +200,17 @@ class KenyaASALMask(KenyaAdminPreprocessor):
     analysis = False
 
     asal_districts = [
-        'TURKANA', 'MANDERA', 'SAMBURU', 'GARISSA', 'MARSABIT',
-        'WAJIR', 'TANA RIVER', 'WEST POKOT', 'ISIOLO', 'KITUI',
-        'MOYALE'
+        "TURKANA",
+        "MANDERA",
+        "SAMBURU",
+        "GARISSA",
+        "MARSABIT",
+        "WAJIR",
+        "TANA RIVER",
+        "WEST POKOT",
+        "ISIOLO",
+        "KITUI",
+        "MOYALE",
     ]
 
     @staticmethod
@@ -212,7 +223,11 @@ class KenyaASALMask(KenyaAdminPreprocessor):
             )
         )
 
-    def preprocess(self, reference_nc_filepath: Path) -> None:
+    def preprocess(
+        self, reference_nc_filepath: Path, selection: str = "level_2"
+    ) -> None:
+
+        assert selection == "level_2", f"Only level 2 supported, got {selection}"
         district_boundaries = self.get_admin_level("level_2")
 
         ds = self._preprocess_single(
@@ -220,8 +235,10 @@ class KenyaASALMask(KenyaAdminPreprocessor):
             lookup_colname=district_boundaries.lookup_colname,
             reference_nc_filepath=reference_nc_filepath,
             var_name=district_boundaries.var_name,
-            save=False
+            save=False,
         )
+
+        assert isinstance(ds, xr.Dataset)
 
         val2key = self.val_to_key(ds)
         relevant_keys = [val2key.get(district) for district in self.asal_districts]
