@@ -29,7 +29,8 @@ class TrainData:
         for key, val in self.__dict__.items():
             if val is not None:
                 if type(val) is np.ndarray:
-                    setattr(self, key, torch.from_numpy(val).to(device).float())
+                    setattr(self, key, torch.from_numpy(
+                        val).to(device).float())
 
     def concatenate(self, x: TrainData):
         # Note this function will only concatenate values from x
@@ -83,11 +84,13 @@ class ModelArrays:
         if self.x.current is not None:
             # NOTE: historical times is one less for nowcast?
             assert (
-                len(self.historical_times) == self.x.historical.shape[1]  # type: ignore
+                # type: ignore
+                len(self.historical_times) == self.x.historical.shape[1]
             ), "second dim is # timesteps"
         else:
             assert (
-                len(self.historical_times) == self.x.historical.shape[1]  # type: ignore
+                # type: ignore
+                len(self.historical_times) == self.x.historical.shape[1]
             ), "second dim is # timesteps"
         variables = self.x_vars
         latitudes = np.unique(self.latlons[:, 0])  # type: ignore
@@ -112,7 +115,8 @@ class ModelArrays:
                             ),
                         )
                     },
-                    coords={"lat": latitudes, "lon": longitudes, "time": times},
+                    coords={"lat": latitudes,
+                            "lon": longitudes, "time": times},
                 )
             )
 
@@ -127,7 +131,8 @@ class ModelArrays:
                     self.y.reshape(len(latitudes), len(longitudes), 1),
                 )
             },
-            coords={"lat": latitudes, "lon": longitudes, "time": [self.target_time]},
+            coords={"lat": latitudes, "lon": longitudes,
+                    "time": [self.target_time]},
         )
 
         # if experiment == 'nowcast'
@@ -303,7 +308,8 @@ class DataLoader:
 
         if static is not None:
             if static == "features":
-                self.static = xr.open_dataset(data_path / "features/static/data.nc")
+                self.static = xr.open_dataset(
+                    data_path / "features/static/data.nc")
                 if normalize:
                     static_normalizer_path = (
                         data_path / "features/static/normalizing_dict.pkl"
@@ -374,7 +380,8 @@ class DataLoader:
             assert len(output_paths) == len(
                 mask
             ), f"Output path and mask must be the same length!"
-            output_paths = [o_p for o_p, include in zip(output_paths, mask) if include]
+            output_paths = [o_p for o_p, include in zip(
+                output_paths, mask) if include]
         if shuffle_data:
             shuffle(output_paths)
         return output_paths
@@ -436,7 +443,8 @@ class _BaseIter:
                     break
 
         normalizing_array = cast(
-            Dict[str, np.ndarray], {"mean": np.asarray(mean), "std": np.asarray(std)}
+            Dict[str, np.ndarray], {
+                "mean": np.asarray(mean), "std": np.asarray(std)}
         )
         return normalizing_array
 
@@ -444,7 +452,8 @@ class _BaseIter:
         self, data_vars: List[str]
     ) -> Dict[str, np.ndarray]:
         # If we've made it here, normalizing_dict is definitely not None
-        self.normalizing_dict = cast(Dict[str, Dict[str, float]], self.normalizing_dict)
+        self.normalizing_dict = cast(
+            Dict[str, Dict[str, float]], self.normalizing_dict)
 
         mean, std = [], []
         normalizing_dict_keys = self.normalizing_dict.keys()
@@ -463,9 +472,6 @@ class _BaseIter:
         return normalizing_array
 
     def _calculate_aggs(self, x: xr.Dataset) -> np.ndarray:
-        # SET -9999 to np.nan
-        # x = x.where(x[self.target_var] != -9999.)
-
         yearly_mean = x.mean(dim=["time", "lat", "lon"])
         yearly_agg = yearly_mean.to_array().values
 
@@ -483,23 +489,23 @@ class _BaseIter:
     def _calculate_historical(
         self, x: xr.Dataset, y: xr.Dataset
     ) -> Tuple[np.ndarray, np.ndarray]:
-        # NOTE: for nowcast need to set these to nan so not calculating aggs
-        # set all -9999 values to np.nan
-        # x = x.where(x[self.target_var] != -9999.)
-        x_np, y_np = x.to_array().values, y.to_array().values
-
         x = self._add_extra_dims(x, self.surrounding_pixels, self.monthly_aggs)
 
+        x_np, y_np = x.to_array().values, y.to_array().values
+
         # first, x
-        x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
+        x_np = x_np.reshape(
+            x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
         x_np = np.moveaxis(np.moveaxis(x_np, 0, 1), -1, 0)
 
         # then, y
-        y_np = y_np.reshape(y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
+        y_np = y_np.reshape(
+            y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
         y_np = np.moveaxis(y_np, -1, 0).reshape(-1, 1)
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
-            self.normalizing_array = self.calculate_normalizing_array(list(x.data_vars))
+            self.normalizing_array = self.calculate_normalizing_array(
+                list(x.data_vars))
             x_np = (x_np - self.normalizing_array["mean"]) / (
                 self.normalizing_array["std"]
             )
@@ -592,8 +598,8 @@ class _BaseIter:
         self, folder: Path, clear_nans: bool = True, to_tensor: bool = False
     ) -> ModelArrays:
 
-        x, y = xr.open_dataset(folder / "x.nc"), xr.open_dataset(folder / "y.nc")
-        self.target_var = [v for v in y.data_vars][0]
+        x, y = xr.open_dataset(
+            folder / "x.nc"), xr.open_dataset(folder / "y.nc")
 
         if self.predict_delta:
             # TODO: do this ONCE not at each read-in of the data
@@ -602,7 +608,6 @@ class _BaseIter:
         assert len(list(y.data_vars)) == 1, (
             f"Expect only 1 target variable! " f"Got {len(list(y.data_vars))}"
         )
-
         if (self.ignore_vars is not None):
             if (any(np.isin(self.ignore_vars, [v for v in x.data_vars]))):
                 _ignore_vars = np.array(self.ignore_vars)[
@@ -611,20 +616,6 @@ class _BaseIter:
                 x = x.drop(_ignore_vars)
             else:
                 print(f"{self.ignore_vars} not found in x data")
-
-        if self.experiment == "nowcast":
-            # only if the target variable is actually in the X data
-            if self.target_var in [v for v in x.data_vars]:
-                # get the CURRENT / HISTORICAL data
-                # target_x = x[target_var].isel(time=slice(0, -1))
-                # x = x.drop(target_var)
-
-                # set all -9999 values to np.nan
-                # (BUT then all pixels are declared to have missing)
-                pass
-                # x = x.where(x[target_var] != -9999.)
-                # TODO: test this tests/models/test_data.py:test_ds_to_np
-                # assert x.isel(time=-1)[target_var].isnull().mean() == 1
 
         target_time = pd.to_datetime(y.time.values[0])
         if self.experiment == "nowcast":
@@ -684,7 +675,8 @@ class _BaseIter:
 
         if clear_nans:
             # remove nans if they are in the x or y data
-            historical_nans, y_nans = np.isnan(train_data.historical), np.isnan(y_np)
+            historical_nans, y_nans = np.isnan(
+                train_data.historical), np.isnan(y_np)
             if train_data.static is not None:
                 static_nans = np.isnan(train_data.static)
                 static_nans_summed = static_nans.sum(axis=-1)
@@ -712,7 +704,8 @@ class _BaseIter:
                     & (current_nans_summed == 0)
                     & (static_nans_summed == 0)
                 )[0]
-                train_data.current = train_data.current[notnan_indices]  # type: ignore
+                # type: ignore
+                train_data.current = train_data.current[notnan_indices]
 
             train_data.historical = train_data.historical[notnan_indices]
             train_data.pred_months = train_data.pred_months[
@@ -745,7 +738,8 @@ class _BaseIter:
             # NOTE: data is not normalised in this function
             model_arrays.predict_delta = True
             historical_target_np = self._calculate_historical_target(x, y_var)
-            historical_target_np = historical_target_np[notnan_indices].flatten()
+            historical_target_np = historical_target_np[notnan_indices].flatten(
+            )
             model_arrays.historical_target = historical_target_np
         return model_arrays
 
@@ -764,14 +758,16 @@ class _BaseIter:
                 x[f"spatial_mean_{var}"] = mean_dataset[var]
 
         if surrounding_pixels is not None:
-            lat_shifts = lon_shifts = range(-surrounding_pixels, surrounding_pixels + 1)
+            lat_shifts = lon_shifts = range(-surrounding_pixels,
+                                            surrounding_pixels + 1)
             for var in original_vars:
                 for lat_shift in lat_shifts:
                     for lon_shift in lon_shifts:
                         if lat_shift == lon_shift == 0:
                             continue
                         shifted_varname = f"lat_{lat_shift}_lon_{lon_shift}_{var}"
-                        x[shifted_varname] = x[var].shift(lat=lat_shift, lon=lon_shift)
+                        x[shifted_varname] = x[var].shift(
+                            lat=lat_shift, lon=lon_shift)
         return x
 
     @staticmethod
@@ -783,7 +779,8 @@ class _BaseIter:
         target_time = y.time
         x_datetimes = [pd.to_datetime(time) for time in x.time.values]
         y_datetime = pd.to_datetime(target_time.values[0])
-        time_ix = [ix for ix, time in enumerate(x_datetimes) if time == y_datetime][0]
+        time_ix = [ix for ix, time in enumerate(
+            x_datetimes) if time == y_datetime][0]
 
         # get the X features and X feature indices
         relevant_indices = [
