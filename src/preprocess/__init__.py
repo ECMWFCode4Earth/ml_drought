@@ -6,7 +6,7 @@ from .seas5 import S5Preprocessor
 from .era5 import ERA5MonthlyMeanPreprocessor
 from .esa_cci import ESACCIPreprocessor
 from .srtm import SRTMPreprocessor
-from .admin_boundaries import KenyaAdminPreprocessor
+from .admin_boundaries import KenyaAdminPreprocessor, KenyaASALMask
 
 __all__ = [
     "VHIPreprocessor",
@@ -18,4 +18,5 @@ __all__ = [
     "ESACCIPreprocessor",
     "SRTMPreprocessor",
     "KenyaAdminPreprocessor",
+    "KenyaASALMask"
 ]

@@ -10,6 +10,7 @@ from src.preprocess import (
     ESACCIPreprocessor,
     SRTMPreprocessor,
     ERA5MonthlyMeanPreprocessor,
+    KenyaASALMask
 )
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
@@ -109,11 +110,21 @@ def preprocess_kenya_boundaries(selection: str = "level_1"):
 
     data_path = get_data_path()
 
-    regrid_path = data_path / "interim/chirps_preprocessed/chirps_kenya.nc"
+    regrid_path = data_path / "interim/chirps_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
 
     processor = KenyaAdminPreprocessor(data_path)
     processor.preprocess(reference_nc_filepath=regrid_path, selection=selection)
+
+
+def preprocess_asal_mask():
+    data_path = get_data_path()
+
+    regrid_path = data_path / "interim/chirps_preprocessed/data_kenya.nc"
+    assert regrid_path.exists(), f"{regrid_path} not available"
+
+    processor = KenyaASALMask(data_path)
+    processor.preprocess(reference_nc_filepath=regrid_path)
 
 
 def preprocess_era5():
@@ -127,13 +138,14 @@ def preprocess_era5():
 
 
 if __name__ == "__main__":
-    process_vci_2018()
-    process_precip_2018()
-    process_era5POS_2018()
-    process_gleam()
-    process_esa_cci_landcover()
-    preprocess_srtm()
-    preprocess_era5()
-    preprocess_kenya_boundaries(selection="level_1")
-    preprocess_kenya_boundaries(selection="level_2")
-    preprocess_kenya_boundaries(selection="level_3")
+    # process_vci_2018()
+    # process_precip_2018()
+    # process_era5POS_2018()
+    # process_gleam()
+    # process_esa_cci_landcover()
+    # preprocess_srtm()
+    # preprocess_era5()
+    # preprocess_kenya_boundaries(selection="level_1")
+    # preprocess_kenya_boundaries(selection="level_2")
+    # preprocess_kenya_boundaries(selection="level_3")
+    preprocess_asal_mask()
