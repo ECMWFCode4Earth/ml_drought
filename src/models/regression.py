@@ -31,6 +31,7 @@ class LinearRegression(ModelBase):
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
         predict_delta: bool = False,
+        spatial_mask: Optional[Path] = None,
     ) -> None:
         super().__init__(
             data_folder,
@@ -45,6 +46,7 @@ class LinearRegression(ModelBase):
             ignore_vars,
             static,
             predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
         )
 
         self.explainer: Optional[shap.LinearExplainer] = None
@@ -92,6 +94,9 @@ class LinearRegression(ModelBase):
                 for batch_x, batch_y in chunk_array(x, y, batch_size, shuffle=True):
                     batch_y = cast(np.ndarray, batch_y)
                     x_in = self._concatenate_data(batch_x)
+
+                    if x_in.shape[0] == 0:
+                        pass
 
                     # fit the model
                     self.model.partial_fit(x_in, batch_y.ravel())

@@ -243,8 +243,7 @@ class KenyaASALMask(KenyaAdminPreprocessor):
         val2key = self.val_to_key(ds)
         relevant_keys = [val2key.get(district) for district in self.asal_districts]
 
-        ds["mask"] = ds.district_l2.isin(relevant_keys).astype(int)
-
+        ds["mask"] = (~ds.district_l2.isin(relevant_keys)).astype(float)
         # save
         filename = "kenya_asal_mask.nc"
         ds.to_netcdf(self.out_dir / filename)
