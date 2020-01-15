@@ -27,6 +27,7 @@ def regression(
     static="features",
     ignore_vars=None,
     predict_delta=False,
+    spatial_mask=None
 ):
     predictor = LinearRegression(
         get_data_path(),
@@ -36,6 +37,8 @@ def regression(
         static=static,
         ignore_vars=ignore_vars,
         predict_delta=predict_delta,
+        spatial_mask=spatial_mask
+
     )
     predictor.train()
     predictor.evaluate(save_preds=True)
@@ -56,6 +59,7 @@ def linear_nn(
     early_stopping=5,
     layer_sizes=[100],
     predict_delta=False,
+    spatial_mask=None
 ):
     predictor = LinearNetwork(
         layer_sizes=layer_sizes,
@@ -66,6 +70,7 @@ def linear_nn(
         static=static,
         ignore_vars=ignore_vars,
         predict_delta=predict_delta,
+        spatial_mask=spatial_mask
     )
     predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)
@@ -86,6 +91,7 @@ def rnn(
     early_stopping=5,
     hidden_size=128,
     predict_delta=False,
+    spatial_mask=None
 ):
     predictor = RecurrentNetwork(
         hidden_size=hidden_size,
@@ -96,6 +102,7 @@ def rnn(
         static=static,
         ignore_vars=ignore_vars,
         predict_delta=predict_delta,
+        spatial_mask=spatial_mask
     )
     predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)
@@ -118,6 +125,7 @@ def earnn(
     static_embedding_size=10,
     hidden_size=128,
     predict_delta=False,
+    spatial_mask=None
 ):
     data_path = get_data_path()
 
@@ -132,6 +140,7 @@ def earnn(
             static_embedding_size=static_embedding_size,
             ignore_vars=ignore_vars,
             predict_delta=predict_delta,
+            spatial_mask=spatial_mask
         )
         predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
         predictor.evaluate(save_preds=True)
@@ -154,6 +163,7 @@ def gbdt(
     static="features",
     ignore_vars=None,
     # predict_delta=False,
+    spatial_mask=None
 ):
     data_path = get_data_path()
 
@@ -165,6 +175,7 @@ def gbdt(
         surrounding_pixels=surrounding_pixels,
         static=static,
         ignore_vars=ignore_vars,
+        spatial_mask=spatial_mask
     )
     predictor.train(early_stopping=5)
     predictor.evaluate(save_preds=True)
