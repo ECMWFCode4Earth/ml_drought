@@ -1,6 +1,7 @@
 import sys
 
-sys.path.append("..")
+sys.path.append("../..")
+
 from src.exporters import (
     ERA5Exporter,
     VHIExporter,
