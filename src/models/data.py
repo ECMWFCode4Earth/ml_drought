@@ -334,11 +334,13 @@ class DataLoader:
     def prepare_mask(spatial_mask: Optional[xr.DataArray]) -> Optional[xr.DataArray]:
         if spatial_mask is None:
             return None
-        # anywhere where the mask is 1, we make NaN
-        spatial_mask.values[spatial_mask.values == 1] = float("NaN")
-        spatial_mask.values[spatial_mask.values == 0] = 1
 
-        return spatial_mask
+        prepared_mask = spatial_mask.copy(deep=True)
+        # anywhere where the mask is 1, we make NaN
+        prepared_mask.values[prepared_mask.values == 1] = float("NaN")
+        prepared_mask.values[prepared_mask.values == 0] = 1
+
+        return prepared_mask
 
     @staticmethod
     def _loc_to_int(base_ds: xr.Dataset) -> Tuple[xr.Dataset, int]:
@@ -699,7 +701,6 @@ class _BaseIter:
                 & (y_nans_summed == 0)
                 & (static_nans_summed == 0)
             )[0]
-
             if self.experiment == "nowcast":
                 current_nans = np.isnan(train_data.current)
                 current_nans_summed = current_nans.sum(axis=-1)

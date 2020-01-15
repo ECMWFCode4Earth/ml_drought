@@ -28,7 +28,7 @@ def parsimonious(experiment="one_month_forecast",):
 
 
 def regression(
-    experiment="one_month_forecast", include_pred_month=True, surrounding_pixels=1
+    experiment="one_month_forecast", include_pred_month=True, surrounding_pixels=None
 ):
 
     data_path = get_data_path()
@@ -107,7 +107,7 @@ def earnn(
 
 
 if __name__ == "__main__":
-    parsimonious()
+    # parsimonious()
     regression()
     # linear_nn()
     # rnn()
