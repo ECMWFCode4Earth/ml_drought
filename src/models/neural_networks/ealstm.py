@@ -49,7 +49,7 @@ class EARecurrentNetwork(NNBase):
             static,
             device,
             predict_delta=predict_delta,
-            spatial_mask=spatial_mask
+            spatial_mask=spatial_mask,
         )
 
         # to initialize and save the model
@@ -98,7 +98,7 @@ class EARecurrentNetwork(NNBase):
             "ignore_vars": self.ignore_vars,
             "static": self.static,
             "device": self.device,
-            "spatial_mask": self.spatial_mask
+            "spatial_mask": self.spatial_mask,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")

@@ -48,7 +48,7 @@ class NNBase(ModelBase):
             ignore_vars=ignore_vars,
             static=static,
             predict_delta=predict_delta,
-            spatial_mask=spatial_mask
+            spatial_mask=spatial_mask,
         )
 
         # for reproducibility

@@ -96,12 +96,15 @@ class ModelBase:
         self.device = "cpu"
 
     @staticmethod
-    def _load_spatial_mask(mask: Union[Path, xr.DataArray, None] = None) -> Optional[xr.DataArray]:
+    def _load_spatial_mask(
+        mask: Union[Path, xr.DataArray, None] = None
+    ) -> Optional[xr.DataArray]:
         if (mask is None) or isinstance(mask, xr.DataArray):
             return mask
         elif isinstance(mask, Path):
             mask = xr.open_dataset(mask)
             return mask["mask"]
+        return None
 
     def _convert_delta_to_raw_values(
         self, x: xr.Dataset, y: xr.Dataset, y_var: str, order: int = 1

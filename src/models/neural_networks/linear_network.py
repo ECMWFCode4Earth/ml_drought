@@ -46,7 +46,7 @@ class LinearNetwork(NNBase):
             static,
             device,
             predict_delta=predict_delta,
-            spatial_mask=spatial_mask
+            spatial_mask=spatial_mask,
         )
 
         self.input_layer_sizes = copy(layer_sizes)
@@ -79,7 +79,7 @@ class LinearNetwork(NNBase):
             "include_yearly_aggs": self.include_yearly_aggs,
             "static": self.static,
             "device": self.device,
-            "spatial_mask": self.spatial_mask
+            "spatial_mask": self.spatial_mask,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")

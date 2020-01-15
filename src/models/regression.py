@@ -179,7 +179,7 @@ class LinearRegression(ModelBase):
             "include_monthly_aggs": self.include_monthly_aggs,
             "include_yearly_aggs": self.include_yearly_aggs,
             "static": self.static,
-            "spatial_mask": self.spatial_mask
+            "spatial_mask": self.spatial_mask,
         }
 
         with (self.model_dir / "model.pkl").open("wb") as f:
