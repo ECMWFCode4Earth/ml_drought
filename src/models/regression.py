@@ -3,10 +3,11 @@ from pathlib import Path
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error
 import pickle
+import xarray as xr
 
 import shap
 
-from typing import cast, Dict, List, Tuple, Optional
+from typing import cast, Dict, List, Tuple, Optional, Union
 
 from .base import ModelBase
 from .utils import chunk_array
@@ -31,7 +32,7 @@ class LinearRegression(ModelBase):
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
         predict_delta: bool = False,
-        spatial_mask: Optional[Path] = None,
+        spatial_mask: Union[xr.DataArray, Path] = None,
     ) -> None:
         super().__init__(
             data_folder,
@@ -178,6 +179,7 @@ class LinearRegression(ModelBase):
             "include_monthly_aggs": self.include_monthly_aggs,
             "include_yearly_aggs": self.include_yearly_aggs,
             "static": self.static,
+            "spatial_mask": self.spatial_mask
         }
 
         with (self.model_dir / "model.pkl").open("wb") as f:

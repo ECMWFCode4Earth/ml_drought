@@ -55,7 +55,7 @@ class ModelBase:
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "embedding",
         predict_delta: bool = False,
-        spatial_mask: Optional[Path] = None,
+        spatial_mask: Union[xr.DataArray, Path] = None,
     ) -> None:
 
         self.batch_size = batch_size
@@ -96,11 +96,11 @@ class ModelBase:
         self.device = "cpu"
 
     @staticmethod
-    def _load_spatial_mask(mask_path: Optional[Path] = None) -> Optional[xr.DataArray]:
-        if mask_path is None:
-            return None
-        else:
-            mask = xr.open_dataset(mask_path)
+    def _load_spatial_mask(mask: Union[Path, xr.DataArray, None] = None) -> Optional[xr.DataArray]:
+        if (mask is None) or isinstance(mask, xr.DataArray):
+            return mask
+        elif isinstance(mask, Path):
+            mask = xr.open_dataset(mask)
             return mask["mask"]
 
     def _convert_delta_to_raw_values(

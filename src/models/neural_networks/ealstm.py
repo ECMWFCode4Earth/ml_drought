@@ -3,8 +3,9 @@ from torch import nn
 
 from pathlib import Path
 from copy import copy
+import xarray as xr
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from .base import NNBase
 
@@ -32,6 +33,7 @@ class EARecurrentNetwork(NNBase):
         static_embedding_size: Optional[int] = None,
         device: str = "cuda:0",
         predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
     ) -> None:
         super().__init__(
             data_folder,
@@ -47,6 +49,7 @@ class EARecurrentNetwork(NNBase):
             static,
             device,
             predict_delta=predict_delta,
+            spatial_mask=spatial_mask
         )
 
         # to initialize and save the model
@@ -95,6 +98,7 @@ class EARecurrentNetwork(NNBase):
             "ignore_vars": self.ignore_vars,
             "static": self.static,
             "device": self.device,
+            "spatial_mask": self.spatial_mask
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")
