@@ -25,4 +25,5 @@ def engineer_static():
 
 if __name__ == "__main__":
     engineer(pred_months=12)
+    # engineer(pred_months=12, experiment='nowcast')
     # engineer_static()

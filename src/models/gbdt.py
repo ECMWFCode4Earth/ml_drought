@@ -33,6 +33,7 @@ class GBDT(ModelBase):
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
+        predict_delta: bool = False,
     ) -> None:
         super().__init__(
             data_folder,
@@ -46,6 +47,7 @@ class GBDT(ModelBase):
             surrounding_pixels,
             ignore_vars,
             static,
+            predict_delta=predict_delta,
         )
 
         self.early_stopping = False
@@ -193,6 +195,15 @@ class GBDT(ModelBase):
                     "y": val.y,
                     "latlons": val.latlons,
                     "time": val.target_time,
+                    "y_var": val.y_var,
                 }
+                if self.predict_delta:
+                    assert val.historical_target.shape[0] == val.y.shape[0], (
+                        "Expect"
+                        f"the shape of the y ({val.y.shape})"
+                        f" and historical_target ({val.historical_target.shape})"
+                        " to be the same!"
+                    )
+                    test_arrays_dict[key]["historical_target"] = val.historical_target
 
         return test_arrays_dict, preds_dict
