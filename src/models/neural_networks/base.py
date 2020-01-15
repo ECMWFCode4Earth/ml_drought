@@ -3,6 +3,7 @@ import random
 from pathlib import Path
 import pickle
 import math
+import xarray as xr
 
 import torch
 from torch.nn import functional as F
@@ -32,6 +33,7 @@ class NNBase(ModelBase):
         static: Optional[str] = "features",
         device: str = "cuda:0",
         predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
     ) -> None:
         super().__init__(
             data_folder=data_folder,
@@ -46,6 +48,7 @@ class NNBase(ModelBase):
             ignore_vars=ignore_vars,
             static=static,
             predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
         )
 
         # for reproducibility

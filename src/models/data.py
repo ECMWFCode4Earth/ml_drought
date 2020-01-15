@@ -263,12 +263,12 @@ class DataLoader:
         monthly_aggs: bool = True,
         static: Optional[str] = "features",
         device: str = "cpu",
+        spatial_mask: Optional[xr.DataArray] = None,
     ) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
         self.shuffle = shuffle_data
-        self.clear_nans = clear_nans
         self.experiment = experiment
         self.data_files = self._load_datasets(
             data_path=data_path,
@@ -313,6 +313,13 @@ class DataLoader:
                 )
 
         self.device = torch.device(device)
+        self.spatial_mask = spatial_mask
+
+        if spatial_mask is not None:
+            assert (
+                clear_nans is True
+            ), f"The spatial mask uses NaNs to get rid of values - this requires clear_nans to be true"
+        self.clear_nans = clear_nans
 
     def __iter__(self):
         if self.mode == "train":
@@ -391,6 +398,7 @@ class _BaseIter:
         self.ignore_vars = loader.ignore_vars
         self.device = loader.device
         self.predict_delta = loader.predict_delta
+        self.spatial_mask = loader.spatial_mask
 
         self.static = loader.static
         self.static_normalizing_dict = loader.static_normalizing_dict
@@ -541,6 +549,17 @@ class _BaseIter:
             self.static_array = static_np
         return self.static_array
 
+    def apply_spatial_mask(
+        self, x: xr.Dataset, y: xr.Dataset
+    ) -> Tuple[xr.Dataset, xr.Dataset]:
+
+        if self.spatial_mask is None:
+            return x, y
+
+        else:
+            # anywhere where the mask is 1, make NaN
+            return x.where(~self.spatial_mask), y.where(~self.spatial_mask)
+
     def _calculate_historical_target(self, x: xr.Dataset, y_var: str) -> np.ndarray:
         """Calculate the previous timestep for the target_variable
             (used in predict_delta experiment).
@@ -586,7 +605,6 @@ class _BaseIter:
         if self.predict_delta:
             # TODO: do this ONCE not at each read-in of the data
             y = self._calculate_change(x, y)
-
         assert len(list(y.data_vars)) == 1, (
             f"Expect only 1 target variable! " f"Got {len(list(y.data_vars))}"
         )
@@ -602,6 +620,8 @@ class _BaseIter:
             ]
         else:
             x_datetimes = [pd.to_datetime(time) for time in x.time.values]
+
+        x, y = self.apply_spatial_mask(x, y)
 
         yearly_agg = self._calculate_aggs(
             x
@@ -669,7 +689,6 @@ class _BaseIter:
                 & (y_nans_summed == 0)
                 & (static_nans_summed == 0)
             )[0]
-
             if self.experiment == "nowcast":
                 current_nans = np.isnan(train_data.current)
                 current_nans_summed = current_nans.sum(axis=-1)
