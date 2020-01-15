@@ -52,14 +52,14 @@ def export_era5(variables):
 
 if __name__ == "__main__":
     variables = [
-        "volumetric_soil_water_layer_1",
-        "volumetric_soil_water_layer_2",
-        "volumetric_soil_water_layer_3",
-        "volumetric_soil_water_layer_4",
         "2m_temperature",
         "potential_evaporation",
         "evaporation",
         "total_precipitation"
+        "volumetric_soil_water_layer_1",
+        "volumetric_soil_water_layer_2",
+        "volumetric_soil_water_layer_3",
+        "volumetric_soil_water_layer_4",
     ]
 
     export_era5(variables)
