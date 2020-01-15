@@ -107,8 +107,8 @@ def earnn(
 
 
 if __name__ == "__main__":
-    # parsimonious()
+    parsimonious()
     regression()
-    # linear_nn()
-    # rnn()
-    # earnn(pretrained=True)
+    linear_nn()
+    rnn()
+    earnn(pretrained=True)

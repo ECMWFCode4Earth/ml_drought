@@ -313,7 +313,7 @@ class DataLoader:
                 )
 
         self.device = torch.device(device)
-        self.spatial_mask = self.prepare_mask(spatial_mask)
+        self.spatial_mask = spatial_mask
 
         if spatial_mask is not None:
             assert (
@@ -329,18 +329,6 @@ class DataLoader:
 
     def __len__(self) -> int:
         return len(self.data_files) // self.batch_file_size
-
-    @staticmethod
-    def prepare_mask(spatial_mask: Optional[xr.DataArray]) -> Optional[xr.DataArray]:
-        if spatial_mask is None:
-            return None
-
-        prepared_mask = spatial_mask.copy(deep=True)
-        # anywhere where the mask is 1, we make NaN
-        prepared_mask.values[prepared_mask.values == 1] = float("NaN")
-        prepared_mask.values[prepared_mask.values == 0] = 1
-
-        return prepared_mask
 
     @staticmethod
     def _loc_to_int(base_ds: xr.Dataset) -> Tuple[xr.Dataset, int]:
@@ -570,7 +558,7 @@ class _BaseIter:
 
         else:
             # anywhere where the mask is 1, make NaN
-            return x * self.spatial_mask, y * self.spatial_mask
+            return x.where(~self.spatial_mask), y.where(~self.spatial_mask)
 
     def _calculate_historical_target(self, x: xr.Dataset, y_var: str) -> np.ndarray:
         """Calculate the previous timestep for the target_variable

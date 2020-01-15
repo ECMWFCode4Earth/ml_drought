@@ -159,10 +159,10 @@ class BasePreProcessor:
             output_dict[var] = regridder(ds[var])
         ds = xr.Dataset(output_dict)
 
-        # print(
-        #     f"Regridded from {(regridder.Ny_in, regridder.Nx_in)} "
-        #     f"to {(regridder.Ny_out, regridder.Nx_out)}"
-        # )
+        print(
+            f"Regridded from {(regridder.Ny_in, regridder.Nx_in)} "
+            f"to {(regridder.Ny_out, regridder.Nx_out)}"
+        )
 
         if clean:
             regridder.clean_weight_file()
