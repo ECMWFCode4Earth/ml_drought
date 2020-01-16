@@ -298,7 +298,7 @@ class GroupbyRegion:
 
 
 class KenyaGroupbyRegion(GroupbyRegion):
-    def __init__(self, data_dir: Path = Path("data"),) -> None:
+    def __init__(self, data_dir: Path = Path("data")) -> None:
         super().__init__(data_dir=data_dir, country="kenya")
 
     def get_admin_level(self, selection: str) -> AdminBoundaries:

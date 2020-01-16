@@ -183,7 +183,11 @@ class ModelBase:
         if type(x) is tuple:
             x_his, x_pm, x_latlons, x_cur, x_ym, x_static = x  # type: ignore
         elif type(x) == TrainData:
-            x_his, x_pm, x_latlons = x.historical, x.pred_months, x.latlons  # type: ignore
+            x_his, x_pm, x_latlons = (
+                x.historical,
+                x.pred_months,
+                x.latlons,
+            )  # type: ignore
             x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
             x_static = x.static  # type: ignore
 

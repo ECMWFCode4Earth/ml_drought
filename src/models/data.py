@@ -468,7 +468,9 @@ class _BaseIter:
                 train_data.current = train_data.current[notnan_indices]  # type: ignore
 
             train_data.historical = train_data.historical[notnan_indices]
-            train_data.pred_months = train_data.pred_months[notnan_indices]  # type: ignore
+            train_data.pred_months = train_data.pred_months[
+                notnan_indices
+            ]  # type: ignore
             train_data.latlons = train_data.latlons[notnan_indices]
             train_data.yearly_aggs = train_data.yearly_aggs[notnan_indices]
             if train_data.static is not None:

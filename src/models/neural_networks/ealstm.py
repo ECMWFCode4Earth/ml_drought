@@ -446,17 +446,17 @@ class OrgEALSTMCell(nn.Module):
         # create tensors of learnable parameters
         self.weight_ih = nn.Parameter(  # type: ignore
             torch.FloatTensor(  # type: ignore
-                input_size_dyn, 3 * hidden_size,
+                input_size_dyn, 3 * hidden_size
             )
         )  # type: ignore
         self.weight_hh = nn.Parameter(  # type: ignore
             torch.FloatTensor(  # type: ignore
-                hidden_size, 3 * hidden_size,
+                hidden_size, 3 * hidden_size
             )
         )  # type: ignore
         self.weight_sh = nn.Parameter(  # type: ignore
             torch.FloatTensor(  # type: ignore
-                input_size_stat, hidden_size,
+                input_size_stat, hidden_size
             )
         )  # type: ignore
         self.bias = nn.Parameter(torch.FloatTensor(3 * hidden_size))  # type: ignore

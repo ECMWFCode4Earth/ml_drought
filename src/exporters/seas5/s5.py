@@ -220,8 +220,10 @@ class S5Exporter(CDSExporter):
                 updated_request["year"] = [year]
                 output_paths.append(
                     self._export(
-                        self.dataset, updated_request,
-                        show_api_request, in_parallel=False
+                        self.dataset,
+                        updated_request,
+                        show_api_request,
+                        in_parallel=False,
                     )
                 )
 

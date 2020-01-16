@@ -25,7 +25,7 @@ class S5Preprocessor(BasePreProcessor):
         self.parallel = parallel
 
     def get_filepaths(  # type: ignore
-        self, target_folder: Path, variable: str, grib: bool = True,
+        self, target_folder: Path, variable: str, grib: bool = True
     ) -> List[Path]:
         # if target_folder.name == 'raw':
         #     target_folder = self.raw_folder
@@ -166,7 +166,7 @@ class S5Preprocessor(BasePreProcessor):
             except ValueError:
                 ds = xr.merge(all_vars)
 
-        if 'initialisation_date' not in [d for d in ds.dims]:
+        if "initialisation_date" not in [d for d in ds.dims]:
             # add initialisation_date as a dimension
             ds = ds.expand_dims(dim="initialisation_date")
 
@@ -176,7 +176,7 @@ class S5Preprocessor(BasePreProcessor):
 
     def merge_all_interim_files(self, variable: str) -> xr.Dataset:
         # open all interim processed files (one variable)
-        print('Reading and merging all interim .nc files')
+        print("Reading and merging all interim .nc files")
         ds = xr.open_mfdataset((self.interim / variable).as_posix() + "/*.nc")
         ds = ds.sortby("initialisation_date")
 
@@ -200,28 +200,30 @@ class S5Preprocessor(BasePreProcessor):
 
     @staticmethod
     def _map_forecast_horizon_to_months_ahead(stacked: xr.Dataset) -> xr.Dataset:
-        assert 'forecast_horizon' in [c for c in stacked.coords], 'Expect the' \
-            '`stacked` dataset object to have `forecast_horizon` as a coord'
+        assert "forecast_horizon" in [c for c in stacked.coords], (
+            "Expect the"
+            "`stacked` dataset object to have `forecast_horizon` as a coord"
+        )
 
         # map forecast horizons to months ahead
         map_ = {
-            pd.Timedelta('28 days 00:00:00'): 1,
-            pd.Timedelta('29 days 00:00:00'): 1,
-            pd.Timedelta('30 days 00:00:00'): 1,
-            pd.Timedelta('31 days 00:00:00'): 1,
-            pd.Timedelta('59 days 00:00:00'): 2,
-            pd.Timedelta('60 days 00:00:00'): 2,
-            pd.Timedelta('61 days 00:00:00'): 2,
-            pd.Timedelta('62 days 00:00:00'): 2,
-            pd.Timedelta('89 days 00:00:00'): 3,
-            pd.Timedelta('90 days 00:00:00'): 3,
-            pd.Timedelta('91 days 00:00:00'): 3,
-            pd.Timedelta('92 days 00:00:00'): 3,
+            pd.Timedelta("28 days 00:00:00"): 1,
+            pd.Timedelta("29 days 00:00:00"): 1,
+            pd.Timedelta("30 days 00:00:00"): 1,
+            pd.Timedelta("31 days 00:00:00"): 1,
+            pd.Timedelta("59 days 00:00:00"): 2,
+            pd.Timedelta("60 days 00:00:00"): 2,
+            pd.Timedelta("61 days 00:00:00"): 2,
+            pd.Timedelta("62 days 00:00:00"): 2,
+            pd.Timedelta("89 days 00:00:00"): 3,
+            pd.Timedelta("90 days 00:00:00"): 3,
+            pd.Timedelta("91 days 00:00:00"): 3,
+            pd.Timedelta("92 days 00:00:00"): 3,
         }
 
         fhs = [pd.Timedelta(fh) for fh in stacked.forecast_horizon.values]
         months = [map_[fh] for fh in fhs]
-        stacked = stacked.assign_coords(months_ahead=('time', months))
+        stacked = stacked.assign_coords(months_ahead=("time", months))
 
         return stacked
 
@@ -270,8 +272,8 @@ class S5Preprocessor(BasePreProcessor):
         forecast_horizons: np.array
             the forecast horizons as a flat numpy array
         """
-        print('Stacking the [initialisation_date, forecast_horizon] coords')
-        stacked = ds.stack(time=('initialisation_date', 'forecast_horizon'))
+        print("Stacking the [initialisation_date, forecast_horizon] coords")
+        stacked = ds.stack(time=("initialisation_date", "forecast_horizon"))
         t = stacked.time.values
 
         # flatten the 2D time array [(timestamp, delta), ...]
@@ -280,14 +282,16 @@ class S5Preprocessor(BasePreProcessor):
         times = initialisation_dates + forecast_horizons
 
         # store as dimensions
-        stacked['time'] = times
-        stacked = stacked.assign_coords(initialisation_date=('time', initialisation_dates))
-        stacked = stacked.assign_coords(forecast_horizon=('time', forecast_horizons))
-        if 'valid_time' in [c for c in stacked.coords]:
-            stacked = stacked.drop('valid_time')
+        stacked["time"] = times
+        stacked = stacked.assign_coords(
+            initialisation_date=("time", initialisation_dates)
+        )
+        stacked = stacked.assign_coords(forecast_horizon=("time", forecast_horizons))
+        if "valid_time" in [c for c in stacked.coords]:
+            stacked = stacked.drop("valid_time")
 
         # remove all of the nan timesteps
-        stacked = stacked.dropna(dim='time', how='all')
+        stacked = stacked.dropna(dim="time", how="all")
 
         # create months ahead coord
         stacked = self._map_forecast_horizon_to_months_ahead(stacked)
@@ -319,34 +323,39 @@ class S5Preprocessor(BasePreProcessor):
         return ds
 
     @staticmethod
-    def get_n_timestep_ahead_data(ds: xr.Dataset, n_tstep: int,
-                                tstep_coord_name: str = 'months_ahead') -> xr.Dataset:
+    def get_n_timestep_ahead_data(
+        ds: xr.Dataset, n_tstep: int, tstep_coord_name: str = "months_ahead"
+    ) -> xr.Dataset:
         """ Get the data for the n timesteps ahead """
-        assert tstep_coord_name in [c for c in ds.coords], \
-            'expect the number of timesteps ahead to have been calculated' \
-            f' already. Coords: {[c for c in ds.coords]}'
+        assert tstep_coord_name in [c for c in ds.coords], (
+            "expect the number of timesteps ahead to have been calculated"
+            f" already. Coords: {[c for c in ds.coords]}"
+        )
 
         variables = [v for v in ds.data_vars]
         all_nstep_list = []
         for var in variables:
-            d_nstep = (
-                ds.loc[dict(time=ds[tstep_coord_name] == n_tstep)]
-                .rename({var: var + f'_{n_tstep}'})
+            d_nstep = ds.loc[dict(time=ds[tstep_coord_name] == n_tstep)].rename(
+                {var: var + f"_{n_tstep}"}
             )
             all_nstep_list.append(d_nstep)
 
         return xr.auto_combine(all_nstep_list)
 
-    def create_variables_for_n_timesteps_predictions(self, ds: xr.Dataset,
-                                                     tstep_coord_name: str = 'months_ahead') -> xr.Dataset:
+    def create_variables_for_n_timesteps_predictions(
+        self, ds: xr.Dataset, tstep_coord_name: str = "months_ahead"
+    ) -> xr.Dataset:
         """Drop the forecast_horizon & initialisation_date variables"""
         assert all(
             np.isin(
-                ['initialisation_date', 'forecast_horizon', tstep_coord_name],
-                [c for c in ds.coords]
-            )), 'Expecting to have ' \
-                f'initialisation_date forecast_horizon {tstep_coord_name} in ds.coords' \
-                f'currently: {[c for c in ds.coords]}'
+                ["initialisation_date", "forecast_horizon", tstep_coord_name],
+                [c for c in ds.coords],
+            )
+        ), (
+            "Expecting to have "
+            f"initialisation_date forecast_horizon {tstep_coord_name} in ds.coords"
+            f"currently: {[c for c in ds.coords]}"
+        )
 
         timesteps = np.unique(ds[tstep_coord_name])
         variables = [v for v in ds.data_vars]
@@ -354,9 +363,9 @@ class S5Preprocessor(BasePreProcessor):
         all_timesteps = []
         for step in timesteps:
             d = self.get_n_timestep_ahead_data(
-                ds, step, tstep_coord_name=tstep_coord_name)
-            d = d.drop(
-                ['initialisation_date', 'forecast_horizon', tstep_coord_name])
+                ds, step, tstep_coord_name=tstep_coord_name
+            )
+            d = d.drop(["initialisation_date", "forecast_horizon", tstep_coord_name])
             # drop the old variables too (so not duplicated)
             d = d.drop(variables)
             all_timesteps.append(d)
@@ -372,36 +381,37 @@ class S5Preprocessor(BasePreProcessor):
         variables = [v for v in ds.data_vars]
 
         # ensure that 'number' still exists in the coords
-        assert 'number' in [c for c in ds.coords], 'require `number` to '\
-            'be a coord in the Dataset object to collapse by mean/std'
+        assert "number" in [c for c in ds.coords], (
+            "require `number` to "
+            "be a coord in the Dataset object to collapse by mean/std"
+        )
 
         # calculate mean and std collapsing the 'number' coordinate
         predict_ds_list = []
         for var in variables:
             print(f"Calculating the mean / std for forecast variable: {var}")
             mean_std = []
-            mean_std.append(
-                ds.mean(dim='number').rename({var: var + '_mean'})
-            )
-            mean_std.append(
-                ds.std(dim='number').rename({var: var + '_std'})
-            )
+            mean_std.append(ds.mean(dim="number").rename({var: var + "_mean"}))
+            mean_std.append(ds.std(dim="number").rename({var: var + "_std"}))
             predict_ds_list.append(xr.auto_combine(mean_std))
 
         return xr.auto_combine(predict_ds_list)
 
-    def _process_interim_files(self, variables: List[str],
-                               resample_time: Optional[str] = "M",
-                               upsampling: bool = False,
-                               subset_str: Optional[str] = 'kenya') -> None:
+    def _process_interim_files(
+        self,
+        variables: List[str],
+        resample_time: Optional[str] = "M",
+        upsampling: bool = False,
+        subset_str: Optional[str] = "kenya",
+    ) -> None:
         # merge all of the preprocessed interim timesteps (../s5_interim/)
         for var in np.unique(variables):
             cast(str, var)
             ds = self.merge_all_interim_files(var)
 
             # remove 'time' from raw data (calculate from initialisation_date/forecast_horizon)
-            if 'time' in [c for c in ds.coords]:
-                ds = ds.drop('time')
+            if "time" in [c for c in ds.coords]:
+                ds = ds.drop("time")
 
             # stack the timesteps to get a more standard dataset format
             # ('forecast_horizon', 'initialisation_date', 'lat', 'lon', 'number')
@@ -525,9 +535,12 @@ class S5Preprocessor(BasePreProcessor):
             print("\nOutputs (errors):\n\t", outputs)
 
         # process the interim files (each timestep)
-        self._process_interim_files(variables, subset_str=subset_str,
-                                    resample_time=resample_time,
-                                    upsampling=upsampling,)
+        self._process_interim_files(
+            variables,
+            subset_str=subset_str,
+            resample_time=resample_time,
+            upsampling=upsampling,
+        )
 
         if cleanup:
             rmtree(self.interim)
