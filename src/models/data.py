@@ -595,8 +595,8 @@ class _BaseIter:
         assert len(list(y.data_vars)) == 1, (
             f"Expect only 1 target variable! " f"Got {len(list(y.data_vars))}"
         )
-        if (self.ignore_vars is not None):
-            if (any(np.isin(self.ignore_vars, [v for v in x.data_vars]))):
+        if self.ignore_vars is not None:
+            if any(np.isin(self.ignore_vars, [v for v in x.data_vars])):
                 _ignore_vars = np.array(self.ignore_vars)[
                     np.isin(self.ignore_vars, [v for v in x.data_vars])
                 ]

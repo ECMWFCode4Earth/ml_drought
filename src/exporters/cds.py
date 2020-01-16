@@ -166,11 +166,7 @@ class ERA5Exporter(CDSExporter):
         days = ["{:02d}".format(day) for day in range(1, 31 + 1)]
         times = ["{:02d}:00".format(hour) for hour in range(24)]
 
-        selection_dict = {
-            "year": years,
-            "month": months,
-            "time": times,
-        }
+        selection_dict = {"year": years, "month": months, "time": times}
         if granularity == "hourly":
             selection_dict["day"] = days
         return selection_dict
