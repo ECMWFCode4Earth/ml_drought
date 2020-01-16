@@ -18,6 +18,6 @@ __all__ = [
     "GLEAMExporter",
     "SRTMExporter",
     "ESACCIExporter",
-    'ERA5LandExporter',
+    "ERA5LandExporter",
     "KenyaAdminExporter",
 ]

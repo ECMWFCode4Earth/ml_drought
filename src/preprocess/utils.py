@@ -99,7 +99,9 @@ class SHPtoXarray:
             from shapely.geometry import Polygon
 
     @staticmethod
-    def transform_from_latlon(lat: xr.DataArray, lon: xr.DataArray) -> Affine:  # type: ignore
+    def transform_from_latlon(
+        lat: xr.DataArray, lon: xr.DataArray
+    ) -> Affine:  # type: ignore
         """ input 1D array of lat / lon and output an Affine transformation
         """
         lat = np.asarray(lat)

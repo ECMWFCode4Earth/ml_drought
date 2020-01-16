@@ -71,7 +71,7 @@ class VHIPreprocessor(BasePreProcessor):
 
         # 3. create the filepath
         filename = self.create_filename(
-            timestamp, netcdf_filepath, subset_name=subset_str,
+            timestamp, netcdf_filepath, subset_name=subset_str
         )
 
         # test if the file already exists

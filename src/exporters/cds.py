@@ -79,7 +79,7 @@ class CDSExporter(BaseExporter):
         return "/".join(["{:.3f}".format(x) for x in x])
 
     @staticmethod
-    def get_default_era5_times(granularity: str = 'hourly', land: bool = False) -> Dict:
+    def get_default_era5_times(granularity: str = "hourly", land: bool = False) -> Dict:
         """Returns the era5 selection request arguments
         for the hourly or monthly data
 
@@ -98,22 +98,18 @@ class CDSExporter(BaseExporter):
             A dictionary with all the time-related arguments of the
             selection dict filled out
         """
-        months = ['{:02d}'.format(month) for month in range(1, 12 + 1)]
-        days = ['{:02d}'.format(day) for day in range(1, 31 + 1)]
-        times = ['{:02d}:00'.format(hour) for hour in range(24)]
+        months = ["{:02d}".format(month) for month in range(1, 12 + 1)]
+        days = ["{:02d}".format(day) for day in range(1, 31 + 1)]
+        times = ["{:02d}:00".format(hour) for hour in range(24)]
 
         if land:
             years = [str(year) for year in range(2001, 2019 + 1)]
         else:  # era5-land
             years = [str(year) for year in range(1979, 2019 + 1)]
 
-        selection_dict = {
-            'year': years,
-            'month': months,
-            'time': times,
-        }
-        if granularity == 'hourly':
-            selection_dict['day'] = days
+        selection_dict = {"year": years, "month": months, "time": times}
+        if granularity == "hourly":
+            selection_dict["day"] = days
         return selection_dict
 
     @staticmethod
@@ -235,11 +231,7 @@ class ERA5Exporter(CDSExporter):
         days = ["{:02d}".format(day) for day in range(1, 31 + 1)]
         times = ["{:02d}:00".format(hour) for hour in range(24)]
 
-        selection_dict = {
-            "year": years,
-            "month": months,
-            "time": times,
-        }
+        selection_dict = {"year": years, "month": months, "time": times}
         if granularity == "hourly":
             selection_dict["day"] = days
         return selection_dict
