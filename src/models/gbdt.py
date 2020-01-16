@@ -1,8 +1,9 @@
 import numpy as np
 from pathlib import Path
 import pickle
+import xarray as xr
 
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional, Union
 
 from .base import ModelBase
 from .data import DataLoader, train_val_mask, TrainData
@@ -32,7 +33,9 @@ class GBDT(ModelBase):
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
-        include_static: bool = True,
+        static: Optional[str] = "features",
+        predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
     ) -> None:
         super().__init__(
             data_folder,
@@ -45,7 +48,9 @@ class GBDT(ModelBase):
             include_yearly_aggs,
             surrounding_pixels,
             ignore_vars,
-            include_static,
+            static,
+            predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
         )
 
         self.early_stopping = False
@@ -164,8 +169,9 @@ class GBDT(ModelBase):
             "ignore_vars": self.ignore_vars,
             "include_monthly_aggs": self.include_monthly_aggs,
             "include_yearly_aggs": self.include_yearly_aggs,
-            "include_static": self.include_static,
+            "static": self.static,
             "early_stopping": self.early_stopping,
+            "spatial_mask": self.spatial_mask,
         }
 
         with (self.model_dir / "model.pkl").open("wb") as f:
@@ -193,6 +199,15 @@ class GBDT(ModelBase):
                     "y": val.y,
                     "latlons": val.latlons,
                     "time": val.target_time,
+                    "y_var": val.y_var,
                 }
+                if self.predict_delta:
+                    assert val.historical_target.shape[0] == val.y.shape[0], (
+                        "Expect"
+                        f"the shape of the y ({val.y.shape})"
+                        f" and historical_target ({val.historical_target.shape})"
+                        " to be the same!"
+                    )
+                    test_arrays_dict[key]["historical_target"] = val.historical_target
 
         return test_arrays_dict, preds_dict

@@ -2,6 +2,7 @@ from pathlib import Path
 import numpy as np
 import json
 import pandas as pd
+import xarray as xr
 from sklearn.metrics import mean_squared_error
 
 from .data import TrainData, DataLoader
@@ -33,6 +34,9 @@ class ModelBase:
         training data
     include_static: bool = True
         Whether to include static data
+    predict_delta: bool = False
+        Whether to model the CHANGE in target variable rather than the
+        raw values
     """
 
     model_name: str  # to be added by the model classes
@@ -49,7 +53,9 @@ class ModelBase:
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
-        include_static: bool = True,
+        static: Optional[str] = "embedding",
+        predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
     ) -> None:
 
         self.batch_size = batch_size
@@ -63,7 +69,11 @@ class ModelBase:
         self.models_dir = data_folder / "models" / self.experiment
         self.surrounding_pixels = surrounding_pixels
         self.ignore_vars = ignore_vars
-        self.include_static = include_static
+        self.static = static
+        self.predict_delta = predict_delta
+
+        # needs to be set by the train function
+        self.num_locations: Optional[int] = None
 
         if not self.models_dir.exists():
             self.models_dir.mkdir(parents=True, exist_ok=False)
@@ -79,10 +89,34 @@ class ModelBase:
 
         self.model: Any = None  # to be added by the model classes
         self.data_vars: Optional[List[str]] = None  # to be added by the train step
+        self.spatial_mask = self._load_spatial_mask(spatial_mask)
 
         # This can be overridden by any model which actually cares which device its run on
         # by default, models which don't care will run on the CPU
         self.device = "cpu"
+
+    @staticmethod
+    def _load_spatial_mask(
+        mask: Union[Path, xr.DataArray, None] = None
+    ) -> Optional[xr.DataArray]:
+        if (mask is None) or isinstance(mask, xr.DataArray):
+            return mask
+        elif isinstance(mask, Path):
+            mask = xr.open_dataset(mask)
+            return mask["mask"]
+        return None
+
+    def _convert_delta_to_raw_values(
+        self, x: xr.Dataset, y: xr.Dataset, y_var: str, order: int = 1
+    ) -> xr.Dataset:
+        """When calculating the derivative we need to convert the change/delta
+        to the raw value for our prediction.
+        """
+        # x.shape == (pixels, featurespreds)
+        prev_ts = x[y_var].isel(time=-order)
+
+        # calculate the raw values
+        return prev_ts + y["preds"]  # .to_dataset(name_of_preds_var)
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         # This method should return the test arrays as loaded by
@@ -139,7 +173,6 @@ class ModelBase:
         output_dict["total"] = np.sqrt(
             mean_squared_error(np.concatenate(total_true), np.concatenate(total_preds))
         ).item()
-
         print(f'RMSE: {output_dict["total"]}')
 
         if save_results:
@@ -147,6 +180,7 @@ class ModelBase:
                 json.dump(output_dict, outfile)
 
         if save_preds:
+            # convert from test_arrays_dict to xarray object
             for key, val in test_arrays_dict.items():
                 latlons = cast(np.ndarray, val["latlons"])
                 preds = preds_dict[key]
@@ -171,6 +205,32 @@ class ModelBase:
                     .to_xarray()
                 )
 
+                if self.predict_delta:
+                    # get the NON-NORMALIZED data (from ModelArrays.historical_target)
+                    historical_y = val["historical_target"]
+                    y_var = val["y_var"]
+                    cast(str, y_var)
+                    historical_ds = (
+                        pd.DataFrame(
+                            data={
+                                y_var: historical_y,
+                                "lat": latlons[:, 0],
+                                "lon": latlons[:, 1],
+                                "time": times,
+                            }
+                        )
+                        .set_index(["lat", "lon", "time"])
+                        .to_xarray()
+                    )
+
+                    # convert delta to raw target_variable
+                    preds_xr = self._convert_delta_to_raw_values(
+                        x=historical_ds, y=preds_xr, y_var=y_var
+                    )
+
+                    if not isinstance(preds_xr, xr.Dataset):
+                        preds_xr = preds_xr.to_dataset("preds")
+
                 preds_xr.to_netcdf(self.model_dir / f"preds_{key}.nc")
 
     def _concatenate_data(
@@ -183,7 +243,11 @@ class ModelBase:
         if type(x) is tuple:
             x_his, x_pm, x_latlons, x_cur, x_ym, x_static = x  # type: ignore
         elif type(x) == TrainData:
-            x_his, x_pm, x_latlons = x.historical, x.pred_months, x.latlons  # type: ignore
+            x_his, x_pm, x_latlons = (
+                x.historical,  # type: ignore
+                x.pred_months,  # type: ignore
+                x.latlons,  # type: ignore
+            )  # type: ignore
             x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
             x_static = x.static  # type: ignore
 
@@ -195,7 +259,7 @@ class ModelBase:
         if self.include_pred_month:
             # one hot encoding, should be num_classes + 1, but
             # for us its + 2, since 0 is not a class either
-            pred_months_onehot = np.eye(14)[x_pm][:, 1:-1]
+            pred_months_onehot = self._one_hot(x_pm, 12)
             x_in = np.concatenate((x_in, pred_months_onehot), axis=-1)
         if self.include_latlons:
             x_in = np.concatenate((x_in, x_latlons), axis=-1)
@@ -203,10 +267,19 @@ class ModelBase:
             x_in = np.concatenate((x_in, x_cur), axis=-1)
         if self.include_yearly_aggs:
             x_in = np.concatenate((x_in, x_ym), axis=-1)
-        if self.include_static:
-            x_in = np.concatenate((x_in, x_static), axis=-1)
-
+        if self.static is not None:
+            if self.static == "features":
+                x_in = np.concatenate((x_in, x_static), axis=-1)
+            elif self.static == "embeddings":
+                assert type(self.num_locations) is int
+                x_s = self._one_hot(x_static, cast(int, self.num_locations))
+                x_in = np.concatenate((x_in, x_s), axis=-1)
         return x_in
+
+    def _one_hot(self, x: np.ndarray, num_vals: int):
+        if len(x.shape) > 1:
+            x = x.squeeze(-1)
+        return np.eye(num_vals + 2)[x][:, 1:-1]
 
     def get_dataloader(
         self, mode: str, to_tensor: bool = False, shuffle_data: bool = False, **kwargs
@@ -227,14 +300,20 @@ class ModelBase:
             "ignore_vars": self.ignore_vars,
             "monthly_aggs": self.include_monthly_aggs,
             "surrounding_pixels": self.surrounding_pixels,
-            "static": self.include_static,
+            "static": self.static,
             "device": self.device,
             "clear_nans": True,
             "normalize": True,
+            "predict_delta": self.predict_delta,
+            "spatial_mask": self.spatial_mask,
         }
 
         for key, val in kwargs.items():
             # override the default args
             default_args[key] = val
 
-        return DataLoader(**default_args)
+        dl = DataLoader(**default_args)
+
+        if (self.static == "embeddings") and (self.num_locations is None):
+            self.num_locations = cast(int, dl.max_loc_int)
+        return dl

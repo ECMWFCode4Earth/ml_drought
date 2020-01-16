@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import datetime
 import numpy as np
@@ -23,6 +25,23 @@ class TrainData:
     yearly_aggs: Union[np.ndarray, torch.Tensor]
     static: Union[np.ndarray, torch.Tensor, None]
 
+    def to_tensor(self, device: torch.device) -> None:
+        for key, val in self.__dict__.items():
+            if val is not None:
+                if type(val) is np.ndarray:
+                    setattr(self, key, torch.from_numpy(val).to(device).float())
+
+    def concatenate(self, x: TrainData):
+        # Note this function will only concatenate values from x
+        # which are not None in self
+        for key, val in self.__dict__.items():
+            if val is not None:
+                if type(val) is np.ndarray:
+                    newval = np.concatenate((val, getattr(x, key)), axis=0)
+                else:
+                    newval = torch.cat((val, getattr(x, key)), dim=0)
+                setattr(self, key, newval)
+
 
 @dataclass
 class ModelArrays:
@@ -32,6 +51,117 @@ class ModelArrays:
     y_var: str
     latlons: Optional[np.ndarray] = None
     target_time: Optional[Timestamp] = None
+    historical_times: Optional[List[Timestamp]] = None
+    predict_delta: bool = False
+    historical_target: Optional[xr.DataArray] = None
+
+    def to_tensor(self, device) -> None:
+        self.x.to_tensor(device)
+        if type(self.y) is np.ndarray:
+            self.y = torch.from_numpy(self.y).to(device).float()
+
+    def concatenate(self, x: ModelArrays) -> None:
+        self.x.concatenate(x.x)
+
+        if type(self.y) is np.ndarray:
+            self.y = np.concatenate((self.y, x.y), axis=0)
+        else:
+            self.y = torch.cat((self.y, x.y), dim=0)
+
+        if self.latlons is not None:
+            self.latlons = np.concatenate((self.latlons, x.latlons), axis=0)
+
+    def to_xarray(self) -> Tuple[xr.Dataset, xr.Dataset, Optional[xr.Dataset]]:
+        assert (
+            self.latlons.shape[0] == self.x.historical.shape[0]  # type: ignore
+        ), "first dim is # pixels"
+        assert (
+            len(self.x_vars) == self.x.historical.shape[2]
+        ), "final dim is # variables"
+
+        # if experiment == 'nowcast'
+        if self.x.current is not None:
+            # NOTE: historical times is one less for nowcast?
+            assert (
+                len(self.historical_times) == self.x.historical.shape[1]  # type: ignore
+            ), "second dim is # timesteps"
+        else:
+            assert (
+                len(self.historical_times) == self.x.historical.shape[1]  # type: ignore
+            ), "second dim is # timesteps"
+        variables = self.x_vars
+        latitudes = np.unique(self.latlons[:, 0])  # type: ignore
+        longitudes = np.unique(self.latlons[:, 1])  # type: ignore
+        times = self.historical_times
+
+        ds_list = []
+        for i, variable in enumerate(variables):
+            # for each variable create the indexed Dataset
+            # from the x.historical array
+            data_np = self.x.historical[:, :, i]
+            ds_list.append(
+                xr.Dataset(
+                    {
+                        variable: (
+                            ["lat", "lon", "time"],
+                            # unflatten the (pixel, time) array -> (lat, lon, time)
+                            data_np.reshape(
+                                len(latitudes),
+                                len(longitudes),
+                                len(times),  # type: ignore
+                            ),
+                        )
+                    },
+                    coords={"lat": latitudes, "lon": longitudes, "time": times},
+                )
+            )
+
+        # TODO: create the static Dataset too!
+        historical_ds = xr.auto_combine(ds_list)
+
+        # create the target_ds
+        target_ds = xr.Dataset(
+            {
+                self.y_var: (
+                    ["lat", "lon", "time"],
+                    self.y.reshape(len(latitudes), len(longitudes), 1),
+                )
+            },
+            coords={"lat": latitudes, "lon": longitudes, "time": [self.target_time]},
+        )
+
+        # if experiment == 'nowcast'
+        if self.x.current is not None:
+            # get the current variables only
+            current_vars = [
+                (i - 1, v)
+                for i, v in enumerate(self.x_vars)
+                if (not v == self.y_var) & ("mean" not in v)
+            ]
+            current_ds_list = []
+            for i, current_var in current_vars:
+                current_ds_list.append(
+                    xr.Dataset(
+                        {
+                            current_var: (
+                                ["lat", "lon", "time"],
+                                self.x.current[:, i].reshape(
+                                    len(latitudes), len(longitudes), 1
+                                ),
+                            )
+                        },
+                        coords={
+                            "lat": latitudes,
+                            "lon": longitudes,
+                            "time": [self.target_time],
+                        },
+                    )
+                )
+            current_ds = xr.auto_combine(current_ds_list)
+        else:  # one_month_forecast
+            current_ds = None
+
+        return historical_ds, target_ds, current_ds
 
 
 # The dict below maps the indices of the arrays returned
@@ -110,6 +240,9 @@ class DataLoader:
         (and optionally current) arrays
     static: bool = True
         Whether to include static data
+    predict_delta: bool = False
+        Whether to predict the CHANGE in the target variable relative to the previous timestep
+        instead of the raw target variable.
     """
 
     def __init__(
@@ -120,6 +253,7 @@ class DataLoader:
         shuffle_data: bool = True,
         clear_nans: bool = True,
         normalize: bool = True,
+        predict_delta: bool = False,
         experiment: str = "one_month_forecast",
         mask: Optional[List[bool]] = None,
         pred_months: Optional[List[int]] = None,
@@ -127,14 +261,14 @@ class DataLoader:
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         monthly_aggs: bool = True,
-        static: bool = False,
+        static: Optional[str] = "features",
         device: str = "cpu",
+        spatial_mask: Optional[xr.DataArray] = None,
     ) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
         self.shuffle = shuffle_data
-        self.clear_nans = clear_nans
         self.experiment = experiment
         self.data_files = self._load_datasets(
             data_path=data_path,
@@ -144,6 +278,7 @@ class DataLoader:
             mask=mask,
             pred_months=pred_months,
         )
+        self.predict_delta = predict_delta
 
         self.normalizing_dict = None
         if normalize:
@@ -157,20 +292,34 @@ class DataLoader:
         self.to_tensor = to_tensor
         self.ignore_vars = ignore_vars
 
-        self.static = None
+        self.static: Optional[xr.Dataset] = None
+        self.max_loc_int: Optional[int] = None
         self.static_normalizing_dict = None
 
-        if static:
-            static_data_path = data_path / "features/static/data.nc"
-            self.static = xr.open_dataset(static_data_path)
-
-            if normalize:
-                static_normalizer_path = (
-                    data_path / "features/static/normalizing_dict.pkl"
+        if static is not None:
+            if static == "features":
+                self.static = xr.open_dataset(data_path / "features/static/data.nc")
+                if normalize:
+                    static_normalizer_path = (
+                        data_path / "features/static/normalizing_dict.pkl"
+                    )
+                    with static_normalizer_path.open("rb") as f:
+                        self.static_normalizing_dict = pickle.load(f)
+            if static == "embeddings":
+                # in case no static dataset was generated, we use the first
+                # historical dataset
+                self.static, self.max_loc_int = self._loc_to_int(
+                    xr.open_dataset(self.data_files[0] / "x.nc")
                 )
-                with static_normalizer_path.open("rb") as f:
-                    self.static_normalizing_dict = pickle.load(f)
+
         self.device = torch.device(device)
+        self.spatial_mask = spatial_mask
+
+        if spatial_mask is not None:
+            assert (
+                clear_nans is True
+            ), f"The spatial mask uses NaNs to get rid of values - this requires clear_nans to be true"
+        self.clear_nans = clear_nans
 
     def __iter__(self):
         if self.mode == "train":
@@ -180,6 +329,25 @@ class DataLoader:
 
     def __len__(self) -> int:
         return len(self.data_files) // self.batch_file_size
+
+    @staticmethod
+    def _loc_to_int(base_ds: xr.Dataset) -> Tuple[xr.Dataset, int]:
+        """
+        returns a dataset with the lat and lon coordinates preserved, and
+        a unique increasing integer for each lat-lon combination
+        """
+        assert {"lat", "lon"} <= set(
+            base_ds.dims
+        ), "Dimensions named lat and lon must be in the reference grid"
+        base_ds = base_ds[["lat", "lon"]]
+
+        # next, we fill the values with unique integers
+        unique_values = np.arange(0, len(base_ds.lat) * len(base_ds.lon)).reshape(
+            (len(base_ds.lat), len(base_ds.lon))
+        )
+        base_ds["encoding"] = (("lat", "lon"), unique_values)
+
+        return base_ds, int(unique_values.max())
 
     @staticmethod
     def _load_datasets(
@@ -229,6 +397,8 @@ class _BaseIter:
         self.experiment = loader.experiment
         self.ignore_vars = loader.ignore_vars
         self.device = loader.device
+        self.predict_delta = loader.predict_delta
+        self.spatial_mask = loader.spatial_mask
 
         self.static = loader.static
         self.static_normalizing_dict = loader.static_normalizing_dict
@@ -379,11 +549,62 @@ class _BaseIter:
             self.static_array = static_np
         return self.static_array
 
+    def apply_spatial_mask(
+        self, x: xr.Dataset, y: xr.Dataset
+    ) -> Tuple[xr.Dataset, xr.Dataset]:
+
+        if self.spatial_mask is None:
+            return x, y
+
+        else:
+            # anywhere where the mask is 1, make NaN
+            return x.where(~self.spatial_mask), y.where(~self.spatial_mask)
+
+    def _calculate_historical_target(self, x: xr.Dataset, y_var: str) -> np.ndarray:
+        """Calculate the previous timestep for the target_variable
+            (used in predict_delta experiment).
+        """
+        # get teh previous timestep
+        # NOTE: hardcoding order=1 for predict_delta
+        order = 1
+        x_np = x[y_var].isel(time=-order).values
+        x_np = x_np.reshape(x_np.shape[0] * x_np.shape[1], 1)
+        # x_np = np.moveaxis(np.moveaxis(x_np, 0, 1), -1, 0)
+        return x_np
+
+    def _calculate_change(
+        self, x: xr.Dataset, y: xr.Dataset, order: int = 1
+    ) -> xr.Dataset:
+        """Rather than predicting the raw VCI value, calculate the change
+        in the VCI relative to the previous timestep (if order == 1).
+
+        Arguments:
+        ---------
+        x: xr.Dataset
+            the predictor timestep variables (including target variable)
+        y: xr.Dataset
+            the predicted timestep target variable
+        order: int = 1
+            the number of timesteps before the predicted timestep to calculate
+            the derivative. 1 means that we are calculating the change
+            from the previous timestep.
+        """
+        # get the last (#order) timestep from the X data
+        y_var = [v for v in y.data_vars][0]
+        prev_ts = x[y_var].isel(time=-order)
+
+        # calculate the derivative
+        return (y[y_var] - prev_ts).to_dataset(name=y_var)
+
     def ds_folder_to_np(
         self, folder: Path, clear_nans: bool = True, to_tensor: bool = False
     ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / "x.nc"), xr.open_dataset(folder / "y.nc")
+
+        if self.predict_delta:
+            # TODO: do this ONCE not at each read-in of the data
+            y = self._calculate_change(x, y)
         assert len(list(y.data_vars)) == 1, (
             f"Expect only 1 target variable! " f"Got {len(list(y.data_vars))}"
         )
@@ -391,9 +612,22 @@ class _BaseIter:
             x = x.drop(self.ignore_vars)
 
         target_time = pd.to_datetime(y.time.values[0])
+        if self.experiment == "nowcast":
+            x_datetimes = [
+                pd.to_datetime(time)
+                for time in x.time.values
+                if pd.to_datetime(time) != target_time
+            ]
+        else:
+            x_datetimes = [pd.to_datetime(time) for time in x.time.values]
+
+        x, y = self.apply_spatial_mask(x, y)
+
         yearly_agg = self._calculate_aggs(
             x
         )  # before to avoid aggs from surrounding pixels
+
+        # calculate normalized values in these functions
         x_np, y_np = self._calculate_historical(x, y)
         x_months = self._calculate_target_months(y, x_np.shape[0])
         yearly_agg = np.vstack([yearly_agg] * x_np.shape[0])
@@ -455,7 +689,6 @@ class _BaseIter:
                 & (y_nans_summed == 0)
                 & (static_nans_summed == 0)
             )[0]
-
             if self.experiment == "nowcast":
                 current_nans = np.isnan(train_data.current)
                 current_nans_summed = current_nans.sum(axis=-1)
@@ -468,7 +701,9 @@ class _BaseIter:
                 train_data.current = train_data.current[notnan_indices]  # type: ignore
 
             train_data.historical = train_data.historical[notnan_indices]
-            train_data.pred_months = train_data.pred_months[notnan_indices]  # type: ignore
+            train_data.pred_months = train_data.pred_months[
+                notnan_indices
+            ]  # type: ignore
             train_data.latlons = train_data.latlons[notnan_indices]
             train_data.yearly_aggs = train_data.yearly_aggs[notnan_indices]
             if train_data.static is not None:
@@ -478,37 +713,27 @@ class _BaseIter:
 
             latlons = latlons[notnan_indices]
 
-        if to_tensor:
-            train_data.historical = (
-                torch.from_numpy(train_data.historical).to(self.device).float()
-            )
-            train_data.pred_months = (
-                torch.from_numpy(train_data.pred_months).to(self.device).float()
-            )
-            train_data.latlons = (
-                torch.from_numpy(train_data.latlons).to(self.device).float()
-            )
-            train_data.yearly_aggs = (
-                torch.from_numpy(train_data.yearly_aggs).to(self.device).float()
-            )
-            if train_data.static is not None:
-                train_data.static = (
-                    torch.from_numpy(train_data.static).to(self.device).float()
-                )
-            y_np = torch.from_numpy(y_np).to(self.device).float()
-
-            if self.experiment == "nowcast":
-                train_data.current = (
-                    torch.from_numpy(train_data.current).to(self.device).float()
-                )
-        return ModelArrays(
+        y_var = list(y.data_vars)[0]
+        model_arrays = ModelArrays(
             x=train_data,
             y=y_np,
             x_vars=list(x.data_vars),
-            y_var=list(y.data_vars)[0],
+            y_var=y_var,
             latlons=latlons,
             target_time=target_time,
+            historical_times=x_datetimes,
         )
+
+        if to_tensor:
+            model_arrays.to_tensor(self.device)
+
+        if self.predict_delta:
+            # NOTE: data is not normalised in this function
+            model_arrays.predict_delta = True
+            historical_target_np = self._calculate_historical_target(x, y_var)
+            historical_target_np = historical_target_np[notnan_indices].flatten()
+            model_arrays.historical_target = historical_target_np
+        return model_arrays
 
     @staticmethod
     def _add_extra_dims(
@@ -567,10 +792,9 @@ class _TrainIter(_BaseIter):
         Tuple[Union[np.ndarray, torch.Tensor], ...], Union[np.ndarray, torch.Tensor]
     ]:
 
+        global_modelarrays: Optional[ModelArrays] = None
+
         if self.idx < self.max_idx:
-            out_x, out_x_add, out_x_curr, out_x_latlon = [], [], [], []
-            out_x_ym, out_x_static = [], []
-            out_y = []
 
             cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
             while self.idx < cur_max_idx:
@@ -588,60 +812,29 @@ class _TrainIter(_BaseIter):
 
                     cur_max_idx = min(cur_max_idx + 1, self.max_idx)
 
-                out_x.append(arrays.x.historical)
-                if arrays.x.current is not None:
-                    out_x_curr.append(arrays.x.current)
-                if arrays.x.static is not None:
-                    out_x_static.append(arrays.x.static)
-                out_x_add.append(arrays.x.pred_months)
-                out_x_latlon.append(arrays.x.latlons)
-                out_x_ym.append(arrays.x.yearly_aggs)
-                out_y.append(arrays.y)
+                if global_modelarrays is None:
+                    global_modelarrays = arrays
+                else:
+                    global_modelarrays.concatenate(arrays)
+
                 self.idx += 1
+            if global_modelarrays is not None:
+                if self.to_tensor:
+                    global_modelarrays.to_tensor(self.device)
 
-            final_x = np.concatenate(out_x, axis=0)
-            final_x_curr = (
-                np.concatenate(out_x_curr, axis=0) if out_x_curr != [] else None
-            )
-            final_x_static = (
-                np.concatenate(out_x_static, axis=0) if out_x_static != [] else None
-            )
-            final_x_add = np.concatenate(out_x_add, axis=0)
-            final_x_latlon = np.concatenate(out_x_latlon, axis=0)
-            final_x_ym = np.concatenate(out_x_ym, axis=0)
-            final_y = np.concatenate(out_y, axis=0)
-
-            if self.to_tensor:
-                final_x = torch.from_numpy(final_x).to(self.device).float()
-                final_x_add = torch.from_numpy(final_x_add).to(self.device).float()
-                final_x_latlon = (
-                    torch.from_numpy(final_x_latlon).to(self.device).float()
+                return (
+                    (
+                        global_modelarrays.x.historical,
+                        global_modelarrays.x.pred_months,
+                        global_modelarrays.x.latlons,
+                        global_modelarrays.x.current,
+                        global_modelarrays.x.yearly_aggs,
+                        global_modelarrays.x.static,
+                    ),
+                    global_modelarrays.y,
                 )
-                final_x_ym = torch.from_numpy(final_x_ym).to(self.device).float()
-                if final_x_curr is not None:
-                    final_x_curr = (
-                        torch.from_numpy(final_x_curr).to(self.device).float()
-                    )
-                if final_x_static is not None:
-                    final_x_static = (
-                        torch.from_numpy(final_x_static).to(self.device).float()
-                    )
-                final_y = torch.from_numpy(final_y).to(self.device).float()
-
-            if final_x.shape[0] == 0:
+            else:
                 raise StopIteration()
-
-            return (
-                (
-                    final_x,
-                    final_x_add,
-                    final_x_latlon,
-                    final_x_curr,
-                    final_x_ym,
-                    final_x_static,
-                ),
-                final_y,
-            )
 
         else:  # final_x_curr >= self.max_idx
             raise StopIteration()

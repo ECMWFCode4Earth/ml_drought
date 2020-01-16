@@ -73,12 +73,16 @@ class TestLinearNetwork:
         assert model_dict["ignore_vars"] == ignore_vars
 
     @pytest.mark.parametrize(
-        "use_pred_months,use_latlons,experiment,monthly_agg,static",
+        "use_pred_months,use_latlons,experiment,monthly_agg,static,predict_delta",
         [
-            (True, False, "one_month_forecast", True, False),
-            (False, True, "one_month_forecast", False, True),
-            (False, True, "nowcast", True, False),
-            (True, False, "nowcast", False, True),
+            (True, False, "one_month_forecast", True, False, True),
+            (False, True, "one_month_forecast", False, True, True),
+            (False, True, "nowcast", True, False, True),
+            (True, False, "nowcast", False, True, True),
+            (True, False, "one_month_forecast", True, False, False),
+            (False, True, "one_month_forecast", False, True, False),
+            (False, True, "nowcast", True, False, False),
+            (True, False, "nowcast", False, True, False),
         ],
     )
     def test_train(
@@ -90,6 +94,7 @@ class TestLinearNetwork:
         experiment,
         monthly_agg,
         static,
+        predict_delta,
     ):
         # make the x, y data (5*5 latlons, 36 timesteps, 3 features)
         x, _, _ = _make_dataset(size=(5, 5), const=True)
@@ -136,41 +141,11 @@ class TestLinearNetwork:
             include_pred_month=use_pred_months,
             include_latlons=use_latlons,
             include_monthly_aggs=monthly_agg,
-            include_static=static,
+            static="embeddings",
+            predict_delta=predict_delta,
         )
 
         model.train()
-
-        # check the number of input features is properly initialised
-        n_input_features = [p for p in model.model.dense_layers.parameters()][0].shape[
-            -1
-        ]
-
-        # Expect to have 12 more features if use_pred_months
-        if experiment == "nowcast":
-            n_expected = 107
-        else:
-            # NOTE: data hasn't been through `src.Engineer` therefore including
-            #  current data (hence why more features than `nowcast`)
-            n_expected = 108
-
-        if monthly_agg:
-            n_expected *= 2
-        if use_pred_months:
-            n_expected += 12
-        if use_latlons:
-            n_expected += 2
-
-        n_expected += 3  # +3 for the yearly means
-
-        if static:
-            n_expected += 1  # for the static variable
-
-        assert n_input_features == n_expected, (
-            "Expected the number"
-            f"of input features to be: {n_expected}"
-            f"Got: {n_input_features}"
-        )
 
         captured = capsys.readouterr()
         expected_stdout = "Epoch 1, train smooth L1: "

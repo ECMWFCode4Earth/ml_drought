@@ -1,3 +1,4 @@
+from pathlib import Path
 import sys
 
 sys.path.append("..")
@@ -10,25 +11,34 @@ from src.models import (
     EARecurrentNetwork,
     load_model,
 )
-from src.analysis import all_shap_for_file
+from src.analysis import all_explanations_for_file
 
 from scripts.utils import get_data_path
 
 
 def parsimonious(experiment="one_month_forecast",):
 
-    predictor = Persistence(get_data_path(), experiment=experiment)
+    data_path = get_data_path()
+    predictor = Persistence(
+        data_path,
+        experiment=experiment,
+        spatial_mask=data_path / "interim/boundaries_preprocessed/kenya_asal_mask.nc",
+    )
     predictor.evaluate(save_preds=True)
 
 
 def regression(
-    experiment="one_month_forecast", include_pred_month=True, surrounding_pixels=1
+    experiment="one_month_forecast", include_pred_month=True, surrounding_pixels=None
 ):
+
+    data_path = get_data_path()
     predictor = LinearRegression(
-        get_data_path(),
+        data_path,
         experiment=experiment,
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
+        static="embeddings",
+        spatial_mask=data_path / "interim/boundaries_preprocessed/kenya_asal_mask.nc",
     )
     predictor.train()
     predictor.evaluate(save_preds=True)
@@ -93,12 +103,12 @@ def earnn(
 
     test_file = data_path / f"features/{experiment}/test/2018_3"
     assert test_file.exists()
-    all_shap_for_file(test_file, predictor, batch_size=100)
+    all_explanations_for_file(test_file, predictor, batch_size=100)
 
 
 if __name__ == "__main__":
-    # parsimonious()
+    parsimonious()
     regression()
-    # linear_nn()
-    # rnn()
-    # earnn(pretrained=True)
+    linear_nn()
+    rnn()
+    earnn(pretrained=True)

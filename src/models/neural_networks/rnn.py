@@ -1,11 +1,12 @@
 import math
 from copy import copy
 from pathlib import Path
+import xarray as xr
 
 import torch
 from torch import nn
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from .base import NNBase
 
@@ -29,8 +30,10 @@ class RecurrentNetwork(NNBase):
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
-        include_static: bool = True,
+        static: Optional[str] = "features",
         device: str = "cuda:0",
+        predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
     ) -> None:
         super().__init__(
             data_folder,
@@ -43,8 +46,10 @@ class RecurrentNetwork(NNBase):
             include_yearly_aggs,
             surrounding_pixels,
             ignore_vars,
-            include_static,
+            static,
             device,
+            predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
         )
 
         # to initialize and save the model
@@ -83,8 +88,9 @@ class RecurrentNetwork(NNBase):
             "include_monthly_aggs": self.include_monthly_aggs,
             "include_yearly_aggs": self.include_yearly_aggs,
             "experiment": self.experiment,
-            "include_static": self.include_static,
+            "static": self.static,
             "device": self.device,
+            "spatial_mask": self.spatial_mask,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")
@@ -137,10 +143,13 @@ class RecurrentNetwork(NNBase):
                 ), f"x_ref can't be None if features_per_month or current_size is not defined"
                 self.yearly_agg_size = x_ref[4].shape[-1]
 
-        if self.include_static:
+        if self.static:
             if self.static_size is None:
-                assert x_ref is not None
-                self.static_size = x_ref[5].shape[-1]
+                if self.static == "features":
+                    assert x_ref is not None
+                    self.static_size = x_ref[5].shape[-1]
+                elif self.static == "embeddings":
+                    self.static_size = self.num_locations
 
         model = RNN(
             features_per_month=self.features_per_month,

@@ -4,6 +4,8 @@ from collections import namedtuple
 from .base import BasePreProcessor
 from .utils import SHPtoXarray
 
+from typing import Optional, Dict
+
 gpd = None
 GeoDataFrame = None
 
@@ -45,7 +47,8 @@ class OCHAAdminBoundariesPreprocesser(BasePreProcessor):
         reference_nc_filepath: Path,
         var_name: str,
         lookup_colname: str,
-    ) -> None:
+        save: bool = True,
+    ) -> Optional[xr.Dataset]:
         """ Preprocess .shp admin boundary files into an `.nc`
         file with the same shape as reference_nc_filepath.
 
@@ -76,7 +79,7 @@ class OCHAAdminBoundariesPreprocesser(BasePreProcessor):
                 "process again then move or delete existing file"
                 f" at: {(self.out_dir / filename).as_posix()}"
             )
-            return
+            return None
 
         assert "interim" in reference_nc_filepath.parts, (
             "Expected " "the target data to have been preprocessed by the pipeline"
@@ -97,14 +100,22 @@ class OCHAAdminBoundariesPreprocesser(BasePreProcessor):
         )
 
         # save the data
-        print(f"Saving to {self.out_dir}")
-        assert self.out_dir.parts[-2] == "analysis", (
-            "self.analysis should" "be True and the output directory should be analysis"
-        )
+        if save:
+            print(f"Saving to {self.out_dir}")
 
-        ds.to_netcdf(self.out_dir / filename)
+            if self.analysis is True:
+                assert self.out_dir.parts[-2] == "analysis", (
+                    "self.analysis should"
+                    "be True and the output directory should be analysis"
+                )
 
-        print(f"** {(self.out_dir / filename).as_posix()} saved! **")
+            ds.to_netcdf(self.out_dir / filename)
+
+            print(f"** {(self.out_dir / filename).as_posix()} saved! **")
+
+            return None
+        else:
+            return ds
 
 
 class KenyaAdminPreprocessor(OCHAAdminBoundariesPreprocesser):
@@ -182,3 +193,58 @@ class KenyaAdminPreprocessor(OCHAAdminBoundariesPreprocesser):
             reference_nc_filepath=reference_nc_filepath,
             var_name=admin_level.var_name,
         )
+
+
+class KenyaASALMask(KenyaAdminPreprocessor):
+
+    analysis = False
+
+    asal_districts = [
+        "TURKANA",
+        "MANDERA",
+        "SAMBURU",
+        "GARISSA",
+        "MARSABIT",
+        "WAJIR",
+        "TANA RIVER",
+        "WEST POKOT",
+        "ISIOLO",
+        "KITUI",
+        "MOYALE",
+    ]
+
+    @staticmethod
+    def val_to_key(ds: xr.Dataset) -> Dict[str, int]:
+
+        return dict(
+            zip(
+                [v.strip() for v in ds.attrs["values"].split(",")],
+                [int(k.strip()) for k in ds.attrs["keys"].split(",")],
+            )
+        )
+
+    def preprocess(
+        self, reference_nc_filepath: Path, selection: str = "level_2"
+    ) -> None:
+
+        assert selection == "level_2", f"Only level 2 supported, got {selection}"
+        district_boundaries = self.get_admin_level("level_2")
+
+        ds = self._preprocess_single(
+            shp_filepath=district_boundaries.shp_filepath,
+            lookup_colname=district_boundaries.lookup_colname,
+            reference_nc_filepath=reference_nc_filepath,
+            var_name=district_boundaries.var_name,
+            save=False,
+        )
+
+        assert isinstance(ds, xr.Dataset)
+
+        val2key = self.val_to_key(ds)
+        relevant_keys = [val2key.get(district) for district in self.asal_districts]
+
+        ds["mask"] = ~ds.district_l2.isin(relevant_keys)
+        # save
+        filename = "kenya_asal_mask.nc"
+        ds.to_netcdf(self.out_dir / filename)
+        print(f"** {(self.out_dir / filename).as_posix()} saved! **")
