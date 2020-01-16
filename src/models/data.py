@@ -83,14 +83,12 @@ class ModelArrays:
         if self.x.current is not None:
             # NOTE: historical times is one less for nowcast?
             assert (
-                # type: ignore
-                len(self.historical_times)
+                len(self.historical_times)  # type: ignore
                 == self.x.historical.shape[1]
             ), "second dim is # timesteps"
         else:
             assert (
-                # type: ignore
-                len(self.historical_times)
+                len(self.historical_times)  # type: ignore
                 == self.x.historical.shape[1]
             ), "second dim is # timesteps"
         variables = self.x_vars
@@ -714,10 +712,9 @@ class _BaseIter:
                     & (current_nans_summed == 0)
                     & (static_nans_summed == 0)
                 )[0]
-                # type: ignore
-                train_data.current = train_data.current[notnan_indices]
+                train_data.current = train_data.current[notnan_indices]  # type: ignore
 
-            train_data.historical = train_data.historical[notnan_indices]
+            train_data.historical = train_data.historical[notnan_indices]  # type: ignore
             train_data.pred_months = train_data.pred_months[
                 notnan_indices
             ]  # type: ignore
