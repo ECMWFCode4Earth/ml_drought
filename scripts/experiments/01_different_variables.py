@@ -173,7 +173,6 @@ if __name__ == "__main__":
 
         # run experiments
         for static in [True, False]:
-<<<<<<< HEAD
             vars_joined = "_".join(vars_to_include)
             already_run = get_already_run(data_dir, vars_joined, static)
             # CHECK if experiment has already been run
@@ -184,18 +183,10 @@ if __name__ == "__main__":
                 )
                 continue
 
-=======
->>>>>>> 35a852bacc0c3e3a6b3d8f3c9756006f93dcf099
             try:
                 run_all_models_as_experiments(
                     vars_to_include, ignore_vars, static=static, run_regression=False
                 )
-<<<<<<< HEAD
-            except:
-                print(
-                    f'\n{"-" * 10}\Experiment FAILED: {vars_to_include} static:{static}\n{"-" * 10}'
-                )
-=======
             except KeyboardInterrupt:
                 raise
             except Exception as e:
@@ -211,4 +202,3 @@ if __name__ == "__main__":
                 data_dir = get_data_path()
                 rename_model_experiment_file(data_dir, vars_to_include, static)
                 print(f"Experiment {vars_to_include} finished")
->>>>>>> 35a852bacc0c3e3a6b3d8f3c9756006f93dcf099

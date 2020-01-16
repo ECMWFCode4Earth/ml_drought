@@ -614,10 +614,7 @@ class _BaseIter:
         if self.predict_delta:
             # TODO: do this ONCE not at each read-in of the data
             y = self._calculate_change(x, y)
-<<<<<<< HEAD
 
-=======
->>>>>>> 35a852bacc0c3e3a6b3d8f3c9756006f93dcf099
         assert len(list(y.data_vars)) == 1, (
             f"Expect only 1 target variable! " f"Got {len(list(y.data_vars))}"
         )
