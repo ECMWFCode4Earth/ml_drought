@@ -35,13 +35,14 @@ class TestPlanetOSPreprocessor:
         coords = {"latitude": latitudes, "longitude": longitudes}
 
         if add_times:
-            size = (2, size[0], size[1])
             dims.insert(0, "time")
 
             if monthly:
                 times = pd.date_range(min_date, max_date, freq="M")
             else:
                 times = pd.date_range(min_date, max_date, freq="H")[:10]
+
+            size = (len(times), size[0], size[1])
             coords["time"] = times
         t2m = np.random.randint(100, size=size)
 
