@@ -28,6 +28,37 @@ class CDSExporter(BaseExporter):
         self.client = cdsapi.Client()  # type: ignore
 
     @staticmethod
+    def _correct_input(value, key):
+        if type(value) is str:
+
+            # check the string is correctly formatted
+            if key == "time":
+                assert re.match(
+                    r"\d{2}:0{2}", value
+                ), f"Expected time string {value} to be in hour:minute format, \
+                    e.g. 01:00. Minutes MUST be `00`"
+            return value
+        else:
+            if key == "year":
+                return str(value)
+            elif key in {"month", "day"}:
+                return "{:02d}".format(value)
+            elif key == "time":
+                return "{:02d}:00".format(value)
+        return str(value)
+
+    @staticmethod
+    def _check_iterable(value, key):
+        if (key == "time") and (type(value) is str):
+            return [value]
+        try:
+            iter(value)
+        except TypeError as te:
+            warnings.warn(f"{key}: {te}. Converting to list")
+            value = [value]
+        return value
+
+    @staticmethod
     def create_area(region: Region) -> str:
         """Create an area string for the CDS API from a Region object
 
@@ -244,37 +275,6 @@ class ERA5Exporter(CDSExporter):
             dataset = f"{dataset}-monthly-means"
 
         return dataset
-
-    @staticmethod
-    def _correct_input(value, key):
-        if type(value) is str:
-
-            # check the string is correctly formatted
-            if key == "time":
-                assert re.match(
-                    r"\d{2}:0{2}", value
-                ), f"Expected time string {value} to be in hour:minute format, \
-                    e.g. 01:00. Minutes MUST be `00`"
-            return value
-        else:
-            if key == "year":
-                return str(value)
-            elif key in {"month", "day"}:
-                return "{:02d}".format(value)
-            elif key == "time":
-                return "{:02d}:00".format(value)
-        return str(value)
-
-    @staticmethod
-    def _check_iterable(value, key):
-        if (key == "time") and (type(value) is str):
-            return [value]
-        try:
-            iter(value)
-        except TypeError as te:
-            warnings.warn(f"{key}: {te}. Converting to list")
-            value = [value]
-        return value
 
     def create_selection_request(
         self,

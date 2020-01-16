@@ -19,6 +19,7 @@ VALID_ERA5_LAND_VARS = [
     'lake_mix_layer_temperature', 'lake_shape_factor',
     'lake_total_layer_temperature', 'leaf_area_index_high_vegetation',
     'leaf_area_index_low_vegetation', 'potential_evaporation', 'runoff',
+    'leaf_area_index_low_vegetation', 'potential_evaporation', 'runoff',
     'skin_reservoir_content', 'skin_temperature', 'snow_albedo', 'snow_cover',
     'snow_density', 'snow_depth', 'snow_depth_water_equivalent',
     'snow_evaporation', 'snowfall', 'snowmelt', 'soil_temperature_level_1',
