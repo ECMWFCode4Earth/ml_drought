@@ -142,6 +142,7 @@ class TestBaseIter:
                 self.device = torch.device("cpu")
 
                 self.static = None
+                self.spatial_mask = None
                 self.static_normalizing_dict = None
 
         base_iterator = _BaseIter(MockLoader())

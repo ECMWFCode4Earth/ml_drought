@@ -203,6 +203,7 @@ class TestLinearRegression:
             static,
             device,
             predict_delta,
+            spatial_mask,
         ):
 
             pass

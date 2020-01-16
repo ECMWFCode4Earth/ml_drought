@@ -78,7 +78,7 @@ def select_bounding_box(
 class SHPtoXarray:
     def __init__(self):
         print(
-            "the SHPtoXarray functionality requires"
+            "the SHPtoXarray functionality requires "
             "rasterio, Affine, geopandas and shapely"
         )
 
@@ -214,7 +214,7 @@ class SHPtoXarray:
             if (values is not None) & (keys is not None)
         ]
         values = [
-            key
+            value
             for key, value in zip(keys, values)
             if (values is not None) & (keys is not None)
         ]

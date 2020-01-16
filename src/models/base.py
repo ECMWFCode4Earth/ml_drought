@@ -55,6 +55,7 @@ class ModelBase:
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "embedding",
         predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
     ) -> None:
 
         self.batch_size = batch_size
@@ -88,10 +89,22 @@ class ModelBase:
 
         self.model: Any = None  # to be added by the model classes
         self.data_vars: Optional[List[str]] = None  # to be added by the train step
+        self.spatial_mask = self._load_spatial_mask(spatial_mask)
 
         # This can be overridden by any model which actually cares which device its run on
         # by default, models which don't care will run on the CPU
         self.device = "cpu"
+
+    @staticmethod
+    def _load_spatial_mask(
+        mask: Union[Path, xr.DataArray, None] = None
+    ) -> Optional[xr.DataArray]:
+        if (mask is None) or isinstance(mask, xr.DataArray):
+            return mask
+        elif isinstance(mask, Path):
+            mask = xr.open_dataset(mask)
+            return mask["mask"]
+        return None
 
     def _convert_delta_to_raw_values(
         self, x: xr.Dataset, y: xr.Dataset, y_var: str, order: int = 1
@@ -160,7 +173,6 @@ class ModelBase:
         output_dict["total"] = np.sqrt(
             mean_squared_error(np.concatenate(total_true), np.concatenate(total_preds))
         ).item()
-
         print(f'RMSE: {output_dict["total"]}')
 
         if save_results:
@@ -293,6 +305,10 @@ class ModelBase:
             "clear_nans": True,
             "normalize": True,
             "predict_delta": self.predict_delta,
+<<<<<<< HEAD
+=======
+            "spatial_mask": self.spatial_mask,
+>>>>>>> 35a852bacc0c3e3a6b3d8f3c9756006f93dcf099
         }
 
         for key, val in kwargs.items():

@@ -29,6 +29,7 @@ def regression(
     static="features",
     ignore_vars=None,
     predict_delta=False,
+    spatial_mask=None,
 ):
     print("\n\n** Regression **")
     predictor = LinearRegression(
@@ -39,6 +40,7 @@ def regression(
         static=static,
         ignore_vars=ignore_vars,
         predict_delta=predict_delta,
+        spatial_mask=spatial_mask,
     )
     predictor.train()
     predictor.evaluate(save_preds=True)
@@ -61,6 +63,7 @@ def linear_nn(
     layer_sizes=[100],
     predict_delta=False,
     learning_rate=1e-3,
+    spatial_mask=None,
 ):
     print("\n\n** Linear Network **")
     predictor = LinearNetwork(
@@ -77,6 +80,7 @@ def linear_nn(
         num_epochs=num_epochs,
         early_stopping=early_stopping,
         learning_rate=learning_rate,
+        spatial_mask=spatial_mask,
     )
     predictor.evaluate(save_preds=True)
     predictor.save_model()
@@ -98,6 +102,7 @@ def rnn(
     hidden_size=128,
     predict_delta=False,
     learning_rate=1e-3,
+    spatial_mask=None,
 ):
     print("\n\n** RNN **")
     predictor = RecurrentNetwork(
@@ -114,6 +119,7 @@ def rnn(
         num_epochs=num_epochs,
         early_stopping=early_stopping,
         learning_rate=learning_rate,
+        spatial_mask=spatial_mask,
     )
     predictor.evaluate(save_preds=True)
     predictor.save_model()
@@ -137,6 +143,7 @@ def earnn(
     hidden_size=128,
     predict_delta=False,
     learning_rate=1e-3,
+    spatial_mask=None,
 ):
     print("\n\n** EALSTM **")
     data_path = get_data_path()
@@ -157,6 +164,7 @@ def earnn(
             num_epochs=num_epochs,
             early_stopping=early_stopping,
             learning_rate=learning_rate,
+            spatial_mask=spatial_mask,
         )
         predictor.evaluate(save_preds=True)
         predictor.save_model()
@@ -179,6 +187,7 @@ def gbdt(
     static="features",
     ignore_vars=None,
     # predict_delta=False,
+    spatial_mask=None,
 ):
     print("\n\n** GBDT **")
     data_path = get_data_path()
@@ -191,6 +200,7 @@ def gbdt(
         surrounding_pixels=surrounding_pixels,
         static=static,
         ignore_vars=ignore_vars,
+        spatial_mask=spatial_mask,
     )
     predictor.train(early_stopping=5)
     predictor.evaluate(save_preds=True)

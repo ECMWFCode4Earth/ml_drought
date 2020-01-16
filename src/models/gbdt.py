@@ -1,8 +1,9 @@
 import numpy as np
 from pathlib import Path
 import pickle
+import xarray as xr
 
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional, Union
 
 from .base import ModelBase
 from .data import DataLoader, train_val_mask, TrainData
@@ -34,6 +35,7 @@ class GBDT(ModelBase):
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
         predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
     ) -> None:
         super().__init__(
             data_folder,
@@ -48,6 +50,7 @@ class GBDT(ModelBase):
             ignore_vars,
             static,
             predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
         )
 
         self.early_stopping = False
@@ -168,6 +171,7 @@ class GBDT(ModelBase):
             "include_yearly_aggs": self.include_yearly_aggs,
             "static": self.static,
             "early_stopping": self.early_stopping,
+            "spatial_mask": self.spatial_mask,
         }
 
         with (self.model_dir / "model.pkl").open("wb") as f:

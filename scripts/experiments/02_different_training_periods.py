@@ -1,7 +1,6 @@
 """
 
 RERUN:
-========
 chose 8 test years?
 test_hilo: high / train_hilo: high / train_length: 5
 _one_month_forecast_TRhigh_TEhigh_LEN5/test
@@ -44,6 +43,35 @@ test_hilo: high / train_hilo: low / train_length: 5
 one_month_forecast_TRlow_TEhigh_LEN5
 
 
+=======
+RERUN:
+chose 8 test years?
+test_hilo: high / train_hilo: high / train_length: 5
+_one_month_forecast_TRhigh_TEhigh_LEN5/test
+chose 5 test years
+test_hilo: med / train_hilo: high / train_length: 10
+one_month_forecast_TRhigh_TEmed_LEN10/test
+chose 2 test years
+test_hilo: low / train_hilo: high / train_length: 20
+one_month_forecast_TRhigh_TElow_LEN20/
+chose 5 test years
+test_hilo: med / train_hilo: high / train_length: 10
+one_month_forecast_TRhigh_TEmed_LEN10/
+DIDN'T RUN
+test_hilo: med / train_hilo: high / train_length: 5
+one_month_forecast_TRhigh_TEmed_LEN5/
+chose 1981 as a test year
+test_hilo: high / train_hilo: med / train_length: 20
+one_month_forecast_TRmed_TEhigh_LEN20/test
+ealstm failed
+test_hilo: low / train_hilo: med / train_length: 10
+*one_month_forecast_TRmed_TElow_LEN10/ealstm
+only chose 2 test years
+test_hilo: low / train_hilo: med / train_length: 20
+one_month_forecast_TRmed_TElow_LEN20
+chose 1981 as a test year
+test_hilo: high / train_hilo: low / train_length: 5
+one_month_forecast_TRlow_TEhigh_LEN5
 """
 import numpy as np
 import pandas as pd
@@ -219,6 +247,12 @@ def rename_experiment_dir(
     # with_datetime ensures that unique
     _rename_directory(from_path, to_path, with_datetime=True)
 
+    # 2. select randomly the TEST years from these groups
+    test_years = np.random.choice(test_dict[test_hilo], test_length, replace=False)
+    # test_indexes = np.array(
+    #     [np.where(test_dict[test_hilo] == i) for i in test_years]
+    # ).flatten()
+
 
 def run_experiments(
     train_hilo: str,
@@ -289,22 +323,24 @@ def run_experiments(
 class Experiment:
     """
     train_length: int
-        the length of the training period (# years)
+        the length of the training period (# years)
     test_length: int = 3
-        the length of the testing period (# years)
+        the length of the testing period (# years)
     train_hilo: str
         selecting the training years from which tercile?
         one of ['high', 'med', 'low']
     test_hilo: str
         selecting the training years from which tercile?
         one of ['high', 'med', 'low']
-
     @dataclass
     train_length: int
     test_length: int = 3
     train_hilo: str
     test_hilo: str
+<<<<<<< HEAD
 
+=======
+>>>>>>> 35a852bacc0c3e3a6b3d8f3c9756006f93dcf099
     TODO: put the get_experiment_years function inside this class!
     """
 
@@ -318,6 +354,11 @@ class Experiment:
 
         assert train_hilo in ["high", "med", "low"]
         assert test_hilo in ["high", "med", "low"]
+
+        try:
+            earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
+        except RuntimeError:
+            print(f"\n{'*'*10}\n FAILED: EALSTM \n{'*'*10}\n")
 
 
 def run_training_period_experiments(pred_months: int = 3):
