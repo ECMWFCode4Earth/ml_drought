@@ -166,11 +166,7 @@ class ERA5Exporter(CDSExporter):
         days = ["{:02d}".format(day) for day in range(1, 31 + 1)]
         times = ["{:02d}:00".format(hour) for hour in range(24)]
 
-        selection_dict = {
-            "year": years,
-            "month": months,
-            "time": times,
-        }
+        selection_dict = {"year": years, "month": months, "time": times}
         if granularity == "hourly":
             selection_dict["day"] = days
         return selection_dict
@@ -328,19 +324,15 @@ class ERA5Exporter(CDSExporter):
         if n_parallel_requests < 1:
             n_parallel_requests = 1
 
-        # break up by month
+        # break up by year
         if break_up:
             if n_parallel_requests > 1:  # Run in parallel
                 p = multiprocessing.Pool(int(n_parallel_requests))
 
             output_paths = []
-            for year, month in itertools.product(
-                processed_selection_request["year"],
-                processed_selection_request["month"],
-            ):
+            for year in processed_selection_request["year"]:
                 updated_request = processed_selection_request.copy()
                 updated_request["year"] = [year]
-                updated_request["month"] = [month]
 
                 if n_parallel_requests > 1:  # Run in parallel
                     # multiprocessing of the paths
