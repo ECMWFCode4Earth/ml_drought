@@ -200,3 +200,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 
         if cleanup:
             rmtree(self.interim)
+
+
+class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
+    dataset = "reanalysis-era5-single-levels"
