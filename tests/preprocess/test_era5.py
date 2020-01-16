@@ -13,8 +13,15 @@ from ..utils import _make_dataset
 class TestPlanetOSPreprocessor:
     @staticmethod
     def _make_era5_dataset(
-        size, lonmin=33.75, lonmax=42.25, latmin=6.0, latmax=-5.0, add_times=True,
-        monthly=True, min_date="2019-01-01", max_date="2019-03-01"
+        size,
+        lonmin=33.75,
+        lonmax=42.25,
+        latmin=6.0,
+        latmax=-5.0,
+        add_times=True,
+        monthly=True,
+        min_date="2019-01-01",
+        max_date="2019-03-01",
     ):
         # Same as make_chirps_dataset, except already truncated
         # since we can just download Kenya from the cds api
@@ -31,9 +38,9 @@ class TestPlanetOSPreprocessor:
             dims.insert(0, "time")
 
             if monthly:
-                times = pd.date_range(min_date, max_date, freq='M')
+                times = pd.date_range(min_date, max_date, freq="M")
             else:
-                times = pd.date_range(min_date, max_date, freq='H')[:10]
+                times = pd.date_range(min_date, max_date, freq="H")[:10]
             coords["time"] = times
         t2m = np.random.randint(100, size=size)
 
@@ -105,7 +112,7 @@ class TestPlanetOSPreprocessor:
 
         (tmp_path / f"raw/{basename}/" "2m_temperature/1979_2019").mkdir(parents=True)
         data_path = tmp_path / f"raw/{basename}/" "2m_temperature/1979_2019/01_12.nc"
-        if granularity == 'hourly':
+        if granularity == "hourly":
             dataset = self._make_era5_dataset(size=(100, 100), monthly=False)
         else:
             dataset = self._make_era5_dataset(size=(100, 100), monthly=True)
