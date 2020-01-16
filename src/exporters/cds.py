@@ -1,6 +1,5 @@
 from pathlib import Path
 import warnings
-import itertools
 import re
 from pprint import pprint
 import multiprocessing
