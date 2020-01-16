@@ -50,6 +50,7 @@ def export_era5(variables):
     for variable in variables:
         exporter.export(variable=variable, granularity="hourly", break_up=True)
 
+
 if __name__ == "__main__":
     variables = [
         "2m_temperature",
