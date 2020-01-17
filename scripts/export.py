@@ -71,12 +71,7 @@ def export_era5():
 
 
 def export_era5_land():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
-    exporter = ERA5LandExporter(data_path)
+    exporter = ERA5LandExporter(get_data_path)
 
     variables = [
         "total_precipitation",
