@@ -160,13 +160,13 @@ class BokuNDVIExporter(BaseExporter):
 
 class BokuNDVI1000Exporter(BokuNDVIExporter):
     # 1km pixel
-    name: str = 'boku_ndvi_1000'
+    dataset: str = 'boku_ndvi_1000'
     resolution: str = '1000'
     base_url: str = os.environ.get("FTP_1000")
 
 
 class BokuNDVI250Exporter(BokuNDVIExporter):
     # 250m pixel
-    name: str = 'boku_ndvi_250'
+    dataset: str = 'boku_ndvi_250'
     resolution: str = '250'
     base_url: str = os.environ.get("FTP_250")
