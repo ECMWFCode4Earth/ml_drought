@@ -11,6 +11,7 @@ from src.exporters import (
     S5Exporter,
     SRTMExporter,
     KenyaAdminExporter,
+    ERA5LandExporter
 )
 
 from scripts.utils import get_data_path
