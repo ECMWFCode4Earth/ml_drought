@@ -109,7 +109,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
         if len(dynamic_filepaths) > 0:
-            _country_str = '_[a-z]*.nc'
+            _country_str = f'_{subset_str}.nc'  # '_[a-z]*.nc'
             variables = [
                 re.sub(_country_str, '', p.name[8:])
                 for p in dynamic_filepaths
@@ -117,7 +117,10 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 
             all_dyn_ds = []
             for variable in np.unique(variables):
-                _dyn_fpaths = [p for p in dynamic_filepaths if variable in p.as_posix()]
+                _dyn_fpaths = [
+                    p for p in dynamic_filepaths
+                    if variable == re.sub(_country_str, '', p.name[8:])
+                ]
                 _ds_dyn = xr.open_mfdataset(_dyn_fpaths)
                 # ds_dyn = xr.open_mfdataset(dynamic_filepaths)
 
