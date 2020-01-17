@@ -4,6 +4,7 @@ import xarray as xr
 import multiprocessing
 from shutil import rmtree
 import re
+import numpy as np
 
 from typing import Optional, List
 
