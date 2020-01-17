@@ -3,6 +3,7 @@ from functools import partial
 import xarray as xr
 import multiprocessing
 from shutil import rmtree
+import re
 
 from typing import Optional, List
 
@@ -107,19 +108,28 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
         if len(dynamic_filepaths) > 0:
-            ds_dyn = xr.open_mfdataset(dynamic_filepaths)
+            _country_str = '_[a-z]*.nc'
+            variables = [
+                re.sub(_country_str, '', p.name[8:])
+                for p in dynamic_filepaths
+                ]
 
-            if resample_time is not None:
-                ds_dyn = self.resample_time(ds_dyn, resample_time, upsampling)
+            for variable in np.unique(variables):
+                _dyn_fpaths = [p for p in dynamic_filepaths if variable in p.as_posix()]
+                ds_dyn = xr.open_mfdataset(dynamic_filepaths)
+                # ds_dyn = xr.open_mfdataset(dynamic_filepaths)
 
-            if filename is None:
-                filename = (
-                    f'data{"_" + subset_str if subset_str is not None else ""}.nc'
-                )
-            out = self.out_dir / filename
+                if resample_time is not None:
+                    ds_dyn = self.resample_time(ds_dyn, resample_time, upsampling)
 
-            ds_dyn.to_netcdf(out)
-            print(f"\n**** {out} Created! ****\n")
+                if filename is None:
+                    filename = (
+                        f'data{"_" + subset_str if subset_str is not None else ""}.nc'
+                    )
+                out = self.out_dir / filename
+
+                ds_dyn.to_netcdf(out)
+                print(f"\n**** {out} Created! ****\n")
 
         # then, static
         static_filepaths = self.get_filepaths("interim", filter_type="static")
