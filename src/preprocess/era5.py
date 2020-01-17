@@ -212,7 +212,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
     def merge_files(
         self,
         subset_str: Optional[str] = "kenya",
-        resample_time: Optional[str] = "M",
+        resample_time: Optional[str] = "W-MON",
         upsampling: bool = False,
         filename: Optional[str] = None,
     ) -> None:
