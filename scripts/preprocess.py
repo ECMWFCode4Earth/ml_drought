@@ -10,6 +10,7 @@ from src.preprocess import (
     ESACCIPreprocessor,
     SRTMPreprocessor,
     ERA5MonthlyMeanPreprocessor,
+    ERA5HourlyPreprocessor,
 )
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
@@ -126,14 +127,27 @@ def preprocess_era5():
     processor.preprocess(subset_str="kenya", regrid=regrid_path)
 
 
+def preprocess_era5_hourly():
+    data_path = get_data_path()
+
+    regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
+    assert regrid_path.exists(), f"{regrid_path} not available"
+
+    processor = ERA5HourlyPreprocessor(data_path)
+
+    # W-MON is weekly each monday (the same as the NDVI data from Atzberger)
+    processor.preprocess(subset_str="kenya", resample_time="W-MON")
+
+
 if __name__ == "__main__":
-    process_vci_2018()
-    process_precip_2018()
-    process_era5POS_2018()
-    process_gleam()
-    process_esa_cci_landcover()
-    preprocess_srtm()
-    preprocess_era5()
-    preprocess_kenya_boundaries(selection="level_1")
-    preprocess_kenya_boundaries(selection="level_2")
-    preprocess_kenya_boundaries(selection="level_3")
+    # process_vci_2018()
+    # process_precip_2018()
+    # process_era5POS_2018()
+    # process_gleam()
+    # process_esa_cci_landcover()
+    # preprocess_srtm()
+    # preprocess_era5()
+    # preprocess_kenya_boundaries(selection="level_1")
+    # preprocess_kenya_boundaries(selection="level_2")
+    # preprocess_kenya_boundaries(selection="level_3")
+    preprocess_era5_hourly()
