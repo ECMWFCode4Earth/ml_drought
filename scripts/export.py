@@ -72,7 +72,7 @@ def export_era5():
 
 
 def export_era5_land():
-    exporter = ERA5LandExporter(get_data_path)
+    exporter = ERA5LandExporter(get_data_path())
 
     variables = [
         "total_precipitation",
