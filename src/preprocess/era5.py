@@ -115,22 +115,27 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
                 for p in dynamic_filepaths
                 ]
 
+            all_dyn_ds = []
             for variable in np.unique(variables):
                 _dyn_fpaths = [p for p in dynamic_filepaths if variable in p.as_posix()]
-                ds_dyn = xr.open_mfdataset(dynamic_filepaths)
+                _ds_dyn = xr.open_mfdataset(_dyn_fpaths)
                 # ds_dyn = xr.open_mfdataset(dynamic_filepaths)
 
                 if resample_time is not None:
-                    ds_dyn = self.resample_time(ds_dyn, resample_time, upsampling)
+                    _ds_dyn = self.resample_time(_ds_dyn, resample_time, upsampling)
 
-                if filename is None:
-                    filename = (
-                        f'data{"_" + subset_str if subset_str is not None else ""}.nc'
-                    )
-                out = self.out_dir / filename
+                all_dyn_ds.append(_ds_dyn)
 
-                ds_dyn.to_netcdf(out)
-                print(f"\n**** {out} Created! ****\n")
+            ds_dyn = xr.auto_combine(all_dyn_ds)
+
+            if filename is None:
+                filename = (
+                    f'data{"_" + subset_str if subset_str is not None else ""}.nc'
+                )
+            out = self.out_dir / filename
+
+            ds_dyn.to_netcdf(out)
+            print(f"\n**** {out} Created! ****\n")
 
         # then, static
         static_filepaths = self.get_filepaths("interim", filter_type="static")
