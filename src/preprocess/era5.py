@@ -109,27 +109,12 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
         if len(dynamic_filepaths) > 0:
-            _country_str = f'_{subset_str}.nc'  # '_[a-z]*.nc'
-            variables = [
-                re.sub(_country_str, '', p.name[8:])
-                for p in dynamic_filepaths
-                ]
+            ds_dyn = xr.open_mfdataset(dynamic_filepaths)
 
-            all_dyn_ds = []
-            for variable in np.unique(variables):
-                _dyn_fpaths = [
-                    p for p in dynamic_filepaths
-                    if variable == re.sub(_country_str, '', p.name[8:])
-                ]
-                _ds_dyn = xr.open_mfdataset(_dyn_fpaths)
-                # ds_dyn = xr.open_mfdataset(dynamic_filepaths)
+            if resample_time is not None:
+                ds_dyn = self.resample_time(ds_dyn, resample_time, upsampling)
 
-                if resample_time is not None:
-                    _ds_dyn = self.resample_time(_ds_dyn, resample_time, upsampling)
-
-                all_dyn_ds.append(_ds_dyn)
-
-            ds_dyn = xr.auto_combine(all_dyn_ds)
+            all_dyn_ds.append(ds_dyn)
 
             if filename is None:
                 filename = (
@@ -223,3 +208,82 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 
 class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
     dataset = "reanalysis-era5-single-levels"
+
+    def merge_files(
+        self,
+        subset_str: Optional[str] = "kenya",
+        resample_time: Optional[str] = "M",
+        upsampling: bool = False,
+        filename: Optional[str] = None,
+    ) -> None:
+
+        # first, dynamic
+        dynamic_filepaths = self.get_filepaths(
+            "interim", filter_type="dynamic")
+        if len(dynamic_filepaths) > 0:
+            _country_str = f'_{subset_str}.nc'  # '_[a-z]*.nc'
+            variables = [
+                re.sub(_country_str, '', p.name[8:])
+                for p in dynamic_filepaths
+            ]
+
+            # all_dyn_ds = []
+            for variable in np.unique(variables):
+                _dyn_fpaths = [
+                    p for p in dynamic_filepaths
+                    if variable == re.sub(_country_str, '', p.name[8:])
+                ]
+                _ds_dyn = xr.open_mfdataset(_dyn_fpaths)
+                # ds_dyn = xr.open_mfdataset(dynamic_filepaths)
+
+                if resample_time is not None:
+                    _ds_dyn = self.resample_time(
+                        _ds_dyn, resample_time, upsampling)
+
+                filename_ = f'{variable}_data{"_" + subset_str if subset_str is not None else ""}.nc'
+                out_ = self.out_dir / filename_
+
+                # save to netcdf
+                _ds_dyn.to_netcdf(out_)
+                print(f"\n**** {out_} Created! ****\n")
+
+                # all_dyn_ds.append(_ds_dyn)
+
+            # too much data and gets killed (hourly data)
+            # ds_dyn = xr.auto_combine(all_dyn_ds)
+
+            # if filename is None:
+            #     filename = (
+            #         f'data{"_" + subset_str if subset_str is not None else ""}.nc'
+            #     )
+            # out = self.out_dir / filename
+
+            # ds_dyn.to_netcdf(out)
+            # print(f"\n**** {out} Created! ****\n")
+
+        # then, static
+        static_filepaths = self.get_filepaths("interim", filter_type="static")
+        print(static_filepaths)
+        if len(static_filepaths) > 0:
+            ds_stat = xr.open_mfdataset(static_filepaths)
+
+            da_list = []
+            for var in ds_stat.data_vars:
+                print(var)
+                da_list.append(get_modal_value_across_time(ds_stat[var]))
+            ds_stat_new = xr.merge(da_list)
+
+            output_folder = (
+                self.preprocessed_folder /
+                f"static/{self.dataset}_preprocessed"
+            )
+            if not output_folder.exists():
+                output_folder.mkdir(exist_ok=True, parents=True)
+            if filename is None:
+                filename = (
+                    f'data{"_" + subset_str if subset_str is not None else ""}.nc'
+                )
+            out = output_folder / filename
+
+            ds_stat_new.to_netcdf(out)
+            print(f"\n**** {out} Created! ****\n")
