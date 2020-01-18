@@ -125,6 +125,7 @@ def earnn(
     hidden_size=128,
     predict_delta=False,
     spatial_mask=None,
+    warmup=False,
 ):
     data_path = get_data_path()
 
@@ -141,6 +142,10 @@ def earnn(
             predict_delta=predict_delta,
             spatial_mask=spatial_mask,
         )
+        if warmup:
+            predictor.unsupervised_warm_up(
+                num_epochs=50, early_stopping=5, neighbourhood_size=1, multiplier=2
+            )
         predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
         predictor.evaluate(save_preds=True)
         predictor.save_model()

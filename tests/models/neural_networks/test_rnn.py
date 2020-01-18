@@ -112,7 +112,7 @@ class TestRecurrentNetwork:
             include_monthly_aggs=True,
             predict_delta=predict_delta,
         )
-        model.train()
+        model.train(final_layer_only=True)
 
         captured = capsys.readouterr()
         expected_stdout = "Epoch 1, train smooth L1:"

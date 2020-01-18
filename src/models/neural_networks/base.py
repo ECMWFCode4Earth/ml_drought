@@ -10,10 +10,11 @@ from torch.nn import functional as F
 
 import shap
 
-from typing import cast, Dict, List, Optional, Tuple, Union
+from typing import cast, Any, Dict, List, Optional, Tuple, Union
 
 from ..base import ModelBase
 from ..utils import chunk_array
+from .triplet_data import TripletLoader, chunk_triplets, triplet_loss
 from ..data import DataLoader, train_val_mask, TrainData, idx_to_input
 
 
@@ -80,6 +81,7 @@ class NNBase(ModelBase):
         batch_size: int = 256,
         learning_rate: float = 1e-3,
         val_split: float = 0.1,
+        final_layer_only: bool = False,
     ) -> None:
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
@@ -115,9 +117,16 @@ class NNBase(ModelBase):
             model = self._initialize_model(x_ref)
             self.model = model
 
-        optimizer = torch.optim.Adam(
-            [pam for pam in self.model.parameters()], lr=learning_rate
-        )
+        if not final_layer_only:
+            parameters = [pam for pam in self.model.parameters()]
+        else:
+            parameters = [
+                pam
+                for name, pam in self.model.named_parameters()
+                if "final" not in name
+            ]
+
+        optimizer = torch.optim.Adam(parameters, lr=learning_rate)
 
         for epoch in range(num_epochs):
             train_rmse = []
@@ -205,6 +214,143 @@ class NNBase(ModelBase):
                         ] = val.historical_target
 
         return test_arrays_dict, preds_dict
+
+    def unsupervised_warm_up(
+        self,
+        neighbourhood_size: Union[float, Tuple[float, float]] = 1,
+        multiplier: int = 2,
+        num_epochs: int = 1,
+        early_stopping: Optional[int] = None,
+        batch_size: int = 256,
+        learning_rate: float = 1e-3,
+        val_split: float = 0.1,
+        margin: float = 50,
+        l2: float = 0,
+        use_spatial_mask: bool = False,
+    ) -> None:
+
+        if early_stopping is not None:
+            len_mask = len(
+                DataLoader._load_datasets(
+                    self.data_path,
+                    mode="train",
+                    experiment=self.experiment,
+                    shuffle_data=False,
+                    pred_months=self.pred_months,
+                )
+            )
+            train_mask, val_mask = train_val_mask(len_mask, val_split)
+
+            train_dataloader = self.get_triplet_dataloader(
+                neighbourhood_size=neighbourhood_size,
+                multiplier=multiplier,
+                mask=train_mask,
+                to_tensor=True,
+                shuffle_data=True,
+                use_spatial_mask=use_spatial_mask,
+            )
+            val_dataloader = self.get_triplet_dataloader(
+                neighbourhood_size=neighbourhood_size,
+                multiplier=multiplier,
+                mask=val_mask,
+                to_tensor=True,
+                shuffle_data=True,
+                use_spatial_mask=use_spatial_mask,
+            )
+
+            batches_without_improvement = 0
+            best_val_score = np.inf
+        else:
+            train_dataloader = self.get_triplet_dataloader(
+                neighbourhood_size=neighbourhood_size,
+                multiplier=multiplier,
+                to_tensor=True,
+                shuffle_data=True,
+                use_spatial_mask=use_spatial_mask,
+            )
+
+        # initialize the model
+        if self.model is None:
+            x_ref, _, _ = next(iter(train_dataloader))
+            model = self._initialize_model(self._input_to_tuple(x_ref))
+            self.model = model
+
+        optimizer = torch.optim.Adam(
+            [pam for pam in self.model.parameters()], lr=learning_rate
+        )
+
+        for epoch in range(num_epochs):
+            train_loss = []
+            self.model.train()
+            for x, neighbours, distant in train_dataloader:
+                for x_batch, n_batch, d_batch in chunk_triplets(
+                    x, neighbours, distant, batch_size, shuffle=True
+                ):
+                    optimizer.zero_grad()
+
+                    anchor_emb = self.model(
+                        *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch)),
+                        return_embedding=True,
+                    )
+                    neighbour_emb = self.model(
+                        *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], n_batch)),
+                        return_embedding=True,
+                    )
+                    distant_emb = self.model(
+                        *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], d_batch)),
+                        return_embedding=True,
+                    )
+
+                    loss = triplet_loss(
+                        anchor_emb, neighbour_emb, distant_emb, margin=margin, l2=l2
+                    )
+                    loss.backward()
+                    optimizer.step()
+
+                    train_loss.append(loss.item())
+
+            if early_stopping is not None:
+                self.model.eval()
+                val_loss = []
+                with torch.no_grad():
+                    for x, neighbours, distant in val_dataloader:
+                        anchor_emb = self.model(
+                            *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x)),
+                            return_embedding=True,
+                        )
+                        neighbour_emb = self.model(
+                            *self._input_to_tuple(
+                                cast(Tuple[torch.Tensor, ...], neighbours)
+                            ),
+                            return_embedding=True,
+                        )
+                        distant_emb = self.model(
+                            *self._input_to_tuple(
+                                cast(Tuple[torch.Tensor, ...], distant)
+                            ),
+                            return_embedding=True,
+                        )
+
+                        loss = triplet_loss(
+                            anchor_emb, neighbour_emb, distant_emb, margin=margin, l2=l2
+                        )
+                        val_loss.append(math.sqrt(loss.cpu().item()))
+
+            print(f"Epoch {epoch + 1}, train loss: {np.mean(train_loss)}")
+
+            if early_stopping is not None:
+                epoch_val_rmse = np.mean(val_loss)
+                print(f"Val RMSE: {epoch_val_rmse}")
+                if epoch_val_rmse < best_val_score:
+                    batches_without_improvement = 0
+                    best_val_score = epoch_val_rmse
+                    best_model_dict = self.model.state_dict()
+                else:
+                    batches_without_improvement += 1
+                    if batches_without_improvement == early_stopping:
+                        print("Early stopping!")
+                        self.model.load_state_dict(best_model_dict)
+                        return None
 
     def _get_background(self, sample_size: int = 150) -> List[torch.Tensor]:
 
@@ -306,7 +452,7 @@ class NNBase(ModelBase):
                 else x.static,  # type: ignore
             )
         else:
-            return (
+            return (  # type: ignore
                 x[0],  # type: ignore
                 self._one_hot(x[1], 12),  # type: ignore
                 x[2],  # type: ignore
@@ -469,3 +615,44 @@ class NNBase(ModelBase):
                 output_dict[key] = None
 
         return output_dict
+
+    def get_triplet_dataloader(
+        self,
+        neighbourhood_size: Union[float, Tuple[float, float]],
+        to_tensor: bool = False,
+        shuffle_data: bool = False,
+        use_spatial_mask: bool = False,
+        **kwargs,
+    ) -> TripletLoader:
+        """
+        Return the correct triplet for this model
+        """
+
+        default_args: Dict[str, Any] = {
+            "data_path": self.data_path,
+            "batch_file_size": self.batch_size,
+            "shuffle_data": shuffle_data,
+            "mask": None,
+            "experiment": self.experiment,
+            "pred_months": self.pred_months,
+            "to_tensor": to_tensor,
+            "ignore_vars": self.ignore_vars,
+            "monthly_aggs": self.include_monthly_aggs,
+            "surrounding_pixels": self.surrounding_pixels,
+            "static": self.static,
+            "device": self.device,
+            "clear_nans": True,
+            "normalize": True,
+            "neighbourhood_size": neighbourhood_size,
+            "spatial_mask": self.spatial_mask if use_spatial_mask else None,
+        }
+
+        for key, val in kwargs.items():
+            # override the default args
+            default_args[key] = val
+
+        dl = TripletLoader(**default_args)
+
+        if (self.static == "embeddings") and (self.num_locations is None):
+            self.num_locations = cast(int, dl.max_loc_int)
+        return dl

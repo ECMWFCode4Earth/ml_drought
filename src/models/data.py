@@ -31,7 +31,7 @@ class TrainData:
                 if type(val) is np.ndarray:
                     setattr(self, key, torch.from_numpy(val).to(device).float())
 
-    def concatenate(self, x: TrainData):
+    def concatenate(self, x: TrainData) -> None:
         # Note this function will only concatenate values from x
         # which are not None in self
         for key, val in self.__dict__.items():
@@ -42,6 +42,25 @@ class TrainData:
                     newval = torch.cat((val, getattr(x, key)), dim=0)
                 setattr(self, key, newval)
 
+    def __getitem__(self, index: Union[int, List[int]]) -> TrainData:
+        output_dict: Dict[str, Union[np.ndarray, torch.Tensor, None]] = {}
+        for key, val in self.__dict__.items():
+            if val is not None:
+                output_dict[key] = val[index]
+            else:
+                output_dict[key] = None
+        return TrainData(**output_dict)
+
+    def return_tuple(self) -> Tuple[Optional[torch.Tensor], ...]:
+        return (
+            self.historical,
+            self.pred_months,
+            self.latlons,
+            self.current,
+            self.yearly_aggs,
+            self.static,
+        )
+
 
 @dataclass
 class ModelArrays:
@@ -49,7 +68,7 @@ class ModelArrays:
     y: Union[np.ndarray, torch.Tensor]
     x_vars: List[str]
     y_var: str
-    latlons: Optional[np.ndarray] = None
+    latlons: np.ndarray
     target_time: Optional[Timestamp] = None
     historical_times: Optional[List[Timestamp]] = None
     predict_delta: bool = False
@@ -823,14 +842,7 @@ class _TrainIter(_BaseIter):
                     global_modelarrays.to_tensor(self.device)
 
                 return (
-                    (
-                        global_modelarrays.x.historical,
-                        global_modelarrays.x.pred_months,
-                        global_modelarrays.x.latlons,
-                        global_modelarrays.x.current,
-                        global_modelarrays.x.yearly_aggs,
-                        global_modelarrays.x.static,
-                    ),
+                    global_modelarrays.x.return_tuple(),
                     global_modelarrays.y,
                 )
             else:

@@ -1,9 +1,7 @@
 """
 run_different_variables.py
-
 All vars:
 ['pev', 'sp', 't2m', 'tp', 'VCI', 'precip', 'ndvi', 'E', 'Eb', 'SMroot', 'SMsurf',]
-
 # NOTE: p84.162 == 'vertical integral of moisture flux'
 """
 from itertools import combinations

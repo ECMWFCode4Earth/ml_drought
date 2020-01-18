@@ -242,7 +242,7 @@ class EALSTM(nn.Module):
         if dense_features[-1] != 1:
             dense_features.append(1)
 
-        self.dense_layers = nn.ModuleList(
+        self.final_dense_layers = nn.ModuleList(
             [
                 nn.Linear(
                     in_features=dense_features[i - 1], out_features=dense_features[i]
@@ -255,7 +255,7 @@ class EALSTM(nn.Module):
 
     def initialize_weights(self):
 
-        for dense_layer in self.dense_layers:
+        for dense_layer in self.final_dense_layers:
             nn.init.kaiming_uniform_(dense_layer.weight.data)
             nn.init.constant_(dense_layer.bias.data, 0)
 
@@ -267,6 +267,7 @@ class EALSTM(nn.Module):
         current=None,
         yearly_aggs=None,
         static=None,
+        return_embedding=False,
     ):
 
         assert (
@@ -294,11 +295,14 @@ class EALSTM(nn.Module):
 
         x = self.rnn_dropout(hidden_state[:, -1, :])
 
+        if return_embedding:
+            return x
+
         if self.experiment == "nowcast":
             assert current is not None
             x = torch.cat((x, current), dim=-1)
 
-        for layer_number, dense_layer in enumerate(self.dense_layers):
+        for layer_number, dense_layer in enumerate(self.final_dense_layers):
             x = dense_layer(x)
         return x
 

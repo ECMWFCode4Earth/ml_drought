@@ -213,7 +213,7 @@ class RNN(nn.Module):
         if dense_features[-1] != 1:
             dense_features.append(1)
 
-        self.dense_layers = nn.ModuleList(
+        self.final_dense_layers = nn.ModuleList(
             [
                 nn.Linear(
                     in_features=dense_features[i - 1], out_features=dense_features[i]
@@ -231,7 +231,7 @@ class RNN(nn.Module):
             for pam in parameters:
                 nn.init.uniform_(pam.data, -sqrt_k, sqrt_k)
 
-        for dense_layer in self.dense_layers:
+        for dense_layer in self.final_dense_layers:
             nn.init.kaiming_uniform_(dense_layer.weight.data)
             nn.init.constant_(dense_layer.bias.data, 0)
 
@@ -243,6 +243,7 @@ class RNN(nn.Module):
         current=None,
         yearly_aggs=None,
         static=None,
+        return_embedding=False,
     ):
 
         sequence_length = x.shape[1]
@@ -278,7 +279,10 @@ class RNN(nn.Module):
         if self.include_static:
             x = torch.cat((x, static), dim=-1)
 
-        for layer_number, dense_layer in enumerate(self.dense_layers):
+        if return_embedding:
+            return x
+
+        for layer_number, dense_layer in enumerate(self.final_dense_layers):
             x = dense_layer(x)
         return x
 
