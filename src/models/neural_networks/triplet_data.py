@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 from random import shuffle as shuffle_list
+import xarray as xr
 
 from ..data import DataLoader, _BaseIter, ModelArrays, TrainData
 
@@ -28,23 +29,26 @@ class TripletLoader(DataLoader):
         monthly_aggs: bool = True,
         static: Optional[str] = "features",
         device: str = "cpu",
+        spatial_mask: Optional[xr.DataArray] = None,
     ) -> None:
         super().__init__(
-            data_path,
-            batch_file_size,
-            "train",  # we only want to load the training data
-            shuffle_data,
-            clear_nans,
-            normalize,
-            experiment,
-            mask,
-            pred_months,
-            to_tensor,
-            surrounding_pixels,
-            ignore_vars,
-            monthly_aggs,
-            static,
-            device,
+            data_path=data_path,
+            batch_file_size=batch_file_size,
+            mode="train",  # we only want to load the training data
+            shuffle_data=shuffle_data,
+            clear_nans=clear_nans,
+            normalize=normalize,
+            experiment=experiment,
+            mask=mask,
+            pred_months=pred_months,
+            to_tensor=to_tensor,
+            surrounding_pixels=surrounding_pixels,
+            ignore_vars=ignore_vars,
+            monthly_aggs=monthly_aggs,
+            static=static,
+            device=device,
+            spatial_mask=spatial_mask,
+            predict_delta=False # This argument doesn't matter - we ignore y
         )
         if isinstance(neighbourhood_size, float) or isinstance(neighbourhood_size, int):
             neighbourhood_size = (neighbourhood_size, neighbourhood_size)
