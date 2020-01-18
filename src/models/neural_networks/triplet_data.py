@@ -48,7 +48,7 @@ class TripletLoader(DataLoader):
             static=static,
             device=device,
             spatial_mask=spatial_mask,
-            predict_delta=False # This argument doesn't matter - we ignore y
+            predict_delta=False,  # This argument doesn't matter - we ignore y
         )
         if isinstance(neighbourhood_size, float) or isinstance(neighbourhood_size, int):
             neighbourhood_size = (neighbourhood_size, neighbourhood_size)

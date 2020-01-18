@@ -125,7 +125,7 @@ def earnn(
     hidden_size=128,
     predict_delta=False,
     spatial_mask=None,
-    warmup=False
+    warmup=False,
 ):
     data_path = get_data_path()
 

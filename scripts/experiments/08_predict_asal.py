@@ -28,7 +28,7 @@ if __name__ == "__main__":
         static_embedding_size=64,
         predict_delta=True,
         spatial_mask="data/interim/boundaries_preprocessed/kenya_asal_mask.nc",
-        warmup=True
+        warmup=True,
     )
 
     # rename the output file

@@ -226,6 +226,7 @@ class NNBase(ModelBase):
         val_split: float = 0.1,
         margin: float = 50,
         l2: float = 0,
+        use_spatial_mask: bool = False,
     ) -> None:
 
         if early_stopping is not None:
@@ -246,6 +247,7 @@ class NNBase(ModelBase):
                 mask=train_mask,
                 to_tensor=True,
                 shuffle_data=True,
+                use_spatial_mask=use_spatial_mask,
             )
             val_dataloader = self.get_triplet_dataloader(
                 neighbourhood_size=neighbourhood_size,
@@ -253,6 +255,7 @@ class NNBase(ModelBase):
                 mask=val_mask,
                 to_tensor=True,
                 shuffle_data=True,
+                use_spatial_mask=use_spatial_mask,
             )
 
             batches_without_improvement = 0
@@ -263,6 +266,7 @@ class NNBase(ModelBase):
                 multiplier=multiplier,
                 to_tensor=True,
                 shuffle_data=True,
+                use_spatial_mask=use_spatial_mask,
             )
 
         # initialize the model
@@ -617,6 +621,7 @@ class NNBase(ModelBase):
         neighbourhood_size: Union[float, Tuple[float, float]],
         to_tensor: bool = False,
         shuffle_data: bool = False,
+        use_spatial_mask: bool = False,
         **kwargs,
     ) -> TripletLoader:
         """
@@ -639,6 +644,7 @@ class NNBase(ModelBase):
             "clear_nans": True,
             "normalize": True,
             "neighbourhood_size": neighbourhood_size,
+            "spatial_mask": self.spatial_mask if use_spatial_mask else None,
         }
 
         for key, val in kwargs.items():
