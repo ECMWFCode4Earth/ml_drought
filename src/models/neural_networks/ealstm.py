@@ -3,8 +3,9 @@ from torch import nn
 
 from pathlib import Path
 from copy import copy
+import xarray as xr
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from .base import NNBase
 
@@ -31,6 +32,8 @@ class EARecurrentNetwork(NNBase):
         static: Optional[str] = "features",
         static_embedding_size: Optional[int] = None,
         device: str = "cuda:0",
+        predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
     ) -> None:
         super().__init__(
             data_folder,
@@ -45,6 +48,8 @@ class EARecurrentNetwork(NNBase):
             ignore_vars,
             static,
             device,
+            predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
         )
 
         # to initialize and save the model
@@ -93,6 +98,7 @@ class EARecurrentNetwork(NNBase):
             "ignore_vars": self.ignore_vars,
             "static": self.static,
             "device": self.device,
+            "spatial_mask": self.spatial_mask,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")
@@ -478,17 +484,17 @@ class OrgEALSTMCell(nn.Module):
         # create tensors of learnable parameters
         self.weight_ih = nn.Parameter(  # type: ignore
             torch.FloatTensor(  # type: ignore
-                input_size_dyn, 3 * hidden_size,
+                input_size_dyn, 3 * hidden_size
             )
         )  # type: ignore
         self.weight_hh = nn.Parameter(  # type: ignore
             torch.FloatTensor(  # type: ignore
-                hidden_size, 3 * hidden_size,
+                hidden_size, 3 * hidden_size
             )
         )  # type: ignore
         self.weight_sh = nn.Parameter(  # type: ignore
             torch.FloatTensor(  # type: ignore
-                input_size_stat, hidden_size,
+                input_size_stat, hidden_size
             )
         )  # type: ignore
         self.bias = nn.Parameter(torch.FloatTensor(3 * hidden_size))  # type: ignore

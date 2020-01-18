@@ -3,10 +3,11 @@ from pathlib import Path
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error
 import pickle
+import xarray as xr
 
 import shap
 
-from typing import cast, Dict, List, Tuple, Optional
+from typing import cast, Dict, List, Tuple, Optional, Union
 
 from .base import ModelBase
 from .utils import chunk_array
@@ -30,6 +31,8 @@ class LinearRegression(ModelBase):
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
+        predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
     ) -> None:
         super().__init__(
             data_folder,
@@ -43,6 +46,8 @@ class LinearRegression(ModelBase):
             surrounding_pixels,
             ignore_vars,
             static,
+            predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
         )
 
         self.explainer: Optional[shap.LinearExplainer] = None
@@ -90,6 +95,9 @@ class LinearRegression(ModelBase):
                 for batch_x, batch_y in chunk_array(x, y, batch_size, shuffle=True):
                     batch_y = cast(np.ndarray, batch_y)
                     x_in = self._concatenate_data(batch_x)
+
+                    if x_in.shape[0] == 0:
+                        pass
 
                     # fit the model
                     self.model.partial_fit(x_in, batch_y.ravel())
@@ -171,6 +179,7 @@ class LinearRegression(ModelBase):
             "include_monthly_aggs": self.include_monthly_aggs,
             "include_yearly_aggs": self.include_yearly_aggs,
             "static": self.static,
+            "spatial_mask": self.spatial_mask,
         }
 
         with (self.model_dir / "model.pkl").open("wb") as f:
@@ -198,7 +207,16 @@ class LinearRegression(ModelBase):
                     "y": val.y,
                     "latlons": val.latlons,
                     "time": val.target_time,
+                    "y_var": val.y_var,
                 }
+                if self.predict_delta:
+                    assert val.historical_target.shape[0] == val.y.shape[0], (
+                        "Expect"
+                        f"the shape of the y ({val.y.shape})"
+                        f" and historical_target ({val.historical_target.shape})"
+                        " to be the same!"
+                    )
+                    test_arrays_dict[key]["historical_target"] = val.historical_target
 
         return test_arrays_dict, preds_dict
 

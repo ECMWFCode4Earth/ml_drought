@@ -1,5 +1,6 @@
 from pathlib import Path
 from copy import copy
+import xarray as xr
 
 import torch
 from torch import nn
@@ -28,6 +29,8 @@ class LinearNetwork(NNBase):
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
         device: str = "cuda:0",
+        predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
     ) -> None:
         super().__init__(
             data_folder,
@@ -42,6 +45,8 @@ class LinearNetwork(NNBase):
             ignore_vars,
             static,
             device,
+            predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
         )
 
         self.input_layer_sizes = copy(layer_sizes)
@@ -74,6 +79,7 @@ class LinearNetwork(NNBase):
             "include_yearly_aggs": self.include_yearly_aggs,
             "static": self.static,
             "device": self.device,
+            "spatial_mask": self.spatial_mask,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")

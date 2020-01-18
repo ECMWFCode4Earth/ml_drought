@@ -69,20 +69,34 @@ class TestBaseIter:
             ), f"{month} not in {pred_months}, got {return_file}"
 
     @pytest.mark.parametrize(
-        "normalize,to_tensor,experiment,surrounding_pixels",
+        "normalize,to_tensor,experiment,surrounding_pixels,predict_delta",
         [
-            (True, True, "one_month_forecast", 1),
-            (True, False, "one_month_forecast", None),
-            (False, True, "one_month_forecast", 1),
-            (False, False, "one_month_forecast", None),
-            (True, True, "nowcast", 1),
-            (True, False, "nowcast", None),
-            (False, True, "nowcast", 1),
-            (False, False, "nowcast", None),
+            (True, True, "one_month_forecast", 1, True),
+            (True, False, "one_month_forecast", None, True),
+            (False, True, "one_month_forecast", 1, True),
+            (False, False, "one_month_forecast", None, True),
+            (True, True, "nowcast", 1, True),
+            (True, False, "nowcast", None, True),
+            (False, True, "nowcast", 1, True),
+            (False, False, "nowcast", None, True),
+            (True, True, "one_month_forecast", 1, False),
+            (True, False, "one_month_forecast", None, False),
+            (False, True, "one_month_forecast", 1, False),
+            (False, False, "one_month_forecast", None, False),
+            (True, True, "nowcast", 1, False),
+            (True, False, "nowcast", None, False),
+            (False, True, "nowcast", 1, False),
+            (False, False, "nowcast", None, False),
         ],
     )
     def test_ds_to_np(
-        self, tmp_path, normalize, to_tensor, experiment, surrounding_pixels
+        self,
+        tmp_path,
+        normalize,
+        to_tensor,
+        experiment,
+        surrounding_pixels,
+        predict_delta,
     ):
 
         x_pred, _, _ = _make_dataset(size=(5, 5))
@@ -122,11 +136,13 @@ class TestBaseIter:
                 self.to_tensor = None
                 self.experiment = experiment
                 self.surrounding_pixels = surrounding_pixels
+                self.predict_delta = predict_delta
                 self.ignore_vars = ["precip"]
                 self.monthly_aggs = False
                 self.device = torch.device("cpu")
 
                 self.static = None
+                self.spatial_mask = None
                 self.static_normalizing_dict = None
 
         base_iterator = _BaseIter(MockLoader())
@@ -250,6 +266,17 @@ class TestBaseIter:
         if (not normalize) and (not to_tensor):
             mean_temp = x_coeff3.temp.mean(dim=["time", "lat", "lon"]).values
             assert (mean_temp == x_train_data.yearly_aggs).any()
+
+        if predict_delta:
+            # is this true? with randomly generated data no guarantee ...
+            assert (y_np < 0).any(), (
+                "If calculating the derivatives"
+                "we expect at least one of the target variables to be"
+                "negative."
+            )
+            assert base_iterator.predict_delta, (
+                "should have set model_" "derivative to True"
+            )
 
     @pytest.mark.parametrize(
         "surrounding_pixels,monthly_agg",

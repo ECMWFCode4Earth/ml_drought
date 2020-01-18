@@ -1,11 +1,12 @@
 import math
 from copy import copy
 from pathlib import Path
+import xarray as xr
 
 import torch
 from torch import nn
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from .base import NNBase
 
@@ -31,6 +32,8 @@ class RecurrentNetwork(NNBase):
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
         device: str = "cuda:0",
+        predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
     ) -> None:
         super().__init__(
             data_folder,
@@ -45,6 +48,8 @@ class RecurrentNetwork(NNBase):
             ignore_vars,
             static,
             device,
+            predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
         )
 
         # to initialize and save the model
@@ -85,6 +90,7 @@ class RecurrentNetwork(NNBase):
             "experiment": self.experiment,
             "static": self.static,
             "device": self.device,
+            "spatial_mask": self.spatial_mask,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")
