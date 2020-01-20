@@ -3,6 +3,7 @@ import numpy as np
 import json
 import pandas as pd
 import xarray as xr
+import random
 from sklearn.metrics import mean_squared_error
 
 from .data import TrainData, DataLoader
@@ -94,6 +95,8 @@ class ModelBase:
         # This can be overridden by any model which actually cares which device its run on
         # by default, models which don't care will run on the CPU
         self.device = "cpu"
+        np.random.seed(42)
+        random.seed(42)
 
     @staticmethod
     def _load_spatial_mask(
