@@ -220,14 +220,23 @@ class ERA5LandExporter(CDSExporter):
             for year in processed_selection_request["year"]:
                 updated_request = processed_selection_request.copy()
                 updated_request["year"] = [year]
-                output_paths = self._broken_export(
-                    updated_request=updated_request,
-                    dataset=dataset,
-                    output_paths=output_paths,
-                    show_api_request=show_api_request,
-                    n_parallel_requests=n_parallel_requests,
-                    pool=p,
-                )
+                try:
+                    output_paths = self._broken_export(
+                        updated_request=updated_request,
+                        dataset=dataset,
+                        output_paths=output_paths,
+                        show_api_request=show_api_request,
+                        n_parallel_requests=n_parallel_requests,
+                        pool=p,
+                    )
+                except KeyboardInterrupt:
+                    raise
+                except Exception as E:
+                    print(f"\n\n**{year} Failed **")
+                    print(E)
+                    print("\nRequest:")
+                    print(updated_request)
+                    print("\n\n")
 
             if n_parallel_requests > 1:
                 assert p is not None
