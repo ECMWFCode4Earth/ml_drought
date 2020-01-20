@@ -7,6 +7,7 @@ from .era5 import ERA5MonthlyMeanPreprocessor, ERA5HourlyPreprocessor
 from .esa_cci import ESACCIPreprocessor
 from .srtm import SRTMPreprocessor
 from .admin_boundaries import KenyaAdminPreprocessor
+from .boku_ndvi import BokuNDVIPreprocessor
 
 __all__ = [
     "VHIPreprocessor",
@@ -19,4 +20,5 @@ __all__ = [
     "ESACCIPreprocessor",
     "SRTMPreprocessor",
     "KenyaAdminPreprocessor",
+    "BokuNDVIPreprocessor",
 ]

@@ -7,6 +7,7 @@ from .gleam import GLEAMExporter
 from .srtm import SRTMExporter
 from .esa_cci import ESACCIExporter
 from .admin_boundaries import KenyaAdminExporter
+from .boku_ndvi import BokuNDVIExporter
 
 __all__ = [
     "ERA5Exporter",
@@ -18,4 +19,5 @@ __all__ = [
     "SRTMExporter",
     "ESACCIExporter",
     "KenyaAdminExporter",
+    "BokuNDVIExporter"
 ]
