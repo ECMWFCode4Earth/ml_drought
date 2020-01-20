@@ -11,7 +11,7 @@ from src.preprocess import (
     SRTMPreprocessor,
     ERA5MonthlyMeanPreprocessor,
     ERA5HourlyPreprocessor,
-    BokuNDVIPreprocessor
+    BokuNDVIPreprocessor,
 )
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
@@ -148,9 +148,7 @@ def preprocess_boku_ndvi():
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
 
-    processor.preprocess(
-        subset_str="kenya", resample_time="W-MON", regrid=regrid_path
-    )
+    processor.preprocess(subset_str="kenya", resample_time="W-MON", regrid=regrid_path)
 
 
 if __name__ == "__main__":
@@ -166,4 +164,3 @@ if __name__ == "__main__":
     # preprocess_kenya_boundaries(selection="level_3")
     preprocess_era5_hourly()
     preprocess_boku_ndvi()
-

@@ -19,10 +19,10 @@ class TestBokuNDVIExporter:
     def build_dummy_ftp_(tmp_path):
         conda_prefix = Path(os.environ.get("CONDA_PREFIX"))
         # make the associated directories and files
-        (conda_prefix / 'etc/conda/activate.d/').mkdir(parents=True, exist_okay=True)
-        (conda_prefix / 'etc/conda/deactivate.d/').mkdir(parents=True, exist_okay=True)
-        (conda_prefix / 'etc/conda/activate.d/env_vars.sh').touch()
-        (conda_prefix / 'etc/conda/deactivate.d/env_vars.sh').touch()
+        (conda_prefix / "etc/conda/activate.d/").mkdir(parents=True, exist_okay=True)
+        (conda_prefix / "etc/conda/deactivate.d/").mkdir(parents=True, exist_okay=True)
+        (conda_prefix / "etc/conda/activate.d/env_vars.sh").touch()
+        (conda_prefix / "etc/conda/deactivate.d/env_vars.sh").touch()
 
         write_to_file = """
         #!/bin/sh
@@ -30,9 +30,7 @@ class TestBokuNDVIExporter:
         export FTP_1000='ftp://1000'
         export FTP_250='ftp://250'
         """
-        with open(
-            conda_prefix / 'etc/conda/activate.d/env_vars.sh', 'wb'
-        ) as fp:
+        with open(conda_prefix / "etc/conda/activate.d/env_vars.sh", "wb") as fp:
             fp.write(write_to_file)
 
         write_to_file = """
@@ -41,9 +39,7 @@ class TestBokuNDVIExporter:
         unset FTP_1000
         unset FTP_250
         """
-        with open(
-            conda_prefix / 'etc/conda/deactivate.d/env_vars.sh', 'wb'
-        ) as fp:
+        with open(conda_prefix / "etc/conda/deactivate.d/env_vars.sh", "wb") as fp:
             fp.write(write_to_file)
 
     def test_init(self, tmp_path):
@@ -123,8 +119,7 @@ class TestBokuNDVIExporter:
         monkeypatch.setattr(urllib.request, "urlopen", mockreturn)
 
         exporter = BokuNDVIExporter(tmp_path)
-        filenames = exporter.get_chirps_filenames(
-            region="africa", period="pentad")
+        filenames = exporter.get_chirps_filenames(region="africa", period="pentad")
 
         assert filenames == expected_filenames
 

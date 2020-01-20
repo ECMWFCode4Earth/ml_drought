@@ -74,11 +74,10 @@ class BokuNDVIPreprocessor(BasePreProcessor):
 
         return datetime.strptime(f"{year}-{week_num}-Mon", "%G-%V-%a")
 
-    def create_new_dataarray(self,
-        ds: xr.Dataset,
-        timestamp: pd.Timestamp
+    def create_new_dataarray(
+        self, ds: xr.Dataset, timestamp: pd.Timestamp
     ) -> xr.Dataset:
-        variable = 'boku_ndvi'
+        variable = "boku_ndvi"
         assert (
             np.array(timestamp).size == 1
         ), "The function only currently works with SINGLE TIMESTEPS."
