@@ -98,8 +98,7 @@ class TestBaseIter:
         surrounding_pixels,
         predict_delta,
     ):
-
-        x_pred, _, _ = _make_dataset(size=(5, 5))
+        x_pred, _, _ = _make_dataset(size=(5, 5), const=True)
         x_coeff1, _, _ = _make_dataset(size=(5, 5), variable_name="precip")
         x_coeff2, _, _ = _make_dataset(size=(5, 5), variable_name="soil_moisture")
         x_coeff3, _, _ = _make_dataset(size=(5, 5), variable_name="temp")
@@ -120,8 +119,14 @@ class TestBaseIter:
                 "mean": float(
                     x[var].mean(dim=["lat", "lon", "time"], skipna=True).values
                 ),
+                # we clip the std because since constant=True, the std=0 for VHI,
+                # giving NaNs which mess the tests up
                 "std": float(
-                    x[var].std(dim=["lat", "lon", "time"], skipna=True).values
+                    np.clip(
+                        a=x[var].std(dim=["lat", "lon", "time"], skipna=True).values,
+                        a_min=1,
+                        a_max=None,
+                    )
                 ),
             }
 
@@ -268,15 +273,12 @@ class TestBaseIter:
             assert (mean_temp == x_train_data.yearly_aggs).any()
 
         if predict_delta:
-            # is this true? with randomly generated data no guarantee ...
-            assert (y_np < 0).any(), (
-                "If calculating the derivatives"
-                "we expect at least one of the target variables to be"
-                "negative."
-            )
-            assert base_iterator.predict_delta, (
-                "should have set model_" "derivative to True"
-            )
+            assert (
+                y_np == 0
+            ).all(), "The derivatives should be 0 for a constant input."
+            assert (
+                base_iterator.predict_delta
+            ), "should have set model_ derivative to True"
 
     @pytest.mark.parametrize(
         "surrounding_pixels,monthly_agg",
