@@ -4,31 +4,41 @@ import xarray as xr
 import os
 import multiprocessing
 from functools import partial
+import re
+from datetime import datetime
+import pandas as pd
+import numpy as np
 
-from typing import cast, Optional
+from typing import cast, Optional, Tuple
 
 from .base import BasePreProcessor
 
 
 class BokuNDVIPreprocessor(BasePreProcessor):
+    resolution: str
 
-    def __init__(self, data_folder: Path = Path("data"),
-                 output_name: Optional[str] = None,
-                 resolution: str = "1000"):
+    def __init__(
+        self,
+        data_folder: Path = Path("data"),
+        output_name: Optional[str] = None,
+        resolution: str = "1000",
+    ):
+        self.resolution = str(resolution)
+        self.static = False
 
-    super().__init__(data_folder, output_name)
-    self.resolution == cast(resolution, str)
-    self.static = False
+        if self.resolution == "1000":
+            # 1km pixel
+            self.dataset: str = "boku_ndvi_1000"
+        elif self.resolution == "250":
+            # 250m pixel
+            self.dataset: str = "boku_ndvi_250"
+        else:
+            assert False, (
+                "Must provide str resolution of 1000 or 250"
+                f"Provided: {resolution} Type: {type(resolution)}"
+            )
 
-    if self.resolution == "1000":
-        # 1km pixel
-        self.dataset: str = "boku_ndvi_1000"
-    elif self.resolution == "250":
-        # 250m pixel
-        self.dataset: str = "boku_ndvi_250"
-    else:
-        assert False, "Must provide str resolution of 1000 or 250" \
-            f"Provided: {resolution} Type: {type(resolution)}"
+        super().__init__(data_folder, output_name)
 
     @staticmethod
     def create_filename(netcdf_filepath: str, subset_name: Optional[str] = None) -> str:
@@ -45,6 +55,42 @@ class BokuNDVIPreprocessor(BasePreProcessor):
             new_filename = f"{filename_stem}.nc"
         return new_filename
 
+    def _parse_time_from_filename(self, filename) -> datetime:
+        """
+        extract the datetime from filename.
+
+        Example:
+            MCD13A2.t200915.006.EAv1.1_km_10_days_NDVI.O1.nc
+            the 15th Monday of 2009
+
+        returns datetime object
+        """
+        # regex pattern (4 digits after '.t')
+        year_pattern = re.compile(r".t\d{4}")
+        # extract the week_number (ISO 8601 week)
+        week_num = year_pattern.split(filename)[-1].split(".")[0]
+        # extract the year from the filename
+        year = year_pattern.findall(filename)[0].split(".t")[-1]
+
+        return datetime.strptime(f"{year}-{week_num}-Mon", "%G-%V-%a")
+
+    def create_new_dataarray(self,
+        ds: xr.Dataset,
+        timestamp: pd.Timestamp
+    ) -> xr.Dataset:
+        variable = 'boku_ndvi'
+        assert (
+            np.array(timestamp).size == 1
+        ), "The function only currently works with SINGLE TIMESTEPS."
+
+        da = xr.DataArray(
+            [ds[variable].values],
+            dims=["time", "lat", "lon"],
+            coords={"lon": ds.lon, "lat": ds.lat, "time": [timestamp]},
+        )
+        da.name = variable
+        return da.to_dataset()
+
     def _preprocess_single(
         self,
         netcdf_filepath: Path,
@@ -59,12 +105,19 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         * assign lat lon
         * create new dataset with these dimensions
         * Save the output file to new folder
+
+        NOTE:
+        * the values are currently in the range 1-255
+        * need to transform them to NDVI values
+        * but require information about how to do this mapping to -1:1
         """
         print(f"Starting work on {netcdf_filepath.name}")
         # 1. read in the dataset
-        ds = xr.open_dataset(netcdf_filepath).rename(
-            {"longitude": "lon", "latitude": "lat"}
-        )
+        ds = xr.open_dataset(netcdf_filepath)
+
+        # assign time stamp
+        timestamp = pd.to_datetime(self._parse_time_from_filename(netcdf_filepath.name))
+        ds = self.create_new_dataarray(ds, timestamp)
 
         # 2. chop out EastAfrica
         if subset_str is not None:
@@ -94,8 +147,8 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         regrid: Optional[Path] = None,
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
-        parallel: bool = False,
-        cleanup: bool = True,
+        n_processes: int = 1,
+        cleanup: bool = False,
     ) -> None:
         """ Preprocess all of the era5 POS .nc files to produce
         one subset file.
@@ -125,8 +178,9 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
 
-        if parallel:
-            pool = multiprocessing.Pool(processes=100)
+        n_processes = max(1, n_processes)
+        if n_processes > 1:
+            pool = multiprocessing.Pool(processes=n_processes)
             outputs = pool.map(
                 partial(self._preprocess_single, subset_str=subset_str, regrid=regrid),
                 nc_files,

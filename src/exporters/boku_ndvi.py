@@ -35,8 +35,6 @@ gdal = None
 
 class BokuNDVIExporter(BaseExporter):
     def __init__(self, data_folder: Path = Path("data"), resolution: str = "1000"):
-        super().__init__(data_folder)
-
         # try and import gdal
         print(
             "The BOKU NDVI exporter requires GDAL"
@@ -48,7 +46,7 @@ class BokuNDVIExporter(BaseExporter):
         if gdal is None:
             from osgeo import gdal
 
-        self.resolution = resolution
+        self.resolution = str(resolution)
         if self.resolution == "1000":
             # 1km pixel
             self.dataset: str = "boku_ndvi_1000"
@@ -58,9 +56,13 @@ class BokuNDVIExporter(BaseExporter):
             self.dataset: str = "boku_ndvi_250"
             self.base_url: str = os.environ.get("FTP_250")
         else:
-            assert False, "Must provide str resolution of 1000 or 250" \
+            assert False, (
+                "Must provide str resolution of 1000 or 250"
                 f"Provided: {resolution} Type: {type(resolution)}"
+            )
 
+        # initialise the base exporter
+        super().__init__(data_folder)
 
     @staticmethod
     def get_filenames(url: str, identifying_string: str) -> List[str]:
@@ -125,11 +127,11 @@ class BokuNDVIExporter(BaseExporter):
         for url in urls:
             self.wget_file(url, output_dir)
 
-        tif_files = [f for f in self.raw_folder.glob("*.tif")]
+        tif_files = [f for f in self.output_folder.glob("*.tif")]
         tif_files.sort()
 
         # 2. move tif files to /tif directory
-        dst_dir = self.raw_folder / "tifs"
+        dst_dir = self.output_folder / "tifs"
         if not dst_dir.exists():
             dst_dir.mkdir(exist_ok=True, parents=True)
 
@@ -139,9 +141,9 @@ class BokuNDVIExporter(BaseExporter):
             shutil.move(src, dst)
 
         # 3. convert from tif to netcdf
-        tif_files = [f for f in raw_dir.glob("tifs/*.tif")]
-        TMP_nc_files = [f.parents[0] / (f.stem + "_TMP.nc") for f in tif_files]
-        nc_files = [f.parents[0] / (f.stem + ".nc") for f in tif_files]
+        tif_files = [f for f in self.output_folder.glob("tifs/*.tif")]
+        TMP_nc_files = [f.parents[1] / (f.stem + "_TMP.nc") for f in tif_files]
+        nc_files = [f.parents[1] / (f.stem + ".nc") for f in tif_files]
         tif_files.sort()
         TMP_nc_files.sort()
         nc_files.sort()
@@ -154,33 +156,19 @@ class BokuNDVIExporter(BaseExporter):
         # 4. rename BAND1 to rename_str
         rename_str = "boku_ndvi"
 
-        TMP_nc_files = [f for f in raw_dir.glob("*TMP.nc")]
-        nc_files = [f.parents[1] / (f.stem + ".nc") for f in tif_files]
-
+        # get the newly created nc files
+        TMP_nc_files = [f for f in self.output_folder.glob("*TMP.nc")]
         TMP_nc_files.sort()
-        nc_files.sort()
+
+        assert TMP_nc_files != [], "Should have created TMP netcdf files"
 
         print("\n")
         for tmp_file, nc_file in zip(TMP_nc_files, nc_files):
             ds = xr.open_dataset(tmp_file).rename(dict(Band1=rename_str))
             da = ds[rename_str]
             da.to_netcdf(nc_file)
-            print(f"-- Renamed {nc_file.name} to {rename_str} --")
+            print(f"-- Renamed Band1 in {nc_file.name} to {rename_str} --")
 
         # 5. remove temporary netcdf files
         [f.unlink() for f in TMP_nc_files]
         print("Removed *TMP.nc files")
-
-
-# class BokuNDVI1000Exporter(BokuNDVIExporter):
-#     # 1km pixel
-#     dataset: str = "boku_ndvi_1000"
-#     resolution: str = "1000"
-#     base_url: str = os.environ.get("FTP_1000")
-
-
-# class BokuNDVI250Exporter(BokuNDVIExporter):
-#     # 250m pixel
-#     dataset: str = "boku_ndvi_250"
-#     resolution: str = "250"
-#     base_url: str = os.environ.get("FTP_250")

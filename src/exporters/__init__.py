@@ -19,5 +19,5 @@ __all__ = [
     "SRTMExporter",
     "ESACCIExporter",
     "KenyaAdminExporter",
-    "BokuNDVIExporter"
+    "BokuNDVIExporter",
 ]
