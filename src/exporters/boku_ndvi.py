@@ -34,7 +34,7 @@ gdal = None
 
 
 class BokuNDVIExporter(BaseExporter):
-    def __init__(self, data_folder: Path = Path("data")):
+    def __init__(self, data_folder: Path = Path("data"), resolution: str = "1000"):
         super().__init__(data_folder)
 
         # try and import gdal
@@ -47,6 +47,20 @@ class BokuNDVIExporter(BaseExporter):
         global gdal
         if gdal is None:
             from osgeo import gdal
+
+        self.resolution = resolution
+        if self.resolution == "1000":
+            # 1km pixel
+            self.dataset: str = "boku_ndvi_1000"
+            self.base_url: str = os.environ.get("FTP_1000")
+        elif self.resolution == "250":
+            # 250m pixel
+            self.dataset: str = "boku_ndvi_250"
+            self.base_url: str = os.environ.get("FTP_250")
+        else:
+            assert False, "Must provide str resolution of 1000 or 250" \
+                f"Provided: {resolution} Type: {type(resolution)}"
+
 
     @staticmethod
     def get_filenames(url: str, identifying_string: str) -> List[str]:
@@ -74,10 +88,13 @@ class BokuNDVIExporter(BaseExporter):
         https://explainshell.com/explain?cmd=wget+-np+-nH+--cut
         -dirs+7+www.google.come+-P+folder
         """
-        os.system(
-            f"wget -np -nH --cut-dirs 2 {url_filepath} \
-            -P {output_folder.as_posix()}"
-        )
+        if (self.region_folder / url_filepath).exists():
+            print(f"{url_filepath} already exists! Skipping")
+        else:
+            os.system(
+                f"wget -np -nH --cut-dirs 2 {url_filepath} \
+                -P {output_folder.as_posix()}"
+            )
 
     @staticmethod
     def tif_to_nc(tif_file: Path, nc_file: Path) -> None:
@@ -155,15 +172,15 @@ class BokuNDVIExporter(BaseExporter):
         print("Removed *TMP.nc files")
 
 
-class BokuNDVI1000Exporter(BokuNDVIExporter):
-    # 1km pixel
-    dataset: str = "boku_ndvi_1000"
-    resolution: str = "1000"
-    base_url: str = os.environ.get("FTP_1000")
+# class BokuNDVI1000Exporter(BokuNDVIExporter):
+#     # 1km pixel
+#     dataset: str = "boku_ndvi_1000"
+#     resolution: str = "1000"
+#     base_url: str = os.environ.get("FTP_1000")
 
 
-class BokuNDVI250Exporter(BokuNDVIExporter):
-    # 250m pixel
-    dataset: str = "boku_ndvi_250"
-    resolution: str = "250"
-    base_url: str = os.environ.get("FTP_250")
+# class BokuNDVI250Exporter(BokuNDVIExporter):
+#     # 250m pixel
+#     dataset: str = "boku_ndvi_250"
+#     resolution: str = "250"
+#     base_url: str = os.environ.get("FTP_250")

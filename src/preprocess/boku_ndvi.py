@@ -5,12 +5,31 @@ import os
 import multiprocessing
 from functools import partial
 
-from typing import Optional
+from typing import cast, Optional
 
 from .base import BasePreProcessor
 
 
 class BokuNDVIPreprocessor(BasePreProcessor):
+
+    def __init__(self, data_folder: Path = Path("data"),
+                 output_name: Optional[str] = None,
+                 resolution: str = "1000"):
+
+    super().__init__(data_folder, output_name)
+    self.resolution == cast(resolution, str)
+    self.static = False
+
+    if self.resolution == "1000":
+        # 1km pixel
+        self.dataset: str = "boku_ndvi_1000"
+    elif self.resolution == "250":
+        # 250m pixel
+        self.dataset: str = "boku_ndvi_250"
+    else:
+        assert False, "Must provide str resolution of 1000 or 250" \
+            f"Provided: {resolution} Type: {type(resolution)}"
+
     @staticmethod
     def create_filename(netcdf_filepath: str, subset_name: Optional[str] = None) -> str:
         """
@@ -122,17 +141,3 @@ class BokuNDVIPreprocessor(BasePreProcessor):
 
         if cleanup:
             rmtree(self.interim)
-
-
-class BokuNDVI1000Preprocessor(BokuNDVIPreprocessor):
-    # 1km pixel
-    dataset: str = "boku_ndvi_1000"
-    static = False
-    resolution: str = "1000"
-
-
-class BokuNDVI250Preprocessor(BokuNDVIPreprocessor):
-    # 250m pixel
-    dataset: str = "boku_ndvi_250"
-    static = False
-    resolution: str = "250"
