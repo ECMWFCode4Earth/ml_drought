@@ -209,6 +209,24 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
     dataset = "reanalysis-era5-single-levels"
 
+    def merge_individual_variable(
+        self, _dyn_fpaths: List[Path], resample_time: Optional[str] = "W-MON"
+    ) -> None:
+        _ds_dyn = xr.open_mfdataset(_dyn_fpaths)
+        # ds_dyn = xr.open_mfdataset(dynamic_filepaths)
+
+        if resample_time is not None:
+            _ds_dyn = self.resample_time(_ds_dyn, resample_time, upsampling)
+
+        filename_ = (
+            f'{variable}_data{"_" + subset_str if subset_str is not None else ""}.nc'
+        )
+        out_ = self.out_dir / filename_
+
+        # save to netcdf
+        _ds_dyn.to_netcdf(out_)
+        print(f"\n**** {out_} Created! ****\n")
+
     def merge_files(
         self,
         subset_str: Optional[str] = "kenya",
@@ -218,34 +236,21 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
     ) -> None:
 
         # first, dynamic
-        dynamic_filepaths = self.get_filepaths(
-            "interim", filter_type="dynamic")
+        dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
         if len(dynamic_filepaths) > 0:
-            _country_str = f'_{subset_str}.nc'  # '_[a-z]*.nc'
+            _country_str = f"_{subset_str}.nc"  # '_[a-z]*.nc'
             variables = [
-                re.sub(_country_str, '', p.name[8:])
-                for p in dynamic_filepaths
+                re.sub(_country_str, "", p.name[8:]) for p in dynamic_filepaths
             ]
 
             # all_dyn_ds = []
             for variable in np.unique(variables):
                 _dyn_fpaths = [
-                    p for p in dynamic_filepaths
-                    if variable == re.sub(_country_str, '', p.name[8:])
+                    p
+                    for p in dynamic_filepaths
+                    if variable == re.sub(_country_str, "", p.name[8:])
                 ]
-                _ds_dyn = xr.open_mfdataset(_dyn_fpaths)
-                # ds_dyn = xr.open_mfdataset(dynamic_filepaths)
-
-                if resample_time is not None:
-                    _ds_dyn = self.resample_time(
-                        _ds_dyn, resample_time, upsampling)
-
-                filename_ = f'{variable}_data{"_" + subset_str if subset_str is not None else ""}.nc'
-                out_ = self.out_dir / filename_
-
-                # save to netcdf
-                _ds_dyn.to_netcdf(out_)
-                print(f"\n**** {out_} Created! ****\n")
+                self.merge_individual_variable(_dyn_fpaths)
 
                 # all_dyn_ds.append(_ds_dyn)
 
@@ -274,8 +279,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
             ds_stat_new = xr.merge(da_list)
 
             output_folder = (
-                self.preprocessed_folder /
-                f"static/{self.dataset}_preprocessed"
+                self.preprocessed_folder / f"static/{self.dataset}_preprocessed"
             )
             if not output_folder.exists():
                 output_folder.mkdir(exist_ok=True, parents=True)
