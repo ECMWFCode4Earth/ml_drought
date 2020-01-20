@@ -241,15 +241,14 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
         if len(dynamic_filepaths) > 0:
             _country_str = f"_{subset_str}.nc"  # '_[a-z]*.nc'
             variables = [
-                re.sub(_country_str, "", p.name[8:]) for p in dynamic_filepaths
+                re.sub(_country_str, "", p.name[8:]).replace('_.nc', '')
+                for p in dynamic_filepaths
             ]
 
             # all_dyn_ds = []
             for variable in np.unique(variables):
-                _dyn_fpaths = [
-                    p
-                    for p in dynamic_filepaths
-                    if variable == re.sub(_country_str, "", p.name[8:])
+                _dyn_fpaths = np.array(dynamic_filepaths)[
+                    np.array(variables) == variable
                 ]
                 self.merge_individual_variable(
                     variable=variable,

@@ -136,8 +136,8 @@ def preprocess_era5_hourly():
     processor = ERA5HourlyPreprocessor(data_path)
 
     # W-MON is weekly each monday (the same as the NDVI data from Atzberger)
-    processor.preprocess(subset_str="kenya", resample_time="W-MON")
-    # processor.merge_files(subset_str='W-MON')
+    # processor.preprocess(subset_str="kenya", resample_time="W-MON")
+    processor.merge_files(subset_str='W-MON')
 
 
 if __name__ == "__main__":
