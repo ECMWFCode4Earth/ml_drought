@@ -210,7 +210,8 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
     dataset = "reanalysis-era5-single-levels"
 
     def merge_individual_variable(
-        self, _dyn_fpaths: List[Path], resample_time: Optional[str] = "W-MON"
+        self, _dyn_fpaths: List[Path], resample_time: Optional[str] = "W-MON",
+        subset_str: Optional[str] = "kenya", upsampling: bool = False,
     ) -> None:
         _ds_dyn = xr.open_mfdataset(_dyn_fpaths)
         # ds_dyn = xr.open_mfdataset(dynamic_filepaths)
@@ -250,7 +251,12 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
                     for p in dynamic_filepaths
                     if variable == re.sub(_country_str, "", p.name[8:])
                 ]
-                self.merge_individual_variable(_dyn_fpaths)
+                self.merge_individual_variable(
+                    _dyn_fpaths,
+                    resample_time=resample_time,
+                    subset_str=subset_str,
+                    upsampling=upsampling,
+                )
 
                 # all_dyn_ds.append(_ds_dyn)
 
