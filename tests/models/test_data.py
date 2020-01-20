@@ -98,9 +98,7 @@ class TestBaseIter:
         surrounding_pixels,
         predict_delta,
     ):
-        x_pred, _, _ = _make_dataset(
-            size=(5, 5), const=True if predict_delta else False
-        )
+        x_pred, _, _ = _make_dataset(size=(5, 5), const=True)
         x_coeff1, _, _ = _make_dataset(size=(5, 5), variable_name="precip")
         x_coeff2, _, _ = _make_dataset(size=(5, 5), variable_name="soil_moisture")
         x_coeff3, _, _ = _make_dataset(size=(5, 5), variable_name="temp")
@@ -121,8 +119,14 @@ class TestBaseIter:
                 "mean": float(
                     x[var].mean(dim=["lat", "lon", "time"], skipna=True).values
                 ),
+                # we clip the std because since constant=True, the std=0 for VHI,
+                # giving NaNs which mess the tests up
                 "std": float(
-                    x[var].std(dim=["lat", "lon", "time"], skipna=True).values
+                    np.clip(
+                        a=x[var].std(dim=["lat", "lon", "time"], skipna=True).values,
+                        a_min=1,
+                        a_max=None,
+                    )
                 ),
             }
 
