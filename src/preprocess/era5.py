@@ -234,6 +234,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
         resample_time: Optional[str] = "W-MON",
         upsampling: bool = False,
         filename: Optional[str] = None,
+        cleanup: bool = False,
     ) -> None:
 
         # first, dynamic
@@ -260,17 +261,23 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
 
                 # all_dyn_ds.append(_ds_dyn)
 
-            # too much data and gets killed (hourly data)
-            # ds_dyn = xr.auto_combine(all_dyn_ds)
+            # get the processed individual files and merge them
+            processed_d_list = [xr.open_dataset(d) for d in self.out_dir.glob('*.nc')]
+            ds_dyn = xr.auto_combine(processed_d_list)
 
-            # if filename is None:
-            #     filename = (
-            #         f'data{"_" + subset_str if subset_str is not None else ""}.nc'
-            #     )
-            # out = self.out_dir / filename
+            if filename is None:
+                filename = (
+                    f'data{"_" + subset_str if subset_str is not None else ""}.nc'
+                )
+            out = self.out_dir / filename
 
-            # ds_dyn.to_netcdf(out)
-            # print(f"\n**** {out} Created! ****\n")
+            ds_dyn.to_netcdf(out)
+            print(f"\n**** {out} Created! ****\n")
+
+            if cleanup:
+                # remove all temporary variable files EXCEPT data_kenya
+                [p.unlink() for p in self.out_dir.glob('*.nc') if p != out]
+                f"Removed the files: {[p.name for p in processed_d_list]}"
 
         # then, static
         static_filepaths = self.get_filepaths("interim", filter_type="static")
