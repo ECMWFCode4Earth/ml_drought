@@ -79,7 +79,7 @@ def create_shape_aligned_climatology(
     # copy that forward in time
     new_clim = xr.Dataset(
         {variable: (["time", "lat", "lon"], new_clim_vals)},
-        coords={"lat": clim.lat, "lon": clim.lon, "time": ds.time,},
+        coords={"lat": clim.lat, "lon": clim.lon, "time": ds.time},
     )
     return new_clim
 

@@ -53,9 +53,7 @@ class RegionGeoPlotter:
 
     def get_groupby_region(self, country_str: str) -> GroupbyRegion:
         # if need a new country boundaries add example here
-        country_lookup = {
-            "kenya": KenyaGroupbyRegion,
-        }
+        country_lookup = {"kenya": KenyaGroupbyRegion}
         keys = [k for k in country_lookup.keys()]
         assert country_str in keys, (
             "Expect " f"the `country_str` argument to be one of: {keys}"
@@ -93,7 +91,7 @@ class RegionGeoPlotter:
                 gdf = gpd.read_file(path)
                 key = f"{admin_boundary.var_name}_{self.country}"
                 region_gdfs[key] = AdminLevelGeoDF(
-                    gdf=gdf, gdf_colname=admin_boundary.lookup_colname, admin_name=key,
+                    gdf=gdf, gdf_colname=admin_boundary.lookup_colname, admin_name=key
                 )
 
             self.region_gdfs = region_gdfs
@@ -177,14 +175,10 @@ class RegionGeoPlotter:
 
     @staticmethod
     def get_metric(selection: str) -> PlotMetric:
-        rmse = PlotMetric(metric="rmse", cmap="viridis", vmin=None, vmax=10,)
-        mae = PlotMetric(metric="mae", cmap="plasma", vmin=None, vmax=10,)
-        r2 = PlotMetric(metric="r2", cmap="inferno_r", vmin=0, vmax=1.0,)
-        lookup = {
-            "rmse": rmse,
-            "mae": mae,
-            "r2": r2,
-        }
+        rmse = PlotMetric(metric="rmse", cmap="viridis", vmin=None, vmax=10)
+        mae = PlotMetric(metric="mae", cmap="plasma", vmin=None, vmax=10)
+        r2 = PlotMetric(metric="r2", cmap="inferno_r", vmin=0, vmax=1.0)
+        lookup = {"rmse": rmse, "mae": mae, "r2": r2}
 
         assert selection in [k for k in lookup.keys()], (
             "selection should be one of:" f"{[k for k in lookup.keys()]}"

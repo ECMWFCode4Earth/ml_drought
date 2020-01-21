@@ -2,10 +2,7 @@ import xarray as xr
 import numpy as np
 
 from .base import BaseIndices
-from .utils import (
-    rolling_cumsum,
-    apply_over_period,
-)
+from .utils import rolling_cumsum, apply_over_period
 
 
 class AnomalyIndex(BaseIndices):
@@ -83,7 +80,7 @@ class AnomalyIndex(BaseIndices):
         rai[variable] = (["time", "lat", "lon"], rai_array)
         return rai
 
-    def RAI(self, da: xr.DataArray, variable: str, dim: str = "time",) -> xr.DataArray:
+    def RAI(self, da: xr.DataArray, variable: str, dim: str = "time") -> xr.DataArray:
         """ Rainfall Anomaly Index """
         # calculations
         y = da.copy()
