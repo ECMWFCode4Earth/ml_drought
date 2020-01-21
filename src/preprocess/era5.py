@@ -246,7 +246,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
                 for p in dynamic_filepaths
             ]
 
-            # all_dyn_ds = []
+            # Create netcdf file FOR EACH VARIABLE
             for variable in np.unique(variables):
                 _dyn_fpaths = np.array(dynamic_filepaths)[
                     np.array(variables) == variable
@@ -259,9 +259,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
                     upsampling=upsampling,
                 )
 
-                # all_dyn_ds.append(_ds_dyn)
-
-            # get the processed individual files and merge them
+            # then join each variable to ONE FINAL NC file
             processed_d_list = [xr.open_dataset(d) for d in self.out_dir.glob('*.nc')]
             ds_dyn = xr.auto_combine(processed_d_list)
 
