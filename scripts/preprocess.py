@@ -162,5 +162,5 @@ if __name__ == "__main__":
     # preprocess_kenya_boundaries(selection="level_1")
     # preprocess_kenya_boundaries(selection="level_2")
     # preprocess_kenya_boundaries(selection="level_3")
-    preprocess_era5_hourly()
+    # preprocess_era5_hourly()
     preprocess_boku_ndvi()

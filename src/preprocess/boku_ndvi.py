@@ -12,6 +12,7 @@ import numpy as np
 from typing import cast, Optional, Tuple
 
 from .base import BasePreProcessor
+# from src.analysis import
 
 
 class BokuNDVIPreprocessor(BasePreProcessor):
@@ -89,6 +90,16 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         )
         da.name = variable
         return da.to_dataset()
+
+    # def _convert_to_VCI(self,):
+    #     """Convert the BOKU NDVI data to VCI data
+
+    #     Justification:
+    #     The BOKU NDVI data is in the range 0-255 which
+    #     suggests there is a scaling issue. Since the VCI
+    #     is an anomaly score the raw values of the NDVI doesn't
+    #     matter. Therefore, it makes sense to preprocess to VCI.
+    #     """
 
     def _preprocess_single(
         self,
