@@ -69,7 +69,7 @@ class CreateSHPFile:
 
     @staticmethod
     def create_demo_shapefile(filepath):
-        df = pd.DataFrame({"PROVID": [10, 20], "PROVINCE": ["NAIROBI", "KIAMBU"],})
+        df = pd.DataFrame({"PROVID": [10, 20], "PROVINCE": ["NAIROBI", "KIAMBU"]})
 
         p1 = Point((34.27795473150634, 0.3094489371060183))
         p2 = Point((35.45785473150634, 0.0118489371060182))

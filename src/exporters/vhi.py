@@ -218,7 +218,7 @@ def _parse_time_from_filename(filename) -> Tuple:
     return year, week_num
 
 
-def make_filename(raw_folder: Path, raw_filename: str, dataset: str = "vhi",) -> Path:
+def make_filename(raw_folder: Path, raw_filename: str, dataset: str = "vhi") -> Path:
     # check that the string is a legitimate name
     assert (
         len(raw_filename.split("/")) == 1
