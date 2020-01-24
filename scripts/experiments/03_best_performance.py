@@ -30,6 +30,7 @@ if __name__ == "__main__":
         early_stopping=5,
         hidden_size=256,
         static_embedding_size=64,
+        include_latlons=True,
     )
 
     # rename the output file
@@ -37,5 +38,5 @@ if __name__ == "__main__":
 
     _rename_directory(
         from_path=data_path / "models" / "one_month_forecast",
-        to_path=data_path / "models" / "one_month_forecast_BASE",
+        to_path=data_path / "models" / "one_month_forecast_BASE_latlon",
     )
