@@ -448,7 +448,6 @@ class _BaseIter:
     ) -> np.ndarray:
 
         # first, we will try loading the previous year
-        print(folder.name)
         year, month = folder.name.split("_")
         previous_year = int(year) - 1
 
