@@ -136,6 +136,7 @@ class TestLinearRegression:
 
         coef_size += 3  # for the yearly aggs
         coef_size += 1  # for the static variable
+        coef_size += 1  # for the prev_y_var
 
         assert model.model.coef_.size == coef_size, f"Got unexpected coef size"
 
@@ -177,6 +178,7 @@ class TestLinearRegression:
                                 np.ones((10, 2)),
                                 np.ones((10, 2)),
                                 np.ones((10, 2)),
+                                np.ones((10, 1)),
                             ),
                             None,
                         )
@@ -231,6 +233,7 @@ class TestLinearRegression:
                 0.0,
                 0.0,
                 0.0,
+                1.0,
                 1.0,
                 1.0,
                 1.0,

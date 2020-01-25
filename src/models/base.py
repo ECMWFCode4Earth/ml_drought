@@ -57,6 +57,7 @@ class ModelBase:
         static: Optional[str] = "embedding",
         predict_delta: bool = False,
         spatial_mask: Union[xr.DataArray, Path] = None,
+        include_prev_y: bool = True,
     ) -> None:
 
         self.batch_size = batch_size
@@ -72,6 +73,7 @@ class ModelBase:
         self.ignore_vars = ignore_vars
         self.static = static
         self.predict_delta = predict_delta
+        self.include_prev_y = include_prev_y
 
         # needs to be set by the train function
         self.num_locations: Optional[int] = None
@@ -244,7 +246,7 @@ class ModelBase:
         """
 
         if type(x) is tuple:
-            x_his, x_pm, x_latlons, x_cur, x_ym, x_static = x  # type: ignore
+            x_his, x_pm, x_latlons, x_cur, x_ym, x_static, x_prev = x  # type: ignore
         elif type(x) == TrainData:
             x_his, x_pm, x_latlons = (
                 x.historical,  # type: ignore
@@ -253,6 +255,7 @@ class ModelBase:
             )  # type: ignore
             x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
             x_static = x.static  # type: ignore
+            x_prev = x.prev_y_var  # type: ignore
 
         assert (
             x_his is not None
@@ -277,6 +280,8 @@ class ModelBase:
                 assert type(self.num_locations) is int
                 x_s = self._one_hot(x_static, cast(int, self.num_locations))
                 x_in = np.concatenate((x_in, x_s), axis=-1)
+        if self.include_prev_y:
+            x_in = np.concatenate((x_in, x_prev), axis=-1)
         return x_in
 
     def _one_hot(self, x: np.ndarray, num_vals: int):

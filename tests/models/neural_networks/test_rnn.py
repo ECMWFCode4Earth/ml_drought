@@ -23,6 +23,7 @@ class TestRecurrentNetwork:
         experiment = "one_month_forecast"
         ignore_vars = ["precip"]
         include_latlons = True
+        include_prev_y = True
 
         def mocktrain(self):
             self.model = RNN(
@@ -33,6 +34,7 @@ class TestRecurrentNetwork:
                 include_pred_month,
                 include_latlons,
                 experiment="one_month_forecast",
+                include_prev_y=include_prev_y,
             )
             self.features_per_month = features_per_month
 
@@ -47,6 +49,7 @@ class TestRecurrentNetwork:
             experiment=experiment,
             include_pred_month=include_pred_month,
             include_latlons=include_latlons,
+            include_prev_y=include_prev_y,
         )
 
         model.train()
@@ -69,6 +72,7 @@ class TestRecurrentNetwork:
         assert model_dict["experiment"] == experiment
         assert model_dict["ignore_vars"] == ignore_vars
         assert model_dict["include_latlons"] == include_latlons
+        assert model_dict["include_prev_y"] == include_prev_y
 
     @pytest.mark.parametrize(
         "use_pred_months,predict_delta",

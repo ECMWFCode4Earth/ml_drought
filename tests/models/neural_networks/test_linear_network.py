@@ -33,6 +33,7 @@ class TestLinearNetwork:
                 include_latlons,
                 include_yearly_aggs,
                 include_static=True,
+                include_prev_y=True,
             )
             self.input_size = input_size
 
@@ -49,6 +50,7 @@ class TestLinearNetwork:
             include_yearly_aggs=include_yearly_aggs,
             surrounding_pixels=surrounding_pixels,
             ignore_vars=ignore_vars,
+            include_prev_y=True,
         )
         model.train()
         model.save_model()
@@ -71,6 +73,7 @@ class TestLinearNetwork:
         assert model_dict["include_yearly_aggs"] == include_yearly_aggs
         assert model_dict["surrounding_pixels"] == surrounding_pixels
         assert model_dict["ignore_vars"] == ignore_vars
+        assert model_dict["include_prev_y"] is True
 
     @pytest.mark.parametrize(
         "use_pred_months,use_latlons,experiment,monthly_agg,static,predict_delta",

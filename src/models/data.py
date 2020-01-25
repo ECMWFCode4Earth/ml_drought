@@ -871,6 +871,7 @@ class _TrainIter(_BaseIter):
                         global_modelarrays.x.current,
                         global_modelarrays.x.yearly_aggs,
                         global_modelarrays.x.static,
+                        global_modelarrays.x.prev_y_var,
                     ),
                     global_modelarrays.y,
                 )

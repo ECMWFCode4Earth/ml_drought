@@ -34,6 +34,7 @@ class RecurrentNetwork(NNBase):
         device: str = "cuda:0",
         predict_delta: bool = False,
         spatial_mask: Union[xr.DataArray, Path] = None,
+        include_prev_y: bool = True,
     ) -> None:
         super().__init__(
             data_folder,
@@ -50,6 +51,7 @@ class RecurrentNetwork(NNBase):
             device,
             predict_delta=predict_delta,
             spatial_mask=spatial_mask,
+            include_prev_y=include_prev_y,
         )
 
         # to initialize and save the model
@@ -91,6 +93,7 @@ class RecurrentNetwork(NNBase):
             "static": self.static,
             "device": self.device,
             "spatial_mask": self.spatial_mask,
+            "include_prev_y": self.include_prev_y,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")
@@ -119,6 +122,7 @@ class RecurrentNetwork(NNBase):
             current_size=self.current_size,
             yearly_agg_size=self.yearly_agg_size,
             static_size=self.static_size,
+            include_prev_y=self.include_prev_y,
         )
         self.model.to(torch.device(self.device))
         self.model.load_state_dict(state_dict)
@@ -162,6 +166,7 @@ class RecurrentNetwork(NNBase):
             current_size=self.current_size,
             yearly_agg_size=self.yearly_agg_size,
             static_size=self.static_size,
+            include_prev_y=self.include_prev_y,
         )
         return model.to(torch.device(self.device))
 
@@ -176,6 +181,7 @@ class RNN(nn.Module):
         include_pred_month,
         include_latlons,
         experiment,
+        include_prev_y,
         current_size=None,
         yearly_agg_size=None,
         static_size=None,
@@ -187,6 +193,7 @@ class RNN(nn.Module):
         self.include_latlons = include_latlons
         self.include_yearly_agg = False
         self.include_static = False
+        self.include_prev_y = include_prev_y
 
         self.dropout = nn.Dropout(rnn_dropout)
         self.rnn = UnrolledRNN(
@@ -208,6 +215,8 @@ class RNN(nn.Module):
         if static_size is not None:
             self.include_static = True
             dense_input_size += static_size
+        if include_prev_y:
+            dense_input_size += 1
 
         dense_features.insert(0, dense_input_size)
         if dense_features[-1] != 1:
@@ -243,6 +252,7 @@ class RNN(nn.Module):
         current=None,
         yearly_aggs=None,
         static=None,
+        prev_y=None,
     ):
 
         sequence_length = x.shape[1]
@@ -277,6 +287,8 @@ class RNN(nn.Module):
             x = torch.cat((x, yearly_aggs), dim=-1)
         if self.include_static:
             x = torch.cat((x, static), dim=-1)
+        if self.include_prev_y:
+            x = torch.cat((x, prev_y), dim=-1)
 
         for layer_number, dense_layer in enumerate(self.dense_layers):
             x = dense_layer(x)
