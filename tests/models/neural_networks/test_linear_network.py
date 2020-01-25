@@ -110,7 +110,7 @@ class TestLinearNetwork:
             "temp": {"mean": 0, "std": 1},
         }
 
-        test_features = tmp_path / f"features/{experiment}/train/hello"
+        test_features = tmp_path / f"features/{experiment}/train/1980_1"
         test_features.mkdir(parents=True, exist_ok=True)
 
         # make the normalising dictionary
@@ -168,10 +168,10 @@ class TestLinearNetwork:
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        train_features = tmp_path / f"features/{experiment}/train/hello"
+        train_features = tmp_path / f"features/{experiment}/train/1980_1"
         train_features.mkdir(parents=True)
 
-        test_features = tmp_path / f"features/{experiment}/test/hello"
+        test_features = tmp_path / f"features/{experiment}/test/1980_1"
         test_features.mkdir(parents=True)
 
         # static
@@ -223,18 +223,18 @@ class TestLinearNetwork:
         model.train()
         test_arrays_dict, pred_dict = model.predict()
 
-        # the foldername "hello" is the only one which should be in the dictionaries
-        assert ("hello" in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1)
-        assert ("hello" in pred_dict.keys()) and (len(pred_dict) == 1)
+        # the foldername "1980_1" is the only one which should be in the dictionaries
+        assert ("1980_1" in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1)
+        assert ("1980_1" in pred_dict.keys()) and (len(pred_dict) == 1)
 
         # _make_dataset with const=True returns all ones
-        assert (test_arrays_dict["hello"]["y"] == 1).all()
+        assert (test_arrays_dict["1980_1"]["y"] == 1).all()
 
     def test_get_background(self, tmp_path):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        train_features = tmp_path / "features/one_month_forecast/train/hello"
+        train_features = tmp_path / "features/one_month_forecast/train/1980_1"
         train_features.mkdir(parents=True)
 
         x.to_netcdf(train_features / "x.nc")
