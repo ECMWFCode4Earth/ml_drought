@@ -27,6 +27,9 @@ if __name__ == "__main__":
         hidden_size=256,
         static_embedding_size=64,
         predict_delta=True,
+        normalize_y=True,
+        include_prev_y=True,
+        include_latlons=True,
     )
 
     # rename the output file
@@ -34,6 +37,8 @@ if __name__ == "__main__":
 
     _rename_directory(
         from_path=data_path / "models" / "one_month_forecast",
-        to_path=data_path / "models" / "one_month_forecast_predict_delta",
+        to_path=data_path
+        / "models"
+        / "one_month_forecast_predict_delta_norm_y_pass_prev_latlons",
         with_datetime=False,
     )
