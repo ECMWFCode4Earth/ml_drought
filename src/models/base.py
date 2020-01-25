@@ -1,4 +1,5 @@
 from pathlib import Path
+import pickle
 import numpy as np
 import json
 import pandas as pd
@@ -58,6 +59,7 @@ class ModelBase:
         predict_delta: bool = False,
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
+        normalize_y: bool = False,
     ) -> None:
 
         self.batch_size = batch_size
@@ -74,6 +76,12 @@ class ModelBase:
         self.static = static
         self.predict_delta = predict_delta
         self.include_prev_y = include_prev_y
+        self.normalize_y = normalize_y
+        if normalize_y:
+            with (data_folder / f"features/{experiment}/normalizing_dict.pkl").open(
+                "rb"
+            ) as f:
+                self.normalizing_dict = pickle.load(f)
 
         # needs to be set by the train function
         self.num_locations: Optional[int] = None
@@ -148,6 +156,17 @@ class ModelBase:
     def save_model(self) -> None:
         raise NotImplementedError
 
+    def denormalize_y(self, y: np.ndarray, var_name: str) -> np.ndarray:
+
+        if not self.normalize_y:
+            return y
+        else:
+            y = y * self.normalizing_dict[var_name]["std"]
+
+        if self.predict_delta:
+            y = y + self.normalizing_dict[var_name]["mean"]
+        return y
+
     def evaluate(self, save_results: bool = True, save_preds: bool = False) -> None:
         """
         Evaluate the trained model on the TEST data
@@ -167,8 +186,9 @@ class ModelBase:
         total_preds: List[np.ndarray] = []
         total_true: List[np.ndarray] = []
         for key, vals in test_arrays_dict.items():
-            true = vals["y"]
-            preds = preds_dict[key]
+
+            true = self.denormalize_y(vals["y"], vals["y_var"])
+            preds = self.denormalize_y(preds_dict[key], vals["y_var"])
 
             output_dict[key] = np.sqrt(mean_squared_error(true, preds)).item()
 
@@ -188,7 +208,7 @@ class ModelBase:
             # convert from test_arrays_dict to xarray object
             for key, val in test_arrays_dict.items():
                 latlons = cast(np.ndarray, val["latlons"])
-                preds = preds_dict[key]
+                preds = self.denormalize_y(preds_dict[key], val["y_var"])
 
                 if len(preds.shape) > 1:
                     preds = preds.squeeze(-1)
@@ -314,6 +334,7 @@ class ModelBase:
             "normalize": True,
             "predict_delta": self.predict_delta,
             "spatial_mask": self.spatial_mask,
+            "normalize_y": self.normalize_y,
         }
 
         for key, val in kwargs.items():

@@ -34,6 +34,7 @@ class LinearRegression(ModelBase):
         predict_delta: bool = False,
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
+        normalize_y: bool = True,
     ) -> None:
         super().__init__(
             data_folder,
@@ -50,6 +51,7 @@ class LinearRegression(ModelBase):
             predict_delta=predict_delta,
             spatial_mask=spatial_mask,
             include_prev_y=include_prev_y,
+            normalize_y=normalize_y,
         )
 
         self.explainer: Optional[shap.LinearExplainer] = None
@@ -183,6 +185,7 @@ class LinearRegression(ModelBase):
             "static": self.static,
             "spatial_mask": self.spatial_mask,
             "include_prev_y": self.include_prev_y,
+            "normalize_y": self.normalize_y,
         }
 
         with (self.model_dir / "model.pkl").open("wb") as f:

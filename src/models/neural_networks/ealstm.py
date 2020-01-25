@@ -35,6 +35,7 @@ class EARecurrentNetwork(NNBase):
         predict_delta: bool = False,
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
+        normalize_y: bool = True,
     ) -> None:
         super().__init__(
             data_folder,
@@ -52,6 +53,7 @@ class EARecurrentNetwork(NNBase):
             predict_delta=predict_delta,
             spatial_mask=spatial_mask,
             include_prev_y=include_prev_y,
+            normalize_y=normalize_y,
         )
 
         # to initialize and save the model
@@ -102,6 +104,7 @@ class EARecurrentNetwork(NNBase):
             "device": self.device,
             "spatial_mask": self.spatial_mask,
             "include_prev_y": self.include_prev_y,
+            "normalize_y": self.normalize_y,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")

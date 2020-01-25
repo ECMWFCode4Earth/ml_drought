@@ -23,6 +23,7 @@ class TestLinearNetwork:
         surrounding_pixels = 1
         ignore_vars = ["precip"]
         include_yearly_aggs = True
+        normalize_y = False
 
         def mocktrain(self):
             self.model = LinearModel(
@@ -51,6 +52,7 @@ class TestLinearNetwork:
             surrounding_pixels=surrounding_pixels,
             ignore_vars=ignore_vars,
             include_prev_y=True,
+            normalize_y=normalize_y,
         )
         model.train()
         model.save_model()
@@ -74,6 +76,7 @@ class TestLinearNetwork:
         assert model_dict["surrounding_pixels"] == surrounding_pixels
         assert model_dict["ignore_vars"] == ignore_vars
         assert model_dict["include_prev_y"] is True
+        assert model_dict["normalize_y"] == normalize_y
 
     @pytest.mark.parametrize(
         "use_pred_months,use_latlons,experiment,monthly_agg,static,predict_delta",

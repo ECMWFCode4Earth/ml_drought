@@ -63,6 +63,7 @@ class TestGBDT:
             include_pred_month=use_pred_months,
             experiment=experiment,
             include_monthly_aggs=monthly_agg,
+            normalize_y=False,
         )
         model.train()
 

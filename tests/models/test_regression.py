@@ -30,7 +30,9 @@ class TestLinearRegression:
 
         monkeypatch.setattr(LinearRegression, "train", mocktrain)
 
-        model = LinearRegression(tmp_path, experiment="one_month_forecast")
+        model = LinearRegression(
+            tmp_path, experiment="one_month_forecast", normalize_y=False
+        )
         model.train()
         model.save_model()
 
@@ -111,6 +113,7 @@ class TestLinearRegression:
             experiment=experiment,
             include_monthly_aggs=monthly_agg,
             predict_delta=predict_delta,
+            normalize_y=True,
         )
         model.train()
 
@@ -206,6 +209,7 @@ class TestLinearRegression:
             device,
             predict_delta,
             spatial_mask,
+            normalize_y,
         ):
 
             pass
@@ -213,7 +217,7 @@ class TestLinearRegression:
         monkeypatch.setattr(DataLoader, "__iter__", mockiter)
         monkeypatch.setattr(DataLoader, "__init__", do_nothing)
 
-        model = LinearRegression(tmp_path)
+        model = LinearRegression(tmp_path, normalize_y=False)
         calculated_mean = model._calculate_big_mean()
 
         # 1 for the 2 features and for the first month, 0 for the rest

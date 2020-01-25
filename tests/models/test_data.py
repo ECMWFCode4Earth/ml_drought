@@ -149,6 +149,7 @@ class TestBaseIter:
                 self.static = None
                 self.spatial_mask = None
                 self.static_normalizing_dict = None
+                self.normalize_y = normalize
 
         base_iterator = _BaseIter(MockLoader())
 

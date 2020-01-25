@@ -278,6 +278,7 @@ class DataLoader:
         static: Optional[str] = "features",
         device: str = "cpu",
         spatial_mask: Optional[xr.DataArray] = None,
+        normalize_y: bool = False,
     ) -> None:
 
         self.batch_file_size = batch_file_size
@@ -295,6 +296,13 @@ class DataLoader:
         self.predict_delta = predict_delta
 
         self.normalizing_dict = None
+        self.normalize_y = normalize_y
+        if normalize_y:
+            # need to load the normalizing dict, and it doesn't really make sense
+            # to normalize the output but not the input
+            if not normalize:
+                print("Forcing normalize to be True since normalize_y is True")
+            normalize = True
         if normalize:
             with (data_path / f"features/{experiment}/normalizing_dict.pkl").open(
                 "rb"
@@ -413,6 +421,7 @@ class _BaseIter:
         self.device = loader.device
         self.predict_delta = loader.predict_delta
         self.spatial_mask = loader.spatial_mask
+        self.normalize_y = loader.normalize_y
 
         self.static = loader.static
         self.static_normalizing_dict = loader.static_normalizing_dict
@@ -543,6 +552,22 @@ class _BaseIter:
             x_np = (x_np - self.normalizing_array["mean"]) / (
                 self.normalizing_array["std"]
             )
+
+        if self.normalize_y:
+            # normalizing_dict will not be None
+            y_var = list(y.data_vars)[0]
+            if not self.predict_delta:
+                y_np = (
+                    (
+                        y_np - self.normalizing_dict[y_var]["mean"]  # type: ignore
+                    )
+                    / self.normalizing_dict[y_var]["std"]  # type: ignore
+                )
+            else:
+                # if we are doing predict_delta, then there is no need to shift by mean, since
+                # the x we will be adding to has already been shifting. Shifting this value would
+                # be "double shifting"
+                y_np = y_np / self.normalizing_dict[y_var]["std"]  # type: ignore
 
         return x_np, y_np
 
