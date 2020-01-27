@@ -34,6 +34,8 @@ class NNBase(ModelBase):
         device: str = "cuda:0",
         predict_delta: bool = False,
         spatial_mask: Union[xr.DataArray, Path] = None,
+        include_prev_y: bool = True,
+        normalize_y: bool = True,
     ) -> None:
         super().__init__(
             data_folder=data_folder,
@@ -49,6 +51,8 @@ class NNBase(ModelBase):
             static=static,
             predict_delta=predict_delta,
             spatial_mask=spatial_mask,
+            include_prev_y=include_prev_y,
+            normalize_y=normalize_y,
         )
 
         # for reproducibility
@@ -220,6 +224,7 @@ class NNBase(ModelBase):
         output_cur: List[torch.Tensor] = []
         output_ym: List[torch.Tensor] = []
         output_static: List[torch.Tensor] = []
+        output_prev_y: List[torch.Tensor] = []
 
         samples_per_instance = max(1, sample_size // len(train_dataloader))
 
@@ -254,6 +259,8 @@ class NNBase(ModelBase):
                 else:
                     output_static.append(torch.zeros(1))
 
+                output_prev_y.append(x[6][idx])
+
                 if len(output_tensors) >= sample_size:
                     return [
                         torch.stack(output_tensors),  # type: ignore
@@ -262,6 +269,7 @@ class NNBase(ModelBase):
                         torch.stack(output_cur),
                         torch.stack(output_ym),
                         torch.stack(output_static),
+                        torch.stack(output_prev_y),
                     ]
 
         return [
@@ -271,6 +279,7 @@ class NNBase(ModelBase):
             torch.stack(output_cur),
             torch.stack(output_ym),
             torch.stack(output_static),
+            torch.stack(output_prev_y),
         ]
 
     def _one_hot(self, indices: torch.Tensor, num_vals: int) -> torch.Tensor:
@@ -291,6 +300,7 @@ class NNBase(ModelBase):
             [3] current data
             [4] yearly aggregations
             [5] static data
+            [6] prev y var
         """
         # mypy totally fails to handle what's going on here
 
@@ -304,6 +314,7 @@ class NNBase(ModelBase):
                 self._one_hot(x.static, self.num_locations)  # type: ignore
                 if self.static == "embeddings"
                 else x.static,  # type: ignore
+                x.prev_y_var,  # type: ignore
             )
         else:
             return (
@@ -315,6 +326,7 @@ class NNBase(ModelBase):
                 self._one_hot(x[5], self.num_locations)  # type: ignore
                 if self.static == "embeddings"
                 else x[5],  # type: ignore
+                x[6],  # type: ignore
             )
 
     def explain(
@@ -447,6 +459,7 @@ class NNBase(ModelBase):
             x.current,
             x.yearly_aggs,
             x.static,
+            x.prev_y_var,
         )
 
         num_items = len(x.__dict__)
