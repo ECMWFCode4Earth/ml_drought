@@ -162,9 +162,6 @@ class ModelBase:
             return y
         else:
             y = y * self.normalizing_dict[var_name]["std"]
-
-        if self.predict_delta:
-            y = y + self.normalizing_dict[var_name]["mean"]
         return y
 
     def evaluate(self, save_results: bool = True, save_preds: bool = False) -> None:
@@ -208,7 +205,10 @@ class ModelBase:
             # convert from test_arrays_dict to xarray object
             for key, val in test_arrays_dict.items():
                 latlons = cast(np.ndarray, val["latlons"])
+                print(preds_dict[key][0])
                 preds = self.denormalize_y(preds_dict[key], val["y_var"])
+                print(preds_dict[key][0])
+                print("------")
 
                 if len(preds.shape) > 1:
                     preds = preds.squeeze(-1)
