@@ -320,10 +320,7 @@ class ModelBase:
             "clear_nans": True,
             "normalize": True,
             "predict_delta": self.predict_delta,
-<<<<<<< HEAD
-=======
             "spatial_mask": self.spatial_mask,
->>>>>>> 933dd5fdb8a1ae95537a4a4235b058d99e217620
         }
 
         for key, val in kwargs.items():
