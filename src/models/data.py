@@ -24,6 +24,7 @@ class TrainData:
     latlons: Union[np.ndarray, torch.Tensor]
     yearly_aggs: Union[np.ndarray, torch.Tensor]
     static: Union[np.ndarray, torch.Tensor, None]
+    prev_y_var: Union[np.ndarray, torch.Tensor]
 
     def to_tensor(self, device: torch.device) -> None:
         for key, val in self.__dict__.items():
@@ -41,6 +42,16 @@ class TrainData:
                 else:
                     newval = torch.cat((val, getattr(x, key)), dim=0)
                 setattr(self, key, newval)
+
+    def filter(self, filter_array: Union[np.ndarray, torch.Tensor]) -> None:
+        # noqa because we just want to make sure these to have the same type,
+        # so isinstance doesn't really fit the bill
+        assert type(filter_array) == type(  # noqa
+            self.historical
+        ), f"Got a different filter type from the TrainData arrays"
+        for key, val in self.__dict__.items():
+            if val is not None:
+                setattr(self, key, val[filter_array])
 
 
 @dataclass
@@ -174,6 +185,7 @@ idx_to_input = {
     3: "current",
     4: "yearly_aggs",
     5: "static",
+    6: "prev_y_var",
 }
 
 
@@ -243,6 +255,8 @@ class DataLoader:
     predict_delta: bool = False
         Whether to predict the CHANGE in the target variable relative to the previous timestep
         instead of the raw target variable.
+    normalize_y: bool = True
+        Whether to normalize y
     """
 
     def __init__(
@@ -264,6 +278,7 @@ class DataLoader:
         static: Optional[str] = "features",
         device: str = "cpu",
         spatial_mask: Optional[xr.DataArray] = None,
+        normalize_y: bool = False,
     ) -> None:
 
         self.batch_file_size = batch_file_size
@@ -281,6 +296,13 @@ class DataLoader:
         self.predict_delta = predict_delta
 
         self.normalizing_dict = None
+        self.normalize_y = normalize_y
+        if normalize_y:
+            # need to load the normalizing dict, and it doesn't really make sense
+            # to normalize the output but not the input
+            if not normalize:
+                print("Forcing normalize to be True since normalize_y is True")
+            normalize = True
         if normalize:
             with (data_path / f"features/{experiment}/normalizing_dict.pkl").open(
                 "rb"
@@ -399,6 +421,7 @@ class _BaseIter:
         self.device = loader.device
         self.predict_delta = loader.predict_delta
         self.spatial_mask = loader.spatial_mask
+        self.normalize_y = loader.normalize_y
 
         self.static = loader.static
         self.static_normalizing_dict = loader.static_normalizing_dict
@@ -419,6 +442,33 @@ class _BaseIter:
 
     def __iter__(self):
         return self
+
+    def _get_prev_y_var(
+        self, folder: Path, y_var: str, num_examples: int
+    ) -> np.ndarray:
+
+        # first, we will try loading the previous year
+        year, month = folder.name.split("_")
+        previous_year = int(year) - 1
+
+        new_path = folder.parent / f"{previous_year}_{month}"
+
+        if new_path.exists():
+            y = xr.open_dataset(new_path / "y.nc")
+            y_np = y[y_var].values
+            y_np = y_np.reshape(y_np.shape[0], y_np.shape[1] * y_np.shape[2])
+            y_np = np.moveaxis(y_np, -1, 0)
+
+            if self.normalizing_dict is not None:
+                y_np = (
+                    y_np - self.normalizing_dict[y_var]["mean"]
+                ) / self.normalizing_dict[y_var]["std"]
+            return y_np
+        else:
+            # the mean will be 0 (if normalizing is True), so this is actually not too bad
+            # if normalizing is not true, we don't have a normalizing dict to find the mean with,
+            # so there is not much we can do.
+            return np.zeros((num_examples, 1))
 
     def calculate_static_normalizing_array(
         self, data_vars: List[str]
@@ -497,9 +547,26 @@ class _BaseIter:
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
             self.normalizing_array = self.calculate_normalizing_array(list(x.data_vars))
+        if self.normalizing_array is not None:
             x_np = (x_np - self.normalizing_array["mean"]) / (
                 self.normalizing_array["std"]
             )
+
+        if self.normalize_y:
+            # normalizing_dict will not be None
+            y_var = list(y.data_vars)[0]
+            if not self.predict_delta:
+                y_np = (
+                    (
+                        y_np - self.normalizing_dict[y_var]["mean"]  # type: ignore
+                    )
+                    / self.normalizing_dict[y_var]["std"]  # type: ignore
+                )
+            else:
+                # if we are doing predict_delta, then there is no need to shift by mean, since
+                # the x we will be adding to has already been shifting. Shifting this value would
+                # be "double shifting"
+                y_np = y_np / self.normalizing_dict[y_var]["std"]  # type: ignore
 
         return x_np, y_np
 
@@ -636,6 +703,8 @@ class _BaseIter:
         else:
             static_np = None
 
+        prev_y_var = self._get_prev_y_var(folder, list(y.data_vars)[0], y_np.shape[0])
+
         latlons, train_latlons = self._calculate_latlons(x)
 
         if self.experiment == "nowcast":
@@ -652,6 +721,7 @@ class _BaseIter:
                 latlons=train_latlons,
                 yearly_aggs=yearly_agg,
                 static=static_np,
+                prev_y_var=prev_y_var,
             )
 
         else:
@@ -662,6 +732,7 @@ class _BaseIter:
                 latlons=train_latlons,
                 yearly_aggs=yearly_agg,
                 static=static_np,
+                prev_y_var=prev_y_var,
             )
 
         assert y_np.shape[0] == x_np.shape[0], (
@@ -683,11 +754,13 @@ class _BaseIter:
                 historical_nans.shape[1] * historical_nans.shape[2],
             ).sum(axis=-1)
             y_nans_summed = y_nans.sum(axis=-1)
+            prev_y_var_summed = np.isnan(prev_y_var).sum(axis=-1)
 
             notnan_indices = np.where(
                 (historical_nans_summed == 0)
                 & (y_nans_summed == 0)
                 & (static_nans_summed == 0)
+                & (prev_y_var_summed == 0)
             )[0]
             if self.experiment == "nowcast":
                 current_nans = np.isnan(train_data.current)
@@ -697,20 +770,12 @@ class _BaseIter:
                     & (y_nans_summed == 0)
                     & (current_nans_summed == 0)
                     & (static_nans_summed == 0)
+                    & (prev_y_var_summed == 0)
                 )[0]
-                train_data.current = train_data.current[notnan_indices]  # type: ignore
 
-            train_data.historical = train_data.historical[notnan_indices]
-            train_data.pred_months = train_data.pred_months[
-                notnan_indices
-            ]  # type: ignore
-            train_data.latlons = train_data.latlons[notnan_indices]
-            train_data.yearly_aggs = train_data.yearly_aggs[notnan_indices]
-            if train_data.static is not None:
-                train_data.static = train_data.static[notnan_indices]
+            train_data.filter(notnan_indices)
 
             y_np = y_np[notnan_indices]
-
             latlons = latlons[notnan_indices]
 
         y_var = list(y.data_vars)[0]
@@ -830,6 +895,7 @@ class _TrainIter(_BaseIter):
                         global_modelarrays.x.current,
                         global_modelarrays.x.yearly_aggs,
                         global_modelarrays.x.static,
+                        global_modelarrays.x.prev_y_var,
                     ),
                     global_modelarrays.y,
                 )

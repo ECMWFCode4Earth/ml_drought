@@ -106,7 +106,7 @@ class TestBaseIter:
         x = xr.merge([x_pred, x_coeff1, x_coeff2, x_coeff3])
         y = x_pred.isel(time=[0])
 
-        data_dir = tmp_path / experiment
+        data_dir = tmp_path / experiment / "1980_1"
         if not data_dir.exists():
             data_dir.mkdir(parents=True, exist_ok=True)
 
@@ -149,6 +149,7 @@ class TestBaseIter:
                 self.static = None
                 self.spatial_mask = None
                 self.static_normalizing_dict = None
+                self.normalize_y = normalize
 
         base_iterator = _BaseIter(MockLoader())
 

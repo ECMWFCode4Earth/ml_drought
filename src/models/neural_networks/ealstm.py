@@ -34,6 +34,8 @@ class EARecurrentNetwork(NNBase):
         device: str = "cuda:0",
         predict_delta: bool = False,
         spatial_mask: Union[xr.DataArray, Path] = None,
+        include_prev_y: bool = True,
+        normalize_y: bool = True,
     ) -> None:
         super().__init__(
             data_folder,
@@ -50,6 +52,8 @@ class EARecurrentNetwork(NNBase):
             device,
             predict_delta=predict_delta,
             spatial_mask=spatial_mask,
+            include_prev_y=include_prev_y,
+            normalize_y=normalize_y,
         )
 
         # to initialize and save the model
@@ -99,6 +103,8 @@ class EARecurrentNetwork(NNBase):
             "static": self.static,
             "device": self.device,
             "spatial_mask": self.spatial_mask,
+            "include_prev_y": self.include_prev_y,
+            "normalize_y": self.normalize_y,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")
@@ -128,6 +134,7 @@ class EARecurrentNetwork(NNBase):
             include_latlons=self.include_latlons,
             static_size=self.static_size,
             static_embedding_size=self.static_embedding_size,
+            include_prev_y=self.include_prev_y,
         )
         self.model.to(torch.device(self.device))
         self.model.load_state_dict(state_dict)
@@ -168,6 +175,7 @@ class EARecurrentNetwork(NNBase):
             include_latlons=self.include_latlons,
             static_size=self.static_size,
             static_embedding_size=self.static_embedding_size,
+            include_prev_y=self.include_prev_y,
         )
 
         return model.to(torch.device(self.device))
@@ -183,6 +191,7 @@ class EALSTM(nn.Module):
         include_latlons,
         include_pred_month,
         experiment,
+        include_prev_y,
         yearly_agg_size=None,
         current_size=None,
         static_size=None,
@@ -195,6 +204,7 @@ class EALSTM(nn.Module):
         self.include_latlons = include_latlons
         self.include_yearly_agg = False
         self.include_static = False
+        self.include_prev_y = include_prev_y
 
         assert (
             include_latlons
@@ -212,6 +222,8 @@ class EALSTM(nn.Module):
             ea_static_size += static_size
         if include_pred_month:
             ea_static_size += 12
+        if self.include_prev_y:
+            ea_static_size += 1
 
         self.use_static_embedding = False
         if static_embedding_size:
@@ -267,6 +279,7 @@ class EALSTM(nn.Module):
         current=None,
         yearly_aggs=None,
         static=None,
+        prev_y=None,
     ):
 
         assert (
@@ -284,6 +297,8 @@ class EALSTM(nn.Module):
             static_x.append(static)
         if self.include_pred_month:
             static_x.append(pred_month)
+        if self.include_prev_y:
+            static_x.append(prev_y)
 
         static_tensor = torch.cat(static_x, dim=-1)
 
