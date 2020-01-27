@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from sklearn.metrics import r2_score, mean_squared_error
-from typing import Dict, List, Optional, Union
-from src.utils import get_ds_mask
+from typing import Dict, List, Optional, Union, Tuple
+from src.utils import get_ds_mask, _sort_lat_lons
 
 
 def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
@@ -19,6 +19,16 @@ def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     true_da_shape = (true_da.lat.shape[0], true_da.lon.shape[0])
     pred_da_shape = (pred_da.lat.shape[0], pred_da.lon.shape[0])
     assert true_da_shape == pred_da_shape
+    assert tuple(true_da.dims) == tuple(pred_da.dims), (
+        f"Expect"
+        "the dimensions to be the same. Currently: "
+        f"True: {tuple(true_da.dims)} Preds: {tuple(pred_da.dims)}. "
+        'Have you tried da.transpose("time", "lat", "lon")'
+    )
+
+    # sort the lat/lons correctly just to be sure
+    pred_da = _sort_lat_lons(pred_da)
+    true_da = _sort_lat_lons(true_da)
 
     vals = np.sqrt(
         np.nansum((true_da.values - pred_da.values) ** 2, axis=0) / pred_da.shape[0]
@@ -60,8 +70,9 @@ def annual_scores(
     models: List[str],
     metrics: Optional[List[str]] = None,
     experiment="one_month_forecast",
+    true_data_experiment: Optional[str] = None,
     data_path: Path = Path("data"),
-    pred_year: int = 2018,
+    pred_years: List[int] = [2018],
     target_var: str = "VCI",
     verbose: bool = True,
     to_dataframe: bool = False,
@@ -78,29 +89,45 @@ def annual_scores(
         for model in models:
             monthly_scores[metric][model] = []
 
-    for month in range(1, 13):
-        scores = monthly_score(
-            month=month,
-            metrics=metrics,
-            models=models,
-            data_path=data_path,
-            pred_year=pred_year,
-            experiment=experiment,
-            target_var=target_var,
-            verbose=verbose,
-        )
+    out_dict = dict()
+    for pred_year in pred_years:
+        for month in range(1, 13):
+            scores = monthly_score(
+                month=month,
+                metrics=metrics,
+                models=models,
+                data_path=data_path,
+                pred_year=pred_year,
+                experiment=experiment,
+                true_data_experiment=true_data_experiment,
+                target_var=target_var,
+                verbose=verbose,
+            )
 
-        for model, metric_scores in scores.items():
-            for metric, score in metric_scores.items():
-                monthly_scores[metric][model].append(score)
-        for metric in metrics:
-            monthly_scores[metric]["month"].append(month)
-            monthly_scores[metric]["year"].append(pred_year)
+            for model, metric_scores in scores.items():
+                for metric, score in metric_scores.items():
+                    monthly_scores[metric][model].append(score)
+            for metric in metrics:
+                monthly_scores[metric]["month"].append(month)
+                monthly_scores[metric]["year"].append(pred_year)
+
+        if to_dataframe:
+            out_dict[pred_year] = annual_scores_to_dataframe(monthly_scores)
+        else:
+            out_dict[pred_year] = monthly_scores
 
     if to_dataframe:
-        return annual_scores_to_dataframe(monthly_scores)
+        out_df = pd.DataFrame()
+        for k in out_dict.keys():
+            out_df = pd.concat([out_df, out_dict[k]])
+
+        out_df["time"] = out_df.apply(
+            lambda row: pd.to_datetime(f"{int(row.month)}-{int(row.year)}"), axis=1
+        )
+
+        return out_df
     else:
-        return monthly_scores
+        return out_dict
 
 
 def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
@@ -119,6 +146,13 @@ def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
     df = pd.concat(metric_dfs)
 
     return df
+
+
+def _read_multi_data_paths(train_data_paths: List[Path]) -> xr.Dataset:
+    train_ds = xr.open_mfdataset(train_data_paths).sortby("time").compute()
+    train_ds = train_ds.transpose("time", "lat", "lon")
+
+    return train_ds
 
 
 def read_pred_data(
@@ -145,8 +179,8 @@ def read_true_data(
         f
         for f in (data_dir / "features" / "one_month_forecast" / "test").glob("*/y.nc")
     ]
-    true_ds = xr.open_mfdataset(true_paths).sortby("time").compute()
-    true_da = true_ds[variable].transpose("time", "lat", "lon")
+    true_ds = _read_multi_data_paths(true_paths)
+    true_da = true_ds[variable]
     return true_da
 
 
@@ -155,6 +189,7 @@ def monthly_score(
     models: List[str],
     metrics: List[str],
     experiment="one_month_forecast",
+    true_data_experiment: Optional[str] = None,
     data_path: Path = Path("data"),
     pred_year: int = 2018,
     target_var: str = "VCI",
@@ -170,7 +205,9 @@ def monthly_score(
     ----------
     month: the month of data being evaluated
     models: A list of models to evaluate. These names must match the model.name attributes
-    experiment: The experiment being run, one of {'one_month_forecast', 'nowcast'}
+    experiment: The experiment being run, usually one of {'one_month_forecast', 'nowcast'}.
+    true_data_experiment: the name of the experiment (for one run of the Engineer),
+    one of {'one_month_forecast', 'nowcast'}. Defaults to the same as the `experiment` arg
     metrics: A list of metrics to calculate. If None, all (rmse, r2) are calculated.
     data_path: The location of the data directory
     pred_year: The year being predicted
@@ -190,9 +227,16 @@ def monthly_score(
         )
         model_files[model] = xr.open_dataset(pred_path).isel(time=0)
 
-    true_data = xr.open_dataset(
-        data_path / f"features/{experiment}/test" f"/{pred_year}_{month}/y.nc"
-    ).isel(time=0)
+    if true_data_experiment is None:
+        true_data_path = (
+            data_path / f"features/{experiment}/test" f"/{pred_year}_{month}/y.nc"
+        )
+    else:
+        true_data_path = (
+            data_path / f"features/{true_data_experiment}/test"
+            f"/{pred_year}_{month}/y.nc"
+        )
+    true_data = xr.open_dataset(true_data_path).isel(time=0)
 
     output_score: Dict[str, Dict[str, float]] = {}
 
@@ -223,6 +267,7 @@ def plot_predictions(
     pred_year: int = 2018,
     data_path: Path = Path("data"),
     experiment: str = "one_month_forecast",
+    **spatial_plot_kwargs,
 ):
 
     true = (
@@ -253,9 +298,83 @@ def plot_predictions(
 
     plt.clf()
 
+    if "vmin" not in spatial_plot_kwargs:
+        print("You have not provided a **kwargs dict with vmin / vmax")
+        print("Are you sure?")
     fig, ax = plt.subplots(1, 2, figsize=(7, 3))
-    true.preds.plot(vmin=0, vmax=100, ax=ax[0], add_colorbar=False)
+    true.preds.plot(ax=ax[0], add_colorbar=False, **spatial_plot_kwargs)
     ax[0].set_title("True")
-    model_ds.preds.plot(vmin=0, vmax=100, ax=ax[1], add_colorbar=False)
+    ax[0].set_axis_off()
+    model_ds.preds.plot(ax=ax[1], add_colorbar=False, **spatial_plot_kwargs)
     ax[1].set_title(model)
+    ax[1].set_axis_off()
     plt.show()
+
+
+def _read_data(
+    data_dir: Path = Path("data"),
+    train_or_test: str = "test",
+    remove_duplicates: bool = True,
+) -> Tuple[xr.Dataset, xr.Dataset]:
+    # LOAD the y files
+    y_data_paths = [
+        f
+        for f in (data_dir / "features" / "one_month_forecast" / train_or_test).glob(
+            "*/y.nc"
+        )
+    ]
+    y_ds = _read_multi_data_paths(y_data_paths)
+
+    # LOAD the X files
+    X_data_paths = [
+        f
+        for f in (data_dir / "features" / "one_month_forecast" / train_or_test).glob(
+            "*/X.nc"
+        )
+    ]
+    X_ds = _read_multi_data_paths(X_data_paths)
+
+    if remove_duplicates:
+        # remove duplicate times from the X ds
+        # https://stackoverflow.com/a/51077784/9940782
+        _, index = np.unique(X_ds["time"], return_index=True)
+        X_ds = X_ds.isel(time=index)
+
+    return X_ds, y_ds
+
+
+def read_train_data(
+    data_dir: Path = Path("data"), remove_duplicates: bool = True
+) -> Tuple[xr.Dataset, xr.Dataset]:
+    """Read the training data from the data directory and return the joined DataArray.
+
+    (Joined on the `time` dimension).
+
+    Return:
+    ------
+    X_train: xr.Dataset
+    y_train: xr.Dataset
+    """
+    train_X_ds, train_y_ds = _read_data(
+        data_dir, train_or_test="train", remove_duplicates=remove_duplicates
+    )
+    return train_X_ds, train_y_ds
+
+
+def read_test_data(
+    data_dir: Path = Path("data"), remove_duplicates: bool = True
+) -> Tuple[xr.Dataset, xr.Dataset]:
+    """Read the test data from the data directory and return the joined DataArray.
+
+    (Joined on the `time` dimension).
+
+    Return:
+    ------
+    X_test: xr.Dataset
+    y_test: xr.Dataset
+    """
+    test_X_ds, test_y_ds = _read_data(
+        data_dir, train_or_test="test", remove_duplicates=remove_duplicates
+    )
+
+    return test_X_ds, test_y_ds
