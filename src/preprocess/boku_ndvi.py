@@ -68,12 +68,24 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         """
         # regex pattern (4 digits after '.t')
         year_pattern = re.compile(r".t\d{4}")
-        # extract the week_number (ISO 8601 week)
-        week_num = year_pattern.split(filename)[-1].split(".")[0]
         # extract the year from the filename
         year = year_pattern.findall(filename)[0].split(".t")[-1]
 
-        return datetime.strptime(f"{year}-{week_num}-Mon", "%G-%V-%a")
+        if self.resolution == '1000':
+            # extract the week_number (ISO 8601 week)
+            week_num = year_pattern.split(filename)[-1].split(".")[0]
+
+            return datetime.strptime(f"{year}-{week_num}-Mon", "%G-%V-%a")
+
+        elif self.resolution == '250':
+            assert False, 'HAVENT DONE THIS YET'
+            # extract the day_number (ISO 8601 week)
+            week_num = year_pattern.split(filename)[-1].split(".")[0]
+
+            return datetime.strptime(f"{year}-{week_num}-Mon", "%G-%V-%a")
+
+        else:
+            assert False, 'Only working with two resolutions 1000 / 250'
 
     def create_new_dataarray(
         self, ds: xr.Dataset, timestamp: pd.Timestamp
