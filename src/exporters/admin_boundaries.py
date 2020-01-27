@@ -89,7 +89,7 @@ class EthiopiaAdminExporter(OCHAExporter):
     urls: Dict = {
         "ethiopia-admin-boundaries": "https://data.humdata.org"
         "/dataset/a5788674-b4d1-4731-9ec6-45040a7be731/resource/"
-        "91274071-1a6d-4cce-a7d3-c29274a4b249/download/ethiopia.zip",
+        "91274071-1a6d-4cce-a7d3-c29274a4b249/download/ethiopia.zip"
     }
 
     def export(self) -> None:

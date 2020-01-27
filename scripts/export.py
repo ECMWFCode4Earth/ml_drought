@@ -11,6 +11,7 @@ from src.exporters import (
     S5Exporter,
     SRTMExporter,
     KenyaAdminExporter,
+    ERA5LandExporter,
 )
 
 from scripts.utils import get_data_path
@@ -68,6 +69,23 @@ def export_era5():
 
     for variable in era5_variables:
         exporter.export(variable=variable, granularity="monthly")
+
+
+def export_era5_land():
+    exporter = ERA5LandExporter(get_data_path())
+
+    variables = [
+        "total_precipitation",
+        "2m_temperature",
+        "evapotranspiration",
+        "potential_evaporation",
+        "volumetric_soil_water_layer_1",
+        "volumetric_soil_water_layer_2"
+        "volumetric_soil_water_layer_3"
+        "volumetric_soil_water_layer_4",
+    ]
+    for variable in variables:
+        exporter.export(variable=variable, break_up="yearly")
 
 
 def export_vhi():
@@ -142,11 +160,12 @@ def export_kenya_boundaries():
 
 
 if __name__ == "__main__":
-    export_era5()
-    export_vhi()
-    export_chirps()
-    export_era5POS()
-    export_gleam()
-    export_esa()
-    export_s5()
-    export_kenya_boundaries()
+    export_era5_land()
+    # export_era5()
+    # export_vhi()
+    # export_chirps()
+    # export_era5POS()
+    # export_gleam()
+    # export_esa()
+    # export_s5()
+    # export_kenya_boundaries()

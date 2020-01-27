@@ -298,7 +298,7 @@ class _EngineerBase:
 
     @staticmethod
     def _make_fill_value_dataset(
-        ds: Union[xr.Dataset, xr.DataArray], fill_value: Union[int, float] = -9999.0,
+        ds: Union[xr.Dataset, xr.DataArray], fill_value: Union[int, float] = -9999.0
     ) -> Union[xr.Dataset, xr.DataArray]:
         nan_ds = xr.full_like(ds, fill_value)
         return nan_ds

@@ -42,3 +42,8 @@ try:
     import climate_indices
 except ImportError:
     collect_ignore.append("analysis/indices/test_spi.py")
+
+try:
+    import cfgrib
+except ImportError:
+    collect_ignore.append("preprocess/test_s5.py")
