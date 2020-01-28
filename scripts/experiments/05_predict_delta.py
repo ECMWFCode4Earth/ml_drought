@@ -14,7 +14,7 @@ if __name__ == "__main__":
     # gbdt(ignore_vars=always_ignore_vars, predict_delta=True)
     # linear_nn(ignore_vars=always_ignore_vars, predict_delta=True)
     # rnn(ignore_vars=always_ignore_vars, predict_delta=True)
-    rnn(   # earnn(
+    rnn(  # earnn(
         experiment="one_month_forecast",
         include_pred_month=True,
         surrounding_pixels=None,
