@@ -96,6 +96,8 @@ def rnn(
     predict_delta=False,
     spatial_mask=None,
     include_latlons=False,
+    normalize_y=True,
+    include_prev_y=True,
 ):
     predictor = RecurrentNetwork(
         hidden_size=hidden_size,
@@ -108,6 +110,8 @@ def rnn(
         predict_delta=predict_delta,
         spatial_mask=spatial_mask,
         include_latlons=include_latlons,
+        normalize_y=normalize_y,
+        include_prev_y=include_prev_y
     )
     predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)

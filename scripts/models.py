@@ -1,4 +1,3 @@
-from pathlib import Path
 import sys
 
 sys.path.append("..")
@@ -126,7 +125,7 @@ def earnn(
 
 if __name__ == "__main__":
     ignore_vars = ["VCI", "p84.162", "sp", "tp"]
-    parsimonious(ignore_vars=ignore_vars)
+    parsimonious()
     regression(ignore_vars=ignore_vars)
     linear_nn(ignore_vars=ignore_vars)
     rnn(ignore_vars=ignore_vars)
