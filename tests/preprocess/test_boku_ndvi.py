@@ -22,7 +22,7 @@ class TestBokuNDVIPreprocessor:
         ), f"Expected output to be {expected_output}, got {filename}"
 
     @staticmethod
-    def _make_chirps_dataset(
+    def _make_boku_ndvi_dataset(
         size, lonmin=-180.0, lonmax=180.0, latmin=-55.152, latmax=75.024, add_times=True
     ):
         lat_len, lon_len = size
@@ -30,8 +30,8 @@ class TestBokuNDVIPreprocessor:
         longitudes = np.linspace(lonmin, lonmax, lon_len)
         latitudes = np.linspace(latmin, latmax, lat_len)
 
-        dims = ["latitude", "longitude"]
-        coords = {"latitude": latitudes, "longitude": longitudes}
+        dims = ["lat", "lon"]
+        coords = {"lat": latitudes, "lon": longitudes}
 
         if add_times:
             size = (2, size[0], size[1])
@@ -39,28 +39,28 @@ class TestBokuNDVIPreprocessor:
             coords["time"] = [datetime(2019, 1, 1), datetime(2019, 1, 2)]
         vhi = np.random.randint(100, size=size)
 
-        return xr.Dataset({"VHI": (dims, vhi)}, coords=coords)
+        return xr.Dataset({"boku_ndvi": (dims, vhi)}, coords=coords)
 
     @staticmethod
     def test_directories_created(tmp_path):
         v = BokuNDVIPreprocessor(tmp_path)
 
         assert (
-            tmp_path / v.preprocessed_folder / "chirps_preprocessed"
+            tmp_path / v.preprocessed_folder / "boku_ndvi_preprocessed"
         ).exists(), (
-            "Should have created a directory tmp_path/interim/chirps_preprocessed"
+            "Should have created a directory tmp_path/interim/boku_ndvi_preprocessed"
         )
 
         assert (
-            tmp_path / v.preprocessed_folder / "chirps_interim"
-        ).exists(), "Should have created a directory tmp_path/interim/chirps_interim"
+            tmp_path / v.preprocessed_folder / "boku_ndvi_interim"
+        ).exists(), "Should have created a directory tmp_path/interim/boku_ndvi_interim"
 
     @staticmethod
     def test_get_filenames(tmp_path):
 
-        (tmp_path / "raw" / "chirps").mkdir(parents=True)
+        (tmp_path / "raw" / "boku_ndvi").mkdir(parents=True)
 
-        test_file = tmp_path / "raw/chirps/testy_test.nc"
+        test_file = tmp_path / "raw/boku_ndvi/testy_test.nc"
         test_file.touch()
 
         processor = BokuNDVIPreprocessor(tmp_path)
@@ -70,9 +70,9 @@ class TestBokuNDVIPreprocessor:
 
     def test_preprocess(self, tmp_path):
 
-        (tmp_path / "raw/chirps/global").mkdir(parents=True)
-        data_path = tmp_path / "raw/chirps/global/testy_test.nc"
-        dataset = self._make_chirps_dataset(size=(100, 100))
+        (tmp_path / "raw/boku_ndvi/global").mkdir(parents=True)
+        data_path = tmp_path / "raw/boku_ndvi/global/testy_test.nc"
+        dataset = self._make_boku_ndvi_dataset(size=(100, 100))
         dataset.to_netcdf(path=data_path)
 
         kenya = get_kenya()
@@ -90,7 +90,7 @@ class TestBokuNDVIPreprocessor:
         processor = BokuNDVIPreprocessor(tmp_path)
         processor.preprocess(subset_str="kenya", regrid=regrid_path, parallel=False)
 
-        expected_out_path = tmp_path / "interim/chirps_preprocessed/data_kenya.nc"
+        expected_out_path = tmp_path / "interim/boku_ndvi_preprocessed/data_kenya.nc"
         assert (
             expected_out_path.exists()
         ), f"Expected processed file to be saved to {expected_out_path}"
@@ -118,13 +118,13 @@ class TestBokuNDVIPreprocessor:
 
         assert (
             not processor.interim.exists()
-        ), f"Interim chirps folder should have been deleted"
+        ), f"Interim boku_ndvi folder should have been deleted"
 
     def test_alternative_region(self, tmp_path):
         # make the dataset
-        (tmp_path / "raw/chirps/global").mkdir(parents=True)
-        data_path = tmp_path / "raw/chirps/global/testy_test.nc"
-        dataset = self._make_chirps_dataset(size=(100, 100))
+        (tmp_path / "raw/boku_ndvi/global").mkdir(parents=True)
+        data_path = tmp_path / "raw/boku_ndvi/global/testy_test.nc"
+        dataset = self._make_boku_ndvi_dataset(size=(100, 100))
         dataset.to_netcdf(path=data_path)
         ethiopia = get_ethiopia()
 
@@ -143,7 +143,7 @@ class TestBokuNDVIPreprocessor:
         processor = BokuNDVIPreprocessor(tmp_path)
         processor.preprocess(subset_str="ethiopia", regrid=regrid_path, parallel=False)
 
-        expected_out_path = tmp_path / "interim/chirps_preprocessed/data_ethiopia.nc"
+        expected_out_path = tmp_path / "interim/boku_ndvi_preprocessed/data_ethiopia.nc"
         assert (
             expected_out_path.exists()
         ), f"Expected processed file to be saved to {expected_out_path}"

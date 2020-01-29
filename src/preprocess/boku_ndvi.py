@@ -1,6 +1,6 @@
 """
 Storing the image values in images as real values generally results
-into large files given the space needs for storing floats. The NDVI
+in large files given the space needs for storing floats. The NDVI
 netCDF files therefore have their values scaled to have integers.
 You need to know the flags for missing data [255], inland water [252] and
 Ocean[251] and then scale the integers to get the actual NDVI values.
@@ -127,12 +127,6 @@ class BokuNDVIPreprocessor(BasePreProcessor):
 
     # def _convert_to_VCI(self,):
     #     """Convert the BOKU NDVI data to VCI data
-
-    #     Justification:
-    #     The BOKU NDVI data is in the range 0-255 which
-    #     suggests there is a scaling issue. Since the VCI
-    #     is an anomaly score the raw values of the NDVI doesn't
-    #     matter. Therefore, it makes sense to preprocess to VCI.
     #     """
 
     def _preprocess_single(
@@ -175,7 +169,7 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         # 251=ocean, 252=inland_water, 255=missing_data
         ds = ds.where((ds != 251) & (ds != 252) & (ds != 255))
 
-        # 5. convert from INT to ndvi float
+        # 5. convert from int to ndvi float (storage reasons)
         # 𝑽𝑰 = 𝑽𝑰𝒔𝒍𝒐𝒑𝒆 * value + 𝑽𝑰𝒊𝒏𝒕𝒆𝒓𝒄𝒆𝒑𝒕
         ds = (0.0048 * ds) - 0.200
 
