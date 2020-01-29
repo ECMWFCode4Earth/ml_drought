@@ -168,10 +168,15 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         if regrid is not None:
             ds = self.regrid(ds, regrid)
 
-        # MASK OUT MISSING VALUES
-        ds.where(np.isin(ds, [255,252,251]))
+        # 4. mask out missing values
+        # 251=ocean, 252=inland_water, 255=missing_data
+        ds = ds.where((ds != 251) & (ds != 252) & (ds != 255))
 
-        # 4. create the filepath and save to that location
+        # 5. convert from INT to ndvi float
+        # 𝑽𝑰 = 𝑽𝑰𝒔𝒍𝒐𝒑𝒆 * value + 𝑽𝑰𝒊𝒏𝒕𝒆𝒓𝒄𝒆𝒑𝒕
+        ds = (0.0048 * ds) - 0.200
+
+        # 6. create the filepath and save to that location
         assert (
             netcdf_filepath.name[-3:] == ".nc"
         ), f"filepath name should be a .nc file. Currently: {netcdf_filepath.name}"
