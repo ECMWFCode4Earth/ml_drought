@@ -105,6 +105,11 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         self, ds: xr.Dataset, timestamp: pd.Timestamp
     ) -> xr.Dataset:
         variable = "boku_ndvi"
+        valid_vars = [v for v in ds.data_vars]
+        if variable not in valid_vars:
+            variable = "modis_ndvi"
+        assert variable in valid_vars, 'Expect modis_ndvi / boku_ndvi to be the variable'
+
         assert (
             np.array(timestamp).size == 1
         ), "The function only currently works with SINGLE TIMESTEPS."
@@ -162,6 +167,9 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         # 3. regrid
         if regrid is not None:
             ds = self.regrid(ds, regrid)
+
+        # MASK OUT MISSING VALUES
+        ds.where(np.isin(ds, [255,252,251]))
 
         # 4. create the filepath and save to that location
         assert (
