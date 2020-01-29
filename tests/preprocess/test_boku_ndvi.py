@@ -8,6 +8,12 @@ from src.utils import get_kenya, get_ethiopia
 
 from ..utils import _make_dataset
 
+"""
+TODO:
+- Test both 250m and 1000m
+- Test values from int scale -> ndvi float scale
+- Test the removal of 251, 252, 255 values
+"""
 
 class TestBokuNDVIPreprocessor:
     @staticmethod
