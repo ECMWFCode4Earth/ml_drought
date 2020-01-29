@@ -26,6 +26,7 @@ import numpy as np
 from typing import cast, Optional, Tuple
 
 from .base import BasePreProcessor
+
 # from src.analysis import
 
 
@@ -85,21 +86,21 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         # extract the year from the filename
         year = year_pattern.findall(filename)[0].split(".t")[-1]
 
-        if self.resolution == '1000':
+        if self.resolution == "1000":
             # extract the week_number (ISO 8601 week)
             week_num = year_pattern.split(filename)[-1].split(".")[0]
 
             return datetime.strptime(f"{year}-{week_num}-Mon", "%G-%V-%a")
 
-        elif self.resolution == '250':
-            assert False, 'HAVENT DONE THIS YET'
+        elif self.resolution == "250":
+            assert False, "HAVENT DONE THIS YET"
             # extract the day_number (ISO 8601 week)
             week_num = year_pattern.split(filename)[-1].split(".")[0]
 
             return datetime.strptime(f"{year}-{week_num}-Mon", "%G-%V-%a")
 
         else:
-            assert False, 'Only working with two resolutions 1000 / 250'
+            assert False, "Only working with two resolutions 1000 / 250"
 
     def create_new_dataarray(
         self, ds: xr.Dataset, timestamp: pd.Timestamp
@@ -108,7 +109,9 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         valid_vars = [v for v in ds.data_vars]
         if variable not in valid_vars:
             variable = "modis_ndvi"
-        assert variable in valid_vars, 'Expect modis_ndvi / boku_ndvi to be the variable'
+        assert (
+            variable in valid_vars
+        ), "Expect modis_ndvi / boku_ndvi to be the variable"
 
         assert (
             np.array(timestamp).size == 1
