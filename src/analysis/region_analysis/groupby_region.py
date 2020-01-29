@@ -39,6 +39,7 @@ class GroupbyRegion:
         assert self.shp_raw_dir.exists(), (
             f"{self.shp_raw_dir} does not exist! Have you run the "
             "AdminBoundaries Exporters?"
+            f"Existing countries: {d for d in [self.shp_raw_dir.parents[0].iterdir()]}"
         )
 
         self.out_dir: Path = self.data_dir / "analysis" / "region_analysis"
@@ -128,11 +129,11 @@ class GroupbyRegion:
         assert type(self.da) == xr.DataArray, (
             "This method only works"
             "with `xr.DataArray` not `xr.Dataset`. Make sure you select"
-            "one variable for your "
+            "one variable for your analysis (can group later)"
         )
 
         self.selection = selection
-        self.admin_bound = self.get_admin_level(self.selection)
+        self.admin_bound = self.get_admin_level(selection)
 
         # initialise filepaths to data
         self.region_shp_path = self.admin_bound.shp_filepath
@@ -263,6 +264,8 @@ class GroupbyRegion:
         datetimes: List = []
         admin_level_names: List = []
 
+        # TODO: SLOW code how can we speed up?
+        # for each time / region calculate the
         for valid_region_id in valid_region_ids:
             for time in da.time.values:
                 region_names.append(region_lookup[valid_region_id])
