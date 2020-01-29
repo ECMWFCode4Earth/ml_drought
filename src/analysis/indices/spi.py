@@ -58,8 +58,9 @@ class SPI(BaseIndices):
     resample = True
     resample_str = "month"
 
-    def __init__(self, data_path: Path) -> None:
-        super().__init__(data_path, resample_str=self.resample_str)
+    def __init__(self, file_path: Optional[Path] = None,
+                 ds: Optional[xr.Dataset] = None,) -> None:
+        super().__init__(file_path, ds=ds, resample_str=self.resample_str)
 
         global indices
         global climate_indices
@@ -245,16 +246,32 @@ class SPI(BaseIndices):
             "---------------\n",
         )
 
-        index = xr.apply_ufunc(  # type: ignore
-            indices.spi,  # type: ignore
-            da,
-            self.scale,
-            dist,
-            self.data_start_year,
-            self.calibration_year_initial,
-            self.calibration_year_final,
-            period,
-        )
+        try:
+            index = xr.apply_ufunc(  # type: ignore
+                indices.spi,  # type: ignore
+                da,
+                self.scale,
+                dist,
+                self.data_start_year,
+                self.calibration_year_initial,
+                self.calibration_year_final,
+                period,
+            )
+        except ValueError as E:
+            print("** ValueError: ")
+            print(E)
+            print("\the current fix is rather nasty edit of xarray")
+            print(
+                "the indices.spi computation sometimes collapses the dimensionality"
+                " of the groupby object. "
+                "Therefore added some code to L578 "
+                "~/miniconda3/envs/crop/lib/python3.7/site-packages/xarray/core/computation.py)"
+                "\n> # TODO: TOMMY ADDED\n"
+                "\nif (data.ndim == 1) and (len(dims) == 2):"
+                "\n\tdata = np.expand_dims(data, -1)"
+                "\n"
+            )
+            print("I am pretty sure that this is probably something that we need to fix from the indices code")
 
         self.index = index.unstack("point").to_dataset(name=f"SPI{scale}")
 

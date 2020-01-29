@@ -10,7 +10,11 @@ class BaseIndices:
     ds: xr.Dataset
     resample: bool = False
 
-    def __init__(self, file_path: Path, resample_str: Optional[str] = None) -> None:
+    def __init__(self,
+                 file_path: Optional[Path] = None,
+                 ds: Optional[xr.Dataset] = None,
+                 resample_str: Optional[str] = None
+    ) -> None:
         """
         Arguments:
         ---------
@@ -21,13 +25,20 @@ class BaseIndices:
         resample_str: Optional[str]
             One of {'daysofyear', 'month', 'year', 'season', None}
         """
-        self.file_path = file_path
-        assert (
-            self.file_path.exists()
-        ), f"{self.file_path} does not exist.\
-        Must be directed to an existing .nc file!"
+        assert (file_path is not None) or (ds is not None), 'Either file_path or ds must be provided'
 
-        self.ds = xr.open_dataset(file_path)
+        if file_path is not None:
+            self.file_path = file_path
+            assert (
+                self.file_path.exists()
+            ), f"{self.file_path} does not exist.\
+            Must be directed to an existing .nc file!"
+
+            self.ds = xr.open_dataset(file_path)
+        elif ds is not None:
+            self.ds = ds
+        else:
+            assert False, "Must provide ds or file_path argument"
 
         if resample_str is not None:
             self.resample = True
