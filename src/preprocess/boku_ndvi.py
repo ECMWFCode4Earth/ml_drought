@@ -31,8 +31,6 @@ from .base import BasePreProcessor
 
 
 class BokuNDVIPreprocessor(BasePreProcessor):
-    resolution: str
-
     def __init__(
         self,
         data_folder: Path = Path("data"),
@@ -73,31 +71,39 @@ class BokuNDVIPreprocessor(BasePreProcessor):
 
     def _parse_time_from_filename(self, filename) -> datetime:
         """
-        extract the datetime from filename.
+        extract the datetime from filename (https://strftime.org/)
 
         Example:
+        1000m
             MCD13A2.t200915.006.EAv1.1_km_10_days_NDVI.O1.nc
             the 15th Monday of 2009
+        250m
+            MCD09Q1.A2010319.006.KEHOA.250m_07_days_NDVI.Bw_TMP.nc
+            day 319 of 2010
 
         returns datetime object
         """
-        # regex pattern (4 digits after '.t')
-        year_pattern = re.compile(r".t\d{4}")
-        # extract the year from the filename
-        year = year_pattern.findall(filename)[0].split(".t")[-1]
 
         if self.resolution == "1000":
+            # regex pattern (4 digits after '.t')
+            year_pattern = re.compile(r".t\d{4}")
+            # extract the year from the filename
+            year = year_pattern.findall(filename)[0].split(".t")[-1]
             # extract the week_number (ISO 8601 week)
             week_num = year_pattern.split(filename)[-1].split(".")[0]
 
             return datetime.strptime(f"{year}-{week_num}-Mon", "%G-%V-%a")
 
         elif self.resolution == "250":
-            assert False, "HAVENT DONE THIS YET"
-            # extract the day_number (ISO 8601 week)
-            week_num = year_pattern.split(filename)[-1].split(".")[0]
+            # regex pattern (4 digits after '.t')
+            year_pattern = re.compile(r".A\d{4}")
+            # extract the year from the filename
+            year = year_pattern.findall(filename)[0].split(".A")[-1]
 
-            return datetime.strptime(f"{year}-{week_num}-Mon", "%G-%V-%a")
+            # extract the day_number
+            day_num = year_pattern.split(filename)[-1].split(".")[0]
+
+            return datetime.strptime(f"{year}-{day_num}", "%Y-%j")
 
         else:
             assert False, "Only working with two resolutions 1000 / 250"
