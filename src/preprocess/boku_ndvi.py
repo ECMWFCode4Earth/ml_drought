@@ -1,3 +1,17 @@
+"""
+Storing the image values in images as real values generally results
+into large files given the space needs for storing floats. The NDVI
+netCDF files therefore have their values scaled to have integers.
+You need to know the flags for missing data [255], inland water [252] and
+Ocean[251] and then scale the integers to get the actual NDVI values.
+
+The equation for the scaling is as show below.
+𝑽𝑰=𝑽𝑰𝒔𝒍𝒐𝒑𝒆∙𝑫𝑵+ 𝑽𝑰𝒊𝒏𝒕𝒆𝒓𝒄𝒆𝒑𝒕 where DN is the digital number on the image.
+
+The actual formula would look like below:
+NDVI = 0.0048 * DN- 0.200
+"""
+
 from pathlib import Path
 from shutil import rmtree
 import xarray as xr
