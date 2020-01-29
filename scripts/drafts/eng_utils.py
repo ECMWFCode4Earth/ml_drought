@@ -15,6 +15,8 @@ import warnings
 import pandas as pd
 from netCDF4 import num2date
 
+from typing import List
+from pathlib import Path
 
 # ------------------------------------------------------------------------------
 # Selcting the Same Timeslice
