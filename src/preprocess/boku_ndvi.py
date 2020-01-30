@@ -27,7 +27,7 @@ from typing import cast, Optional, Tuple
 
 from .base import BasePreProcessor
 
-# from src.analysis import
+# from src.analysis import ConditionIndex
 
 
 class BokuNDVIPreprocessor(BasePreProcessor):
@@ -131,9 +131,16 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         da.name = variable
         return da.to_dataset()
 
-    # def _convert_to_VCI(self,):
+    # def _convert_to_VCI(self, ds: xr.Dataset) -> xr.Dataset:
     #     """Convert the BOKU NDVI data to VCI data
     #     """
+    #     vci = ConditionIndex(ds=ds, resample_str="M")
+    #     variable = [v for v in ds.data_vars][0]
+    #     vci.fit(variable=variable, rolling_window=1)
+    #     var_ = [v for v in vci.index.data_vars][0]
+    #     vci = vci.index.rename({var_: "VCI"})
+
+    #     return VCI
 
     def _preprocess_single(
         self,
@@ -179,7 +186,11 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         # 𝑽𝑰 = 𝑽𝑰𝒔𝒍𝒐𝒑𝒆 * value + 𝑽𝑰𝒊𝒏𝒕𝒆𝒓𝒄𝒆𝒑𝒕
         ds = (0.0048 * ds) - 0.200
 
-        # 6. create the filepath and save to that location
+        # 6. add in the VCI data too
+        # vci = _convert_to_VCI(ds).rename({'VCI': 'boku_VCI'})
+        # ds = xr.auto_combine([ds, vci])
+
+        # 7. create the filepath and save to that location
         assert (
             netcdf_filepath.name[-3:] == ".nc"
         ), f"filepath name should be a .nc file. Currently: {netcdf_filepath.name}"
