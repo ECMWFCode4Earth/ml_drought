@@ -11,7 +11,7 @@ if __name__ == "__main__":
     # important_vars = ["VCI", "precip", "t2m", "pev", "p0005", "SMsurf", "SMroot"]
     # always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb", "E", "p0001"]
     important_vars = ["VCI", "precip", "t2m", "pev", "E", "SMsurf", "SMroot"]
-    always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb", "VCI1M"]
+    always_ignore_vars = [ "p84.162", "sp", "tp", "Eb", "VCI1M"] # "ndvi",
 
     # parsimonious()
     # regression(ignore_vars=always_ignore_vars)
