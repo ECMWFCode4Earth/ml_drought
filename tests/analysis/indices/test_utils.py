@@ -8,7 +8,7 @@ from src.analysis.indices.utils import (
     rolling_cumsum,
     apply_over_period,
     create_shape_aligned_climatology,
-    rolling_mean
+    rolling_mean,
 )
 from tests.utils import _create_dummy_precip_data
 
@@ -43,13 +43,15 @@ class TestIndicesUtils:
         dims = ["lat", "lon"]
         coords = {"lat": list(range(10)), "lon": list(range(10))}
 
-        times = pd.date_range('2018-01-01', '2018-12-31', name="time", freq="M")
+        times = pd.date_range("2018-01-01", "2018-12-31", name="time", freq="M")
         size = (len(times), 10, 10)
         dims.insert(0, "time")
         coords["time"] = times
 
         data = np.ones(size)
-        data = data * np.expand_dims(np.expand_dims(np.array(list(range(len(times)))), -1), -1)
+        data = data * np.expand_dims(
+            np.expand_dims(np.array(list(range(len(times)))), -1), -1
+        )
 
         ds = xr.Dataset({"VCI": (dims, data)}, coords=coords)
 
@@ -64,12 +66,12 @@ class TestIndicesUtils:
                 if i + 1 < window:
                     expected_means.append(float("NaN"))
                 else:
-                    expected_means.append(
-                        np.mean([i - w for w in range(window)])
-                    )
-            expected_data = np.ones(size) * np.expand_dims(np.expand_dims(np.array(expected_means), -1), -1)
+                    expected_means.append(np.mean([i - w for w in range(window)]))
+            expected_data = np.ones(size) * np.expand_dims(
+                np.expand_dims(np.array(expected_means), -1), -1
+            )
             expected_ds = xr.Dataset({"VCI": (dims, expected_data)}, coords=coords)
-            assert (rolling_mean_ds == expected_ds)
+            assert rolling_mean_ds == expected_ds
 
     def test_apply_over_period(self, tmp_path):
         data_path = _create_dummy_precip_data(tmp_path)
