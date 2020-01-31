@@ -30,7 +30,8 @@ def rename_dirs():
             with_datetime=False,
         )
     elif (
-        not (data_path / "interim_adede_only").exists() and (data_path / "interim_").exists()
+        not (data_path / "interim_adede_only").exists()
+        and (data_path / "interim_").exists()
     ):
         # move interim_adede -> interim
         print("Moving data/interim_adede_only -> data/interim")
@@ -158,8 +159,8 @@ if __name__ == "__main__":
 
     for target_var in ["VCI1M", "VCI3M"]:
         print(f"\n\n** Running Experiment with {target_var} ** \n\n")
-        # engineer(target_var=target_var)
-        # run_models(target_var=target_var)
-        # revert_features_dirs(target_var=target_var)
+        engineer(target_var=target_var)
+        run_models(target_var=target_var)
+        revert_features_dirs(target_var=target_var)
 
-    # revert_interim_dirs()
+    revert_interim_dirs()
