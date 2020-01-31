@@ -162,6 +162,9 @@ class ModelBase:
             return y
         else:
             y = y * self.normalizing_dict[var_name]["std"]
+
+            if not self.predict_delta:
+                y = y + self.normalizing_dict[var_name]["mean"]
         return y
 
     def evaluate(self, save_results: bool = True, save_preds: bool = False) -> None:
