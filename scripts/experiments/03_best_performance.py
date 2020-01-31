@@ -11,7 +11,7 @@ if __name__ == "__main__":
     # important_vars = ["VCI", "precip", "t2m", "pev", "p0005", "SMsurf", "SMroot"]
     # always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb", "E", "p0001"]
     important_vars = ["VCI", "precip", "t2m", "pev", "E", "SMsurf", "SMroot"]
-    always_ignore_vars = [ "p84.162", "sp", "tp", "Eb", "VCI1M", "RFE1M"] # "ndvi",
+    always_ignore_vars = ["p84.162", "sp", "tp", "Eb", "VCI1M", "RFE1M"]  # "ndvi",
 
     # -------------
     # persistence
@@ -61,5 +61,5 @@ if __name__ == "__main__":
 
     _rename_directory(
         from_path=data_path / "models" / "one_month_forecast",
-        to_path=data_path / "models" / "one_month_forecast_BASE_adede_vars"
+        to_path=data_path / "models" / "one_month_forecast_BASE_adede_vars",
     )
