@@ -80,11 +80,11 @@ def revert_features_dirs(target_var: str, original_dir: bool = False):
     data_path = get_data_path()
     # FEATURES
     print(
-        "Moving data/features/one_month_forecast -> data/features/one_month_forecast_adede_{target_var}"
+        f"Moving data/features/one_month_forecast -> data/features/one_month_forecast_adede_{target_var}"
     )
     _rename_directory(
         from_path=data_path / "features/one_month_forecast",
-        to_path=data_path / "features/one_month_forecast_adede_{target_var}",
+        to_path=data_path / f"features/one_month_forecast_adede_{target_var}",
         with_datetime=False,
     )
 
