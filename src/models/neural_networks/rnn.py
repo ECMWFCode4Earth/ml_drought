@@ -199,27 +199,29 @@ class RNN(nn.Module):
         self.include_prev_y = include_prev_y
 
         self.dropout = nn.Dropout(rnn_dropout)
+
+        if include_pred_month:
+            features_per_month += 12
+        if include_latlons:
+            features_per_month += 2
+        if yearly_agg_size is not None:
+            self.include_yearly_agg = True
+            features_per_month += yearly_agg_size
+        if static_size is not None:
+            self.include_static = True
+            features_per_month += static_size
+        if include_prev_y:
+            features_per_month += 1
+
         self.rnn = UnrolledRNN(
             input_size=features_per_month, hidden_size=hidden_size, batch_first=True
         )
         self.hidden_size = hidden_size
 
         dense_input_size = hidden_size
-        if include_pred_month:
-            dense_input_size += 12
-        if include_latlons:
-            dense_input_size += 2
         if experiment == "nowcast":
             assert current_size is not None
             dense_input_size += current_size
-        if yearly_agg_size is not None:
-            self.include_yearly_agg = True
-            dense_input_size += yearly_agg_size
-        if static_size is not None:
-            self.include_static = True
-            dense_input_size += static_size
-        if include_prev_y:
-            dense_input_size += 1
 
         dense_features.insert(0, dense_input_size)
         if dense_features[-1] != 1:
@@ -263,6 +265,28 @@ class RNN(nn.Module):
         hidden_state = torch.zeros(1, x.shape[0], self.hidden_size)
         cell_state = torch.zeros(1, x.shape[0], self.hidden_size)
 
+        # construct the vector to be appended to the dynamic steps
+        input_tensors: List[torch.Tensor] = []
+        if self.include_pred_month:
+            input_tensors.append(pred_month)
+        if self.include_latlons:
+            input_tensors.append(latlons)
+        if self.include_yearly_agg:
+            input_tensors.append(yearly_aggs)
+        if self.include_static:
+            input_tensors.append(static)
+        if self.include_prev_y:
+            input_tensors.append(prev_y)
+
+        if len(input_tensors) > 0:
+            input_tensor = torch.cat(input_tensors, dim=-1)
+
+            # we also want to expand it to the number of input timesteps
+            input_tensor = input_tensor.unsqueeze(1)
+            with_time_dims = torch.cat([input_tensor] * sequence_length, dim=1)
+
+            x = torch.cat((x, with_time_dims), dim=-1)
+
         if x.is_cuda:
             hidden_state = hidden_state.cuda()
             cell_state = cell_state.cuda()
@@ -279,19 +303,9 @@ class RNN(nn.Module):
 
         x = hidden_state.squeeze(0)
 
-        if self.include_pred_month:
-            x = torch.cat((x, pred_month), dim=-1)
-        if self.include_latlons:
-            x = torch.cat((x, latlons), dim=-1)
         if self.experiment == "nowcast":
             assert current is not None
             x = torch.cat((x, current), dim=-1)
-        if self.include_yearly_agg:
-            x = torch.cat((x, yearly_aggs), dim=-1)
-        if self.include_static:
-            x = torch.cat((x, static), dim=-1)
-        if self.include_prev_y:
-            x = torch.cat((x, prev_y), dim=-1)
 
         for layer_number, dense_layer in enumerate(self.dense_layers):
             x = dense_layer(x)
