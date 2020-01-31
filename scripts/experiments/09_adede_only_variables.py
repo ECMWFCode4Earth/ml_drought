@@ -6,15 +6,14 @@ from _base_models import parsimonious, regression, linear_nn, rnn, earnn
 from scripts.utils import _rename_directory, get_data_path
 from src.engineer import Engineer
 
-adede_vars = [
-    'VCI1M', 'VCI3M', 'RFE1M', 'RFE3M', 'SPI1M', 'SPI3M', 'RCI1M', 'RCI3M'
-]
+adede_vars = ["VCI1M", "VCI3M", "RFE1M", "RFE3M", "SPI1M", "SPI3M", "RCI1M", "RCI3M"]
+
 
 def rename_dirs():
     data_path = get_data_path()
 
     # INTERIM
-    if (data_path / 'interim_adede').exists() and (data_path / "interim").exists():
+    if (data_path / "interim_adede").exists() and (data_path / "interim").exists():
         # move interim -> interim_
         # move interim_adede -> interim
         print("Moving data/interim -> data/interim_")
@@ -30,7 +29,9 @@ def rename_dirs():
             to_path=data_path / "interim",
             with_datetime=False,
         )
-    elif not (data_path / 'interim_adede').exists() and (data_path / "interim_").exists():
+    elif (
+        not (data_path / "interim_adede").exists() and (data_path / "interim_").exists()
+    ):
         # move interim_adede -> interim
         print("Moving data/interim_adede -> data/interim")
         _rename_directory(
@@ -40,13 +41,15 @@ def rename_dirs():
         )
 
     # check that correct dirs created
-    assert not (data_path / 'interim_adede').exists()
+    assert not (data_path / "interim_adede").exists()
     assert (data_path / "interim").exists()
     assert (data_path / "interim_").exists()
 
     # FEATURES
     if (data_path / "features" / "one_month_forecast").exists():
-        print("Moving data/features/one_month_forecast -> data/features/one_month_forecast_")
+        print(
+            "Moving data/features/one_month_forecast -> data/features/one_month_forecast_"
+        )
         _rename_directory(
             from_path=data_path / "features/one_month_forecast",
             to_path=data_path / "features/one_month_forecast_",
@@ -54,6 +57,7 @@ def rename_dirs():
         )
 
     assert not (data_path / "features" / "one_month_forecast").exists()
+
 
 def revert_dirs(target_var):
     data_path = get_data_path()
@@ -72,13 +76,17 @@ def revert_dirs(target_var):
     )
 
     # FEATURES
-    print("Moving data/features/one_month_forecast -> data/features/one_month_forecast_adedd")
+    print(
+        "Moving data/features/one_month_forecast -> data/features/one_month_forecast_adedd"
+    )
     _rename_directory(
         from_path=data_path / "features/one_month_forecast",
         to_path=data_path / "features/one_month_forecast_adede_{target_var}",
         with_datetime=False,
     )
-    print("Moving data/features/one_month_forecast_ -> data/features/one_month_forecast")
+    print(
+        "Moving data/features/one_month_forecast_ -> data/features/one_month_forecast"
+    )
     _rename_directory(
         from_path=data_path / "features/one_month_forecast_",
         to_path=data_path / "features/one_month_forecast",
@@ -88,11 +96,9 @@ def revert_dirs(target_var):
 
 # 2) ENGINEER the adede_vars to train/test
 #    (VCI1M / VCI3M)
-def engineer(pred_months=3, target_var='VCI1M'):
+def engineer(pred_months=3, target_var="VCI1M"):
     engineer = Engineer(
-        get_data_path(),
-        experiment='one_month_forecast',
-        process_static=False
+        get_data_path(), experiment="one_month_forecast", process_static=False
     )
     engineer.engineer(
         test_year=[y for y in range(2011, 2019)],
@@ -100,6 +106,7 @@ def engineer(pred_months=3, target_var='VCI1M'):
         pred_months=pred_months,
         expected_length=pred_months,
     )
+
 
 # 3) run the models
 def run_models(target_var: str):
@@ -139,12 +146,13 @@ def run_models(target_var: str):
         with_datetime=False,
     )
 
+
 if __name__ == "__main__":
     # 1) MOVE the current interim_ and
     #    change interim_adede -> interim
     # rename_dirs()
 
-    for target_var in ['VCI1M', 'VCI3M']:
+    for target_var in ["VCI1M", "VCI3M"]:
         engineer(target_var=target_var)
         run_models(target_var=target_var)
         # revert_dirs(target_var=target_var)
