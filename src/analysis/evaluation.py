@@ -315,22 +315,17 @@ def _read_data(
     data_dir: Path = Path("data"),
     train_or_test: str = "test",
     remove_duplicates: bool = True,
+    experiment: str = "one_month_forecast",
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     # LOAD the y files
     y_data_paths = [
-        f
-        for f in (data_dir / "features" / "one_month_forecast" / train_or_test).glob(
-            "*/y.nc"
-        )
+        f for f in (data_dir / "features" / experiment / train_or_test).glob("*/y.nc")
     ]
     y_ds = _read_multi_data_paths(y_data_paths)
 
     # LOAD the X files
     X_data_paths = [
-        f
-        for f in (data_dir / "features" / "one_month_forecast" / train_or_test).glob(
-            "*/X.nc"
-        )
+        f for f in (data_dir / "features" / experiment / train_or_test).glob("*/X.nc")
     ]
     X_ds = _read_multi_data_paths(X_data_paths)
 
@@ -344,7 +339,9 @@ def _read_data(
 
 
 def read_train_data(
-    data_dir: Path = Path("data"), remove_duplicates: bool = True
+    data_dir: Path = Path("data"),
+    remove_duplicates: bool = True,
+    experiment: str = "one_month_forecast",
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     """Read the training data from the data directory and return the joined DataArray.
 
@@ -356,13 +353,18 @@ def read_train_data(
     y_train: xr.Dataset
     """
     train_X_ds, train_y_ds = _read_data(
-        data_dir, train_or_test="train", remove_duplicates=remove_duplicates
+        data_dir,
+        train_or_test="train",
+        remove_duplicates=remove_duplicates,
+        experiment=experiment,
     )
     return train_X_ds, train_y_ds
 
 
 def read_test_data(
-    data_dir: Path = Path("data"), remove_duplicates: bool = True
+    data_dir: Path = Path("data"),
+    remove_duplicates: bool = True,
+    experiment: str = "one_month_forecast",
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     """Read the test data from the data directory and return the joined DataArray.
 
@@ -374,7 +376,10 @@ def read_test_data(
     y_test: xr.Dataset
     """
     test_X_ds, test_y_ds = _read_data(
-        data_dir, train_or_test="test", remove_duplicates=remove_duplicates
+        data_dir,
+        train_or_test="test",
+        remove_duplicates=remove_duplicates,
+        experiment=experiment,
     )
 
     return test_X_ds, test_y_ds
