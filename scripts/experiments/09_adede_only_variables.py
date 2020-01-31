@@ -13,7 +13,7 @@ def rename_dirs():
     data_path = get_data_path()
 
     # INTERIM
-    if (data_path / "interim_adede").exists() and (data_path / "interim").exists():
+    if (data_path / "interim_adede_only").exists() and (data_path / "interim").exists():
         # move interim -> interim_
         # move interim_adede -> interim
         print("Moving data/interim -> data/interim_")
