@@ -59,7 +59,7 @@ def rename_dirs():
     assert not (data_path / "features" / "one_month_forecast").exists()
 
 
-def revert_dirs(target_var):
+def revert_interim_dirs():
     data_path = get_data_path()
     # INTERIM
     print("Moving data/interim -> data/interim_adede")
@@ -75,9 +75,11 @@ def revert_dirs(target_var):
         with_datetime=False,
     )
 
+
+def revert_features_dirs(target_var):
     # FEATURES
     print(
-        "Moving data/features/one_month_forecast -> data/features/one_month_forecast_adedd"
+        "Moving data/features/one_month_forecast -> data/features/one_month_forecast_adede"
     )
     _rename_directory(
         from_path=data_path / "features/one_month_forecast",
@@ -153,6 +155,8 @@ if __name__ == "__main__":
 
     for target_var in ["VCI1M", "VCI3M"]:
         print(f"\n\n** Running Experiment with {target_var} ** \n\n")
-        engineer(target_var=target_var)
-        run_models(target_var=target_var)
-        # revert_dirs(target_var=target_var)
+        # engineer(target_var=target_var)
+        # run_models(target_var=target_var)
+        revert_features_dirs(target_var=target_var)
+
+    # revert_interim_dirs
