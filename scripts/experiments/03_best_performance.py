@@ -29,7 +29,6 @@ if __name__ == "__main__":
         experiment="one_month_forecast",
         include_pred_month=True,
         surrounding_pixels=None,
-        pretrained=False,
         explain=False,
         static="features",
         ignore_vars=always_ignore_vars,
