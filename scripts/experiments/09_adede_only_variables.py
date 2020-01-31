@@ -124,7 +124,6 @@ def run_models(target_var: str):
         num_epochs=50,  # 50
         early_stopping=5,  # 5
         hidden_size=256,
-        static_embedding_size=64,
         predict_delta=False,
         normalize_y=True,
         include_prev_y=False,
