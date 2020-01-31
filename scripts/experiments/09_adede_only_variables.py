@@ -76,24 +76,27 @@ def revert_interim_dirs():
     )
 
 
-def revert_features_dirs(target_var):
+def revert_features_dirs(target_var: str, original_dir: bool = False):
+    data_path = get_data_path()
     # FEATURES
     print(
-        "Moving data/features/one_month_forecast -> data/features/one_month_forecast_adede"
+        "Moving data/features/one_month_forecast -> data/features/one_month_forecast_adede_{target_var}"
     )
     _rename_directory(
         from_path=data_path / "features/one_month_forecast",
         to_path=data_path / "features/one_month_forecast_adede_{target_var}",
         with_datetime=False,
     )
-    print(
-        "Moving data/features/one_month_forecast_ -> data/features/one_month_forecast"
-    )
-    _rename_directory(
-        from_path=data_path / "features/one_month_forecast_",
-        to_path=data_path / "features/one_month_forecast",
-        with_datetime=False,
-    )
+
+    if original_dir:
+        print(
+            "Moving data/features/one_month_forecast_ -> data/features/one_month_forecast"
+        )
+        _rename_directory(
+            from_path=data_path / "features/one_month_forecast_",
+            to_path=data_path / "features/one_month_forecast",
+            with_datetime=False,
+        )
 
 
 # 2) ENGINEER the adede_vars to train/test
@@ -155,7 +158,7 @@ if __name__ == "__main__":
 
     for target_var in ["VCI1M", "VCI3M"]:
         print(f"\n\n** Running Experiment with {target_var} ** \n\n")
-        # engineer(target_var=target_var)
+        engineer(target_var=target_var)
         # run_models(target_var=target_var)
         revert_features_dirs(target_var=target_var)
 
