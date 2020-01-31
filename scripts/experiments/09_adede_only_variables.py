@@ -152,6 +152,7 @@ if __name__ == "__main__":
     # rename_dirs()
 
     for target_var in ["VCI1M", "VCI3M"]:
+        print(f"\n\n** Running Experiment with {target_var} ** \n\n")
         engineer(target_var=target_var)
         run_models(target_var=target_var)
         # revert_dirs(target_var=target_var)
