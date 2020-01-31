@@ -113,15 +113,15 @@ def run_models(target_var: str):
         surrounding_pixels=None,
         explain=False,
         static=None,  # "features",
-        ignore_vars=always_ignore_vars,
+        ignore_vars=None,
         num_epochs=50,  # 50
         early_stopping=5,  # 5
         hidden_size=256,
         static_embedding_size=64,
-        predict_delta=True,
+        predict_delta=False,
         normalize_y=True,
-        include_prev_y=True,
-        include_latlons=True,
+        include_prev_y=False,
+        include_latlons=False,
     )
 
     # -------
