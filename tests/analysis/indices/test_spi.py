@@ -19,7 +19,7 @@ class TestSPI:
         data_path = _create_dummy_precip_data(
             tmp_path, start_date="2000-01-01", end_date="2010-01-01"
         )
-        assert data_path.exists(), f'file not created correctly'
+        assert data_path.exists(), f"file not created correctly"
         spi = SPI(data_path / "data_kenya.nc")
         variable = "precip"
         spi.fit(variable=variable)

@@ -1,8 +1,7 @@
 import xarray as xr
-import numpy as np
 
 from .base import BaseIndices
-from .utils import rolling_mean, apply_over_period
+from .utils import rolling_mean
 
 
 class ConditionIndex(BaseIndices):
@@ -30,7 +29,7 @@ class ConditionIndex(BaseIndices):
 
     """
 
-    name = 'condition_index'
+    name = "condition_index"
 
     @staticmethod
     def condition_index(da: xr.DataArray, dim: str = "time") -> xr.DataArray:
@@ -39,20 +38,14 @@ class ConditionIndex(BaseIndices):
 
         return condition_index
 
-    def fit(
-        self,
-        variable: str,
-        rolling_window: int = 1
-    ) -> None:
+    def fit(self, variable: str, rolling_window: int = 1) -> None:
 
         var_name = f"{variable}_{self.name}_{rolling_window}"
         print(f"Fitting {variable} Condition Index")
-        assert rolling_window > 0, 'Must have a rolling window > 0'
+        assert rolling_window > 0, "Must have a rolling window > 0"
 
         rolling_ds = rolling_mean(self.ds[variable], rolling_window)
-        condition_index = self.condition_index(
-            rolling_ds
-        )
+        condition_index = self.condition_index(rolling_ds)
 
         self.index = condition_index.to_dataset(var_name)
         print(f"Fitted {variable} Condition Index and stored at `obj.index`")

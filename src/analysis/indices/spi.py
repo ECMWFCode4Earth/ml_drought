@@ -58,8 +58,9 @@ class SPI(BaseIndices):
     resample = True
     resample_str = "month"
 
-    def __init__(self, file_path: Optional[Path] = None,
-                 ds: Optional[xr.Dataset] = None,) -> None:
+    def __init__(
+        self, file_path: Optional[Path] = None, ds: Optional[xr.Dataset] = None
+    ) -> None:
         super().__init__(file_path, ds=ds, resample_str=self.resample_str)
 
         global indices
@@ -271,7 +272,9 @@ class SPI(BaseIndices):
                 "\n\tdata = np.expand_dims(data, -1)"
                 "\n"
             )
-            print("I am pretty sure that this is probably something that we need to fix from the indices code")
+            print(
+                "I am pretty sure that this is probably something that we need to fix from the indices code"
+            )
 
         self.index = index.unstack("point").to_dataset(name=f"SPI{scale}")
 

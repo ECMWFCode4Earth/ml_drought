@@ -21,7 +21,7 @@ from .indices import (
     AnomalyIndex,
     MovingAverage,
     VegetationDeficitIndex,
-    ConditionIndex
+    ConditionIndex,
 )
 from .region_analysis import LandcoverRegionAnalysis, AdministrativeRegionAnalysis
 
