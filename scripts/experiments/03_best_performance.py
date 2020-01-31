@@ -13,11 +13,35 @@ if __name__ == "__main__":
     important_vars = ["VCI", "precip", "t2m", "pev", "E", "SMsurf", "SMroot"]
     always_ignore_vars = [ "p84.162", "sp", "tp", "Eb", "VCI1M"] # "ndvi",
 
-    # parsimonious()
+    # -------------
+    # persistence
+    # -------------
+    parsimonious()
+
     # regression(ignore_vars=always_ignore_vars)
     # gbdt(ignore_vars=always_ignore_vars)
     # linear_nn(ignore_vars=always_ignore_vars)
-    # rnn(ignore_vars=always_ignore_vars)
+
+    # -------------
+    # LSTM
+    # -------------
+    rnn(
+        experiment="one_month_forecast",
+        include_pred_month=True,
+        surrounding_pixels=None,
+        pretrained=False,
+        explain=False,
+        static="features",
+        ignore_vars=always_ignore_vars,
+        num_epochs=50,
+        early_stopping=5,
+        hidden_size=256,
+        include_latlons=True,
+    )
+
+    # -------------
+    # EALSTM
+    # -------------
     earnn(
         experiment="one_month_forecast",
         include_pred_month=True,
