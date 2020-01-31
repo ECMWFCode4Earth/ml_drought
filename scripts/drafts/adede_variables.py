@@ -76,9 +76,9 @@ from src.analysis import SPI
 
 spi = SPI(data_dir / "interim/chirps_preprocessed/data_kenya.nc")
 spi = SPI(ds=ds[["precip"]])
-spi.fit(variable="precip", scale=1)
+spi.fit(variable="precip", scale=1, calibration_year_final=2010)
 SPI1M = spi.index
-spi.fit(variable="precip", scale=3)
+spi.fit(variable="precip", scale=3, calibration_year_final=2010)
 SPI3M = spi.index
 
 # create RCI data
