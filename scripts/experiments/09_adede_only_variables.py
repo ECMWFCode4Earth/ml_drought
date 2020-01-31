@@ -23,25 +23,25 @@ def rename_dirs():
             with_datetime=False,
         )
 
-        print("Moving data/interim_adede -> data/interim")
+        print("Moving data/interim_adede_only -> data/interim")
         _rename_directory(
             from_path=data_path / "interim_adede_only",
             to_path=data_path / "interim",
             with_datetime=False,
         )
     elif (
-        not (data_path / "interim_adede").exists() and (data_path / "interim_").exists()
+        not (data_path / "interim_adede_only").exists() and (data_path / "interim_").exists()
     ):
         # move interim_adede -> interim
-        print("Moving data/interim_adede -> data/interim")
+        print("Moving data/interim_adede_only -> data/interim")
         _rename_directory(
-            from_path=data_path / "interim_adede",
+            from_path=data_path / "interim_adede_only",
             to_path=data_path / "interim",
             with_datetime=False,
         )
 
     # check that correct dirs created
-    assert not (data_path / "interim_adede").exists()
+    assert not (data_path / "interim_adede_only").exists()
     assert (data_path / "interim").exists()
     assert (data_path / "interim_").exists()
 
