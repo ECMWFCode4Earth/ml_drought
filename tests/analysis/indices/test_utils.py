@@ -72,6 +72,7 @@ class TestIndicesUtils:
             )
             expected_ds = xr.Dataset({"VCI": (dims, expected_data)}, coords=coords)
             assert rolling_mean_ds == expected_ds
+            assert expected_ds.isel(time=-1).time == rolling_mean_ds.isel(time=-1).time
 
     def test_apply_over_period(self, tmp_path):
         data_path = _create_dummy_precip_data(tmp_path)
