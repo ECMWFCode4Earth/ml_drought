@@ -25,7 +25,7 @@ def rename_dirs():
 
         print("Moving data/interim_adede -> data/interim")
         _rename_directory(
-            from_path=data_path / "interim_adede",
+            from_path=data_path / "interim_adede_only",
             to_path=data_path / "interim",
             with_datetime=False,
         )
@@ -65,7 +65,7 @@ def revert_interim_dirs():
     print("Moving data/interim -> data/interim_adede")
     _rename_directory(
         from_path=data_path / "interim",
-        to_path=data_path / f"interim_adede_{target_var}",
+        to_path=data_path / f"interim_adede_only",
         with_datetime=False,
     )
     print("Moving data/interim_ -> data/interim")
@@ -154,7 +154,7 @@ def run_models(target_var: str):
 if __name__ == "__main__":
     # 1) MOVE the current interim_ and
     #    change interim_adede -> interim
-    # rename_dirs()
+    rename_dirs()
 
     for target_var in ["VCI1M", "VCI3M"]:
         print(f"\n\n** Running Experiment with {target_var} ** \n\n")
@@ -162,4 +162,4 @@ if __name__ == "__main__":
         # run_models(target_var=target_var)
         # revert_features_dirs(target_var=target_var)
 
-    revert_interim_dirs()
+    # revert_interim_dirs()
