@@ -158,8 +158,8 @@ if __name__ == "__main__":
 
     for target_var in ["VCI1M", "VCI3M"]:
         print(f"\n\n** Running Experiment with {target_var} ** \n\n")
-        engineer(target_var=target_var)
+        # engineer(target_var=target_var)
         # run_models(target_var=target_var)
-        revert_features_dirs(target_var=target_var)
+        # revert_features_dirs(target_var=target_var)
 
-    # revert_interim_dirs
+    revert_interim_dirs()
