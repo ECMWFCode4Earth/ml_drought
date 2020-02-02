@@ -8,7 +8,7 @@ from src.analysis.indices import SPI
 class TestSPI:
     def test_initialisation(self, tmp_path):
         data_path = _create_dummy_precip_data(tmp_path)
-        spi = SPI(data_path / "data_kenya.nc")
+        spi = SPI(data_path / "chirps_kenya.nc")
         assert spi.name == "spi", f"Expected name" f"to be `spi` got: {spi.name}"
 
         with pytest.raises(AttributeError):
@@ -19,8 +19,7 @@ class TestSPI:
         data_path = _create_dummy_precip_data(
             tmp_path, start_date="2000-01-01", end_date="2010-01-01"
         )
-        assert data_path.exists(), f"file not created correctly"
-        spi = SPI(data_path / "data_kenya.nc")
+        spi = SPI(data_path / "chirps_kenya.nc")
         variable = "precip"
         spi.fit(variable=variable)
 
@@ -43,7 +42,7 @@ class TestSPI:
         )
         assert np.isclose(spi.index.SPI3.std(), 1, atol=0.01), (
             ""
-            "Expect the `std()` SPI value to be close to 1 because"
+            "Expect the `std()` SPI value to be close to 0 because"
             "converted to a standard normal distribution"
         )
 
@@ -51,7 +50,7 @@ class TestSPI:
         data_path = _create_dummy_precip_data(
             tmp_path, start_date="2000-01-01", end_date="2010-01-01"
         )
-        spi = SPI(data_path / "data_kenya.nc")
+        spi = SPI(data_path / "chirps_kenya.nc")
         variable = "precip"
 
         # SPI 6
