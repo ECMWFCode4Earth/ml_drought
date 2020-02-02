@@ -1,3 +1,6 @@
+import sys
+
+sys.path.append("../..")
 from src.models import (
     Persistence,
     LinearRegression,
@@ -9,9 +12,6 @@ from src.models import (
 )
 from src.analysis import all_explanations_for_file
 from scripts.utils import get_data_path
-import sys
-
-sys.path.append("../..")
 
 
 def parsimonious(experiment="one_month_forecast",):
@@ -26,6 +26,9 @@ def regression(
     explain=False,
     static="features",
     ignore_vars=None,
+    predict_delta=False,
+    spatial_mask=None,
+    include_latlons=False,
 ):
     predictor = LinearRegression(
         get_data_path(),
@@ -34,6 +37,9 @@ def regression(
         surrounding_pixels=surrounding_pixels,
         static=static,
         ignore_vars=ignore_vars,
+        predict_delta=predict_delta,
+        spatial_mask=spatial_mask,
+        include_latlons=include_latlons,
     )
     predictor.train()
     predictor.evaluate(save_preds=True)
@@ -53,6 +59,9 @@ def linear_nn(
     num_epochs=50,
     early_stopping=5,
     layer_sizes=[100],
+    predict_delta=False,
+    spatial_mask=None,
+    include_latlons=False,
 ):
     predictor = LinearNetwork(
         layer_sizes=layer_sizes,
@@ -62,6 +71,9 @@ def linear_nn(
         surrounding_pixels=surrounding_pixels,
         static=static,
         ignore_vars=ignore_vars,
+        predict_delta=predict_delta,
+        spatial_mask=spatial_mask,
+        include_latlons=include_latlons,
     )
     predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)
@@ -81,6 +93,11 @@ def rnn(
     num_epochs=50,
     early_stopping=5,
     hidden_size=128,
+    predict_delta=False,
+    spatial_mask=None,
+    include_latlons=False,
+    normalize_y=True,
+    include_prev_y=True,
 ):
     predictor = RecurrentNetwork(
         hidden_size=hidden_size,
@@ -90,6 +107,11 @@ def rnn(
         surrounding_pixels=surrounding_pixels,
         static=static,
         ignore_vars=ignore_vars,
+        predict_delta=predict_delta,
+        spatial_mask=spatial_mask,
+        include_latlons=include_latlons,
+        normalize_y=normalize_y,
+        include_prev_y=include_prev_y,
     )
     predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)
@@ -111,6 +133,11 @@ def earnn(
     early_stopping=5,
     static_embedding_size=10,
     hidden_size=128,
+    predict_delta=False,
+    spatial_mask=None,
+    include_latlons=False,
+    normalize_y=True,
+    include_prev_y=True,
 ):
     data_path = get_data_path()
 
@@ -124,6 +151,11 @@ def earnn(
             static=static,
             static_embedding_size=static_embedding_size,
             ignore_vars=ignore_vars,
+            predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
+            include_latlons=include_latlons,
+            normalize_y=normalize_y,
+            include_prev_y=include_prev_y,
         )
         predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
         predictor.evaluate(save_preds=True)
@@ -145,6 +177,9 @@ def gbdt(
     explain=False,
     static="features",
     ignore_vars=None,
+    # predict_delta=False,
+    spatial_mask=None,
+    include_latlons=False,
 ):
     data_path = get_data_path()
 
@@ -156,6 +191,8 @@ def gbdt(
         surrounding_pixels=surrounding_pixels,
         static=static,
         ignore_vars=ignore_vars,
+        spatial_mask=spatial_mask,
+        include_latlons=include_latlons,
     )
     predictor.train(early_stopping=5)
     predictor.evaluate(save_preds=True)

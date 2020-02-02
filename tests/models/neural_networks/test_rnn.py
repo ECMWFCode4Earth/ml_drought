@@ -23,6 +23,8 @@ class TestRecurrentNetwork:
         experiment = "one_month_forecast"
         ignore_vars = ["precip"]
         include_latlons = True
+        include_prev_y = True
+        normalize_y = False
 
         def mocktrain(self):
             self.model = RNN(
@@ -33,6 +35,7 @@ class TestRecurrentNetwork:
                 include_pred_month,
                 include_latlons,
                 experiment="one_month_forecast",
+                include_prev_y=include_prev_y,
             )
             self.features_per_month = features_per_month
 
@@ -47,6 +50,8 @@ class TestRecurrentNetwork:
             experiment=experiment,
             include_pred_month=include_pred_month,
             include_latlons=include_latlons,
+            include_prev_y=include_prev_y,
+            normalize_y=normalize_y,
         )
 
         model.train()
@@ -69,13 +74,18 @@ class TestRecurrentNetwork:
         assert model_dict["experiment"] == experiment
         assert model_dict["ignore_vars"] == ignore_vars
         assert model_dict["include_latlons"] == include_latlons
+        assert model_dict["include_prev_y"] == include_prev_y
+        assert model_dict["normalize_y"] == normalize_y
 
-    @pytest.mark.parametrize("use_pred_months", [True, False])
-    def test_train(self, tmp_path, capsys, use_pred_months):
+    @pytest.mark.parametrize(
+        "use_pred_months,predict_delta",
+        [(True, True), (False, True), (True, False), (False, False)],
+    )
+    def test_train(self, tmp_path, capsys, use_pred_months, predict_delta):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        test_features = tmp_path / "features/one_month_forecast/train/hello"
+        test_features = tmp_path / "features/one_month_forecast/train/1980_1"
         test_features.mkdir(parents=True)
 
         norm_dict = {"VHI": {"mean": 0, "std": 1}}
@@ -107,6 +117,7 @@ class TestRecurrentNetwork:
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
             include_monthly_aggs=True,
+            predict_delta=predict_delta,
         )
         model.train()
 
@@ -116,15 +127,18 @@ class TestRecurrentNetwork:
 
         assert type(model.model) == RNN, f"Model attribute not an RNN!"
 
-    @pytest.mark.parametrize("use_pred_months", [True, False])
-    def test_predict(self, tmp_path, use_pred_months):
+    @pytest.mark.parametrize(
+        "use_pred_months,predict_delta",
+        [(True, True), (False, True), (True, False), (False, False)],
+    )
+    def test_predict(self, tmp_path, use_pred_months, predict_delta):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        train_features = tmp_path / "features/one_month_forecast/train/hello"
+        train_features = tmp_path / "features/one_month_forecast/train/1980_1"
         train_features.mkdir(parents=True)
 
-        test_features = tmp_path / "features/one_month_forecast/test/hello"
+        test_features = tmp_path / "features/one_month_forecast/test/1980_1"
         test_features.mkdir(parents=True)
 
         norm_dict = {"VHI": {"mean": 0.0, "std": 1.0}}
@@ -158,16 +172,18 @@ class TestRecurrentNetwork:
             dense_features=dense_features,
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
+            predict_delta=predict_delta,
         )
         model.train()
         test_arrays_dict, pred_dict = model.predict()
 
-        # the foldername "hello" is the only one which should be in the dictionaries
-        assert ("hello" in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1)
-        assert ("hello" in pred_dict.keys()) and (len(pred_dict) == 1)
+        # the foldername "1980_1" is the only one which should be in the dictionaries
+        assert ("1980_1" in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1)
+        assert ("1980_1" in pred_dict.keys()) and (len(pred_dict) == 1)
 
-        # _make_dataset with const=True returns all ones
-        assert (test_arrays_dict["hello"]["y"] == 1).all()
+        if not predict_delta:
+            # _make_dataset with const=True returns all ones
+            assert (test_arrays_dict["1980_1"]["y"] == 1).all()
 
 
 class TestUnrolledRNN:

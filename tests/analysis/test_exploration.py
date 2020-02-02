@@ -15,7 +15,7 @@ class TestExploration:
     def test_seasonal_anomalies(self, tmp_path):
         _create_dummy_precip_data(tmp_path)
         ds = xr.open_dataset(
-            tmp_path / "data" / "interim" / "chirps_preprocessed" / "chirps_kenya.nc"
+            tmp_path / "data" / "interim" / "chirps_preprocessed" / "data_kenya.nc"
         )
 
         da = calculate_seasonal_anomalies(ds, "precip")
@@ -26,7 +26,7 @@ class TestExploration:
     def test_calculate_seasonal_anomalies_spatial(self, tmp_path):
         _create_dummy_precip_data(tmp_path)
         ds = xr.open_dataset(
-            tmp_path / "data" / "interim" / "chirps_preprocessed" / "chirps_kenya.nc"
+            tmp_path / "data" / "interim" / "chirps_preprocessed" / "data_kenya.nc"
         )
         da = calculate_seasonal_anomalies_spatial(ds, "precip")
         assert da.name == "anomaly"
@@ -37,7 +37,7 @@ class TestExploration:
     def test_create_anomaly_df(self, tmp_path):
         _create_dummy_precip_data(tmp_path)
         ds = xr.open_dataset(
-            tmp_path / "data" / "interim" / "chirps_preprocessed" / "chirps_kenya.nc"
+            tmp_path / "data" / "interim" / "chirps_preprocessed" / "data_kenya.nc"
         )
         da = calculate_seasonal_anomalies(ds, "precip")
         df = create_anomaly_df(da)

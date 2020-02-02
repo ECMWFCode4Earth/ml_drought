@@ -69,23 +69,36 @@ class TestBaseIter:
             ), f"{month} not in {pred_months}, got {return_file}"
 
     @pytest.mark.parametrize(
-        "normalize,to_tensor,experiment,surrounding_pixels",
+        "normalize,to_tensor,experiment,surrounding_pixels,predict_delta",
         [
-            (True, True, "one_month_forecast", 1),
-            (True, False, "one_month_forecast", None),
-            (False, True, "one_month_forecast", 1),
-            (False, False, "one_month_forecast", None),
-            (True, True, "nowcast", 1),
-            (True, False, "nowcast", None),
-            (False, True, "nowcast", 1),
-            (False, False, "nowcast", None),
+            (True, True, "one_month_forecast", 1, True),
+            (True, False, "one_month_forecast", None, True),
+            (False, True, "one_month_forecast", 1, True),
+            (False, False, "one_month_forecast", None, True),
+            (True, True, "nowcast", 1, True),
+            (True, False, "nowcast", None, True),
+            (False, True, "nowcast", 1, True),
+            (False, False, "nowcast", None, True),
+            (True, True, "one_month_forecast", 1, False),
+            (True, False, "one_month_forecast", None, False),
+            (False, True, "one_month_forecast", 1, False),
+            (False, False, "one_month_forecast", None, False),
+            (True, True, "nowcast", 1, False),
+            (True, False, "nowcast", None, False),
+            (False, True, "nowcast", 1, False),
+            (False, False, "nowcast", None, False),
         ],
     )
     def test_ds_to_np(
-        self, tmp_path, normalize, to_tensor, experiment, surrounding_pixels
+        self,
+        tmp_path,
+        normalize,
+        to_tensor,
+        experiment,
+        surrounding_pixels,
+        predict_delta,
     ):
-
-        x_pred, _, _ = _make_dataset(size=(5, 5))
+        x_pred, _, _ = _make_dataset(size=(5, 5), const=True)
         x_coeff1, _, _ = _make_dataset(size=(5, 5), variable_name="precip")
         x_coeff2, _, _ = _make_dataset(size=(5, 5), variable_name="soil_moisture")
         x_coeff3, _, _ = _make_dataset(size=(5, 5), variable_name="temp")
@@ -93,7 +106,7 @@ class TestBaseIter:
         x = xr.merge([x_pred, x_coeff1, x_coeff2, x_coeff3])
         y = x_pred.isel(time=[0])
 
-        data_dir = tmp_path / experiment
+        data_dir = tmp_path / experiment / "1980_1"
         if not data_dir.exists():
             data_dir.mkdir(parents=True, exist_ok=True)
 
@@ -106,8 +119,14 @@ class TestBaseIter:
                 "mean": float(
                     x[var].mean(dim=["lat", "lon", "time"], skipna=True).values
                 ),
+                # we clip the std because since constant=True, the std=0 for VHI,
+                # giving NaNs which mess the tests up
                 "std": float(
-                    x[var].std(dim=["lat", "lon", "time"], skipna=True).values
+                    np.clip(
+                        a=x[var].std(dim=["lat", "lon", "time"], skipna=True).values,
+                        a_min=1,
+                        a_max=None,
+                    )
                 ),
             }
 
@@ -122,12 +141,15 @@ class TestBaseIter:
                 self.to_tensor = None
                 self.experiment = experiment
                 self.surrounding_pixels = surrounding_pixels
+                self.predict_delta = predict_delta
                 self.ignore_vars = ["precip"]
                 self.monthly_aggs = False
                 self.device = torch.device("cpu")
 
                 self.static = None
+                self.spatial_mask = None
                 self.static_normalizing_dict = None
+                self.normalize_y = normalize
 
         base_iterator = _BaseIter(MockLoader())
 
@@ -250,6 +272,14 @@ class TestBaseIter:
         if (not normalize) and (not to_tensor):
             mean_temp = x_coeff3.temp.mean(dim=["time", "lat", "lon"]).values
             assert (mean_temp == x_train_data.yearly_aggs).any()
+
+        if predict_delta:
+            assert (
+                y_np == 0
+            ).all(), "The derivatives should be 0 for a constant input."
+            assert (
+                base_iterator.predict_delta
+            ), "should have set model_ derivative to True"
 
     @pytest.mark.parametrize(
         "surrounding_pixels,monthly_agg",

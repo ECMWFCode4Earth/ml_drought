@@ -3,6 +3,7 @@ import random
 from pathlib import Path
 import pickle
 import math
+import xarray as xr
 
 import torch
 from torch.nn import functional as F
@@ -31,19 +32,27 @@ class NNBase(ModelBase):
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
         device: str = "cuda:0",
+        predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
+        include_prev_y: bool = True,
+        normalize_y: bool = True,
     ) -> None:
         super().__init__(
-            data_folder,
-            batch_size,
-            experiment,
-            pred_months,
-            include_pred_month,
-            include_latlons,
-            include_monthly_aggs,
-            include_yearly_aggs,
-            surrounding_pixels,
-            ignore_vars,
-            static,
+            data_folder=data_folder,
+            batch_size=batch_size,
+            experiment=experiment,
+            pred_months=pred_months,
+            include_pred_month=include_pred_month,
+            include_latlons=include_latlons,
+            include_monthly_aggs=include_monthly_aggs,
+            include_yearly_aggs=include_yearly_aggs,
+            surrounding_pixels=surrounding_pixels,
+            ignore_vars=ignore_vars,
+            static=static,
+            predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
+            include_prev_y=include_prev_y,
+            normalize_y=normalize_y,
         )
 
         # for reproducibility
@@ -186,7 +195,18 @@ class NNBase(ModelBase):
                         "y": val.y.cpu().numpy(),
                         "latlons": val.latlons,
                         "time": val.target_time,
+                        "y_var": val.y_var,
                     }
+                    if self.predict_delta:
+                        assert val.historical_target.shape[0] == val.y.shape[0], (
+                            "Expect"
+                            f"the shape of the y ({val.y.shape})"
+                            f" and historical_target ({val.historical_target.shape})"
+                            " to be the same!"
+                        )
+                        test_arrays_dict[key][
+                            "historical_target"
+                        ] = val.historical_target
 
         return test_arrays_dict, preds_dict
 
@@ -204,6 +224,7 @@ class NNBase(ModelBase):
         output_cur: List[torch.Tensor] = []
         output_ym: List[torch.Tensor] = []
         output_static: List[torch.Tensor] = []
+        output_prev_y: List[torch.Tensor] = []
 
         samples_per_instance = max(1, sample_size // len(train_dataloader))
 
@@ -238,6 +259,8 @@ class NNBase(ModelBase):
                 else:
                     output_static.append(torch.zeros(1))
 
+                output_prev_y.append(x[6][idx])
+
                 if len(output_tensors) >= sample_size:
                     return [
                         torch.stack(output_tensors),  # type: ignore
@@ -246,6 +269,7 @@ class NNBase(ModelBase):
                         torch.stack(output_cur),
                         torch.stack(output_ym),
                         torch.stack(output_static),
+                        torch.stack(output_prev_y),
                     ]
 
         return [
@@ -255,6 +279,7 @@ class NNBase(ModelBase):
             torch.stack(output_cur),
             torch.stack(output_ym),
             torch.stack(output_static),
+            torch.stack(output_prev_y),
         ]
 
     def _one_hot(self, indices: torch.Tensor, num_vals: int) -> torch.Tensor:
@@ -265,6 +290,18 @@ class NNBase(ModelBase):
     def _input_to_tuple(
         self, x: Union[Tuple[torch.Tensor, ...], TrainData]
     ) -> Tuple[torch.Tensor, ...]:
+        """
+        Returns:
+        --------
+        Tuple:
+            [0] historical data
+            [1] months (one hot encoded)
+            [2] latlons
+            [3] current data
+            [4] yearly aggregations
+            [5] static data
+            [6] prev y var
+        """
         # mypy totally fails to handle what's going on here
 
         if type(x) is TrainData:  # type: ignore
@@ -274,7 +311,10 @@ class NNBase(ModelBase):
                 x.latlons,  # type: ignore
                 x.current,  # type: ignore
                 x.yearly_aggs,  # type: ignore
-                self._one_hot(x.static, self.num_locations) if self.static == "embeddings" else x.static,  # type: ignore
+                self._one_hot(x.static, self.num_locations)  # type: ignore
+                if self.static == "embeddings"
+                else x.static,  # type: ignore
+                x.prev_y_var,  # type: ignore
             )
         else:
             return (
@@ -283,7 +323,10 @@ class NNBase(ModelBase):
                 x[2],  # type: ignore
                 x[3],  # type: ignore
                 x[4],  # type: ignore
-                self._one_hot(x[5], self.num_locations) if self.static == "embeddings" else x[5],  # type: ignore
+                self._one_hot(x[5], self.num_locations)  # type: ignore
+                if self.static == "embeddings"
+                else x[5],  # type: ignore
+                x[6],  # type: ignore
             )
 
     def explain(
@@ -416,6 +459,7 @@ class NNBase(ModelBase):
             x.current,
             x.yearly_aggs,
             x.static,
+            x.prev_y_var,
         )
 
         num_items = len(x.__dict__)
