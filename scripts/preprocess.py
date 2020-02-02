@@ -163,7 +163,6 @@ def preprocess_boku_ndvi():
 
 
 if __name__ == "__main__":
-<<<<<<< HEAD
     # process_vci_2018()
     # process_precip_2018()
     # process_era5POS_2018()
@@ -176,16 +175,4 @@ if __name__ == "__main__":
     # preprocess_kenya_boundaries(selection="level_3")
     # preprocess_era5_hourly()
     preprocess_boku_ndvi()
-=======
-    process_vci_2018()
-    process_precip_2018()
-    process_era5POS_2018()
-    process_gleam()
-    process_esa_cci_landcover()
-    preprocess_srtm()
-    preprocess_era5()
-    preprocess_kenya_boundaries(selection="level_1")
-    preprocess_kenya_boundaries(selection="level_2")
-    preprocess_kenya_boundaries(selection="level_3")
-    preprocess_asal_mask()
->>>>>>> ea3cf0c996db7519927868b4a9a56d2cc22da5a9
+    # preprocess_asal_mask()
