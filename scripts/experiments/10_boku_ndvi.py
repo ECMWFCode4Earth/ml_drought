@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-import numpy as np
+import datetime
 
 sys.path.append("../..")
 
@@ -112,16 +112,16 @@ def move_features_dir(target_var):
             from_path=data_path / "features" / "one_month_forecast",
             to_path=data_path
             / "features"
-            / f"one_month_forecast_BOKU_{target_var}_our_vars",
+            / f"one_month_forecast_BOKU_{target_var}_our_vars_ALL",
         )
     except Error as E:
         print(E)
-        randint = np.random.randint(10)
+        date = datetime.datetime.now().strftime('%Y%M%d_%H%M')
         _rename_directory(
             from_path=data_path / "features" / "one_month_forecast",
             to_path=data_path
             / "features"
-            / f"one_month_forecast_BOKU_{target_var}_our_vars_{randint}",
+            / f"one_month_forecast_BOKU_{target_var}_our_vars_{date}",
         )
 
 
