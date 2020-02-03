@@ -36,7 +36,7 @@ def engineer(pred_months=3, target_var="boku_VCI"):
 
 
 def models():
-    ignore_vars = ["p84.162", "sp", "tp", "Eb", "VCI", "boku_VCI"]  # modis_ndvi
+    ignore_vars = ["p84.162", "sp", "tp", "Eb", "VCI", "modis_ndvi"]  #  boku_VCI
     # -------------
     # persistence
     # -------------
@@ -91,7 +91,7 @@ def models():
 
 def main(monthly=True):
     # preprocess(monthly=monthly)
-    engineer(target_var="modis_ndvi")
+    engineer(target_var="boku_VCI")
     models()
 
 
