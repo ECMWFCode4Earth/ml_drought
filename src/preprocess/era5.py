@@ -105,7 +105,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
         filename: Optional[str] = None,
-    ) -> Tuple[Path]:  # type: ignore
+    ) -> Tuple[Path]:  #  type: ignore
 
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
