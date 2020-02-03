@@ -35,8 +35,13 @@ def engineer(pred_months=3, target_var="boku_VCI"):
     )
 
 
-def models():
-    ignore_vars = ["p84.162", "sp", "tp", "Eb", "VCI", "modis_ndvi"]  #  boku_VCI
+def models(target_var: str = "boku_VCI"):
+    ignore_vars = ["p84.162", "sp", "tp", "Eb", "VCI", "modis_ndvi", "boku_VCI", "VCI3M"]
+
+    # drop the target variable from ignore_vars
+    ignore_vars = [v for v in ignore_vars if v != target_var]
+    assert target_var not in ignore_vars
+
     # -------------
     # persistence
     # -------------
@@ -85,14 +90,28 @@ def models():
 
     _rename_directory(
         from_path=data_path / "models" / "one_month_forecast",
-        to_path=data_path / "models" / "one_month_forecast_boku_ndvi",
+        to_path=data_path / "models" / f"one_month_forecast_BOKU_{target_var}",
+    )
+
+def move_features_dir(target_var):
+    # rename the features dir
+    data_path = get_data_path()
+
+    _rename_directory(
+        from_path=data_path / "features" / "one_month_forecast",
+        to_path=data_path / "features" / f"one_month_forecast_BOKU_{target_var}",
     )
 
 
 def main(monthly=True):
     # preprocess(monthly=monthly)
-    engineer(target_var="boku_VCI")
-    models()
+
+    target_vars = ['VCI3M']  # "boku_VCI",
+    for target_var in target_vars:
+        print(f"\n\n ** Target Variable: {target_var} ** \n\n")
+        engineer(target_var=target_var)
+        models(target_var=target_var)
+        move_features_dir(target_var=target_var)
 
 
 if __name__ == "__main__":
