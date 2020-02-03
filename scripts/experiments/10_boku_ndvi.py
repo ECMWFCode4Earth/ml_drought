@@ -43,8 +43,8 @@ def models(target_var: str = "boku_VCI"):
         "Eb",
         "VCI",
         "modis_ndvi",
-        "boku_VCI",
-        "VCI3M",
+        # "boku_VCI",
+        # "VCI3M",
     ]
 
     # drop the target variable from ignore_vars
