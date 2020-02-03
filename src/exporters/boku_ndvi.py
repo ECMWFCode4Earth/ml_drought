@@ -50,11 +50,11 @@ class BokuNDVIExporter(BaseExporter):
         if self.resolution == "1000":
             # 1km pixel
             self.dataset: str = "boku_ndvi_1000"
-            self.base_url: str = os.environ.get("FTP_1000")
+            self.base_url: str = os.environ.get("FTP_1000")  # type: ignore
         elif self.resolution == "250":
             # 250m pixel
             self.dataset: str = "boku_ndvi_250"
-            self.base_url: str = os.environ.get("FTP_250")
+            self.base_url: str = os.environ.get("FTP_250")  # type: ignore
         else:
             assert False, (
                 "Must provide str resolution of 1000 or 250"
@@ -90,7 +90,7 @@ class BokuNDVIExporter(BaseExporter):
         https://explainshell.com/explain?cmd=wget+-np+-nH+--cut
         -dirs+7+www.google.come+-P+folder
         """
-        if (self.region_folder / url_filepath).exists():
+        if (output_folder / url_filepath).exists():
             print(f"{url_filepath} already exists! Skipping")
         else:
             os.system(
@@ -101,7 +101,7 @@ class BokuNDVIExporter(BaseExporter):
     @staticmethod
     def tif_to_nc(tif_file: Path, nc_file: Path) -> None:
         ds = gdal.Open(tif_file.resolve().as_posix())  # type: ignore
-        _ = gdal.Translate(
+        _ = gdal.Translate(  # type: ignore
             format="NetCDF",
             srcDS=ds,  # type: ignore
             destName=nc_file.resolve().as_posix(),
@@ -125,7 +125,7 @@ class BokuNDVIExporter(BaseExporter):
         urls = [self.base_url + f for f in fnames]
 
         for url in urls:
-            self.wget_file(url, output_dir)
+            self.wget_file(url, self.output_folder)
 
         tif_files = [f for f in self.output_folder.glob("*.tif")]
         tif_files.sort()
@@ -170,5 +170,5 @@ class BokuNDVIExporter(BaseExporter):
             print(f"-- Renamed Band1 in {nc_file.name} to {rename_str} --")
 
         # 5. remove temporary netcdf files
-        [f.unlink() for f in TMP_nc_files]
+        [f.unlink() for f in TMP_nc_files]  # type: ignore
         print("Removed *TMP.nc files")
