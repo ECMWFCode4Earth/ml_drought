@@ -24,7 +24,7 @@ def engineer(pred_months=3, target_var="VCI1M"):
 def models(target_var: str = "VCI1M"):
     # NO IGNORE VARS
 
-    # ignore_vars = []
+    ignore_vars = None
     # drop the target variable from ignore_vars
     # ignore_vars = [v for v in ignore_vars if v != target_var]
     # assert target_var not in ignore_vars
