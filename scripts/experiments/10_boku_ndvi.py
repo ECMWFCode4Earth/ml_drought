@@ -6,7 +6,7 @@ sys.path.append("../..")
 # from src.exporters import BokuNDVIExporter
 from src.preprocess import BokuNDVIPreprocessor
 
-from scripts.utils import get_data_path
+from scripts.utils import _rename_directory, get_data_path
 from src.engineer import Engineer
 from _base_models import parsimonious, regression, linear_nn, rnn, earnn
 
@@ -36,7 +36,7 @@ def engineer(pred_months=3, target_var="boku_VCI"):
 
 
 def models():
-    ignore_vars = ["p84.162", "sp", "tp", "Eb", "modis_ndvi", "VCI"]
+    ignore_vars = ["p84.162", "sp", "tp", "Eb", "VCI", "boku_VCI"]  # modis_ndvi
     # -------------
     # persistence
     # -------------
@@ -91,7 +91,7 @@ def models():
 
 def main(monthly=True):
     # preprocess(monthly=monthly)
-    # engineer()
+    engineer(target_var="modis_ndvi")
     models()
 
 

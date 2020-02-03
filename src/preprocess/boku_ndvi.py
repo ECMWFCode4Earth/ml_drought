@@ -197,6 +197,7 @@ class BokuNDVIPreprocessor(BasePreProcessor):
 
         # 6. add in the VCI data too
         vci = self._convert_to_VCI(ds).rename({f"VCI": "boku_VCI"})
+        assert vci.isnull().mean() < 1, "All NaN values!"
         ds = xr.auto_combine([ds, vci])
 
         # 7. create the filepath and save to that location
