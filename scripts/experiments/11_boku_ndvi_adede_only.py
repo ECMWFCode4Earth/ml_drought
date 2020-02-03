@@ -102,16 +102,16 @@ def main(monthly=True):
     #     "predicting values upside down. See notebooks/draft/33_tl_..._.ipynb" \
     #     "somewhere we need to sort the latitude because they are predicting" \
     #     "values with the latitudes inverted ..."
-    rename_dirs()
+    # rename_dirs()
 
-    target_vars = ["VCI1M", "VCI3M"]  #
-    for target_var in target_vars:
-        print(f"\n\n ** Target Variable: {target_var} ** \n\n")
-        engineer(target_var=target_var)
-        print(f"\n\n ** Running Models Target Variable: {target_var} ** \n\n")
-        models(target_var=target_var)
-        print(f"\n\n ** Models Run Target Variable: {target_var} ** \n\n")
-        move_features_dir(target_var=target_var)
+    # target_vars = ["VCI1M", "VCI3M"]  #
+    # for target_var in target_vars:
+    #     print(f"\n\n ** Target Variable: {target_var} ** \n\n")
+    #     engineer(target_var=target_var)
+    #     print(f"\n\n ** Running Models Target Variable: {target_var} ** \n\n")
+    #     models(target_var=target_var)
+    #     print(f"\n\n ** Models Run Target Variable: {target_var} ** \n\n")
+    #     move_features_dir(target_var=target_var)
 
     revert_interim_dirs()
 
