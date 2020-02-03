@@ -26,6 +26,7 @@ import numpy as np
 from typing import cast, Optional, Tuple
 
 from .base import BasePreProcessor
+from .dekad_utils import dekad_index
 
 from src.analysis import ConditionIndex
 
@@ -76,7 +77,9 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         Example:
         1000m
             MCD13A2.t200915.006.EAv1.1_km_10_days_NDVI.O1.nc
-            the 15th Monday of 2009
+            the 15th Monday of 2009 (NO)
+            the 15th Dekad of 2009
+            https://pytesmo.readthedocs.io/en/latest/_modules/pytesmo/timedate/dekad.html
         250m
             MCD09Q1.A2010319.006.KEHOA.250m_07_days_NDVI.Bw_TMP.nc
             day 319 of 2010
@@ -85,14 +88,20 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         """
 
         if self.resolution == "1000":
+            # GET the Dekad
             # regex pattern (4 digits after '.t')
             year_pattern = re.compile(r".t\d{4}")
             # extract the year from the filename
             year = year_pattern.findall(filename)[0].split(".t")[-1]
-            # extract the week_number (ISO 8601 week)
-            week_num = year_pattern.split(filename)[-1].split(".")[0]
+            # create a list of DEKAD datetimes
+            begin = pd.to_datetime(f"{year}-01-01").to_pydatetime()
+            end = pd.to_datetime(f"{int(year) + 1}-01-01").to_pydatetime()
+            dekad_list = dekad_index(begin, end)
+            # extract the dekad_number
+            dekad_num = year_pattern.split(filename)[-1].split(".")[0]
 
-            return datetime.strptime(f"{year}-{week_num}-Mon", "%G-%V-%a")
+            # index the list of dates by the dekad_number
+            return dekad_list[int(dekad_num)]
 
         elif self.resolution == "250":
             # regex pattern (4 digits after '.t')
@@ -134,11 +143,11 @@ class BokuNDVIPreprocessor(BasePreProcessor):
     def _convert_to_VCI(self, ds: xr.Dataset, rolling_window: int = 1) -> xr.Dataset:
         """Convert the BOKU NDVI data to VCI data
         """
-        vci = ConditionIndex(ds=ds, resample_str="M")
+        vci = ConditionIndex(ds=ds, resample_str=None)
         variable = [v for v in ds.data_vars][0]
         vci.fit(variable=variable, rolling_window=rolling_window)
         var_ = [v for v in vci.index.data_vars][0]
-        vci = vci.index.rename({var_: f"VCI{rolling_window}M"})
+        vci = vci.index.rename({var_: f"VCI"})
 
         return vci
 
@@ -186,8 +195,8 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         # 𝑽𝑰 = 𝑽𝑰𝒔𝒍𝒐𝒑𝒆 * value + 𝑽𝑰𝒊𝒏𝒕𝒆𝒓𝒄𝒆𝒑𝒕
         ds = (0.0048 * ds) - 0.200
 
-        # 6. add in the VCI data too (VCI1M, VCI3M)
-        vci = self._convert_to_VCI(ds).rename({f"VCI1M": "boku_VCI"})
+        # 6. add in the VCI data too
+        vci = self._convert_to_VCI(ds).rename({f"VCI": "boku_VCI"})
         ds = xr.auto_combine([ds, vci])
 
         # 7. create the filepath and save to that location

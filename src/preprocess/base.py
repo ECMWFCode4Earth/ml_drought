@@ -190,16 +190,32 @@ class BasePreProcessor:
         upsampling: bool = False,
         time_coord: str = "time",
     ) -> xr.Dataset:
-
         # TODO: would be nice to programmatically get upsampling / not
         ds = ds.sortby(time_coord)
 
-        resampler = ds.resample({time_coord: resample_length})
-
-        if not upsampling:
-            return resampler.mean()
+        if resample_length is "DEKAD":
+            # https://stackoverflow.com/questions/15408156/resampling-with-custom-periods
+            # https://stackoverflow.com/a/15409033/9940782
+            # assert False, "Need to TEST/implement this functionality"
+            d = (
+                ds[f"{time_coord}.day"]
+                - np.clip((ds[f"{time_coord}.day"] - 1) // 10, 0, 2) * 10
+                - 1
+            )
+            d = d.astype("timedelta64[D]")
+            date = d.time.values - d
+            resampler = ds.groupby(date)
+            if not upsampling:
+                return resampler.mean(dim=time_coord).rename({"day": time_coord})
+            else:
+                return resampler.nearest()
         else:
-            return resampler.nearest()
+            resampler = ds.resample({time_coord: resample_length})
+
+            if not upsampling:
+                return resampler.mean()
+            else:
+                return resampler.nearest()
 
     @staticmethod
     def chop_roi(
