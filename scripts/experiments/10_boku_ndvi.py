@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import numpy as np
 
 sys.path.append("../..")
 
@@ -106,13 +107,23 @@ def models(target_var: str = "boku_VCI"):
 def move_features_dir(target_var):
     # rename the features dir
     data_path = get_data_path()
+    try:
+        _rename_directory(
+            from_path=data_path / "features" / "one_month_forecast",
+            to_path=data_path
+            / "features"
+            / f"one_month_forecast_BOKU_{target_var}_our_vars",
+        )
+    except Error as E:
+        print(E)
+        randint = np.random.randint(10)
+        _rename_directory(
+            from_path=data_path / "features" / "one_month_forecast",
+            to_path=data_path
+            / "features"
+            / f"one_month_forecast_BOKU_{target_var}_our_vars_{randint}",
+        )
 
-    _rename_directory(
-        from_path=data_path / "features" / "one_month_forecast",
-        to_path=data_path
-        / "features"
-        / f"one_month_forecast_BOKU_{target_var}_our_vars",
-    )
 
 
 def main(monthly=True):
@@ -122,7 +133,9 @@ def main(monthly=True):
     for target_var in target_vars:
         print(f"\n\n ** Target Variable: {target_var} ** \n\n")
         engineer(target_var=target_var)
+        print(f"\n\n ** RUNNING MODELS FOR Target Variable: {target_var} ** \n\n")
         models(target_var=target_var)
+        print(f"\n\n ** Target Variable: {target_var} DONE ** \n\n")
         move_features_dir(target_var=target_var)
 
 
