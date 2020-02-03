@@ -108,6 +108,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
+        all_dyn_ds = []
         if len(dynamic_filepaths) > 0:
             ds_dyn = xr.open_mfdataset(dynamic_filepaths)
 
