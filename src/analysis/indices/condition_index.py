@@ -33,7 +33,15 @@ class ConditionIndex(BaseIndices):
 
     @staticmethod
     def condition_index(da: xr.DataArray, dim: str = "time") -> xr.DataArray:
-        relative_range = (da - da.min(dim=dim)) / (da.max(dim=dim) - da.min(dim=dim))
+        # calculate the Monthly min/max (normalise over months AND pixels)
+        monmin = da.groupby("time.month").min(dim="time")
+        monmax = da.groupby("time.month").max(dim="time")
+        # copy array forwards through time
+        sameshape_monmin = monmin.sel(month=da["time.month"]).drop("month")
+        sameshape_monmax = monmax.sel(month=da["time.month"]).drop("month")
+
+        # The max/min for each unique pixel-month
+        relative_range = (da - sameshape_monmin) / (sameshape_monmax - sameshape_monmin)
         condition_index = 100 * relative_range
 
         return condition_index
@@ -44,8 +52,31 @@ class ConditionIndex(BaseIndices):
         print(f"Fitting {variable} Condition Index")
         assert rolling_window > 0, "Must have a rolling window > 0"
 
-        rolling_ds = rolling_mean(self.ds[variable], rolling_window)
-        condition_index = self.condition_index(rolling_ds)
+        condition_index = self.condition_index(self.ds[variable])
+        # NOTE: if rolling_window = 1 the calculation doesn't change values
+        rolling_ds = rolling_mean(condition_index, rolling_window)
 
-        self.index = condition_index.to_dataset(var_name)
+        self.index = rolling_ds.to_dataset(var_name)
         print(f"Fitted {variable} Condition Index and stored at `obj.index`")
+
+
+"""
+TESTS:
+
+# check the mean for EACH PIXEL is close to 50
+assert np.isclose(condition_index.isel(lat=0, lon=0).mean(), 50)
+
+# check the max for EACH PIXEL is 100
+assert condition_index.isel(lat=0, lon=0).max() == 100
+
+# check the min for EACH PIXEL is 0
+assert condition_index.isel(lat=0, lon=0).min() == 0
+
+# check there are multiple 100 values for each pixel (for each month)
+assert (
+    condition_index
+    .isel(lat=0, lon=0)  # first pixel
+    .sel(time=condition_index.isel(lat=0, lon=0) == 100)  # where value is 100
+    .values.shape
+) == condition_index.isel(lat=0, lon=0)['time.month'].sel(time=condition_index.isel(lat=0, lon=0)['time.month'] == 11).values.shape
+"""

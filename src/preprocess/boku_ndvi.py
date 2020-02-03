@@ -195,11 +195,6 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         # 𝑽𝑰 = 𝑽𝑰𝒔𝒍𝒐𝒑𝒆 * value + 𝑽𝑰𝒊𝒏𝒕𝒆𝒓𝒄𝒆𝒑𝒕
         ds = (0.0048 * ds) - 0.200
 
-        # 6. add in the VCI data too
-        vci = self._convert_to_VCI(ds).rename({f"VCI": "boku_VCI"})
-        assert vci.isnull().mean() < 1, "All NaN values!"
-        ds = xr.auto_combine([ds, vci])
-
         # 7. create the filepath and save to that location
         assert (
             netcdf_filepath.name[-3:] == ".nc"
@@ -268,7 +263,13 @@ class BokuNDVIPreprocessor(BasePreProcessor):
                 self._preprocess_single(file, subset_str, regrid)
 
         # merge all of the timesteps
-        self.merge_files(subset_str, resample_time, upsampling)
+        outpath = self.merge_files(subset_str, resample_time, upsampling)
+
+        # 6. add in the VCI data too
+        ds = xr.open_dataset(outpath)
+        vci = self._convert_to_VCI(ds).rename({f"VCI": "boku_VCI"})
+        assert vci.isnull().mean() < 1, "All NaN values!"
+        ds = xr.auto_combine([ds, vci])
 
         if cleanup:
             rmtree(self.interim)

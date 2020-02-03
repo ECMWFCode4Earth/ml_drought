@@ -237,7 +237,7 @@ class BasePreProcessor:
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
         filename: Optional[str] = None,
-    ) -> None:
+    ) -> Path:
 
         ds = xr.open_mfdataset(self.get_filepaths("interim"))
 
@@ -250,3 +250,5 @@ class BasePreProcessor:
 
         ds.to_netcdf(out)
         print(f"\n**** {out} Created! ****\n")
+
+        return out
