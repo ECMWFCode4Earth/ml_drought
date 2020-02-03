@@ -15,6 +15,7 @@ TODO:
 - Test the removal of 251, 252, 255 values
 """
 
+
 class TestBokuNDVIPreprocessor:
     @staticmethod
     def test_make_filename():

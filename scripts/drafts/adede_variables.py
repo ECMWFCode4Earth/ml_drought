@@ -27,6 +27,7 @@ from src.engineer import Engineer
 # data = e.engineer_class._make_dataset(static=False)
 
 from src.analysis import read_train_data, read_test_data
+from src.analysis.indices.utils import rolling_mean
 
 
 boku = True
@@ -42,7 +43,6 @@ ds = xr.merge([y_train, y_test]).sortby("time").sortby("lat")
 d_ = xr.merge([X_train, X_test]).sortby("time").sortby("lat")
 ds = xr.merge([ds, d_])
 
-from src.analysis.indices.utils import rolling_mean
 
 # ----------------------------------------
 # Create the features (pixel-by-pixel)

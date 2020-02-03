@@ -77,7 +77,9 @@ def models(target_var: str = "VCI1M"):
 
     _rename_directory(
         from_path=data_path / "models" / "one_month_forecast",
-        to_path=data_path / "models" / f"one_month_forecast_BOKU_{target_var}_adede_only_vars",
+        to_path=data_path
+        / "models"
+        / f"one_month_forecast_BOKU_{target_var}_adede_only_vars",
     )
 
 
@@ -87,7 +89,9 @@ def move_features_dir(target_var):
 
     _rename_directory(
         from_path=data_path / "features" / "one_month_forecast",
-        to_path=data_path / "features" / f"one_month_forecast_BOKU_{target_var}_adede_only_vars",
+        to_path=data_path
+        / "features"
+        / f"one_month_forecast_BOKU_{target_var}_adede_only_vars",
     )
 
 

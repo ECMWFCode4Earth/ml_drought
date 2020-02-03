@@ -109,7 +109,9 @@ def move_features_dir(target_var):
 
     _rename_directory(
         from_path=data_path / "features" / "one_month_forecast",
-        to_path=data_path / "features" / f"one_month_forecast_BOKU_{target_var}_our_vars",
+        to_path=data_path
+        / "features"
+        / f"one_month_forecast_BOKU_{target_var}_our_vars",
     )
 
 
