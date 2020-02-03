@@ -237,6 +237,7 @@ class BokuNDVIPreprocessor(BasePreProcessor):
 
         # get the filepaths for all of the downloaded data
         nc_files = self.get_filepaths()
+        nc_files.sort()
 
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
@@ -250,7 +251,8 @@ class BokuNDVIPreprocessor(BasePreProcessor):
             )
             print("\nOutputs (errors):\n\t", outputs)
         else:
-            for file in nc_files:
+            for ix, file in enumerate(nc_files):
+                print(f"INDEX: {ix}")
                 self._preprocess_single(file, subset_str, regrid)
 
         # merge all of the timesteps
