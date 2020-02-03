@@ -118,7 +118,7 @@ def move_features_dir(target_var):
 def main(monthly=True):
     # preprocess(monthly=monthly)
 
-    target_vars = ["VCI3M"]  # "boku_VCI",
+    target_vars = ["boku_VCI", "VCI3M"]
     for target_var in target_vars:
         print(f"\n\n ** Target Variable: {target_var} ** \n\n")
         engineer(target_var=target_var)
