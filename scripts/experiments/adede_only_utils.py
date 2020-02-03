@@ -5,9 +5,7 @@ sys.path.append("../..")
 from scripts.utils import _rename_directory, get_data_path
 
 
-def rename_dirs():
-    data_path = get_data_path()
-
+def swap_interim_dirs(data_path):
     # INTERIM
     if (data_path / "interim_adede_only").exists() and (data_path / "interim").exists():
         # move interim -> interim_
@@ -42,6 +40,8 @@ def rename_dirs():
     assert (data_path / "interim").exists()
     assert (data_path / "interim_").exists()
 
+
+def move_features_dir(data_path):
     # FEATURES
     if (data_path / "features" / "one_month_forecast").exists():
         print(
@@ -54,6 +54,14 @@ def rename_dirs():
         )
 
     assert not (data_path / "features" / "one_month_forecast").exists()
+
+
+def rename_dirs():
+    data_path = get_data_path()
+
+    # swap interim dirs
+    swap_interim_dirs(data_path)
+    move_features_dir(data_path)
 
 
 def revert_interim_dirs():

@@ -97,7 +97,7 @@ def move_features_dir(target_var):
 
 def main(monthly=True):
     # REQUIRES HAVING RUN preprocess() function in 10_boku_ndvi.py
-    # rename_dirs()
+    rename_dirs()
 
     target_vars = ["VCI1M", "VCI3M"]  #
     for target_var in target_vars:
