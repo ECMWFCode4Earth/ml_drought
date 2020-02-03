@@ -2,7 +2,7 @@ from pathlib import Path
 import xarray as xr
 import numpy as np
 
-from typing import List, Optional
+from typing import List, Optional, Union, Tuple
 
 from ..utils import Region, region_lookup
 from .utils import select_bounding_box
@@ -237,7 +237,7 @@ class BasePreProcessor:
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
         filename: Optional[str] = None,
-    ) -> Path:
+    ) -> Union[Path, Tuple[Path]]:
 
         ds = xr.open_mfdataset(self.get_filepaths("interim"))
 

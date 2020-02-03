@@ -100,7 +100,9 @@ def models(target_var: str = "boku_VCI"):
 
     _rename_directory(
         from_path=data_path / "models" / "one_month_forecast",
-        to_path=data_path / "models" / f"one_month_forecast_BOKU_{target_var}_our_vars_ALL",
+        to_path=data_path
+        / "models"
+        / f"one_month_forecast_BOKU_{target_var}_our_vars_ALL",
     )
 
 
@@ -116,14 +118,13 @@ def move_features_dir(target_var):
         )
     except Error as E:
         print(E)
-        date = datetime.datetime.now().strftime('%Y%M%d_%H%M')
+        date = datetime.datetime.now().strftime("%Y%M%d_%H%M")
         _rename_directory(
             from_path=data_path / "features" / "one_month_forecast",
             to_path=data_path
             / "features"
             / f"one_month_forecast_BOKU_{target_var}_our_vars_{date}",
         )
-
 
 
 def main(monthly=True):

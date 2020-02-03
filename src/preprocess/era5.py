@@ -6,7 +6,7 @@ from shutil import rmtree
 import re
 import numpy as np
 
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from .base import BasePreProcessor
 from ..utils import get_modal_value_across_time
@@ -96,6 +96,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
             list(target_folder.glob("**/*.nc")), filter_type
         )
         outfiles.sort()
+
         return outfiles
 
     def merge_files(
@@ -104,7 +105,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
         filename: Optional[str] = None,
-    ) -> None:
+    ) -> Tuple[Path]:  # type: ignore
 
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
@@ -121,10 +122,10 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
                 filename = (
                     f'data{"_" + subset_str if subset_str is not None else ""}.nc'
                 )
-            out = self.out_dir / filename
+            out_dyn = self.out_dir / filename
 
-            ds_dyn.to_netcdf(out)
-            print(f"\n**** {out} Created! ****\n")
+            ds_dyn.to_netcdf(out_dyn)
+            print(f"\n**** {out_dyn} Created! ****\n")
 
         # then, static
         static_filepaths = self.get_filepaths("interim", filter_type="static")
@@ -147,10 +148,12 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
                 filename = (
                     f'data{"_" + subset_str if subset_str is not None else ""}.nc'
                 )
-            out = output_folder / filename
+            out_static = output_folder / filename
 
-            ds_stat_new.to_netcdf(out)
-            print(f"\n**** {out} Created! ****\n")
+            ds_stat_new.to_netcdf(out_static)
+            print(f"\n**** {out_static} Created! ****\n")
+
+        return out_dyn, out_static  # type: ignore
 
     def preprocess(
         self,
@@ -216,7 +219,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
         resample_time: Optional[str] = "W-MON",
         upsampling: bool = False,
         filename: Optional[str] = None,
-    ) -> None:
+    ) -> Tuple[Path]:
 
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
@@ -255,10 +258,10 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
             #     filename = (
             #         f'data{"_" + subset_str if subset_str is not None else ""}.nc'
             #     )
-            # out = self.out_dir / filename
+            # out_dyn = self.out_dir / filename
 
-            # ds_dyn.to_netcdf(out)
-            # print(f"\n**** {out} Created! ****\n")
+            # ds_dyn.to_netcdf(out_dyn)
+            # print(f"\n**** {out_dyn} Created! ****\n")
 
         # then, static
         static_filepaths = self.get_filepaths("interim", filter_type="static")
@@ -281,7 +284,9 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
                 filename = (
                     f'data{"_" + subset_str if subset_str is not None else ""}.nc'
                 )
-            out = output_folder / filename
+            out_static = output_folder / filename
 
-            ds_stat_new.to_netcdf(out)
-            print(f"\n**** {out} Created! ****\n")
+            ds_stat_new.to_netcdf(out_static)
+            print(f"\n**** {out_static} Created! ****\n")
+
+        return out_dyn, out_static  # type: ignore
