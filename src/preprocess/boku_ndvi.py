@@ -261,6 +261,8 @@ class BokuNDVIPreprocessor(BasePreProcessor):
             print("\nOutputs (errors):\n\t", outputs)
         else:
             for ix, file in enumerate(nc_files):
+                if ix < 278:
+                    continue
                 print(f"INDEX: {ix}")
                 self._preprocess_single(file, subset_str, regrid)
 
