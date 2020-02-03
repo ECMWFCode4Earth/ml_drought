@@ -8,6 +8,8 @@ from src.preprocess import BokuNDVIPreprocessor
 
 from scripts.utils import get_data_path
 from src.engineer import Engineer
+from _base_models import parsimonious, regression, linear_nn, rnn, earnn
+
 
 def preprocess(monthly=True):
     regrid = get_data_path() / "interim/VCI_preprocessed/data_kenya.nc"
@@ -33,10 +35,64 @@ def engineer(pred_months=3, target_var="boku_VCI"):
     )
 
 
+def models():
+    ignore_vars = ["p84.162", "sp", "tp", "Eb", "modis_ndvi", "VCI"]
+    # -------------
+    # persistence
+    # -------------
+    parsimonious()
+
+    # regression(ignore_vars=ignore_vars)
+    # gbdt(ignore_vars=ignore_vars)
+    # linear_nn(ignore_vars=ignore_vars)
+
+    # -------------
+    # LSTM
+    # -------------
+    rnn(
+        experiment="one_month_forecast",
+        include_pred_month=True,
+        surrounding_pixels=None,
+        explain=False,
+        static="features",
+        ignore_vars=ignore_vars,
+        num_epochs=50,
+        early_stopping=5,
+        hidden_size=256,
+        include_latlons=True,
+    )
+
+    # -------------
+    # EALSTM
+    # -------------
+    earnn(
+        experiment="one_month_forecast",
+        include_pred_month=True,
+        surrounding_pixels=None,
+        pretrained=False,
+        explain=False,
+        static="features",
+        ignore_vars=ignore_vars,
+        num_epochs=50,
+        early_stopping=5,
+        hidden_size=256,
+        static_embedding_size=64,
+        include_latlons=True,
+    )
+
+    # rename the output file
+    data_path = get_data_path()
+
+    _rename_directory(
+        from_path=data_path / "models" / "one_month_forecast",
+        to_path=data_path / "models" / "one_month_forecast_boku_ndvi",
+    )
+
+
 def main(monthly=True):
     # preprocess(monthly=monthly)
-    engineer()
-    # ignore_vars = ["p84.162", "sp", "tp", "Eb", "modis_ndvi", "VCI1M", "RFE1M"]  # "ndvi",
+    # engineer()
+    models()
 
 
 if __name__ == "__main__":
