@@ -8,7 +8,8 @@ from src.engineer import Engineer
 from _base_models import parsimonious, regression, linear_nn, rnn, earnn
 from scripts.experiments.adede_only_utils import rename_dirs, revert_interim_dirs
 
-def engineer(pred_months=3, target_var="boku_VCI"):
+
+def engineer(pred_months=3, target_var="VCI1M"):
     engineer = Engineer(
         get_data_path(), experiment="one_month_forecast", process_static=False
     )
@@ -20,21 +21,13 @@ def engineer(pred_months=3, target_var="boku_VCI"):
     )
 
 
-def models(target_var: str = "boku_VCI"):
-    ignore_vars = [
-        "p84.162",
-        "sp",
-        "tp",
-        "Eb",
-        "VCI",
-        "modis_ndvi",
-        "boku_VCI",
-        "VCI3M",
-    ]
+def models(target_var: str = "VCI1M"):
+    # NO IGNORE VARS
 
+    # ignore_vars = []
     # drop the target variable from ignore_vars
-    ignore_vars = [v for v in ignore_vars if v != target_var]
-    assert target_var not in ignore_vars
+    # ignore_vars = [v for v in ignore_vars if v != target_var]
+    # assert target_var not in ignore_vars
 
     # -------------
     # persistence
