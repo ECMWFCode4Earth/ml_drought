@@ -668,6 +668,9 @@ class _BaseIter:
     ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / "x.nc"), xr.open_dataset(folder / "y.nc")
+        # SORT values to make sure that predictions aren't upside down
+        x = x.sortby(['time', 'lat', 'lon'])
+        y = y.sortby(['time', 'lat', 'lon'])
 
         if self.predict_delta:
             # TODO: do this ONCE not at each read-in of the data

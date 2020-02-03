@@ -97,6 +97,11 @@ def move_features_dir(target_var):
 
 def main(monthly=True):
     # REQUIRES HAVING RUN preprocess() function in 10_boku_ndvi.py
+
+    assert False, "Need to work out why the LSTM / EALSTM is " \
+        "predicting values upside down. See notebooks/draft/33_tl_..._.ipynb" \
+        "somewhere we need to sort the latitude because they are predicting" \
+        "values with the latitudes inverted ..."
     rename_dirs()
 
     target_vars = ["VCI1M", "VCI3M"]  #
