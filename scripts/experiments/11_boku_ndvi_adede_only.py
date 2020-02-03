@@ -3,25 +3,10 @@ from pathlib import Path
 
 sys.path.append("../..")
 
-# from src.exporters import BokuNDVIExporter
-from src.preprocess import BokuNDVIPreprocessor
-
 from scripts.utils import _rename_directory, get_data_path
 from src.engineer import Engineer
 from _base_models import parsimonious, regression, linear_nn, rnn, earnn
-
-
-def preprocess(monthly=True):
-    regrid = get_data_path() / "interim/VCI_preprocessed/data_kenya.nc"
-    preprocessor = BokuNDVIPreprocessor(get_data_path(), resolution="1000")
-
-    if monthly:
-        preprocessor.preprocess(subset_str="kenya", regrid=regrid, resample_time="M")
-    else:
-        preprocessor.preprocess(
-            subset_str="kenya", regrid=regrid, resample_time="W-MON"
-        )
-
+from .adede_only_utils import rename_dirs, revert_interim_dirs
 
 def engineer(pred_months=3, target_var="boku_VCI"):
     engineer = Engineer(
@@ -114,14 +99,17 @@ def move_features_dir(target_var):
 
 
 def main(monthly=True):
-    # preprocess(monthly=monthly)
+    # REQUIRES HAVING RUN preprocess() function in 10_boku_ndvi.py
+    rename_dirs()
 
-    target_vars = ["VCI3M"]  # "boku_VCI",
+    target_vars = ["VCI1M", "VCI3M"]  #
     for target_var in target_vars:
         print(f"\n\n ** Target Variable: {target_var} ** \n\n")
         engineer(target_var=target_var)
         models(target_var=target_var)
         move_features_dir(target_var=target_var)
+
+    revert_interim_dirs()
 
 
 if __name__ == "__main__":
