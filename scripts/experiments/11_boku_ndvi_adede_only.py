@@ -6,7 +6,7 @@ sys.path.append("../..")
 from scripts.utils import _rename_directory, get_data_path
 from src.engineer import Engineer
 from _base_models import parsimonious, regression, linear_nn, rnn, earnn
-from .adede_only_utils import rename_dirs, revert_interim_dirs
+from scripts.experiments.adede_only_utils import rename_dirs, revert_interim_dirs
 
 def engineer(pred_months=3, target_var="boku_VCI"):
     engineer = Engineer(
