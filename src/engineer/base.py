@@ -98,7 +98,7 @@ class _EngineerBase:
             )
 
         # read in all the data from interim/{var}_preprocessed
-        data = self._make_dataset(static=False)
+        data = self._make_dataset(static=False).sortby('lat')
 
         # ensure test_year is List[int]
         if type(test_year) is int:
