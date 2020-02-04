@@ -149,9 +149,9 @@ def main(monthly=True):
         print(f"\n\n ** Target Variable: {target_var} ** \n\n")
         engineer(target_var=target_var)
         print(f"\n\n ** RUNNING MODELS FOR Target Variable: {target_var} ** \n\n")
-        models(target_var=target_var, adede_only)
+        models(target_var=target_var, adede_only=adede_only)
         print(f"\n\n ** Target Variable: {target_var} DONE ** \n\n")
-        move_features_dir(target_var=target_var, adede_only)
+        move_features_dir(target_var=target_var, adede_only=adede_only)
 
 
 if __name__ == "__main__":
