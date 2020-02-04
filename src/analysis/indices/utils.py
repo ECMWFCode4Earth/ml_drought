@@ -22,7 +22,7 @@ def rolling_mean(ds: xr.Dataset, rolling_window: int = 3) -> xr.Dataset:
         .dropna(dim="time", how="all")
     )
 
-    return ds_window.sortby('lat')
+    return ds_window.sortby("lat")
 
 
 def apply_over_period(

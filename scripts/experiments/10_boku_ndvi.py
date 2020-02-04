@@ -36,7 +36,7 @@ def engineer(pred_months=3, target_var="boku_VCI"):
     )
 
 
-def models(target_var: str = "boku_VCI", adede_only=False):
+def models(target_var: str = "boku_VCI", adede_only=False, experiment_name=None):
     if adede_only:
         ignore_vars = [
             "p84.162",
@@ -49,17 +49,10 @@ def models(target_var: str = "boku_VCI", adede_only=False):
             "t2m",
             "E",
             "SMroot",
-            "SMsurf"
+            "SMsurf",
         ]
     else:
-        ignore_vars = [
-            "p84.162",
-            "sp",
-            "tp",
-            "Eb",
-            "VCI",
-            "modis_ndvi",
-        ]
+        ignore_vars = ["p84.162", "sp", "tp", "Eb", "VCI", "modis_ndvi"]
 
     # drop the target variable from ignore_vars
     ignore_vars = [v for v in ignore_vars if v != target_var]
@@ -84,7 +77,7 @@ def models(target_var: str = "boku_VCI", adede_only=False):
         explain=False,
         static="features",
         ignore_vars=ignore_vars,
-        num_epochs=50,
+        num_epochs=1,  # 50,
         early_stopping=5,
         hidden_size=256,
         include_latlons=True,
@@ -101,7 +94,7 @@ def models(target_var: str = "boku_VCI", adede_only=False):
         explain=False,
         static="features",
         ignore_vars=ignore_vars,
-        num_epochs=50,
+        num_epochs=1,  # 50,
         early_stopping=5,
         hidden_size=256,
         static_embedding_size=64,
@@ -110,34 +103,27 @@ def models(target_var: str = "boku_VCI", adede_only=False):
 
     # rename the output file
     data_path = get_data_path()
+    if experiment_name is None:
+        experiment_name = (
+            f"one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
+        )
 
     _rename_directory(
         from_path=data_path / "models" / "one_month_forecast",
-        to_path=data_path
-        / "models"
-        / f"one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
+        to_path=data_path / "models" / experiment_name,
     )
 
 
-def move_features_dir(target_var, adede_only=False):
+def move_features_dir(target_var, adede_only=False, experiment_name=None):
     # rename the features dir
     data_path = get_data_path()
-    try:
-        _rename_directory(
-            from_path=data_path / "features" / "one_month_forecast",
-            to_path=data_path
-            / "features"
-            / f"one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
-        )
-    except Error as E:
-        print(E)
-        date = datetime.datetime.now().strftime("%Y%M%d_%H%M")
-        _rename_directory(
-            from_path=data_path / "features" / "one_month_forecast",
-            to_path=data_path
-            / "features"
-            / f"one_month_forecast_BOKU_{target_var}_our_vars_{date}",
-        )
+    if experiment_name is None:
+        experiment_name = f"one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}"
+
+    _rename_directory(
+        from_path=data_path / "features" / "one_month_forecast",
+        to_path=data_path / "features" / experiment_name,
+    )
 
 
 def main(monthly=True):
@@ -149,7 +135,11 @@ def main(monthly=True):
         print(f"\n\n ** Target Variable: {target_var} ** \n\n")
         engineer(target_var=target_var)
         print(f"\n\n ** RUNNING MODELS FOR Target Variable: {target_var} ** \n\n")
-        models(target_var=target_var, adede_only=adede_only)
+        models(
+            target_var=target_var,
+            adede_only=adede_only,
+            experiment_name="0_TEST_branch",
+        )
         print(f"\n\n ** Target Variable: {target_var} DONE ** \n\n")
         move_features_dir(target_var=target_var, adede_only=adede_only)
 
