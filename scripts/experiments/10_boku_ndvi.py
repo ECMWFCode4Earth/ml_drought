@@ -49,17 +49,10 @@ def models(target_var: str = "boku_VCI", adede_only=False):
             "t2m",
             "E",
             "SMroot",
-            "SMsurf"
+            "SMsurf",
         ]
     else:
-        ignore_vars = [
-            "p84.162",
-            "sp",
-            "tp",
-            "Eb",
-            "VCI",
-            "modis_ndvi",
-        ]
+        ignore_vars = ["p84.162", "sp", "tp", "Eb", "VCI", "modis_ndvi"]
 
     # drop the target variable from ignore_vars
     ignore_vars = [v for v in ignore_vars if v != target_var]
