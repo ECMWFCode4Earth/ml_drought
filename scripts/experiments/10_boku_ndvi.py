@@ -77,7 +77,7 @@ def models(target_var: str = "boku_VCI", adede_only=False, experiment_name=None)
         explain=False,
         static="features",
         ignore_vars=ignore_vars,
-        num_epochs=10, #1,  # 50 ,
+        num_epochs=1, #1,  # 50 ,
         early_stopping=5,
         hidden_size=256,
         include_latlons=True,
@@ -94,7 +94,7 @@ def models(target_var: str = "boku_VCI", adede_only=False, experiment_name=None)
         explain=False,
         static="features",
         ignore_vars=ignore_vars,
-        num_epochs=10, #1,  # 50 ,
+        num_epochs=1, #1,  # 50 ,
         early_stopping=5,
         hidden_size=256,
         static_embedding_size=64,
@@ -130,7 +130,7 @@ def main(monthly=True):
     # preprocess(monthly=monthly)
 
     adede_only = True
-    target_vars = ["VCI3M"]  # "boku_VCI",
+    target_vars = ["boku_VCI"]  # "boku_VCI", "VCI3M"
     for target_var in target_vars:
         print(f"\n\n ** Target Variable: {target_var} ** \n\n")
         engineer(target_var=target_var)
