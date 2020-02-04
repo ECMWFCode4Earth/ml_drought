@@ -5,7 +5,7 @@ import datetime
 sys.path.append("../..")
 
 # from src.exporters import BokuNDVIExporter
-from src.preprocess import BokuNDVIPreprocessor
+# from src.preprocess import BokuNDVIPreprocessor
 
 from scripts.utils import _rename_directory, get_data_path
 from src.engineer import Engineer
