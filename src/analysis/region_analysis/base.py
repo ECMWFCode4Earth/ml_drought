@@ -90,7 +90,10 @@ class RegionAnalysis:
                 f"try one of: {[d.name for d in self.models_dir.iterdir()]}"
             )
 
-        assert ("one_month_forecast" in experiment) or ("nowcast" in experiment)
+        if not (("one_month_forecast" in experiment) or ("nowcast" in experiment)):
+            print(
+                "WARNING: could not find one_month_forecast or nowcast in experiment name. Are you sure this has been run through the pipeline?"
+            )
         self.experiment: str = experiment
 
         # NOTE: this shouldn't be specific for the boundaries it should
