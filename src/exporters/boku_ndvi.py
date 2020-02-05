@@ -20,7 +20,6 @@ import os
 from pathlib import Path
 import urllib.request
 from pathlib import Path
-from bs4 import BeautifulSoup
 import xarray as xr
 import numpy as np
 import shutil
@@ -31,6 +30,7 @@ from .base import BaseExporter
 from ..utils import Region, region_lookup
 
 gdal = None
+BeautifulSoup = None
 
 
 class BokuNDVIExporter(BaseExporter):
@@ -45,6 +45,9 @@ class BokuNDVIExporter(BaseExporter):
         global gdal
         if gdal is None:
             from osgeo import gdal
+        global BeautifulSoup
+        if BeautifulSoup is None:
+            from bs4 import BeautifulSoup
 
         self.resolution = str(resolution)
         if self.resolution == "1000":
