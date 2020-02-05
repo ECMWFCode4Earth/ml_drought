@@ -243,11 +243,11 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
                     _ds_dyn = self.resample_time(_ds_dyn, resample_time, upsampling)
 
                 filename_ = f'{variable}_data{"_" + subset_str if subset_str is not None else ""}.nc'
-                out_ = self.out_dir / filename_
+                out_dyn = self.out_dir / filename_
 
                 # save to netcdf
-                _ds_dyn.to_netcdf(out_)
-                print(f"\n**** {out_} Created! ****\n")
+                _ds_dyn.to_netcdf(out_dyn)
+                print(f"\n**** {out_dyn} Created! ****\n")
 
                 # all_dyn_ds.append(_ds_dyn)
 
