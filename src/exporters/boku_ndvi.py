@@ -19,15 +19,12 @@ and copy the ftp links to `./etc/conda/activate.d/env_vars.sh`
 import os
 from pathlib import Path
 import urllib.request
-from pathlib import Path
 import xarray as xr
-import numpy as np
 import shutil
 
-from typing import List, Tuple
+from typing import List
 
 from .base import BaseExporter
-from ..utils import Region, region_lookup
 
 gdal = None
 BeautifulSoup = None
@@ -52,11 +49,11 @@ class BokuNDVIExporter(BaseExporter):
         self.resolution = str(resolution)
         if self.resolution == "1000":
             # 1km pixel
-            self.dataset: str = "boku_ndvi_1000"
+            self.dataset: str = "boku_ndvi_1000"  # type: ignore
             self.base_url: str = os.environ.get("FTP_1000")  # type: ignore
         elif self.resolution == "250":
             # 250m pixel
-            self.dataset: str = "boku_ndvi_250"
+            self.dataset: str = "boku_ndvi_250"  # type: ignore
             self.base_url: str = os.environ.get("FTP_250")  # type: ignore
         else:
             assert False, (

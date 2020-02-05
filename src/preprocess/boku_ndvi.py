@@ -15,7 +15,6 @@ NDVI = 0.0048 * DN- 0.200
 from pathlib import Path
 from shutil import rmtree
 import xarray as xr
-import os
 import multiprocessing
 from functools import partial
 import re
@@ -23,7 +22,7 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 
-from typing import cast, Optional, Tuple
+from typing import Optional
 
 from .base import BasePreProcessor
 from .dekad_utils import dekad_index
@@ -43,10 +42,10 @@ class BokuNDVIPreprocessor(BasePreProcessor):
 
         if self.resolution == "1000":
             # 1km pixel
-            self.dataset: str = "boku_ndvi_1000"
+            self.dataset: str = "boku_ndvi_1000"  # type: ignore
         elif self.resolution == "250":
             # 250m pixel
-            self.dataset: str = "boku_ndvi_250"
+            self.dataset: str = "boku_ndvi_250"  # type: ignore
         else:
             assert False, (
                 "Must provide str resolution of 1000 or 250"

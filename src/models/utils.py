@@ -120,6 +120,7 @@ def _to_xarray_dataset(
         try:
             data = data.numpy()
         except RuntimeError as E:
+            print(E)
             data = data.detach().numpy()
     if isinstance(latlons, Tensor):
         latlons = latlons.numpy()

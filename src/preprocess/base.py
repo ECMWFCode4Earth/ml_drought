@@ -193,7 +193,7 @@ class BasePreProcessor:
         # TODO: would be nice to programmatically get upsampling / not
         ds = ds.sortby(time_coord)
 
-        if resample_length is "DEKAD":
+        if resample_length == "DEKAD":
             # https://stackoverflow.com/questions/15408156/resampling-with-custom-periods
             # https://stackoverflow.com/a/15409033/9940782
             # assert False, "Need to TEST/implement this functionality"
