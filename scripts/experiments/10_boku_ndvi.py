@@ -36,7 +36,7 @@ def engineer(pred_months=3, target_var="boku_VCI"):
     )
 
 
-def models(target_var: str = "boku_VCI", adede_only=False, experiment_name=None, check_inversion=check_inversion):
+def models(target_var: str = "boku_VCI", adede_only=False, experiment_name=None, check_inversion=False):
     if adede_only:
         ignore_vars = [
             "p84.162",
