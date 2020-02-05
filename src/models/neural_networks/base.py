@@ -13,7 +13,7 @@ import shap
 from typing import cast, Dict, List, Optional, Tuple, Union
 
 from ..base import ModelBase
-from ..utils import chunk_array
+from ..utils import chunk_array, _to_xarray_dataset
 from ..data import DataLoader, train_val_mask, TrainData, idx_to_input
 
 
@@ -84,6 +84,7 @@ class NNBase(ModelBase):
         batch_size: int = 256,
         learning_rate: float = 1e-3,
         val_split: float = 0.1,
+        check_inversion: bool = False,
     ) -> None:
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
@@ -133,6 +134,19 @@ class NNBase(ModelBase):
                     pred = self.model(
                         *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
                     )
+                    if (epoch % 10 == 0) & check_inversion:
+                        # create xarray objects
+                        pred_xr = _to_xarray_dataset(latlons=x_batch[2], data=pred)
+                        true_xr = _to_xarray_dataset(latlons=x_batch[2], data=pred)
+                        # check that nans more or less the same
+                        assert (
+                            pred_xr.isnull().data.values == true_xr.isnull().data.values
+                        ).mean() > 0.92, (
+                            "The missing data should be the same for 92% of the data. "
+                            "This sometimes occurs when there has been a problem with an inversion "
+                            "somewhere in the data"
+                        )
+
                     loss = F.smooth_l1_loss(pred, y_batch)
                     loss.backward()
                     optimizer.step()

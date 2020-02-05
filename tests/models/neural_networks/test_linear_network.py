@@ -79,16 +79,24 @@ class TestLinearNetwork:
         assert model_dict["normalize_y"] == normalize_y
 
     @pytest.mark.parametrize(
-        "use_pred_months,use_latlons,experiment,monthly_agg,static,predict_delta",
+        "use_pred_months,use_latlons,experiment,monthly_agg,static,predict_delta,check_inversion",
         [
-            (True, False, "one_month_forecast", True, False, True),
-            (False, True, "one_month_forecast", False, True, True),
-            (False, True, "nowcast", True, False, True),
-            (True, False, "nowcast", False, True, True),
-            (True, False, "one_month_forecast", True, False, False),
-            (False, True, "one_month_forecast", False, True, False),
-            (False, True, "nowcast", True, False, False),
-            (True, False, "nowcast", False, True, False),
+            (True, False, "one_month_forecast", True, False, True, True),
+            (False, True, "one_month_forecast", False, True, True, True),
+            (False, True, "nowcast", True, False, True, True),
+            (True, False, "nowcast", False, True, True, True),
+            (True, False, "one_month_forecast", True, False, False, True),
+            (False, True, "one_month_forecast", False, True, False, True),
+            (False, True, "nowcast", True, False, False, True),
+            (True, False, "nowcast", False, True, False, True),
+            (True, False, "one_month_forecast", True, False, True, False),
+            (False, True, "one_month_forecast", False, True, True, False),
+            (False, True, "nowcast", True, False, True, False),
+            (True, False, "nowcast", False, True, True, False),
+            (True, False, "one_month_forecast", True, False, False, False),
+            (False, True, "one_month_forecast", False, True, False, False),
+            (False, True, "nowcast", True, False, False, False),
+            (True, False, "nowcast", False, True, False, False),
         ],
     )
     def test_train(
@@ -101,6 +109,7 @@ class TestLinearNetwork:
         monthly_agg,
         static,
         predict_delta,
+        check_inversion,
     ):
         # make the x, y data (5*5 latlons, 36 timesteps, 3 features)
         x, _, _ = _make_dataset(size=(5, 5), const=True)
@@ -151,7 +160,10 @@ class TestLinearNetwork:
             predict_delta=predict_delta,
         )
 
-        model.train()
+        if check_inversion:
+            model.train(num_epochs=10, check_inversion=check_inversion)
+        else:
+            model.train()
 
         captured = capsys.readouterr()
         expected_stdout = "Epoch 1, train smooth L1: "
