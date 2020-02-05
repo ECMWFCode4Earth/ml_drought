@@ -81,6 +81,7 @@ def models(target_var: str = "boku_VCI", adede_only=False, experiment_name=None)
         early_stopping=5,
         hidden_size=256,
         include_latlons=True,
+        check_inversion=check_inversion,
     )
 
     # -------------
@@ -99,6 +100,7 @@ def models(target_var: str = "boku_VCI", adede_only=False, experiment_name=None)
         hidden_size=256,
         static_embedding_size=64,
         include_latlons=True,
+        check_inversion=check_inversion,
     )
 
     # rename the output file

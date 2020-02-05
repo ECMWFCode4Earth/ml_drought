@@ -854,6 +854,18 @@ class _BaseIter:
 
 
 class _TrainIter(_BaseIter):
+    """ Returns a Tuple of the data for training the models as built by the Dataloader
+    Tuple Schema
+    ------------
+    0: historical data
+    1: pred_months OHE
+    2: latlons
+    3: current data
+    4: yearly_aggs data
+    5: static data
+    6: prev_y_var
+    """
+
     def __next__(
         self,
     ) -> Tuple[
