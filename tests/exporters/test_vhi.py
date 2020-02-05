@@ -3,11 +3,7 @@ from unittest.mock import patch
 import pytest
 import re
 
-from src.exporters.vhi import (
-    VHIExporter,
-    _parse_time_from_filename,
-    make_filename,
-)
+from src.exporters.vhi import VHIExporter, _parse_time_from_filename, make_filename
 
 
 class TestVHIExporter:

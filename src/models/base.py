@@ -1,4 +1,5 @@
 from pathlib import Path
+import pickle
 import numpy as np
 import json
 import pandas as pd
@@ -57,6 +58,8 @@ class ModelBase:
         static: Optional[str] = "embedding",
         predict_delta: bool = False,
         spatial_mask: Union[xr.DataArray, Path] = None,
+        include_prev_y: bool = True,
+        normalize_y: bool = False,
     ) -> None:
 
         self.batch_size = batch_size
@@ -72,6 +75,13 @@ class ModelBase:
         self.ignore_vars = ignore_vars
         self.static = static
         self.predict_delta = predict_delta
+        self.include_prev_y = include_prev_y
+        self.normalize_y = normalize_y
+        if normalize_y:
+            with (data_folder / f"features/{experiment}/normalizing_dict.pkl").open(
+                "rb"
+            ) as f:
+                self.normalizing_dict = pickle.load(f)
 
         # needs to be set by the train function
         self.num_locations: Optional[int] = None
@@ -146,6 +156,17 @@ class ModelBase:
     def save_model(self) -> None:
         raise NotImplementedError
 
+    def denormalize_y(self, y: np.ndarray, var_name: str) -> np.ndarray:
+
+        if not self.normalize_y:
+            return y
+        else:
+            y = y * self.normalizing_dict[var_name]["std"]
+
+            if not self.predict_delta:
+                y = y + self.normalizing_dict[var_name]["mean"]
+        return y
+
     def evaluate(self, save_results: bool = True, save_preds: bool = False) -> None:
         """
         Evaluate the trained model on the TEST data
@@ -165,8 +186,9 @@ class ModelBase:
         total_preds: List[np.ndarray] = []
         total_true: List[np.ndarray] = []
         for key, vals in test_arrays_dict.items():
-            true = vals["y"]
-            preds = preds_dict[key]
+
+            true = self.denormalize_y(vals["y"], vals["y_var"])
+            preds = self.denormalize_y(preds_dict[key], vals["y_var"])
 
             output_dict[key] = np.sqrt(mean_squared_error(true, preds)).item()
 
@@ -186,7 +208,7 @@ class ModelBase:
             # convert from test_arrays_dict to xarray object
             for key, val in test_arrays_dict.items():
                 latlons = cast(np.ndarray, val["latlons"])
-                preds = preds_dict[key]
+                preds = self.denormalize_y(preds_dict[key], val["y_var"])
 
                 if len(preds.shape) > 1:
                     preds = preds.squeeze(-1)
@@ -244,7 +266,7 @@ class ModelBase:
         """
 
         if type(x) is tuple:
-            x_his, x_pm, x_latlons, x_cur, x_ym, x_static = x  # type: ignore
+            x_his, x_pm, x_latlons, x_cur, x_ym, x_static, x_prev = x  # type: ignore
         elif type(x) == TrainData:
             x_his, x_pm, x_latlons = (
                 x.historical,  # type: ignore
@@ -253,6 +275,7 @@ class ModelBase:
             )  # type: ignore
             x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
             x_static = x.static  # type: ignore
+            x_prev = x.prev_y_var  # type: ignore
 
         assert (
             x_his is not None
@@ -277,6 +300,8 @@ class ModelBase:
                 assert type(self.num_locations) is int
                 x_s = self._one_hot(x_static, cast(int, self.num_locations))
                 x_in = np.concatenate((x_in, x_s), axis=-1)
+        if self.include_prev_y:
+            x_in = np.concatenate((x_in, x_prev), axis=-1)
         return x_in
 
     def _one_hot(self, x: np.ndarray, num_vals: int):
@@ -309,6 +334,7 @@ class ModelBase:
             "normalize": True,
             "predict_delta": self.predict_delta,
             "spatial_mask": self.spatial_mask,
+            "normalize_y": self.normalize_y,
         }
 
         for key, val in kwargs.items():

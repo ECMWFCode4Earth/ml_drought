@@ -80,7 +80,7 @@ class TestVHIPreprocessor:
         raw_ds.to_netcdf(netcdf_filepath)
 
         # run the preprocessing steps
-        out = v._preprocess(netcdf_filepath.as_posix(), v.interim.as_posix(),)
+        out = v._preprocess(netcdf_filepath.as_posix(), v.interim.as_posix())
         expected = "STAR_VHP.G04.C07.NC_1981_8_31_kenya_VH.nc"
 
         assert out.name == expected, f"Expected: {expected} Got: {out.name}"
@@ -101,7 +101,7 @@ class TestVHIPreprocessor:
         subset_name = "kenya"
         t = pd.to_datetime("1981-08-31")
 
-        out_fname = VHIPreprocessor.create_filename(t, netcdf_filepath, subset_name,)
+        out_fname = VHIPreprocessor.create_filename(t, netcdf_filepath, subset_name)
 
         expected = "STAR_VHP.G04.C07.NC_1981_8_31_kenya_VH.nc"
         assert out_fname == expected, f"Expected: {expected}, got: {out_fname}"

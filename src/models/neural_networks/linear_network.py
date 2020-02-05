@@ -31,6 +31,8 @@ class LinearNetwork(NNBase):
         device: str = "cuda:0",
         predict_delta: bool = False,
         spatial_mask: Union[xr.DataArray, Path] = None,
+        include_prev_y: bool = True,
+        normalize_y: bool = True,
     ) -> None:
         super().__init__(
             data_folder,
@@ -47,6 +49,8 @@ class LinearNetwork(NNBase):
             device,
             predict_delta=predict_delta,
             spatial_mask=spatial_mask,
+            include_prev_y=include_prev_y,
+            normalize_y=normalize_y,
         )
 
         self.input_layer_sizes = copy(layer_sizes)
@@ -80,6 +84,8 @@ class LinearNetwork(NNBase):
             "static": self.static,
             "device": self.device,
             "spatial_mask": self.spatial_mask,
+            "include_prev_y": self.include_prev_y,
+            "normalize_y": self.normalize_y,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")
@@ -96,6 +102,7 @@ class LinearNetwork(NNBase):
             include_yearly_aggs=self.include_yearly_aggs,
             experiment=self.experiment,
             include_static=True if self.static is not None else False,
+            include_prev_y=self.include_prev_y,
         )
         self.model.to(torch.device(self.device))
         self.model.load_state_dict(state_dict)
@@ -115,6 +122,8 @@ class LinearNetwork(NNBase):
                 input_size += x_ref[5].shape[-1]
             elif self.static == "embeddings":
                 input_size += self.num_locations
+            if self.include_prev_y:
+                input_size += 1
             self.input_size = input_size
 
         model = LinearModel(
@@ -126,6 +135,7 @@ class LinearNetwork(NNBase):
             include_yearly_aggs=self.include_yearly_aggs,
             experiment=self.experiment,
             include_static=True if self.static is not None else False,
+            include_prev_y=self.include_prev_y,
         )
         return model.to(torch.device(self.device))
 
@@ -140,6 +150,7 @@ class LinearModel(nn.Module):
         include_latlons,
         include_yearly_aggs,
         include_static,
+        include_prev_y,
         experiment="one_month_forecast",
     ):
         super().__init__()
@@ -149,6 +160,7 @@ class LinearModel(nn.Module):
         self.include_yearly_aggs = include_yearly_aggs
         self.include_static = include_static
         self.experiment = experiment
+        self.include_prev_y = include_prev_y
 
         # change the size of inputs if include_pred_month
         if self.include_pred_month:
@@ -193,6 +205,7 @@ class LinearModel(nn.Module):
         current=None,
         yearly_aggs=None,
         static=None,
+        prev_y=None,
     ):
         # flatten the final 2 dimensions (time / feature)
         x = x.contiguous().view(x.shape[0], -1)
@@ -210,6 +223,8 @@ class LinearModel(nn.Module):
             x = torch.cat((x, yearly_aggs), dim=-1)
         if self.include_static:
             x = torch.cat((x, static), dim=-1)
+        if self.include_prev_y:
+            x = torch.cat((x, prev_y), dim=-1)
 
         # pass the inputs through the layers
         for layer in self.dense_layers:

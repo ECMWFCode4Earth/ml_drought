@@ -53,9 +53,7 @@ class RegionGeoPlotter:
 
     def get_groupby_region(self, country_str: str) -> GroupbyRegion:
         # if need a new country boundaries add example here
-        country_lookup = {
-            "kenya": KenyaGroupbyRegion,
-        }
+        country_lookup = {"kenya": KenyaGroupbyRegion}
         keys = [k for k in country_lookup.keys()]
         assert country_str in keys, (
             "Expect " f"the `country_str` argument to be one of: {keys}"
@@ -93,7 +91,7 @@ class RegionGeoPlotter:
                 gdf = gpd.read_file(path)
                 key = f"{admin_boundary.var_name}_{self.country}"
                 region_gdfs[key] = AdminLevelGeoDF(
-                    gdf=gdf, gdf_colname=admin_boundary.lookup_colname, admin_name=key,
+                    gdf=gdf, gdf_colname=admin_boundary.lookup_colname, admin_name=key
                 )
 
             self.region_gdfs = region_gdfs
@@ -176,15 +174,25 @@ class RegionGeoPlotter:
         return self.gdf
 
     @staticmethod
-    def get_metric(selection: str) -> PlotMetric:
-        rmse = PlotMetric(metric="rmse", cmap="viridis", vmin=None, vmax=10,)
-        mae = PlotMetric(metric="mae", cmap="plasma", vmin=None, vmax=10,)
-        r2 = PlotMetric(metric="r2", cmap="inferno_r", vmin=0, vmax=1.0,)
-        lookup = {
-            "rmse": rmse,
-            "mae": mae,
-            "r2": r2,
-        }
+    def get_metric(
+        selection: str, gdf: GeoDataFrame, **kwargs  # type: ignore
+    ) -> PlotMetric:  # type: ignore
+        rmse_vmin = kwargs["rmse_vmin"] if "rmse_vmin" in kwargs else None
+        rmse_vmax = (
+            kwargs["rmse_vmax"]
+            if "rmse_vmax" in kwargs
+            else np.nanpercentile(gdf.rmse, q=85)  # type: ignore
+        )
+        rmse = PlotMetric(metric="rmse", cmap="viridis", vmin=rmse_vmin, vmax=rmse_vmax)
+        mae_vmin = kwargs["mae_vmin"] if "mae_vmin" in kwargs else None
+        mae_vmax = (
+            kwargs["mae_vmax"]
+            if "mae_vmax" in kwargs
+            else np.nanpercentile(gdf.mae, q=85)  # type: ignore
+        )
+        mae = PlotMetric(metric="mae", cmap="plasma", vmin=mae_vmin, vmax=mae_vmax)
+        r2 = PlotMetric(metric="r2", cmap="inferno_r", vmin=0, vmax=1.0)
+        lookup = {"rmse": rmse, "mae": mae, "r2": r2}
 
         assert selection in [k for k in lookup.keys()], (
             "selection should be one of:" f"{[k for k in lookup.keys()]}"
@@ -216,15 +224,16 @@ class RegionGeoPlotter:
         self,
         gdf: GeoDataFrame,  # type: ignore
         title: str = "",
+        **kwargs: Dict,
     ) -> Tuple[Figure, List[Axes]]:
         """Plot area-based maps of the scores"""
         assert np.isin(["rmse", "mae", "r2"], gdf.columns).all()  # type: ignore
         gdf = gdf.dropna(subset=["rmse", "mae", "r2"])  # type: ignore
 
         # get the PlotMetric objects
-        rmse = self.get_metric("rmse")
-        mae = self.get_metric("mae")
-        r2 = self.get_metric("r2")
+        rmse = self.get_metric("rmse", gdf, **kwargs)
+        mae = self.get_metric("mae", gdf, **kwargs)
+        r2 = self.get_metric("r2", gdf, **kwargs)
 
         # build multi-axis plot
         fig, axs = plt.subplots(1, 3, figsize=(12, 8))
@@ -240,13 +249,14 @@ class RegionGeoPlotter:
         self,
         gdf: GeoDataFrame,  # type: ignore
         selection: str,
+        **kwargs: Dict,
     ) -> Tuple[Figure, Axes]:
         valid_metrics = ["rmse", "mae", "r2"]
         assert selection in valid_metrics, (
             "Expecting selection" f" to be one of: {valid_metrics}"
         )
         gdf = gdf.dropna(subset=valid_metrics)  # type: ignore
-        metric = self.get_metric(selection)
+        metric = self.get_metric(selection, gdf, **kwargs)
         fig, ax = plt.subplots()
         ax = self.plot_metric(gdf=gdf, ax=ax, metric=metric)
 
