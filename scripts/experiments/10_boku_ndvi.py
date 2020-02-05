@@ -36,7 +36,12 @@ def engineer(pred_months=3, target_var="boku_VCI"):
     )
 
 
-def models(target_var: str = "boku_VCI", adede_only=False, experiment_name=None, check_inversion=False):
+def models(
+    target_var: str = "boku_VCI",
+    adede_only=False,
+    experiment_name=None,
+    check_inversion=False,
+):
     if adede_only:
         ignore_vars = [
             "p84.162",
@@ -141,7 +146,7 @@ def main(monthly=True):
             target_var=target_var,
             adede_only=adede_only,
             experiment_name="0_TEST_branch",
-            check_inversion=True
+            check_inversion=True,
         )
         print(f"\n\n ** Target Variable: {target_var} DONE ** \n\n")
         move_features_dir(target_var=target_var, adede_only=adede_only)

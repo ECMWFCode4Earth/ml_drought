@@ -128,10 +128,7 @@ class TestEARecurrentNetwork:
             static_embedding_size=use_static_embedding,
             normalize_y=True,
         )
-        if check_inversion:
-            model.train(num_epochs=10, check_inversion=check_inversion)
-        else:
-            model.train()
+        model.train(check_inversion=check_inversion)
 
         captured = capsys.readouterr()
         expected_stdout = "Epoch 1, train smooth L1: 0."

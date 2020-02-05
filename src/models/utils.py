@@ -118,14 +118,14 @@ def _to_xarray_dataset(
     # convert to numpy array
     if isinstance(data, Tensor):
         try:
-            data.numpy()
+            data = data.numpy()
         except RuntimeError as E:
             data = data.detach().numpy()
+    if isinstance(latlons, Tensor):
+        latlons = latlons.numpy()
 
-    lats = np.unique(latlons[:, 0])
-    lons = np.unique(latlons[:, 1])
-    shape = (len(lats), len(lons))
-    _vals = data.reshape(shape)
-    dims = ["lat", "lon"]
-    coords = {"lat": lats, "lon": lons}
+    points = [i for i in range(len(latlons))]
+    _vals = data.flatten()
+    dims = ["point"]
+    coords = {"point": points}
     return xr.Dataset({var_name: (dims, _vals)}, coords=coords)

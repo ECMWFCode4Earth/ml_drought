@@ -130,10 +130,7 @@ class TestRecurrentNetwork:
             include_monthly_aggs=True,
             predict_delta=predict_delta,
         )
-        if check_inversion:
-            model.train(num_epochs=10, check_inversion=check_inversion)
-        else:
-            model.train()
+        model.train(check_inversion=check_inversion)
 
         captured = capsys.readouterr()
         expected_stdout = "Epoch 1, train smooth L1:"

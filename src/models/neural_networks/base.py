@@ -137,7 +137,7 @@ class NNBase(ModelBase):
                     if (epoch % 10 == 0) & check_inversion:
                         # create xarray objects
                         pred_xr = _to_xarray_dataset(latlons=x_batch[2], data=pred)
-                        true_xr = _to_xarray_dataset(latlons=x_batch[2], data=pred)
+                        true_xr = _to_xarray_dataset(latlons=x_batch[2], data=y_batch)
                         # check that nans more or less the same
                         assert (
                             pred_xr.isnull().data.values == true_xr.isnull().data.values
