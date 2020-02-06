@@ -57,7 +57,7 @@ def models(
             "SMsurf",
         ]
     else:
-        ignore_vars = ["p84.162", "sp", "tp", "Eb", "VCI", "modis_ndvi"]
+        ignore_vars = ["p84.162", "sp", "tp", "Eb", "VCI", "modis_ndvi", "SMroot", "SMsurf",]
 
     # drop the target variable from ignore_vars
     ignore_vars = [v for v in ignore_vars if v != target_var]
@@ -82,7 +82,7 @@ def models(
         explain=False,
         static="features",
         ignore_vars=ignore_vars,
-        num_epochs=10,  # 1,  # 50 ,
+        num_epochs=50,  # 1,  # 50 ,
         early_stopping=5,
         hidden_size=256,
         include_latlons=True,
@@ -100,7 +100,7 @@ def models(
         explain=False,
         static="features",
         ignore_vars=ignore_vars,
-        num_epochs=10,  # 1,  # 50 ,
+        num_epochs=50,  # 1,  # 50 ,
         early_stopping=5,
         hidden_size=256,
         static_embedding_size=64,
