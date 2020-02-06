@@ -1,6 +1,5 @@
 from pathlib import Path
 import os
-from typing import List
 
 from .base import BaseExporter
 
