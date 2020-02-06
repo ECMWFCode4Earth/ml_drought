@@ -135,17 +135,17 @@ def move_features_dir(target_var, adede_only=False, experiment_name=None):
 
 def main(monthly=True):
     # preprocess(monthly=monthly)
+    ADEDE_ONLY = False
+    TARGET_VARS = ["boku_VCI", "VCI3M"]  # "boku_VCI", "VCI3M"
 
-    adede_only = True
-    target_vars = ["boku_VCI"]  # "boku_VCI", "VCI3M"
-    for target_var in target_vars:
+    for target_var in TARGET_VARS:
         print(f"\n\n ** Target Variable: {target_var} ** \n\n")
         engineer(target_var=target_var)
         print(f"\n\n ** RUNNING MODELS FOR Target Variable: {target_var} ** \n\n")
         models(
             target_var=target_var,
-            adede_only=adede_only,
-            experiment_name="0_TEST_branch",
+            adede_only=ADEDE_ONLY,
+            experiment_name=None,
             check_inversion=True,
         )
         print(f"\n\n ** Target Variable: {target_var} DONE ** \n\n")
