@@ -132,7 +132,9 @@ class FEWSNetLivelihoodPreprocessor(FEWSNetPreprocesser):
         shp_to_nc = SHPtoXarray()
 
         # if supply a country_str then only create .nc file for that country
-        country_lookup = dict(zip(self.country_code_mapping.values(), self.country_code_mapping.keys()))
+        country_lookup = dict(
+            zip(self.country_code_mapping.values(), self.country_code_mapping.keys())
+        )
         if country_str is not None:
             if country_str.capitalize() not in country_lookup.keys():
                 assert False, (
@@ -183,7 +185,9 @@ class FEWSNetLivelihoodPreprocessor(FEWSNetPreprocesser):
                 f"** {(self.out_dir / filename).as_posix()} and lookup_dict saved! **"
             )
 
-    def preprocess(self, reference_nc_filepath: Path, country_str: Optional[str] = None) -> None:
+    def preprocess(
+        self, reference_nc_filepath: Path, country_str: Optional[str] = None
+    ) -> None:
         """Preprocess FEWSNet Livelihood Zone shapefiles into xarray objects
         """
         self._preprocess_single(
@@ -191,5 +195,5 @@ class FEWSNetLivelihoodPreprocessor(FEWSNetPreprocesser):
             lookup_colname="LZCODE",
             reference_nc_filepath=reference_nc_filepath,
             var_name="livelihood_zone",
-            country_str=country_str
+            country_str=country_str,
         )

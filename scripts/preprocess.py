@@ -12,7 +12,7 @@ from src.preprocess import (
     SRTMPreprocessor,
     ERA5MonthlyMeanPreprocessor,
     KenyaASALMask,
-    FEWSNetLivelihoodPreprocessor
+    FEWSNetLivelihoodPreprocessor,
 )
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
@@ -146,7 +146,7 @@ def preprocess_livelihood_zones():
     assert regrid_path.exists(), f"{regrid_path} not available"
 
     processor = FEWSNetLivelihoodPreprocessor(data_path)
-    processor.preprocess(reference_nc_filepath=regrid_path, country_str='kenya')
+    processor.preprocess(reference_nc_filepath=regrid_path, country_str="kenya")
 
 
 if __name__ == "__main__":

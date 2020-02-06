@@ -34,9 +34,7 @@ class FEWSNetExporter(BaseExporter):
     def unzip(self, fname: Path) -> None:
         print(f"Unzipping {fname.name}")
 
-        os.system(
-            f"unzip {fname.as_posix()} -d {self.output_dir.resolve().as_posix()}"
-        )
+        os.system(f"unzip {fname.as_posix()} -d {self.output_dir.resolve().as_posix()}")
         print(f"{fname.name} unzipped!")
 
 
