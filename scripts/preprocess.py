@@ -142,11 +142,15 @@ def preprocess_era5():
 def preprocess_livelihood_zones():
     data_path = get_data_path()
 
+    from pathlib import Path
+    data_path = Path('/Volumes/Lees_Extend/data/ecmwf_sowc/data/')
+
+
     regrid_path = data_path / "interim/chirps_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
 
     processor = FEWSNetLivelihoodPreprocessor(data_path)
-    processor.preprocess(reference_nc_filepath=regrid_path, country_str="kenya")
+    processor.preprocess(reference_nc_filepath=regrid_path, country_to_preprocess="kenya")
 
 
 if __name__ == "__main__":
