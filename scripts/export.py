@@ -14,6 +14,8 @@ from src.exporters import (
     ERA5LandExporter,
 )
 
+from src.exporters import FEWSNetKenyaLivelihoodExporter
+
 from scripts.utils import get_data_path
 
 
@@ -159,8 +161,14 @@ def export_kenya_boundaries():
     exporter.export()
 
 
+def export_fewsnet_shapefiles():
+    data_path = get_data_path()
+    exporter = FEWSNetKenyaLivelihoodExporter(data_path)
+    exporter.export()
+
+
 if __name__ == "__main__":
-    export_era5_land()
+    # export_era5_land()
     # export_era5()
     # export_vhi()
     # export_chirps()
@@ -169,3 +177,4 @@ if __name__ == "__main__":
     # export_esa()
     # export_s5()
     # export_kenya_boundaries()
+    export_fewsnet_shapefiles()

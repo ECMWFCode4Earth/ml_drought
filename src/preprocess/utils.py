@@ -10,6 +10,7 @@ features = None
 Affine = None
 gpd = None
 Polygon = None
+GeoDataFrame = None
 
 
 def select_bounding_box(
@@ -98,6 +99,10 @@ class SHPtoXarray:
         if Polygon is None:
             from shapely.geometry import Polygon
 
+        global GeoDataFrame
+        if GeoDataFrame is None:
+            from geopandas.geodataframe import GeoDataFrame
+
     @staticmethod
     def transform_from_latlon(
         lat: xr.DataArray, lon: xr.DataArray
@@ -138,6 +143,64 @@ class SHPtoXarray:
         dims = ["lat", "lon"]
 
         return xr.Dataset({variable_name: (dims, raster)}, coords=spatial_coords)
+
+    def _to_xarray(
+        self,
+        da: xr.DataArray,
+        gdf: GeoDataFrame,  # type: ignore
+        var_name: str = "region",
+        lookup_colname: Optional[str] = None,
+    ) -> xr.Dataset:
+        """
+        Returns:
+        -------
+        :xr.Dataset
+            Dataset with metadata associated with the areas in the shapefile.
+            Stored as `ds.attrs['keys']` & `ds.attrs['values']`
+        """
+        # allow the user to see the column headers
+        if lookup_colname is None:
+            print("lookup_colname MUST be provided (see error message below)")
+            print(gdf.head())  # type: ignore
+
+        assert (
+            lookup_colname in gdf.columns  # type: ignore
+        ), f"lookup_colname must be one of: {list(gdf.columns)}"  # type: ignore
+
+        # 2. create a list of tuples (shapely.geometry, id)
+        # this allows for many different polygons within a .shp file
+        # (e.g. Admin Regions of Kenya)
+        shapes = [(shape, n) for n, shape in enumerate(gdf.geometry)]  # type: ignore
+
+        # 3. create a new variable set to the id in `shapes` (same shape as da)
+        ds = self.rasterize(shapes=shapes, coords=da.coords, variable_name=var_name)
+        values = [value for value in gdf[lookup_colname].tolist()]  # type: ignore
+        keys = [str(key) for key in gdf.index.tolist()]  # type: ignore
+        data_vals = ds[[d for d in ds.data_vars][0]].values
+        unique_values = np.unique(data_vals[~np.isnan(data_vals)])
+        unique_values = [str(int(v)) for v in unique_values]
+
+        # Check for None in keys/values
+        keys = [
+            key
+            for key, value in zip(keys, values)
+            if (values is not None) & (keys is not None)
+        ]
+        values = [
+            value
+            for key, value in zip(keys, values)
+            if (values is not None) & (keys is not None)
+        ]
+        # assign to attrs
+        ds.attrs["keys"] = ", ".join(keys)
+        ds.attrs["values"] = ", ".join(values)
+        ds.attrs["unique_values"] = ", ".join(unique_values)
+
+        if ds[var_name].isnull().mean() <= 0.01:
+            print("NOTE: Only 1% of values overlap with shapes")
+            print("Are you certain the subset or shapefile are the correct region?")
+
+        return ds
 
     def shapefile_to_xarray(
         self,
@@ -185,46 +248,6 @@ class SHPtoXarray:
         # 1. read in shapefile
         gdf = gpd.read_file(shp_path)  # type: ignore
 
-        # allow the user to see the column headers
-        if lookup_colname is None:
-            print("lookup_colname MUST be provided (see error message below)")
-            print(gdf.head())
-
-        assert (
-            lookup_colname in gdf.columns
-        ), f"lookup_colname must be one of: {list(gdf.columns)}"
-
-        # 2. create a list of tuples (shapely.geometry, id)
-        # this allows for many different polygons within a .shp file
-        # (e.g. Admin Regions of Kenya)
-        shapes = [(shape, n) for n, shape in enumerate(gdf.geometry)]
-
-        # 3. create a new variable set to the id in `shapes` (same shape as da)
-        ds = self.rasterize(shapes=shapes, coords=da.coords, variable_name=var_name)
-        values = [value for value in gdf[lookup_colname].to_list()]
-        keys = [str(key) for key in gdf.index.to_list()]
-        data_vals = ds[[d for d in ds.data_vars][0]].values
-        unique_values = np.unique(data_vals[~np.isnan(data_vals)])
-        unique_values = [str(int(v)) for v in unique_values]
-
-        # Check for None in keys/values
-        keys = [
-            key
-            for key, value in zip(keys, values)
-            if (values is not None) & (keys is not None)
-        ]
-        values = [
-            value
-            for key, value in zip(keys, values)
-            if (values is not None) & (keys is not None)
-        ]
-        # assign to attrs
-        ds.attrs["keys"] = ", ".join(keys)
-        ds.attrs["values"] = ", ".join(values)
-        ds.attrs["unique_values"] = ", ".join(unique_values)
-
-        if ds[var_name].isnull().mean() <= 0.01:
-            print("NOTE: Only 1% of values overlap with shapes")
-            print("Are you certain the subset or shapefile are the correct region?")
-
-        return ds
+        return self._to_xarray(
+            da=da, gdf=gdf, var_name=var_name, lookup_colname=lookup_colname
+        )

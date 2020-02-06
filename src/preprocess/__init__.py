@@ -7,6 +7,7 @@ from .era5 import ERA5MonthlyMeanPreprocessor
 from .esa_cci import ESACCIPreprocessor
 from .srtm import SRTMPreprocessor
 from .admin_boundaries import KenyaAdminPreprocessor, KenyaASALMask
+from .fewsnet_shapefiles import FEWSNetLivelihoodPreprocessor
 
 __all__ = [
     "VHIPreprocessor",
@@ -19,4 +20,5 @@ __all__ = [
     "SRTMPreprocessor",
     "KenyaAdminPreprocessor",
     "KenyaASALMask",
+    "FEWSNetLivelihoodPreprocessor",
 ]

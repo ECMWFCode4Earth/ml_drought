@@ -1,6 +1,7 @@
 import sys
 
 sys.path.append("..")
+
 from src.preprocess import (
     VHIPreprocessor,
     CHIRPSPreprocessor,
@@ -11,6 +12,7 @@ from src.preprocess import (
     SRTMPreprocessor,
     ERA5MonthlyMeanPreprocessor,
     KenyaASALMask,
+    FEWSNetLivelihoodPreprocessor,
 )
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
@@ -137,15 +139,32 @@ def preprocess_era5():
     processor.preprocess(subset_str="kenya", regrid=regrid_path)
 
 
+def preprocess_livelihood_zones():
+    data_path = get_data_path()
+
+    from pathlib import Path
+
+    data_path = Path("/Volumes/Lees_Extend/data/ecmwf_sowc/data/")
+
+    regrid_path = data_path / "interim/chirps_preprocessed/data_kenya.nc"
+    assert regrid_path.exists(), f"{regrid_path} not available"
+
+    processor = FEWSNetLivelihoodPreprocessor(data_path)
+    processor.preprocess(
+        reference_nc_filepath=regrid_path, country_to_preprocess="kenya"
+    )
+
+
 if __name__ == "__main__":
-    process_vci_2018()
-    process_precip_2018()
-    process_era5POS_2018()
-    process_gleam()
-    process_esa_cci_landcover()
-    preprocess_srtm()
-    preprocess_era5()
-    preprocess_kenya_boundaries(selection="level_1")
-    preprocess_kenya_boundaries(selection="level_2")
-    preprocess_kenya_boundaries(selection="level_3")
-    preprocess_asal_mask()
+    # process_vci_2018()
+    # process_precip_2018()
+    # process_era5POS_2018()
+    # process_gleam()
+    # process_esa_cci_landcover()
+    # preprocess_srtm()
+    # preprocess_era5()
+    # preprocess_kenya_boundaries(selection="level_1")
+    # preprocess_kenya_boundaries(selection="level_2")
+    # preprocess_kenya_boundaries(selection="level_3")
+    # preprocess_asal_mask()
+    preprocess_livelihood_zones()
