@@ -40,7 +40,7 @@ class FEWSNetExporter(BaseExporter):
 
 class FEWSNetKenyaLivelihoodExporter(FEWSNetExporter):
     data_str = "livelihood_zones"
-    url: List = "http://shapefiles.fews.net.s3.amazonaws.com/LHZ/FEWS_NET_LH_World.zip"
+    url: str = "http://shapefiles.fews.net.s3.amazonaws.com/LHZ/FEWS_NET_LH_World.zip"
 
     def export(self) -> None:
         """Export functionality for the FEWSNET Livelihood Zones as .shp files

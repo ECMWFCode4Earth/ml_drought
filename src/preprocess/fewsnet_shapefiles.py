@@ -1,6 +1,5 @@
 from pathlib import Path
 import xarray as xr
-from collections import namedtuple
 from .base import BasePreProcessor
 from .utils import SHPtoXarray
 
@@ -89,8 +88,8 @@ class FEWSNetLivelihoodPreprocessor(FEWSNetPreprocesser):
         var_name: str,
         lookup_colname: str,
         save: bool = True,
-        country_str: Optional[str] = None,
-    ) -> Optional[xr.Dataset]:
+        country_to_preprocess: Optional[str] = None,
+    ) -> None:
         """ Preprocess .shp admin boundary files into an `.nc`
         file with the same shape as reference_nc_filepath.
 
@@ -114,7 +113,7 @@ class FEWSNetLivelihoodPreprocessor(FEWSNetPreprocesser):
             the column name to lookup in the shapefile
             (read in as geopandas.GeoDataFrame)
 
-        country_str: Optional[str] = None
+        country_to_preprocess: Optional[str] = None
             the country you want to preprocess
 
         """
@@ -128,21 +127,21 @@ class FEWSNetLivelihoodPreprocessor(FEWSNetPreprocesser):
         da = target_ds[data_var]
 
         # turn the shapefile into a categorical variable (like landcover)
-        gdf = gpd.read_file(shp_filepath)
+        gdf = gpd.read_file(shp_filepath)  # type: ignore
         shp_to_nc = SHPtoXarray()
 
-        # if supply a country_str then only create .nc file for that country
+        # if supply a country_to_preprocess then only create .nc file for that country
         country_lookup = dict(
             zip(self.country_code_mapping.values(), self.country_code_mapping.keys())
         )
-        if country_str is not None:
-            if country_str.capitalize() not in country_lookup.keys():
+        if country_to_preprocess is not None:
+            if country_to_preprocess.capitalize() not in country_lookup.keys():
                 assert False, (
                     f"Expecting to have one of: \n{country_lookup.keys()}"
-                    f"\nYou supplied: {country_str.capitalize()}"
+                    f"\nYou supplied: {country_to_preprocess.capitalize()}"
                     "\nDoes this definitely exist?"
                 )
-            country_code_list = [country_lookup[country_str.capitalize()]]
+            country_code_list = [country_lookup[country_to_preprocess.capitalize()]]
         else:
             country_code_list = gdf.COUNTRY.unique()
 
@@ -186,7 +185,7 @@ class FEWSNetLivelihoodPreprocessor(FEWSNetPreprocesser):
             )
 
     def preprocess(
-        self, reference_nc_filepath: Path, country_str: Optional[str] = None
+        self, reference_nc_filepath: Path, country_to_preprocess: Optional[str] = None
     ) -> None:
         """Preprocess FEWSNet Livelihood Zone shapefiles into xarray objects
         """
@@ -195,5 +194,5 @@ class FEWSNetLivelihoodPreprocessor(FEWSNetPreprocesser):
             lookup_colname="LZCODE",
             reference_nc_filepath=reference_nc_filepath,
             var_name="livelihood_zone",
-            country_str=country_str,
+            country_to_preprocess=country_to_preprocess,
         )

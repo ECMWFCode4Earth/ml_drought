@@ -147,7 +147,7 @@ class SHPtoXarray:
     def _to_xarray(
         self,
         da: xr.DataArray,
-        gdf: GeoDataFrame,
+        gdf: GeoDataFrame,  # type: ignore
         var_name: str = "region",
         lookup_colname: Optional[str] = None,
     ) -> xr.Dataset:
@@ -161,21 +161,21 @@ class SHPtoXarray:
         # allow the user to see the column headers
         if lookup_colname is None:
             print("lookup_colname MUST be provided (see error message below)")
-            print(gdf.head())
+            print(gdf.head())  # type: ignore
 
         assert (
-            lookup_colname in gdf.columns
-        ), f"lookup_colname must be one of: {list(gdf.columns)}"
+            lookup_colname in gdf.columns  # type: ignore
+        ), f"lookup_colname must be one of: {list(gdf.columns)}"  # type: ignore
 
         # 2. create a list of tuples (shapely.geometry, id)
         # this allows for many different polygons within a .shp file
         # (e.g. Admin Regions of Kenya)
-        shapes = [(shape, n) for n, shape in enumerate(gdf.geometry)]
+        shapes = [(shape, n) for n, shape in enumerate(gdf.geometry)]  # type: ignore
 
         # 3. create a new variable set to the id in `shapes` (same shape as da)
         ds = self.rasterize(shapes=shapes, coords=da.coords, variable_name=var_name)
-        values = [value for value in gdf[lookup_colname].tolist()]
-        keys = [str(key) for key in gdf.index.tolist()]
+        values = [value for value in gdf[lookup_colname].tolist()]  # type: ignore
+        keys = [str(key) for key in gdf.index.tolist()]  # type: ignore
         data_vals = ds[[d for d in ds.data_vars][0]].values
         unique_values = np.unique(data_vals[~np.isnan(data_vals)])
         unique_values = [str(int(v)) for v in unique_values]
