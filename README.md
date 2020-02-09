@@ -1,6 +1,9 @@
 <!-- ![](https://imgur.com/8qjbXcD) -->
 [![Build Status](https://travis-ci.com/esowc/ml_drought.svg?branch=master)](https://travis-ci.com/esowc/ml_drought)
 
+<!-- https://colab.research.google.com/github/googlecolab/colabtools/blob/master/notebooks/colab-github-demo.ipynb#scrollTo=8QAWNjizy_3O -->
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/esowc/ml_drought/blob/master/notebooks/docs/Pipeline.ipynb)
+
 <!-- OVERVIEW -->
 
 # A Machine Learning Pipeline for Climate Science
