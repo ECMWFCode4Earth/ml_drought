@@ -134,7 +134,7 @@ class NNBase(ModelBase):
                     pred = self.model(
                         *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
                     )
-                    if (epoch % 10 == 0) & check_inversion:
+                    if (epoch == 0) & check_inversion:  # check only the first epoch
                         # create xarray objects
                         pred_xr = _to_xarray_dataset(latlons=x_batch[2], data=pred)
                         true_xr = _to_xarray_dataset(latlons=x_batch[2], data=y_batch)
