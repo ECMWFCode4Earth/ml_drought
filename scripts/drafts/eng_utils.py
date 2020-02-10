@@ -124,13 +124,14 @@ def nans_mask_from_multiple_arrays(dataArrays: List[xr.DataArray]) -> xr.DataArr
     shapes_list = [da.shape for da in dataArrays]
     len(set(shapes_list)) <= 1, f"Ensure that all dims the same. Currently: {dims_list}"
 
-
-    isnull_das = ([da.isnull() for da in dataArrays])
+    isnull_das = [da.isnull() for da in dataArrays]
     isnull = isnull_das[0]
     for isnull_da in isnull_das:
         isnull = isnull | isnull_da
 
     return isnull
+
+
 # ------------------------------------------------------------------------------
 # Collapsing Time Dimensions
 # ------------------------------------------------------------------------------
