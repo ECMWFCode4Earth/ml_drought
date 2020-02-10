@@ -57,7 +57,16 @@ def models(
             "SMsurf",
         ]
     else:
-        ignore_vars = ["p84.162", "sp", "tp", "Eb", "VCI", "modis_ndvi", "SMroot", "SMsurf",]
+        ignore_vars = [
+            "p84.162",
+            "sp",
+            "tp",
+            "Eb",
+            "VCI",
+            "modis_ndvi",
+            "SMroot",
+            "SMsurf",
+        ]
 
     # drop the target variable from ignore_vars
     ignore_vars = [v for v in ignore_vars if v != target_var]
