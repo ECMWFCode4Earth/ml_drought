@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import numpy as np
 
 from pathlib import Path
 from copy import copy
@@ -179,6 +180,12 @@ class EARecurrentNetwork(NNBase):
         )
 
         return model.to(torch.device(self.device))
+
+    def get_static_embedding(self) -> Tuple[np.array, np.array]:
+        od = self.model.static_embedding.state_dict()
+        weight = od['weight'].numpy()
+        bias = od['bias'].numpy()
+        return weight, bias
 
 
 class EALSTM(nn.Module):
