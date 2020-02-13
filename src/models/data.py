@@ -676,6 +676,10 @@ class _BaseIter:
             f"Expect only 1 target variable! " f"Got {len(list(y.data_vars))}"
         )
         if self.ignore_vars is not None:
+            #  only include the vars in ignore_vars that are in x.data_vars
+            self.ignore_vars = [
+                v for v in self.ignore_vars if v in [var_ for var_ in x.data_vars]
+            ]
             x = x.drop(self.ignore_vars)
 
         target_time = pd.to_datetime(y.time.values[0])
