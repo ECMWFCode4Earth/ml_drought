@@ -7,6 +7,17 @@ sys.path.append("../..")
 from _base_models import parsimonious, regression, linear_nn, rnn, earnn
 
 from scripts.utils import _rename_directory, get_data_path
+from src.engineer import Engineer
+
+
+def engineer(experiment="one_month_forecast", process_static=False, pred_months=3):
+    engineer = Engineer(get_data_path(), experiment=experiment, process_static=False)
+    engineer.engineer(
+        test_year=[y for y in range(2016, 2019)],
+        target_variable="boku_VCI",
+        pred_months=pred_months,
+        expected_length=pred_months,
+    )
 
 
 def lstm(ignore_vars, static):
@@ -49,6 +60,7 @@ def ealstm(ignore_vars, static="features"):
 
 
 if __name__ == "__main__":
+    engineer()
     # run the autoregressive LSTM
     # run the autoregressive + dynamic LSTM
     # run the autoregressive + dynamic + static LSTM / EALSTM
