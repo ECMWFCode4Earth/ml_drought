@@ -75,7 +75,7 @@ def models(target_var: str = "boku_VCI", adede_only=False):
         include_pred_month=True,
         surrounding_pixels=None,
         explain=False,
-        static="features",
+        static=None if adede_only else "features",
         ignore_vars=ignore_vars,
         num_epochs=50,
         early_stopping=5,
@@ -92,12 +92,12 @@ def models(target_var: str = "boku_VCI", adede_only=False):
         surrounding_pixels=None,
         pretrained=False,
         explain=False,
-        static="features",
+        static=None if adede_only else "features",
         ignore_vars=ignore_vars,
         num_epochs=50,
         early_stopping=5,
         hidden_size=256,
-        static_embedding_size=64,
+        static_embedding_size=None if adede_only else 64,
         include_latlons=True,
     )
 
@@ -122,7 +122,7 @@ def move_features_dir(target_var, adede_only=False):
             / "features"
             / f"one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
         )
-    except Error as E:
+    except Exception as E:
         print(E)
         date = datetime.datetime.now().strftime("%Y%M%d_%H%M")
         _rename_directory(
