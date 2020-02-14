@@ -325,7 +325,7 @@ def _read_data(
 
     # LOAD the X files
     X_data_paths = [
-        f for f in (data_dir / "features" / experiment / train_or_test).glob("*/X.nc")
+        f for f in (data_dir / "features" / experiment / train_or_test).glob("*/x.nc")
     ]
     X_ds = _read_multi_data_paths(X_data_paths)
 
