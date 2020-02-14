@@ -104,6 +104,8 @@ def main(target_var, all_vars):
 
         # FIT models
         vars_to_exclude = [v for v in all_vars if v not in vars_to_include]
+
+        parsimonious()
         if static_bool:
             lstm(vars_to_exclude, static="features")
             ealstm(vars_to_exclude, static="features")
