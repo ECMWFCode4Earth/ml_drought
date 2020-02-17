@@ -104,17 +104,19 @@ def main(target_var, all_vars):
 
         # FIT models
         vars_to_exclude = [v for v in all_vars if v not in vars_to_include]
-        if static_bool:
-            lstm(vars_to_exclude, static="features")
-            ealstm(vars_to_exclude, static="features")
-        else:
-            lstm(vars_to_exclude, static=None)
 
-        # RENAME model directories
-        data_dir = get_data_path()
-        rename_model_experiment_file(
-            data_dir, vars_to_include, static=static_bool, target_var=target_var
-        )
+        parsimonious()
+        # if static_bool:
+        #     lstm(vars_to_exclude, static="features")
+        #     ealstm(vars_to_exclude, static="features")
+        # else:
+        #     lstm(vars_to_exclude, static=None)
+
+        # # RENAME model directories
+        # data_dir = get_data_path()
+        # rename_model_experiment_file(
+        #     data_dir, vars_to_include, static=static_bool, target_var=target_var
+        # )
 
 
 if __name__ == "__main__":
@@ -140,7 +142,7 @@ if __name__ == "__main__":
     ]
 
     #  run the engineer
-    target_vars = ["boku_VCI", "VCI"]
+    target_vars = ["boku_VCI"]  # , "VCI"]
 
     for target_var in target_vars:
         main(target_var, all_vars)
