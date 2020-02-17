@@ -36,9 +36,9 @@ def lstm(ignore_vars, static):
         hidden_size=256,
         # static data
         static=static,
-        include_pred_month=True,  # if static is not None else False,
+        include_pred_month=True if static is not None else False,
         include_latlons=True if static is not None else False,
-        include_prev_y=True,  # if static is not None else False,
+        include_prev_y=True if static is not None else False,
     )
 
 
@@ -141,8 +141,8 @@ if __name__ == "__main__":
         "modis_ndvi",
     ]
 
-    #  run the engineer
-    target_vars = ["boku_VCI", "VCI"]
+    target_vars = ["boku_VCI"]  # , "VCI"]
 
+    # run the engineer THEN models
     for target_var in target_vars:
         main(target_var, all_vars)
