@@ -36,9 +36,9 @@ def lstm(ignore_vars, static):
         hidden_size=256,
         # static data
         static=static,
-        include_pred_month=True,  # if static is not None else False,
+        include_pred_month=True if static is not None else False,
         include_latlons=True if static is not None else False,
-        include_prev_y=True,  # if static is not None else False,
+        include_prev_y=True if static is not None else False,
     )
 
 
@@ -106,17 +106,17 @@ def main(target_var, all_vars):
         vars_to_exclude = [v for v in all_vars if v not in vars_to_include]
 
         parsimonious()
-        # if static_bool:
-        #     lstm(vars_to_exclude, static="features")
-        #     ealstm(vars_to_exclude, static="features")
-        # else:
-        #     lstm(vars_to_exclude, static=None)
+        if static_bool:
+            lstm(vars_to_exclude, static="features")
+            ealstm(vars_to_exclude, static="features")
+        else:
+            lstm(vars_to_exclude, static=None)
 
-        # # RENAME model directories
-        # data_dir = get_data_path()
-        # rename_model_experiment_file(
-        #     data_dir, vars_to_include, static=static_bool, target_var=target_var
-        # )
+        # RENAME model directories
+        data_dir = get_data_path()
+        rename_model_experiment_file(
+            data_dir, vars_to_include, static=static_bool, target_var=target_var
+        )
 
 
 if __name__ == "__main__":
@@ -141,8 +141,8 @@ if __name__ == "__main__":
         "modis_ndvi",
     ]
 
-    #  run the engineer
     target_vars = ["boku_VCI"]  # , "VCI"]
 
+    # run the engineer THEN models
     for target_var in target_vars:
         main(target_var, all_vars)
