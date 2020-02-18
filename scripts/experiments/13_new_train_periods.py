@@ -54,9 +54,7 @@ def ealstm(ignore_vars, static="features"):
 
 
 def calculate_length_of_hi_med_lo_experiment_train_years(
-    total_months: int,
-    test_length: int = 12,
-    pred_timesteps: int = 3,
+    total_months: int, test_length: int = 12, pred_timesteps: int = 3
 ) -> List[int]:
     # how many months do we have for train/test
     total_train_months = total_months - (test_length * (pred_timesteps + 1))
@@ -69,27 +67,32 @@ def calculate_length_of_hi_med_lo_experiment_train_years(
     if not train_length_0 + train_length_1 + train_length_2 == total_train_months:
         train_length_0 = round(total_train_months / 3) + 1
 
-    assert train_length_0 + train_length_1 + train_length_2 == total_train_months, "" \
-        f"{train_length_0 + train_length_1 + train_length_2} == {total_train_months}"
+    assert train_length_0 + train_length_1 + train_length_2 == total_train_months, (
+        "" f"{train_length_0 + train_length_1 + train_length_2} == {total_train_months}"
+    )
 
     # calculate the number of train months in each experiment
     train_lengths = [
         train_length_0,
         train_length_0 + train_length_1,
-        train_length_0 + train_length_1 + train_length_2
+        train_length_0 + train_length_1 + train_length_2,
     ]
 
     return train_lengths
 
 
-def get_valid_test_timesteps(pred_timesteps: int, target_data: pd.DataFrame) -> pd.DataFrame:
+def get_valid_test_timesteps(
+    pred_timesteps: int, target_data: pd.DataFrame
+) -> pd.DataFrame:
     """Need at least `pred_timesteps + 1` before the test timestep to
     allow enough previous timesteps of predictor variables!
     """
-    return target_data.iloc[pred_timesteps + 1:, :]
+    return target_data.iloc[pred_timesteps + 1 :, :]
 
 
-def sort_by_median_target_var(pred_timesteps: int, data_dir: Path = Path('data')) -> Tuple[pd.DataFrame, pd.DatetimeIndex]:
+def sort_by_median_target_var(
+    pred_timesteps: int, data_dir: Path = Path("data")
+) -> Tuple[pd.DataFrame, pd.DatetimeIndex]:
     """ Calculate the sorted_timesteps to then calculate hi/med/lo
     train and test periods.
     """
@@ -98,11 +101,10 @@ def sort_by_median_target_var(pred_timesteps: int, data_dir: Path = Path('data')
     target_variable = [v for v in target_data.data_vars][0]
 
     # SORT BY MEDIAN VCI EACH MONTH (over space)
-    median_data = target_data.resample(time='M').mean().median(dim=['lat', 'lon'])
+    median_data = target_data.resample(time="M").mean().median(dim=["lat", "lon"])
     median_data = median_data.to_dataframe()
     median_data = get_valid_test_timesteps(
-        pred_timesteps=pred_timesteps,
-        target_data=median_data,
+        pred_timesteps=pred_timesteps, target_data=median_data
     )
 
     # sorted low to high
@@ -137,7 +139,7 @@ class Experiment:
         test_hilo: str,
         test_length: int,
         sorted_timesteps: pd.DatetimeIndex,
-        pred_timesteps: int = 3
+        pred_timesteps: int = 3,
     ):
         self.train_length = train_length
         self.train_hilo = train_hilo
@@ -158,15 +160,17 @@ class Experiment:
         # e.g. do we give the model the opportunity to retrain on the same years?
         self.replacement = False
 
-        test_timesteps, train_timesteps = self.get_experiment_timesteps(sorted_timesteps)
+        test_timesteps, train_timesteps = self.get_experiment_timesteps(
+            sorted_timesteps
+        )
         self.test_timesteps = [pd.to_datetime(ts) for ts in test_timesteps]
         self.train_timesteps = [pd.to_datetime(ts) for ts in train_timesteps]
 
         # CHECK NO DATA LEAKAGE
-        assert ~ all(
-            np.isin(self.test_timesteps, self.train_timesteps)
-        ), f"Data Leakage:\n\nTrain timesteps: {[f'{ts.year}-{ts.month}' for ts in train_timesteps]}\n\n" \
+        assert ~all(np.isin(self.test_timesteps, self.train_timesteps)), (
+            f"Data Leakage:\n\nTrain timesteps: {[f'{ts.year}-{ts.month}' for ts in train_timesteps]}\n\n"
             "Test Timesteps: {[f'{ts.year}-{ts.month}' for ts in train_timesteps]}"
+        )
 
     @staticmethod
     def _calculate_hilo_dict(sorted_timesteps: np.array) -> Dict[str, np.array]:
@@ -183,7 +187,7 @@ class Experiment:
         all_timesteps = self.sorted_timesteps.copy().sort_values()
 
         dict_ = {
-            f'test_{ix}': bool_arr
+            f"test_{ix}": bool_arr
             for ix, bool_arr in enumerate([all_timesteps == t for t in test_timesteps])
         }
         df = pd.DataFrame(dict_)
@@ -192,22 +196,35 @@ class Experiment:
         # because these timesteps cannot be seen by the TRAIN data
         # to prevent model leakage
         list_of_invalid_indexes = [
-            [i for i in range(df.index[df[col]][0], (df.index[df[col]] + (self.pred_timesteps + 1))[0])]
+            [
+                i
+                for i in range(
+                    df.index[df[col]][0],
+                    (df.index[df[col]] + (self.pred_timesteps + 1))[0],
+                )
+            ]
             for col in df.columns
         ]
 
         list_of_invalid_indexes = np.array(list_of_invalid_indexes).flatten()
-        bool_invalid_list = [True if i in list_of_invalid_indexes else False for i, ts in enumerate(all_timesteps)]
+        bool_invalid_list = [
+            True if i in list_of_invalid_indexes else False
+            for i, ts in enumerate(all_timesteps)
+        ]
         test_timesteps_plus = all_timesteps[bool_invalid_list]
 
         return test_timesteps_plus
 
-    def get_experiment_timesteps(self, sorted_timesteps: np.array) -> Tuple[np.array, np.array]:
+    def get_experiment_timesteps(
+        self, sorted_timesteps: np.array
+    ) -> Tuple[np.array, np.array]:
         # 1. split into low, med, high groups
         test_dict = self._calculate_hilo_dict(sorted_timesteps)
 
         # 2. select randomly the TEST timesteps from these groups
-        test_timesteps = np.random.choice(test_dict[self.test_hilo], self.test_length, replace=False)
+        test_timesteps = np.random.choice(
+            test_dict[self.test_hilo], self.test_length, replace=False
+        )
 
         # 3. remove test_timesteps from array to choose train_timesteps
         # we also need to account for the fact that these TEST timesteps
@@ -222,7 +239,11 @@ class Experiment:
         else:
             train_dict = test_dict.copy()
             train_dict[self.train_hilo] = np.array(
-                [ts for ts in train_dict[self.train_hilo] if ts not in test_timesteps_plus]
+                [
+                    ts
+                    for ts in train_dict[self.train_hilo]
+                    if ts not in test_timesteps_plus
+                ]
             )
 
         # 4. Choose the train_timesteps
@@ -234,7 +255,9 @@ class Experiment:
             train_timesteps = train_dict[self.train_hilo]
 
             leftover_timesteps = [
-                i for i in sorted_timesteps if (i not in train_timesteps) & (i not in test_timesteps_plus)
+                i
+                for i in sorted_timesteps
+                if (i not in train_timesteps) & (i not in test_timesteps_plus)
             ]
 
             # iteratively split the array into low, med, high and keep selecting
@@ -252,7 +275,9 @@ class Experiment:
                 # e.g. {low=[1991], med=[1992], high=[]}
                 # and we want high training timesteps, select from other groups
                 if len(train_dict[self.train_hilo]) == 0:
-                    print(f"not enough {self.train_hilo} timesteps left! Selecting from other groups")
+                    print(
+                        f"not enough {self.train_hilo} timesteps left! Selecting from other groups"
+                    )
                     train_timesteps = np.append(
                         train_timesteps, np.random.choice(leftover_timesteps, 1)
                     )
@@ -263,7 +288,9 @@ class Experiment:
                     ]
                     assert False, "need to select the leftovers in a neater way?"
                     continue
-                train_timesteps = np.append(train_timesteps, train_dict[self.train_hilo])
+                train_timesteps = np.append(
+                    train_timesteps, train_dict[self.train_hilo]
+                )
                 leftover_timesteps = [
                     i
                     for i in sorted_timesteps
@@ -288,18 +315,19 @@ class Experiment:
             else:
                 is_test.append(np.nan)
 
-        df = pd.DataFrame({'Test Data': is_test}, index=self.sorted_timesteps).sort_index()
+        df = pd.DataFrame(
+            {"Test Data": is_test}, index=self.sorted_timesteps
+        ).sort_index()
 
         df = df.sort_index()
-        df['year'] = df.index.year
-        df['month'] = df.index.month
+        df["year"] = df.index.year
+        df["month"] = df.index.month
 
         fig, ax = plt.subplots()
-        title = f'Test: {self.test_hilo} // Train: {self.train_hilo}\nTrainLength:{self.train_length} TestLength:{self.test_length}'
+        title = f"Test: {self.test_hilo} // Train: {self.train_hilo}\nTrainLength:{self.train_length} TestLength:{self.test_length}"
         ax = make_monthly_calendar_plot(df, ax, title=title)
 
         return ax
-
 
     def print_experiment_summary(self):
         print(
@@ -338,18 +366,24 @@ def rename_experiment_dir(
     return to_path
 
 
-def run_experiments(vars_to_exclude: List, pred_timesteps: int = 3, test_length: int = 12, target_var = 'boku_VCI', data_dir: Path = Path('data')):
+def run_experiments(
+    vars_to_exclude: List,
+    pred_timesteps: int = 3,
+    test_length: int = 12,
+    target_var="boku_VCI",
+    data_dir: Path = Path("data"),
+):
     expected_length = pred_timesteps
 
     # 1. Read the target data
     print(f"** Reading the target data for {target_var}**")
 
-    if target_var == 'VCI':
+    if target_var == "VCI":
         target_data = xr.open_dataset(
             data_dir / "interim" / "VCI_preprocessed" / "data_kenya.nc"
         )
 
-    if target_var == 'boku_VCI':
+    if target_var == "boku_VCI":
         target_data = xr.open_dataset(
             data_dir / "interim" / "boku_ndvi_1000_preprocessed" / "data_kenya.nc"
         )
@@ -357,12 +391,16 @@ def run_experiments(vars_to_exclude: List, pred_timesteps: int = 3, test_length:
     target_data = target_data[[target_var]]
     hilos = ["high", "med", "low"]
 
-    # 2. Sort the target data by MEDIAN MONTH values
-    sorted_df, sorted_timesteps = sort_by_median_target_var(pred_timesteps=pred_timesteps, data_dir=data_dir)
+    #  2. Sort the target data by MEDIAN MONTH values
+    sorted_df, sorted_timesteps = sort_by_median_target_var(
+        pred_timesteps=pred_timesteps, data_dir=data_dir
+    )
 
     # 3. Calculate the train lengths ([1/3, 2/3, 3/3] of leftover data after test)
     train_lengths = calculate_length_of_hi_med_lo_experiment_train_years(
-        total_months=len(sorted_timesteps), test_length=test_length, pred_timesteps=pred_timesteps
+        total_months=len(sorted_timesteps),
+        test_length=test_length,
+        pred_timesteps=pred_timesteps,
     )
 
     # 4. create all experiments
@@ -374,7 +412,7 @@ def run_experiments(vars_to_exclude: List, pred_timesteps: int = 3, test_length:
             train_hilo=train_hilo,
             test_hilo=test_hilo,
             test_length=test_length,
-            sorted_timesteps=sorted_timesteps
+            sorted_timesteps=sorted_timesteps,
         )
         for train_hilo, test_hilo, train_length in itertools.product(
             hilos, hilos, train_lengths
@@ -384,7 +422,10 @@ def run_experiments(vars_to_exclude: List, pred_timesteps: int = 3, test_length:
     # 5. Run the experiments
     print("** Running all experiments **")
     for experiment in experiments:
-        test_timesteps, train_timesteps = experiment.test_timesteps, experiment.train_timesteps
+        test_timesteps, train_timesteps = (
+            experiment.test_timesteps,
+            experiment.train_timesteps,
+        )
         if DEBUG:
             experiment.print_experiment_summary()
 
@@ -443,7 +484,6 @@ if __name__ == "__main__":
     global DEBUG
     DEBUG = True
 
-
     all_vars = [
         "VCI",
         "precip",
@@ -470,4 +510,6 @@ if __name__ == "__main__":
 
     data_dir = get_data_path()
     # data_dir = Path('/Volumes/Lees_Extend/data/ecmwf_sowc/data')
-    run_experiments(vars_to_exclude=vars_to_exclude, data_dir=data_dir, target_var='boku_VCI')
+    run_experiments(
+        vars_to_exclude=vars_to_exclude, data_dir=data_dir, target_var="boku_VCI"
+    )
