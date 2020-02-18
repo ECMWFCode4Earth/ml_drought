@@ -3,6 +3,7 @@ from datetime import date
 import xarray as xr
 import warnings
 import pickle
+import pandas as pd
 
 from typing import cast, Dict, Optional, Tuple, List, Union
 
@@ -30,10 +31,16 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         pred_months: int = 12,
         expected_length: Optional[int] = 12,
         train_years: Optional[List[int]] = None,
+        train_timesteps: Optional[List[pd.Datetime]] = None,
     ) -> None:
 
         self._process_dynamic(
-            test_year, target_variable, pred_months, expected_length, train_years
+            test_year,
+            target_variable,
+            pred_months,
+            expected_length,
+            train_years=train_years,
+            train_timesteps=train_timesteps,
         )
         if self.process_static:
             self._process_static()
@@ -90,14 +97,29 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         normalization_values = self._calculate_normalization_values(train_ds)
 
         # split train_ds into x, y for each year-month before `test_year` & save
-        self._stratify_training_data(
-            train_ds=train_ds,
-            test_dts=test_dts,
-            target_variable=target_variable,
-            pred_months=pred_months,
-            expected_length=expected_length,
-            train_years=train_years,
-        )
+        if train_years is not None:
+            # Define experiments that use whole years
+            self._stratify_training_data(
+                train_ds=train_ds,
+                test_dts=test_dts,
+                target_variable=target_variable,
+                pred_months=pred_months,
+                expected_length=expected_length,
+                train_years=train_years,
+            )
+
+        elif train_timesteps is not None:
+            # Define experiments that use individual TIMESTEPS not whole years
+            self._stratify_training_data(
+                train_ds=train_ds,
+                test_dts=test_dts,
+                target_variable=target_variable,
+                pred_months=pred_months,
+                expected_length=expected_length,
+                train_timesteps=train_timesteps,
+            )
+        else:
+            assert False, "Must provide either `train_years` or `train_timesteps`"
 
         savepath = self.output_folder / "normalizing_dict.pkl"
         with savepath.open("wb") as f:
@@ -112,8 +134,35 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         test_timesteps: Optional[Union[pd.Timestamp, List[pd.Timestamp]]],
         train_timesteps: Optional[List[pd.Timestamp]] = None,
     ) -> Tuple[xr.Dataset, List[date]]:
-        """save the test data and return the training dataset"""
-        return
+        """save the test data and return the training dataset
+        1) SAVE [x.nc, y.nc] for each test timestep
+        2) Return the dataset
+        """
+        test_dts = []
+
+        # each month in test_year produce an x,y pair for testing
+        for timestep in test_timesteps:
+            # CALCULATE X, y for data for TEST timesteps
+            year = int(timestep.year)
+            month = int(timestep.month)
+            xy_test, _ = self._stratify_xy(
+                ds=ds,
+                year=year,
+                target_variable=target_variable,
+                target_month=month,
+                pred_months=pred_months,
+                expected_length=expected_length,
+            )
+
+            if xy_test is not None:
+                # check for data leakage
+                # self.check_data_leakage(train_ds, xy_test)
+                test_dts.append(self._get_datetime(xy_test["y"].time.values[0]))
+                self._save(xy_test, year=year, month=month, dataset_type="test")
+
+        train_ds = ds
+
+        return train_ds, test_dts
 
     def year_train_test_split(
         self,
@@ -195,6 +244,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         pred_months: int,
         expected_length: Optional[int],
         train_years: Optional[List[int]] = None,
+        train_timesteps: Optional[List[pd.Timestamp]] = None,
     ) -> None:
         """split `train_ds` into x, y and save the outputs to
         self.output_folder (data/features) """
@@ -220,11 +270,27 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             )
 
             # Preventing data leakage:
-            # only save if that year is in train_years
-            # and that month is not in test_dts
-            if arrays is not None:
-                if (cur_pred_year in train_years) and (  # type: ignore
-                    self._get_datetime(arrays["y"].time.values[0]) not in test_dts
+            if train_years is not None:
+                # only save if that year is in train_years
+                # and that month is not in test_dts
+                if arrays is not None:
+                    if (cur_pred_year in train_years) and (  # type: ignore
+                        self._get_datetime(arrays["y"].time.values[0]) not in test_dts
+                    ):
+                        self._save(
+                            arrays,
+                            year=cur_pred_year,
+                            month=cur_pred_month,
+                            dataset_type="train",
+                        )
+
+            # ALREADY PREVENTED here ...
+            if train_timesteps is not None:
+                # only save if that ts is in train_timesteps
+                # pd.Datetime(f'{cur_pred_year}-{int(cur_pred_month):02}')
+                if (
+                    pd.to_datetime(self._get_datetime(arrays["y"].time.values[0]))
+                    in train_timesteps
                 ):
                     self._save(
                         arrays,
@@ -232,4 +298,5 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
                         month=cur_pred_month,
                         dataset_type="train",
                     )
+
             cur_pred_year, cur_pred_month = cur_min_date.year, cur_min_date.month

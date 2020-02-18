@@ -421,7 +421,7 @@ def run_experiments(
 
     # 5. Run the experiments
     print("** Running all experiments **")
-    for experiment in experiments:
+    for experiment in experiments[0:1]:
         test_timesteps, train_timesteps = (
             experiment.test_timesteps,
             experiment.train_timesteps,
@@ -429,55 +429,65 @@ def run_experiments(
         if DEBUG:
             experiment.print_experiment_summary()
 
-        # # a. Run the Engineer for these train/test periods
-        # # TODO:
-        # assert False, "Need to fix up the engineer to work with specific months too ..."
-        # engineer = Engineer(
-        #     get_data_path(),
-        #     experiment="one_month_forecast",
-        #     process_static=True,
-        #     different_training_periods=True,
-        # )
-        # engineer.engineer_class.engineer(
-        #     test_year=test_timesteps,         # defined by experiment
-        #     train_years=train_timesteps,      # defined by experiment
-        #     pred_timesteps=pred_timesteps,          # 3 by default
-        #     expected_length=expected_length,  # == pred_month by default
-        #     target_variable=target_var,
-        # )
+        # a. Run the Engineer for these train/test periods
+        # TODO:
+        assert (
+            False
+        ), "Need to fix up the engineer to work with specific timesteps too ..."
+        engineer = Engineer(
+            get_data_path(),
+            experiment="one_month_forecast",
+            process_static=True,
+            different_training_periods=True,
+        )
+        engineer.engineer_class.engineer(
+            test_year=test_timesteps,  # defined by experiment
+            train_timesteps=[
+                pd.Datetime(t) for t in train_timesteps
+            ],  # defined by experiment
+            pred_timesteps=pred_timesteps,  # 3 by default
+            expected_length=expected_length,  # == pred_month by default
+            target_variable=target_var,
+        )
 
-        # # b. run the models
-        # parsimonious()
-        # lstm(vars_to_exclude, static="features")
-        # ealstm(vars_to_exclude, static="features")
+        #  b. run the models
+        parsimonious()
+        lstm(vars_to_exclude, static="features")
+        ealstm(vars_to_exclude, static="features")
 
-        # # c. save the experiment metadata
-        # save_object = dict(
-        #     train_hilo=experiment.train_hilo,
-        #     test_hilo=experiment.test_hilo,
-        #     train_length=len(experiment.train_timesteps),
-        #     ignore_vars=ignore_vars,
-        #     static=static,
-        #     train_timesteps=experiment.train_timesteps,
-        #     test_timesteps=experiment.test_timesteps,
-        #     features_path=features_path,
-        #     models_path=models_path,
-        #     sorted_timesteps=experiment.sorted_timesteps
-        # )
+        # c. save the experiment metadata
+        save_object = dict(
+            train_hilo=experiment.train_hilo,
+            test_hilo=experiment.test_hilo,
+            train_length=len(experiment.train_timesteps),
+            ignore_vars=ignore_vars,
+            static=static,
+            train_timesteps=experiment.train_timesteps,
+            test_timesteps=experiment.test_timesteps,
+            features_path=features_path,
+            models_path=models_path,
+            sorted_timesteps=experiment.sorted_timesteps,
+        )
 
-        # with open(data_dir / "models/one_month_forecast/experiment.json", "wb") as fp:
-        #     json.dump(expt_dict, fp, sort_keys=True, indent=4)
+        with open(data_dir / "models/one_month_forecast/experiment.json", "wb") as fp:
+            json.dump(expt_dict, fp, sort_keys=True, indent=4)
 
-        # # d. rename the directories (TRAIN/TEST)
-        # data_dir = get_data_path()
-        # features_path = rename_experiment_dir(
-        #     data_dir, train_hilo=train_hilo, test_hilo=test_hilo, train_length=train_length,
-        #     dir_='features'
-        # )
-        # models_path = rename_experiment_dir(
-        #     data_dir, train_hilo=train_hilo, test_hilo=test_hilo, train_length=train_length,
-        #     dir_='models'
-        # )
+        # d. rename the directories (TRAIN/TEST)
+        data_dir = get_data_path()
+        features_path = rename_experiment_dir(
+            data_dir,
+            train_hilo=train_hilo,
+            test_hilo=test_hilo,
+            train_length=train_length,
+            dir_="features",
+        )
+        models_path = rename_experiment_dir(
+            data_dir,
+            train_hilo=train_hilo,
+            test_hilo=test_hilo,
+            train_length=train_length,
+            dir_="models",
+        )
 
 
 if __name__ == "__main__":
