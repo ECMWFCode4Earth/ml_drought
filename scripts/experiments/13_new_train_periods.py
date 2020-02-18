@@ -455,7 +455,7 @@ def run_experiments(
 
     # 5. Run the experiments
     print("** Running all experiments **")
-    for experiment in experiments[0:1]:
+    for experiment in experiments:
         test_timesteps, train_timesteps = (
             experiment.test_timesteps,
             experiment.train_timesteps,
@@ -496,8 +496,8 @@ def run_experiments(
 
         #  b. run the models
         parsimonious()
-        # lstm(vars_to_exclude, static="features")
-        # ealstm(vars_to_exclude, static="features")
+        lstm(vars_to_exclude, static="features")
+        ealstm(vars_to_exclude, static="features")
 
         # c. rename the directories (TRAIN/TEST)
         data_dir = get_data_path()
