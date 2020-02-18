@@ -36,10 +36,10 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
     ) -> None:
 
         self._process_dynamic(
-            test_year,
-            target_variable,
-            pred_months,
-            expected_length,
+            test_year=test_year,
+            target_variable=target_variable,
+            pred_months=pred_months,
+            expected_length=expected_length,
             train_years=train_years,
             train_timesteps=train_timesteps,
             test_timesteps=test_timesteps
@@ -50,8 +50,8 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
     def _process_dynamic(
         self,
         target_variable: str = "VHI",
-        pred_months: int = 12,
-        expected_length: Optional[int] = 12,
+        pred_months: int = 3,
+        expected_length: Optional[int] = 3,
         test_year: Optional[Union[int, List[int]]] = None,
         train_years: Optional[List[int]] = None,
         test_timesteps: Optional[Union[pd.Timestamp, List[pd.Timestamp]]] = None,
