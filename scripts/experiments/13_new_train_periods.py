@@ -530,8 +530,8 @@ def run_experiments(
             sorted_timesteps=experiment.sorted_timesteps,
         )
 
-        with open(models_path / "experiment.json", "wb") as fp:
-            json.dump(save_object, fp, sort_keys=True, indent=4)
+        # with open(models_path / "experiment.json", "wb") as fp:
+        #     json.dump(save_object, fp, sort_keys=True, indent=4)
 
 
 if __name__ == "__main__":
