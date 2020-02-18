@@ -502,16 +502,16 @@ def run_experiments(
         data_dir = get_data_path()
         features_path = rename_experiment_dir(
             data_dir,
-            train_hilo=train_hilo,
-            test_hilo=test_hilo,
-            train_length=train_length,
+            train_hilo=experiment.train_hilo,
+            test_hilo=experiment.test_hilo,
+            train_length=experiment.train_length,
             dir_="features",
         )
         models_path = rename_experiment_dir(
             data_dir,
-            train_hilo=train_hilo,
-            test_hilo=test_hilo,
-            train_length=train_length,
+            train_hilo=experiment.train_hilo,
+            test_hilo=experiment.test_hilo,
+            train_length=experiment.train_length,
             dir_="models",
         )
 
