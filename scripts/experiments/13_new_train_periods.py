@@ -483,17 +483,20 @@ def run_experiments(
             pred_months=pred_timesteps,  # 3 by default
             expected_length=expected_length,  # == pred_month by default
             target_variable=target_var,
+            train_years=None,
+            test_years=None,
         )
 
         test_nc_files = [d.name for d in (data_dir / "features/one_month_forecast/test").iterdir()]
+        test_nc_files.sort()
         assert len(test_nc_files) == int(experiment.test_length), \
-            f"Expect the Engineer to have created {experiment.test_length} files"\
+            f"Expect the Engineer to have created {experiment.test_length} files "\
             f"Got: {len(test_nc_files)} \n\n {test_nc_files}"
 
         #  b. run the models
-        parsimonious()
-        lstm(vars_to_exclude, static="features")
-        ealstm(vars_to_exclude, static="features")
+        # parsimonious()
+        # lstm(vars_to_exclude, static="features")
+        # ealstm(vars_to_exclude, static="features")
 
         # c. save the experiment metadata
         save_object = dict(
@@ -513,21 +516,21 @@ def run_experiments(
             json.dump(expt_dict, fp, sort_keys=True, indent=4)
 
         # d. rename the directories (TRAIN/TEST)
-        data_dir = get_data_path()
-        features_path = rename_experiment_dir(
-            data_dir,
-            train_hilo=train_hilo,
-            test_hilo=test_hilo,
-            train_length=train_length,
-            dir_="features",
-        )
-        models_path = rename_experiment_dir(
-            data_dir,
-            train_hilo=train_hilo,
-            test_hilo=test_hilo,
-            train_length=train_length,
-            dir_="models",
-        )
+        # data_dir = get_data_path()
+        # features_path = rename_experiment_dir(
+        #     data_dir,
+        #     train_hilo=train_hilo,
+        #     test_hilo=test_hilo,
+        #     train_length=train_length,
+        #     dir_="features",
+        # )
+        # models_path = rename_experiment_dir(
+        #     data_dir,
+        #     train_hilo=train_hilo,
+        #     test_hilo=test_hilo,
+        #     train_length=train_length,
+        #     dir_="models",
+        # )
 
 
 if __name__ == "__main__":

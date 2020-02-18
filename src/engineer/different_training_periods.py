@@ -66,12 +66,12 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         # read in all the data from interim/{var}_preprocessed
         data = self._make_dataset(static=False)
 
-        # ensure test_year is List[int]
-        if type(test_year) is int:
-            test_year = [cast(int, test_year)]
-
         # save test data (x, y) and return the train_ds (subset of `data`)
         if train_years is not None:
+            # ensure test_year is List[int]
+            if type(test_year) is int:
+                test_year = [cast(int, test_year)]
+
             train_ds, test_dts = self.year_train_test_split(
                 ds=data,
                 target_variable=target_variable,
@@ -80,7 +80,9 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
                 expected_length=expected_length,
                 train_years=train_years,
             )
+
         elif train_timesteps is not None:
+            # save test timesteps for specific timesteps
             train_ds, test_dts = self.timestep_train_test_split(
                 ds=data,
                 target_variable=target_variable,
@@ -155,6 +157,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
                 pred_months=pred_months,
                 expected_length=expected_length,
             )
+            assert False
 
             if xy_test is not None:
                 # check for data leakage
