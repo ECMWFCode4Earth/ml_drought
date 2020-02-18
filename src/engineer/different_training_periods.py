@@ -32,6 +32,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         expected_length: Optional[int] = 12,
         train_years: Optional[List[int]] = None,
         train_timesteps: Optional[List[pd.Timestamp]] = None,
+        test_timesteps: Optional[List[pd.Timestamp]] = None,
     ) -> None:
 
         self._process_dynamic(
@@ -41,6 +42,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             expected_length,
             train_years=train_years,
             train_timesteps=train_timesteps,
+            test_timesteps=test_timesteps
         )
         if self.process_static:
             self._process_static()
