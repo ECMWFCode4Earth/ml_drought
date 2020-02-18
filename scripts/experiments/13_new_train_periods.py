@@ -443,7 +443,7 @@ def run_experiments(
         engineer.engineer_class.engineer(
             test_year=test_timesteps,  # defined by experiment
             train_timesteps=[
-                pd.Datetime(t) for t in train_timesteps
+                pd.to_datetime(t) for t in train_timesteps
             ],  # defined by experiment
             pred_timesteps=pred_timesteps,  # 3 by default
             expected_length=expected_length,  # == pred_month by default
