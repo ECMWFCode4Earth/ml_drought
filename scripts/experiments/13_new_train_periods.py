@@ -484,7 +484,7 @@ def run_experiments(
             expected_length=expected_length,  # == pred_month by default
             target_variable=target_var,
             train_years=None,
-            test_years=None,
+            test_year=None,
         )
 
         test_nc_files = [d.name for d in (data_dir / "features/one_month_forecast/test").iterdir()]
