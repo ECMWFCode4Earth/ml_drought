@@ -12,6 +12,36 @@ from _base_models import parsimonious, regression, linear_nn, rnn, earnn
 
 from scripts.utils import _rename_directory, get_data_path
 from src.engineer import Engineer
+import calendar
+
+
+def make_monthly_calendar_plot(df, ax, title, **kwargs):
+    assert 'year' in [c for c in df.columns]
+    assert 'month' in [c for c in df.columns]
+    im = ax.imshow(df.pivot(index='year', columns='month').values, aspect='auto', **kwargs)
+
+    ax.set_xticks([i for i in range(0, 12)])
+    ax.set_xticklabels([calendar.month_abbr[i+1] for i in range(0, 12)]);
+    ax.set_xlabel('Month')
+    plt.xticks(rotation=45)
+
+    ax.set_yticks([i for i in range(len(df.year.unique()))])
+    ax.set_yticklabels([yr for yr in range(df.year.min(), df.year.max() + 1)]);
+    ax.set_ylabel('Year')
+
+    ax.set_title(title)
+
+    for item in ([ax.title, ax.xaxis.label, ax.yaxis.label]
+                 + ax.get_xticklabels() + ax.get_yticklabels()):
+        item.set_fontsize(14)
+
+    cbar = fig.colorbar(im);
+    cbar.set_label(
+        [c for c in df.columns if c not in ['year', 'month']][0],
+        fontsize=14
+    )
+
+    return ax
 
 
 def lstm(ignore_vars, static):
@@ -437,7 +467,6 @@ def run_experiments(
             different_training_periods=True,
         )
         engineer.engineer_class.engineer(
-            test_year=test_timesteps,  # defined by experiment
             train_timesteps=[
                 pd.to_datetime(t) for t in train_timesteps
             ],  # defined by experiment
