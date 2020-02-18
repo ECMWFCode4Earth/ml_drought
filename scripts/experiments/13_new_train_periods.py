@@ -507,6 +507,7 @@ def run_experiments(
             test_hilo=experiment.test_hilo,
             train_length=experiment.train_length,
             dir_="features",
+            with_datetime=True,
         )
         models_path = rename_experiment_dir(
             data_dir,
@@ -514,6 +515,7 @@ def run_experiments(
             test_hilo=experiment.test_hilo,
             train_length=experiment.train_length,
             dir_="models",
+            with_datetime=True,
         )
 
         # d. save the experiment metadata
