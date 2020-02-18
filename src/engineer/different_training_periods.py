@@ -31,7 +31,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         pred_months: int = 12,
         expected_length: Optional[int] = 12,
         train_years: Optional[List[int]] = None,
-        train_timesteps: Optional[List[pd.Datetime]] = None,
+        train_timesteps: Optional[List[pd.Timestamp]] = None,
     ) -> None:
 
         self._process_dynamic(
@@ -287,7 +287,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             # ALREADY PREVENTED here ...
             if train_timesteps is not None:
                 # only save if that ts is in train_timesteps
-                # pd.Datetime(f'{cur_pred_year}-{int(cur_pred_month):02}')
+                # pd.to_datetime(f'{cur_pred_year}-{int(cur_pred_month):02}')
                 if (
                     pd.to_datetime(self._get_datetime(arrays["y"].time.values[0]))
                     in train_timesteps
