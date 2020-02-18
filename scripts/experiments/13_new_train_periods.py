@@ -485,7 +485,7 @@ def run_experiments(
             target_variable=target_var,
         )
 
-        test_nc_files = [d.name for d in (data_dir / "features/one_month_forecast/test").glob('*.nc')]
+        test_nc_files = [d.name for d in (data_dir / "features/one_month_forecast/test").iterdir()]
         assert len(test_nc_files) == int(experiment.test_length), \
             f"Expect the Engineer to have created {experiment.test_length} files"\
             f"Got: {len(test_nc_files)} \n\n {test_nc_files}"
