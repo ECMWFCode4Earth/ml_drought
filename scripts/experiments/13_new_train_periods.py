@@ -316,7 +316,10 @@ class Experiment:
                         for i in self.sorted_timesteps
                         if (i not in train_timesteps) & (i not in test_timesteps_plus)
                     ]
-                    assert False, "need to select the leftovers in a neater way?"
+
+                    # append remaining to the train_timesteps
+                    train_timesteps = np.append(train_timesteps, leftover_timesteps)
+
                     continue
                 train_timesteps = np.append(
                     train_timesteps, train_dict[self.train_hilo]
