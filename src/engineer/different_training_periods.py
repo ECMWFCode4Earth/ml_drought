@@ -157,7 +157,6 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
                 pred_months=pred_months,
                 expected_length=expected_length,
             )
-            assert False
 
             if xy_test is not None:
                 # check for data leakage
