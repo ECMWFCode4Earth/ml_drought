@@ -41,5 +41,6 @@ switch_data_dirs.sh
 # vscode settings
 .vscode/*
 .vscode/settings.json
+.vscode
 # vscode options
 settings.json

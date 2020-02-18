@@ -1,8 +1,10 @@
 from pathlib import Path
+import pickle
 import numpy as np
 import json
 import pandas as pd
 import xarray as xr
+import random
 from sklearn.metrics import mean_squared_error
 
 from .data import TrainData, DataLoader
@@ -55,6 +57,9 @@ class ModelBase:
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "embedding",
         predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
+        include_prev_y: bool = True,
+        normalize_y: bool = False,
     ) -> None:
 
         self.batch_size = batch_size
@@ -70,6 +75,13 @@ class ModelBase:
         self.ignore_vars = ignore_vars
         self.static = static
         self.predict_delta = predict_delta
+        self.include_prev_y = include_prev_y
+        self.normalize_y = normalize_y
+        if normalize_y:
+            with (data_folder / f"features/{experiment}/normalizing_dict.pkl").open(
+                "rb"
+            ) as f:
+                self.normalizing_dict = pickle.load(f)
 
         # needs to be set by the train function
         self.num_locations: Optional[int] = None
@@ -88,10 +100,36 @@ class ModelBase:
 
         self.model: Any = None  # to be added by the model classes
         self.data_vars: Optional[List[str]] = None  # to be added by the train step
+        self.spatial_mask = self._load_spatial_mask(spatial_mask)
 
         # This can be overridden by any model which actually cares which device its run on
         # by default, models which don't care will run on the CPU
         self.device = "cpu"
+        np.random.seed(42)
+        random.seed(42)
+
+    @staticmethod
+    def _load_spatial_mask(
+        mask: Union[Path, xr.DataArray, None] = None
+    ) -> Optional[xr.DataArray]:
+        if (mask is None) or isinstance(mask, xr.DataArray):
+            return mask
+        elif isinstance(mask, Path):
+            mask = xr.open_dataset(mask)
+            return mask["mask"]
+        return None
+
+    def _convert_delta_to_raw_values(
+        self, x: xr.Dataset, y: xr.Dataset, y_var: str, order: int = 1
+    ) -> xr.Dataset:
+        """When calculating the derivative we need to convert the change/delta
+        to the raw value for our prediction.
+        """
+        # x.shape == (pixels, featurespreds)
+        prev_ts = x[y_var].isel(time=-order)
+
+        # calculate the raw values
+        return prev_ts + y["preds"]  # .to_dataset(name_of_preds_var)
 
     def _convert_delta_to_raw_values(
         self, x: xr.Dataset, y: xr.Dataset, y_var: str, order: int = 1
@@ -130,6 +168,17 @@ class ModelBase:
     def save_model(self) -> None:
         raise NotImplementedError
 
+    def denormalize_y(self, y: np.ndarray, var_name: str) -> np.ndarray:
+
+        if not self.normalize_y:
+            return y
+        else:
+            y = y * self.normalizing_dict[var_name]["std"]
+
+            if not self.predict_delta:
+                y = y + self.normalizing_dict[var_name]["mean"]
+        return y
+
     def evaluate(self, save_results: bool = True, save_preds: bool = False) -> None:
         """
         Evaluate the trained model on the TEST data
@@ -149,8 +198,9 @@ class ModelBase:
         total_preds: List[np.ndarray] = []
         total_true: List[np.ndarray] = []
         for key, vals in test_arrays_dict.items():
-            true = vals["y"]
-            preds = preds_dict[key]
+
+            true = self.denormalize_y(vals["y"], vals["y_var"])
+            preds = self.denormalize_y(preds_dict[key], vals["y_var"])
 
             output_dict[key] = np.sqrt(mean_squared_error(true, preds)).item()
 
@@ -160,7 +210,6 @@ class ModelBase:
         output_dict["total"] = np.sqrt(
             mean_squared_error(np.concatenate(total_true), np.concatenate(total_preds))
         ).item()
-
         print(f'RMSE: {output_dict["total"]}')
 
         if save_results:
@@ -171,7 +220,7 @@ class ModelBase:
             # convert from test_arrays_dict to xarray object
             for key, val in test_arrays_dict.items():
                 latlons = cast(np.ndarray, val["latlons"])
-                preds = preds_dict[key]
+                preds = self.denormalize_y(preds_dict[key], val["y_var"])
 
                 if len(preds.shape) > 1:
                     preds = preds.squeeze(-1)
@@ -229,7 +278,7 @@ class ModelBase:
         """
 
         if type(x) is tuple:
-            x_his, x_pm, x_latlons, x_cur, x_ym, x_static = x  # type: ignore
+            x_his, x_pm, x_latlons, x_cur, x_ym, x_static, x_prev = x  # type: ignore
         elif type(x) == TrainData:
             x_his, x_pm, x_latlons = (
                 x.historical,  # type: ignore
@@ -238,6 +287,7 @@ class ModelBase:
             )  # type: ignore
             x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
             x_static = x.static  # type: ignore
+            x_prev = x.prev_y_var  # type: ignore
 
         assert (
             x_his is not None
@@ -262,6 +312,8 @@ class ModelBase:
                 assert type(self.num_locations) is int
                 x_s = self._one_hot(x_static, cast(int, self.num_locations))
                 x_in = np.concatenate((x_in, x_s), axis=-1)
+        if self.include_prev_y:
+            x_in = np.concatenate((x_in, x_prev), axis=-1)
         return x_in
 
     def _one_hot(self, x: np.ndarray, num_vals: int):
@@ -293,6 +345,8 @@ class ModelBase:
             "clear_nans": True,
             "normalize": True,
             "predict_delta": self.predict_delta,
+            "spatial_mask": self.spatial_mask,
+            "normalize_y": self.normalize_y,
         }
 
         for key, val in kwargs.items():

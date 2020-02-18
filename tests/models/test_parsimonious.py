@@ -9,7 +9,7 @@ class TestPersistence:
         x, _, _ = _make_dataset(size=(5, 5))
         y = x.isel(time=[-1])
 
-        test_features = tmp_path / "features/one_month_forecast/test/hello"
+        test_features = tmp_path / "features/one_month_forecast/test/1980_1"
         test_features.mkdir(parents=True)
 
         x.to_netcdf(test_features / "x.nc")
@@ -20,5 +20,5 @@ class TestPersistence:
         test_arrays, preds = predictor.predict()
 
         assert (
-            test_arrays["hello"]["y"] == preds["hello"]
+            test_arrays["1980_1"]["y"] == preds["1980_1"]
         ).all(), f"Last timestep not correctly taken!"

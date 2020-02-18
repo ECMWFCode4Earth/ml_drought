@@ -40,11 +40,13 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
 
     def _process_dynamic(
         self,
-        test_year: Union[int, List[int]],
         target_variable: str = "VHI",
         pred_months: int = 12,
         expected_length: Optional[int] = 12,
+        test_year: Optional[Union[int, List[int]]] = None,
         train_years: Optional[List[int]] = None,
+        test_timesteps: Optional[Union[pd.Timestamp, List[pd.Timestamp]]] = None,
+        train_timesteps: Optional[List[pd.Timestamp]] = None,
     ) -> None:
         if expected_length is None:
             warnings.warn(
@@ -60,14 +62,27 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             test_year = [cast(int, test_year)]
 
         # save test data (x, y) and return the train_ds (subset of `data`)
-        train_ds, test_dts = self._train_test_split(
-            ds=data,
-            test_years=cast(List, test_year),
-            target_variable=target_variable,
-            pred_months=pred_months,
-            expected_length=expected_length,
-            train_years=train_years,
-        )
+        if train_years is not None:
+            train_ds, test_dts = self.year_train_test_split(
+                ds=data,
+                target_variable=target_variable,
+                test_years=cast(List, test_year),
+                pred_months=pred_months,
+                expected_length=expected_length,
+                train_years=train_years,
+            )
+        elif train_timesteps is not None:
+            train_ds, test_dts = self.timestep_train_test_split(
+                ds=data,
+                target_variable=target_variable,
+                pred_months=pred_months,
+                expected_length=expected_length,
+                test_timesteps=test_timesteps,
+                train_timesteps=train_timesteps,
+            )
+        else:
+            assert False, "Must provide either `train_years` or `train_timesteps`"
+
         assert train_ds.time.shape[0] > 0, (
             "Expect the train_ds to have" f"`time` dimension. \n{train_ds}"
         )
@@ -88,10 +103,22 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
         with savepath.open("wb") as f:
             pickle.dump(normalization_values, f)
 
-    def _train_test_split(
+    def timestep_train_test_split(
         self,
         ds: xr.Dataset,
-        test_years: List[int],
+        target_variable: str,
+        pred_months: int,
+        expected_length: Optional[int],
+        test_timesteps: Optional[Union[pd.Timestamp, List[pd.Timestamp]]],
+        train_timesteps: Optional[List[pd.Timestamp]] = None,
+    ) -> Tuple[xr.Dataset, List[date]]:
+        """save the test data and return the training dataset"""
+        return
+
+    def year_train_test_split(
+        self,
+        ds: xr.Dataset,
+        test_years: Union[int, List[int]],
         target_variable: str,
         pred_months: int,
         expected_length: Optional[int],

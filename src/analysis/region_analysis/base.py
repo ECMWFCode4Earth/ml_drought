@@ -44,6 +44,7 @@ class RegionAnalysis:
         self,
         data_dir: Path = Path("data"),
         experiment: str = "one_month_forecast",
+        true_data_experiment: str = "one_month_forecast",
         models: Union[List[str], None] = None,
         admin_boundaries: bool = True,
         models_experiment_dir: Optional[str] = None,
@@ -55,7 +56,10 @@ class RegionAnalysis:
             path to data directory
 
         :experiment: str = 'one_month_forecast'
-            the name of the experiment that want to analyze
+            the name of the model dir that want to analyze
+
+        true_data_experiment: str = "one_month_forecast",
+            the name of the features/ dir used for Train/Test X/y split
 
         :models: Union[List[str], None] = None
             a list of models (as strings)
@@ -66,12 +70,8 @@ class RegionAnalysis:
         self.true_variable: Optional[str] = None
 
         self.data_dir: Path = data_dir
-
-        if models_experiment_dir is None:
-            models_experiment_dir = experiment
-
-        self.models_dir: Path = data_dir / "models" / models_experiment_dir
-        self.features_dir: Path = data_dir / "features" / experiment / "test"
+        self.models_dir: Path = data_dir / "models" / experiment
+        self.features_dir: Path = data_dir / "features" / true_data_experiment / "test"
         assert self.models_dir.exists(), (
             "Require {data_path}/models to have been" "created by the pipeline."
         )
@@ -91,7 +91,7 @@ class RegionAnalysis:
                 f"try one of: {[d.name for d in self.models_dir.iterdir()]}"
             )
 
-        assert experiment in ["one_month_forecast", "nowcast"]
+        assert ("one_month_forecast" in experiment) or ("nowcast" in experiment)
         self.experiment: str = experiment
 
         # NOTE: this shouldn't be specific for the boundaries it should

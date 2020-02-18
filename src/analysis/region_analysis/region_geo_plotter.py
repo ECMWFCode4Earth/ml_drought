@@ -176,7 +176,7 @@ class RegionGeoPlotter:
     @staticmethod
     def get_metric(
         selection: str, gdf: GeoDataFrame, **kwargs  # type: ignore
-    ) -> PlotMetric:
+    ) -> PlotMetric:  # type: ignore
         rmse_vmin = kwargs["rmse_vmin"] if "rmse_vmin" in kwargs else None
         rmse_vmax = (
             kwargs["rmse_vmax"]

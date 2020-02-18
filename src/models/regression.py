@@ -3,10 +3,11 @@ from pathlib import Path
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error
 import pickle
+import xarray as xr
 
 import shap
 
-from typing import cast, Dict, List, Tuple, Optional
+from typing import cast, Dict, List, Tuple, Optional, Union
 
 from .base import ModelBase
 from .utils import chunk_array
@@ -31,6 +32,9 @@ class LinearRegression(ModelBase):
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
         predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
+        include_prev_y: bool = True,
+        normalize_y: bool = True,
     ) -> None:
         super().__init__(
             data_folder,
@@ -45,6 +49,9 @@ class LinearRegression(ModelBase):
             ignore_vars,
             static,
             predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
+            include_prev_y=include_prev_y,
+            normalize_y=normalize_y,
         )
 
         self.explainer: Optional[shap.LinearExplainer] = None
@@ -92,6 +99,9 @@ class LinearRegression(ModelBase):
                 for batch_x, batch_y in chunk_array(x, y, batch_size, shuffle=True):
                     batch_y = cast(np.ndarray, batch_y)
                     x_in = self._concatenate_data(batch_x)
+
+                    if x_in.shape[0] == 0:
+                        pass
 
                     # fit the model
                     self.model.partial_fit(x_in, batch_y.ravel())
@@ -173,6 +183,9 @@ class LinearRegression(ModelBase):
             "include_monthly_aggs": self.include_monthly_aggs,
             "include_yearly_aggs": self.include_yearly_aggs,
             "static": self.static,
+            "spatial_mask": self.spatial_mask,
+            "include_prev_y": self.include_prev_y,
+            "normalize_y": self.normalize_y,
         }
 
         with (self.model_dir / "model.pkl").open("wb") as f:

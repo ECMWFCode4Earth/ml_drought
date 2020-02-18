@@ -16,11 +16,12 @@ class AdministrativeRegionAnalysis(RegionAnalysis):
         self,
         data_dir: Path = Path("data"),
         experiment: str = "one_month_forecast",
-        models_experiment_dir: Optional[str] = None,
+        true_data_experiment: str = "one_month_forecast",
     ):
         super().__init__(
             data_dir=data_dir,
             experiment=experiment,
+            true_data_experiment="one_month_forecast",
             admin_boundaries=self.admin_boundaries,
             models_experiment_dir=models_experiment_dir,
         )
@@ -69,7 +70,7 @@ class AdministrativeRegionAnalysis(RegionAnalysis):
         true_da: xr.DataArray,
         datetime: datetime,
     ) -> Tuple[List, List, List, List]:
-        """compute the mean values in the DataArray for each
+        """compute the mean values in the DataArray for each region
         Returns:
         --------
         datetimes: List
