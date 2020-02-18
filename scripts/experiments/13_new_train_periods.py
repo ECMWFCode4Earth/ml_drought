@@ -430,10 +430,6 @@ def run_experiments(
             experiment.print_experiment_summary()
 
         # a. Run the Engineer for these train/test periods
-        # TODO:
-        assert (
-            False
-        ), "Need to fix up the engineer to work with specific timesteps too ..."
         engineer = Engineer(
             get_data_path(),
             experiment="one_month_forecast",
