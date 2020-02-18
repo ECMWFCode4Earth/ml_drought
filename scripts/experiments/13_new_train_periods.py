@@ -441,7 +441,7 @@ def run_experiments(
             train_timesteps=[
                 pd.to_datetime(t) for t in train_timesteps
             ],  # defined by experiment
-            pred_timesteps=pred_timesteps,  # 3 by default
+            pred_months=pred_timesteps,  # 3 by default
             expected_length=expected_length,  # == pred_month by default
             target_variable=target_var,
         )
