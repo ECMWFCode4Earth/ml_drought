@@ -42,7 +42,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             expected_length=expected_length,
             train_years=train_years,
             train_timesteps=train_timesteps,
-            test_timesteps=test_timesteps
+            test_timesteps=test_timesteps,
         )
         if self.process_static:
             self._process_static()
@@ -290,15 +290,16 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
             if train_timesteps is not None:
                 # only save if that ts is in train_timesteps
                 # pd.to_datetime(f'{cur_pred_year}-{int(cur_pred_month):02}')
-                if (
-                    pd.to_datetime(self._get_datetime(arrays["y"].time.values[0]))
-                    in train_timesteps
-                ):
-                    self._save(
-                        arrays,
-                        year=cur_pred_year,
-                        month=cur_pred_month,
-                        dataset_type="train",
-                    )
+                if arrays is not None:
+                    if (
+                        pd.to_datetime(self._get_datetime(arrays["y"].time.values[0]))
+                        in train_timesteps
+                    ):
+                        self._save(
+                            arrays,
+                            year=cur_pred_year,
+                            month=cur_pred_month,
+                            dataset_type="train",
+                        )
 
             cur_pred_year, cur_pred_month = cur_min_date.year, cur_min_date.month
