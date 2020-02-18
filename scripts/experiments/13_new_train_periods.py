@@ -494,16 +494,33 @@ def run_experiments(
             f"Got: {len(test_nc_files)} \n\n {test_nc_files}"
 
         #  b. run the models
-        # parsimonious()
+        parsimonious()
         # lstm(vars_to_exclude, static="features")
         # ealstm(vars_to_exclude, static="features")
 
-        # c. save the experiment metadata
+        # c. rename the directories (TRAIN/TEST)
+        data_dir = get_data_path()
+        features_path = rename_experiment_dir(
+            data_dir,
+            train_hilo=train_hilo,
+            test_hilo=test_hilo,
+            train_length=train_length,
+            dir_="features",
+        )
+        models_path = rename_experiment_dir(
+            data_dir,
+            train_hilo=train_hilo,
+            test_hilo=test_hilo,
+            train_length=train_length,
+            dir_="models",
+        )
+
+        # d. save the experiment metadata
         save_object = dict(
             train_hilo=experiment.train_hilo,
             test_hilo=experiment.test_hilo,
             train_length=len(experiment.train_timesteps),
-            ignore_vars=ignore_vars,
+            ignore_vars=vars_to_exclude,
             static=static,
             train_timesteps=experiment.train_timesteps,
             test_timesteps=experiment.test_timesteps,
@@ -512,25 +529,8 @@ def run_experiments(
             sorted_timesteps=experiment.sorted_timesteps,
         )
 
-        with open(data_dir / "models/one_month_forecast/experiment.json", "wb") as fp:
-            json.dump(expt_dict, fp, sort_keys=True, indent=4)
-
-        # d. rename the directories (TRAIN/TEST)
-        # data_dir = get_data_path()
-        # features_path = rename_experiment_dir(
-        #     data_dir,
-        #     train_hilo=train_hilo,
-        #     test_hilo=test_hilo,
-        #     train_length=train_length,
-        #     dir_="features",
-        # )
-        # models_path = rename_experiment_dir(
-        #     data_dir,
-        #     train_hilo=train_hilo,
-        #     test_hilo=test_hilo,
-        #     train_length=train_length,
-        #     dir_="models",
-        # )
+        with open(models_path / "experiment.json", "wb") as fp:
+            json.dump(save_object, fp, sort_keys=True, indent=4)
 
 
 if __name__ == "__main__":
@@ -563,6 +563,12 @@ if __name__ == "__main__":
 
     data_dir = get_data_path()
     # data_dir = Path('/Volumes/Lees_Extend/data/ecmwf_sowc/data')
+
+    if (data_dir / 'features/one_month_forecast').exists():
+        from_path = data_dir / 'features/one_month_forecast'
+        to_path = data_dir / 'features/__one_month_forecast'
+        _rename_directory(from_path, to_path, with_datetime=True)
+
     run_experiments(
         vars_to_exclude=vars_to_exclude, data_dir=data_dir, target_var="boku_VCI"
     )
