@@ -26,7 +26,7 @@ class _DifferentTrainingPeriodsEngineer(_OneMonthForecastEngineer):
 
     def engineer(
         self,
-        test_year: Union[int, List[int]],
+        test_year: Optional[Union[int, List[int]]] = None,
         target_variable: str = "VHI",
         pred_months: int = 12,
         expected_length: Optional[int] = 12,
