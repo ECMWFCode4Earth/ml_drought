@@ -459,6 +459,10 @@ def run_experiments(
             experiment.test_timesteps,
             experiment.train_timesteps,
         )
+        assert len(test_timesteps) == int(experiment.test_length), \
+            f"Expect the number of test timesteps to be: {experiment.test_length}" \
+            f"Got: {len(test_timesteps)}"
+
         if DEBUG:
             experiment.print_experiment_summary()
 
@@ -480,6 +484,11 @@ def run_experiments(
             expected_length=expected_length,  # == pred_month by default
             target_variable=target_var,
         )
+
+        test_nc_files = [d.name for d in (data_dir / "features/one_month_forecast/test").glob('*.nc')]
+        assert len(test_nc_files) == int(experiment.test_length), \
+            f"Expect the Engineer to have created {experiment.test_length} files"\
+            f"Got: {len(test_nc_files)} \n\n {test_nc_files}"
 
         #  b. run the models
         parsimonious()

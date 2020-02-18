@@ -685,7 +685,7 @@ class _BaseIter:
                 _ignore_vars = np.array(self.ignore_vars)[
                     np.isin(self.ignore_vars, [v for v in x.data_vars])
                 ]
-                x = x.drop(_ignore_vars)
+                x = x.drop([v for v in _ignore_vars])
             else:
                 print(f"{self.ignore_vars} not found in x data")
 
