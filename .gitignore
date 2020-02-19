@@ -21,6 +21,7 @@ data/*.zip*
 *.idx
 scripts/*.png
 scripts/variables.txt
+data/tommy/
 
 .ipynb_checkpoints
 
