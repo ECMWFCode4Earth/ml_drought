@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 import sys
 import itertools
 import pandas as pd
@@ -15,12 +15,83 @@ from src.engineer import Engineer
 import calendar
 
 
-def make_monthly_calendar_plot(df, ax, title, **kwargs):
+def highlight_cell(x, y, ax=None, fill=False, **kwargs):
+    """Pick a particular cell to add a patch around
+    https://stackoverflow.com/a/56655069/9940782
+    """
+    rect = plt.Rectangle((x-.5, y-.575), 1, 1, fill=fill, **kwargs)
+    ax = ax or plt.gca()
+    ax.add_patch(rect)
+    return rect
+
+
+def highlight_timestep_cells(
+    ax, highlight_timesteps: List[pd.Timestamp],
+    highlight_color: Optional[str] = None
+):
+    yr_index_map = {
+        int(label.get_text()): ix
+        for ix, label in enumerate(ax.get_yticklabels())
+    }
+
+    # get the indexes of the yr-mth
+    yrs = [yr_index_map[dt.year] for dt in highlight_timesteps]
+    mths = [dt.month - 1 for dt in highlight_timesteps]
+    highlight_ixs = list(zip(mths, yrs))
+    # highlight them all!
+    highlight_color = 'red' if highlight_color is None else highlight_color
+    for cell in highlight_ixs:
+        highlight_cell(cell[0], cell[1], ax=ax, color=highlight_color, fill=False)
+
+    return ax
+
+
+def make_monthly_calendar_plot(
+    df: pd.DataFrame,
+    ax: plt.Axes,
+    title: str,
+    highlight_timesteps: Optional[List[pd.Timestamp]] = None,
+    highlight_color: Optional[str] = None,
+    **kwargs
+):
+    """Make a calendar plot (months on the x axis, years on the y axis)
+    from a DataFrame.
+
+    Note:
+    - The dataframe must have a time index
+        ```
+        df.astype(columns={'time': pd.Timestamp}).set_index('time')
+        ```
+    - the max/min years should be appended to the dataset
+        ```
+        _df = pd.DataFrame({value_column: [np.nan]}, index=[pd.to_datetime(MIN_TIME)])
+        df = pd.concat([_df, df])
+        _df = pd.DataFrame({value_column: [np.nan]}, index=[pd.to_datetime(MAX_TIME)])
+        df = pd.concat([df, _df])
+        ```
+    - the dataset should be resampled to ensure that all empty
+    months are filled with np.nan using:
+        ```df = df.resample('M').first() ```
+    - must assign a "year" and a "month" column to the dataframe
+        ```
+        df['month'] = [pd.to_datetime(d).month for d in df.index]
+        df['year'] = [pd.to_datetime(d).year for d in df.index]
+        ```
+    """
     assert "year" in [c for c in df.columns]
     assert "month" in [c for c in df.columns]
-    im = ax.imshow(
-        df.pivot(index="year", columns="month").values, aspect="auto", **kwargs
-    )
+
+    try:
+        im = ax.imshow(
+            df.pivot(index="year", columns="month").values,
+            aspect="auto", **kwargs
+        )
+    except ValueError as E:
+        print(E)
+        im = ax.imshow(
+            df.reset_index().drop('index').pivot(index="year", columns="month").values,
+            aspect="auto", **kwargs
+        )
 
     ax.set_xticks([i for i in range(0, 12)])
     ax.set_xticklabels([calendar.month_abbr[i + 1] for i in range(0, 12)])
@@ -32,6 +103,12 @@ def make_monthly_calendar_plot(df, ax, title, **kwargs):
     ax.set_ylabel("Year")
 
     ax.set_title(title)
+
+    if highlight_timesteps is not None:
+        ax = highlight_timestep_cells(
+            ax=plt.gca(), highlight_timesteps=highlight_timesteps,
+            highlight_color=highlight_color
+        )
 
     for item in (
         [ax.title, ax.xaxis.label, ax.yaxis.label]
@@ -303,7 +380,7 @@ class Experiment:
 
         return test_timesteps, train_timesteps
 
-    def plot_experiment_split(self):
+    def plot_experiment_split(self, ax: Optional = None, show_test_timesteps: bool = True):
         # FILL IN GAPS!
         is_test = []
         for ts in self.sorted_timesteps:
@@ -322,9 +399,15 @@ class Experiment:
         df["year"] = df.index.year
         df["month"] = df.index.month
 
-        fig, ax = plt.subplots()
+        if ax is None:
+            fig, ax = plt.subplots()
+
         title = f"Test: {self.test_hilo} // Train: {self.train_hilo}\nTrainLength:{self.train_length} TestLength:{self.test_length}"
-        ax = make_monthly_calendar_plot(df, ax, title=title)
+        if show_test_timesteps:
+            highlight_timesteps = [pd.to_datetime(dt) for dt in self.test_timesteps]
+        else:
+            highlight_timesteps = None
+        ax = make_monthly_calendar_plot(df, ax, title=title, highlight_timesteps=highlight_timesteps)
 
         return ax
 
