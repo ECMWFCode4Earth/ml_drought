@@ -225,6 +225,19 @@ def run_experiments(
         #     json.dump(save_object, fp, sort_keys=True, indent=4)
 
 
+def move_all_experiment_files(data_dir: Path, folder_name: str, dir_: str = 'models'):
+    assert dir_ in ["models", "features"]
+
+    all_experiment_dirs = [d for d in (data_dir / dir_).glob('*TR*TE*LEN*')]
+
+    if not (data_dir / dir_ / folder_name).exists():
+        (data_dir / dir_ / folder_name).mkdir(exist_ok=True, parents=True)
+
+    for from_path in all_experiment_dirs:
+        to_path = data_dir / dir_ / folder_name / from_path.name
+        _rename_directory(from_path=from_path, to_path=to_path)
+
+
 if __name__ == "__main__":
     global DEBUG
     DEBUG = True
@@ -261,6 +274,20 @@ if __name__ == "__main__":
         to_path = data_dir / "features/__one_month_forecast"
         _rename_directory(from_path, to_path, with_datetime=True)
 
+    target_var = target_vars[0]
     run_experiments(
-        vars_to_exclude=vars_to_exclude, data_dir=data_dir, target_var="boku_VCI"
+        vars_to_exclude=vars_to_exclude, data_dir=data_dir, target_var=target_var
     )
+
+    move_all_experiment_files(
+        data_dir=data_dir,
+        folder_name=f"robustness_{target_var}",
+        dir_='models'
+    )
+
+    move_all_experiment_files(
+        data_dir=data_dir,
+        folder_name=f"robustness_{target_var}",
+        dir_='features'
+    )
+

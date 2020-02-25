@@ -30,7 +30,7 @@ def highlight_timestep_cells(
     highlight_color: Optional[str] = None
 ):
     yr_index_map = {
-        int(label.get_text()): ix
+        int(float(label.get_text())): ix
         for ix, label in enumerate(ax.get_yticklabels())
     }
 
