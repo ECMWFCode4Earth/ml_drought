@@ -9,6 +9,7 @@ from datetime import date
 import xarray as xr
 import numpy as np
 from scipy import stats
+import pandas as pd
 
 from typing import Optional, Tuple
 
@@ -67,6 +68,34 @@ def minus_months(
     else:
         newdate = None
     return new_year, new_month, newdate
+
+
+def minus_timesteps(
+    time: pd.Timestamp,
+    time_delta: int,
+    freq: str = 'M'
+) -> pd.Timestamp:
+    """
+    alternative method:
+    ```
+        # create ordered list of timesteps
+        min_time='1980-01'; max_time='2020-01'
+        date_range = pd.date_range(min_time, max_time, freq=freq)
+    ```
+    """
+    # create timedelta object
+    tdelta = pd.Timedelta(time_delta, freq)
+
+    # take the timedelta to get the starting timestep
+    minus_time = time - tdelta
+
+    if freq == 'M':
+        from pandas.tseries.offsets import MonthEnd
+        # our pipeline mostly works with 'MS' resampled data
+        # so monthly data is always at the END of the month
+        minus_time = minus_time + MonthEnd(1)
+
+    return minus_time
 
 
 def get_ds_mask(ds: xr.Dataset) -> xr.Dataset:

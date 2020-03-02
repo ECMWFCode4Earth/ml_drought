@@ -283,15 +283,22 @@ class _EngineerBase:
             output_ds.to_netcdf(output_location / f"{x_or_y}.nc")
 
     def _calculate_normalization_values(
-        self, x_data: xr.Dataset
+        self, train_data: xr.Dataset, latlon: bool = True
     ) -> DefaultDict[str, Dict[str, float]]:
         normalization_values: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 
-        for var in x_data.data_vars:
+        for var in train_data.data_vars:
+            if latlon:
+                dims = ["lat", "lon", "time"]
+            else:  # ASSUME 1D
+                assert len([c for c in train_data.coords if c != 'time']) == 1, "Only works with one dimension"
+                dimension_name = [c for c in train_data.coords][0]
+                dims = [dimension_name, "time"]
+
             mean = float(
-                x_data[var].mean(dim=["lat", "lon", "time"], skipna=True).values
+                train_data[var].mean(dim=dims, skipna=True).values
             )
-            std = float(x_data[var].std(dim=["lat", "lon", "time"], skipna=True).values)
+            std = float(train_data[var].std(dim=dims, skipna=True).values)
             normalization_values[var]["mean"] = mean
             normalization_values[var]["std"] = std
 
