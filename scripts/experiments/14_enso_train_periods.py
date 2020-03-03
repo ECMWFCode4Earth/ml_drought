@@ -323,8 +323,8 @@ if __name__ == "__main__":
     vars_to_include = target_vars + dynamic_vars
     vars_to_exclude = [v for v in all_vars if v not in vars_to_include]
 
-    # data_dir = get_data_path()
-    data_dir = Path("/Volumes/Lees_Extend/data/ecmwf_sowc/data")
+    data_dir = get_data_path()
+    # data_dir = Path("/Volumes/Lees_Extend/data/ecmwf_sowc/data")
 
     # save the preexisting one-month-forecast if already exists
     if (data_dir / "features/one_month_forecast").exists():
