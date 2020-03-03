@@ -19,15 +19,14 @@ def highlight_cell(x, y, ax=None, fill=False, **kwargs):
     """Pick a particular cell to add a patch around
     https://stackoverflow.com/a/56655069/9940782
     """
-    rect = plt.Rectangle((x-.5, y-.575), 1, 1, fill=fill, **kwargs)
+    rect = plt.Rectangle((x - 0.5, y - 0.575), 1, 1, fill=fill, **kwargs)
     ax = ax or plt.gca()
     ax.add_patch(rect)
     return rect
 
 
 def highlight_timestep_cells(
-    ax, highlight_timesteps: List[pd.Timestamp],
-    highlight_color: Optional[str] = None
+    ax, highlight_timesteps: List[pd.Timestamp], highlight_color: Optional[str] = None
 ):
     yr_index_map = {
         int(float(label.get_text())): ix
@@ -39,7 +38,7 @@ def highlight_timestep_cells(
     mths = [dt.month - 1 for dt in highlight_timesteps]
     highlight_ixs = list(zip(mths, yrs))
     # highlight them all!
-    highlight_color = 'red' if highlight_color is None else highlight_color
+    highlight_color = "red" if highlight_color is None else highlight_color
     for cell in highlight_ixs:
         highlight_cell(cell[0], cell[1], ax=ax, color=highlight_color, fill=False)
 
@@ -52,7 +51,7 @@ def make_monthly_calendar_plot(
     title: str,
     highlight_timesteps: Optional[List[pd.Timestamp]] = None,
     highlight_color: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ):
     """Make a calendar plot (months on the x axis, years on the y axis)
     from a DataFrame.
@@ -83,14 +82,14 @@ def make_monthly_calendar_plot(
 
     try:
         im = ax.imshow(
-            df.pivot(index="year", columns="month").values,
-            aspect="auto", **kwargs
+            df.pivot(index="year", columns="month").values, aspect="auto", **kwargs
         )
     except ValueError as E:
         print(E)
         im = ax.imshow(
-            df.reset_index().drop('index').pivot(index="year", columns="month").values,
-            aspect="auto", **kwargs
+            df.reset_index().drop("index").pivot(index="year", columns="month").values,
+            aspect="auto",
+            **kwargs,
         )
 
     ax.set_xticks([i for i in range(0, 12)])
@@ -106,8 +105,9 @@ def make_monthly_calendar_plot(
 
     if highlight_timesteps is not None:
         ax = highlight_timestep_cells(
-            ax=plt.gca(), highlight_timesteps=highlight_timesteps,
-            highlight_color=highlight_color
+            ax=plt.gca(),
+            highlight_timesteps=highlight_timesteps,
+            highlight_color=highlight_color,
         )
 
     for item in (
@@ -216,6 +216,7 @@ class Experiment:
         test_length: int,
         sorted_timesteps: pd.DatetimeIndex,
         pred_timesteps: int = 3,
+        randomly_select_test_times: bool = True,
     ):
         self.train_length = train_length
         self.train_hilo = train_hilo
@@ -223,6 +224,7 @@ class Experiment:
         self.test_length = test_length
         self.sorted_timesteps = sorted_timesteps
         self.pred_timesteps = pred_timesteps
+        self.randomly_select_test_times = randomly_select_test_times
 
         assert train_hilo in ["high", "med", "low"]
         assert test_hilo in ["high", "med", "low"]
@@ -237,7 +239,7 @@ class Experiment:
         self.replacement = False
 
         test_timesteps, train_timesteps = self.get_experiment_timesteps(
-            sorted_timesteps
+            sorted_timesteps, randomly_select_test_times=self.randomly_select_test_times
         )
         self.test_timesteps = [pd.to_datetime(ts) for ts in test_timesteps]
         self.train_timesteps = [pd.to_datetime(ts) for ts in train_timesteps]
@@ -291,16 +293,44 @@ class Experiment:
 
         return test_timesteps_plus
 
+    @staticmethod
+    def get_n_middle(seq, n_elements) -> np.array:
+        """Get the n_elements from the middle of a sequence"""
+        # get the middle index
+        idx = len(seq) // 2
+        # get n above/below
+        n_below = n_elements // 2
+        n_above = (n_elements // 2) + (n_elements % 2)
+        assert n_below + n_above == n_elements
+
+        # extract the middle indices from sequence
+        middle_portion = np.append(seq[idx - n_below : idx], seq[idx : idx + n_above])
+        assert len(middle_portion) == n_elements
+
+        return middle_portion
+
     def get_experiment_timesteps(
-        self, sorted_timesteps: np.array
+        self, sorted_timesteps: np.array, randomly_select_test_times: bool = True
     ) -> Tuple[np.array, np.array]:
         # 1. split into low, med, high groups
         test_dict = self._calculate_hilo_dict(sorted_timesteps)
 
         # 2. select randomly the TEST timesteps from these groups
-        test_timesteps = np.random.choice(
-            test_dict[self.test_hilo], self.test_length, replace=False
-        )
+        if randomly_select_test_times:
+            test_timesteps = np.random.choice(
+                test_dict[self.test_hilo], self.test_length, replace=False
+            )
+        else:  # OR select the middle, or extremes (hilo)
+            if self.test_hilo == "med":
+                mid_idx = int(len(sorted_timesteps) / 2)
+                # select 12 middle elements
+                test_timesteps = self.get_n_middle(sorted_timesteps, 12)
+            elif self.test_hilo == "high":
+                # select 12 highest
+                test_timesteps = sorted_timesteps[-12:]
+            elif self.test_hilo == "low":
+                # select 12 lowest
+                test_timesteps = sorted_timesteps[:12]
 
         # 3. remove test_timesteps from array to choose train_timesteps
         # we also need to account for the fact that these TEST timesteps
@@ -383,7 +413,9 @@ class Experiment:
 
         return test_timesteps, train_timesteps
 
-    def plot_experiment_split(self, ax: Optional = None, show_test_timesteps: bool = True):
+    def plot_experiment_split(
+        self, ax: Optional = None, show_test_timesteps: bool = True
+    ):
         # FILL IN GAPS!
         is_test = []
         for ts in self.sorted_timesteps:
@@ -410,7 +442,9 @@ class Experiment:
             highlight_timesteps = [pd.to_datetime(dt) for dt in self.test_timesteps]
         else:
             highlight_timesteps = None
-        ax = make_monthly_calendar_plot(df, ax, title=title, highlight_timesteps=highlight_timesteps)
+        ax = make_monthly_calendar_plot(
+            df, ax, title=title, highlight_timesteps=highlight_timesteps
+        )
 
         return ax
 

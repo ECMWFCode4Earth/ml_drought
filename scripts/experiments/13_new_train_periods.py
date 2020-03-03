@@ -225,10 +225,10 @@ def run_experiments(
         #     json.dump(save_object, fp, sort_keys=True, indent=4)
 
 
-def move_all_experiment_files(data_dir: Path, folder_name: str, dir_: str = 'models'):
+def move_all_experiment_files(data_dir: Path, folder_name: str, dir_: str = "models"):
     assert dir_ in ["models", "features"]
 
-    all_experiment_dirs = [d for d in (data_dir / dir_).glob('*TR*TE*LEN*')]
+    all_experiment_dirs = [d for d in (data_dir / dir_).glob("*TR*TE*LEN*")]
 
     if not (data_dir / dir_ / folder_name).exists():
         (data_dir / dir_ / folder_name).mkdir(exist_ok=True, parents=True)
@@ -280,14 +280,9 @@ if __name__ == "__main__":
     )
 
     move_all_experiment_files(
-        data_dir=data_dir,
-        folder_name=f"robustness_{target_var}",
-        dir_='models'
+        data_dir=data_dir, folder_name=f"robustness_{target_var}", dir_="models"
     )
 
     move_all_experiment_files(
-        data_dir=data_dir,
-        folder_name=f"robustness_{target_var}",
-        dir_='features'
+        data_dir=data_dir, folder_name=f"robustness_{target_var}", dir_="features"
     )
-

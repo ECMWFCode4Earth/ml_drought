@@ -27,12 +27,14 @@ import calendar
 def download_preprocess_enso(data_dir: Path) -> xr.Dataset:
     """Get Nino3.4 index and convert to xarray obj"""
     nino34_link = "https://www.esrl.noaa.gov/psd/data/correlation/nina34.data"
-    nino34_link = "https://www.esrl.noaa.gov/psd/gcos_wgsp/Timeseries/Data/nino34.long.anom.data"
-    name = 'nino34'
+    nino34_link = (
+        "https://www.esrl.noaa.gov/psd/gcos_wgsp/Timeseries/Data/nino34.long.anom.data"
+    )
+    name = "nino34"
 
     # 1. PREPROCESS DATAFRAME
     # Download data and clean the table
-    if 'anom' in nino34_link:
+    if "anom" in nino34_link:
         df = pd.read_table(nino34_link, skiprows=0, nrows=149)
     else:
         df = pd.read_table(nino34_link, skiprows=0, nrows=73)
@@ -42,22 +44,22 @@ def download_preprocess_enso(data_dir: Path) -> xr.Dataset:
     # wide to long format
     df = df.set_index(0).stack()
     df.name = name
-    df = df.reset_index().rename(columns={0: 'year', 'level_1': 'month'})
+    df = df.reset_index().rename(columns={0: "year", "level_1": "month"})
 
     # create datetime index
-    df['time'] = df.apply(lambda x: pd.to_datetime(f'{x.year}-{x.month}'), axis=1)
-    df = df.set_index('time').drop(columns=['year', 'month'])
+    df["time"] = df.apply(lambda x: pd.to_datetime(f"{x.year}-{x.month}"), axis=1)
+    df = df.set_index("time").drop(columns=["year", "month"])
 
     # replace missing data
     df = df.astype({name: float}).replace(-99.99, np.nan)
 
     # resample to month end (same as other data)
-    df = df.resample('M').first()
+    df = df.resample("M").first()
 
     # 2. CONVERT TO XARRAY
     vci = xr.open_dataset(
-        data_dir / 'interim/boku_ndvi_1000_preprocessed/data_kenya.nc'
-    )['boku_VCI']
+        data_dir / "interim/boku_ndvi_1000_preprocessed/data_kenya.nc"
+    )["boku_VCI"]
     mask = vci.isnull()
 
     # for each MONTH TIMESTEP multiply by the nino value
@@ -66,11 +68,11 @@ def download_preprocess_enso(data_dir: Path) -> xr.Dataset:
     nino_xr = nino_xr * pd.DataFrame.to_xarray(nino_ts)
     nino_xr = nino_xr.where(~mask)
 
-    if not (data_dir / 'analysis/sst').exists():
-        (data_dir / 'analysis/sst').mkdir(parents=True, exist_ok=True)
+    if not (data_dir / "analysis/sst").exists():
+        (data_dir / "analysis/sst").mkdir(parents=True, exist_ok=True)
 
     # save to netcdf
-    nino_xr.to_netcdf(data_dir / f'analysis/sst/data_{name}.nc')
+    nino_xr.to_netcdf(data_dir / f"analysis/sst/data_{name}.nc")
 
     return nino_xr
 
@@ -142,6 +144,7 @@ def run_experiments(
     test_length: int = 12,
     target_var="boku_VCI",
     data_dir: Path = Path("data"),
+    randomly_select_test_times: bool = True,
 ):
     nino_xr = download_preprocess_enso(data_dir)
     expected_length = pred_timesteps
@@ -165,9 +168,7 @@ def run_experiments(
     #  2. Sort the target data by MEDIAN MONTH values
     # target_data = Engineer(data_dir).engineer_class._make_dataset(static=False)
     sorted_df, sorted_timesteps = sort_by_median_target_var(
-        target_data=nino_xr,
-        pred_timesteps=pred_timesteps,
-        data_dir=data_dir,
+        target_data=nino_xr, pred_timesteps=pred_timesteps, data_dir=data_dir
     )
 
     # 3. Calculate the train lengths ([1/3, 2/3, 3/3] of leftover data after test)
@@ -187,6 +188,7 @@ def run_experiments(
             test_hilo=test_hilo,
             test_length=test_length,
             sorted_timesteps=sorted_timesteps,
+            randomly_select_test_times=randomly_select_test_times,
         )
         for train_hilo, test_hilo, train_length in itertools.product(
             hilos, hilos, train_lengths
@@ -280,10 +282,10 @@ def run_experiments(
         #     json.dump(save_object, fp, sort_keys=True, indent=4)
 
 
-def move_all_experiment_files(data_dir: Path, folder_name: str, dir_: str = 'models'):
+def move_all_experiment_files(data_dir: Path, folder_name: str, dir_: str = "models"):
     assert dir_ in ["models", "features"]
 
-    all_experiment_dirs = [d for d in (data_dir / dir_).glob('*TR*TE*LEN*')]
+    all_experiment_dirs = [d for d in (data_dir / dir_).glob("*TR*TE*LEN*")]
 
     if not (data_dir / dir_ / folder_name).exists():
         (data_dir / dir_ / folder_name).mkdir(exist_ok=True, parents=True)
@@ -322,7 +324,7 @@ if __name__ == "__main__":
     vars_to_exclude = [v for v in all_vars if v not in vars_to_include]
 
     # data_dir = get_data_path()
-    data_dir = Path('/Volumes/Lees_Extend/data/ecmwf_sowc/data')
+    data_dir = Path("/Volumes/Lees_Extend/data/ecmwf_sowc/data")
 
     # save the preexisting one-month-forecast if already exists
     if (data_dir / "features/one_month_forecast").exists():
@@ -332,21 +334,23 @@ if __name__ == "__main__":
 
     # RUN EXPERIMENT for target_var
     target_var = target_vars[0]
-    run_experiments(
-        vars_to_exclude=vars_to_exclude,
-        data_dir=data_dir,
-        target_var=target_var
-    )
 
-    move_all_experiment_files(
-        data_dir=data_dir,
-        folder_name=f"enso_robustness_{target_var}",
-        dir_='models'
-    )
+    for randomly_select_test_times in [True, False]:
+        run_experiments(
+            vars_to_exclude=vars_to_exclude,
+            data_dir=data_dir,
+            target_var=target_var,
+            randomly_select_test_times=randomly_select_test_times,
+        )
 
-    move_all_experiment_files(
-        data_dir=data_dir,
-        folder_name=f"enso_robustness_{target_var}",
-        dir_='features'
-    )
+        move_all_experiment_files(
+            data_dir=data_dir,
+            folder_name=f"enso_robustness_{target_var}_random{randomly_select_test_times}",
+            dir_="models",
+        )
 
+        move_all_experiment_files(
+            data_dir=data_dir,
+            folder_name=f"enso_robustness_{target_var}_random{randomly_select_test_times}",
+            dir_="features",
+        )
