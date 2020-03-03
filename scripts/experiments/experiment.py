@@ -164,13 +164,14 @@ def get_valid_test_timesteps(
 
 
 def sort_by_median_target_var(
-    pred_timesteps: int, data_dir: Path = Path("data")
+    target_data: xr.Dataset,
+    pred_timesteps: int,
+    data_dir: Path = Path("data"),
+    drop_nans: bool = True,
 ) -> Tuple[pd.DataFrame, pd.DatetimeIndex]:
     """ Calculate the sorted_timesteps to then calculate hi/med/lo
     train and test periods.
     """
-    target_data = Engineer(data_dir).engineer_class._make_dataset(static=False)
-
     target_variable = [v for v in target_data.data_vars][0]
 
     # SORT BY MEDIAN VCI EACH MONTH (over space)
@@ -182,6 +183,8 @@ def sort_by_median_target_var(
 
     # sorted low to high
     sorted_df = median_data.sort_values(target_variable)
+    if drop_nans:
+        sorted_df = sorted_df.dropna()
     sorted_timesteps = sorted_df.index
 
     return sorted_df, sorted_timesteps
