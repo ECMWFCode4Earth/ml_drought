@@ -17,11 +17,6 @@ from .base import _EngineerBase
 class _OneTimestepForecastEngineer(_EngineerBase):
     name = "one_timestep_forecast"
 
-    # def _process_dynamic(test_year: List[int]):
-    #     """""""
-    #     netcdf_files = self._get_preprocessed_files(static=False)
-    #     data = xr.open_dataset()
-
     def stratify_xy(
         self,
         ds: xr.Dataset,
