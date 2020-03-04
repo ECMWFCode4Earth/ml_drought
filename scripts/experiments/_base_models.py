@@ -14,8 +14,10 @@ from src.analysis import all_explanations_for_file
 from scripts.utils import get_data_path
 
 
-def parsimonious(experiment="one_month_forecast",):
-    predictor = Persistence(get_data_path(), experiment=experiment)
+def parsimonious(experiment="one_month_forecast", include_yearly_aggs=True):
+    predictor = Persistence(
+        get_data_path(), experiment=experiment, include_yearly_aggs=include_yearly_aggs
+    )
     predictor.evaluate(save_preds=True)
 
 

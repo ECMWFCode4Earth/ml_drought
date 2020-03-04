@@ -44,7 +44,7 @@ if __name__ == "__main__":
     # -------------
     # persistence
     # -------------
-    parsimonious()
+    parsimonious(include_yearly_aggs=False)
 
     # regression(ignore_vars=always_ignore_vars)
     # gbdt(ignore_vars=always_ignore_vars)
