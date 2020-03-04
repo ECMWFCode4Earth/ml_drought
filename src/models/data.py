@@ -795,7 +795,6 @@ class _BaseIter:
                 & (static_nans_summed == 0)
                 & (prev_y_var_summed == 0)
             )[0]
-            assert False
             if self.experiment == "nowcast":
                 current_nans = np.isnan(train_data.current)
                 current_nans_summed = current_nans.sum(axis=-1)
@@ -822,16 +821,17 @@ class _BaseIter:
             target_time=target_time,
             historical_times=x_datetimes,
         )
-
         if to_tensor:
             model_arrays.to_tensor(self.device)
 
+        assert False
         if self.predict_delta:
             # NOTE: data is not normalised in this function
             model_arrays.predict_delta = True
             historical_target_np = self._calculate_historical_target(x, y_var)
             historical_target_np = historical_target_np[notnan_indices].flatten()
             model_arrays.historical_target = historical_target_np
+
         return model_arrays
 
     @staticmethod
