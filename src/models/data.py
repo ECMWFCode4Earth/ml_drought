@@ -824,7 +824,6 @@ class _BaseIter:
         if to_tensor:
             model_arrays.to_tensor(self.device)
 
-        assert False
         if self.predict_delta:
             # NOTE: data is not normalised in this function
             model_arrays.predict_delta = True
@@ -901,6 +900,7 @@ class _TrainIter(_BaseIter):
                 arrays = self.ds_folder_to_np(
                     subfolder, clear_nans=self.clear_nans, to_tensor=False
                 )
+                assert False
                 if arrays.x.historical.shape[0] == 0:
                     print(f"{subfolder} returns no values. Skipping")
 
