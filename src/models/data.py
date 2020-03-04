@@ -205,8 +205,13 @@ def train_val_mask(
     The train mask and the val mask, both as lists
     """
     assert val_ratio < 1, f"Val ratio must be smaller than 1"
-    train_mask = np.random.rand(mask_len) < 1 - val_ratio
-    val_mask = ~train_mask
+    train_mask = np.ones(mask_len).astype("bool")
+    val_mask = np.zeros(mask_len).astype("bool")
+
+    # We don't want ALL values in train and none in val
+    while all(np.array(train_mask)) and all(~np.array(val_mask)):
+        train_mask = np.random.rand(mask_len) < 1 - val_ratio
+        val_mask = ~train_mask
 
     return train_mask.tolist(), val_mask.tolist()
 
@@ -676,11 +681,13 @@ class _BaseIter:
             f"Expect only 1 target variable! " f"Got {len(list(y.data_vars))}"
         )
         if self.ignore_vars is not None:
-            #  only include the vars in ignore_vars that are in x.data_vars
-            self.ignore_vars = [
-                v for v in self.ignore_vars if v in [var_ for var_ in x.data_vars]
-            ]
-            x = x.drop(self.ignore_vars)
+            if any(np.isin(self.ignore_vars, [v for v in x.data_vars])):
+                _ignore_vars = np.array(self.ignore_vars)[
+                    np.isin(self.ignore_vars, [v for v in x.data_vars])
+                ]
+                x = x.drop([v for v in _ignore_vars])
+            else:
+                print(f"{self.ignore_vars} not found in x data")
 
         target_time = pd.to_datetime(y.time.values[0])
         if self.experiment == "nowcast":

@@ -23,6 +23,7 @@ class AdministrativeRegionAnalysis(RegionAnalysis):
             experiment=experiment,
             true_data_experiment="one_month_forecast",
             admin_boundaries=self.admin_boundaries,
+            models_experiment_dir=models_experiment_dir,
         )
 
     @staticmethod

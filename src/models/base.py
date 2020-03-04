@@ -131,6 +131,18 @@ class ModelBase:
         # calculate the raw values
         return prev_ts + y["preds"]  # .to_dataset(name_of_preds_var)
 
+    def _convert_delta_to_raw_values(
+        self, x: xr.Dataset, y: xr.Dataset, y_var: str, order: int = 1
+    ) -> xr.Dataset:
+        """When calculating the derivative we need to convert the change/delta
+        to the raw value for our prediction.
+        """
+        # x.shape == (pixels, featurespreds)
+        prev_ts = x[y_var].isel(time=-order)
+
+        # calculate the raw values
+        return prev_ts + y["preds"]  # .to_dataset(name_of_preds_var)
+
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         # This method should return the test arrays as loaded by
         # the test array dataloader, and the corresponding predictions
