@@ -696,7 +696,6 @@ class _BaseIter:
     ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / "x.nc"), xr.open_dataset(folder / "y.nc")
-        assert False
         if self.predict_delta:
             # TODO: do this ONCE not at each read-in of the data
             y = self._calculate_change(x, y)
@@ -708,6 +707,7 @@ class _BaseIter:
             self.ignore_vars = [
                 v for v in self.ignore_vars if v in [var_ for var_ in x.data_vars]
             ]
+            assert False
             x = x.drop(self.ignore_vars)
 
         target_time = pd.to_datetime(y.time.values[0])
