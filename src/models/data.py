@@ -723,6 +723,7 @@ class _BaseIter:
         x, y = self.apply_spatial_mask(x, y)
 
         if self.incl_yearly_aggs:
+            assert False
             yearly_agg = self._calculate_aggs(
                 x
             )  # before to avoid aggs from surrounding pixels
