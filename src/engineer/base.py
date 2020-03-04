@@ -56,8 +56,8 @@ class _EngineerBase:
         dynamic_ds = self._make_dataset(static=False, overwrite_dims=False)
         # TODO: ignore test years
         min_year = dynamic_ds.time.min()
-        dynamic_ds = dynamic_ds.sel(time=slice(min_year, str(test_year - 1)))
         test_year = [test_year] if not isinstance(test_year, Iterable) else test_year
+        dynamic_ds = dynamic_ds.sel(time=slice(min_year, str(min(test_year) - 1)))
         assert all(
             int(yr) not in np.unique(dynamic_ds["time.year"].values) for yr in test_year
         )
