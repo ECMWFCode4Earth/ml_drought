@@ -707,7 +707,6 @@ class _BaseIter:
             self.ignore_vars = [
                 v for v in self.ignore_vars if v in [var_ for var_ in x.data_vars]
             ]
-            assert False
             x = x.drop(self.ignore_vars)
 
         target_time = pd.to_datetime(y.time.values[0])
@@ -741,6 +740,7 @@ class _BaseIter:
         prev_y_var = self._get_prev_y_var(folder, list(y.data_vars)[0], y_np.shape[0])
 
         latlons, train_latlons = self._calculate_latlons(x)
+        assert False
         if self.experiment == "nowcast":
             # if nowcast then we have a TrainData.current
             historical = x_np[:, :-1, :]  # all timesteps except the final
