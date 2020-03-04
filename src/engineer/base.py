@@ -5,6 +5,7 @@ from pathlib import Path
 import pickle
 import xarray as xr
 import warnings
+from collections.abc import Iterable
 
 from typing import cast, DefaultDict, Dict, List, Optional, Union, Tuple
 
@@ -47,12 +48,41 @@ class _EngineerBase:
 
         self._process_dynamic(test_year, target_variable, pred_months, expected_length)
         if self.process_static:
-            self._process_static()
+            self._process_static(test_year=test_year)
 
-    def _process_static(self):
-        assert False, "This is where you make the changes!"
+    def calculate_static_means_ds(
+        self, static_ds: xr.Dataset, test_year: Union[int, List[int]]
+    ) -> xr.Dataset:
         dynamic_ds = self._make_dataset(static=False, overwrite_dims=False)
-        static_means = dynamic_ds.mean(dim=['lat', 'lon'])
+        # TODO: ignore test years
+        min_year = dynamic_ds.time.min()
+        dynamic_ds = dynamic_ds.sel(time=slice(min_year, str(test_year - 1)))
+        test_year = [test_year] if not isinstance(test_year, Iterable) else test_year
+        assert all(
+            int(yr) not in np.unique(dynamic_ds["time.year"].values) for yr in test_year
+        )
+
+        ones = xr.ones_like(static_ds)
+
+        # 1. create global means ds
+        global_means = dynamic_ds.mean(dim=["lat", "lon", "time"])
+        global_means = ones * global_means
+        # rename variables
+        rename_map = {v: f"{v}_global_mean" for v in global_means.data_vars}
+        global_means = global_means.rename(rename_map)
+
+        # 2. create pixel means ds
+        pixel_means = dynamic_ds.mean(dim=["time"])
+        pixel_means = ones * pixel_means
+        # rename variables
+        rename_map = {v: f"{v}_pixel_mean" for v in pixel_means.data_vars}
+        pixel_means = pixel_means.rename(rename_map)
+
+        static_mean_ds = xr.auto_combine([global_means, pixel_means])
+
+        return static_mean_ds
+
+    def _process_static(self, test_year: Union[int, List[int]]):
 
         # this function assumes the static data has only two dimensions,
         # lat and lon
@@ -66,6 +96,13 @@ class _EngineerBase:
         # uses CDO for regridding, which yields very slightly different
         # coordinates (it seems from rounding)
         static_ds = self._make_dataset(static=True, overwrite_dims=True)
+
+        # create dynamic_variable means for input to static data
+        static_mean_ds = self.calculate_static_means_ds(
+            static_ds=static_ds, test_year=test_year
+        )
+
+        static_ds = xr.auto_combine([static_ds, static_mean_ds])
 
         normalization_values: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 

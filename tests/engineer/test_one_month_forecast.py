@@ -28,6 +28,7 @@ class TestOneMonthForecastEngineer:
         one_month_forecast directory not made!"
 
     def test_static(self, tmp_path):
+        _ = _setup(tmp_path, add_times=True, static=False)
         _, expected_vars = _setup(tmp_path, add_times=False, static=True)
         engineer = OneMonthForecastEngineer(tmp_path, process_static=True)
 
@@ -35,7 +36,7 @@ class TestOneMonthForecastEngineer:
             tmp_path / "features/static"
         ).exists(), "Static output folder does not exist!"
 
-        engineer._process_static()
+        engineer._process_static(test_year=2001)
 
         output_file = tmp_path / "features/static/data.nc"
         assert output_file.exists(), "Static output folder does not exist!"
