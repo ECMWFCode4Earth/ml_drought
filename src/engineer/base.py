@@ -50,6 +50,9 @@ class _EngineerBase:
             self._process_static()
 
     def _process_static(self):
+        assert False, "This is where you make the changes!"
+        dynamic_ds = self._make_dataset(static=False, overwrite_dims=False)
+        static_means = dynamic_ds.mean(dim=['lat', 'lon'])
 
         # this function assumes the static data has only two dimensions,
         # lat and lon
