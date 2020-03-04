@@ -740,7 +740,6 @@ class _BaseIter:
         prev_y_var = self._get_prev_y_var(folder, list(y.data_vars)[0], y_np.shape[0])
 
         latlons, train_latlons = self._calculate_latlons(x)
-        assert False
         if self.experiment == "nowcast":
             # if nowcast then we have a TrainData.current
             historical = x_np[:, :-1, :]  # all timesteps except the final
@@ -796,6 +795,7 @@ class _BaseIter:
                 & (static_nans_summed == 0)
                 & (prev_y_var_summed == 0)
             )[0]
+            assert False
             if self.experiment == "nowcast":
                 current_nans = np.isnan(train_data.current)
                 current_nans_summed = current_nans.sum(axis=-1)
