@@ -332,6 +332,14 @@ class DataLoader:
                     )
                     with static_normalizer_path.open("rb") as f:
                         self.static_normalizing_dict = pickle.load(f)
+                if self.ignore_vars is not None:
+                    vars_to_include = [
+                        v
+                        for v in self.static.data_vars
+                        if all([ign_v not in v for ign_v in ignore_vars])
+                    ]
+                    self.static = self.static[vars_to_include]
+
             if static == "embeddings":
                 # in case no static dataset was generated, we use the first
                 # historical dataset
@@ -428,6 +436,7 @@ class _BaseIter:
         self.spatial_mask = loader.spatial_mask
         self.normalize_y = loader.normalize_y
         self.incl_yearly_aggs = loader.incl_yearly_aggs
+        self.ignore_vars = loader.ignore_vars
 
         self.static = loader.static
         self.static_normalizing_dict = loader.static_normalizing_dict
@@ -603,8 +612,19 @@ class _BaseIter:
         return latlons, train_latlons
 
     def _calculate_static(self, num_instances: int) -> np.ndarray:
+        # make sure values are DROPPED!
+        if self.ignore_vars is not None:
+            include_vars = [
+                v
+                for v in self.static.data_vars
+                if all([ign_v not in v for ign_v in self.ignore_vars])
+            ]
+            self.static = self.static[include_vars]
+
+        # convert static data to numpy array
         if self.static_array is None:
             static_np = self.static.to_array().values  # type: ignore
+            # FLATTEN the static pixels -> 1D ( (lat, lon) -> pixels )
             static_np = static_np.reshape(
                 static_np.shape[0], static_np.shape[1] * static_np.shape[2]
             )
@@ -620,6 +640,7 @@ class _BaseIter:
                 static_np = (
                     static_np - self.static_normalizing_array["mean"]
                 ) / self.static_normalizing_array["std"]
+
             self.static_array = static_np
         return self.static_array
 
@@ -719,7 +740,6 @@ class _BaseIter:
         prev_y_var = self._get_prev_y_var(folder, list(y.data_vars)[0], y_np.shape[0])
 
         latlons, train_latlons = self._calculate_latlons(x)
-
         if self.experiment == "nowcast":
             # if nowcast then we have a TrainData.current
             historical = x_np[:, :-1, :]  # all timesteps except the final

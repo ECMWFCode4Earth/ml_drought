@@ -130,6 +130,15 @@ class TestBaseIter:
                 ),
             }
 
+        # build static data
+        static1 = x.mean(dim="time").rename({v: f"{v}_pixel_mean" for v in x.data_vars})
+        ones = xr.ones_like(x.mean(dim="time"))[[v for v in x.data_vars][0]]
+        static2 = x.mean(dim=["lat", "lon", "time"]).rename(
+            {v: f"{v}_global_mean" for v in x.data_vars}
+        )
+        static2 = static2 * ones
+        static_ds = xr.auto_combine([static1, static2])
+
         class MockLoader:
             def __init__(self):
                 self.batch_file_size = None
@@ -146,8 +155,7 @@ class TestBaseIter:
                 self.monthly_aggs = False
                 self.device = torch.device("cpu")
                 self.incl_yearly_aggs = True
-
-                self.static = None
+                self.static = static_ds
                 self.spatial_mask = None
                 self.static_normalizing_dict = None
                 self.normalize_y = normalize
@@ -155,8 +163,12 @@ class TestBaseIter:
         base_iterator = _BaseIter(MockLoader())
 
         arrays = base_iterator.ds_folder_to_np(data_dir, to_tensor=to_tensor)
-
         x_train_data, y_np, latlons = (arrays.x, arrays.y, arrays.latlons)
+
+        assert (
+            arrays.x.static.shape[-1] == 6
+        ), "Expect 6 static features because ignore 'precip' variables in the static data"
+
         assert isinstance(x_train_data, TrainData)
         if not to_tensor:
             assert isinstance(y_np, np.ndarray)

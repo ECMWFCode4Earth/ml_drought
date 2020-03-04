@@ -63,17 +63,18 @@ class _EngineerBase:
         )
 
         ones = xr.ones_like(static_ds)
+        ones_da = ones[[v for v in ones.data_vars][0]]
 
         # 1. create global means ds
         global_means = dynamic_ds.mean(dim=["lat", "lon", "time"])
-        global_means = ones * global_means
+        global_means = ones_da * global_means
         # rename variables
         rename_map = {v: f"{v}_global_mean" for v in global_means.data_vars}
         global_means = global_means.rename(rename_map)
 
         # 2. create pixel means ds
         pixel_means = dynamic_ds.mean(dim=["time"])
-        pixel_means = ones * pixel_means
+        pixel_means = ones_da * pixel_means
         # rename variables
         rename_map = {v: f"{v}_pixel_mean" for v in pixel_means.data_vars}
         pixel_means = pixel_means.rename(rename_map)
@@ -95,14 +96,20 @@ class _EngineerBase:
         # here, we overwrite the dims because topography (a static variable)
         # uses CDO for regridding, which yields very slightly different
         # coordinates (it seems from rounding)
-        static_ds = self._make_dataset(static=True, overwrite_dims=True)
-
+        try:
+            static_ds = self._make_dataset(static=True, overwrite_dims=True)
+        except:
+            print("No static data features included! Creating static ds")
+            static_ds = None
         # create dynamic_variable means for input to static data
         static_mean_ds = self.calculate_static_means_ds(
             static_ds=static_ds, test_year=test_year
         )
 
-        static_ds = xr.auto_combine([static_ds, static_mean_ds])
+        if static_ds is None:
+            static_ds = static_mean_ds
+        else:
+            static_ds = xr.auto_combine([static_ds, static_mean_ds])
 
         normalization_values: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 
