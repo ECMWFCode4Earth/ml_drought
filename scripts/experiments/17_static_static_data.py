@@ -18,15 +18,12 @@ def engineer(pred_months=3, target_var="boku_VCI", process_static=False):
         expected_length=pred_months,
     )
 
+
 if __name__ == "__main__":
     # 1. Run the engineer
     target_var = "boku_VCI"
     pred_months = 3
-    engineer(
-        pred_months=pred_months,
-        target_var=target_var,
-        process_static=True
-    )
+    engineer(pred_months=pred_months, target_var=target_var, process_static=True)
 
     # NOTE: why have we downloaded 2 variables for ERA5 evaporaton
     # important_vars = ["VCI", "precip", "t2m", "pev", "p0005", "SMsurf", "SMroot"]
@@ -41,7 +38,7 @@ if __name__ == "__main__":
         "VCI1M",
         "RFE1M",
         "VCI3M",
-        "modis_ndvi"
+        "modis_ndvi",
     ]  # "ndvi",
 
     # -------------
