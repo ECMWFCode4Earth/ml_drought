@@ -696,7 +696,7 @@ class _BaseIter:
     ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / "x.nc"), xr.open_dataset(folder / "y.nc")
-
+        assert False
         if self.predict_delta:
             # TODO: do this ONCE not at each read-in of the data
             y = self._calculate_change(x, y)
@@ -901,7 +901,6 @@ class _TrainIter(_BaseIter):
                 arrays = self.ds_folder_to_np(
                     subfolder, clear_nans=self.clear_nans, to_tensor=False
                 )
-                assert False
                 if arrays.x.historical.shape[0] == 0:
                     print(f"{subfolder} returns no values. Skipping")
 
