@@ -327,6 +327,7 @@ class ModelBase:
             "to_tensor": to_tensor,
             "ignore_vars": self.ignore_vars,
             "monthly_aggs": self.include_monthly_aggs,
+            "incl_yearly_aggs": self.include_yearly_aggs,
             "surrounding_pixels": self.surrounding_pixels,
             "static": self.static,
             "device": self.device,

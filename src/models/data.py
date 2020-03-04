@@ -251,7 +251,7 @@ class DataLoader:
         Whether to include the monthly aggregates (mean and std across all spatial values) for
         the input variables. These will be additional dimensions to the historical
         (and optionally current) arrays
-    incl_yearly_agg: bool = True
+    incl_yearly_aggs: bool = True
         Whether to include the yearly aggregations (mean and std for the dynamic data across all)
     static: bool = True
         Whether to include static data
@@ -278,7 +278,7 @@ class DataLoader:
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         monthly_aggs: bool = True,
-        incl_yearly_agg: bool = True,
+        incl_yearly_aggs: bool = True,
         static: Optional[str] = "features",
         device: str = "cpu",
         spatial_mask: Optional[xr.DataArray] = None,
@@ -315,6 +315,7 @@ class DataLoader:
 
         self.surrounding_pixels = surrounding_pixels
         self.monthly_aggs = monthly_aggs
+        self.incl_yearly_aggs = incl_yearly_aggs
         self.to_tensor = to_tensor
         self.ignore_vars = ignore_vars
 
@@ -426,7 +427,7 @@ class _BaseIter:
         self.predict_delta = loader.predict_delta
         self.spatial_mask = loader.spatial_mask
         self.normalize_y = loader.normalize_y
-        self.incl_yearly_agg = loader.incl_yearly_agg
+        self.incl_yearly_aggs = loader.incl_yearly_aggs
 
         self.static = loader.static
         self.static_normalizing_dict = loader.static_normalizing_dict
@@ -700,7 +701,7 @@ class _BaseIter:
 
         x, y = self.apply_spatial_mask(x, y)
 
-        if self.incl_yearly_agg:
+        if self.incl_yearly_aggs:
             yearly_agg = self._calculate_aggs(
                 x
             )  # before to avoid aggs from surrounding pixels
@@ -708,7 +709,7 @@ class _BaseIter:
         # calculate normalized values in these functions
         x_np, y_np = self._calculate_historical(x, y)
         x_months = self._calculate_target_months(y, x_np.shape[0])
-        if self.incl_yearly_agg:
+        if self.incl_yearly_aggs:
             yearly_agg = np.vstack([yearly_agg] * x_np.shape[0])
         if self.static is not None:
             static_np = self._calculate_static(x_np.shape[0])
@@ -731,7 +732,7 @@ class _BaseIter:
                 historical=historical,
                 pred_months=x_months,
                 latlons=train_latlons,
-                yearly_aggs=yearly_agg if self.incl_yearly_agg else None,
+                yearly_aggs=yearly_agg if self.incl_yearly_aggs else None,
                 static=static_np,
                 prev_y_var=prev_y_var,
             )
@@ -742,7 +743,7 @@ class _BaseIter:
                 historical=x_np,
                 pred_months=x_months,
                 latlons=train_latlons,
-                yearly_aggs=yearly_agg if self.incl_yearly_agg else None,
+                yearly_aggs=yearly_agg if self.incl_yearly_aggs else None,
                 static=static_np,
                 prev_y_var=prev_y_var,
             )

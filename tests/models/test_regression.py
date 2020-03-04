@@ -210,6 +210,7 @@ class TestLinearRegression:
             predict_delta,
             spatial_mask,
             normalize_y,
+            incl_yearly_aggs,
         ):
 
             pass

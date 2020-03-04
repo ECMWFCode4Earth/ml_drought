@@ -29,6 +29,7 @@ def regression(
     predict_delta=False,
     spatial_mask=None,
     include_latlons=False,
+    include_yearly_aggs=True,
 ):
     predictor = LinearRegression(
         get_data_path(),
@@ -40,6 +41,7 @@ def regression(
         predict_delta=predict_delta,
         spatial_mask=spatial_mask,
         include_latlons=include_latlons,
+        include_yearly_aggs=include_yearly_aggs,
     )
     predictor.train()
     predictor.evaluate(save_preds=True)
@@ -62,6 +64,7 @@ def linear_nn(
     predict_delta=False,
     spatial_mask=None,
     include_latlons=False,
+    include_yearly_aggs=True,
 ):
     predictor = LinearNetwork(
         layer_sizes=layer_sizes,
@@ -74,6 +77,7 @@ def linear_nn(
         predict_delta=predict_delta,
         spatial_mask=spatial_mask,
         include_latlons=include_latlons,
+        include_yearly_aggs=include_yearly_aggs,
     )
     predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)
@@ -98,6 +102,7 @@ def rnn(
     include_latlons=False,
     normalize_y=True,
     include_prev_y=True,
+    include_yearly_aggs=True,
 ):
     predictor = RecurrentNetwork(
         hidden_size=hidden_size,
@@ -112,6 +117,7 @@ def rnn(
         include_latlons=include_latlons,
         normalize_y=normalize_y,
         include_prev_y=include_prev_y,
+        include_yearly_aggs=include_yearly_aggs,
     )
     predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)
@@ -138,6 +144,7 @@ def earnn(
     include_latlons=False,
     normalize_y=True,
     include_prev_y=True,
+    include_yearly_aggs=True,
 ):
     data_path = get_data_path()
 
@@ -156,6 +163,7 @@ def earnn(
             include_latlons=include_latlons,
             normalize_y=normalize_y,
             include_prev_y=include_prev_y,
+            include_yearly_aggs=include_yearly_aggs,
         )
         predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
         predictor.evaluate(save_preds=True)
@@ -180,6 +188,7 @@ def gbdt(
     # predict_delta=False,
     spatial_mask=None,
     include_latlons=False,
+    include_yearly_aggs=True,
 ):
     data_path = get_data_path()
 
@@ -193,6 +202,7 @@ def gbdt(
         ignore_vars=ignore_vars,
         spatial_mask=spatial_mask,
         include_latlons=include_latlons,
+        include_yearly_aggs=include_yearly_aggs,
     )
     predictor.train(early_stopping=5)
     predictor.evaluate(save_preds=True)

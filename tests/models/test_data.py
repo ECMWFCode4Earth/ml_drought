@@ -145,7 +145,7 @@ class TestBaseIter:
                 self.ignore_vars = ["precip"]
                 self.monthly_aggs = False
                 self.device = torch.device("cpu")
-                self.incl_yearly_agg = True
+                self.incl_yearly_aggs = True
 
                 self.static = None
                 self.spatial_mask = None
