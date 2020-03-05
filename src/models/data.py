@@ -902,7 +902,6 @@ class _TrainIter(_BaseIter):
                     subfolder, clear_nans=self.clear_nans, to_tensor=False
                 )
                 if arrays.x.historical.shape[0] == 0:
-                    assert False
                     print(f"{subfolder} returns no values. Skipping")
 
                     # remove the empty element from the list
