@@ -36,6 +36,7 @@ class RecurrentNetwork(NNBase):
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = True,
+        clear_nans: bool = True,
     ) -> None:
         super().__init__(
             data_folder,
@@ -54,6 +55,7 @@ class RecurrentNetwork(NNBase):
             spatial_mask=spatial_mask,
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
+            clear_nans=clear_nans,
         )
 
         # to initialize and save the model
