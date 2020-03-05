@@ -71,7 +71,7 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         dimension_name = [c for c in static_ds.coords][0]
 
         # TODO: ONE HOT ENCODE THE RELEVANT FEATURES
-        [v for v in static_ds.data_vars if static_ds[v].dtype == float]
+        float_vars = [v for v in static_ds.data_vars if static_ds[v].dtype == float]
         assert False
 
         for var in static_ds.data_vars:
