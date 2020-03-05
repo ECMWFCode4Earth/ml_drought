@@ -36,6 +36,7 @@ class NNBase(ModelBase):
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = True,
+        clear_nans: bool = True,
     ) -> None:
         super().__init__(
             data_folder=data_folder,
@@ -53,6 +54,7 @@ class NNBase(ModelBase):
             spatial_mask=spatial_mask,
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
+            clear_nans=clear_nans,
         )
 
         # for reproducibility

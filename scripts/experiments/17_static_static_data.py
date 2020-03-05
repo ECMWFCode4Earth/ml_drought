@@ -65,6 +65,7 @@ if __name__ == "__main__":
         hidden_size=256,
         include_latlons=True,
         include_yearly_aggs=False,
+        clear_nans=False,
     )
 
     # -------------
@@ -84,6 +85,7 @@ if __name__ == "__main__":
         static_embedding_size=64,
         include_latlons=True,
         include_yearly_aggs=False,
+        clear_nans=False,
     )
 
     # rename the output file

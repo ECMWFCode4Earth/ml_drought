@@ -60,6 +60,7 @@ class ModelBase:
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = False,
+        clear_nans: bool = True,
     ) -> None:
 
         self.batch_size = batch_size
@@ -77,6 +78,7 @@ class ModelBase:
         self.predict_delta = predict_delta
         self.include_prev_y = include_prev_y
         self.normalize_y = normalize_y
+        self.clear_nans = clear_nans
         if normalize_y:
             with (data_folder / f"features/{experiment}/normalizing_dict.pkl").open(
                 "rb"
@@ -331,7 +333,7 @@ class ModelBase:
             "surrounding_pixels": self.surrounding_pixels,
             "static": self.static,
             "device": self.device,
-            "clear_nans": True,
+            "clear_nans": self.clear_nans,
             "normalize": True,
             "predict_delta": self.predict_delta,
             "spatial_mask": self.spatial_mask,
