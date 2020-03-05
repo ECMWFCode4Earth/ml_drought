@@ -950,7 +950,7 @@ class _TestIter(_BaseIter):
             cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
             while self.idx < cur_max_idx:
                 subfolder = self.data_files[self.idx]
-                arrays = self.ds_folder_to_np(
+                arrays, (train_data, y_np) = self.ds_folder_to_np(
                     subfolder, clear_nans=self.clear_nans, to_tensor=self.to_tensor
                 )
                 if arrays.x.historical.shape[0] == 0:
