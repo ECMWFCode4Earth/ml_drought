@@ -148,7 +148,7 @@ def earnn(
     include_latlons=False,
     normalize_y=True,
     include_prev_y=True,
-    include_yearly_aggs=True,
+    include_yearly_aggs=True,  # new
     clear_nans=True,
 ):
     data_path = get_data_path()
