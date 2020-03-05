@@ -49,7 +49,7 @@ class _EngineerBase:
             test_year=test_year,
             target_variable=target_variable,
             pred_months=pred_months,
-            expected_length=expected_length
+            expected_length=expected_length,
         )
         if self.process_static:
             self._process_static()
