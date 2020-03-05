@@ -821,7 +821,7 @@ class _BaseIter:
             target_time=target_time,
             historical_times=x_datetimes,
         )
-        assert False
+
         if to_tensor:
             model_arrays.to_tensor(self.device)
 
@@ -831,7 +831,7 @@ class _BaseIter:
             historical_target_np = self._calculate_historical_target(x, y_var)
             historical_target_np = historical_target_np[notnan_indices].flatten()
             model_arrays.historical_target = historical_target_np
-
+        assert False
         return model_arrays
 
     @staticmethod
