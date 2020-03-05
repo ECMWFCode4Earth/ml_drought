@@ -810,6 +810,7 @@ class _BaseIter:
 
             y_np = y_np[notnan_indices]
             latlons = latlons[notnan_indices]
+            assert False
 
         y_var = list(y.data_vars)[0]
         model_arrays = ModelArrays(
