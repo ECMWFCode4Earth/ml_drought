@@ -682,7 +682,10 @@ class _BaseIter:
             ]
             x = x.drop(self.ignore_vars)
 
-        target_time = pd.to_datetime(y.time.values[0])
+        try:
+            target_time = pd.to_datetime(y.time.values[0])
+        except IndexError:
+            target_time = pd.to_datetime(y.time.values)
         if self.experiment == "nowcast":
             x_datetimes = [
                 pd.to_datetime(time)
