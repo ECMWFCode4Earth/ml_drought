@@ -7,6 +7,7 @@ import pandas as pd
 from pandas.tseries.offsets import Day
 from collections import defaultdict
 import pickle
+from collections.abc import Iterable
 
 from typing import cast, Dict, Optional, Tuple, DefaultDict, List
 
@@ -86,7 +87,7 @@ class _OneTimestepForecastEngineer(_EngineerBase):
 
     def _process_dynamic(
         self,
-        min_test_date: str,
+        test_date: str,
         target_variable: str = "discharge_vol",
         seq_length: int = 365,
         resolution: str = 'D',
@@ -96,7 +97,7 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         """
         Arguments:
         ---------
-        min_test_date: str,
+        test_date: str,
             the date from which testing begins
         target_variable: str = "discharge_vol"
             what is the y_var
@@ -117,7 +118,10 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         # 1. SPLIT TRAIN - TEST
         # NOTE: need to change if not selecting time-ordered train-test splits
         # GET train/test timesteps
-        min_test_date = pd.to_datetime(min_test_date)
+        if isinstance(test_date, Iterable):
+            test_date = min(test_date)
+
+        min_test_date = pd.to_datetime(test_date)
         max_test_date = pd.to_datetime(ds.time.max().values) + Day(1)
         max_train_date = min_test_date - Day(1)
         min_ds_date = pd.to_datetime(ds.time.min().values)
