@@ -79,7 +79,7 @@ class TestLinearNetwork:
         assert model_dict["normalize_y"] == normalize_y
 
     @pytest.mark.parametrize(
-        "use_pred_months,use_latlons,experiment,monthly_agg,static,predict_delta",
+        "use_seq_length,use_latlons,experiment,monthly_agg,static,predict_delta",
         [
             (True, False, "one_month_forecast", True, False, True),
             (False, True, "one_month_forecast", False, True, True),
@@ -95,7 +95,7 @@ class TestLinearNetwork:
         self,
         tmp_path,
         capsys,
-        use_pred_months,
+        use_seq_length,
         use_latlons,
         experiment,
         monthly_agg,
@@ -144,7 +144,7 @@ class TestLinearNetwork:
             layer_sizes=layer_sizes,
             dropout=dropout,
             experiment=experiment,
-            include_pred_month=use_pred_months,
+            include_pred_month=use_seq_length,
             include_latlons=use_latlons,
             include_monthly_aggs=monthly_agg,
             static="embeddings",
@@ -162,7 +162,7 @@ class TestLinearNetwork:
         ), f"Model attribute not a linear regression!"
 
     @pytest.mark.parametrize(
-        "use_pred_months,use_latlons,experiment",
+        "use_seq_length,use_latlons,experiment",
         [
             (True, True, "one_month_forecast"),
             (True, False, "one_month_forecast"),
@@ -170,7 +170,7 @@ class TestLinearNetwork:
             (False, False, "nowcast"),
         ],
     )
-    def test_predict(self, tmp_path, use_pred_months, use_latlons, experiment):
+    def test_predict(self, tmp_path, use_seq_length, use_latlons, experiment):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -223,7 +223,7 @@ class TestLinearNetwork:
             layer_sizes=layer_sizes,
             dropout=dropout,
             experiment=experiment,
-            include_pred_month=use_pred_months,
+            include_pred_month=use_seq_length,
             include_latlons=use_latlons,
         )
         model.train()

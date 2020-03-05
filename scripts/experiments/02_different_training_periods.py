@@ -312,8 +312,8 @@ class Experiment:
         assert test_hilo in ["high", "med", "low"]
 
 
-def run_training_period_experiments(pred_months: int = 3):
-    expected_length = pred_months
+def run_training_period_experiments(seq_length: int = 3):
+    expected_length = seq_length
 
     # Read the target data
     print("** Reading the target data **")
@@ -377,7 +377,7 @@ def run_training_period_experiments(pred_months: int = 3):
         engineer.engineer_class.engineer(
             test_year=test_years,  # defined by experiment
             train_years=train_years,  # defined by experiment
-            pred_months=pred_months,  # 3 by default
+            seq_length=seq_length,  # 3 by default
             expected_length=expected_length,  # == pred_month by default
             target_variable="VCI",
         )
@@ -422,6 +422,6 @@ def run_training_period_experiments(pred_months: int = 3):
 
 
 if __name__ == "__main__":
-    pred_months = 3
+    seq_length = 3
 
-    run_training_period_experiments(pred_months=pred_months)
+    run_training_period_experiments(seq_length=seq_length)

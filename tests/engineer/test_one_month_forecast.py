@@ -55,7 +55,7 @@ class TestOneMonthForecastEngineer:
             dataset,
             years=[2001],
             target_variable="VHI",
-            pred_months=11,
+            seq_length=11,
             expected_length=11,
         )
 
@@ -67,13 +67,13 @@ class TestOneMonthForecastEngineer:
 
         _setup(tmp_path)
 
-        pred_months = expected_length = 11
+        seq_length = expected_length = 11
 
         engineer = OneMonthForecastEngineer(tmp_path)
         engineer.engineer(
             test_year=2001,
             target_variable="a",
-            pred_months=pred_months,
+            seq_length=seq_length,
             expected_length=expected_length,
         )
 
@@ -127,7 +127,7 @@ class TestOneMonthForecastEngineer:
             year=2001,
             target_variable="VHI",
             target_month=1,
-            pred_months=4,
+            seq_length=4,
             expected_length=4,
         )
 

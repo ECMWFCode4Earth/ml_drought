@@ -144,15 +144,15 @@ def engineer(
     data_path,
     experiment="one_month_forecast",
     process_static=True,
-    pred_months=12,
+    seq_length=12,
     expected_length=12,
 ):
     engineer = Engineer(data_path, experiment=experiment, process_static=process_static)
     engineer.engineer(
         test_year=2018,
         target_variable="VHI",
-        pred_months=pred_months,
-        expected_length=pred_months,
+        seq_length=seq_length,
+        expected_length=seq_length,
     )
 
 

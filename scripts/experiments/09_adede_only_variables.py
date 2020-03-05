@@ -102,15 +102,15 @@ def revert_features_dirs(target_var: str, original_dir: bool = False):
 
 # 2) ENGINEER the adede_vars to train/test
 #    (VCI1M / VCI3M)
-def engineer(pred_months=3, target_var="VCI1M"):
+def engineer(seq_length=3, target_var="VCI1M"):
     engineer = Engineer(
         get_data_path(), experiment="one_month_forecast", process_static=False
     )
     engineer.engineer(
         test_year=[y for y in range(2011, 2019)],
         target_variable=target_var,
-        pred_months=pred_months,
-        expected_length=pred_months,
+        seq_length=seq_length,
+        expected_length=seq_length,
     )
 
 

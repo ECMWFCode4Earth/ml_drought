@@ -8,7 +8,7 @@ from _base_models import parsimonious, regression, linear_nn, rnn, earnn
 
 
 def run_engineer() -> None:
-    engineer(pred_months=12, experiment="nowcast")
+    engineer(seq_length=12, experiment="nowcast")
 
 
 if __name__ == "__main__":
