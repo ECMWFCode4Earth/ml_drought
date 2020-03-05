@@ -832,7 +832,7 @@ class _BaseIter:
             historical_target_np = historical_target_np[notnan_indices].flatten()
             model_arrays.historical_target = historical_target_np
 
-        return model_arrays
+        return model_arrays, (train_data, y_np)
 
     @staticmethod
     def _add_extra_dims(
@@ -898,11 +898,12 @@ class _TrainIter(_BaseIter):
             cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
             while self.idx < cur_max_idx:
                 subfolder = self.data_files[self.idx]
-                arrays = self.ds_folder_to_np(
+                arrays, (train_data, y_np) = self.ds_folder_to_np(
                     subfolder, clear_nans=self.clear_nans, to_tensor=False
                 )
                 if arrays.x.historical.shape[0] == 0:
                     print(f"{subfolder} returns no values. Skipping")
+                    assert False
 
                     # remove the empty element from the list
                     self.data_files.pop(self.idx)
