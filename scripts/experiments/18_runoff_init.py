@@ -34,7 +34,7 @@ def run_model():
         pretrained=False,
         explain=False,
         static="features",
-        ignore_vars=always_ignore_vars,
+        ignore_vars=None,
         num_epochs=50,
         early_stopping=5,
         hidden_size=256,
