@@ -25,6 +25,25 @@ def engineer_static_only():
     engineer = _OneTimestepForecastEngineer(get_data_path(), process_static=True)
     engineer._process_static()
 
+
+def run_model():
+    earnn(
+        experiment="one_timestep_forecast",
+        include_pred_month=True,
+        surrounding_pixels=None,
+        pretrained=False,
+        explain=False,
+        static="features",
+        ignore_vars=always_ignore_vars,
+        num_epochs=50,
+        early_stopping=5,
+        hidden_size=256,
+        static_embedding_size=64,
+        include_latlons=False,
+    )
+
+
 if __name__ == "__main__":
     # engineer(seq_length=3)
-    engineer_static_only()
+    # engineer_static_only()
+    run_model()
