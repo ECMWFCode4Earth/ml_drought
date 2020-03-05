@@ -903,7 +903,6 @@ class _TrainIter(_BaseIter):
                 )
                 if arrays.x.historical.shape[0] == 0:
                     print(f"{subfolder} returns no values. Skipping")
-                    assert False
 
                     # remove the empty element from the list
                     self.data_files.pop(self.idx)
