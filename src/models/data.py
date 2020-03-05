@@ -952,6 +952,7 @@ class _TestIter(_BaseIter):
                     subfolder, clear_nans=self.clear_nans, to_tensor=self.to_tensor
                 )
                 if arrays.x.historical.shape[0] == 0:
+                    assert False
                     print(f"{subfolder} returns no values. Skipping")
                     # remove the empty element from the list
                     self.data_files.pop(self.idx)
