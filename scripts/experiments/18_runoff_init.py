@@ -21,5 +21,10 @@ def engineer(seq_length=3, target_var="discharge_vol"):
     )
 
 
+def engineer_static_only():
+    engineer = _OneTimestepForecastEngineer(get_data_path(), process_static=True)
+    engineer._process_static()
+
 if __name__ == "__main__":
-    engineer(seq_length=3)
+    # engineer(seq_length=3)
+    engineer_static_only()
