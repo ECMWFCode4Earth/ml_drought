@@ -76,7 +76,6 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         dropped_vars = [v for v in static_ds.data_vars if v not in float_vars]
         print(f'Dropping the following non-float vars:\n{dropped_vars}')
         static_ds = static_ds[float_vars]
-        assert False
 
         for var in static_ds.data_vars:
             if var.endswith("one_hot"):
