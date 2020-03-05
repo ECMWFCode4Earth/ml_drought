@@ -91,7 +91,7 @@ class _OneTimestepForecastEngineer(_EngineerBase):
 
     def _process_dynamic(
         self,
-        test_date: str,
+        test_year: str,
         target_variable: str = "discharge_vol",
         seq_length: int = 365,
         resolution: str = "D",
@@ -101,7 +101,7 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         """
         Arguments:
         ---------
-        test_date: str,
+        test_year: str,
             the date from which testing begins
         target_variable: str = "discharge_vol"
             what is the y_var
@@ -122,10 +122,10 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         # 1. SPLIT TRAIN - TEST
         # NOTE: need to change if not selecting time-ordered train-test splits
         # GET train/test timesteps
-        if isinstance(test_date, Iterable):
-            test_date = min(test_date)
+        if isinstance(test_year, Iterable):
+            test_year = min(test_year)
 
-        min_test_date = pd.to_datetime(f"{test_date}-01-01")
+        min_test_date = pd.to_datetime(f"{test_year}-01-01")
         max_test_date = pd.to_datetime(ds.time.max().values) + Day(1)
         max_train_date = min_test_date - Day(1)
         min_ds_date = pd.to_datetime(ds.time.min().values)
