@@ -810,7 +810,6 @@ class _BaseIter:
 
             y_np = y_np[notnan_indices]
             latlons = latlons[notnan_indices]
-            assert False
 
         y_var = list(y.data_vars)[0]
         model_arrays = ModelArrays(
@@ -822,6 +821,7 @@ class _BaseIter:
             target_time=target_time,
             historical_times=x_datetimes,
         )
+        assert False
         if to_tensor:
             model_arrays.to_tensor(self.device)
 
