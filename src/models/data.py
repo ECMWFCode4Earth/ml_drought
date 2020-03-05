@@ -830,7 +830,7 @@ class _BaseIter:
             historical_target_np = self._calculate_historical_target(x, y_var)
             historical_target_np = historical_target_np[notnan_indices].flatten()
             model_arrays.historical_target = historical_target_np
-        assert False
+
         return model_arrays
 
     @staticmethod
@@ -900,7 +900,6 @@ class _TrainIter(_BaseIter):
                 arrays = self.ds_folder_to_np(
                     subfolder, clear_nans=self.clear_nans, to_tensor=False
                 )
-                assert False
                 if arrays.x.historical.shape[0] == 0:
                     print(f"{subfolder} returns no values. Skipping")
 
