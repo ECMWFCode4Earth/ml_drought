@@ -41,14 +41,14 @@ class _EngineerBase:
         self,
         test_year: Union[int, List[int]],
         target_variable: str = "VHI",
-        pred_months: int = 12,
+        seq_length: int = 12,
         expected_length: Optional[int] = 12,
     ) -> None:
 
         self._process_dynamic(
             test_year=test_year,
             target_variable=target_variable,
-            pred_months=pred_months,
+            seq_length=seq_length,
             expected_length=expected_length,
         )
         if self.process_static:
@@ -93,7 +93,7 @@ class _EngineerBase:
         self,
         test_year: Union[int, List[int]],
         target_variable: str = "VHI",
-        pred_months: int = 12,
+        seq_length: int = 12,
         expected_length: Optional[int] = 12,
     ) -> None:
         if expected_length is None:
@@ -114,7 +114,7 @@ class _EngineerBase:
             ds=data,
             years=cast(List, test_year),
             target_variable=target_variable,
-            pred_months=pred_months,
+            seq_length=seq_length,
             expected_length=expected_length,
         )
 
@@ -124,7 +124,7 @@ class _EngineerBase:
         self._stratify_training_data(
             train_ds=train_ds,
             target_variable=target_variable,
-            pred_months=pred_months,
+            seq_length=seq_length,
             expected_length=expected_length,
         )
 
@@ -179,7 +179,7 @@ class _EngineerBase:
         self,
         train_ds: xr.Dataset,
         target_variable: str,
-        pred_months: int,
+        seq_length: int,
         expected_length: Optional[int],
     ) -> None:
         """split `train_ds` into x, y and save the outputs to
@@ -199,7 +199,7 @@ class _EngineerBase:
                 year=cur_pred_year,
                 target_variable=target_variable,
                 target_month=cur_pred_month,
-                pred_months=pred_months,
+                seq_length=seq_length,
                 expected_length=expected_length,
             )
             if arrays is not None:
@@ -216,7 +216,7 @@ class _EngineerBase:
         ds: xr.Dataset,
         years: List[int],
         target_variable: str,
-        pred_months: int,
+        seq_length: int,
         expected_length: Optional[int],
     ) -> xr.Dataset:
         """save the test data and return the training dataset"""
@@ -229,7 +229,7 @@ class _EngineerBase:
             year=years[0],
             target_variable=target_variable,
             target_month=1,
-            pred_months=pred_months,
+            seq_length=seq_length,
             expected_length=expected_length,
         )
 
@@ -251,7 +251,7 @@ class _EngineerBase:
                         year=year,
                         target_variable=target_variable,
                         target_month=month,
-                        pred_months=pred_months,
+                        seq_length=seq_length,
                         expected_length=expected_length,
                     )
                     if xy_test is not None:
@@ -264,7 +264,7 @@ class _EngineerBase:
         year: int,
         target_variable: str,
         target_month: int,
-        pred_months: int,
+        seq_length: int,
         expected_length: Optional[int],
     ) -> Tuple[Optional[Dict[str, xr.Dataset]], date]:
         raise NotImplementedError
