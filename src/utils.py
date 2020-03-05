@@ -71,9 +71,7 @@ def minus_months(
 
 
 def minus_timesteps(
-    time: pd.Timestamp,
-    time_delta: int,
-    freq: str = 'M'
+    time: pd.Timestamp, time_delta: int, freq: str = "M"
 ) -> pd.Timestamp:
     """
     alternative method:
@@ -89,8 +87,9 @@ def minus_timesteps(
     # take the timedelta to get the starting timestep
     minus_time = time - tdelta
 
-    if freq == 'M':
+    if freq == "M":
         from pandas.tseries.offsets import MonthEnd
+
         # our pipeline mostly works with 'MS' resampled data
         # so monthly data is always at the END of the month
         minus_time = minus_time + MonthEnd(1)

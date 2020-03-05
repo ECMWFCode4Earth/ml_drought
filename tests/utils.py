@@ -136,14 +136,13 @@ def _create_features_dir(
 
 
 def _make_runoff_data(
-    start_date='2000-01',
-    end_date='2001-01'
+    start_date="2000-01", end_date="2001-01"
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     # create dims / coords
-    times = pd.date_range(start_date, end_date, freq='D')
+    times = pd.date_range(start_date, end_date, freq="D")
     station_ids = np.arange(0, 10)
-    dims = ['station_id', 'time']
-    coords = {'station_id': station_ids, 'time': times}
+    dims = ["station_id", "time"]
+    coords = {"station_id": station_ids, "time": times}
     shape = (len(station_ids), len(times))
 
     # create random data
@@ -151,13 +150,11 @@ def _make_runoff_data(
     discharge = np.random.random(shape)
     pet = np.random.random(shape)
     datasets = [precip, discharge, pet]
-    variables = ['precip', 'discharge', 'pet']
+    variables = ["precip", "discharge", "pet"]
 
     ds = xr.Dataset(
-        {
-            variable: (dims, dataset)
-            for variable, dataset in zip(variables, datasets)
-        }, coords=coords
+        {variable: (dims, dataset) for variable, dataset in zip(variables, datasets)},
+        coords=coords,
     )
 
     # create static data
@@ -165,15 +162,13 @@ def _make_runoff_data(
     q_mean = np.random.random(size=shape[0])
     area = np.random.random(size=shape[0])
     datasets = [gauge_elev, q_mean, area]
-    variables = ['gauge_elev', 'q_mean', 'area']
-    dims = ['station_id']
-    coords = {'station_id': station_ids}
+    variables = ["gauge_elev", "q_mean", "area"]
+    dims = ["station_id"]
+    coords = {"station_id": station_ids}
 
     static = xr.Dataset(
-        {
-            variable: (dims, dataset)
-            for variable, dataset in zip(variables, datasets)
-        }, coords=coords
+        {variable: (dims, dataset) for variable, dataset in zip(variables, datasets)},
+        coords=coords,
     )
 
     return ds, static
@@ -184,7 +179,7 @@ def _ds_to_features_dirs(
     data: xr.Dataset,
     date_range: pd.DatetimeIndex,
     train: bool = False,
-    x: bool = True
+    x: bool = True,
 ):
     # create features directory setup
     # e.g. features/train/2000_1/x.nc
@@ -201,42 +196,31 @@ def _ds_to_features_dirs(
 def _create_runoff_features_dir(
     tmp_path, train=False, start_date="1999-01-01", end_date="2001-12-31"
 ) -> Tuple[xr.Dataset, xr.Dataset]:
-    ds, static = _make_runoff_data(
-        start_date=start_date,
-        end_date=end_date,
-    )
+    ds, static = _make_runoff_data(start_date=start_date, end_date=end_date)
 
     # TARGET variable target time
     target_time = pd.to_datetime(ds.isel(time=-1).time.values)
     y_daterange = pd.DatetimeIndex([target_time])
-    y_data = ds.sel(time=target_time)[['discharge']]
+    y_data = ds.sel(time=target_time)[["discharge"]]
 
     _ds_to_features_dirs(
-        tmp_path,
-        data=y_data,
-        date_range=y_daterange,
-        train=True,
-        x=False,
+        tmp_path, data=y_data, date_range=y_daterange, train=True, x=False
     )
 
     # non-target data
     X_data = ds.isel(time=slice(0, -1))
 
     X_daterange = pd.date_range(
-        X_data.time.min().values, X_data.time.max().values, freq='D'
+        X_data.time.min().values, X_data.time.max().values, freq="D"
     )
 
     _ds_to_features_dirs(
-        tmp_path,
-        data=X_data,
-        date_range=X_daterange,
-        train=True,
-        x=True,
+        tmp_path, data=X_data, date_range=X_daterange, train=True, x=True
     )
 
     # static_data
-    if not (tmp_path / 'features/static').exists():
-        (tmp_path / 'features/static').mkdir(exist_ok=True, parents=True)
-    static.to_netcdf(tmp_path / 'features/static/data.nc')
+    if not (tmp_path / "features/static").exists():
+        (tmp_path / "features/static").mkdir(exist_ok=True, parents=True)
+    static.to_netcdf(tmp_path / "features/static/data.nc")
 
     return X_data, y_data, static

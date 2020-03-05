@@ -15,8 +15,9 @@ from typing import cast, Dict, Optional, Union, List, Tuple
 
 from .data import DataLoader
 
+
 class OneDimensionalLoader(DataLoader):
-    # NOTE: do we want to keep saving these to memory?
+    #  NOTE: do we want to keep saving these to memory?
     #       or just use a DataLoader to read from one ds
     def __init__(
         self,
@@ -146,7 +147,7 @@ class OneDimensionalLoader(DataLoader):
                 if pred_months is None:
                     output_paths.append(subtrain)
                 else:
-                    month = int(str(subtrain.parts[-1]).split('_')[-2])
+                    month = int(str(subtrain.parts[-1]).split("_")[-2])
                     if month in pred_months:
                         output_paths.append(subtrain)
 
@@ -215,7 +216,7 @@ class _BaseIter:
         new_path = folder.parent / f"{previous_year}_{month}"
         if new_path.exists():
             y = xr.open_dataset(new_path / "y.nc")
-            coord = [c for c in y.coords if c != 'time'][0]
+            coord = [c for c in y.coords if c != "time"][0]
             y = y.transpose("time", coord)
             y_np = y[y_var].values
             y_np = y_np.reshape(y_np.shape[0], y_np.shape[1])
@@ -568,10 +569,12 @@ class _BaseIter:
 
     @staticmethod
     def _add_extra_dims(
-        x: xr.Dataset, surrounding_pixels: Optional[int] = None, monthly_agg: bool = True
+        x: xr.Dataset,
+        surrounding_pixels: Optional[int] = None,
+        monthly_agg: bool = True,
     ) -> xr.Dataset:
         original_vars = list(x.data_vars)
-        coord = [c for c in x.coords if c != 'time'][0]
+        coord = [c for c in x.coords if c != "time"][0]
 
         if monthly_agg:
             # first, the means

@@ -26,14 +26,14 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         seq_length: int,
         min_ds_date: pd.Timestamp,
         train: bool = True,
-        resolution: str = 'D'
+        resolution: str = "D",
     ) -> Tuple[Optional[Dict[str, xr.Dataset]], pd.Timestamp]:
         # convert to pandas datetime (easier to work with)
         target_time = pd.to_datetime(target_time)
 
         # min/max date for X data
-        max_X_date = minus_timesteps(target_time, 1, 'D')
-        min_X_date = minus_timesteps(target_time, seq_length, 'D')
+        max_X_date = minus_timesteps(target_time, 1, "D")
+        min_X_date = minus_timesteps(target_time, seq_length, "D")
         print(f"Min: {min_X_date} Max: {max_X_date}")
 
         # check whether enough data
@@ -48,8 +48,10 @@ class _OneTimestepForecastEngineer(_EngineerBase):
 
         ds_dict = {"x": X_dataset, "y": y_dataset}
 
-        dataset_type = 'train' if train else 'test'
-        self._save(ds_dict, target_time, dataset_type=dataset_type, resolution=resolution)
+        dataset_type = "train" if train else "test"
+        self._save(
+            ds_dict, target_time, dataset_type=dataset_type, resolution=resolution
+        )
 
         return ds_dict, target_time
 
@@ -75,7 +77,9 @@ class _OneTimestepForecastEngineer(_EngineerBase):
                 mean = float(
                     static_ds[var].mean(dim=[dimension_name], skipna=True).values
                 )
-                std = float(static_ds[var].std(dim=[dimension_name], skipna=True).values)
+                std = float(
+                    static_ds[var].std(dim=[dimension_name], skipna=True).values
+                )
 
             normalization_values[var]["mean"] = mean
             normalization_values[var]["std"] = std
@@ -90,9 +94,10 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         test_date: str,
         target_variable: str = "discharge_vol",
         seq_length: int = 365,
-        resolution: str = 'D',
+        resolution: str = "D",
         expected_length: Optional[int] = 365,
-        latlons: bool = False
+        latlons: bool = False,
+        resolution: str = 'D'
     ) -> None:
         """
         Arguments:
@@ -113,7 +118,7 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         """
         # NOTE: HARDCODED the dataset to open
         ds = xr.open_dataset(self.interim_folder / "camels_preprocessed/data.nc")
-        ds = ds.sortby('time')
+        ds = ds.sortby("time")
 
         # 1. SPLIT TRAIN - TEST
         # NOTE: need to change if not selecting time-ordered train-test splits
@@ -127,8 +132,8 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         min_ds_date = pd.to_datetime(ds.time.min().values)
 
         print(
-            f'Generating data.\nTrain: {min_ds_date}-{max_train_date}'
-            f'\nTest:  {min_test_date}-{max_test_date} '
+            f"Generating data.\nTrain: {min_ds_date}-{max_train_date}"
+            f"\nTest:  {min_test_date}-{max_test_date} "
         )
         test_ds = ds.sel(time=slice(min_test_date, max_test_date))
         train_ds = ds.sel(time=slice(min_ds_date, max_train_date))
@@ -137,7 +142,9 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         assert train_ds.time.min().values < test_ds.time.min().values
 
         # 2. calculate & save the normalisation values
-        normalization_values = self._calculate_normalization_values(train_ds, latlon=False)
+        normalization_values = self._calculate_normalization_values(
+            train_ds, latlon=False
+        )
 
         savepath = self.output_folder / "normalizing_dict.pkl"
         with savepath.open("wb") as f:
@@ -152,15 +159,21 @@ class _OneTimestepForecastEngineer(_EngineerBase):
 
             for target_time in target_times:
                 self.stratify_xy(
-                    ds=ds, target_time=target_time,
-                    seq_length=seq_length, min_ds_date=min_ds_date,
+                    ds=ds,
+                    target_time=target_time,
+                    seq_length=seq_length,
+                    min_ds_date=min_ds_date,
                     target_var=target_variable,
-                    train=train, resolution=resolution
+                    train=train,
+                    resolution=resolution,
                 )
 
-
     def _save(
-        self, ds_dict: Dict[str, xr.Dataset], target_time: pd.Timestamp, dataset_type: str, resolution: str
+        self,
+        ds_dict: Dict[str, xr.Dataset],
+        target_time: pd.Timestamp,
+        dataset_type: str,
+        resolution: str,
     ) -> None:
         """
         Arguments:
@@ -174,18 +187,20 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         resolution:
             the resolution of the data used to create directories
         """
-        assert dataset_type in ['train', 'test']
+        assert dataset_type in ["train", "test"]
 
         # parent of output folder
         save_folder = self.output_folder / dataset_type
         save_folder.mkdir(exist_ok=True)
 
         # output folder name
-        if resolution == 'M':
+        if resolution == "M":
             output_location = save_folder / f"{target_time.year}_{target_time.month}"
-        elif resolution == 'D':
-            output_location = save_folder / \
-                f"{target_time.year}_{target_time.month}_{target_time.day}"
+        elif resolution == "D":
+            output_location = (
+                save_folder
+                / f"{target_time.year}_{target_time.month}_{target_time.day}"
+            )
         else:
             assert False, "no other resolutions (hrs, mins) etc. have been implemented"
         output_location.mkdir(exist_ok=True)

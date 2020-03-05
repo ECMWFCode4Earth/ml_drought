@@ -45,7 +45,12 @@ class _EngineerBase:
         expected_length: Optional[int] = 12,
     ) -> None:
 
-        self._process_dynamic(test_year, target_variable, pred_months, expected_length)
+        self._process_dynamic(
+            test_year=test_year,
+            target_variable=target_variable,
+            pred_months=pred_months,
+            expected_length=expected_length
+        )
         if self.process_static:
             self._process_static()
 
@@ -291,13 +296,13 @@ class _EngineerBase:
             if latlon:
                 dims = ["lat", "lon", "time"]
             else:  # ASSUME 1D
-                assert len([c for c in train_data.coords if c != 'time']) == 1, "Only works with one dimension"
+                assert (
+                    len([c for c in train_data.coords if c != "time"]) == 1
+                ), "Only works with one dimension"
                 dimension_name = [c for c in train_data.coords][0]
                 dims = [dimension_name, "time"]
 
-            mean = float(
-                train_data[var].mean(dim=dims, skipna=True).values
-            )
+            mean = float(train_data[var].mean(dim=dims, skipna=True).values)
             std = float(train_data[var].std(dim=dims, skipna=True).values)
             normalization_values[var]["mean"] = mean
             normalization_values[var]["std"] = std

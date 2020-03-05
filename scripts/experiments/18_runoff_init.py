@@ -12,9 +12,7 @@ from src.engineer.one_timestep_forecast import _OneTimestepForecastEngineer
 
 
 def engineer(pred_months=3, target_var="discharge_vol"):
-    engineer = _OneTimestepForecastEngineer(
-        get_data_path(), process_static=True,
-    )
+    engineer = _OneTimestepForecastEngineer(get_data_path(), process_static=True)
     engineer.engineer(
         test_year=[y for y in range(2011, 2016)],
         target_variable=target_var,
@@ -23,5 +21,5 @@ def engineer(pred_months=3, target_var="discharge_vol"):
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     engineer(pred_months=3)
