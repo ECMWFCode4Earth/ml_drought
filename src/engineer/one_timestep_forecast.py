@@ -121,7 +121,7 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         if isinstance(test_date, Iterable):
             test_date = min(test_date)
 
-        min_test_date = pd.to_datetime(test_date)
+        min_test_date = pd.to_datetime(f"{test_date}-01-01")
         max_test_date = pd.to_datetime(ds.time.max().values) + Day(1)
         max_train_date = min_test_date - Day(1)
         min_ds_date = pd.to_datetime(ds.time.min().values)
