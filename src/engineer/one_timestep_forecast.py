@@ -67,8 +67,8 @@ class _OneTimestepForecastEngineer(_EngineerBase):
 
         normalization_values: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 
-        assert len([c for c in static.coords]) == 1, "Only works with one dimension"
-        dimension_name = [c for c in static.coords][0]
+        assert len([c for c in static_ds.coords]) == 1, "Only works with one dimension"
+        dimension_name = [c for c in static_ds.coords][0]
         for var in static_ds.data_vars:
             if var.endswith("one_hot"):
                 mean = 0
