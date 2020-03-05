@@ -43,7 +43,7 @@ class Engineer:
         self,
         test_year: Union[int, List[int]],
         target_variable: str = "VHI",
-        pred_months: int = 12,
+        seq_length: int = 12,
         expected_length: Optional[int] = 12,
     ) -> None:
         """
@@ -54,15 +54,15 @@ class Engineer:
             will be used for training. If a list is passed, a file for each year will be saved.
         :param target_variable: The variable to be predicted. Only this variable will be saved in
             the test netcdf files
-        :param pred_months: The amount of months of data to feed as input to the model for
+        :param seq_length: The amount of months of data to feed as input to the model for
             it to make its prediction
         :param expected_length: The expected length of the x data along its time-dimension.
             If this is not None and an x array has a different time dimension size, the array
-            is ignored. This differs from pred_months if the preprocessors are run with a
+            is ignored. This differs from seq_length if the preprocessors are run with a
             time granularity different from `'M'`
         """
         self.engineer_class.engineer(
-            test_year, target_variable, pred_months, expected_length
+            test_year, target_variable, seq_length, expected_length
         )
 
     @staticmethod

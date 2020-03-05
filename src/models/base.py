@@ -21,7 +21,7 @@ class ModelBase:
     batch_size: int 1
         The number of files to load at once. These will be chunked and shuffled, so
         a higher value will lead to better shuffling (but will require more memory)
-    pred_months: Optional[List[int]] = None
+    seq_length: Optional[List[int]] = None
         The months the model should predict. If None, all months are predicted
     include_pred_month: bool = True
         Whether to include the prediction month to the model's training data
@@ -48,7 +48,7 @@ class ModelBase:
         data_folder: Path = Path("data"),
         batch_size: int = 1,
         experiment: str = "one_month_forecast",
-        pred_months: Optional[List[int]] = None,
+        seq_length: Optional[List[int]] = None,
         include_pred_month: bool = True,
         include_latlons: bool = False,
         include_monthly_aggs: bool = True,
@@ -69,7 +69,7 @@ class ModelBase:
         self.include_yearly_aggs = include_yearly_aggs
         self.data_path = data_folder
         self.experiment = experiment
-        self.pred_months = pred_months
+        self.seq_length = seq_length
         self.models_dir = data_folder / "models" / self.experiment
         self.surrounding_pixels = surrounding_pixels
         self.ignore_vars = ignore_vars
@@ -270,7 +270,7 @@ class ModelBase:
         elif type(x) == TrainData:
             x_his, x_pm, x_latlons = (
                 x.historical,  # type: ignore
-                x.pred_months,  # type: ignore
+                x.seq_length,  # type: ignore
                 x.latlons,  # type: ignore
             )  # type: ignore
             x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
@@ -285,8 +285,8 @@ class ModelBase:
         if self.include_pred_month:
             # one hot encoding, should be num_classes + 1, but
             # for us its + 2, since 0 is not a class either
-            pred_months_onehot = self._one_hot(x_pm, 12)
-            x_in = np.concatenate((x_in, pred_months_onehot), axis=-1)
+            seq_length_onehot = self._one_hot(x_pm, 12)
+            x_in = np.concatenate((x_in, seq_length_onehot), axis=-1)
         if self.include_latlons:
             x_in = np.concatenate((x_in, x_latlons), axis=-1)
         if self.experiment == "nowcast":
@@ -323,7 +323,7 @@ class ModelBase:
             "mode": mode,
             "mask": None,
             "experiment": self.experiment,
-            "pred_months": self.pred_months,
+            "seq_length": self.seq_length,
             "to_tensor": to_tensor,
             "ignore_vars": self.ignore_vars,
             "monthly_aggs": self.include_monthly_aggs,

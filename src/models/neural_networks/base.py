@@ -23,7 +23,7 @@ class NNBase(ModelBase):
         data_folder: Path = Path("data"),
         batch_size: int = 1,
         experiment: str = "one_month_forecast",
-        pred_months: Optional[List[int]] = None,
+        seq_length: Optional[List[int]] = None,
         include_pred_month: bool = True,
         include_latlons: bool = False,
         include_monthly_aggs: bool = True,
@@ -41,7 +41,7 @@ class NNBase(ModelBase):
             data_folder=data_folder,
             batch_size=batch_size,
             experiment=experiment,
-            pred_months=pred_months,
+            seq_length=seq_length,
             include_pred_month=include_pred_month,
             include_latlons=include_latlons,
             include_monthly_aggs=include_monthly_aggs,
@@ -94,7 +94,7 @@ class NNBase(ModelBase):
                     mode="train",
                     experiment=self.experiment,
                     shuffle_data=False,
-                    pred_months=self.pred_months,
+                    seq_length=self.seq_length,
                 )
             )
             train_mask, val_mask = train_val_mask(len_mask, val_split)
@@ -307,7 +307,7 @@ class NNBase(ModelBase):
         if type(x) is TrainData:  # type: ignore
             return (  # type: ignore
                 x.historical,  # type: ignore
-                self._one_hot(x.pred_months, 12),  # type: ignore
+                self._one_hot(x.seq_length, 12),  # type: ignore
                 x.latlons,  # type: ignore
                 x.current,  # type: ignore
                 x.yearly_aggs,  # type: ignore
@@ -414,7 +414,7 @@ class NNBase(ModelBase):
         for _, val in sorted(idx_to_input.items()):
             tensor = x.__getattribute__(val)
             if tensor is not None:
-                if val == "pred_months":
+                if val == "seq_length":
                     output_tensors.append(
                         self._one_hot(tensor[start_idx : start_idx + num_inputs], 12)
                     )
@@ -454,7 +454,7 @@ class NNBase(ModelBase):
                 val.requires_grad = True
         outputs = self.model(
             x.historical,
-            self._one_hot(x.pred_months, 12),
+            self._one_hot(x.seq_length, 12),
             x.latlons,
             x.current,
             x.yearly_aggs,

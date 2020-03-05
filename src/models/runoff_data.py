@@ -30,7 +30,7 @@ class OneDimensionalLoader(DataLoader):
         predict_delta: bool = False,
         experiment: str = "one_month_forecast",
         mask: Optional[List[bool]] = None,
-        pred_months: Optional[List[int]] = None,
+        seq_length: Optional[List[int]] = None,
         to_tensor: bool = False,
         ignore_vars: Optional[List[str]] = None,
         monthly_aggs: bool = True,
@@ -50,7 +50,7 @@ class OneDimensionalLoader(DataLoader):
             shuffle_data=shuffle_data,
             experiment=experiment,
             mask=mask,
-            pred_months=pred_months,
+            seq_length=seq_length,
         )
         self.predict_delta = predict_delta
 
@@ -136,7 +136,7 @@ class OneDimensionalLoader(DataLoader):
         shuffle_data: bool,
         experiment: str,
         mask: Optional[List[bool]] = None,
-        pred_months: Optional[List[int]] = None,
+        seq_length: Optional[List[int]] = None,
     ) -> List[Path]:
 
         data_folder = data_path / f"features/{experiment}/{mode}"
@@ -144,11 +144,11 @@ class OneDimensionalLoader(DataLoader):
 
         for subtrain in data_folder.iterdir():
             if (subtrain / "x.nc").exists() and (subtrain / "y.nc").exists():
-                if pred_months is None:
+                if seq_length is None:
                     output_paths.append(subtrain)
                 else:
                     month = int(str(subtrain.parts[-1]).split("_")[-2])
-                    if month in pred_months:
+                    if month in seq_length:
                         output_paths.append(subtrain)
 
         if mask is not None:
@@ -484,7 +484,7 @@ class _BaseIter:
             train_data = TrainData(
                 current=current,
                 historical=historical,
-                pred_months=x_months,
+                seq_length=x_months,
                 latlons=train_latlons,
                 yearly_aggs=yearly_agg,
                 static=static_np,
@@ -495,7 +495,7 @@ class _BaseIter:
             train_data = TrainData(
                 current=None,
                 historical=x_np,
-                pred_months=x_months,
+                seq_length=x_months,
                 latlons=train_latlons,
                 yearly_aggs=yearly_agg,
                 static=static_np,
@@ -650,7 +650,7 @@ class _TrainIter(_BaseIter):
                 return (
                     (
                         global_modelarrays.x.historical,
-                        global_modelarrays.x.pred_months,
+                        global_modelarrays.x.seq_length,
                         global_modelarrays.x.latlons,
                         global_modelarrays.x.current,
                         global_modelarrays.x.yearly_aggs,

@@ -18,7 +18,7 @@ from typing import cast, Dict, Optional, Union, List, Tuple
 class TrainData:
     historical: Union[np.ndarray, torch.Tensor]
     current: Union[np.ndarray, torch.Tensor, None]
-    pred_months: Union[np.ndarray, torch.Tensor]
+    seq_length: Union[np.ndarray, torch.Tensor]
     # latlons are repeated here so they can be tensor-ized and
     # normalized
     latlons: Union[np.ndarray, torch.Tensor]
@@ -180,7 +180,7 @@ class ModelArrays:
 # if new inputs are added
 idx_to_input = {
     0: "historical",
-    1: "pred_months",
+    1: "seq_length",
     2: "latlons",
     3: "current",
     4: "yearly_aggs",
@@ -236,7 +236,7 @@ class DataLoader:
     mask: Optional[List[bool]] = None
         If not None, this list will be used to mask the input files. Useful for creating a train
         and validation set
-    pred_months: Optional[List[int]] = None
+    seq_length: Optional[List[int]] = None
         The months the model should predict. If None, all months are predicted
     to_tensor: bool = False
         Whether to turn the np.ndarrays into torch.Tensors
@@ -270,7 +270,7 @@ class DataLoader:
         predict_delta: bool = False,
         experiment: str = "one_month_forecast",
         mask: Optional[List[bool]] = None,
-        pred_months: Optional[List[int]] = None,
+        seq_length: Optional[List[int]] = None,
         to_tensor: bool = False,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
@@ -291,7 +291,7 @@ class DataLoader:
             shuffle_data=shuffle_data,
             experiment=experiment,
             mask=mask,
-            pred_months=pred_months,
+            seq_length=seq_length,
         )
         self.predict_delta = predict_delta
 
@@ -378,7 +378,7 @@ class DataLoader:
         shuffle_data: bool,
         experiment: str,
         mask: Optional[List[bool]] = None,
-        pred_months: Optional[List[int]] = None,
+        seq_length: Optional[List[int]] = None,
     ) -> List[Path]:
 
         data_folder = data_path / f"features/{experiment}/{mode}"
@@ -386,11 +386,11 @@ class DataLoader:
 
         for subtrain in data_folder.iterdir():
             if (subtrain / "x.nc").exists() and (subtrain / "y.nc").exists():
-                if pred_months is None:
+                if seq_length is None:
                     output_paths.append(subtrain)
                 else:
                     month = int(str(subtrain.parts[-1])[5:])
-                    if month in pred_months:
+                    if month in seq_length:
                         output_paths.append(subtrain)
 
         if mask is not None:
@@ -721,7 +721,7 @@ class _BaseIter:
             train_data = TrainData(
                 current=current,
                 historical=historical,
-                pred_months=x_months,
+                seq_length=x_months,
                 latlons=train_latlons,
                 yearly_aggs=yearly_agg,
                 static=static_np,
@@ -732,7 +732,7 @@ class _BaseIter:
             train_data = TrainData(
                 current=None,
                 historical=x_np,
-                pred_months=x_months,
+                seq_length=x_months,
                 latlons=train_latlons,
                 yearly_aggs=yearly_agg,
                 static=static_np,
@@ -894,7 +894,7 @@ class _TrainIter(_BaseIter):
                 return (
                     (
                         global_modelarrays.x.historical,
-                        global_modelarrays.x.pred_months,
+                        global_modelarrays.x.seq_length,
                         global_modelarrays.x.latlons,
                         global_modelarrays.x.current,
                         global_modelarrays.x.yearly_aggs,
