@@ -97,7 +97,6 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         resolution: str = "D",
         expected_length: Optional[int] = 365,
         latlons: bool = False,
-        resolution: str = 'D'
     ) -> None:
         """
         Arguments:
