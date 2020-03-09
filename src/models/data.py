@@ -61,6 +61,7 @@ class ModelArrays:
     y: Union[np.ndarray, torch.Tensor]
     x_vars: List[str]
     y_var: str
+    id_to_loc_map: Dict
     latlons: Optional[np.ndarray] = None
     target_time: Optional[Timestamp] = None
     historical_times: Optional[List[Timestamp]] = None
@@ -365,7 +366,6 @@ class DataLoader:
             data_path = [
                 list(p.glob("x.nc"))[0]
                 for p in self.data_files
-                if p.parents[0].name == "train"
             ][0]
             ds = xr.open_dataset(data_path)
             reducing_dims = [c for c in ds.coords if c != "time"]
@@ -425,7 +425,7 @@ class DataLoader:
 
 
 class _BaseIter:
-    """Base iterator
+    """Base iterator over all of the data files
     """
 
     def __init__(self, loader: DataLoader) -> None:
@@ -648,26 +648,40 @@ class _BaseIter:
 
         return x_months
 
-    def _calculate_latlons(self, x: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
-        """return raw and normalised latlons
+    def build_loc_to_idx_mapping(self, x: xr.Dataset, notnan_indices: Optional[np.array] = None) -> Dict:
+        """ build a mapping from SPATIAL ID to the value
+        (pixel, station_id, admin_unit) removing the nan indices
+        """
         reducing_coords = [c for c in x.coords if c != "time"]
+        if self.calculate_latlons:
+            lons, lats = np.meshgrid(x.lon.values, x.lat.values)
+            flat_lats, flat_lons = lats.reshape(-1, 1), lons.reshape(-1, 1)
+            latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
+            if notnan_indices is not None:
+                latlons = latlons[notnan_indices]
+            id_to_val_map = dict(zip(
+                np.arange(latlons),
+                latlons
+            ))
+
         elif len(reducing_coords) == 1:
             # working with 1D data (pixel, area, stations etc.)
             # create a DUMMY latlon ([0], [idx])
+            ids = np.arange(len(x[reducing_coords[0]].values))
+            values = x[reducing_coords[0]].values
+            if notnan_indices is not None:
+                ids, values = ids[notnan_indices], values[notnan_indices]
+
             id_to_val_map = dict(zip(
-                np.arange(len(x[reducing_coords[0]].values)),
-                x[reducing_coords[0]].values
+                ids, values
             ))
-            zeros, ids = np.meshgrid([0], np.array(list(id_to_val_map.keys())))
-            flat_zeros, flat_ids = zeros.reshape(-1, 1), ids.reshape(-1, 1)
-            latlons = np.concatenate((flat_zeros, flat_ids), axis=-1)
-            train_latlons = np.concatenate((flat_zeros, flat_ids), axis=-1)
-
-            if self.normalizing_array is not None:
-                train_latlons / [1, max(ids)]
-
         else:
             assert False, "Haven't included other dimensions (only 1D or latlon)"
+
+        return id_to_val_map
+
+    def _calculate_latlons(self, x: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
+        """return raw and normalised latlons
 
         """
         # then, latlons
@@ -811,8 +825,9 @@ class _BaseIter:
             )
         else:
             prev_y_var = None
-        # raw, normalised latlons
-        latlons, train_latlons = self._calculate_latlons(x)
+
+        # raw & normalised latlons
+        latlons, train_latlons, pixel_unit_lookup = self._calculate_latlons(x)
 
         if self.experiment == "nowcast":
             # if nowcast then we have a TrainData.current
@@ -905,6 +920,10 @@ class _BaseIter:
             if latlons is not None:
                 latlons = latlons[notnan_indices]
 
+            id_to_loc_map = self.build_loc_to_idx_mapping(x, notnan_indices=notnan_indices)
+        else:
+            id_to_loc_map = self.build_loc_to_idx_mapping(x, notnan_indices=None)
+
         y_var = list(y.data_vars)[0]
         model_arrays = ModelArrays(
             x=train_data,
@@ -914,6 +933,7 @@ class _BaseIter:
             latlons=latlons,
             target_time=target_time,
             historical_times=x_datetimes,
+            id_to_loc_map=id_to_loc_map,
         )
 
         if to_tensor:

@@ -50,6 +50,7 @@ def run_model():
         hidden_size=256,
         include_latlons=False,
         include_prev_y=False,
+        pretrained=True,
         # yearly_aggs=False,
         # static_embedding_size=64,
     )

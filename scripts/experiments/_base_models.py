@@ -101,23 +101,28 @@ def rnn(
     normalize_y=True,
     include_prev_y=True,
     batch_size=1,
+    pretrained=False,
 ):
-    predictor = RecurrentNetwork(
-        hidden_size=hidden_size,
-        data_folder=get_data_path(),
-        experiment=experiment,
-        include_pred_month=include_pred_month,
-        surrounding_pixels=surrounding_pixels,
-        static=static,
-        ignore_vars=ignore_vars,
-        predict_delta=predict_delta,
-        spatial_mask=spatial_mask,
-        include_latlons=include_latlons,
-        normalize_y=normalize_y,
-        include_prev_y=include_prev_y,
-        batch_size=batch_size,
-    )
-    predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
+    if not pretrained:
+        predictor = RecurrentNetwork(
+            hidden_size=hidden_size,
+            data_folder=get_data_path(),
+            experiment=experiment,
+            include_pred_month=include_pred_month,
+            surrounding_pixels=surrounding_pixels,
+            static=static,
+            ignore_vars=ignore_vars,
+            predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
+            include_latlons=include_latlons,
+            normalize_y=normalize_y,
+            include_prev_y=include_prev_y,
+            batch_size=batch_size,
+        )
+        predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
+    else:
+        predictor = load_model(data_path / f"models/{experiment}/rnn/model.pt")
+
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 

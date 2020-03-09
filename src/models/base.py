@@ -207,7 +207,8 @@ class ModelBase:
         if save_preds:
             # convert from test_arrays_dict to xarray object
             for key, val in test_arrays_dict.items():
-                latlons = cast(np.ndarray, val["latlons"])
+                if val["latlons"] is not None:
+                    latlons = cast(np.ndarray, val["latlons"])
                 preds = self.denormalize_y(preds_dict[key], val["y_var"])
 
                 if len(preds.shape) > 1:

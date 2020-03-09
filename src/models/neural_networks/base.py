@@ -202,6 +202,7 @@ class NNBase(ModelBase):
                         "latlons": val.latlons,
                         "time": val.target_time,
                         "y_var": val.y_var,
+                        "id_to_loc_map": val.id_to_loc_map,
                     }
                     if self.predict_delta:
                         assert val.historical_target.shape[0] == val.y.shape[0], (
