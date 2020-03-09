@@ -132,9 +132,9 @@ class NNBase(ModelBase):
             train_l1 = []
             self.model.train()
             # load in timesteps a few at a time
-            for x, y in train_dataloader:
+            for x, y in tqdm.tqdm(train_dataloader):
                 # chunk into n_pixels
-                for x_batch, y_batch in tqdm.tqdm(chunk_array(x, y, self.batch_size, shuffle=True)):
+                for x_batch, y_batch in (chunk_array(x, y, self.batch_size, shuffle=True)):
                     optimizer.zero_grad()
                     pred = self.model(
                         *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
