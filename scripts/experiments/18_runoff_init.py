@@ -45,7 +45,7 @@ def run_model():
         explain=False,
         static=None,  # "features",
         ignore_vars=ignore_vars,
-        num_epochs=50,
+        num_epochs=1,  # 50,
         early_stopping=5,
         hidden_size=256,
         include_latlons=False,
