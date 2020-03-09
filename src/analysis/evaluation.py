@@ -11,13 +11,21 @@ from sklearn.metrics import r2_score, mean_squared_error
 from typing import Dict, List, Optional, Union, Tuple
 from src.utils import get_ds_mask, _sort_lat_lons
 
+def _get_coords(ds: xr.Dataset) -> List[str]:
+    """return coords except time"""
+    return [c for c in ds.coords if c != "time"]
 
 def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     """Calculate the RMSE collapsing the time dimension returning
     a DataArray of the rmse values (spatially)
     """
-    true_da_shape = (true_da.lat.shape[0], true_da.lon.shape[0])
-    pred_da_shape = (pred_da.lat.shape[0], pred_da.lon.shape[0])
+    true_coords = _get_coords(true_da)
+    true_coords.sort()
+    pred_coords = _get_coords(pred_da)
+    pred_coords.sort()
+    true_da_shape = (true_da[coord].shape[0] for coord in true_coords)
+    pred_da_shape = (pred_da[coord].shape[0] for coord in pred_coords)
+
     assert true_da_shape == pred_da_shape
     assert tuple(true_da.dims) == tuple(pred_da.dims), (
         f"Expect"
@@ -27,8 +35,12 @@ def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     )
 
     # sort the lat/lons correctly just to be sure
-    pred_da = _sort_lat_lons(pred_da)
-    true_da = _sort_lat_lons(true_da)
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        pred_da = _sort_lat_lons(pred_da)
+        true_da = _sort_lat_lons(true_da)
+    else:
+        pred_da = pred_da.sortby(["time"] + pred_coords)
+        true_da = true_da.sortby(["time"] + true_coords)
 
     vals = np.sqrt(
         np.nansum((true_da.values - pred_da.values) ** 2, axis=0) / pred_da.shape[0]
@@ -38,19 +50,25 @@ def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     da.values = vals
 
     # reapply the mask
-    da = da.where(~get_ds_mask(pred_da))
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        da = da.where(~get_ds_mask(pred_da))
     return da
 
 
 def spatial_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
-    true_da_shape = (true_da.lat.shape[0], true_da.lon.shape[0])
-    pred_da_shape = (pred_da.lat.shape[0], pred_da.lon.shape[0])
+    true_coords = _get_coords(true_da)
+    true_coords.sort()
+    pred_coords = _get_coords(pred_da)
+    pred_coords.sort()
+    true_da_shape = (true_da[coord].shape[0] for coord in true_coords)
+    pred_da_shape = (pred_da[coord].shape[0] for coord in pred_coords)
     assert true_da_shape == pred_da_shape
 
     # sort the dimensions so that no inversions (e.g. lat)
-    true_da = true_da.sortby(["time", "lat", "lon"])
-    pred_da = pred_da.sortby(["time", "lat", "lon"])
+    pred_da = pred_da.sortby(["time"] + pred_coords)
+    true_da = true_da.sortby(["time"] + true_coords)
 
+    # run r2 calculation
     r2_vals = 1 - (np.nansum((true_da.values - pred_da.values) ** 2, axis=0)) / (
         np.nansum((true_da.values - np.nanmean(pred_da.values)) ** 2, axis=0)
     )
@@ -59,7 +77,8 @@ def spatial_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     da.values = r2_vals
 
     # reapply the mask
-    da = da.where(~get_ds_mask(pred_da))
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        da = da.where(~get_ds_mask(pred_da))
     return da
 
 
@@ -154,7 +173,8 @@ def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
 
 def _read_multi_data_paths(train_data_paths: List[Path]) -> xr.Dataset:
     train_ds = xr.open_mfdataset(train_data_paths).sortby("time").compute()
-    train_ds = train_ds.transpose("time", "lat", "lon")
+    coords = ["time"] + _get_coords(train_ds)
+    train_ds = train_ds.transpose(*coords)
 
     return train_ds
 
@@ -166,7 +186,8 @@ def read_pred_data(
     pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
     pred_ds = pred_ds.sortby("time")
     pred_da = pred_ds.preds
-    pred_da = pred_da.transpose("time", "lat", "lon")
+    coords = ["time"] + _get_coords(pred_da)
+    pred_da = pred_da.transpose(*coords)
 
     return pred_ds, pred_da
 

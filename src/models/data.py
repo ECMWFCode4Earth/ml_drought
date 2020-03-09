@@ -363,10 +363,7 @@ class DataLoader:
 
     def get_reducing_dims(self, reducing_dims: Optional[List[str]] = None) -> List[str]:
         if reducing_dims is None:
-            data_path = [
-                list(p.glob("x.nc"))[0]
-                for p in self.data_files
-            ][0]
+            data_path = [list(p.glob("x.nc"))[0] for p in self.data_files][0]
             ds = xr.open_dataset(data_path)
             reducing_dims = [c for c in ds.coords if c != "time"]
 
@@ -648,7 +645,9 @@ class _BaseIter:
 
         return x_months
 
-    def build_loc_to_idx_mapping(self, x: xr.Dataset, notnan_indices: Optional[np.array] = None) -> Dict:
+    def build_loc_to_idx_mapping(
+        self, x: xr.Dataset, notnan_indices: Optional[np.array] = None
+    ) -> Dict:
         """ build a mapping from SPATIAL ID to the value
         (pixel, station_id, admin_unit) removing the nan indices
 
@@ -664,10 +663,7 @@ class _BaseIter:
             latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
             if notnan_indices is not None:
                 latlons = latlons[notnan_indices]
-            id_to_val_map = dict(zip(
-                np.arange(latlons),
-                latlons
-            ))
+            id_to_val_map = dict(zip(np.arange(latlons), latlons))
 
         elif len(reducing_coords) == 1:
             # working with 1D data (pixel, area, stations etc.)
@@ -677,9 +673,7 @@ class _BaseIter:
             if notnan_indices is not None:
                 ids, values = ids[notnan_indices], values[notnan_indices]
 
-            id_to_val_map = dict(zip(
-                ids, values
-            ))
+            id_to_val_map = dict(zip(ids, values))
         else:
             assert False, "Haven't included other dimensions (only 1D or latlon)"
 
@@ -924,7 +918,9 @@ class _BaseIter:
             if latlons is not None:
                 latlons = latlons[notnan_indices]
 
-            id_to_loc_map = self.build_loc_to_idx_mapping(x, notnan_indices=notnan_indices)
+            id_to_loc_map = self.build_loc_to_idx_mapping(
+                x, notnan_indices=notnan_indices
+            )
         else:
             id_to_loc_map = self.build_loc_to_idx_mapping(x, notnan_indices=None)
 

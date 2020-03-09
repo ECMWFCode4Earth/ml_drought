@@ -167,7 +167,12 @@ class ModelBase:
                 y = y + self.normalizing_dict[var_name]["mean"]
         return y
 
-    def evaluate(self, save_results: bool = True, save_preds: bool = False) -> None:
+    def evaluate(
+        self,
+        save_results: bool = True,
+        save_preds: bool = False,
+        spatial_unit_name: Optional[str] = None,
+    ) -> None:
         """
         Evaluate the trained model on the TEST data
 
@@ -221,7 +226,7 @@ class ModelBase:
                 # get the spatial_unit from the ModelArrays
                 spatial_unit = np.array([v for v in val["id_to_loc_map"].values()])
 
-                # WORK with latlon or with 1D data
+                #  WORK with latlon or with 1D data
                 try:
                     preds_xr = (
                         pd.DataFrame(
@@ -236,16 +241,21 @@ class ModelBase:
                         .to_xarray()
                     )
                 except NameError as E:  # non latlon data
-                    print(f"data is not 2D (latlons):\n{E}")
+                    # print(f"data is not 2D (latlons):\n{E}")
+                    spatial_unit_name = (
+                        "spatial_unit"
+                        if spatial_unit_name is None
+                        else spatial_unit_name
+                    )
                     preds_xr = (
                         pd.DataFrame(
                             data={
                                 "preds": preds,
-                                "spatial_unit": spatial_unit,
+                                spatial_unit_name: spatial_unit,
                                 "time": times,
                             }
                         )
-                        .set_index(["spatial_unit", "time"])
+                        .set_index([spatial_unit_name, "time"])
                         .to_xarray()
                     )
 
