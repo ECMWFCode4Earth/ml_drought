@@ -660,7 +660,7 @@ class _BaseIter:
             if self.normalizing_array is not None:
                 train_latlons / [90, 180]
         else:
-            latlons, train_latlons = None
+            latlons, train_latlons = None, None
         return latlons, train_latlons
 
     def _calculate_static(self, num_instances: int) -> np.ndarray:
