@@ -620,9 +620,12 @@ class _BaseIter:
     def _calculate_static(self, num_instances: int) -> np.ndarray:
         if self.static_array is None:
             static_np = self.static.to_array().values  # type: ignore
-            static_np = static_np.reshape(
-                static_np.shape[0], static_np.shape[1] * static_np.shape[2]
-            )
+            if len(static_np.shape) == 3:
+                # if 3 dimensions (vars, lat, lon)
+                # collapse to 2 dimensions (vars, pixels)
+                static_np = static_np.reshape(
+                    static_np.shape[0], static_np.shape[1] * static_np.shape[2]
+                )
             static_np = np.moveaxis(static_np, -1, 0)
             assert static_np.shape[0] == num_instances
 
