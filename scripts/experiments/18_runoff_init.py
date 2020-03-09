@@ -39,6 +39,7 @@ def run_model():
     ]
     rnn(
         experiment="one_timestep_forecast",
+        batch_size=100,
         include_pred_month=True,
         surrounding_pixels=None,
         explain=False,

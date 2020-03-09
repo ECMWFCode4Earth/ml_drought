@@ -62,6 +62,7 @@ def linear_nn(
     predict_delta=False,
     spatial_mask=None,
     include_latlons=False,
+    batch_size=1,
 ):
     predictor = LinearNetwork(
         layer_sizes=layer_sizes,
@@ -74,6 +75,7 @@ def linear_nn(
         predict_delta=predict_delta,
         spatial_mask=spatial_mask,
         include_latlons=include_latlons,
+        batch_size=batch_size,
     )
     predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)
@@ -98,6 +100,7 @@ def rnn(
     include_latlons=False,
     normalize_y=True,
     include_prev_y=True,
+    batch_size=1,
 ):
     predictor = RecurrentNetwork(
         hidden_size=hidden_size,
@@ -112,6 +115,7 @@ def rnn(
         include_latlons=include_latlons,
         normalize_y=normalize_y,
         include_prev_y=include_prev_y,
+        batch_size=batch_size,
     )
     predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)
@@ -138,6 +142,7 @@ def earnn(
     include_latlons=False,
     normalize_y=True,
     include_prev_y=True,
+    batch_size=1,
 ):
     data_path = get_data_path()
 
@@ -156,6 +161,7 @@ def earnn(
             include_latlons=include_latlons,
             normalize_y=normalize_y,
             include_prev_y=include_prev_y,
+            batch_size=batch_size,
         )
         predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
         predictor.evaluate(save_preds=True)
