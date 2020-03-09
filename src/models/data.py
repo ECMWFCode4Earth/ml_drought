@@ -795,7 +795,6 @@ class _BaseIter:
 
         # calculate normalized values in these functions
         x_np, y_np = self._calculate_historical(x, y)
-        assert False
         x_months = self._calculate_target_months(y, x_np.shape[0])
         yearly_agg = np.vstack([yearly_agg] * x_np.shape[0])
         if self.static is not None:
@@ -804,7 +803,7 @@ class _BaseIter:
             static_np = None
 
         prev_y_var = self._get_prev_y_var(folder, list(y.data_vars)[0], y_np.shape[0])
-
+        assert False
         # raw, normalised latlons
         latlons, train_latlons = self._calculate_latlons(x)
 
