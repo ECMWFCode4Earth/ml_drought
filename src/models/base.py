@@ -51,7 +51,7 @@ class ModelBase:
         seq_length: Optional[List[int]] = None,
         include_pred_month: bool = True,
         include_latlons: bool = False,
-        include_monthly_aggs: bool = True,
+        include_timestep_aggs: bool = True,
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
@@ -65,7 +65,7 @@ class ModelBase:
         self.batch_size = batch_size
         self.include_pred_month = include_pred_month
         self.include_latlons = include_latlons
-        self.include_monthly_aggs = include_monthly_aggs
+        self.include_timestep_aggs = include_timestep_aggs
         self.include_yearly_aggs = include_yearly_aggs
         self.data_path = data_folder
         self.experiment = experiment
@@ -326,7 +326,7 @@ class ModelBase:
             "seq_length": self.seq_length,
             "to_tensor": to_tensor,
             "ignore_vars": self.ignore_vars,
-            "monthly_aggs": self.include_monthly_aggs,
+            "timestep_aggs": self.include_timestep_aggs,
             "surrounding_pixels": self.surrounding_pixels,
             "static": self.static,
             "device": self.device,
