@@ -952,6 +952,7 @@ class _TrainIter(_BaseIter):
                     reducing_dims=self.reducing_dims,
                 )
                 if arrays.x.historical.shape[0] == 0:
+                    assert False
                     print(f"{subfolder} returns no values. Skipping")
 
                     # remove the empty element from the list
