@@ -172,8 +172,7 @@ def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
 
 
 def _read_multi_data_paths(train_data_paths: List[Path]) -> xr.Dataset:
-    train_ds = xr.open_mfdataset(train_data_paths).sortby("time").compute()
-    assert False
+    train_ds = xr.open_mfdataset(train_data_paths, concat_dim='time').sortby("time").compute()
     coords = ["time"] + _get_coords(train_ds)
     train_ds = train_ds.transpose(*coords)
 
