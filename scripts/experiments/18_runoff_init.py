@@ -37,10 +37,10 @@ def run_model():
         num_epochs=50,
         early_stopping=5,
         hidden_size=256,
-        static_embedding_size=64,
         include_latlons=False,
         include_prev_y=False,
         # yearly_aggs=False,
+        # static_embedding_size=64,
     )
 
 
