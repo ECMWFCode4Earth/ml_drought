@@ -682,7 +682,6 @@ class _BaseIter:
 
     def _calculate_latlons(self, x: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
         """return raw and normalised latlons
-
         """
         # then, latlons
         if self.calculate_latlons:
@@ -827,7 +826,7 @@ class _BaseIter:
             prev_y_var = None
 
         # raw & normalised latlons
-        latlons, train_latlons, pixel_unit_lookup = self._calculate_latlons(x)
+        latlons, train_latlons = self._calculate_latlons(x)
 
         if self.experiment == "nowcast":
             # if nowcast then we have a TrainData.current
