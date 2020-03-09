@@ -838,7 +838,7 @@ class _BaseIter:
                 x[f"spatial_mean_{var}"] = mean_dataset[var]
 
         if surrounding_pixels is not None:
-            assert reducing_dims = ["lat", "lon"], "This only works with lat,lon pixel data"
+            assert reducing_dims == ["lat", "lon"], "This only works with lat,lon pixel data"
             lat_shifts = lon_shifts = range(-surrounding_pixels, surrounding_pixels + 1)
             for var in original_vars:
                 for lat_shift in lat_shifts:
