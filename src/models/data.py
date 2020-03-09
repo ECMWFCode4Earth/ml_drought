@@ -479,7 +479,13 @@ class _BaseIter:
         if new_path.exists():
             y = xr.open_dataset(new_path / "y.nc")
             y_np = y[y_var].values
-            y_np = y_np.reshape(y_np.shape[0], y_np.shape[1] * y_np.shape[2])
+            if len(y_np.shape) == 3:
+                # if 3 dimensions (time, lat, lon)
+                # then collapse to 2d (time, pixels)
+                y_np = y_np.reshape(y_np.shape[0], y_np.shape[1] * y_np.shape[2])
+            if len(y_np.shape) == 1:
+                y_np = np.expand_dims(y_np, axis=0)
+            # reshape to (pixels, 1)
             y_np = np.moveaxis(y_np, -1, 0)
 
             if self.normalizing_dict is not None:
@@ -562,7 +568,9 @@ class _BaseIter:
         x_np, y_np = x.to_array().values, y.to_array().values
 
         # first, x
-        if len(x_np.shape) == 4:  # if 4 dimensions (time, vars, lat, lon)
+        if len(x_np.shape) == 4:
+            # if 4 dimensions (time, vars, lat, lon)
+            # then collapse to 3 d (time, vars, lat, lon)
             x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
         x_np = np.moveaxis(np.moveaxis(x_np, 0, 1), -1, 0)
 
