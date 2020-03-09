@@ -803,7 +803,6 @@ class _BaseIter:
             static_np = None
 
         prev_y_var = self._get_prev_y_var(folder, list(y.data_vars)[0], y_np.shape[0])
-        assert False
         # raw, normalised latlons
         latlons, train_latlons = self._calculate_latlons(x)
 
@@ -839,7 +838,7 @@ class _BaseIter:
             f"x and y data have a different "
             f"number of instances! x: {x_np.shape[0]}, y: {y_np.shape[0]}"
         )
-
+        assert False
         if clear_nans:
             # remove nans if they are in the x or y data
             historical_nans, y_nans = np.isnan(train_data.historical), np.isnan(y_np)
