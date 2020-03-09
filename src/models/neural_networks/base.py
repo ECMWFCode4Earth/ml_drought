@@ -99,6 +99,7 @@ class NNBase(ModelBase):
             )
             train_mask, val_mask = train_val_mask(len_mask, val_split)
 
+            print("\n** Loading Dataloaders ... **")
             train_dataloader = self.get_dataloader(
                 mode="train", mask=train_mask, to_tensor=True, shuffle_data=True
             )
@@ -109,11 +110,13 @@ class NNBase(ModelBase):
             batches_without_improvement = 0
             best_val_score = np.inf
         else:
+            print("\n** Loading Dataloaders ... **")
             train_dataloader = self.get_dataloader(
                 mode="train", to_tensor=True, shuffle_data=True
             )
 
         # initialize the model
+        print("\n** Initializing Model ... **")
         if self.model is None:
             x_ref, _ = next(iter(train_dataloader))
             model = self._initialize_model(x_ref)
@@ -123,6 +126,7 @@ class NNBase(ModelBase):
             [pam for pam in self.model.parameters()], lr=learning_rate
         )
 
+        print("\n** Running Epochs ... **")
         for epoch in range(num_epochs):
             train_rmse = []
             train_l1 = []
