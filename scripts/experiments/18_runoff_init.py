@@ -45,6 +45,6 @@ def run_model():
 
 
 if __name__ == "__main__":
-    engineer(seq_length=365)
+    # engineer(seq_length=3)
     # engineer_static_only()
-    # run_model()
+    run_model()
