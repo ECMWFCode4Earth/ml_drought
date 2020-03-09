@@ -336,6 +336,7 @@ class ModelBase:
             "spatial_mask": self.spatial_mask,
             "normalize_y": self.normalize_y,
             "calculate_latlons": self.include_latlons,
+            "use_prev_y_var": self.include_prev_y,
         }
 
         for key, val in kwargs.items():

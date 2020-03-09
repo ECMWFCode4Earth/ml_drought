@@ -282,6 +282,7 @@ class DataLoader:
         normalize_y: bool = False,
         reducing_dims: Optional[List[str]] = None,
         calculate_latlons: bool = True,
+        use_prev_y_var: bool = False,
     ) -> None:
 
         self.batch_file_size = batch_file_size
@@ -348,6 +349,7 @@ class DataLoader:
 
         self.reducing_dims = self.get_reducing_dims(reducing_dims)
         self.calculate_latlons = calculate_latlons
+        self.use_prev_y_var = use_prev_y_var
 
     def __iter__(self):
         if self.mode == "train":
@@ -460,6 +462,7 @@ class _BaseIter:
 
         self.reducing_dims: List[str] = loader.reducing_dims
         self.calculate_latlons = loader.calculate_latlons
+        self.use_prev_y_var: bool = loader.use_prev_y_var
 
     def __iter__(self):
         return self
@@ -802,7 +805,8 @@ class _BaseIter:
         else:
             static_np = None
 
-        prev_y_var = self._get_prev_y_var(folder, list(y.data_vars)[0], y_np.shape[0])
+        if self.use_prev_y_var:
+            prev_y_var = self._get_prev_y_var(folder, list(y.data_vars)[0], y_np.shape[0])
         # raw, normalised latlons
         latlons, train_latlons = self._calculate_latlons(x)
 
