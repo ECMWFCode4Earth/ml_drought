@@ -246,7 +246,7 @@ class DataLoader:
         be included too, up to a distance of one pixel away
     ignore_vars: Optional[List[str]] = None
         A list of variables to ignore. If None, all variables in the data_path will be included
-    monthly_aggs: bool = True
+    timestep_aggs: bool = True
         Whether to include the monthly aggregates (mean and std across all spatial values) for
         the input variables. These will be additional dimensions to the historical
         (and optionally current) arrays
@@ -274,7 +274,7 @@ class DataLoader:
         to_tensor: bool = False,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
-        monthly_aggs: bool = True,
+        timestep_aggs: bool = True,
         static: Optional[str] = "features",
         device: str = "cpu",
         spatial_mask: Optional[xr.DataArray] = None,
@@ -311,7 +311,7 @@ class DataLoader:
                 self.normalizing_dict = pickle.load(f)
 
         self.surrounding_pixels = surrounding_pixels
-        self.monthly_aggs = monthly_aggs
+        self.timestep_aggs = timestep_aggs
         self.to_tensor = to_tensor
         self.ignore_vars = ignore_vars
 
@@ -425,7 +425,7 @@ class _BaseIter:
         self.shuffle = loader.shuffle
         self.clear_nans = loader.clear_nans
         self.surrounding_pixels = loader.surrounding_pixels
-        self.monthly_aggs = loader.monthly_aggs
+        self.timestep_aggs = loader.timestep_aggs
         self.to_tensor = loader.to_tensor
         self.experiment = loader.experiment
         self.ignore_vars = loader.ignore_vars
@@ -449,8 +449,6 @@ class _BaseIter:
         self.normalizing_array: Optional[Dict[str, np.ndarray]] = None
         self.normalizing_array_ym: Optional[Dict[str, np.ndarray]] = None
         self.normalizing_array_static: Optional[Dict[str, np.ndarray]] = None
-
-
 
         self.idx = 0
         self.max_idx = len(loader.data_files)
@@ -549,7 +547,7 @@ class _BaseIter:
     def _calculate_historical(
         self, x: xr.Dataset, y: xr.Dataset
     ) -> Tuple[np.ndarray, np.ndarray]:
-        x = self._add_extra_dims(x, self.surrounding_pixels, self.monthly_aggs)
+        x = self._add_extra_dims(x, self.surrounding_pixels, self.timestep_aggs, self.reducing_dims)
 
         x_np, y_np = x.to_array().values, y.to_array().values
 
@@ -826,19 +824,21 @@ class _BaseIter:
 
     @staticmethod
     def _add_extra_dims(
-        x: xr.Dataset, surrounding_pixels: Optional[int], monthly_agg: bool
+        x: xr.Dataset, surrounding_pixels: Optional[int], timestep_agg: bool,
+        reducing_dims: List[str]
     ) -> xr.Dataset:
         original_vars = list(x.data_vars)
 
-        if monthly_agg:
+        if timestep_agg:
             # first, the means
-            monthly_mean_values = x.mean(dim=["lat", "lon"])
-            mean_dataset = xr.ones_like(x) * monthly_mean_values
+            timestep_mean_values = x.mean(dim=reducing_dims)
+            mean_dataset = xr.ones_like(x) * timestep_mean_values
 
             for var in mean_dataset.data_vars:
                 x[f"spatial_mean_{var}"] = mean_dataset[var]
 
         if surrounding_pixels is not None:
+            assert reducing_dims = ["lat", "lon"], "This only works with lat,lon pixel data"
             lat_shifts = lon_shifts = range(-surrounding_pixels, surrounding_pixels + 1)
             for var in original_vars:
                 for lat_shift in lat_shifts:
