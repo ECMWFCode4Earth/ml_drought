@@ -121,6 +121,7 @@ def rnn(
         )
         predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
     else:
+        data_path = get_data_path()
         predictor = load_model(data_path / f"models/{experiment}/rnn/model.pt")
 
     predictor.evaluate(save_preds=True)
