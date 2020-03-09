@@ -843,6 +843,7 @@ class _BaseIter:
             # remove nans if they are in the x or y data
             historical_nans, y_nans = np.isnan(train_data.historical), np.isnan(y_np)
             if train_data.static is not None:
+                # TODO: why so many static nones?
                 static_nans = np.isnan(train_data.static)
                 static_nans_summed = static_nans.sum(axis=-1)
             else:

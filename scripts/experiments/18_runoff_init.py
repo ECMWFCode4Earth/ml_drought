@@ -27,13 +27,13 @@ def engineer_static_only():
 
 
 def run_model():
-    earnn(
+    rnn(
         experiment="one_timestep_forecast",
         include_pred_month=True,
         surrounding_pixels=None,
         pretrained=False,
         explain=False,
-        static="features",
+        static=None, # "features",
         ignore_vars=None,
         num_epochs=50,
         early_stopping=5,
