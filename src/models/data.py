@@ -357,7 +357,7 @@ class DataLoader:
 
     def get_reducing_dims(self, reducing_dims: Optional[List[str]] = None,) -> List[str]:
         if reducing_dims is None:
-            ds = xr.open_dataset([p for p in data_files if p.name == 'x.nc'])
+            ds = xr.open_dataset([p for p in self.data_files if p.name == 'x.nc'])
             reducing_dims = [c for c in ds.coords if c != "time"]
 
         assert False
