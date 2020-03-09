@@ -25,7 +25,7 @@ class TrainData:
     latlons: Union[np.ndarray, torch.Tensor, None]
     yearly_aggs: Union[np.ndarray, torch.Tensor]
     static: Union[np.ndarray, torch.Tensor, None]
-    prev_y_var: Union[np.ndarray, torch.Tensor]
+    prev_y_var: Union[np.ndarray, torch.Tensor, None]
 
     def to_tensor(self, device: torch.device) -> None:
         for key, val in self.__dict__.items():
@@ -807,6 +807,8 @@ class _BaseIter:
 
         if self.use_prev_y_var:
             prev_y_var = self._get_prev_y_var(folder, list(y.data_vars)[0], y_np.shape[0])
+        else:
+            prev_y_var = None
         # raw, normalised latlons
         latlons, train_latlons = self._calculate_latlons(x)
 
