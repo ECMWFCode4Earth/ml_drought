@@ -795,6 +795,7 @@ class _BaseIter:
 
         # calculate normalized values in these functions
         x_np, y_np = self._calculate_historical(x, y)
+        assert False
         x_months = self._calculate_target_months(y, x_np.shape[0])
         yearly_agg = np.vstack([yearly_agg] * x_np.shape[0])
         if self.static is not None:
