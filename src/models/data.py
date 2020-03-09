@@ -879,6 +879,8 @@ class _BaseIter:
             historical_target_np = self._calculate_historical_target(x, y_var)
             historical_target_np = historical_target_np[notnan_indices].flatten()
             model_arrays.historical_target = historical_target_np
+
+        assert False
         return model_arrays
 
     @staticmethod
@@ -952,7 +954,6 @@ class _TrainIter(_BaseIter):
                     reducing_dims=self.reducing_dims,
                 )
                 if arrays.x.historical.shape[0] == 0:
-                    assert False
                     print(f"{subfolder} returns no values. Skipping")
 
                     # remove the empty element from the list
