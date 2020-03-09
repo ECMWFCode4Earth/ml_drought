@@ -31,7 +31,6 @@ def run_model():
         experiment="one_timestep_forecast",
         include_pred_month=True,
         surrounding_pixels=None,
-        pretrained=False,
         explain=False,
         static=None, # "features",
         ignore_vars=None,
