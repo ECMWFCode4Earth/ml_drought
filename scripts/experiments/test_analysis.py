@@ -29,6 +29,7 @@ if __name__ == "__main__":
     X_test, y_test = read_test_data(data_dir, experiment=TRUE_EXPERIMENT)
     static_ds = xr.open_dataset(data_dir / "features/static/data.nc")
 
+    assert False
     ds = xr.merge([y_train, y_test]).sortby('time').sortby('lat')
     d_ = xr.merge([X_train, X_test]).sortby('time').sortby('lat')
     ds = xr.merge([ds, d_])
