@@ -589,9 +589,13 @@ class _BaseIter:
     @staticmethod
     def _calculate_target_months(y: xr.Dataset, num_instances: int) -> np.ndarray:
         # then, the x month
-        assert len(y.time) == 1, (
-            "Expected y to only have 1 timestamp!" f"Got {len(y.time)}"
-        )
+        try:
+            assert len(y.time) == 1, (
+                "Expected y to only have 1 timestamp!" f"Got {len(y.time)}"
+            )
+        except TypeError:
+            assert y.time.shape == (), "Expected y to only have 1 timestamp!"
+
         target_month = datetime.strptime(
             str(y.time.values[0])[:-3], "%Y-%m-%dT%H:%M:%S.%f"
         ).month
