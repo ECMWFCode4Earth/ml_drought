@@ -806,7 +806,9 @@ class _BaseIter:
             static_np = None
 
         if self.use_prev_y_var:
-            prev_y_var = self._get_prev_y_var(folder, list(y.data_vars)[0], y_np.shape[0])
+            prev_y_var = self._get_prev_y_var(
+                folder, list(y.data_vars)[0], y_np.shape[0]
+            )
         else:
             prev_y_var = None
         # raw, normalised latlons
@@ -880,13 +882,22 @@ class _BaseIter:
             if self.experiment == "nowcast":
                 current_nans = np.isnan(train_data.current)
                 current_nans_summed = current_nans.sum(axis=-1)
-                notnan_indices = np.where(
-                    (historical_nans_summed == 0)
-                    & (y_nans_summed == 0)
-                    & (current_nans_summed == 0)
-                    & (static_nans_summed == 0)
-                    & (prev_y_var_summed == 0)
-                )[0]
+
+                if prev_y_var is not None:
+                    notnan_indices = np.where(
+                        (historical_nans_summed == 0)
+                        & (y_nans_summed == 0)
+                        & (current_nans_summed == 0)
+                        & (static_nans_summed == 0)
+                        & (prev_y_var_summed == 0)
+                    )[0]
+                else:
+                    notnan_indices = np.where(
+                        (historical_nans_summed == 0)
+                        & (y_nans_summed == 0)
+                        & (current_nans_summed == 0)
+                        & (static_nans_summed == 0)
+                    )[0]
 
             train_data.filter(notnan_indices)
 

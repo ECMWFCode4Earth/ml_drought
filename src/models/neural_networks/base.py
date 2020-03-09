@@ -296,11 +296,11 @@ class NNBase(ModelBase):
         Tuple:
             [0] historical data
             [1] months (one hot encoded)
-            [2] latlons
-            [3] current data
+            [2] latlons (optional)
+            [3] current data (optional - Nowcast)
             [4] yearly aggregations
-            [5] static data
-            [6] prev y var
+            [5] static data (optional)
+            [6] prev y var (optional)
         """
         # mypy totally fails to handle what's going on here
 

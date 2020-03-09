@@ -27,13 +27,23 @@ def engineer_static_only():
 
 
 def run_model():
+    ignore_vars = None
+    ignore_vars = [
+        "temperature",
+        "discharge_spec",
+        "peti",
+        "humidity",
+        "shortwave_rad",
+        "longwave_rad",
+        "windspeed",
+    ]
     rnn(
         experiment="one_timestep_forecast",
         include_pred_month=True,
         surrounding_pixels=None,
         explain=False,
-        static=None, # "features",
-        ignore_vars=None,
+        static=None,  # "features",
+        ignore_vars=ignore_vars,
         num_epochs=50,
         early_stopping=5,
         hidden_size=256,
