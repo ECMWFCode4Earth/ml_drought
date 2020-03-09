@@ -552,11 +552,13 @@ class _BaseIter:
         x_np, y_np = x.to_array().values, y.to_array().values
 
         # first, x
-        x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
+        if len(x_np.shape) == 4:  # if 4 dimensions (time, vars, lat, lon)
+            x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
         x_np = np.moveaxis(np.moveaxis(x_np, 0, 1), -1, 0)
 
         # then, y
-        y_np = y_np.reshape(y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
+        if len(x_np.shape) == 4:  # if 4 dimensions (time, vars, lat, lon)
+            y_np = y_np.reshape(y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
         y_np = np.moveaxis(y_np, -1, 0).reshape(-1, 1)
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
