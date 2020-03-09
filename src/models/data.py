@@ -457,14 +457,24 @@ class _BaseIter:
         return self
 
     def _get_prev_y_var(
-        self, folder: Path, y_var: str, num_examples: int
+        self, folder: Path, y_var: str, num_examples: int,
     ) -> np.ndarray:
 
         # first, we will try loading the previous year
-        year, month = folder.name.split("_")
+        folder_name_split = folder.name.split("_")
+        if len(folder_name_split) == 2:
+            resolution = "monthly"
+            year, month = folder_name_split
+        elif len(folder_name_split) == 3:
+            resolution = "daily"
+            year, month, day = folder_name_split
+        else:
+            assert False, 'What resolution is this data?'
+
         previous_year = int(year) - 1
 
-        new_path = folder.parent / f"{previous_year}_{month}"
+        folder_name = f"{previous_year}_{month}" if resolution == 'monthly' else f"{previous_year}_{month}_{day}"
+        new_path = folder.parent / folder_name
 
         if new_path.exists():
             y = xr.open_dataset(new_path / "y.nc")
