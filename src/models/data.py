@@ -593,11 +593,13 @@ class _BaseIter:
             assert len(y.time) == 1, (
                 "Expected y to only have 1 timestamp!" f"Got {len(y.time)}"
             )
+            time_value = y.time.values[0]
         except TypeError:
             assert y.time.shape == (), "Expected y to only have 1 timestamp!"
+            time_value = y.time.values
 
         target_month = datetime.strptime(
-            str(y.time.values[0])[:-3], "%Y-%m-%dT%H:%M:%S.%f"
+            str(time_value)[:-3], "%Y-%m-%dT%H:%M:%S.%f"
         ).month
         x_months = np.array([target_month] * num_instances)
 
