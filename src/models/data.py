@@ -862,7 +862,6 @@ class _BaseIter:
                 & (static_nans_summed == 0)
                 & (prev_y_var_summed == 0)
             )[0]
-            assert False
 
             if self.experiment == "nowcast":
                 current_nans = np.isnan(train_data.current)
