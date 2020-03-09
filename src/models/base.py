@@ -218,20 +218,39 @@ class ModelBase:
                 time = val["time"]
                 times = [time for _ in range(len(preds))]
 
-                preds_xr = (
-                    pd.DataFrame(
-                        data={
-                            "preds": preds,
-                            "lat": latlons[:, 0],
-                            "lon": latlons[:, 1],
-                            "time": times,
-                        }
+                # get the spatial_unit from the ModelArrays
+                spatial_unit = np.array([v for v in val["id_to_loc_map"].values()])
+
+                # WORK with latlon or with 1D data
+                try:
+                    preds_xr = (
+                        pd.DataFrame(
+                            data={
+                                "preds": preds,
+                                "lat": latlons[:, 0],
+                                "lon": latlons[:, 1],
+                                "time": times,
+                            }
+                        )
+                        .set_index(["lat", "lon", "time"])
+                        .to_xarray()
                     )
-                    .set_index(["lat", "lon", "time"])
-                    .to_xarray()
-                )
+                except NameError as E:  # non latlon data
+                    print(f"data is not 2D (latlons):\n{E}")
+                    preds_xr = (
+                        pd.DataFrame(
+                            data={
+                                "preds": preds,
+                                "spatial_unit": spatial_unit,
+                                "time": times,
+                            }
+                        )
+                        .set_index(["spatial_unit", "time"])
+                        .to_xarray()
+                    )
 
                 if self.predict_delta:
+                    # TODO: fix the predict_delta to work with the spatial unit too ...
                     # get the NON-NORMALIZED data (from ModelArrays.historical_target)
                     historical_y = val["historical_target"]
                     y_var = val["y_var"]

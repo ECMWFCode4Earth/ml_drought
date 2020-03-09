@@ -651,6 +651,11 @@ class _BaseIter:
     def build_loc_to_idx_mapping(self, x: xr.Dataset, notnan_indices: Optional[np.array] = None) -> Dict:
         """ build a mapping from SPATIAL ID to the value
         (pixel, station_id, admin_unit) removing the nan indices
+
+        Why? In order to track the spatial units so that we can
+        rebuild the predictions in the `evaluate` function. This
+        way it doesn't require (lat, lon) but also works for
+        station_id // flattened data (regions etc.)
         """
         reducing_coords = [c for c in x.coords if c != "time"]
         if self.calculate_latlons:
