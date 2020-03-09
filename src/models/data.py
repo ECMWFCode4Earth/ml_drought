@@ -279,6 +279,7 @@ class DataLoader:
         device: str = "cpu",
         spatial_mask: Optional[xr.DataArray] = None,
         normalize_y: bool = False,
+        reducing_dims: Optional[List[str]] = None,
     ) -> None:
 
         self.batch_file_size = batch_file_size
@@ -343,6 +344,8 @@ class DataLoader:
             ), f"The spatial mask uses NaNs to get rid of values - this requires clear_nans to be true"
         self.clear_nans = clear_nans
 
+        self.reducing_dims = self.get_reducing_dims(reducing_dims)
+
     def __iter__(self):
         if self.mode == "train":
             return _TrainIter(self)
@@ -351,6 +354,16 @@ class DataLoader:
 
     def __len__(self) -> int:
         return len(self.data_files) // self.batch_file_size
+
+    def get_reducing_dims(self, reducing_dims: Optional[List[str]] = None,) -> List[str]:
+        if reducing_dims is None:
+            return ["lat", "lon"]
+
+        ds = xr.open_dataset([p for p in data_files if p.name == 'x.nc'])
+        reducing_dims = [c for c in ds.coords if c != "time"]
+
+        assert False
+        return reducing_dims
 
     @staticmethod
     def _loc_to_int(base_ds: xr.Dataset) -> Tuple[xr.Dataset, int]:
@@ -428,6 +441,8 @@ class _BaseIter:
 
         self.static_array: Optional[np.ndarray] = None
 
+        self.reducing_dims: List[str] = loader.reducing_dims
+
         if self.shuffle:
             # makes sure they are shuffled every epoch
             shuffle(self.data_files)
@@ -436,6 +451,8 @@ class _BaseIter:
         self.normalizing_array: Optional[Dict[str, np.ndarray]] = None
         self.normalizing_array_ym: Optional[Dict[str, np.ndarray]] = None
         self.normalizing_array_static: Optional[Dict[str, np.ndarray]] = None
+
+
 
         self.idx = 0
         self.max_idx = len(loader.data_files)
@@ -515,20 +532,21 @@ class _BaseIter:
         )
         return normalizing_array
 
-    def _calculate_aggs(self, x: xr.Dataset) -> np.ndarray:
-        yearly_mean = x.mean(dim=["time", "lat", "lon"])
-        yearly_agg = yearly_mean.to_array().values
+    def _calculate_aggs(self, x: xr.Dataset, reducing_dims: List[str] = ['lat', 'lon']) -> np.ndarray:
+        reducing_dims = ["time"] + reducing_dims if "time" not in reducing_dims else reducing_dims
+        global_mean = x.mean(dim=reducing_dims)
+        global_agg = global_mean.to_array().values
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
             self.normalizing_array_ym = self.calculate_normalizing_array(
-                list(yearly_mean.data_vars)
+                list(global_mean.data_vars)
             )
 
         if self.normalizing_array_ym is not None:
-            yearly_agg = (
-                yearly_agg - self.normalizing_array_ym["mean"]
+            global_agg = (
+                global_agg - self.normalizing_array_ym["mean"]
             ) / self.normalizing_array_ym["std"]
-        return yearly_agg
+        return global_agg
 
     def _calculate_historical(
         self, x: xr.Dataset, y: xr.Dataset
@@ -664,7 +682,8 @@ class _BaseIter:
         return (y[y_var] - prev_ts).to_dataset(name=y_var)
 
     def ds_folder_to_np(
-        self, folder: Path, clear_nans: bool = True, to_tensor: bool = False
+        self, folder: Path, clear_nans: bool = True, to_tensor: bool = False,
+        reducing_dims: List[str] = ["lat", "lon"]
     ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / "x.nc"), xr.open_dataset(folder / "y.nc")
@@ -698,7 +717,7 @@ class _BaseIter:
         x, y = self.apply_spatial_mask(x, y)
 
         yearly_agg = self._calculate_aggs(
-            x
+            x, reducing_dims=reducing_dims
         )  # before to avoid aggs from surrounding pixels
 
         # calculate normalized values in these functions
@@ -872,7 +891,8 @@ class _TrainIter(_BaseIter):
             while self.idx < cur_max_idx:
                 subfolder = self.data_files[self.idx]
                 arrays = self.ds_folder_to_np(
-                    subfolder, clear_nans=self.clear_nans, to_tensor=False
+                    subfolder, clear_nans=self.clear_nans, to_tensor=False,
+                    reducing_dims=self.reducing_dims,
                 )
                 if arrays.x.historical.shape[0] == 0:
                     print(f"{subfolder} returns no values. Skipping")
@@ -923,7 +943,8 @@ class _TestIter(_BaseIter):
             while self.idx < cur_max_idx:
                 subfolder = self.data_files[self.idx]
                 arrays = self.ds_folder_to_np(
-                    subfolder, clear_nans=self.clear_nans, to_tensor=self.to_tensor
+                    subfolder, clear_nans=self.clear_nans, to_tensor=self.to_tensor,
+                    reducing_dims=self.reducing_dims,
                 )
                 if arrays.x.historical.shape[0] == 0:
                     print(f"{subfolder} returns no values. Skipping")
