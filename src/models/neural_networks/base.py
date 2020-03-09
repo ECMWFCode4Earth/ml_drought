@@ -4,6 +4,7 @@ from pathlib import Path
 import pickle
 import math
 import xarray as xr
+import tqdm
 
 import torch
 from torch.nn import functional as F
@@ -21,7 +22,7 @@ class NNBase(ModelBase):
     def __init__(
         self,
         data_folder: Path = Path("data"),
-        batch_size: int = 1,
+        batch_size: int = 256,
         experiment: str = "one_month_forecast",
         seq_length: Optional[List[int]] = None,
         include_pred_month: bool = True,
@@ -81,7 +82,6 @@ class NNBase(ModelBase):
         self,
         num_epochs: int = 1,
         early_stopping: Optional[int] = None,
-        batch_size: int = 256,
         learning_rate: float = 1e-3,
         val_split: float = 0.1,
     ) -> None:
@@ -131,8 +131,10 @@ class NNBase(ModelBase):
             train_rmse = []
             train_l1 = []
             self.model.train()
+            # load in timesteps a few at a time
             for x, y in train_dataloader:
-                for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
+                # chunk into n_pixels
+                for x_batch, y_batch in tqdm.tqdm(chunk_array(x, y, self.batch_size, shuffle=True)):
                     optimizer.zero_grad()
                     pred = self.model(
                         *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
