@@ -335,6 +335,7 @@ class ModelBase:
             "predict_delta": self.predict_delta,
             "spatial_mask": self.spatial_mask,
             "normalize_y": self.normalize_y,
+            "calculate_latlons": self.include_latlons,
         }
 
         for key, val in kwargs.items():

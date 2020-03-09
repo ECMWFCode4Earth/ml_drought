@@ -21,7 +21,8 @@ class TrainData:
     seq_length: Union[np.ndarray, torch.Tensor]
     # latlons are repeated here so they can be tensor-ized and
     # normalized
-    latlons: Union[np.ndarray, torch.Tensor]
+    # TODO: Optional because pixel id in 1D case
+    latlons: Union[np.ndarray, torch.Tensor, None]
     yearly_aggs: Union[np.ndarray, torch.Tensor]
     static: Union[np.ndarray, torch.Tensor, None]
     prev_y_var: Union[np.ndarray, torch.Tensor]
@@ -280,6 +281,7 @@ class DataLoader:
         spatial_mask: Optional[xr.DataArray] = None,
         normalize_y: bool = False,
         reducing_dims: Optional[List[str]] = None,
+        calculate_latlons: bool = True
     ) -> None:
 
         self.batch_file_size = batch_file_size
@@ -345,6 +347,7 @@ class DataLoader:
         self.clear_nans = clear_nans
 
         self.reducing_dims = self.get_reducing_dims(reducing_dims)
+        self.calculate_latlons = calculate_latlons
 
     def __iter__(self):
         if self.mode == "train":
@@ -624,15 +627,38 @@ class _BaseIter:
         return x_months
 
     def _calculate_latlons(self, x: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
+        """return raw and normalised latlons
+        reducing_coords = [c for c in x.coords if c != "time"]
+        elif len(reducing_coords) == 1:
+            # working with 1D data (pixel, area, stations etc.)
+            # create a DUMMY latlon ([0], [idx])
+            id_to_val_map = dict(zip(
+                np.arange(len(x[reducing_coords[0]].values)),
+                x[reducing_coords[0]].values
+            ))
+            zeros, ids = np.meshgrid([0], np.array(list(id_to_val_map.keys())))
+            flat_zeros, flat_ids = zeros.reshape(-1, 1), ids.reshape(-1, 1)
+            latlons = np.concatenate((flat_zeros, flat_ids), axis=-1)
+            train_latlons = np.concatenate((flat_zeros, flat_ids), axis=-1)
+
+            if self.normalizing_array is not None:
+                train_latlons / [1, max(ids)]
+
+        else:
+            assert False, "Haven't included other dimensions (only 1D or latlon)"
+
+        """
         # then, latlons
-        lons, lats = np.meshgrid(x.lon.values, x.lat.values)
-        flat_lats, flat_lons = lats.reshape(-1, 1), lons.reshape(-1, 1)
-        latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
-        train_latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
+        if self.calculate_latlons:
+            lons, lats = np.meshgrid(x.lon.values, x.lat.values)
+            flat_lats, flat_lons = lats.reshape(-1, 1), lons.reshape(-1, 1)
+            latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
+            train_latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
 
-        if self.normalizing_array is not None:
-            train_latlons / [90, 180]
-
+            if self.normalizing_array is not None:
+                train_latlons / [90, 180]
+        else:
+            latlons, train_latlons = None
         return latlons, train_latlons
 
     def _calculate_static(self, num_instances: int) -> np.ndarray:
@@ -756,6 +782,7 @@ class _BaseIter:
 
         prev_y_var = self._get_prev_y_var(folder, list(y.data_vars)[0], y_np.shape[0])
 
+        # raw, normalised latlons
         latlons, train_latlons = self._calculate_latlons(x)
 
         if self.experiment == "nowcast":
@@ -827,7 +854,8 @@ class _BaseIter:
             train_data.filter(notnan_indices)
 
             y_np = y_np[notnan_indices]
-            latlons = latlons[notnan_indices]
+            if latlons is not None:
+                latlons = latlons[notnan_indices]
 
         y_var = list(y.data_vars)[0]
         model_arrays = ModelArrays(
