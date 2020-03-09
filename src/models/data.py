@@ -442,7 +442,6 @@ class _BaseIter:
 
         self.static_array: Optional[np.ndarray] = None
 
-        self.reducing_dims: List[str] = loader.reducing_dims
 
         if self.shuffle:
             # makes sure they are shuffled every epoch
@@ -455,6 +454,9 @@ class _BaseIter:
 
         self.idx = 0
         self.max_idx = len(loader.data_files)
+
+        self.reducing_dims: List[str] = loader.reducing_dims
+        self.calculate_latlons = loader.calculate_latlons
 
     def __iter__(self):
         return self
