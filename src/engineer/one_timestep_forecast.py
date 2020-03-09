@@ -74,7 +74,7 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         # only keep the float variables
         float_vars = [v for v in static_ds.data_vars if static_ds[v].dtype == float]
         dropped_vars = [v for v in static_ds.data_vars if v not in float_vars]
-        print(f'Dropping the following non-float vars:\n{dropped_vars}')
+        print(f"Dropping the following non-float vars:\n{dropped_vars}")
         static_ds = static_ds[float_vars]
 
         for var in static_ds.data_vars:

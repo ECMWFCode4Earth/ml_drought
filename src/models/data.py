@@ -281,7 +281,7 @@ class DataLoader:
         spatial_mask: Optional[xr.DataArray] = None,
         normalize_y: bool = False,
         reducing_dims: Optional[List[str]] = None,
-        calculate_latlons: bool = True
+        calculate_latlons: bool = True,
     ) -> None:
 
         self.batch_file_size = batch_file_size
@@ -358,9 +358,13 @@ class DataLoader:
     def __len__(self) -> int:
         return len(self.data_files) // self.batch_file_size
 
-    def get_reducing_dims(self, reducing_dims: Optional[List[str]] = None,) -> List[str]:
+    def get_reducing_dims(self, reducing_dims: Optional[List[str]] = None) -> List[str]:
         if reducing_dims is None:
-            data_path = [list(p.glob('x.nc'))[0] for p in self.data_files if p.parents[0].name == 'train'][0]
+            data_path = [
+                list(p.glob("x.nc"))[0]
+                for p in self.data_files
+                if p.parents[0].name == "train"
+            ][0]
             ds = xr.open_dataset(data_path)
             reducing_dims = [c for c in ds.coords if c != "time"]
 
@@ -442,7 +446,6 @@ class _BaseIter:
 
         self.static_array: Optional[np.ndarray] = None
 
-
         if self.shuffle:
             # makes sure they are shuffled every epoch
             shuffle(self.data_files)
@@ -462,7 +465,7 @@ class _BaseIter:
         return self
 
     def _get_prev_y_var(
-        self, folder: Path, y_var: str, num_examples: int,
+        self, folder: Path, y_var: str, num_examples: int
     ) -> np.ndarray:
 
         # first, we will try loading the previous year
@@ -474,18 +477,22 @@ class _BaseIter:
             resolution = "daily"
             year, month, day = folder_name_split
         else:
-            assert False, 'What resolution is this data?'
+            assert False, "What resolution is this data?"
 
         previous_year = int(year) - 1
 
-        folder_name = f"{previous_year}_{month}" if resolution == 'monthly' else f"{previous_year}_{month}_{day}"
+        folder_name = (
+            f"{previous_year}_{month}"
+            if resolution == "monthly"
+            else f"{previous_year}_{month}_{day}"
+        )
         new_path = folder.parent / folder_name
 
         if new_path.exists():
             y = xr.open_dataset(new_path / "y.nc")
             y_np = y[y_var].values
             if len(y_np.shape) == 3:
-                # if 3 dimensions (time, lat, lon)
+                #  if 3 dimensions (time, lat, lon)
                 # then collapse to 2d (time, pixels)
                 y_np = y_np.reshape(y_np.shape[0], y_np.shape[1] * y_np.shape[2])
             if len(y_np.shape) == 1:
@@ -549,8 +556,12 @@ class _BaseIter:
         )
         return normalizing_array
 
-    def _calculate_aggs(self, x: xr.Dataset, reducing_dims: List[str] = ['lat', 'lon']) -> np.ndarray:
-        reducing_dims = ["time"] + reducing_dims if "time" not in reducing_dims else reducing_dims
+    def _calculate_aggs(
+        self, x: xr.Dataset, reducing_dims: List[str] = ["lat", "lon"]
+    ) -> np.ndarray:
+        reducing_dims = (
+            ["time"] + reducing_dims if "time" not in reducing_dims else reducing_dims
+        )
         global_mean = x.mean(dim=reducing_dims)
         global_agg = global_mean.to_array().values
 
@@ -568,20 +579,26 @@ class _BaseIter:
     def _calculate_historical(
         self, x: xr.Dataset, y: xr.Dataset
     ) -> Tuple[np.ndarray, np.ndarray]:
-        x = self._add_extra_dims(x, self.surrounding_pixels, self.timestep_aggs, self.reducing_dims)
+        x = self._add_extra_dims(
+            x, self.surrounding_pixels, self.timestep_aggs, self.reducing_dims
+        )
 
         x_np, y_np = x.to_array().values, y.to_array().values
 
         # first, x
         if len(x_np.shape) == 4:
-            # if 4 dimensions (time, vars, lat, lon)
+            #  if 4 dimensions (time, vars, lat, lon)
             # then collapse to 3 d (time, vars, lat, lon)
-            x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
+            x_np = x_np.reshape(
+                x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3]
+            )
         x_np = np.moveaxis(np.moveaxis(x_np, 0, 1), -1, 0)
 
         # then, y
-        if len(x_np.shape) == 4:  # if 4 dimensions (time, vars, lat, lon)
-            y_np = y_np.reshape(y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
+        if len(x_np.shape) == 4:  #  if 4 dimensions (time, vars, lat, lon)
+            y_np = y_np.reshape(
+                y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3]
+            )
         y_np = np.moveaxis(y_np, -1, 0).reshape(-1, 1)
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
@@ -667,7 +684,7 @@ class _BaseIter:
         if self.static_array is None:
             static_np = self.static.to_array().values  # type: ignore
             if len(static_np.shape) == 3:
-                # if 3 dimensions (vars, lat, lon)
+                #  if 3 dimensions (vars, lat, lon)
                 # collapse to 2 dimensions (vars, pixels)
                 static_np = static_np.reshape(
                     static_np.shape[0], static_np.shape[1] * static_np.shape[2]
@@ -735,8 +752,11 @@ class _BaseIter:
         return (y[y_var] - prev_ts).to_dataset(name=y_var)
 
     def ds_folder_to_np(
-        self, folder: Path, clear_nans: bool = True, to_tensor: bool = False,
-        reducing_dims: List[str] = ["lat", "lon"]
+        self,
+        folder: Path,
+        clear_nans: bool = True,
+        to_tensor: bool = False,
+        reducing_dims: List[str] = ["lat", "lon"],
     ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / "x.nc"), xr.open_dataset(folder / "y.nc")
@@ -885,8 +905,10 @@ class _BaseIter:
 
     @staticmethod
     def _add_extra_dims(
-        x: xr.Dataset, surrounding_pixels: Optional[int], timestep_agg: bool,
-        reducing_dims: List[str]
+        x: xr.Dataset,
+        surrounding_pixels: Optional[int],
+        timestep_agg: bool,
+        reducing_dims: List[str],
     ) -> xr.Dataset:
         original_vars = list(x.data_vars)
 
@@ -899,7 +921,10 @@ class _BaseIter:
                 x[f"spatial_mean_{var}"] = mean_dataset[var]
 
         if surrounding_pixels is not None:
-            assert reducing_dims == ["lat", "lon"], "This only works with lat,lon pixel data"
+            assert reducing_dims == [
+                "lat",
+                "lon",
+            ], "This only works with lat,lon pixel data"
             lat_shifts = lon_shifts = range(-surrounding_pixels, surrounding_pixels + 1)
             for var in original_vars:
                 for lat_shift in lat_shifts:
@@ -950,7 +975,9 @@ class _TrainIter(_BaseIter):
             while self.idx < cur_max_idx:
                 subfolder = self.data_files[self.idx]
                 arrays = self.ds_folder_to_np(
-                    subfolder, clear_nans=self.clear_nans, to_tensor=False,
+                    subfolder,
+                    clear_nans=self.clear_nans,
+                    to_tensor=False,
                     reducing_dims=self.reducing_dims,
                 )
                 if arrays.x.historical.shape[0] == 0:
@@ -1002,7 +1029,9 @@ class _TestIter(_BaseIter):
             while self.idx < cur_max_idx:
                 subfolder = self.data_files[self.idx]
                 arrays = self.ds_folder_to_np(
-                    subfolder, clear_nans=self.clear_nans, to_tensor=self.to_tensor,
+                    subfolder,
+                    clear_nans=self.clear_nans,
+                    to_tensor=self.to_tensor,
                     reducing_dims=self.reducing_dims,
                 )
                 if arrays.x.historical.shape[0] == 0:
