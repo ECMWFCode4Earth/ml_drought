@@ -11,9 +11,11 @@ from sklearn.metrics import r2_score, mean_squared_error
 from typing import Dict, List, Optional, Union, Tuple
 from src.utils import get_ds_mask, _sort_lat_lons
 
+
 def _get_coords(ds: xr.Dataset) -> List[str]:
     """return coords except time"""
     return [c for c in ds.coords if c != "time"]
+
 
 def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     """Calculate the RMSE collapsing the time dimension returning
@@ -172,7 +174,9 @@ def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
 
 
 def _read_multi_data_paths(train_data_paths: List[Path]) -> xr.Dataset:
-    train_ds = xr.open_mfdataset(train_data_paths, concat_dim='time').sortby("time").compute()
+    train_ds = (
+        xr.open_mfdataset(train_data_paths, concat_dim="time").sortby("time").compute()
+    )
     coords = ["time"] + _get_coords(train_ds)
     train_ds = train_ds.transpose(*coords)
 
