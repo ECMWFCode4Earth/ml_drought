@@ -838,7 +838,7 @@ class _BaseIter:
             f"x and y data have a different "
             f"number of instances! x: {x_np.shape[0]}, y: {y_np.shape[0]}"
         )
-        assert False
+
         if clear_nans:
             # remove nans if they are in the x or y data
             historical_nans, y_nans = np.isnan(train_data.historical), np.isnan(y_np)
@@ -861,6 +861,8 @@ class _BaseIter:
                 & (static_nans_summed == 0)
                 & (prev_y_var_summed == 0)
             )[0]
+            assert False
+
             if self.experiment == "nowcast":
                 current_nans = np.isnan(train_data.current)
                 current_nans_summed = current_nans.sum(axis=-1)
