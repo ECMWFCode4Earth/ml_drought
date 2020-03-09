@@ -860,14 +860,22 @@ class _BaseIter:
                 historical_nans.shape[1] * historical_nans.shape[2],
             ).sum(axis=-1)
             y_nans_summed = y_nans.sum(axis=-1)
-            prev_y_var_summed = np.isnan(prev_y_var).sum(axis=-1)
 
-            notnan_indices = np.where(
-                (historical_nans_summed == 0)
-                & (y_nans_summed == 0)
-                & (static_nans_summed == 0)
-                & (prev_y_var_summed == 0)
-            )[0]
+            if prev_y_var is not None:
+                prev_y_var_summed = np.isnan(prev_y_var).sum(axis=-1)
+
+                notnan_indices = np.where(
+                    (historical_nans_summed == 0)
+                    & (y_nans_summed == 0)
+                    & (static_nans_summed == 0)
+                    & (prev_y_var_summed == 0)
+                )[0]
+            else:
+                notnan_indices = np.where(
+                    (historical_nans_summed == 0)
+                    & (y_nans_summed == 0)
+                    & (static_nans_summed == 0)
+                )[0]
 
             if self.experiment == "nowcast":
                 current_nans = np.isnan(train_data.current)
