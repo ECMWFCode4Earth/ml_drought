@@ -207,8 +207,8 @@ def read_pred_data(
 
     # pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
     # pred_ds = pred_ds.sortby("time")
-    pred_da = _safe_read_multi_data_paths(nc_paths)
     # pred_da = pred_ds.preds
+    pred_da = _safe_read_multi_data_paths(nc_paths)
     coords = ["time"] + _get_coords(pred_da)
     pred_da = pred_da.transpose(*coords)
 
@@ -227,7 +227,7 @@ def read_true_data(
         f
         for f in (data_dir / "features" / "one_month_forecast" / "test").glob("*/y.nc")
     ]
-    true_ds = _read_multi_data_paths(true_paths)
+    true_ds = safe_read_multi_data_paths(true_paths)
     true_da = true_ds[variable]
     return true_da
 
@@ -369,13 +369,13 @@ def _read_data(
     y_data_paths = [
         f for f in (data_dir / "features" / experiment / train_or_test).glob("*/y.nc")
     ]
-    y_ds = _read_multi_data_paths(y_data_paths)
+    y_ds = safe_read_multi_data_paths(y_data_paths)
 
     # LOAD the X files
     X_data_paths = [
         f for f in (data_dir / "features" / experiment / train_or_test).glob("*/x.nc")
     ]
-    X_ds = _read_multi_data_paths(X_data_paths)
+    X_ds = safe_read_multi_data_paths(X_data_paths)
 
     if remove_duplicates:
         # remove duplicate times from the X ds
