@@ -168,7 +168,8 @@ def join_true_pred_da(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.Datase
         f"True: {true_da.shape} Pred: {pred_da.shape}"
     )
 
-    return xr.auto_combine([true_da, pred_da])
+    return xr.merge([true_da, pred_da])
+
 
 def annual_scores(
     models: List[str],
