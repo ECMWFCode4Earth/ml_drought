@@ -280,15 +280,18 @@ def _safe_read_multi_data_paths(data_paths: List[Path]) -> xr.Dataset:
 
 
 def read_pred_data(
-    model: str, data_dir: Path = Path("data"), experiment: str = "one_month_forecast"
+    model: str, data_dir: Path = Path("data"), experiment: str = "one_month_forecast", safe: bool = True
 ) -> xr.DataArray:
     model_pred_dir = data_dir / "models" / experiment / model
     nc_paths = [fp for fp in model_pred_dir.glob("*.nc")]
 
-    # pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
-    # pred_ds = pred_ds.sortby("time")
-    # pred_da = pred_ds.preds
-    pred_da = _safe_read_multi_data_paths(nc_paths)
+    if safe:
+        pred_da = _safe_read_multi_data_paths(nc_paths)
+    else:
+        pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
+        pred_ds = pred_ds.sortby("time")
+        pred_da = pred_ds.preds
+
     coords = ["time"] + _get_coords(pred_da)
     pred_da = pred_da.transpose(*coords)
 
@@ -444,18 +447,25 @@ def _read_data(
     train_or_test: str = "test",
     remove_duplicates: bool = True,
     experiment: str = "one_month_forecast",
+    safe: bool = False,
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     # LOAD the y files
     y_data_paths = [
         f for f in (data_dir / "features" / experiment / train_or_test).glob("*/y.nc")
     ]
-    y_ds = _safe_read_multi_data_paths(y_data_paths)
+    if safe:
+        y_ds = _safe_read_multi_data_paths(y_data_paths)
+    else:
+        y_ds = _read_multi_data_paths(y_data_paths)
 
     # LOAD the X files
     X_data_paths = [
         f for f in (data_dir / "features" / experiment / train_or_test).glob("*/x.nc")
     ]
-    X_ds = _safe_read_multi_data_paths(X_data_paths)
+    if safe:
+        X_ds = _safe_read_multi_data_paths(X_data_paths)
+    else:
+        X_ds = _read_multi_data_paths(X_data_paths)
 
     if remove_duplicates:
         # remove duplicate times from the X ds
@@ -470,6 +480,7 @@ def read_train_data(
     data_dir: Path = Path("data"),
     remove_duplicates: bool = True,
     experiment: str = "one_month_forecast",
+    safe: bool = False,
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     """Read the training data from the data directory and return the joined DataArray.
 
@@ -485,6 +496,7 @@ def read_train_data(
         train_or_test="train",
         remove_duplicates=remove_duplicates,
         experiment=experiment,
+        safe=safe
     )
     return train_X_ds, train_y_ds
 
@@ -493,6 +505,7 @@ def read_test_data(
     data_dir: Path = Path("data"),
     remove_duplicates: bool = True,
     experiment: str = "one_month_forecast",
+    safe: bool = False,
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     """Read the test data from the data directory and return the joined DataArray.
 
@@ -508,6 +521,7 @@ def read_test_data(
         train_or_test="test",
         remove_duplicates=remove_duplicates,
         experiment=experiment,
+        safe=safe
     )
 
     return test_X_ds, test_y_ds
