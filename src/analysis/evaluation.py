@@ -448,6 +448,7 @@ def _read_data(
     remove_duplicates: bool = True,
     experiment: str = "one_month_forecast",
     safe: bool = False,
+    sort_values: bool = True,
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     # LOAD the y files
     y_data_paths = [
@@ -472,6 +473,12 @@ def _read_data(
         # https://stackoverflow.com/a/51077784/9940782
         _, index = np.unique(X_ds["time"], return_index=True)
         X_ds = X_ds.isel(time=index)
+
+    if sort_values:
+        # PREVENTS INVERSION OF LATLONS
+        transpose_vars = ["time"] + _get_coords(X_ds)
+        X_ds = X_ds.transpose(*transpose_vars).sortby(transpose_vars)
+        y_ds = y_ds.transpose(*transpose_vars).sortby(transpose_vars)
 
     return X_ds, y_ds
 
