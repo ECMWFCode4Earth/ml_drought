@@ -26,7 +26,7 @@ def engineer_static_only():
     engineer._process_static()
 
 
-def run_model():
+def run_model(pretrained: bool = False):
     ignore_vars = None
     ignore_vars = [
         "temperature",
@@ -50,7 +50,7 @@ def run_model():
         hidden_size=256,
         include_latlons=False,
         include_prev_y=False,
-        pretrained=True,
+        pretrained=pretrained,
         # yearly_aggs=False,
         # static_embedding_size=64,
     )
