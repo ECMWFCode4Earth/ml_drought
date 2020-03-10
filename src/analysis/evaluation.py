@@ -17,18 +17,31 @@ def _get_coords(ds: xr.Dataset) -> List[str]:
     return [c for c in ds.coords if c != "time"]
 
 
-def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
-    """Calculate the RMSE collapsing the time dimension returning
-    a DataArray of the rmse values (spatially)
-    """
+def _prepare_true_pred_da(
+    true_da: xr.DataArray, pred_da: xr.DataArray
+) -> Tuple[xr.DataArray, xr.DataArray]:
     true_coords = _get_coords(true_da)
     true_coords.sort()
     pred_coords = _get_coords(pred_da)
     pred_coords.sort()
     true_da_shape = [true_da[coord].shape[0] for coord in true_coords]
     pred_da_shape = [pred_da[coord].shape[0] for coord in pred_coords]
-
     assert true_da_shape == pred_da_shape
+
+    # sort the dimensions so that no inversions (e.g. lat)
+    pred_da = pred_da.sortby(["time"] + pred_coords)
+    true_da = true_da.sortby(["time"] + true_coords)
+
+    assert true_da.dims == pred_da.dims, f"True: {true_da.dims} Preds: {pred_da.dims}"
+
+    return true_da, pred_da
+
+
+def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    """Calculate the RMSE collapsing the time dimension returning
+    a DataArray of the rmse values (spatially)
+    """
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
     assert tuple(true_da.dims) == tuple(pred_da.dims), (
         f"Expect"
         "the dimensions to be the same. Currently: "
@@ -47,6 +60,7 @@ def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     vals = np.sqrt(
         np.nansum((true_da.values - pred_da.values) ** 2, axis=0) / pred_da.shape[0]
     )
+    # vals = _rmse_func(true_da.values, pred_da.values, n_instances=pred_da.shape[0])
 
     da = xr.ones_like(pred_da).isel(time=0)
     da.values = vals
@@ -57,18 +71,70 @@ def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     return da
 
 
-def spatial_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
-    true_coords = _get_coords(true_da)
-    true_coords.sort()
-    pred_coords = _get_coords(pred_da)
-    pred_coords.sort()
-    true_da_shape = [true_da[coord].shape[0] for coord in true_coords]
-    pred_da_shape = [pred_da[coord].shape[0] for coord in pred_coords]
-    assert true_da_shape == pred_da_shape
+def temporal_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    """return a R2 object collapsing spatial dimensions -> Time Series"""
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    times = true_da.time.values
+    time_values = []
+    for time in times:
+        # extract numpy arrays for that time
+        true_vals = true_da.sel(time=time).values
+        pred_vals = pred_da.sel(time=time).values
+        # calculate SCALAR R2
+        time_values.append(_r2_func(true_vals=true_vals, pred_vals=pred_vals))
 
-    # sort the dimensions so that no inversions (e.g. lat)
-    pred_da = pred_da.sortby(["time"] + pred_coords)
-    true_da = true_da.sortby(["time"] + true_coords)
+    drop_coords = [c for c in true_da.coords if c != "time"]
+    ones = xr.ones_like(true_da.isel({c: 0 for c in drop_coords}).drop(drop_coords))
+
+    return ones * time_values
+
+
+def temporal_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    """return a RMSE object collapsing spatial dimensions -> Time Series"""
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    times = true_da.time.values
+    time_values = []
+    for time in times:
+        # get the data for that timestep
+        true_tstep = true_da.sel(time=time)
+        pred_tstep = pred_da.sel(time=time)
+        # remove nans from that timestep
+        true_vals = true_tstep.where(
+            (~true_tstep.isnull() & ~pred_tstep.isnull()), drop=True
+        ).values
+        pred_vals = pred_tstep.where(
+            (~true_tstep.isnull() & ~pred_tstep.isnull()), drop=True
+        ).values
+        # calculate RMSE
+        n_instances = pred_vals.shape[0]
+        time_values.append(_rmse_func(true_vals, pred_vals, n_instances=n_instances))
+
+    drop_coords = [c for c in true_da.coords if c != "time"]
+    ones = xr.ones_like(true_da.isel({c: 0 for c in drop_coords}).drop(drop_coords))
+
+    return ones * time_values
+
+
+def squared_error():
+    """the most granular error metric"""
+    (true_da - pred_da) ** 2
+
+
+def _rmse_func(
+    true_vals: np.ndarray, pred_vals: np.ndarray, n_instances: int
+) -> np.ndarray:
+    """RMSE over the first dimension (usually time unless iterating over each timestep)"""
+    return np.sqrt(np.nansum((true_vals - pred_vals) ** 2, axis=0) / n_instances)
+
+
+def _r2_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
+    return 1 - (np.nansum((true_vals - pred_vals) ** 2, axis=0)) / (
+        np.nansum((true_vals - np.nanmean(pred_vals)) ** 2, axis=0)
+    )
+
+
+def spatial_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
 
     # run r2 calculation
     r2_vals = 1 - (np.nansum((true_da.values - pred_da.values) ** 2, axis=0)) / (
@@ -203,7 +269,7 @@ def read_pred_data(
     model: str, data_dir: Path = Path("data"), experiment: str = "one_month_forecast"
 ) -> xr.DataArray:
     model_pred_dir = data_dir / "models" / experiment / model
-    nc_paths = [fp for fp in model_pred_dir.glob('*.nc')]
+    nc_paths = [fp for fp in model_pred_dir.glob("*.nc")]
 
     # pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
     # pred_ds = pred_ds.sortby("time")
