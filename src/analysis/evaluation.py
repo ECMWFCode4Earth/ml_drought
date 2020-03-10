@@ -183,17 +183,30 @@ def _read_multi_data_paths(train_data_paths: List[Path]) -> xr.Dataset:
     return train_ds
 
 
+def _safe_read_multi_data_paths(data_paths: List[Path]) -> xr.Dataset:
+    parent_dir = data_paths[0].parents[0].name
+    print(f"Reading all .nc files from: {parent_dir}")
+    all_ds = [xr.open_dataset(fp) for fp in data_paths]
+    print("All datasets loaded. Now combining ...")
+    ds = xr.auto_combine(all_ds)
+    del all_ds
+    return ds
+
+
 def read_pred_data(
     model: str, data_dir: Path = Path("data"), experiment: str = "one_month_forecast"
-) -> Union[xr.Dataset, xr.DataArray]:
+) -> xr.DataArray:
     model_pred_dir = data_dir / "models" / experiment / model
-    pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
-    pred_ds = pred_ds.sortby("time")
-    pred_da = pred_ds.preds
+    nc_paths = [fp for fp in model_pred_dir.glob('*.nc')]
+
+    # pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
+    # pred_ds = pred_ds.sortby("time")
+    pred_da = _safe_read_multi_data_paths(nc_paths)
+    # pred_da = pred_ds.preds
     coords = ["time"] + _get_coords(pred_da)
     pred_da = pred_da.transpose(*coords)
 
-    return pred_ds, pred_da
+    return pred_da
 
 
 def read_true_data(
