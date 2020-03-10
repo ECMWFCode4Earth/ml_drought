@@ -476,11 +476,16 @@ def _read_data(
 
     if sort_values:
         # PREVENTS INVERSION OF LATLONS
-        transpose_vars = ["time"] + _get_coords(X_ds)
-        X_ds = X_ds.transpose(*transpose_vars).sortby(transpose_vars)
-        y_ds = y_ds.transpose(*transpose_vars).sortby(transpose_vars)
+        X_ds = _sort_values(X_ds)
+        y_ds = _sort_values(y_ds)
 
     return X_ds, y_ds
+
+
+def _sort_values(ds: xr.Dataset) -> xr.Dataset:
+    assert "time" in [c for c in ds.coords]
+    transpose_vars = ["time"] + _get_coords(ds)
+    return ds.transpose(*transpose_vars).sortby(transpose_vars)
 
 
 def read_train_data(
@@ -532,5 +537,6 @@ def read_test_data(
         safe=safe,
         sort_values=True
     )
+    test_X_ds, test_y_ds = _sort_values(test_X_ds), _sort_values(test_y_ds)
 
     return test_X_ds, test_y_ds
