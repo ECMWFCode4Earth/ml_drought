@@ -484,7 +484,14 @@ def _read_data(
 
 def _sort_values(ds: xr.Dataset) -> xr.Dataset:
     assert "time" in [c for c in ds.coords]
-    transpose_vars = ["time"] + _get_coords(ds)
+
+    non_time_coords = _get_coords(ds)
+    if all(np.isin(["lat", "lon"], non_time_coords)):
+        # THE ORDER is important (lat, lon)
+        leftover_coords = [c for c in non_time_coords if c is not in ["lat", "lon"]]
+        transpose_vars = ["time"] + ["lat", "lon"] + leftover_coords
+    else:
+        transpose_vars = ["time"] + non_time_coords
     return ds.transpose(*transpose_vars).sortby(transpose_vars)
 
 
