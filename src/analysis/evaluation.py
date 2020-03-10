@@ -307,7 +307,7 @@ def read_true_data(
         f
         for f in (data_dir / "features" / "one_month_forecast" / "test").glob("*/y.nc")
     ]
-    true_ds = safe_read_multi_data_paths(true_paths)
+    true_ds = _safe_read_multi_data_paths(true_paths)
     true_da = true_ds[variable]
     return true_da
 
@@ -449,13 +449,13 @@ def _read_data(
     y_data_paths = [
         f for f in (data_dir / "features" / experiment / train_or_test).glob("*/y.nc")
     ]
-    y_ds = safe_read_multi_data_paths(y_data_paths)
+    y_ds = _safe_read_multi_data_paths(y_data_paths)
 
     # LOAD the X files
     X_data_paths = [
         f for f in (data_dir / "features" / experiment / train_or_test).glob("*/x.nc")
     ]
-    X_ds = safe_read_multi_data_paths(X_data_paths)
+    X_ds = _safe_read_multi_data_paths(X_data_paths)
 
     if remove_duplicates:
         # remove duplicate times from the X ds
