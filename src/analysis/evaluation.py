@@ -503,7 +503,8 @@ def read_train_data(
         train_or_test="train",
         remove_duplicates=remove_duplicates,
         experiment=experiment,
-        safe=safe
+        safe=safe,
+        sort_values=True,
     )
     return train_X_ds, train_y_ds
 
@@ -528,7 +529,8 @@ def read_test_data(
         train_or_test="test",
         remove_duplicates=remove_duplicates,
         experiment=experiment,
-        safe=safe
+        safe=safe,
+        sort_values=True
     )
 
     return test_X_ds, test_y_ds
