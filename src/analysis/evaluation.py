@@ -157,6 +157,19 @@ def rmse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return np.sqrt(mean_squared_error(y_true, y_pred))
 
 
+def join_true_pred_da(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.Dataset:
+    """"""
+    assert list(true_da.dims) == list(pred_da.dims), ("Should have matching dimensions\n"
+        f"True: {true_da.dims} Pred: {pred_da.dims}"
+    )
+
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    assert true_da.shape == pred_da.shape, ("Should have matching shapes!\n"
+        f"True: {true_da.shape} Pred: {pred_da.shape}"
+    )
+
+    return xr.auto_combine([true_da, pred_da])
+
 def annual_scores(
     models: List[str],
     metrics: Optional[List[str]] = None,
