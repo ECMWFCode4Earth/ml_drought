@@ -159,13 +159,13 @@ def rmse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 
 def join_true_pred_da(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.Dataset:
     """"""
-    assert list(true_da.dims) == list(pred_da.dims), ("Should have matching dimensions\n"
-        f"True: {true_da.dims} Pred: {pred_da.dims}"
+    assert list(true_da.dims) == list(pred_da.dims), (
+        "Should have matching dimensions\n" f"True: {true_da.dims} Pred: {pred_da.dims}"
     )
 
     true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
-    assert true_da.shape == pred_da.shape, ("Should have matching shapes!\n"
-        f"True: {true_da.shape} Pred: {pred_da.shape}"
+    assert true_da.shape == pred_da.shape, (
+        "Should have matching shapes!\n" f"True: {true_da.shape} Pred: {pred_da.shape}"
     )
 
     return xr.merge([true_da, pred_da])
@@ -280,7 +280,10 @@ def _safe_read_multi_data_paths(data_paths: List[Path]) -> xr.Dataset:
 
 
 def read_pred_data(
-    model: str, data_dir: Path = Path("data"), experiment: str = "one_month_forecast", safe: bool = True
+    model: str,
+    data_dir: Path = Path("data"),
+    experiment: str = "one_month_forecast",
+    safe: bool = True,
 ) -> xr.DataArray:
     model_pred_dir = data_dir / "models" / experiment / model
     nc_paths = [fp for fp in model_pred_dir.glob("*.nc")]
@@ -487,8 +490,8 @@ def _sort_values(ds: xr.Dataset) -> xr.Dataset:
 
     non_time_coords = _get_coords(ds)
     if all(np.isin(["lat", "lon"], non_time_coords)):
-        # THE ORDER is important (lat, lon)
-        leftover_coords = [c for c in non_time_coords if c is not in ["lat", "lon"]]
+        #  THE ORDER is important (lat, lon)
+        leftover_coords = [c for c in non_time_coords if c not in ["lat", "lon"]]
         transpose_vars = ["time"] + ["lat", "lon"] + leftover_coords
     else:
         transpose_vars = ["time"] + non_time_coords
@@ -542,7 +545,7 @@ def read_test_data(
         remove_duplicates=remove_duplicates,
         experiment=experiment,
         safe=safe,
-        sort_values=True
+        sort_values=True,
     )
     test_X_ds, test_y_ds = _sort_values(test_X_ds), _sort_values(test_y_ds)
 
