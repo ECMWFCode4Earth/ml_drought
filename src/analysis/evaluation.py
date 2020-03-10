@@ -183,12 +183,18 @@ def _read_multi_data_paths(train_data_paths: List[Path]) -> xr.Dataset:
     return train_ds
 
 
+def _drop_duplicates(ds: xr.Dataset, coord: str) -> xr.Dataset:
+    """https://stackoverflow.com/a/51077784/9940782"""
+    _, index = np.unique(ds[coord], return_index=True)
+    return ds.isel({coord: index})
+
+
 def _safe_read_multi_data_paths(data_paths: List[Path]) -> xr.Dataset:
-    parent_dir = data_paths[0].parents[0].name
+    parent_dir = data_paths[0].parents[0].as_posix()
     print(f"Reading all .nc files from: {parent_dir}")
     all_ds = [xr.open_dataset(fp) for fp in data_paths]
     print("All datasets loaded. Now combining ...")
-    ds = xr.auto_combine(all_ds)
+    ds = xr.combine_by_coords(all_ds)
     del all_ds
     return ds
 
