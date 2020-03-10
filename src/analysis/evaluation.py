@@ -62,8 +62,8 @@ def spatial_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     true_coords.sort()
     pred_coords = _get_coords(pred_da)
     pred_coords.sort()
-    true_da_shape = (true_da[coord].shape[0] for coord in true_coords)
-    pred_da_shape = (pred_da[coord].shape[0] for coord in pred_coords)
+    true_da_shape = [true_da[coord].shape[0] for coord in true_coords]
+    pred_da_shape = [pred_da[coord].shape[0] for coord in pred_coords]
     assert true_da_shape == pred_da_shape
 
     # sort the dimensions so that no inversions (e.g. lat)
