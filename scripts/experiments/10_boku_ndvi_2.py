@@ -61,7 +61,7 @@ def models(target_var: str = "boku_VCI", adede_only=False):
     # -------------
     # persistence
     # -------------
-    parsimonious(include_yearly_aggs=False,)
+    parsimonious(include_yearly_aggs=False)
 
     # regression(ignore_vars=ignore_vars)
     # gbdt(ignore_vars=ignore_vars)

@@ -501,7 +501,11 @@ class _BaseIter:
                 if var == norm_var:
                     mean.append(self.static_normalizing_dict[norm_var]["mean"])
                     # TODO: DO NOT ALLOW STD TO BE ZERO
-                    std.append(self.static_normalizing_dict[norm_var]["std"] if self.static_normalizing_dict[norm_var]["std"] != 0.0 else 1.0)
+                    std.append(
+                        self.static_normalizing_dict[norm_var]["std"]
+                        if self.static_normalizing_dict[norm_var]["std"] != 0.0
+                        else 1.0
+                    )
                     break
 
         normalizing_array = cast(
@@ -646,8 +650,12 @@ class _BaseIter:
 
         # if there are any ALL NAN static values then DROP those values ...
         if any(np.isnan(self.static_array).all(axis=0)):
-            self.static_array = self.static_array[:, ~np.isnan(self.static_array).all(axis=0)]
-            assert False, "We need some more clever way of tracking the values that are being dropped"
+            self.static_array = self.static_array[
+                :, ~np.isnan(self.static_array).all(axis=0)
+            ]
+            assert (
+                False
+            ), "We need some more clever way of tracking the values that are being dropped"
 
         return self.static_array
 

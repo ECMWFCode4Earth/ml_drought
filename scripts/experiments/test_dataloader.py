@@ -24,6 +24,9 @@ ealstm.models_dir = data_dir / "models" / EXPERIMENT
 ealstm.experiment = TRUE_EXPERIMENT
 
 # load static embeddings
+from typing import Tuple
+
+
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
@@ -48,11 +51,18 @@ def build_static_x(
         static_x.append(
             (latlons_data - latlons_data.mean(axis=0)) / latlons_data.std(axis=0)
         )  # 0, 1
-        static_x.append(yearly_aggs_data)  # 2: 9  - NO LONGER IN DATA
+        static_x.append(yearly_aggs_data)  # 2: 9
         static_x.append(static_data)
         static_x.append(prev_y_data)
         # one_hot_encode the pred_month_data
-        static_x.append(ealstm._one_hot(torch.from_numpy(pred_month_data), 12).numpy())
+        try:
+            static_x.append(
+                ealstm._one_hot(torch.from_numpy(pred_month_data), 12).numpy()
+            )
+        except TypeError:
+            static_x.append(
+                ealstm._one_hot(torch.from_numpy(pred_month_data), 12).cpu().numpy()
+            )
 
         # exclude Nones
         static_x = np.concatenate([x for x in static_x if x is not None], axis=-1)
@@ -81,8 +91,12 @@ def calculate_embeddings(static_x: np.ndarray, W: np.ndarray, b: np.array) -> np
 def get_static_embedding(ealstm_model):
     # get W, b from state_dict
     od = ealstm_model.static_embedding.state_dict()
-    W = od["weight"].numpy()
-    b = od["bias"].numpy()
+    try:
+        W = od["weight"].numpy()
+        b = od["bias"].numpy()
+    except TypeError:
+        W = od["weight"].cpu().numpy()
+        b = od["bias"].cpu().numpy()
 
     # get X_static data from dataloader
     print("Calling Training DataLoader")
@@ -92,7 +106,9 @@ def get_static_embedding(ealstm_model):
     # build static_x matrix
     all_static_x, all_latlons, all_pred_months = build_static_x(x)
     # check w^Tx + b is a valid matrix operation
-    assert W.T.shape[0] == all_static_x[0].shape[-1]
+    assert (
+        W.T.shape[0] == all_static_x[0].shape[-1]
+    ), f"W.T shape: {W.T.shape} static_x shape: {all_static_x[0].shape}"
 
     # calculate the embeddings
     all_embeddings = []
