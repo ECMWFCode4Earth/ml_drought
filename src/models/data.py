@@ -646,8 +646,8 @@ class _BaseIter:
 
         # if there are any ALL NAN static values then DROP those values ...
         if any(np.isnan(self.static_array).all(axis=0)):
-            assert False
             self.static_array = self.static_array[:, ~np.isnan(self.static_array).all(axis=0)]
+            assert False, "We need some more clever way of tracking the values that are being dropped"
 
         return self.static_array
 
@@ -838,7 +838,7 @@ class _BaseIter:
             historical_target_np = self._calculate_historical_target(x, y_var)
             historical_target_np = historical_target_np[notnan_indices].flatten()
             model_arrays.historical_target = historical_target_np
-        assert False
+
         return model_arrays  # , (train_data, y_np)
 
     @staticmethod
