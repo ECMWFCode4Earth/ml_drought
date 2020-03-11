@@ -224,8 +224,10 @@ class EALSTM(nn.Module):
             ea_static_size += static_size
         if include_pred_month:
             ea_static_size += 12
+
+        # append prev_y to DYNAMIC data
         if self.include_prev_y:
-            ea_static_size += 1
+            features_per_month += 1
 
         self.use_static_embedding = False
         if static_embedding_size:
@@ -299,6 +301,9 @@ class EALSTM(nn.Module):
             static_x.append(static)
         if self.include_pred_month:
             static_x.append(pred_month)
+
+        # append prev_y to DYNAMIC data
+        assert False
         if self.include_prev_y:
             static_x.append(prev_y)
 
