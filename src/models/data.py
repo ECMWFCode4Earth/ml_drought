@@ -714,8 +714,14 @@ class _BaseIter:
                 )
 
                 static_np = (
-                    static_np - self.static_normalizing_array["mean"]
-                ) / self.static_normalizing_array["std"]
+                    (static_np - self.static_normalizing_array["mean"])
+                    / [
+                        s if s != 0 else 1e-10
+                        for s in self.static_normalizing_array["std"]
+                    ]
+                    # TODO: only use STD if non-zero!
+                )
+
             self.static_array = static_np
         return self.static_array
 
