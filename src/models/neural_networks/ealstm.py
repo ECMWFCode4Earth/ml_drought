@@ -228,6 +228,7 @@ class EALSTM(nn.Module):
             ea_static_size += 1
 
         print(f"** Number of Static Features: {ea_static_size} **")
+        ## NOTE: 2 features being dropped from static_features
         assert ea_static_size == 46
 
         self.use_static_embedding = False
