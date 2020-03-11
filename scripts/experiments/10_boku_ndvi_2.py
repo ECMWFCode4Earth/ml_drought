@@ -36,7 +36,14 @@ def engineer(pred_months=3, target_var="boku_VCI"):
     )
 
 
-def models(target_var: str = "boku_VCI", adede_only=False):
+def models(
+    target_var: str = "boku_VCI",
+    adede_only=False,
+    rename: bool = True,
+    ealstm: bool = True,
+    lstm: bool = True,
+    baseline: bool = True,
+):
     if adede_only:
         ignore_vars = [
             "p84.162",
@@ -61,7 +68,8 @@ def models(target_var: str = "boku_VCI", adede_only=False):
     # -------------
     # persistence
     # -------------
-    parsimonious(include_yearly_aggs=False)
+    if baseline:
+        parsimonious(include_yearly_aggs=False)
 
     # regression(ignore_vars=ignore_vars)
     # gbdt(ignore_vars=ignore_vars)
@@ -70,48 +78,51 @@ def models(target_var: str = "boku_VCI", adede_only=False):
     # -------------
     # LSTM
     # -------------
-    rnn(
-        experiment="one_month_forecast",
-        include_pred_month=True,
-        surrounding_pixels=None,
-        explain=False,
-        static=None if adede_only else "features",
-        ignore_vars=ignore_vars,
-        num_epochs=50,
-        early_stopping=5,
-        hidden_size=256,
-        include_latlons=True,
-        include_yearly_aggs=False,
-    )
+    if lstm:
+        rnn(
+            experiment="one_month_forecast",
+            include_pred_month=True,
+            surrounding_pixels=None,
+            explain=False,
+            static=None if adede_only else "features",
+            ignore_vars=ignore_vars,
+            num_epochs=50,
+            early_stopping=5,
+            hidden_size=256,
+            include_latlons=True,
+            include_yearly_aggs=False,
+        )
 
     # -------------
     # EALSTM
     # -------------
-    earnn(
-        experiment="one_month_forecast",
-        include_pred_month=True,
-        surrounding_pixels=None,
-        pretrained=False,
-        explain=False,
-        static=None if adede_only else "features",
-        ignore_vars=ignore_vars,
-        num_epochs=50,
-        early_stopping=5,
-        hidden_size=256,
-        static_embedding_size=None if adede_only else 64,
-        include_latlons=True,
-        include_yearly_aggs=False,
-    )
+    if ealstm:
+        earnn(
+            experiment="one_month_forecast",
+            include_pred_month=True,
+            surrounding_pixels=None,
+            pretrained=False,
+            explain=False,
+            static=None if adede_only else "features",
+            ignore_vars=ignore_vars,
+            num_epochs=50,
+            early_stopping=5,
+            hidden_size=256,
+            static_embedding_size=None if adede_only else 64,
+            include_latlons=True,
+            include_yearly_aggs=False,
+        )
 
     # rename the output file
-    data_path = get_data_path()
+    if rename:
+        data_path = get_data_path()
 
-    _rename_directory(
-        from_path=data_path / "models" / "one_month_forecast",
-        to_path=data_path
-        / "models"
-        / f"ICLR_one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
-    )
+        _rename_directory(
+            from_path=data_path / "models" / "one_month_forecast",
+            to_path=data_path
+            / "models"
+            / f"ICLR_one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
+        )
 
 
 def move_features_dir(target_var, adede_only=False):
@@ -139,14 +150,24 @@ def main(monthly=True):
     # preprocess(monthly=monthly)
 
     adede_only = False
-    target_vars = ["boku_VCI", "VCI3M"]  # "boku_VCI",
+    rename = False
+    target_vars = ["boku_VCI"]  # "boku_VCI", "VCI3M"
     for target_var in target_vars:
         print(f"\n\n ** Target Variable: {target_var} ** \n\n")
-        engineer(target_var=target_var)
+        # engineer(target_var=target_var)
+
         print(f"\n\n ** RUNNING MODELS FOR Target Variable: {target_var} ** \n\n")
-        models(target_var=target_var, adede_only=adede_only)
+        models(
+            target_var=target_var,
+            adede_only=adede_only,
+            rename=rename,
+            ealstm=True,
+            lstm=False,
+            baseline=False,
+            )
+
         print(f"\n\n ** Target Variable: {target_var} DONE ** \n\n")
-        move_features_dir(target_var=target_var, adede_only=adede_only)
+        # move_features_dir(target_var=target_var, adede_only=adede_only)
 
 
 if __name__ == "__main__":

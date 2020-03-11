@@ -106,6 +106,7 @@ def get_static_embedding(ealstm_model):
     # build static_x matrix
     all_static_x, all_latlons, all_pred_months = build_static_x(x)
     # check w^Tx + b is a valid matrix operation
+    # TODO: WHY IS THE W matrix 2 features bigger ?
     assert (
         W.T.shape[0] == all_static_x[0].shape[-1]
     ), f"W.T shape: {W.T.shape} static_x shape: {all_static_x[0].shape}"
