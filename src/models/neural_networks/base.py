@@ -118,7 +118,6 @@ class NNBase(ModelBase):
         # initialize the model
         if self.model is None:
             x_ref, _ = next(iter(train_dataloader))
-            assert False, "TODO: "
             model = self._initialize_model(x_ref)
             self.model = model
 

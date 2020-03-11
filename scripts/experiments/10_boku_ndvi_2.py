@@ -164,7 +164,7 @@ def main(monthly=True):
             ealstm=True,
             lstm=False,
             baseline=False,
-            )
+        )
 
         print(f"\n\n ** Target Variable: {target_var} DONE ** \n\n")
         # move_features_dir(target_var=target_var, adede_only=adede_only)
