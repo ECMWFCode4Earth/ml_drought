@@ -138,7 +138,7 @@ def move_features_dir(target_var, adede_only=False):
 def main(monthly=True):
     # preprocess(monthly=monthly)
 
-    adede_only = True
+    adede_only = False
     target_vars = ["boku_VCI", "VCI3M"]  # "boku_VCI",
     for target_var in target_vars:
         print(f"\n\n ** Target Variable: {target_var} ** \n\n")
