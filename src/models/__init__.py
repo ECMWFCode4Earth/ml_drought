@@ -25,6 +25,7 @@ def load_model(
     data_path: Optional[Path] = None,
     model_type: Optional[str] = None,
     device: Optional[str] = "cpu",
+    experiment: Optional[str] = None,
 ) -> Union[RecurrentNetwork, LinearNetwork, LinearRegression, EARecurrentNetwork, GBDT]:
     """
     This function loads models from the output `.pkl` files generated when
@@ -67,7 +68,10 @@ def load_model(
 
     model_dict = torch.load(model_path, map_location=device)
 
-    init_kwargs = {"data_folder": data_path}
+    if experiment is None:
+        init_kwargs = {"data_folder": data_path}
+    else:
+        init_kwargs = {"data_folder": data_path, "experiment": experiment}
     for key, val in model_dict.items():
         if key == "device":
             if device is not None:
