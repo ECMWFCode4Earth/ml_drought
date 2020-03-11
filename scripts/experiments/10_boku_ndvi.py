@@ -108,7 +108,7 @@ def models(target_var: str = "boku_VCI", adede_only=False):
         from_path=data_path / "models" / "one_month_forecast",
         to_path=data_path
         / "models"
-        / f"one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
+        / f"ICLR_one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
     )
 
 
@@ -120,7 +120,7 @@ def move_features_dir(target_var, adede_only=False):
             from_path=data_path / "features" / "one_month_forecast",
             to_path=data_path
             / "features"
-            / f"one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
+            / f"ICLR_one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
         )
     except Exception as E:
         print(E)
@@ -129,7 +129,7 @@ def move_features_dir(target_var, adede_only=False):
             from_path=data_path / "features" / "one_month_forecast",
             to_path=data_path
             / "features"
-            / f"one_month_forecast_BOKU_{target_var}_our_vars_{date}",
+            / f"ICLR_one_month_forecast_BOKU_{target_var}_our_vars_{date}",
         )
 
 
@@ -137,7 +137,7 @@ def main(monthly=True):
     # preprocess(monthly=monthly)
 
     adede_only = True
-    target_vars = ["VCI3M"]  # "boku_VCI",
+    target_vars = ["boku_VCI", "VCI3M"]  # "boku_VCI",
     for target_var in target_vars:
         print(f"\n\n ** Target Variable: {target_var} ** \n\n")
         engineer(target_var=target_var)

@@ -48,7 +48,7 @@ def build_static_x(
         static_x.append(
             (latlons_data - latlons_data.mean(axis=0)) / latlons_data.std(axis=0)
         )  # 0, 1
-        static_x.append(yearly_aggs_data)  # 2: 9
+        static_x.append(yearly_aggs_data)  # 2: 9  - NO LONGER IN DATA
         static_x.append(static_data)
         static_x.append(prev_y_data)
         # one_hot_encode the pred_month_data
