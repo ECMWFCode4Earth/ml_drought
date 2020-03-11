@@ -36,7 +36,7 @@ class EARecurrentNetwork(NNBase):
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = True,
-        clear_nans: bool = True
+        clear_nans: bool = True,
     ) -> None:
         super().__init__(
             data_folder,
