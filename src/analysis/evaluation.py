@@ -103,11 +103,14 @@ def spatial_nse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
 
     stacked_pred = pred_da.stack(space=pred_coords)
     stacked_true = true_da.stack(space=true_coords)
+    vals = []
     for space in stacked_pred.space.values:
-        vals = _nse_func(stacked_true.sel(space=space).values, stacked_pred.sel(space=space).values)
+        true_vals = stacked_true.sel(space=space).values
+        pred_vals = stacked_pred.sel(space=space).values
+        vals.append(_nse_func(true_vals, pred_vals))
 
     da = xr.ones_like(stacked_pred).isel(time=0).drop('time')
-    da = da * vals
+    da = da * np.array(vals)
     da = da.unstack()
 
     # reapply the mask
