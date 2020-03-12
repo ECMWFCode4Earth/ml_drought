@@ -71,11 +71,23 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         dimension_name = [c for c in static_ds.coords][0]
 
         # TODO: ONE HOT ENCODE THE RELEVANT FEATURES
+        # --------------------------------------------------
+        # removing alot of information here ...
         # only keep the float variables
+        # TODO: remove the features that are mostly missing!
+        # remove features with >100 missing values
         float_vars = [v for v in static_ds.data_vars if static_ds[v].dtype == float]
-        dropped_vars = [v for v in static_ds.data_vars if v not in float_vars]
+        non_missing_float_vars = [
+            v
+            for v in static_ds[float_vars].data_vars
+            if static_ds[float_vars][v].isnull().sum() < 100
+        ]
+        dropped_vars = [
+            v for v in static_ds.data_vars if v not in non_missing_float_vars
+        ]
         print(f"Dropping the following non-float vars:\n{dropped_vars}")
-        static_ds = static_ds[float_vars]
+        static_ds = static_ds[non_missing_float_vars]
+        # --------------------------------------------------
 
         for var in static_ds.data_vars:
             if var.endswith("one_hot"):

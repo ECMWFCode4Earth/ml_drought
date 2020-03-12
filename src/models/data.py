@@ -326,6 +326,17 @@ class DataLoader:
         if static is not None:
             if static == "features":
                 self.static = xr.open_dataset(data_path / "features/static/data.nc")
+                # ---------------------------------------------------
+                # TODO: remove the features with >100 missing values
+                # temporary so that we don't have to rerun the engineer (takes time)
+                self.static = self.static[
+                    [
+                        v
+                        for v in self.static.data_vars
+                        if self.static[v].isnull().sum() < 100
+                    ]
+                ]
+                # ---------------------------------------------------
                 if normalize:
                     static_normalizer_path = (
                         data_path / "features/static/normalizing_dict.pkl"
