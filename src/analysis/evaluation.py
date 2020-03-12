@@ -42,6 +42,11 @@ def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     a DataArray of the rmse values (spatially)
     """
     true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    true_coords = _get_coords(true_da)
+    true_coords.sort()
+    pred_coords = _get_coords(pred_da)
+    pred_coords.sort()
+
     assert tuple(true_da.dims) == tuple(pred_da.dims), (
         f"Expect"
         "the dimensions to be the same. Currently: "
