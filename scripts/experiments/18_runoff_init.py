@@ -26,7 +26,7 @@ def engineer_static_only():
     engineer._process_static()
 
 
-def run_model(pretrained: bool = False):
+def run_model(pretrained: bool = False, n_epochs=20):
     ignore_vars = None
     ignore_vars = [
         "temperature",
@@ -45,7 +45,7 @@ def run_model(pretrained: bool = False):
         explain=False,
         static="features",
         ignore_vars=ignore_vars,
-        num_epochs=20,
+        num_epochs=n_epochs,
         early_stopping=5,
         hidden_size=256,
         include_latlons=False,
@@ -59,4 +59,4 @@ def run_model(pretrained: bool = False):
 if __name__ == "__main__":
     # engineer(seq_length=3)
     # engineer_static_only()
-    run_model()
+    run_model(n_epochs=1)
