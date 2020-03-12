@@ -76,6 +76,42 @@ def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     return da
 
 
+def spatial_nse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    """Calculate the RMSE collapsing the time dimension returning
+    a DataArray of the rmse values (spatially)
+    """
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    true_coords = _get_coords(true_da)
+    true_coords.sort()
+    pred_coords = _get_coords(pred_da)
+    pred_coords.sort()
+
+    assert tuple(true_da.dims) == tuple(pred_da.dims), (
+        f"Expect"
+        "the dimensions to be the same. Currently: "
+        f"True: {tuple(true_da.dims)} Preds: {tuple(pred_da.dims)}. "
+        'Have you tried da.transpose("time", "lat", "lon")'
+    )
+
+    # sort the lat/lons correctly just to be sure
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        pred_da = _sort_lat_lons(pred_da)
+        true_da = _sort_lat_lons(true_da)
+    else:
+        pred_da = pred_da.sortby(["time"] + pred_coords)
+        true_da = true_da.sortby(["time"] + true_coords)
+
+    vals = _nse_func(true_da.values, pred_da.values)
+
+    da = xr.ones_like(pred_da).isel(time=0)
+    da.values = vals
+
+    # reapply the mask
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        da = da.where(~get_ds_mask(pred_da))
+    return da
+
+
 def temporal_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     """return a R2 object collapsing spatial dimensions -> Time Series"""
     true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
@@ -87,6 +123,24 @@ def temporal_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
         pred_vals = pred_da.sel(time=time).values
         # calculate SCALAR R2
         time_values.append(_r2_func(true_vals=true_vals, pred_vals=pred_vals))
+
+    drop_coords = [c for c in true_da.coords if c != "time"]
+    ones = xr.ones_like(true_da.isel({c: 0 for c in drop_coords}).drop(drop_coords))
+
+    return ones * time_values
+
+
+def temporal_nse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    """return a R2 object collapsing spatial dimensions -> Time Series"""
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    times = true_da.time.values
+    time_values = []
+    for time in times:
+        # extract numpy arrays for that time
+        true_vals = true_da.sel(time=time).values
+        pred_vals = pred_da.sel(time=time).values
+        # calculate SCALAR NSE
+        time_values.append(_nse_func(true_vals=true_vals, pred_vals=pred_vals))
 
     drop_coords = [c for c in true_da.coords if c != "time"]
     ones = xr.ones_like(true_da.isel({c: 0 for c in drop_coords}).drop(drop_coords))
@@ -120,9 +174,26 @@ def temporal_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     return ones * time_values
 
 
-def squared_error():
-    """the most granular error metric"""
-    (true_da - pred_da) ** 2
+def _nse_func(true_vals: np.array, pred_vals: np.array) -> float:
+    """Calculate Nash-Sutcliff-Efficiency.
+
+    :param true_vals: Array containing the observations
+    :param pred_vals: Array containing the simulations
+    :return: NSE value.
+    """
+    # only consider time steps, where observations are available
+    pred_vals = np.delete(pred_vals, np.argwhere(true_vals < 0), axis=0)
+    true_vals = np.delete(true_vals, np.argwhere(true_vals < 0), axis=0)
+
+    # check for NaNs in observations
+    pred_vals = np.delete(pred_vals, np.argwhere(np.isnan(true_vals)), axis=0)
+    true_vals = np.delete(true_vals, np.argwhere(np.isnan(true_vals)), axis=0)
+
+    denominator = np.sum((true_vals - np.mean(true_vals)) ** 2)
+    numerator = np.sum((pred_vals - true_vals) ** 2)
+    nse_val = 1 - numerator / denominator
+
+    return nse_val
 
 
 def _rmse_func(
