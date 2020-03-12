@@ -101,10 +101,14 @@ def spatial_nse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
         pred_da = pred_da.sortby(["time"] + pred_coords)
         true_da = true_da.sortby(["time"] + true_coords)
 
-    vals = _nse_func(true_da.values, pred_da.values)
+    stacked_pred = pred_da.stack(space=pred_coords)
+    stacked_true = true_da.stack(space=true_coords)
+    for space in stacked_pred.space.values:
+        vals = _nse_func(stacked_true.sel(space=space).values, stacked_pred.sel(space=space).values)
 
-    da = xr.ones_like(pred_da).isel(time=0)
-    da.values = vals
+    da = xr.ones_like(stacked_pred).isel(time=0).drop('time')
+    da = da * vals
+    da = da.unstack()
 
     # reapply the mask
     if all(np.isin(["lat", "lon"], list(pred_da.coords))):
