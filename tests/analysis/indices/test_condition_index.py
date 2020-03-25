@@ -8,9 +8,9 @@ from src.analysis.indices import ConditionIndex
 class TestConditionIndex:
     def test_initialisation(self, tmp_path):
         data_path = _create_dummy_precip_data(tmp_path)
-        ci = ConditionIndex(data_path / "chirps_kenya.nc")
-        assert ci.name == "decile_index", (
-            f"Expected name" f"to be `decile_index` got: {ci.name}"
+        ci = ConditionIndex(data_path / "data_kenya.nc")
+        assert ci.name == "condition_index", (
+            f"Expected name" f"to be `condition_index` got: {ci.name}"
         )
 
         with pytest.raises(AttributeError):
@@ -21,25 +21,33 @@ class TestConditionIndex:
         data_path = _create_dummy_precip_data(
             tmp_path, start_date="2000-01-01", end_date="2010-01-01"
         )
-        ci = ConditionIndex(data_path / "chirps_kenya.nc")
+        ci = ConditionIndex(data_path / "data_kenya.nc")
         variable = "precip"
         ci.fit(variable=variable)
 
         coords = [c for c in ci.index.coords]
         vars_ = [v for v in ci.index.variables if v not in coords]
-        assert "quintile" in vars_, f"Expecting `quintile` variable in" "`self.index`"
-
-        vals = np.unique(ci.index.quintile.values)
-        assert all(np.isin(np.arange(1, 6), vals)), (
-            f"Expect quintiles to" f" be from 1 - 5. Got: {vals}"
+        assert "precip_condition_index_1" in vars_, (
+            f"Expecting `precip_condition_index_1` variable in" "`self.index`"
         )
 
-        assert ci.index.rank_norm.min().values == 0, (
-            f"Expect minmum "
-            f"rank_norm to be 0. Got: {ci.index.rank_norm.min().values}"
-        )
+        # MIN-MAX of 0, 100
+        assert np.isclose(
+            float(ci.index[vars_[0]].max().values), 100
+        ), f"Expected to have max value of 100. Got: {ci.index[vars_[0]].max()}"
+        assert np.isclose(
+            float(ci.index[vars_[0]].min().values), 0
+        ), f"Expected to have min value of 0. Got: {ci.index[vars_[0]].min()}"
 
-        assert ci.index.rank_norm.max().values == 100, (
-            f"Expect max "
-            f"rank_norm to be 100. Got: {ci.index.rank_norm.max().values}"
-        )
+        assert (
+            np.isclose(ci.index[vars_[0]].max(dim="time"), 100)
+        ).all(), "Expect all times to have a max value of 100"
+        assert (
+            np.isclose(ci.index[vars_[0]].max(dim=["lat", "lon"]), 100)
+        ).all(), "Expect all pixels (lat, lon) to have a max value of 100"
+        assert (
+            np.isclose(ci.index[vars_[0]].min(dim="time"), 0)
+        ).all(), "Expect all times to have a min value of 0"
+        assert (
+            np.isclose(ci.index[vars_[0]].min(dim=["lat", "lon"]), 0)
+        ).all(), "Expect all pixels (lat, lon) to have a min value of 0"

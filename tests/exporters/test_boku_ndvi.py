@@ -10,7 +10,6 @@ TODO:
 - Test both 250m and 1000m
 - Test conversion using GDAL from .tif -> .nc
 - Test the creation of tif directory
-
 """
 
 

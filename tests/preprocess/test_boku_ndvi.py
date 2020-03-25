@@ -1,6 +1,5 @@
 import xarray as xr
 import numpy as np
-from datetime import datetime
 
 from src.preprocess.boku_ndvi import BokuNDVIPreprocessor
 
@@ -30,9 +29,21 @@ class TestBokuNDVIPreprocessor:
 
     @staticmethod
     def _make_boku_ndvi_dataset(
-        size, lonmin=-180.0, lonmax=180.0, latmin=-55.152, latmax=75.024, add_times=True
+        size,
+        lonmin=-180.0,
+        lonmax=180.0,
+        latmin=-55.152,
+        latmax=75.024,
+        kenya_only=False,
     ):
         lat_len, lon_len = size
+        if kenya_only:
+            kenya = get_kenya()
+            latmin = kenya.latmin
+            latmax = kenya.latmax
+            lonmin = kenya.lonmin
+            lonmax = kenya.lonmax
+
         # create the vector
         longitudes = np.linspace(lonmin, lonmax, lon_len)
         latitudes = np.linspace(latmin, latmax, lat_len)
@@ -40,34 +51,31 @@ class TestBokuNDVIPreprocessor:
         dims = ["lat", "lon"]
         coords = {"lat": latitudes, "lon": longitudes}
 
-        if add_times:
-            size = (2, size[0], size[1])
-            dims.insert(0, "time")
-            coords["time"] = [datetime(2019, 1, 1), datetime(2019, 1, 2)]
-        vhi = np.random.randint(100, size=size)
+        modis_vals = np.append(np.arange(1, 252), 255)
+        data = np.random.choice(modis_vals, size=size)
 
-        return xr.Dataset({"boku_ndvi": (dims, vhi)}, coords=coords)
+        return xr.Dataset({"boku_ndvi": (dims, data)}, coords=coords)
 
     @staticmethod
     def test_directories_created(tmp_path):
         v = BokuNDVIPreprocessor(tmp_path)
 
         assert (
-            tmp_path / v.preprocessed_folder / "boku_ndvi_preprocessed"
-        ).exists(), (
-            "Should have created a directory tmp_path/interim/boku_ndvi_preprocessed"
-        )
+            v.preprocessed_folder / "boku_ndvi_1000_preprocessed"
+        ).exists(), "Should have created a directory tmp_path/interim/boku_ndvi_1000_preprocessed"
 
         assert (
-            tmp_path / v.preprocessed_folder / "boku_ndvi_interim"
-        ).exists(), "Should have created a directory tmp_path/interim/boku_ndvi_interim"
+            v.preprocessed_folder / "boku_ndvi_1000_interim"
+        ).exists(), (
+            "Should have created a directory tmp_path/interim/boku_ndvi_1000_interim"
+        )
 
     @staticmethod
     def test_get_filenames(tmp_path):
 
-        (tmp_path / "raw" / "boku_ndvi").mkdir(parents=True)
+        (tmp_path / "raw" / "boku_ndvi_1000").mkdir(parents=True)
 
-        test_file = tmp_path / "raw/boku_ndvi/testy_test.nc"
+        test_file = tmp_path / "raw/boku_ndvi_1000/testy_test.nc"
         test_file.touch()
 
         processor = BokuNDVIPreprocessor(tmp_path)
@@ -77,10 +85,19 @@ class TestBokuNDVIPreprocessor:
 
     def test_preprocess(self, tmp_path):
 
-        (tmp_path / "raw/boku_ndvi/global").mkdir(parents=True)
-        data_path = tmp_path / "raw/boku_ndvi/global/testy_test.nc"
-        dataset = self._make_boku_ndvi_dataset(size=(100, 100))
-        dataset.to_netcdf(path=data_path)
+        (tmp_path / "raw/boku_ndvi_1000").mkdir(parents=True)
+
+        RAW_FILES = [
+            "MCD13A2.t200915.006.EAv1.1_km_10_days_NDVI.O1.nc",
+            "MCD13A2.t201107.006.EAv1.1_km_10_days_NDVI.O1.nc",
+            "MCD13A2.t201330.006.EAv1.1_km_10_days_NDVI.O1.nc",
+            "MCD13A2.t201733.006.EAv1.1_km_10_days_NDVI.O1.nc",
+        ]
+
+        for raw_file in RAW_FILES:
+            data_path = tmp_path / f"raw/boku_ndvi_1000/{raw_file}"
+            dataset = self._make_boku_ndvi_dataset(size=(100, 100), kenya_only=True)
+            dataset.to_netcdf(path=data_path)
 
         kenya = get_kenya()
         regrid_dataset, _, _ = _make_dataset(
@@ -95,7 +112,7 @@ class TestBokuNDVIPreprocessor:
         regrid_dataset.to_netcdf(regrid_path)
 
         processor = BokuNDVIPreprocessor(tmp_path)
-        processor.preprocess(subset_str="kenya", regrid=regrid_path, parallel=False)
+        processor.preprocess(subset_str="kenya", regrid=regrid_path)
 
         expected_out_path = tmp_path / "interim/boku_ndvi_preprocessed/data_kenya.nc"
         assert (
@@ -129,8 +146,11 @@ class TestBokuNDVIPreprocessor:
 
     def test_alternative_region(self, tmp_path):
         # make the dataset
-        (tmp_path / "raw/boku_ndvi/global").mkdir(parents=True)
-        data_path = tmp_path / "raw/boku_ndvi/global/testy_test.nc"
+        (tmp_path / "raw/boku_ndvi_1000").mkdir(parents=True)
+        data_path = (
+            tmp_path
+            / "raw/boku_ndvi_1000/MCD13A2.t200915.006.EAv1.1_km_10_days_NDVI.O1.nc"
+        )
         dataset = self._make_boku_ndvi_dataset(size=(100, 100))
         dataset.to_netcdf(path=data_path)
         ethiopia = get_ethiopia()
