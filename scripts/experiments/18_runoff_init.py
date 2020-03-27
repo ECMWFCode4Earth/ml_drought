@@ -37,6 +37,7 @@ def run_model(pretrained: bool = False, n_epochs=20):
         "longwave_rad",
         "windspeed",
     ]
+    print(f"Running model with {n_epochs} epochs")
     rnn(
         experiment="one_timestep_forecast",
         batch_size=100,
@@ -59,4 +60,6 @@ def run_model(pretrained: bool = False, n_epochs=20):
 if __name__ == "__main__":
     # engineer(seq_length=3)
     # engineer_static_only()
-    run_model(n_epochs=40)
+    # run_model(n_epochs=40)
+    run_model(n_epochs=20)
+
