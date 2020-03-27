@@ -193,6 +193,8 @@ def _nse_func(true_vals: np.array, pred_vals: np.array) -> float:
     true_vals = np.delete(true_vals, np.argwhere(true_vals < 0), axis=0)
 
     # check for NaNs in observations
+    # TODO: this is raising ValueErrors because the np.argwhere(np.isnan(true_vals)) is returning
+    # indices that are too large for the array
     pred_vals = np.delete(pred_vals, np.argwhere(np.isnan(true_vals)), axis=0)
     true_vals = np.delete(true_vals, np.argwhere(np.isnan(true_vals)), axis=0)
 
