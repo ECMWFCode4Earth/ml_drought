@@ -49,7 +49,7 @@ def run_model(pretrained: bool = False, n_epochs=20):
         num_epochs=n_epochs,
         early_stopping=5,
         hidden_size=256,
-        include_latlons=False,
+        include_latlons=False,  # IMPORTANT change
         include_prev_y=False,
         pretrained=pretrained,
         # yearly_aggs=False,

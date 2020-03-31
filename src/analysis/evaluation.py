@@ -109,7 +109,7 @@ def spatial_nse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
         pred_vals = stacked_pred.sel(space=space).values
         vals.append(_nse_func(true_vals, pred_vals))
 
-    da = xr.ones_like(stacked_pred).isel(time=0).drop('time')
+    da = xr.ones_like(stacked_pred).isel(time=0).drop("time")
     da = da * np.array(vals)
     da = da.unstack()
 

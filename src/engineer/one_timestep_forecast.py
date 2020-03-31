@@ -91,8 +91,8 @@ class _OneTimestepForecastEngineer(_EngineerBase):
 
         for var in static_ds.data_vars:
             if var.endswith("one_hot"):
-                mean = 0
-                std = 1
+                mean = 0.0
+                std = 1.0
             else:
                 mean = float(
                     static_ds[var].mean(dim=[dimension_name], skipna=True).values
@@ -109,7 +109,10 @@ class _OneTimestepForecastEngineer(_EngineerBase):
         with savepath.open("wb") as f:
             pickle.dump(normalization_values, f)
 
-    def _process_dynamic(
+    # TODO: fix this to generalise / work with base.py
+    # currently throwing a mypy error
+    # Signature of "_process_dynamic" incompatible with supertype "_EngineerBase"
+    def _process_dynamic(  # type: ignore
         self,
         test_year: str,
         target_variable: str = "discharge_vol",
@@ -187,7 +190,10 @@ class _OneTimestepForecastEngineer(_EngineerBase):
                     resolution=resolution,
                 )
 
-    def _save(
+    # TODO: use this format to generalize the code in `base.py`
+    # Argument 3 of "_save" incompatible with supertype "_EngineerBase"
+    # from (year: int, month: int) -> (target_time: pd.Timestamp,)
+    def _save(  # type: ignore
         self,
         ds_dict: Dict[str, xr.Dataset],
         target_time: pd.Timestamp,

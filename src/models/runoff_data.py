@@ -13,7 +13,7 @@ import xarray as xr
 
 from typing import cast, Dict, Optional, Union, List, Tuple
 
-from .data import DataLoader
+from .data import DataLoader, ModelArrays, TrainData
 
 
 class OneDimensionalLoader(DataLoader):
@@ -33,11 +33,12 @@ class OneDimensionalLoader(DataLoader):
         seq_length: Optional[List[int]] = None,
         to_tensor: bool = False,
         ignore_vars: Optional[List[str]] = None,
-        monthly_aggs: bool = True,
+        timestep_aggs: bool = True,
         static: Optional[str] = "features",
         device: str = "cpu",
         spatial_mask: Optional[xr.DataArray] = None,
         normalize_y: bool = False,
+        calculate_latlons: bool = True,
     ) -> None:
 
         self.batch_file_size = batch_file_size
@@ -68,13 +69,14 @@ class OneDimensionalLoader(DataLoader):
             ) as f:
                 self.normalizing_dict = pickle.load(f)
 
-        self.monthly_aggs = monthly_aggs
+        self.timestep_aggs = timestep_aggs
         self.to_tensor = to_tensor
         self.ignore_vars = ignore_vars
 
         self.static: Optional[xr.Dataset] = None
         self.max_loc_int: Optional[int] = None
         self.static_normalizing_dict = None
+        self.calculate_latlons = calculate_latlons
 
         if static is not None:
             if static == "features":
@@ -176,7 +178,7 @@ class _BaseIter:
         self.batch_file_size = loader.batch_file_size
         self.shuffle = loader.shuffle
         self.clear_nans = loader.clear_nans
-        self.monthly_aggs = loader.monthly_aggs
+        self.timestep_aggs = loader.timestep_aggs
         self.to_tensor = loader.to_tensor
         self.experiment = loader.experiment
         self.ignore_vars = loader.ignore_vars
@@ -201,6 +203,8 @@ class _BaseIter:
 
         self.idx = 0
         self.max_idx = len(loader.data_files)
+
+        self.calculate_latlons = loader.calculate_latlons
 
     def __iter__(self):
         return self
@@ -296,7 +300,7 @@ class _BaseIter:
     def _calculate_historical(
         self, x: xr.Dataset, y: xr.Dataset
     ) -> Tuple[np.ndarray, np.ndarray]:
-        x = self._add_extra_dims(x, False, self.monthly_aggs)
+        x = self._add_extra_dims(x, False, self.timestep_aggs)
 
         x_np, y_np = x.to_array().values, y.to_array().values
 
@@ -332,6 +336,40 @@ class _BaseIter:
                 y_np = y_np / self.normalizing_dict[y_var]["std"]  # type: ignore
 
         return x_np, y_np
+
+    def build_loc_to_idx_mapping(
+        self, x: xr.Dataset, notnan_indices: Optional[np.array] = None
+    ) -> Dict:
+        """ build a mapping from SPATIAL ID to the value
+        (pixel, station_id, admin_unit) removing the nan indices
+
+        Why? In order to track the spatial units so that we can
+        rebuild the predictions in the `evaluate` function. This
+        way it doesn't require (lat, lon) but also works for
+        station_id // flattened data (regions etc.)
+        """
+        reducing_coords = [c for c in x.coords if c != "time"]
+        if self.calculate_latlons:
+            lons, lats = np.meshgrid(x.lon.values, x.lat.values)
+            flat_lats, flat_lons = lats.reshape(-1, 1), lons.reshape(-1, 1)
+            latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
+            if notnan_indices is not None:
+                latlons = latlons[notnan_indices]
+            id_to_val_map = dict(zip(np.arange(latlons), latlons))
+
+        elif len(reducing_coords) == 1:
+            # working with 1D data (pixel, area, stations etc.)
+            # create a DUMMY latlon ([0], [idx])
+            ids = np.arange(len(x[reducing_coords[0]].values))
+            values = x[reducing_coords[0]].values
+            if notnan_indices is not None:
+                ids, values = ids[notnan_indices], values[notnan_indices]
+
+            id_to_val_map = dict(zip(ids, values))
+        else:
+            assert False, "Haven't included other dimensions (only 1D or latlon)"
+
+        return id_to_val_map
 
     @staticmethod
     def _calculate_target_months(y: xr.Dataset, num_instances: int) -> np.ndarray:
@@ -545,6 +583,12 @@ class _BaseIter:
             y_np = y_np[notnan_indices]
             latlons = latlons[notnan_indices]
 
+            id_to_loc_map = self.build_loc_to_idx_mapping(
+                x, notnan_indices=notnan_indices
+            )
+        else:
+            id_to_loc_map = self.build_loc_to_idx_mapping(x, notnan_indices=None)
+
         y_var = list(y.data_vars)[0]
         model_arrays = ModelArrays(
             x=train_data,
@@ -554,6 +598,7 @@ class _BaseIter:
             latlons=latlons,
             target_time=target_time,
             historical_times=x_datetimes,
+            id_to_loc_map=id_to_loc_map,
         )
 
         if to_tensor:

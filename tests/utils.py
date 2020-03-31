@@ -195,7 +195,7 @@ def _ds_to_features_dirs(
 
 def _create_runoff_features_dir(
     tmp_path, train=False, start_date="1999-01-01", end_date="2001-12-31"
-) -> Tuple[xr.Dataset, xr.Dataset]:
+) -> Tuple[xr.Dataset, xr.Dataset, xr.Dataset]:
     ds, static = _make_runoff_data(start_date=start_date, end_date=end_date)
 
     # TARGET variable target time
