@@ -118,7 +118,9 @@ class NNBase(ModelBase):
         # initialize the model
         if self.model is None:
             x_ref, _ = next(iter(train_dataloader))
-            assert len(list(iter(train_dataloader).static.data_vars))
+            assert (
+                len(list(iter(train_dataloader).static.data_vars)) > 0  # type: ignore
+            )
             model = self._initialize_model(x_ref)
             self.model = model
 

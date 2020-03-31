@@ -66,11 +66,13 @@ class Engineer:
         )
 
     @staticmethod
-    def engineer_static_only(data_folder: Path = Path("data")):
+    def engineer_static_only(
+        test_year: Union[int, List[int]], data_folder: Path = Path("data")
+    ):
         """
         Only process static data (i.e. data in interim/static).
 
         :param data_folder: The location of the data folder.
         """
         engineer = _EngineerBase(data_folder, process_static=True)
-        engineer._process_static()
+        engineer._process_static(test_year=test_year)

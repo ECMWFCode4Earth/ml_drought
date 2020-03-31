@@ -336,7 +336,7 @@ class DataLoader:
                     vars_to_include = [
                         v
                         for v in self.static.data_vars
-                        if all([ign_v not in v for ign_v in ignore_vars])
+                        if all([ign_v not in v for ign_v in self.ignore_vars])
                     ]
                     self.static = self.static[vars_to_include]
 
@@ -618,6 +618,7 @@ class _BaseIter:
 
     def _calculate_static(self, num_instances: int) -> np.ndarray:
         # make sure values are DROPPED!
+        assert self.static is not None
         if self.ignore_vars is not None:
             include_vars = [
                 v
@@ -647,7 +648,10 @@ class _BaseIter:
 
                 static_np = (
                     (static_np - self.static_normalizing_array["mean"])
-                    / [s if s != 0 else 1e-10 for s in self.static_normalizing_array["std"]]
+                    / [
+                        s if s != 0 else 1e-10
+                        for s in self.static_normalizing_array["std"]
+                    ]
                     # TODO: only use STD if non-zero!
                 )
 

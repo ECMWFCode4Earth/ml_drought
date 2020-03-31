@@ -308,8 +308,11 @@ class EALSTM(nn.Module):
             x = torch.cat(
                 (
                     x,
-                    prev_y.view(-1, 1).repeat(1, x.shape[1]).view(x.shape[0], x.shape[1], 1)
-                ), axis=-1
+                    prev_y.view(-1, 1)
+                    .repeat(1, x.shape[1])
+                    .view(x.shape[0], x.shape[1], 1),
+                ),
+                axis=-1,
             )
 
         static_tensor = torch.cat(static_x, dim=-1)

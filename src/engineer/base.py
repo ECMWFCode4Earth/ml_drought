@@ -57,7 +57,9 @@ class _EngineerBase:
         # TODO: ignore test years
         min_year = dynamic_ds.time.min()
         test_year = [test_year] if not isinstance(test_year, Iterable) else test_year
-        dynamic_ds = dynamic_ds.sel(time=slice(min_year, str(min(test_year) - 1)))
+        dynamic_ds = dynamic_ds.sel(
+            time=slice(min_year, str(min(test_year) - 1))  # type: ignore
+        )
         assert all(
             int(yr) not in np.unique(dynamic_ds["time.year"].values) for yr in test_year
         )
@@ -84,7 +86,11 @@ class _EngineerBase:
         return static_mean_ds
 
     def _process_static(self, test_year: Union[int, List[int]]):
-
+        """
+        Note:
+        requires `test_year` so that can ignore test years in the calculation
+        of spatial means and global means of dynamic variables.
+        """
         # this function assumes the static data has only two dimensions,
         # lat and lon
 
@@ -115,8 +121,8 @@ class _EngineerBase:
 
         for var in static_ds.data_vars:
             if var.endswith("one_hot"):
-                mean = 0
-                std = 1
+                mean = 0.0
+                std = 1.0
             else:
                 mean = float(
                     static_ds[var].mean(dim=["lat", "lon"], skipna=True).values
