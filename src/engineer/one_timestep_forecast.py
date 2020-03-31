@@ -72,7 +72,7 @@ class _OneTimestepForecastEngineer(_EngineerBase):
 
         # TODO: ONE HOT ENCODE THE RELEVANT FEATURES
         # --------------------------------------------------
-        # removing alot of information here ...
+        # removing a lot of information here ...
         # only keep the float variables
         # TODO: remove the features that are mostly missing!
         # remove features with >100 missing values

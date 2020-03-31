@@ -62,4 +62,3 @@ if __name__ == "__main__":
     # engineer_static_only()
     # run_model(n_epochs=40)
     run_model(n_epochs=20)
-
