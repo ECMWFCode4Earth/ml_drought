@@ -154,7 +154,7 @@ class TestBaseIter:
                 self.ignore_vars = ["precip"]
                 self.monthly_aggs = False
                 self.device = torch.device("cpu")
-                self.incl_yearly_aggs = True
+                self.incl_yearly_aggs = False
                 self.static = static_ds
                 self.spatial_mask = None
                 self.static_normalizing_dict = None
@@ -165,10 +165,36 @@ class TestBaseIter:
         arrays = base_iterator.ds_folder_to_np(data_dir, to_tensor=to_tensor)
         x_train_data, y_np, latlons = (arrays.x, arrays.y, arrays.latlons)
 
+        # ----------------------
+        # Test the static data
+        # ----------------------
+        # check first 3 features are CONSTANT (global means)
+        assert all(
+            [
+                all(arrays.x.static[:, i][1:] == arrays.x.static[:, i][:-1])
+                for i in range(4)
+            ]
+        )
+        # check second 3 features vary (pixel means)
+        assert all(
+            [
+                all(arrays.x.static[:, i][1:] != arrays.x.static[:, i][:-1])
+                for i in range(4, 6)
+            ]
+        )
+
+        n_samples = 25 if surrounding_pixels is None else 9
+        assert (
+            arrays.x.static.shape[0] == n_samples
+        ), f"Expect {n_samples} samples because ..."
+
         assert (
             arrays.x.static.shape[-1] == 6
         ), "Expect 6 static features because ignore 'precip' variables in the static data"
 
+        # ----------------------
+        # Test the TrainData
+        # ----------------------
         assert isinstance(x_train_data, TrainData)
         if not to_tensor:
             assert isinstance(y_np, np.ndarray)
@@ -279,12 +305,14 @@ class TestBaseIter:
                 f"Expected to " "find the target_time data for the non target variables"
             )
 
-        # n_variables should be 3 because `ignoring` precip
-        assert x_train_data.yearly_aggs.shape[1] == 3
+        if x_train_data.yearly_aggs is not None:
+            # n_variables should be 3 because `ignoring` precip
+            assert x_train_data.yearly_aggs.shape[1] == 3
 
         if (not normalize) and (not to_tensor):
             mean_temp = x_coeff3.temp.mean(dim=["time", "lat", "lon"]).values
-            assert (mean_temp == x_train_data.yearly_aggs).any()
+            if x_train_data.yearly_aggs is not None:
+                assert (mean_temp == x_train_data.yearly_aggs).any()
 
         if predict_delta:
             assert (

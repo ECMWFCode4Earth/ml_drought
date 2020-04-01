@@ -27,7 +27,7 @@ class NNBase(ModelBase):
         include_pred_month: bool = True,
         include_latlons: bool = False,
         include_monthly_aggs: bool = True,
-        include_yearly_aggs: bool = True,
+        include_yearly_aggs: bool = False,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",

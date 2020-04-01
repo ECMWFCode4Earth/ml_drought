@@ -626,10 +626,10 @@ class _BaseIter:
                 for v in self.static.data_vars
                 if all([ign_v not in v for ign_v in self.ignore_vars])
             ]
+            self.static = self.static[include_vars]
             assert len(include_vars) == len(
                 list(self.static.data_vars)
             ), "TODO: are vars being dropped?"
-            self.static = self.static[include_vars]
 
         # convert static data to numpy array
         if self.static_array is None:
