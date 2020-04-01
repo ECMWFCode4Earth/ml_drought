@@ -215,7 +215,9 @@ class NNBase(ModelBase):
 
         return test_arrays_dict, preds_dict
 
-    def _get_background(self, sample_size: int = 150) -> List[torch.Tensor]:
+    def _get_background(
+        self, sample_size: int = 150
+    ) -> List[Union[torch.Tensor, None]]:
 
         print("Extracting a sample of the training data")
 
@@ -227,7 +229,7 @@ class NNBase(ModelBase):
         output_pm: List[torch.Tensor] = []
         output_ll: List[torch.Tensor] = []
         output_cur: List[torch.Tensor] = []
-        output_ym: List[torch.Tensor] = []
+        output_ym: Optional[List[torch.Tensor]] = None
         output_static: List[torch.Tensor] = []
         output_prev_y: List[torch.Tensor] = []
 
@@ -254,6 +256,7 @@ class NNBase(ModelBase):
                 if x[4] is not None:
                     # TODO: Gabi help for situations where not include yearly_aggs
                     # yearly aggs
+                    output_ym = []
                     output_ym.append(x[4][idx])
                 else:
                     output_ym = None
