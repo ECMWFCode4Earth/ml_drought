@@ -11,13 +11,14 @@ from scripts.utils import _rename_directory, get_data_path
 from src.engineer.one_timestep_forecast import _OneTimestepForecastEngineer
 
 
-def engineer(seq_length=3, target_var="discharge_vol"):
+def engineer(seq_length=3, target_var="discharge_spec"):
     engineer = _OneTimestepForecastEngineer(get_data_path(), process_static=True)
     engineer.engineer(
         test_year=[y for y in range(2011, 2016)],
         target_variable=target_var,
         seq_length=seq_length,
         expected_length=seq_length,
+        logy=True,
     )
 
 
@@ -30,7 +31,8 @@ def run_model(pretrained: bool = False, n_epochs=20):
     ignore_vars = None
     ignore_vars = [
         "temperature",
-        "discharge_spec",
+        "discharge_vol",
+        "discharge_spec",  # ignore the y_var (no autoregression)
         "peti",
         "humidity",
         "shortwave_rad",
@@ -58,7 +60,7 @@ def run_model(pretrained: bool = False, n_epochs=20):
 
 
 if __name__ == "__main__":
-    # engineer(seq_length=3)
+    engineer(seq_length=3)
     # engineer_static_only()
     # run_model(n_epochs=40)
     run_model(n_epochs=20)
