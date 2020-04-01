@@ -5,7 +5,6 @@ import torch
 import numpy as np
 from typing import List, Union, Tuple
 from src.models.neural_networks.ealstm import EALSTM
-from src.models.data import DataLoader
 
 
 def sigmoid(x: np.array) -> np.array:

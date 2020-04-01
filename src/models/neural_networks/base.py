@@ -255,6 +255,8 @@ class NNBase(ModelBase):
                     # TODO: Gabi help for situations where not include yearly_aggs
                     # yearly aggs
                     output_ym.append(x[4][idx])
+                else:
+                    output_ym = None
 
                 # static data
                 if self.static == "embeddings":
@@ -274,7 +276,7 @@ class NNBase(ModelBase):
                         torch.cat(output_pm, dim=0),
                         torch.stack(output_ll),
                         torch.stack(output_cur),
-                        torch.stack(output_ym),
+                        torch.stack(output_ym) if output_ym is not None else None,
                         torch.stack(output_static),
                         torch.stack(output_prev_y),
                     ]
@@ -284,7 +286,7 @@ class NNBase(ModelBase):
             torch.cat(output_pm, dim=0),
             torch.stack(output_ll),
             torch.stack(output_cur),
-            torch.stack(output_ym),
+            torch.stack(output_ym) if output_ym is not None else None,
             torch.stack(output_static),
             torch.stack(output_prev_y),
         ]
