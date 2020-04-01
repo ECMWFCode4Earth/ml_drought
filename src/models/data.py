@@ -536,6 +536,7 @@ class _BaseIter:
         return normalizing_array
 
     def _calculate_aggs(self, x: xr.Dataset) -> np.ndarray:
+        """Calculate an annual average for the year of interest ...?"""
         warnings.warn("Deprecated for causing the static data to vary")
         yearly_mean = x.mean(dim=["time", "lat", "lon"])
         yearly_agg = yearly_mean.to_array().values
@@ -746,16 +747,16 @@ class _BaseIter:
         x, y = self.apply_spatial_mask(x, y)
 
         if self.incl_yearly_aggs:
-            assert False
             yearly_agg = self._calculate_aggs(
                 x
             )  # before to avoid aggs from surrounding pixels
+            assert False, "Depreceated for causing the static data to vary"
 
         # calculate normalized values in these functions
         x_np, y_np = self._calculate_historical(x, y)
         x_months = self._calculate_target_months(y, x_np.shape[0])
         if self.incl_yearly_aggs:
-            yearly_agg = np.vstack([yearly_agg] * x_np.shape[0])
+            yearly_agg = np.vstack([yearly_agg] * x_np.shape[0])  # type: ignore
         if self.static is not None:
             static_np = self._calculate_static(x_np.shape[0])
         else:
