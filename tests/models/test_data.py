@@ -175,13 +175,14 @@ class TestBaseIter:
                 for i in range(4)
             ]
         )
-        # check second 3 features vary (pixel means)
-        assert all(
-            [
-                all(arrays.x.static[:, i][1:] != arrays.x.static[:, i][:-1])
-                for i in range(4, 6)
-            ]
-        )
+        if not predict_delta:
+            # check second 3 features vary (pixel means)
+            assert all(
+                [
+                    all(arrays.x.static[:, i][1:] != arrays.x.static[:, i][:-1])
+                    for i in range(4, 6)
+                ]
+            ), f"static data: \n[,4]\n: {arrays.x.static[:, 4][1:]}\n[,5]\n: {arrays.x.static[:, 5][1:]}"
 
         n_samples = 25 if surrounding_pixels is None else 9
         assert (

@@ -750,7 +750,7 @@ class _BaseIter:
             yearly_agg = self._calculate_aggs(
                 x
             )  # before to avoid aggs from surrounding pixels
-            assert False, "Depreceated for causing the static data to vary"
+            warnings.warn("Depreceated for causing the static data to vary")
 
         # calculate normalized values in these functions
         x_np, y_np = self._calculate_historical(x, y)

@@ -104,7 +104,7 @@ class _EngineerBase:
         # coordinates (it seems from rounding)
         try:
             static_ds = self._make_dataset(static=True, overwrite_dims=True)
-        except:
+        except ValueError:
             print("No static data features included! Creating static ds")
             static_ds = None
         # create dynamic_variable means for input to static data

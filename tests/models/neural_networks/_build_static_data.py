@@ -3,8 +3,9 @@ functions for calculating the static embedding
 """
 import torch
 import numpy as np
-from typing import List, Union, Tuple, Dict, Optional
+from typing import List, Union, Tuple
 from src.models.neural_networks.ealstm import EALSTM
+from src.models.data import DataLoader
 
 
 def sigmoid(x: np.array) -> np.array:
@@ -39,12 +40,18 @@ def build_static_x(
             # one_hot_encode the pred_month_data
             try:
                 static_x.append(
-                    ealstm._one_hot(torch.from_numpy(pred_month_data), 12).numpy()  # type: ignore
+                    ealstm._one_hot(  # type: ignore
+                        torch.from_numpy(pred_month_data), 12
+                    ).numpy()
                 )
             except TypeError:
                 # when need to convert tensor from gpu format
                 static_x.append(
-                    ealstm._one_hot(torch.from_numpy(pred_month_data), 12).cpu().numpy()  # type: ignore
+                    ealstm._one_hot(  # type: ignore
+                        torch.from_numpy(pred_month_data), 12
+                    )
+                    .cpu()
+                    .numpy()
                 )
 
         # exclude Nones
@@ -70,21 +77,6 @@ def calculate_embeddings(static_x: np.ndarray, W: np.ndarray, b: np.array) -> np
     for pixel_ix in range(static_x.shape[0]):
         embedding.append(sigmoid(np.dot(W, static_x[pixel_ix]) + b))
     return np.array(embedding)
-
-
-def get_train_mask(ealstm):
-    val_split = 0.1
-    len_mask = len(
-        DataLoader._load_datasets(
-            ealstm.data_path,
-            mode="train",
-            experiment=EXPERIMENT,
-            shuffle_data=False,
-            pred_months=None,
-        )
-    )
-    train_mask, val_mask = train_val_mask(len_mask, val_split)
-    return train_mask
 
 
 def get_static_embedding(
