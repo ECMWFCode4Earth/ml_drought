@@ -351,9 +351,10 @@ class DataLoader:
         self.spatial_mask = spatial_mask
 
         if spatial_mask is not None:
-            assert (
-                clear_nans is True
-            ), f"The spatial mask uses NaNs to get rid of values - this requires clear_nans to be true"
+            assert clear_nans is True, (
+                "The spatial mask uses NaNs to get rid of values - "
+                "this requires clear_nans to be true"
+            )
         self.clear_nans = clear_nans
 
     def __iter__(self):
