@@ -79,7 +79,7 @@ def calculate_embeddings(static_x: np.ndarray, W: np.ndarray, b: np.array) -> np
 
 
 def get_static_embedding(
-    ealstm
+    ealstm,
 ) -> Tuple[List[np.array], Tuple[List[np.array], np.array, List[np.array]]]:
     # get W, b from state_dict
     od = ealstm.model.static_embedding.state_dict()
