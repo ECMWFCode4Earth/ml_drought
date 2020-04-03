@@ -259,7 +259,14 @@ class DataLoader:
         instead of the raw target variable.
     normalize_y: bool = True
         Whether to normalize y
+    dynamic: bool = False
+        If True then load the static_ds/dynamic_ds into memory once and
+        draw samples (X-y pairs) from the dynamic_ds. Better when
+        you have a long time-series of data to work with.
+        If False then pre-engineer data creating X.nc / y.nc pairs for
+        each target timestep. Better when there are memory constraints.
     """
+    dynamic: bool = False
 
     def __init__(
         self,
@@ -272,7 +279,7 @@ class DataLoader:
         predict_delta: bool = False,
         experiment: str = "one_month_forecast",
         mask: Optional[List[bool]] = None,
-        seq_length: Optional[List[int]] = None,
+        seq_length: int = 3,  # why is this optional list? should be provided ...
         to_tensor: bool = False,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
@@ -284,20 +291,32 @@ class DataLoader:
         reducing_dims: Optional[List[str]] = None,
         calculate_latlons: bool = True,
         use_prev_y_var: bool = False,
+        dynamic: bool = False,
     ) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
         self.shuffle = shuffle_data
         self.experiment = experiment
-        self.data_files = self._load_datasets(
-            data_path=data_path,
-            mode=mode,
-            shuffle_data=shuffle_data,
-            experiment=experiment,
-            mask=mask,
-            seq_length=seq_length,
-        )
+
+        self.data_path = data_path
+        self.seq_length = seq_length
+
+        if self.dynamic:
+            # ignore the raw target variable (if training on logy)
+            if ignore_vars is not None:
+                ignore_vars += ['target_var_original']
+            else:
+                ignore_vars = ['target_var_original']
+        else:
+            self.data_files = self._load_datasets(
+                data_path=data_path,
+                mode=mode,
+                shuffle_data=shuffle_data,
+                experiment=experiment,
+                mask=mask,
+                seq_length=seq_length,
+            )
         self.predict_delta = predict_delta
 
         self.normalizing_dict = None
@@ -362,6 +381,7 @@ class DataLoader:
         self.reducing_dims = self.get_reducing_dims(reducing_dims)
         self.calculate_latlons = calculate_latlons
         self.use_prev_y_var = use_prev_y_var
+        self.dynamic = dynamic
 
     def __iter__(self):
         if self.mode == "train":
@@ -375,8 +395,9 @@ class DataLoader:
     def get_reducing_dims(self, reducing_dims: Optional[List[str]] = None) -> List[str]:
         if reducing_dims is None:
             data_path = [list(p.glob("x.nc"))[0] for p in self.data_files][0]
-            ds = xr.open_dataset(data_path)
-            reducing_dims = [c for c in ds.coords if c != "time"]
+
+        ds = xr.open_dataset(data_path)
+        reducing_dims = [c for c in ds.coords if c != "time"]
 
         return reducing_dims
 
@@ -408,16 +429,16 @@ class DataLoader:
         mask: Optional[List[bool]] = None,
         seq_length: Optional[List[int]] = None,
     ) -> List[Path]:
-
-        data_folder = data_path / f"features/{experiment}/{mode}"
+        # load data from pre-engineered folders
         output_paths: List[Path] = []
+        data_folder = data_path / f"features/{experiment}/{mode}"
 
         for subtrain in data_folder.iterdir():
             if (subtrain / "x.nc").exists() and (subtrain / "y.nc").exists():
                 if seq_length is None:
                     output_paths.append(subtrain)
                 else:
-                    month = int(str(subtrain.parts[-1])[5:])
+                    month = int(str(subtrain.parts[-1]).split("_")[-2])
                     if month in seq_length:
                         output_paths.append(subtrain)
 
@@ -427,6 +448,7 @@ class DataLoader:
                 mask
             ), f"Output path and mask must be the same length!"
             output_paths = [o_p for o_p, include in zip(output_paths, mask) if include]
+
         if shuffle_data:
             shuffle(output_paths)
         return output_paths
@@ -437,7 +459,11 @@ class _BaseIter:
     """
 
     def __init__(self, loader: DataLoader) -> None:
-        self.data_files = loader.data_files
+        self.dynamic = loader.dynamic
+        if dynamic:
+
+        else:
+            self.data_files = loader.data_files
         self.batch_file_size = loader.batch_file_size
         self.shuffle = loader.shuffle
         self.clear_nans = loader.clear_nans
@@ -599,7 +625,7 @@ class _BaseIter:
         # first, x
         if len(x_np.shape) == 4:
             #  if 4 dimensions (time, vars, lat, lon)
-            # then collapse to 3 d (time, vars, lat, lon)
+            # then collapse to 3 d (time, vars, latlon)
             x_np = x_np.reshape(
                 x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3]
             )
@@ -881,7 +907,6 @@ class _BaseIter:
             # remove nans if they are in the x or y data
             historical_nans, y_nans = np.isnan(train_data.historical), np.isnan(y_np)
             if train_data.static is not None:
-                # TODO: why so many static nones?
                 static_nans = np.isnan(train_data.static)
                 static_nans_summed = static_nans.sum(axis=-1)
             else:
