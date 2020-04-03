@@ -21,7 +21,8 @@ class ModelBase:
     batch_size: int 1
         The number of files to load at once. These will be chunked and shuffled, so
         a higher value will lead to better shuffling (but will require more memory)
-    seq_length: Optional[List[int]] = None
+    seq_length:
+    pred_months: Optional[List[int]] = None
         The months the model should predict. If None, all months are predicted
     include_pred_month: bool = True
         Whether to include the prediction month to the model's training data
@@ -48,7 +49,8 @@ class ModelBase:
         data_folder: Path = Path("data"),
         batch_size: int = 1,
         experiment: str = "one_month_forecast",
-        seq_length: Optional[List[int]] = None,
+        seq_length: Optional[int] = 3,  # why do we need this?
+        pred_months: Optional[List[int]] = None,
         include_pred_month: bool = True,
         include_latlons: bool = False,
         include_timestep_aggs: bool = True,
@@ -61,7 +63,6 @@ class ModelBase:
         include_prev_y: bool = True,
         normalize_y: bool = False,
     ) -> None:
-
         self.batch_size = batch_size
         self.include_pred_month = include_pred_month
         self.include_latlons = include_latlons
@@ -70,6 +71,7 @@ class ModelBase:
         self.data_path = data_folder
         self.experiment = experiment
         self.seq_length = seq_length
+        self.pred_months = pred_months
         self.models_dir = data_folder / "models" / self.experiment
         self.surrounding_pixels = surrounding_pixels
         self.ignore_vars = ignore_vars
@@ -354,6 +356,7 @@ class ModelBase:
             "mask": None,
             "experiment": self.experiment,
             "seq_length": self.seq_length,
+            "pred_months": self.pred_months,
             "to_tensor": to_tensor,
             "ignore_vars": self.ignore_vars,
             "timestep_aggs": self.include_timestep_aggs,

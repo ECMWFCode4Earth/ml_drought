@@ -13,7 +13,10 @@ class _EngineerBase:
     name: str
 
     def __init__(
-        self, data_folder: Path = Path("data"), process_static: bool = False, resolution: str = "D"
+        self,
+        data_folder: Path = Path("data"),
+        process_static: bool = False,
+        resolution: str = "D",
     ) -> None:
 
         self.data_folder = data_folder
@@ -144,7 +147,9 @@ class _EngineerBase:
                 processed_files.extend(list(subfolder.glob("*.nc")))
         return processed_files
 
-    def _make_dataset(self, static: bool, overwrite_dims: bool = False, latlon: bool = True) -> xr.Dataset:
+    def _make_dataset(
+        self, static: bool, overwrite_dims: bool = False, latlon: bool = True
+    ) -> xr.Dataset:
         """Make one dataset by joining all of the different
         datasets (spatial coords should be constant).
         """
@@ -161,7 +166,9 @@ class _EngineerBase:
                         coords[dim] = datasets[idx][dim].values
                 else:
                     for dim in dims:
-                        array_equal = np.array_equal(datasets[idx][dim].values, coords[dim])
+                        array_equal = np.array_equal(
+                            datasets[idx][dim].values, coords[dim]
+                        )
                         if (not overwrite_dims) and (not array_equal):
                             # SORT the values first (xarray clever enough to figure out joining)
                             assert np.array_equal(
@@ -174,7 +181,6 @@ class _EngineerBase:
             for idx, file in enumerate(self._get_preprocessed_files(static)):
                 datasets.append(xr.open_dataset(file))
 
-
         # join all preprocessed datasets
         main_dataset = datasets[0]
         if len(datasets) > 1:
@@ -185,7 +191,7 @@ class _EngineerBase:
         # Transpose to ensure that first dimension is time
         if not static:
             reducing_dims = [c for c in main_dataset.coords if c != "time"]
-            main_dataset = main_dataset.transpose(*(['time'] + reducing_dims))
+            main_dataset = main_dataset.transpose(*(["time"] + reducing_dims))
 
         return main_dataset
 

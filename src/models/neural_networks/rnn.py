@@ -23,7 +23,8 @@ class RecurrentNetwork(NNBase):
         data_folder: Path = Path("data"),
         batch_size: int = 1,
         experiment: str = "one_month_forecast",
-        seq_length: Optional[List[int]] = None,
+        seq_length: int = 3,
+        pred_months: Optional[List[int]] = None,
         include_pred_month: bool = True,
         include_latlons: bool = False,
         include_timestep_aggs: bool = True,
@@ -54,6 +55,7 @@ class RecurrentNetwork(NNBase):
             spatial_mask=spatial_mask,
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
+            pred_months=pred_months,
         )
 
         # to initialize and save the model

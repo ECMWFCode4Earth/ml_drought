@@ -38,20 +38,21 @@ class LinearRegression(ModelBase):
     ) -> None:
         super().__init__(
             data_folder,
-            batch_size,
-            experiment,
-            seq_length,
-            include_pred_month,
-            include_latlons,
-            include_timestep_aggs,
-            include_yearly_aggs,
-            surrounding_pixels,
-            ignore_vars,
-            static,
+            batch_size=batch_size,
+            experiment=experiment,
+            seq_length=seq_length,
+            include_pred_month=include_pred_month,
+            include_latlons=include_latlons,
+            include_timestep_aggs=include_timestep_aggs,
+            include_yearly_aggs=include_yearly_aggs,
+            surrounding_pixels=surrounding_pixels,
+            ignore_vars=ignore_vars,
+            static=static,
             predict_delta=predict_delta,
             spatial_mask=spatial_mask,
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
+            pred_months=pred_months,
         )
 
         self.explainer: Optional[shap.LinearExplainer] = None

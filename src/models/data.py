@@ -18,7 +18,7 @@ from typing import cast, Dict, Optional, Union, List, Tuple
 class TrainData:
     historical: Union[np.ndarray, torch.Tensor]
     current: Union[np.ndarray, torch.Tensor, None]
-    seq_length: Union[np.ndarray, torch.Tensor]
+    pred_month: Union[np.ndarray, torch.Tensor]
     # latlons are repeated here so they can be tensor-ized and
     # normalized
     # TODO: Optional because pixel id in 1D case
@@ -182,7 +182,7 @@ class ModelArrays:
 # if new inputs are added
 idx_to_input = {
     0: "historical",
-    1: "seq_length",
+    1: "pred_month",
     2: "latlons",
     3: "current",
     4: "yearly_aggs",
@@ -238,7 +238,9 @@ class DataLoader:
     mask: Optional[List[bool]] = None
         If not None, this list will be used to mask the input files. Useful for creating a train
         and validation set
-    seq_length: Optional[List[int]] = None
+    seq_length: int
+        the size of the input sequence
+    pred_months: Optional[List[int]] = None
         The months the model should predict. If None, all months are predicted
     to_tensor: bool = False
         Whether to turn the np.ndarrays into torch.Tensors
@@ -266,6 +268,7 @@ class DataLoader:
         If False then pre-engineer data creating X.nc / y.nc pairs for
         each target timestep. Better when there are memory constraints.
     """
+
     dynamic: bool = False
 
     def __init__(
@@ -279,7 +282,8 @@ class DataLoader:
         predict_delta: bool = False,
         experiment: str = "one_month_forecast",
         mask: Optional[List[bool]] = None,
-        seq_length: int = 3,  # why is this optional list? should be provided ...
+        seq_length: int = 3,
+        pred_months: Optional[List[int]] = None,
         to_tensor: bool = False,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
@@ -301,13 +305,14 @@ class DataLoader:
 
         self.data_path = data_path
         self.seq_length = seq_length
+        self.pred_months = pred_months
 
         if self.dynamic:
             # ignore the raw target variable (if training on logy)
             if ignore_vars is not None:
-                ignore_vars += ['target_var_original']
+                ignore_vars += ["target_var_original"]
             else:
-                ignore_vars = ['target_var_original']
+                ignore_vars = ["target_var_original"]
         else:
             self.data_files = self._load_datasets(
                 data_path=data_path,
@@ -315,7 +320,7 @@ class DataLoader:
                 shuffle_data=shuffle_data,
                 experiment=experiment,
                 mask=mask,
-                seq_length=seq_length,
+                pred_months=pred_months,
             )
         self.predict_delta = predict_delta
 
@@ -427,7 +432,7 @@ class DataLoader:
         shuffle_data: bool,
         experiment: str,
         mask: Optional[List[bool]] = None,
-        seq_length: Optional[List[int]] = None,
+        pred_months: Optional[List[int]] = None,  # months to predict!
     ) -> List[Path]:
         # load data from pre-engineered folders
         output_paths: List[Path] = []
@@ -435,11 +440,11 @@ class DataLoader:
 
         for subtrain in data_folder.iterdir():
             if (subtrain / "x.nc").exists() and (subtrain / "y.nc").exists():
-                if seq_length is None:
+                if pred_months is None:
                     output_paths.append(subtrain)
                 else:
                     month = int(str(subtrain.parts[-1]).split("_")[-2])
-                    if month in seq_length:
+                    if month in pred_months:
                         output_paths.append(subtrain)
 
         if mask is not None:
@@ -459,11 +464,8 @@ class _BaseIter:
     """
 
     def __init__(self, loader: DataLoader) -> None:
-        self.dynamic = loader.dynamic
-        if dynamic:
 
-        else:
-            self.data_files = loader.data_files
+        self.data_files = loader.data_files
         self.batch_file_size = loader.batch_file_size
         self.shuffle = loader.shuffle
         self.clear_nans = loader.clear_nans
@@ -880,7 +882,7 @@ class _BaseIter:
             train_data = TrainData(
                 current=current,
                 historical=historical,
-                seq_length=x_months,
+                pred_month=x_months,
                 latlons=train_latlons,
                 yearly_aggs=yearly_agg,
                 static=static_np,
@@ -891,7 +893,7 @@ class _BaseIter:
             train_data = TrainData(
                 current=None,
                 historical=x_np,
-                seq_length=x_months,
+                pred_month=x_months,
                 latlons=train_latlons,
                 yearly_aggs=yearly_agg,
                 static=static_np,
@@ -1090,7 +1092,7 @@ class _TrainIter(_BaseIter):
                 return (
                     (
                         global_modelarrays.x.historical,
-                        global_modelarrays.x.seq_length,
+                        global_modelarrays.x.pred_month,
                         global_modelarrays.x.latlons,
                         global_modelarrays.x.current,
                         global_modelarrays.x.yearly_aggs,
