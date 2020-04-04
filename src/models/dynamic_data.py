@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import DefaultDict, Dict, Tuple, Optional, Union, List, Any, cast
 from random import shuffle
 import torch
+from collections import Iterable
 
 from .data import DataLoader, ModelArrays, TrainData, _TrainIter, _TestIter
 from src.utils import minus_timesteps
@@ -17,7 +18,7 @@ from src.utils import minus_timesteps
 # DynamicDataLoader:
 #  The DataLoader loads the data into memory from the engineered data.
 #  It is initialised once at the start of each epoch.
-#  It performs tasks such as
+#  It performs the following tasks:
 #   - calculating the train/test split
 #   - calculate the normalizing arrays (numpy) used by the iterators
 #
@@ -129,7 +130,10 @@ class DynamicDataLoader(DataLoader):
             return _TestDynamicIter(self, mode="test")
 
     def __len__(self) -> int:
-        return len(self.legit_target_times) // self.batch_file_size
+        if self.mode == "train":
+            return len(self.valid_train_times) // self.batch_file_size
+        else:
+            return len(self.valid_test_times) // self.batch_file_size
 
     def get_train_test_times(
         self, test_years: Union[List[str], str]
@@ -194,6 +198,7 @@ class DynamicDataLoader(DataLoader):
         data_vars: List[str] = [
             v for v in self.normalizing_dict.keys() if v not in self.dynamic_ignore_vars
         ]
+        data_vars = [v for v in data_vars if v != "target_var_original"]
         self.normalizing_array: Optional[
             Dict[str, np.ndarray]
         ] = self.calculate_normalizing_array(data_vars, static=False)
@@ -319,8 +324,10 @@ class _DynamicIter:
 
         if mode == "train":
             self.target_times = loader.valid_train_times
+            self.target_times = [tt for tt in self.target_times]
         elif mode == "test":
             self.target_times = loader.valid_test_times
+            self.target_times = [tt for tt in self.target_times]
         else:
             assert False, "Mode must be one of train / test"
 
@@ -703,31 +710,31 @@ class _TrainDynamicIter(_DynamicIter):
                 cur_max_idx = self.deal_with_no_values(
                     target_time=target_time, cur_max_idx=cur_max_idx
                 )
-
-            arrays = self.ds_sample_to_np(
-                xy_sample=xy_sample,
-                target_time=target_time,
-                clear_nans=self.clear_nans,
-                to_tensor=self.to_tensor,
-                reducing_dims=self.reducing_dims,
-            )
-
-            # If there are no values!
-            if arrays.x.historical.shape[0] == 0:
-                cur_max_idx = self.deal_with_no_values(
-                    target_time=target_time, cur_max_idx=cur_max_idx
-                )
-                # print(f"{pd.to_datetime(target_time)} returns no values. Skipping")
-
-                # # remove the empty element from the list
-                # self.data_files.pop(self.idx)
-                # self.max_idx -= 1
-                # cur_max_idx = min(cur_max_idx + 1, self.max_idx)
-
-            if global_modelarrays is None:
-                global_modelarrays = arrays
             else:
-                global_modelarrays.concatenate(arrays)
+                arrays = self.ds_sample_to_np(
+                    xy_sample=xy_sample,
+                    target_time=target_time,
+                    clear_nans=self.clear_nans,
+                    to_tensor=self.to_tensor,
+                    reducing_dims=self.reducing_dims,
+                )
+
+                # If there are no values!
+                if arrays.x.historical.shape[0] == 0:
+                    cur_max_idx = self.deal_with_no_values(
+                        target_time=target_time, cur_max_idx=cur_max_idx
+                    )
+                    # print(f"{pd.to_datetime(target_time)} returns no values. Skipping")
+
+                    # # remove the empty element from the list
+                    # self.data_files.pop(self.idx)
+                    # self.max_idx -= 1
+                    # cur_max_idx = min(cur_max_idx + 1, self.max_idx)
+
+                if global_modelarrays is None:
+                    global_modelarrays = arrays
+                else:
+                    global_modelarrays.concatenate(arrays)
             self.idx += 1
 
             if global_modelarrays is not None:
@@ -759,6 +766,11 @@ class _TestDynamicIter(_DynamicIter):
     mode = "test"
     # max index is the final test time drawn from the DataLoader
     # max_idx = len(self.target_times)
+    def make_timestamp(self, target_time: datetime) -> str:
+        """TODO: hardcoded for the DAILY data (deal with other resolution data e.g. months) """
+        dt = pd.to_datetime(target_time)
+        timestamp = f"{dt.year}_{dt.month}_{dt.day}"
+        return timestamp
 
     def __next__(self) -> Dict[str, ModelArrays]:
         # self.max_idx = len(self.target_times)
@@ -793,16 +805,16 @@ class _TestDynamicIter(_DynamicIter):
                     cur_max_idx = self.deal_with_no_values(
                         target_time=target_time, cur_max_idx=cur_max_idx
                     )
-                    # print(f"{pd.to_datetime(target_time)} returns no values. Skipping")
-
-                    # # remove the empty element from the list
-                    # self.data_files.pop(self.idx)
-                    # self.max_idx -= 1
-                    # cur_max_idx = min(cur_max_idx + 1, self.max_idx)
-
                 else:
-                    out_dict[subfolder.parts[-1]] = arrays
+                    timestamp = self.make_timestamp(target_time)
+                    out_dict[timestamp] = arrays
                 self.idx += 1
 
+            # assert that it's not empty
+            if len(out_dict) == 0:
+                raise StopIteration()
+            return out_dict
+
         else:
+            # end of sequence!
             raise StopIteration()

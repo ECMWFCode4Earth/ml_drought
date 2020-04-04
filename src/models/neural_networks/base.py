@@ -22,8 +22,12 @@ class NNBase(ModelBase):
     def __init__(
         self,
         data_folder: Path = Path("data"),
+        dynamic: bool = False,
         batch_size: int = 256,
         experiment: str = "one_month_forecast",
+        forecast_horizon: int = 1,
+        target_var: Optional[str] = None,
+        test_years: Optional[Union[List[str], str]] = None,
         seq_length: int = 3,
         pred_months: Optional[List[int]] = None,
         include_pred_month: bool = True,
@@ -32,6 +36,8 @@ class NNBase(ModelBase):
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
+        dynamic_ignore_vars: Optional[List[str]] = None,
+        static_ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
         device: str = "cuda:0",
         predict_delta: bool = False,
@@ -40,6 +46,7 @@ class NNBase(ModelBase):
         normalize_y: bool = True,
     ) -> None:
         super().__init__(
+            dynamic=dynamic,
             data_folder=data_folder,
             batch_size=batch_size,
             experiment=experiment,
@@ -56,6 +63,11 @@ class NNBase(ModelBase):
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
             pred_months=pred_months,
+            dynamic_ignore_vars=dynamic_ignore_vars,
+            static_ignore_vars=static_ignore_vars,
+            target_var=target_var,
+            test_years=test_years,
+            forecast_horizon=forecast_horizon,
         )
 
         # for reproducibility
@@ -318,7 +330,7 @@ class NNBase(ModelBase):
         if type(x) is TrainData:  # type: ignore
             return (  # type: ignore
                 x.historical,  # type: ignore
-                self._one_hot(x.seq_length, 12),  # type: ignore
+                self._one_hot(x.pred_month, 12),  # type: ignore
                 x.latlons,  # type: ignore
                 x.current,  # type: ignore
                 x.yearly_aggs,  # type: ignore

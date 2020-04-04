@@ -8,6 +8,7 @@ import random
 from sklearn.metrics import mean_squared_error
 
 from .data import TrainData, DataLoader
+from .dynamic_data import DynamicDataLoader
 
 from typing import cast, Any, Dict, List, Optional, Union, Tuple
 
@@ -47,6 +48,10 @@ class ModelBase:
     def __init__(
         self,
         data_folder: Path = Path("data"),
+        dynamic: bool = False,
+        target_var: Optional[str] = None,
+        test_years: Optional[Union[List[str], str]] = None,
+        forecast_horizon: int = 1,
         batch_size: int = 1,
         experiment: str = "one_month_forecast",
         seq_length: Optional[int] = 3,  # why do we need this?
@@ -57,6 +62,8 @@ class ModelBase:
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
+        dynamic_ignore_vars: Optional[List[str]] = None,
+        static_ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "embedding",
         predict_delta: bool = False,
         spatial_mask: Union[xr.DataArray, Path] = None,
@@ -75,6 +82,8 @@ class ModelBase:
         self.models_dir = data_folder / "models" / self.experiment
         self.surrounding_pixels = surrounding_pixels
         self.ignore_vars = ignore_vars
+        self.dynamic_ignore_vars = dynamic_ignore_vars
+        self.static_ignore_vars = static_ignore_vars
         self.static = static
         self.predict_delta = predict_delta
         self.include_prev_y = include_prev_y
@@ -84,6 +93,32 @@ class ModelBase:
                 "rb"
             ) as f:
                 self.normalizing_dict = pickle.load(f)
+
+        self.forecast_horizon = forecast_horizon
+        self.dynamic = dynamic
+        if self.dynamic:
+            assert (
+                target_var is not None
+            ), "If using the dynamic DataLoader require a `target_var` parameter to be provided"
+            assert (
+                test_years is not None
+            ), "If using the dynamic DataLoader require a `test_years` parameter to be provided"
+            self.target_var = target_var
+            self.test_years = test_years
+            if self.include_yearly_aggs:
+                print(
+                    "`include_yearly_aggs` does not yet work for dynamic dataloder. Setting to False"
+                )
+                self.include_yearly_aggs = False
+            if self.include_prev_y:
+                print(
+                    "`include_prev_y` does not yet work for dynamic dataloder. Setting to False"
+                )
+                self.include_prev_y = False
+
+            print("Using the Dynamic DataLoader")
+            print(f"\tTarget Var: {target_var}")
+            print(f"\tTest Years: {test_years}")
 
         # needs to be set by the train function
         self.num_locations: Optional[int] = None
@@ -348,35 +383,70 @@ class ModelBase:
         Return the correct dataloader for this model
         """
 
-        default_args: Dict[str, Any] = {
-            "data_path": self.data_path,
-            "batch_file_size": self.batch_size,
-            "shuffle_data": shuffle_data,
-            "mode": mode,
-            "mask": None,
-            "experiment": self.experiment,
-            "seq_length": self.seq_length,
-            "pred_months": self.pred_months,
-            "to_tensor": to_tensor,
-            "ignore_vars": self.ignore_vars,
-            "timestep_aggs": self.include_timestep_aggs,
-            "surrounding_pixels": self.surrounding_pixels,
-            "static": self.static,
-            "device": self.device,
-            "clear_nans": True,
-            "normalize": True,
-            "predict_delta": self.predict_delta,
-            "spatial_mask": self.spatial_mask,
-            "normalize_y": self.normalize_y,
-            "calculate_latlons": self.include_latlons,
-            "use_prev_y_var": self.include_prev_y,
-        }
+        if self.dynamic:
+            default_args: Dict[str, Any] = {
+                "target_var": self.target_var,
+                "test_years": self.test_years,
+                "seq_length": self.seq_length,  # changed this default arg
+                "forecast_horizon": self.forecast_horizon,
+                "data_path": self.data_path,
+                "batch_file_size": self.batch_size,
+                "mode": mode,
+                "shuffle_data": True,
+                "clear_nans": True,
+                "normalize": True,
+                "predict_delta": False,
+                "experiment": "one_timestep_forecast",  # changed this default arg
+                "mask": None,
+                "pred_months": None,
+                "to_tensor": to_tensor,
+                "surrounding_pixels": False,
+                "dynamic_ignore_vars": self.dynamic_ignore_vars,
+                "static_ignore_vars": self.static_ignore_vars,
+                "timestep_aggs": False,  # changed this default arg
+                "static": self.static,
+                "device": self.device,
+                "spatial_mask": None,
+                "normalize_y": True,
+                "reducing_dims": None,
+                "calculate_latlons": False,  # changed this default arg
+                "use_prev_y_var": False,
+                "resolution": "D",
+            }
+
+        else:
+            default_args: Dict[str, Any] = {
+                "data_path": self.data_path,
+                "batch_file_size": self.batch_size,
+                "shuffle_data": shuffle_data,
+                "mode": mode,
+                "mask": None,
+                "experiment": self.experiment,
+                "seq_length": self.seq_length,
+                "pred_months": self.pred_months,
+                "to_tensor": to_tensor,
+                "ignore_vars": self.ignore_vars,
+                "timestep_aggs": self.include_timestep_aggs,
+                "surrounding_pixels": self.surrounding_pixels,
+                "static": self.static,
+                "device": self.device,
+                "clear_nans": True,
+                "normalize": True,
+                "predict_delta": self.predict_delta,
+                "spatial_mask": self.spatial_mask,
+                "normalize_y": self.normalize_y,
+                "calculate_latlons": self.include_latlons,
+                "use_prev_y_var": self.include_prev_y,
+            }
 
         for key, val in kwargs.items():
             # override the default args
             default_args[key] = val
 
-        dl = DataLoader(**default_args)
+        if self.dynamic:
+            dl = DynamicDataLoader(**default_args)
+        else:
+            dl = DataLoader(**default_args)
 
         if (self.static == "embeddings") and (self.num_locations is None):
             self.num_locations = cast(int, dl.max_loc_int)

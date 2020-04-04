@@ -5,7 +5,8 @@ from src.models import DynamicDataLoader
 class TestDynamicDataLoader:
     def test_dynamic_dataloader(self, tmp_path):
         # initialise the data as an OUTPUT of the engineers
-
+        static_ignore_vars = ["var1"]
+        dynamic_ignore_vars = ["var1"]
         target_var = "discharge_spec"
         seq_length = 365
 

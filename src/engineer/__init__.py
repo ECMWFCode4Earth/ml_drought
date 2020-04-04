@@ -5,6 +5,7 @@ from typing import Union, List, Optional
 from .nowcast import _NowcastEngineer
 from .one_month_forecast import _OneMonthForecastEngineer
 from .one_timestep_forecast import _OneTimestepForecastEngineer
+from .dynamic_engineer import DynamicEngineer
 from .base import _EngineerBase
 
 

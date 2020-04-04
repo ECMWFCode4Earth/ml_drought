@@ -21,6 +21,9 @@ class RecurrentNetwork(NNBase):
         dense_features: Optional[List[int]] = None,
         rnn_dropout: float = 0.25,
         data_folder: Path = Path("data"),
+        forecast_horizon: int = 1,
+        target_var: Optional[str] = None,
+        test_years: Optional[Union[List[str], str]] = None,
         batch_size: int = 1,
         experiment: str = "one_month_forecast",
         seq_length: int = 3,
@@ -31,12 +34,15 @@ class RecurrentNetwork(NNBase):
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
+        dynamic_ignore_vars: Optional[List[str]] = None,
+        static_ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
         device: str = "cuda:0",
         predict_delta: bool = False,
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = True,
+        dynamic: bool = False,
     ) -> None:
         super().__init__(
             data_folder,
@@ -56,6 +62,12 @@ class RecurrentNetwork(NNBase):
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
             pred_months=pred_months,
+            dynamic=dynamic,
+            dynamic_ignore_vars=dynamic_ignore_vars,
+            static_ignore_vars=static_ignore_vars,
+            target_var=target_var,
+            test_years=test_years,
+            forecast_horizon=forecast_horizon,
         )
 
         # to initialize and save the model

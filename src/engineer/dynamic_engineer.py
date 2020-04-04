@@ -8,7 +8,7 @@ from pandas.tseries.offsets import Day
 from typing import DefaultDict, Dict, Tuple, Optional, Union, List, Any
 from collections import Iterable
 
-from src.engineer import _EngineerBase
+from src.engineer.base import _EngineerBase
 from scripts.utils import _rename_directory
 
 
@@ -218,7 +218,7 @@ class DynamicEngineer(_EngineerBase):
 
         print(
             "Engineering the dynamic data\n"
-            f"\tTarget Var: {target_var}\n"
+            f"\tTarget Var: {target_variable}\n"
             f"\tLogy: {logy}\n"
             f"\tIgnore Vars: {dynamic_ignore_vars}\n"
         )
