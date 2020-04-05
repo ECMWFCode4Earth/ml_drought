@@ -239,13 +239,13 @@ class DynamicEngineer(_EngineerBase):
 
         # log the y
         if logy:
-            dynamic_ds["target_var_original"] = dynamic_ds[target_var]
-            dynamic_ds[target_var] = np.log(dynamic_ds[target_var] + 0.001)
+            dynamic_ds["target_var_original"] = dynamic_ds[target_variable]
+            dynamic_ds[target_variable] = np.log(dynamic_ds[target_variable] + 0.001)
 
         # drop the ignore vars
         # NB: cannot ignore the target var here because need for creating
         # xy pairs in the DynamicDataLoader
-        dynamic_ignore_vars = [v for v in dynamic_ignore_vars if v != target_var]
+        dynamic_ignore_vars = [v for v in dynamic_ignore_vars if v != target_variable]
 
         dynamic_ds = self._drop_ignore_vars(dynamic_ds, ignore_vars=dynamic_ignore_vars)
 
