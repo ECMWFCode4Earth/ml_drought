@@ -209,7 +209,7 @@ class NNBase(ModelBase):
 
         self.model.eval()
         with torch.no_grad():
-            for dict in test_arrays_loader:
+            for dict in tqdm.tqdm(test_arrays_loader):
                 for key, val in dict.items():
                     preds = self.model(*self._input_to_tuple(val.x))
                     preds_dict[key] = preds.cpu().numpy()
