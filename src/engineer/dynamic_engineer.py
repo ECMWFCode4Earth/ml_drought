@@ -222,7 +222,7 @@ class DynamicEngineer(_EngineerBase):
             f"\tLogy: {logy}\n"
             f"\tIgnore Vars: {dynamic_ignore_vars}\n"
         )
-        # pretty much move from interim/ -> features/
+        # some processing/engineering steps
         dynamic_ds = self._make_dataset(static=False, latlon=latlon)
 
         # TODO: remove this hack

@@ -119,6 +119,12 @@ class EARecurrentNetwork(NNBase):
             "spatial_mask": self.spatial_mask,
             "include_prev_y": self.include_prev_y,
             "normalize_y": self.normalize_y,
+            "dynamic": self.dynamic,
+            "dynamic_ignore_vars": self.dynamic_ignore_vars,
+            "static_ignore_vars": self.static_ignore_vars,
+            "target_var": self.target_var,
+            "test_years": self.test_years,
+            "forecast_horizon": self.forecast_horizon,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")

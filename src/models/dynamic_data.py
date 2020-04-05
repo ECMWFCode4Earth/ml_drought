@@ -331,7 +331,7 @@ class _DynamicIter:
         else:
             assert False, "Mode must be one of train / test"
 
-        self.max_idx = len(self.valid_train_times)
+        self.max_idx = len(self.target_times)
 
         # CHANGED
         if self.shuffle:
