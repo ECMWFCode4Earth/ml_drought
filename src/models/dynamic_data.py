@@ -197,9 +197,10 @@ class DynamicDataLoader(DataLoader):
 
         # calculate the normalizing_array in the loader too
         # ignore_vars = only include the vars being used in X!
-        data_vars: List[str] = [
-            v for v in self.normalizing_dict.keys() if v not in self.dynamic_ignore_vars
-        ]
+        if self.dynamic_ignore_vars is not None:
+            data_vars: List[str] = [
+                v for v in self.normalizing_dict.keys() if v not in self.dynamic_ignore_vars
+            ]
         data_vars = [v for v in data_vars if v != "target_var_original"]
         self.normalizing_array: Optional[
             Dict[str, np.ndarray]
