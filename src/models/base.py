@@ -194,7 +194,7 @@ class ModelBase:
         raise NotImplementedError
 
     def denormalize_y(self, y: np.ndarray, var_name: str) -> np.ndarray:
-
+        """to compare """
         if not self.normalize_y:
             return y
         else:
@@ -203,6 +203,12 @@ class ModelBase:
             if not self.predict_delta:
                 y = y + self.normalizing_dict[var_name]["mean"]
         return y
+
+    def undo_log_transform(self, y: np.ndarray) -> np.ndarray:
+        if self.logy:
+            return np.exp(y) + 0.001
+        else:
+            return y
 
     def evaluate(
         self,
@@ -247,6 +253,7 @@ class ModelBase:
                 json.dump(output_dict, outfile)
 
         if save_preds:
+            print(f"** Saving Predictions for {self.model_name} **")
             # convert from test_arrays_dict to xarray object
             for key, val in test_arrays_dict.items():
                 if val["latlons"] is not None:
@@ -261,6 +268,8 @@ class ModelBase:
                 times = [time for _ in range(len(preds))]
 
                 # get the spatial_unit from the ModelArrays
+                # TODO: how are we selecting the id_to_loc_map taking into account the
+                # dropped nans ?
                 spatial_unit = np.array([v for v in val["id_to_loc_map"].values()])
 
                 #  WORK with latlon or with 1D data

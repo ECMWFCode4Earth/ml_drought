@@ -102,27 +102,30 @@ class NNBase(ModelBase):
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
         if early_stopping is not None:
-            len_mask = len(
-                DataLoader._load_datasets(
-                    self.data_path,
-                    mode="train",
-                    experiment=self.experiment,
-                    shuffle_data=False,
-                    seq_length=self.seq_length,
+            if self.dynamic:
+                assert False, "Need to implement early stopping for Dynamic dataloader"
+            else:
+                len_mask = len(
+                    DataLoader._load_datasets(
+                        self.data_path,
+                        mode="train",
+                        experiment=self.experiment,
+                        shuffle_data=False,
+                        pred_months=self.pred_months,
+                    )
                 )
-            )
-            train_mask, val_mask = train_val_mask(len_mask, val_split)
+                train_mask, val_mask = train_val_mask(len_mask, val_split)
 
-            print("\n** Loading Dataloaders ... **")
-            train_dataloader = self.get_dataloader(
-                mode="train", mask=train_mask, to_tensor=True, shuffle_data=True
-            )
-            val_dataloader = self.get_dataloader(
-                mode="train", mask=val_mask, to_tensor=True, shuffle_data=False
-            )
+                print("\n** Loading Dataloaders ... **")
+                train_dataloader = self.get_dataloader(
+                    mode="train", mask=train_mask, to_tensor=True, shuffle_data=True
+                )
+                val_dataloader = self.get_dataloader(
+                    mode="train", mask=val_mask, to_tensor=True, shuffle_data=False
+                )
 
-            batches_without_improvement = 0
-            best_val_score = np.inf
+                batches_without_improvement = 0
+                best_val_score = np.inf
         else:
             print("\n** Loading Dataloaders ... **")
             train_dataloader = self.get_dataloader(
@@ -195,6 +198,7 @@ class NNBase(ModelBase):
                         return None
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
+        print(f"** Making Predictions for {self.model_name} **")
 
         test_arrays_loader = self.get_dataloader(
             mode="test", to_tensor=True, shuffle_data=False

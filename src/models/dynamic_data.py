@@ -38,6 +38,8 @@ class DynamicDataLoader(DataLoader):
     self.legit_target_times: List[np.dtype('datetime64[ns]')]
     self.valid_train_times: List[np.dtype('datetime64[ns]')]
     self.valid_test_times: List[np.dtype('datetime64[ns]')]
+
+    TODO: add in the logy as an argument to the dataloder not the engineer
     """
 
     dynamic: bool = True
@@ -769,7 +771,7 @@ class _TestDynamicIter(_DynamicIter):
     def make_timestamp(self, target_time: datetime) -> str:
         """TODO: hardcoded for the DAILY data (deal with other resolution data e.g. months) """
         dt = pd.to_datetime(target_time)
-        timestamp = f"{dt.year}_{dt.month}_{dt.day}"
+        timestamp = f"{dt.year}-{dt.month}-{dt.day}"
         return timestamp
 
     def __next__(self) -> Dict[str, ModelArrays]:
