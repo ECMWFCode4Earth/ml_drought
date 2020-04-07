@@ -131,6 +131,8 @@ static_ignore_vars = [
     "reservoir_nousedata",
     "reservoir_year_first",
     "reservoir_year_last",
+    "surfacewater_abs",
+    "groundwater_abs",
     # climatic_attributes
     "p_mean",
     "pet_mean",
