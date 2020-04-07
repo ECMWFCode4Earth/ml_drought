@@ -475,6 +475,8 @@ class _DynamicIter:
         self, x: xr.Dataset, y: xr.Dataset
     ) -> Tuple[np.ndarray, np.ndarray]:
 
+        if 'target_var_original' in list(x.data_vars):
+            x = x.drop('target_var_original')
         x_np, y_np = x.to_array().values, y.to_array().values
 
         # first, x

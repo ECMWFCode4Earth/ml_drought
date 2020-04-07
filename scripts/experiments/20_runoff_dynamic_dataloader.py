@@ -80,7 +80,7 @@ def main():
     # ----------------------------------------------------------------
     # PARAMETERS
     # General Vars
-    dynamic_ignore_vars = None
+    dynamic_ignore_vars = ['discharge_vol', 'discharge_spec']
     # dynamic_ignore_vars = ['temperature', 'discharge_vol', 'discharge_spec',
     #            'pet', 'humidity', 'shortwave_rad', 'longwave_rad', 'windspeed']
     target_var = "discharge_spec"
