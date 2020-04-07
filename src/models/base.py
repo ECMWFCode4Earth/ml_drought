@@ -55,7 +55,7 @@ class ModelBase:
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
-        static: Optional[str] = "embedding",
+        static: Optional[str] = "embeddings",
         predict_delta: bool = False,
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,

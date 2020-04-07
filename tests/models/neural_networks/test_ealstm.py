@@ -81,9 +81,12 @@ class TestEARecurrentNetwork:
         assert model_dict["normalize_y"] == normalize_y
 
     @pytest.mark.parametrize(
-        "use_pred_months,use_static_embedding", [(True, 10), (False, None)]
+        "use_pred_months,use_static_embedding,static",
+        [(True, 10, "features"), (False, None, "features")],
     )
-    def test_train(self, tmp_path, capsys, use_pred_months, use_static_embedding):
+    def test_train(
+        self, tmp_path, capsys, use_pred_months, use_static_embedding, static
+    ):
         # make directories
         for ts in ["2001_11", "2001_12"]:
             test_features = tmp_path / f"features/one_month_forecast/train/{ts}"
@@ -130,6 +133,7 @@ class TestEARecurrentNetwork:
             static_embedding_size=use_static_embedding,
             normalize_y=True,
             include_yearly_aggs=False,
+            static=static,
         )
         model.train()
 

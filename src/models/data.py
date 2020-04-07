@@ -501,7 +501,7 @@ class _BaseIter:
             for norm_var in normalizing_dict_keys:
                 if var == norm_var:
                     mean.append(self.static_normalizing_dict[norm_var]["mean"])
-                    # TODO: DO NOT ALLOW STD TO BE ZERO
+                    # DO NOT ALLOW STD TO BE ZERO
                     std.append(
                         self.static_normalizing_dict[norm_var]["std"]
                         if self.static_normalizing_dict[norm_var]["std"] != 0.0
@@ -630,7 +630,7 @@ class _BaseIter:
             self.static = self.static[include_vars]
             assert len(include_vars) == len(
                 list(self.static.data_vars)
-            ), "TODO: are vars being dropped?"
+            ), f"Are vars being dropped? {list(self.static.data_vars)}"
 
         # convert static data to numpy array
         if self.static_array is None:
@@ -650,10 +650,7 @@ class _BaseIter:
 
                 static_np = (
                     (static_np - self.static_normalizing_array["mean"])
-                    / [
-                        s if s != 0 else 1e-10
-                        for s in self.static_normalizing_array["std"]
-                    ]
+                    / [s if s != 0 else 1 for s in self.static_normalizing_array["std"]]
                     # TODO: only use STD if non-zero!
                 )
 

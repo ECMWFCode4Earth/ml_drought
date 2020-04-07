@@ -26,32 +26,38 @@ def build_static_x(
 
         # append the static_arrays
         static_x = []
-        if ealstm.include_latlons:
-            # normalise latlon
-            static_x.append(
-                (latlons_data - latlons_data.mean(axis=0)) / latlons_data.std(axis=0)
-            )  # 0, 1
-        if ealstm.include_yearly_aggs:
-            static_x.append(yearly_aggs_data)  # 2: 9
-        static_x.append(static_data)
+        if ealstm.static == "features":
+            if ealstm.include_latlons:
+                # normalise latlon
+                static_x.append(
+                    (latlons_data - latlons_data.mean(axis=0))
+                    / latlons_data.std(axis=0)
+                )  # 0, 1
+            if ealstm.include_yearly_aggs:
+                static_x.append(yearly_aggs_data)  # 2: 9
+            static_x.append(static_data)
 
-        if ealstm.include_pred_month:
-            # one_hot_encode the pred_month_data
-            try:
-                static_x.append(
-                    ealstm._one_hot(  # type: ignore
-                        torch.from_numpy(pred_month_data), 12
-                    ).numpy()
-                )
-            except TypeError:
-                # when need to convert tensor from gpu format
-                static_x.append(
-                    ealstm._one_hot(  # type: ignore
-                        torch.from_numpy(pred_month_data), 12
+            if ealstm.include_pred_month:
+                # one_hot_encode the pred_month_data
+                try:
+                    static_x.append(
+                        ealstm._one_hot(  # type: ignore
+                            torch.from_numpy(pred_month_data), 12
+                        ).numpy()
                     )
-                    .cpu()
-                    .numpy()
-                )
+                except TypeError:
+                    # when need to convert tensor from gpu format
+                    static_x.append(
+                        ealstm._one_hot(  # type: ignore
+                            torch.from_numpy(pred_month_data), 12
+                        )
+                        .cpu()
+                        .numpy()
+                    )
+        elif ealstm.static == "embeddings":
+            assert (
+                False
+            ), "Have not implemented getting the embedding for pixel-id as input"
 
         # exclude Nones
         static_x = np.concatenate([x for x in static_x if x is not None], axis=-1)
