@@ -201,7 +201,13 @@ class DynamicDataLoader(DataLoader):
             data_vars: List[str] = [
                 v for v in self.normalizing_dict.keys() if v not in self.dynamic_ignore_vars
             ]
+        else:
+            data_vars: List[str] = [
+                v for v in self.normalizing_dict.keys()
+            ]
+
         data_vars = [v for v in data_vars if v != "target_var_original"]
+
         self.normalizing_array: Optional[
             Dict[str, np.ndarray]
         ] = self.calculate_normalizing_array(data_vars, static=False)
