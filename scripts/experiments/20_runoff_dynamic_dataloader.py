@@ -20,7 +20,8 @@ def engineer(
     data_dir,
     static_ignore_vars,
     dynamic_ignore_vars,
-    logy=True
+    logy=True,
+    test_years=np.arange(2011, 2017),
 ) -> None:
     de = DynamicEngineer(data_dir, process_static=True)
 
@@ -28,7 +29,8 @@ def engineer(
         augment_static=False,
         static_ignore_vars=static_ignore_vars,
         dynamic_ignore_vars=dynamic_ignore_vars,
-        logy=logy
+        logy=logy,
+        test_years=test_years,
     )
     print("\n\n** Data Engineered! **\n\n")
 
@@ -97,7 +99,8 @@ def main():
         data_dir=data_dir,
         static_ignore_vars=static_ignore_vars,
         dynamic_ignore_vars=dynamic_ignore_vars,
-        logy=logy
+        logy=logy,
+        test_years=test_years
     )
 
     run_model(
