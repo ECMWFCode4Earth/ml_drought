@@ -245,9 +245,10 @@ class DynamicEngineer(_EngineerBase):
         # drop the ignore vars
         # NB: cannot ignore the target var here because need for creating
         # xy pairs in the DynamicDataLoader
-        dynamic_ignore_vars = [v for v in dynamic_ignore_vars if v != target_variable]
+        if dynamic_ignore_vars is not None:
+            dynamic_ignore_vars = [v for v in dynamic_ignore_vars if v != target_variable]
 
-        dynamic_ds = self._drop_ignore_vars(dynamic_ds, ignore_vars=dynamic_ignore_vars)
+            dynamic_ds = self._drop_ignore_vars(dynamic_ds, ignore_vars=dynamic_ignore_vars)
 
         # calculate the normalization dict
         dynamic_normalization_dict = self.create_normalization_dict(
