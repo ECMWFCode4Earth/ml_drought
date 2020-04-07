@@ -4,7 +4,7 @@ import numpy as np
 from collections import defaultdict
 import pickle
 import pandas as pd
-from pandas.tseries.offsets import Day
+import json
 import sys
 sys.path.append("../..")
 
@@ -68,13 +68,11 @@ def run_model(
         spatial_unit_name='station_id',
         save_preds=True
     )
-    results_dict = json.load(open(data_dir / '/models/one_timestep_forecast/ealstm/results.json', 'rb'))
+    results_dict = json.load(open(data_dir / 'models/one_timestep_forecast/ealstm/results.json', 'rb'))
     print("** Overall RMSE: ", results_dict['total'], " **\n\n")
 
     # save the model
     ealstm.save_model()
-
-
 
 def main():
     data_dir = get_data_path()
@@ -111,6 +109,13 @@ def main():
         seq_length=seq_length,
         test_years=test_years,
         target_var=target_var,
+    )
+
+    # datestamp the model directory so that we can run multiple experiments
+    _rename_directory(
+        from_path=data_dir / "models" / "one_timestep_forecast",
+        to_path=data_dir / "models" / "one_timestep_forecast",
+        with_datetime=True,
     )
 
 
