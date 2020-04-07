@@ -47,7 +47,7 @@ def run_model(
     # initialise the model
     ealstm = EARecurrentNetwork(
         data_folder=data_dir,
-        batch_size=1000,
+        batch_size=2000,
         hidden_size=128,
         experiment='one_timestep_forecast',
         dynamic=True,
@@ -80,8 +80,9 @@ def main():
     # ----------------------------------------------------------------
     # PARAMETERS
     # General Vars
-    dynamic_ignore_vars = ['temperature', 'discharge_vol', 'discharge_spec',
-               'pet', 'humidity', 'shortwave_rad', 'longwave_rad', 'windspeed']
+    dynamic_ignore_vars = None
+    # dynamic_ignore_vars = ['temperature', 'discharge_vol', 'discharge_spec',
+    #            'pet', 'humidity', 'shortwave_rad', 'longwave_rad', 'windspeed']
     target_var = "discharge_spec"
     seq_length = 365
     forecast_horizon = 1
@@ -89,7 +90,7 @@ def main():
 
     # Model Vars
     test_years = [2011, 2012, 2013, 2014, 2015]
-    num_epochs = 100
+    num_epochs = 10
 
     # ----------------------------------------------------------------
     # CODE

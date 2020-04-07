@@ -104,6 +104,8 @@ class NNBase(ModelBase):
         if early_stopping is not None:
             if self.dynamic:
                 assert False, "Need to implement early stopping for Dynamic dataloader"
+                len_mask = len(dl.valid_train_times)
+                train_mask, val_mask = train_val_mask(len_mask, 0.1)
             else:
                 len_mask = len(
                     DataLoader._load_datasets(
