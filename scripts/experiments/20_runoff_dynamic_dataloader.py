@@ -102,7 +102,7 @@ def main():
         data_dir=data_dir,
         static_ignore_vars=static_ignore_vars,
         dynamic_ignore_vars=dynamic_ignore_vars,
-        n_epochs=n_epochs,
+        n_epochs=num_epochs,
         seq_length=seq_length,
         test_years=test_years,
         target_var=target_var,
