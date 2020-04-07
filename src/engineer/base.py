@@ -140,11 +140,12 @@ class _EngineerBase:
         processed_files = []
         if static:
             interim_folder = self.interim_folder / "static"
+            processed_files.extend(list(interim_folder.glob("*.nc")))
         else:
             interim_folder = self.interim_folder
-        for subfolder in interim_folder.iterdir():
-            if str(subfolder).endswith("_preprocessed") and subfolder.is_dir():
-                processed_files.extend(list(subfolder.glob("*.nc")))
+            for subfolder in interim_folder.iterdir():
+                if str(subfolder).endswith("_preprocessed") and subfolder.is_dir():
+                    processed_files.extend(list(subfolder.glob("*.nc")))
         return processed_files
 
     def _make_dataset(
