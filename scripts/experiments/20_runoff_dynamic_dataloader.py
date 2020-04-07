@@ -7,7 +7,7 @@ import pandas as pd
 from pandas.tseries.offsets import Day
 
 from typing import DefaultDict, Dict, Tuple, Optional, Union, List, Any
-from ..utils import _rename_directory, get_data_path
+from scripts.utils import _rename_directory, get_data_path
 from ._static_ignore_vars import static_ignore_vars
 
 from src.engineer.dynamic_engineer import DynamicEngineer
