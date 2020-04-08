@@ -43,11 +43,12 @@ def run_model(
     seq_length=365,
     test_years=np.arange(2011, 2017),
     target_var = "discharge_spec",
+    batch_size=1000
 ) -> None:
     # initialise the model
     ealstm = EARecurrentNetwork(
         data_folder=data_dir,
-        batch_size=2000,
+        batch_size=batch_size,
         hidden_size=128,
         experiment='one_timestep_forecast',
         dynamic=True,
@@ -87,6 +88,7 @@ def main():
     seq_length = 365
     forecast_horizon = 1
     logy = True
+    batch_size = 1000
 
     # Model Vars
     test_years = [2011, 2012, 2013, 2014, 2015]
@@ -99,7 +101,7 @@ def main():
         static_ignore_vars=static_ignore_vars,
         dynamic_ignore_vars=dynamic_ignore_vars,
         logy=logy,
-        test_years=test_years
+        test_years=test_years,
     )
 
     run_model(
@@ -110,6 +112,7 @@ def main():
         seq_length=seq_length,
         test_years=test_years,
         target_var=target_var,
+        batch_size=batch_size,
     )
 
     # datestamp the model directory so that we can run multiple experiments
