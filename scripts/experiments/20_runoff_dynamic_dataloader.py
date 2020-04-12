@@ -35,7 +35,7 @@ def engineer(
     print("\n\n** Data Engineered! **\n\n")
 
 
-def run_model(
+def train_model(
     data_dir,
     static_ignore_vars,
     dynamic_ignore_vars,
@@ -43,8 +43,8 @@ def run_model(
     seq_length=365,
     test_years=np.arange(2011, 2017),
     target_var = "discharge_spec",
-    batch_size=1000
-) -> None:
+    batch_size=1000,
+) -> EARecurrentNetwork:
     # initialise the model
     ealstm = EARecurrentNetwork(
         data_folder=data_dir,
@@ -64,6 +64,12 @@ def run_model(
     ealstm.train(num_epochs=n_epochs)
     print("\n\n** Model Trained! **\n\n")
 
+    # save the model
+    ealstm.save_model()
+
+    return ealstm
+
+def run_evaluation(ealstm, ):
     # evaluate on the test set
     ealstm.evaluate(
         spatial_unit_name='station_id',
@@ -72,8 +78,7 @@ def run_model(
     results_dict = json.load(open(data_dir / 'models/one_timestep_forecast/ealstm/results.json', 'rb'))
     print("** Overall RMSE: ", results_dict['total'], " **\n\n")
 
-    # save the model
-    ealstm.save_model()
+
 
 def main():
     data_dir = get_data_path()
