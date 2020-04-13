@@ -504,7 +504,7 @@ class NNBase(ModelBase):
                 val.requires_grad = True
         outputs = self.model(
             x.historical,
-            self._one_hot(x.seq_length, 12),
+            self._one_hot(x.pred_months, self.seq_length),
             x.latlons,
             x.current,
             x.yearly_aggs,

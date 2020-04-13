@@ -61,6 +61,7 @@ def train_model(
         test_years=np.arange(2011, 2017),
         static_embedding_size=static_embedding_size
     )
+    assert ealstm.seq_length == 365
     print("\n\n** Initialised Models! **\n\n")
 
     # Train the model on train set
