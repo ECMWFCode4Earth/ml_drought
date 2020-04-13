@@ -778,7 +778,9 @@ class _TestDynamicIter(_DynamicIter):
     # max index is the final test time drawn from the DataLoader
     # max_idx = len(self.target_times)
     def make_timestamp(self, target_time: datetime) -> str:
-        """TODO: hardcoded for the DAILY data (deal with other resolution data e.g. months) """
+        """TODO:
+            - hardcoded for the DAILY data (deal with other resolution data e.g. months)
+        """
         dt = pd.to_datetime(target_time)
         timestamp = f"{dt.year}-{dt.month}-{dt.day}"
         return timestamp

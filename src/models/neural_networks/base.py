@@ -532,3 +532,10 @@ class NNBase(ModelBase):
                 output_dict[key] = None
 
         return output_dict
+
+    def move_model(self, new_device: str) -> None:
+        """Move the model between devices
+            (e.g. 'cuda:0' -> 'cpu'
+        """
+        self.model.to(torch.device(new_device))
+        self.device = new_device

@@ -70,11 +70,12 @@ def train_model(
 
     return ealstm
 
-def run_evaluation(data_dir):
+def run_evaluation(data_dir, ealstm):
     print("** Running Model Evaluation **")
-    ealstm = load_model(
-        data_dir / 'models/one_timestep_forecast/ealstm/model.pt', device="cpu"
-    )
+    # ealstm = load_model(
+    #     data_dir / 'models/one_timestep_forecast/ealstm/model.pt', device="cpu"
+    # )
+    ealstm.move_model('cpu')
 
     # evaluate on the test set
     ealstm.evaluate(
@@ -125,7 +126,7 @@ def main():
             target_var=target_var,
             batch_size=batch_size,
     )
-    run_evaluation(data_dir)
+    run_evaluation(data_dir, ealstm)
 
     # datestamp the model directory so that we can run multiple experiments
     _rename_directory(
