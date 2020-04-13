@@ -616,7 +616,6 @@ class _DynamicIter:
         """
         # vars are already ignored in `get_sample_from_dynamic_data`
         x, y = xy_sample
-        print(f"TIMESTEPS: {x['time'].shape}")
 
         assert len(list(y.data_vars)) == 1, (
             f"Expect only 1 target variable! " f"Got {len(list(y.data_vars))}"

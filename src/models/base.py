@@ -54,7 +54,7 @@ class ModelBase:
         forecast_horizon: int = 1,
         batch_size: int = 1,
         experiment: str = "one_month_forecast",
-        seq_length: Optional[int] = 3,  # why do we need this?
+        seq_length: Optional[int] = 365,  # why do we need this?
         pred_months: Optional[List[int]] = None,
         include_pred_month: bool = True,
         include_latlons: bool = False,

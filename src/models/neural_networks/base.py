@@ -28,7 +28,7 @@ class NNBase(ModelBase):
         forecast_horizon: int = 1,
         target_var: Optional[str] = None,
         test_years: Optional[Union[List[str], str]] = None,
-        seq_length: int = 3,
+        seq_length: int = 365,
         pred_months: Optional[List[int]] = None,
         include_pred_month: bool = True,
         include_latlons: bool = False,

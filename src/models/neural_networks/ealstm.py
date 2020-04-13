@@ -26,7 +26,7 @@ class EARecurrentNetwork(NNBase):
         test_years: Optional[Union[List[str], str]] = None,
         batch_size: int = 1,
         experiment: str = "one_month_forecast",
-        seq_length: int = 3,
+        seq_length: int = 365,
         pred_months: Optional[List[int]] = None,
         include_latlons: bool = False,
         include_pred_month: bool = True,
