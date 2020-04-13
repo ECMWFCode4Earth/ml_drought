@@ -157,7 +157,7 @@ class EARecurrentNetwork(NNBase):
             include_prev_y=self.include_prev_y,
         )
         self.model.to(torch.device(self.device))
-        self.model.load_state_dict(state_dict)
+        self.model.load_state_dict(state_dict)  # self.model.load_state_dict(state_dict, strict=False)
 
     def _initialize_model(self, x_ref: Optional[Tuple[torch.Tensor, ...]]) -> nn.Module:
         if self.features_per_month is None:

@@ -14,6 +14,7 @@ from scripts.experiments._static_ignore_vars import static_ignore_vars
 
 from src.engineer.dynamic_engineer import DynamicEngineer
 from src.models import EARecurrentNetwork
+from src.models import load_model
 
 
 def engineer(
@@ -69,12 +70,17 @@ def train_model(
 
     return ealstm
 
-def run_evaluation(ealstm):
+def run_evaluation(ealstm, data_dir):
     print("** Running Model Evaluation **")
+    ealstm = load_model(
+        data_dir / 'models/one_timestep_forecast/ealstm/model.pt', device="cpu"
+    )
+
     # evaluate on the test set
     ealstm.evaluate(
         spatial_unit_name='station_id',
-        save_preds=True
+        save_preds=True,
+
     )
     results_dict = json.load(open(data_dir / 'models/one_timestep_forecast/ealstm/results.json', 'rb'))
     print("** Overall RMSE: ", results_dict['total'], " **\n\n")
@@ -102,24 +108,24 @@ def main():
 
     # ----------------------------------------------------------------
     # CODE
-    engineer(
-        data_dir=data_dir,
-        static_ignore_vars=static_ignore_vars,
-        dynamic_ignore_vars=dynamic_ignore_vars,
-        logy=logy,
-        test_years=test_years,
-    )
-    ealstm = train_model(
-            data_dir=data_dir,
-            static_ignore_vars=static_ignore_vars,
-            dynamic_ignore_vars=dynamic_ignore_vars,
-            n_epochs=num_epochs,
-            seq_length=seq_length,
-            test_years=test_years,
-            target_var=target_var,
-            batch_size=batch_size,
-    )
-    run_evaluation(ealstm)
+    # engineer(
+    #     data_dir=data_dir,
+    #     static_ignore_vars=static_ignore_vars,
+    #     dynamic_ignore_vars=dynamic_ignore_vars,
+    #     logy=logy,
+    #     test_years=test_years,
+    # )
+    # ealstm = train_model(
+    #         data_dir=data_dir,
+    #         static_ignore_vars=static_ignore_vars,
+    #         dynamic_ignore_vars=dynamic_ignore_vars,
+    #         n_epochs=num_epochs,
+    #         seq_length=seq_length,
+    #         test_years=test_years,
+    #         target_var=target_var,
+    #         batch_size=batch_size,
+    # )
+    run_evaluation(ealstm, data_dir)
 
     # datestamp the model directory so that we can run multiple experiments
     _rename_directory(

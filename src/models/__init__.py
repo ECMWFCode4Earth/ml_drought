@@ -66,7 +66,7 @@ def load_model(
         model_type = cast(str, str(model_path.parts[-2]))
     if data_path is None:
         data_path = cast(Path, model_path.parents[3])
-
+    print("__init__.py L67: ", device)
     model_dict = torch.load(model_path, map_location=device)
 
     init_kwargs = {"data_folder": data_path}
@@ -78,6 +78,7 @@ def load_model(
                 init_kwargs[key] = val
         if key != "model":
             init_kwargs[key] = val
+    print("__init__.py L74: ", f"device: {device}, init_kwargs['device']: {init_kwargs['device']}")
 
     model = str_to_model[model_type](**init_kwargs)
     model.load(**model_dict["model"])

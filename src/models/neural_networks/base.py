@@ -218,6 +218,8 @@ class NNBase(ModelBase):
             for dict in tqdm.tqdm(test_arrays_loader):
                 for key, val in dict.items():
 
+                    # TODO: this is where the code breaks down
+                    # ipdb> self.x.historical.shape => (659, 365, 8)
                     input_tuple = self._input_to_tuple(val.x)
 
                     # TODO - this code is mostly copied from
