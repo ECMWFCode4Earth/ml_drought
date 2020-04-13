@@ -1,6 +1,6 @@
 ## variables to ignore
 static_ignore_vars = [
-    ## hydrometry_attributes
+    ## hydrometry_attributes -------------------
     "station_type",
     "flow_period_start",
     "flow_period_end",
@@ -20,7 +20,7 @@ static_ignore_vars = [
     "q99_uncert_upper",
     "q99_uncert_lower",
     "quncert_meta",
-    ## soil_attributes
+    ## soil_attributes -------------------
     "sand_perc",
     "sand_perc_missing",
     "silt_perc",
@@ -67,13 +67,13 @@ static_ignore_vars = [
     "soil_depth_pelletier_5",
     "soil_depth_pelletier_50",
     "soil_depth_pelletier_95",
-    ## landcover_attributes
+    ## landcover_attributes -------------------
     "grass_perc",
     "shrub_perc",
     "inwater_perc",
     "bares_perc",
     "dom_land_cover",
-    ## topographic_attributes
+    ## topographic_attributes -------------------
     "gauge_name",
     "gauge_lat",
     "gauge_lon",
@@ -81,13 +81,13 @@ static_ignore_vars = [
     "gauge_northing",
     "gauge_elev",
     "area",
-    "elev_mean",
+    # "elev_mean",
     "elev_min",
     "elev_10",
     "elev_50",
     "elev_90",
     "elev_max",
-    ## hydrologic_attributes (?? I like these ??)
+    ## hydrologic_attributes (?? I like these ??) -------------------
     # "q_mean",
     "runoff_ratio",
     "stream_elas",
@@ -102,7 +102,7 @@ static_ignore_vars = [
     "low_q_freq",
     "low_q_dur",
     "zero_q_freq",
-    ## hydrogeology_attributes
+    ## hydrogeology_attributes -------------------
     "inter_high_perc",
     "inter_mod_perc",
     "inter_low_perc",
@@ -112,7 +112,7 @@ static_ignore_vars = [
     "no_gw_perc",
     "low_nsig_perc",
     "nsig_low_perc",
-    ## humaninfluence_attributes
+    ## humaninfluence_attributes -------------------
     "benchmark_catch",
     "discharges",
     "abs_agriculture_perc",
@@ -133,11 +133,11 @@ static_ignore_vars = [
     "reservoir_year_last",
     "surfacewater_abs",
     "groundwater_abs",
-    ## climatic_attributes
+    ## climatic_attributes -------------------
     # "p_mean",
-    # "pet_mean",
-    "p_seasonality",
-    "high_prec_freq",
+    "pet_mean",
+    # "p_seasonality",
+    # "high_prec_freq",
     "high_prec_dur",
     "high_prec_timing",
     "low_prec_freq",
