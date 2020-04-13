@@ -111,9 +111,9 @@ def main():
     batch_size = 2000  # 1000
 
     # Model Vars
-    num_epochs = 1#00
+    num_epochs = 100
     test_years = [2011, 2012, 2013, 2014, 2015]
-    static_embedding_size = 64
+    static_embedding_size = 256  # 64
     hidden_size = 128
 
     # ----------------------------------------------------------------
