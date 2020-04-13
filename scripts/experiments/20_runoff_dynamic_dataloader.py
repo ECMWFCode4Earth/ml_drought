@@ -46,12 +46,13 @@ def train_model(
     target_var = "discharge_spec",
     batch_size=1000,
     static_embedding_size = 64,
+    hidden_size = 128,
 ) -> EARecurrentNetwork:
     # initialise the model
     ealstm = EARecurrentNetwork(
         data_folder=data_dir,
         batch_size=batch_size,
-        hidden_size=128,
+        hidden_size=hidden_size,
         experiment='one_timestep_forecast',
         dynamic=True,
         seq_length=seq_length,
@@ -61,7 +62,7 @@ def train_model(
         test_years=np.arange(2011, 2017),
         static_embedding_size=static_embedding_size
     )
-    assert ealstm.seq_length == 365
+    assert ealstm.seq_length == seq_length
     print("\n\n** Initialised Models! **\n\n")
 
     # Train the model on train set
@@ -73,7 +74,8 @@ def train_model(
 
     return ealstm
 
-def run_evaluation(data_dir, ealstm):
+
+def run_evaluation(data_dir, ealstm=None):
     print("** Running Model Evaluation **")
     if ealstm is None:
         ealstm = load_model(
@@ -109,9 +111,10 @@ def main():
     batch_size = 2000  # 1000
 
     # Model Vars
+    num_epochs = 1#00
     test_years = [2011, 2012, 2013, 2014, 2015]
-    num_epochs = 100
     static_embedding_size = 64
+    hidden_size = 128
 
     # ----------------------------------------------------------------
     # CODE
@@ -132,6 +135,7 @@ def main():
             target_var=target_var,
             batch_size=batch_size,
             static_embedding_size=static_embedding_size,
+            hidden_size=hidden_size,
     )
     run_evaluation(data_dir, ealstm)
 
