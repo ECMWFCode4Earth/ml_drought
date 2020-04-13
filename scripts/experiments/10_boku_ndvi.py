@@ -24,15 +24,15 @@ def preprocess(monthly=True):
         )
 
 
-def engineer(pred_months=3, target_var="boku_VCI"):
+def engineer(seq_length=3, target_var="boku_VCI"):
     engineer = Engineer(
         get_data_path(), experiment="one_month_forecast", process_static=False
     )
     engineer.engineer(
         test_year=[y for y in range(2016, 2019)],
         target_variable=target_var,
-        pred_months=pred_months,
-        expected_length=pred_months,
+        seq_length=seq_length,
+        expected_length=seq_length,
     )
 
 

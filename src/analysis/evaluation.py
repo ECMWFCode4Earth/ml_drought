@@ -12,13 +12,41 @@ from typing import Dict, List, Optional, Union, Tuple
 from src.utils import get_ds_mask, _sort_lat_lons
 
 
+def _get_coords(ds: xr.Dataset) -> List[str]:
+    """return coords except time"""
+    return [c for c in ds.coords if c != "time"]
+
+
+def _prepare_true_pred_da(
+    true_da: xr.DataArray, pred_da: xr.DataArray
+) -> Tuple[xr.DataArray, xr.DataArray]:
+    true_coords = _get_coords(true_da)
+    true_coords.sort()
+    pred_coords = _get_coords(pred_da)
+    pred_coords.sort()
+    true_da_shape = [true_da[coord].shape[0] for coord in true_coords]
+    pred_da_shape = [pred_da[coord].shape[0] for coord in pred_coords]
+    assert true_da_shape == pred_da_shape
+
+    # sort the dimensions so that no inversions (e.g. lat)
+    pred_da = pred_da.sortby(["time"] + pred_coords)
+    true_da = true_da.sortby(["time"] + true_coords)
+
+    assert true_da.dims == pred_da.dims, f"True: {true_da.dims} Preds: {pred_da.dims}"
+
+    return true_da, pred_da
+
+
 def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     """Calculate the RMSE collapsing the time dimension returning
     a DataArray of the rmse values (spatially)
     """
-    true_da_shape = (true_da.lat.shape[0], true_da.lon.shape[0])
-    pred_da_shape = (pred_da.lat.shape[0], pred_da.lon.shape[0])
-    assert true_da_shape == pred_da_shape
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    true_coords = _get_coords(true_da)
+    true_coords.sort()
+    pred_coords = _get_coords(pred_da)
+    pred_coords.sort()
+
     assert tuple(true_da.dims) == tuple(pred_da.dims), (
         f"Expect"
         "the dimensions to be the same. Currently: "
@@ -27,30 +55,173 @@ def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     )
 
     # sort the lat/lons correctly just to be sure
-    pred_da = _sort_lat_lons(pred_da)
-    true_da = _sort_lat_lons(true_da)
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        pred_da = _sort_lat_lons(pred_da)
+        true_da = _sort_lat_lons(true_da)
+    else:
+        pred_da = pred_da.sortby(["time"] + pred_coords)
+        true_da = true_da.sortby(["time"] + true_coords)
 
     vals = np.sqrt(
         np.nansum((true_da.values - pred_da.values) ** 2, axis=0) / pred_da.shape[0]
     )
+    # vals = _rmse_func(true_da.values, pred_da.values, n_instances=pred_da.shape[0])
 
     da = xr.ones_like(pred_da).isel(time=0)
     da.values = vals
 
     # reapply the mask
-    da = da.where(~get_ds_mask(pred_da))
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        da = da.where(~get_ds_mask(pred_da))
     return da
 
 
+def spatial_nse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    """Calculate the RMSE collapsing the time dimension returning
+    a DataArray of the rmse values (spatially)
+    """
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    true_coords = _get_coords(true_da)
+    true_coords.sort()
+    pred_coords = _get_coords(pred_da)
+    pred_coords.sort()
+
+    assert tuple(true_da.dims) == tuple(pred_da.dims), (
+        f"Expect"
+        "the dimensions to be the same. Currently: "
+        f"True: {tuple(true_da.dims)} Preds: {tuple(pred_da.dims)}. "
+        'Have you tried da.transpose("time", "lat", "lon")'
+    )
+
+    # sort the lat/lons correctly just to be sure
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        pred_da = _sort_lat_lons(pred_da)
+        true_da = _sort_lat_lons(true_da)
+    else:
+        pred_da = pred_da.sortby(["time"] + pred_coords)
+        true_da = true_da.sortby(["time"] + true_coords)
+
+    stacked_pred = pred_da.stack(space=pred_coords)
+    stacked_true = true_da.stack(space=true_coords)
+    vals = []
+    for space in stacked_pred.space.values:
+        true_vals = stacked_true.sel(space=space).values
+        pred_vals = stacked_pred.sel(space=space).values
+        vals.append(_nse_func(true_vals, pred_vals))
+
+    da = xr.ones_like(stacked_pred).isel(time=0).drop("time")
+    da = da * np.array(vals)
+    da = da.unstack()
+
+    # reapply the mask
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        da = da.where(~get_ds_mask(pred_da))
+    return da
+
+
+def temporal_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    """return a R2 object collapsing spatial dimensions -> Time Series"""
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    times = true_da.time.values
+    time_values = []
+    for time in times:
+        # extract numpy arrays for that time
+        true_vals = true_da.sel(time=time).values
+        pred_vals = pred_da.sel(time=time).values
+        # calculate SCALAR R2
+        time_values.append(_r2_func(true_vals=true_vals, pred_vals=pred_vals))
+
+    drop_coords = [c for c in true_da.coords if c != "time"]
+    ones = xr.ones_like(true_da.isel({c: 0 for c in drop_coords}).drop(drop_coords))
+
+    return ones * time_values
+
+
+def temporal_nse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    """return a R2 object collapsing spatial dimensions -> Time Series"""
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    times = true_da.time.values
+    time_values = []
+    for time in times:
+        # extract numpy arrays for that time
+        true_vals = true_da.sel(time=time).values
+        pred_vals = pred_da.sel(time=time).values
+        # calculate SCALAR NSE
+        time_values.append(_nse_func(true_vals=true_vals, pred_vals=pred_vals))
+
+    drop_coords = [c for c in true_da.coords if c != "time"]
+    ones = xr.ones_like(true_da.isel({c: 0 for c in drop_coords}).drop(drop_coords))
+
+    return ones * time_values
+
+
+def temporal_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    """return a RMSE object collapsing spatial dimensions -> Time Series"""
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    times = true_da.time.values
+    time_values = []
+    for time in times:
+        # get the data for that timestep
+        true_tstep = true_da.sel(time=time)
+        pred_tstep = pred_da.sel(time=time)
+        # remove nans from that timestep
+        true_vals = true_tstep.where(
+            (~true_tstep.isnull() & ~pred_tstep.isnull()), drop=True
+        ).values
+        pred_vals = pred_tstep.where(
+            (~true_tstep.isnull() & ~pred_tstep.isnull()), drop=True
+        ).values
+        # calculate RMSE
+        n_instances = pred_vals.shape[0]
+        time_values.append(_rmse_func(true_vals, pred_vals, n_instances=n_instances))
+
+    drop_coords = [c for c in true_da.coords if c != "time"]
+    ones = xr.ones_like(true_da.isel({c: 0 for c in drop_coords}).drop(drop_coords))
+
+    return ones * time_values
+
+
+def _nse_func(true_vals: np.array, pred_vals: np.array) -> float:
+    """Calculate Nash-Sutcliff-Efficiency.
+
+    :param true_vals: Array containing the observations
+    :param pred_vals: Array containing the simulations
+    :return: NSE value.
+    """
+    # only consider time steps, where observations are available
+    pred_vals = np.delete(pred_vals, np.argwhere(true_vals < 0), axis=0)
+    true_vals = np.delete(true_vals, np.argwhere(true_vals < 0), axis=0)
+
+    # check for NaNs in observations
+    # TODO: this is raising ValueErrors because the np.argwhere(np.isnan(true_vals)) is returning
+    # indices that are too large for the array
+    pred_vals = np.delete(pred_vals, np.argwhere(np.isnan(true_vals)), axis=0)
+    true_vals = np.delete(true_vals, np.argwhere(np.isnan(true_vals)), axis=0)
+
+    denominator = np.sum((true_vals - np.mean(true_vals)) ** 2)
+    numerator = np.sum((pred_vals - true_vals) ** 2)
+    nse_val = 1 - numerator / denominator
+
+    return nse_val
+
+
+def _rmse_func(
+    true_vals: np.ndarray, pred_vals: np.ndarray, n_instances: int
+) -> np.ndarray:
+    """RMSE over the first dimension (usually time unless iterating over each timestep)"""
+    return np.sqrt(np.nansum((true_vals - pred_vals) ** 2, axis=0) / n_instances)
+
+
+def _r2_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
+    return 1 - (np.nansum((true_vals - pred_vals) ** 2, axis=0)) / (
+        np.nansum((true_vals - np.nanmean(pred_vals)) ** 2, axis=0)
+    )
+
+
 def spatial_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
-    true_da_shape = (true_da.lat.shape[0], true_da.lon.shape[0])
-    pred_da_shape = (pred_da.lat.shape[0], pred_da.lon.shape[0])
-    assert true_da_shape == pred_da_shape
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
 
-    # sort the dimensions so that no inversions (e.g. lat)
-    true_da = true_da.sortby(["time", "lat", "lon"])
-    pred_da = pred_da.sortby(["time", "lat", "lon"])
-
+    # run r2 calculation
     r2_vals = 1 - (np.nansum((true_da.values - pred_da.values) ** 2, axis=0)) / (
         np.nansum((true_da.values - np.nanmean(pred_da.values)) ** 2, axis=0)
     )
@@ -59,7 +230,8 @@ def spatial_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     da.values = r2_vals
 
     # reapply the mask
-    da = da.where(~get_ds_mask(pred_da))
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        da = da.where(~get_ds_mask(pred_da))
     return da
 
 
@@ -68,6 +240,20 @@ def rmse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     So that RMSE can be selected as an evaluation metric
     """
     return np.sqrt(mean_squared_error(y_true, y_pred))
+
+
+def join_true_pred_da(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.Dataset:
+    """"""
+    assert list(true_da.dims) == list(pred_da.dims), (
+        "Should have matching dimensions\n" f"True: {true_da.dims} Pred: {pred_da.dims}"
+    )
+
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    assert true_da.shape == pred_da.shape, (
+        "Should have matching shapes!\n" f"True: {true_da.shape} Pred: {pred_da.shape}"
+    )
+
+    return xr.merge([true_da, pred_da])
 
 
 def annual_scores(
@@ -153,22 +339,51 @@ def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
 
 
 def _read_multi_data_paths(train_data_paths: List[Path]) -> xr.Dataset:
-    train_ds = xr.open_mfdataset(train_data_paths).sortby("time").compute()
-    train_ds = train_ds.transpose("time", "lat", "lon")
+    train_ds = (
+        xr.open_mfdataset(train_data_paths, concat_dim="time").sortby("time").compute()
+    )
+    coords = ["time"] + _get_coords(train_ds)
+    train_ds = train_ds.transpose(*coords)
 
     return train_ds
 
 
-def read_pred_data(
-    model: str, data_dir: Path = Path("data"), experiment: str = "one_month_forecast"
-) -> Union[xr.Dataset, xr.DataArray]:
-    model_pred_dir = data_dir / "models" / experiment / model
-    pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
-    pred_ds = pred_ds.sortby("time")
-    pred_da = pred_ds.preds
-    pred_da = pred_da.transpose("time", "lat", "lon")
+def _drop_duplicates(ds: xr.Dataset, coord: str) -> xr.Dataset:
+    """https://stackoverflow.com/a/51077784/9940782"""
+    _, index = np.unique(ds[coord], return_index=True)
+    return ds.isel({coord: index})
 
-    return pred_ds, pred_da
+
+def _safe_read_multi_data_paths(data_paths: List[Path]) -> xr.Dataset:
+    parent_dir = data_paths[0].parents[0].as_posix()
+    print(f"Reading all .nc files from: {parent_dir}")
+    all_ds = [xr.open_dataset(fp) for fp in data_paths]
+    print("All datasets loaded. Now combining ...")
+    ds = xr.combine_by_coords(all_ds)
+    del all_ds
+    return ds
+
+
+def read_pred_data(
+    model: str,
+    data_dir: Path = Path("data"),
+    experiment: str = "one_month_forecast",
+    safe: bool = True,
+) -> xr.DataArray:
+    model_pred_dir = data_dir / "models" / experiment / model
+    nc_paths = [fp for fp in model_pred_dir.glob("*.nc")]
+
+    if safe:
+        pred_da = _safe_read_multi_data_paths(nc_paths)
+    else:
+        pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
+        pred_ds = pred_ds.sortby("time")
+        pred_da = pred_ds.preds
+
+    coords = ["time"] + _get_coords(pred_da)
+    pred_da = pred_da.transpose(*coords)
+
+    return pred_da
 
 
 def read_true_data(
@@ -183,7 +398,7 @@ def read_true_data(
         f
         for f in (data_dir / "features" / "one_month_forecast" / "test").glob("*/y.nc")
     ]
-    true_ds = _read_multi_data_paths(true_paths)
+    true_ds = _safe_read_multi_data_paths(true_paths)
     true_da = true_ds[variable]
     return true_da
 
@@ -320,18 +535,26 @@ def _read_data(
     train_or_test: str = "test",
     remove_duplicates: bool = True,
     experiment: str = "one_month_forecast",
+    safe: bool = False,
+    sort_values: bool = True,
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     # LOAD the y files
     y_data_paths = [
         f for f in (data_dir / "features" / experiment / train_or_test).glob("*/y.nc")
     ]
-    y_ds = _read_multi_data_paths(y_data_paths)
+    if safe:
+        y_ds = _safe_read_multi_data_paths(y_data_paths)
+    else:
+        y_ds = _read_multi_data_paths(y_data_paths)
 
     # LOAD the X files
     X_data_paths = [
         f for f in (data_dir / "features" / experiment / train_or_test).glob("*/x.nc")
     ]
-    X_ds = _read_multi_data_paths(X_data_paths)
+    if safe:
+        X_ds = _safe_read_multi_data_paths(X_data_paths)
+    else:
+        X_ds = _read_multi_data_paths(X_data_paths)
 
     if remove_duplicates:
         # remove duplicate times from the X ds
@@ -339,13 +562,32 @@ def _read_data(
         _, index = np.unique(X_ds["time"], return_index=True)
         X_ds = X_ds.isel(time=index)
 
+    if sort_values:
+        # PREVENTS INVERSION OF LATLONS
+        X_ds = _sort_values(X_ds)
+        y_ds = _sort_values(y_ds)
+
     return X_ds, y_ds
+
+
+def _sort_values(ds: xr.Dataset) -> xr.Dataset:
+    assert "time" in [c for c in ds.coords]
+
+    non_time_coords = _get_coords(ds)
+    if all(np.isin(["lat", "lon"], non_time_coords)):
+        #  THE ORDER is important (lat, lon)
+        leftover_coords = [c for c in non_time_coords if c not in ["lat", "lon"]]
+        transpose_vars = ["time"] + ["lat", "lon"] + leftover_coords
+    else:
+        transpose_vars = ["time"] + non_time_coords
+    return ds.transpose(*transpose_vars).sortby(transpose_vars)
 
 
 def read_train_data(
     data_dir: Path = Path("data"),
     remove_duplicates: bool = True,
     experiment: str = "one_month_forecast",
+    safe: bool = False,
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     """Read the training data from the data directory and return the joined DataArray.
 
@@ -361,6 +603,8 @@ def read_train_data(
         train_or_test="train",
         remove_duplicates=remove_duplicates,
         experiment=experiment,
+        safe=safe,
+        sort_values=True,
     )
     return train_X_ds, train_y_ds
 
@@ -369,6 +613,7 @@ def read_test_data(
     data_dir: Path = Path("data"),
     remove_duplicates: bool = True,
     experiment: str = "one_month_forecast",
+    safe: bool = False,
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     """Read the test data from the data directory and return the joined DataArray.
 
@@ -384,6 +629,9 @@ def read_test_data(
         train_or_test="test",
         remove_duplicates=remove_duplicates,
         experiment=experiment,
+        safe=safe,
+        sort_values=True,
     )
+    test_X_ds, test_y_ds = _sort_values(test_X_ds), _sort_values(test_y_ds)
 
     return test_X_ds, test_y_ds

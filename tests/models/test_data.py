@@ -39,7 +39,7 @@ class TestBaseIter:
         ), f"Got the same file in both train and val set!"
         assert len(train_paths) + len(val_paths) == 5, f"Not all files loaded!"
 
-    def test_pred_months(self, tmp_path):
+    def test_seq_length(self, tmp_path):
         for i in range(1, 13):
             (tmp_path / f"features/one_month_forecast/train/2018_{i}").mkdir(
                 parents=True
@@ -47,26 +47,26 @@ class TestBaseIter:
             (tmp_path / f"features/one_month_forecast/train/2018_{i}/x.nc").touch()
             (tmp_path / f"features/one_month_forecast/train/2018_{i}/y.nc").touch()
 
-        pred_months = [4, 5, 6]
+        seq_length = [4, 5, 6]
 
         train_paths = DataLoader._load_datasets(
             tmp_path,
             mode="train",
             shuffle_data=True,
-            pred_months=pred_months,
+            seq_length=seq_length,
             experiment="one_month_forecast",
         )
 
         assert len(train_paths) == len(
-            pred_months
-        ), f"Got {len(train_paths)} filepaths back, expected {len(pred_months)}"
+            seq_length
+        ), f"Got {len(train_paths)} filepaths back, expected {len(seq_length)}"
 
         for return_file in train_paths:
             subfolder = return_file.parts[-1]
             month = int(str(subfolder)[5:])
             assert (
-                month in pred_months
-            ), f"{month} not in {pred_months}, got {return_file}"
+                month in seq_length
+            ), f"{month} not in {seq_length}, got {return_file}"
 
     @pytest.mark.parametrize(
         "normalize,to_tensor,experiment,surrounding_pixels,predict_delta",

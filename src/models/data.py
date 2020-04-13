@@ -18,13 +18,14 @@ from typing import cast, Dict, Optional, Union, List, Tuple
 class TrainData:
     historical: Union[np.ndarray, torch.Tensor]
     current: Union[np.ndarray, torch.Tensor, None]
-    pred_months: Union[np.ndarray, torch.Tensor]
+    pred_month: Union[np.ndarray, torch.Tensor]
     # latlons are repeated here so they can be tensor-ized and
     # normalized
-    latlons: Union[np.ndarray, torch.Tensor]
+    # TODO: Optional because pixel id in 1D case
+    latlons: Union[np.ndarray, torch.Tensor, None]
     yearly_aggs: Union[np.ndarray, torch.Tensor]
     static: Union[np.ndarray, torch.Tensor, None]
-    prev_y_var: Union[np.ndarray, torch.Tensor]
+    prev_y_var: Union[np.ndarray, torch.Tensor, None]
 
     def to_tensor(self, device: torch.device) -> None:
         for key, val in self.__dict__.items():
@@ -60,6 +61,7 @@ class ModelArrays:
     y: Union[np.ndarray, torch.Tensor]
     x_vars: List[str]
     y_var: str
+    id_to_loc_map: Dict
     latlons: Optional[np.ndarray] = None
     target_time: Optional[Timestamp] = None
     historical_times: Optional[List[Timestamp]] = None
@@ -180,7 +182,7 @@ class ModelArrays:
 # if new inputs are added
 idx_to_input = {
     0: "historical",
-    1: "pred_months",
+    1: "pred_month",
     2: "latlons",
     3: "current",
     4: "yearly_aggs",
@@ -236,6 +238,8 @@ class DataLoader:
     mask: Optional[List[bool]] = None
         If not None, this list will be used to mask the input files. Useful for creating a train
         and validation set
+    seq_length: int
+        the size of the input sequence
     pred_months: Optional[List[int]] = None
         The months the model should predict. If None, all months are predicted
     to_tensor: bool = False
@@ -246,7 +250,7 @@ class DataLoader:
         be included too, up to a distance of one pixel away
     ignore_vars: Optional[List[str]] = None
         A list of variables to ignore. If None, all variables in the data_path will be included
-    monthly_aggs: bool = True
+    timestep_aggs: bool = True
         Whether to include the monthly aggregates (mean and std across all spatial values) for
         the input variables. These will be additional dimensions to the historical
         (and optionally current) arrays
@@ -257,7 +261,15 @@ class DataLoader:
         instead of the raw target variable.
     normalize_y: bool = True
         Whether to normalize y
+    dynamic: bool = False
+        If True then load the static_ds/dynamic_ds into memory once and
+        draw samples (X-y pairs) from the dynamic_ds. Better when
+        you have a long time-series of data to work with.
+        If False then pre-engineer data creating X.nc / y.nc pairs for
+        each target timestep. Better when there are memory constraints.
     """
+
+    dynamic: bool = False
 
     def __init__(
         self,
@@ -270,29 +282,46 @@ class DataLoader:
         predict_delta: bool = False,
         experiment: str = "one_month_forecast",
         mask: Optional[List[bool]] = None,
+        seq_length: int = 3,
         pred_months: Optional[List[int]] = None,
         to_tensor: bool = False,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
-        monthly_aggs: bool = True,
+        timestep_aggs: bool = True,
         static: Optional[str] = "features",
         device: str = "cpu",
         spatial_mask: Optional[xr.DataArray] = None,
         normalize_y: bool = False,
+        reducing_dims: Optional[List[str]] = None,
+        calculate_latlons: bool = True,
+        use_prev_y_var: bool = False,
+        dynamic: bool = False,
     ) -> None:
 
         self.batch_file_size = batch_file_size
         self.mode = mode
         self.shuffle = shuffle_data
         self.experiment = experiment
-        self.data_files = self._load_datasets(
-            data_path=data_path,
-            mode=mode,
-            shuffle_data=shuffle_data,
-            experiment=experiment,
-            mask=mask,
-            pred_months=pred_months,
-        )
+
+        self.data_path = data_path
+        self.seq_length = seq_length
+        self.pred_months = pred_months
+
+        if self.dynamic:
+            # ignore the raw target variable (if training on logy)
+            if ignore_vars is not None:
+                ignore_vars += ["target_var_original"]
+            else:
+                ignore_vars = ["target_var_original"]
+        else:
+            self.data_files = self._load_datasets(
+                data_path=data_path,
+                mode=mode,
+                shuffle_data=shuffle_data,
+                experiment=experiment,
+                mask=mask,
+                pred_months=pred_months,
+            )
         self.predict_delta = predict_delta
 
         self.normalizing_dict = None
@@ -310,7 +339,7 @@ class DataLoader:
                 self.normalizing_dict = pickle.load(f)
 
         self.surrounding_pixels = surrounding_pixels
-        self.monthly_aggs = monthly_aggs
+        self.timestep_aggs = timestep_aggs
         self.to_tensor = to_tensor
         self.ignore_vars = ignore_vars
 
@@ -321,6 +350,17 @@ class DataLoader:
         if static is not None:
             if static == "features":
                 self.static = xr.open_dataset(data_path / "features/static/data.nc")
+                # ---------------------------------------------------
+                # TODO: remove the features with >100 missing values
+                # temporary so that we don't have to rerun the engineer (takes time)
+                self.static = self.static[
+                    [
+                        v
+                        for v in self.static.data_vars
+                        if self.static[v].isnull().sum() < 100
+                    ]
+                ]
+                # ---------------------------------------------------
                 if normalize:
                     static_normalizer_path = (
                         data_path / "features/static/normalizing_dict.pkl"
@@ -343,6 +383,11 @@ class DataLoader:
             ), f"The spatial mask uses NaNs to get rid of values - this requires clear_nans to be true"
         self.clear_nans = clear_nans
 
+        self.reducing_dims = self.get_reducing_dims(reducing_dims)
+        self.calculate_latlons = calculate_latlons
+        self.use_prev_y_var = use_prev_y_var
+        self.dynamic = dynamic
+
     def __iter__(self):
         if self.mode == "train":
             return _TrainIter(self)
@@ -351,6 +396,15 @@ class DataLoader:
 
     def __len__(self) -> int:
         return len(self.data_files) // self.batch_file_size
+
+    def get_reducing_dims(self, reducing_dims: Optional[List[str]] = None) -> List[str]:
+        if reducing_dims is None:
+            data_path = [list(p.glob("x.nc"))[0] for p in self.data_files][0]
+
+        ds = xr.open_dataset(data_path)
+        reducing_dims = [c for c in ds.coords if c != "time"]
+
+        return reducing_dims
 
     @staticmethod
     def _loc_to_int(base_ds: xr.Dataset) -> Tuple[xr.Dataset, int]:
@@ -378,18 +432,18 @@ class DataLoader:
         shuffle_data: bool,
         experiment: str,
         mask: Optional[List[bool]] = None,
-        pred_months: Optional[List[int]] = None,
+        pred_months: Optional[List[int]] = None,  # months to predict!
     ) -> List[Path]:
-
-        data_folder = data_path / f"features/{experiment}/{mode}"
+        # load data from pre-engineered folders
         output_paths: List[Path] = []
+        data_folder = data_path / f"features/{experiment}/{mode}"
 
         for subtrain in data_folder.iterdir():
             if (subtrain / "x.nc").exists() and (subtrain / "y.nc").exists():
                 if pred_months is None:
                     output_paths.append(subtrain)
                 else:
-                    month = int(str(subtrain.parts[-1])[5:])
+                    month = int(str(subtrain.parts[-1]).split("_")[-2])
                     if month in pred_months:
                         output_paths.append(subtrain)
 
@@ -399,22 +453,24 @@ class DataLoader:
                 mask
             ), f"Output path and mask must be the same length!"
             output_paths = [o_p for o_p, include in zip(output_paths, mask) if include]
+
         if shuffle_data:
             shuffle(output_paths)
         return output_paths
 
 
 class _BaseIter:
-    """Base iterator
+    """Base iterator over all of the data files
     """
 
     def __init__(self, loader: DataLoader) -> None:
+
         self.data_files = loader.data_files
         self.batch_file_size = loader.batch_file_size
         self.shuffle = loader.shuffle
         self.clear_nans = loader.clear_nans
         self.surrounding_pixels = loader.surrounding_pixels
-        self.monthly_aggs = loader.monthly_aggs
+        self.timestep_aggs = loader.timestep_aggs
         self.to_tensor = loader.to_tensor
         self.experiment = loader.experiment
         self.ignore_vars = loader.ignore_vars
@@ -440,6 +496,10 @@ class _BaseIter:
         self.idx = 0
         self.max_idx = len(loader.data_files)
 
+        self.reducing_dims: List[str] = loader.reducing_dims
+        self.calculate_latlons = loader.calculate_latlons
+        self.use_prev_y_var: bool = loader.use_prev_y_var
+
     def __iter__(self):
         return self
 
@@ -448,15 +508,35 @@ class _BaseIter:
     ) -> np.ndarray:
 
         # first, we will try loading the previous year
-        year, month = folder.name.split("_")
+        folder_name_split = folder.name.split("_")
+        if len(folder_name_split) == 2:
+            resolution = "monthly"
+            year, month = folder_name_split
+        elif len(folder_name_split) == 3:
+            resolution = "daily"
+            year, month, day = folder_name_split
+        else:
+            assert False, "What resolution is this data?"
+
         previous_year = int(year) - 1
 
-        new_path = folder.parent / f"{previous_year}_{month}"
+        folder_name = (
+            f"{previous_year}_{month}"
+            if resolution == "monthly"
+            else f"{previous_year}_{month}_{day}"
+        )
+        new_path = folder.parent / folder_name
 
         if new_path.exists():
             y = xr.open_dataset(new_path / "y.nc")
             y_np = y[y_var].values
-            y_np = y_np.reshape(y_np.shape[0], y_np.shape[1] * y_np.shape[2])
+            if len(y_np.shape) == 3:
+                #  if 3 dimensions (time, lat, lon)
+                # then collapse to 2d (time, pixels)
+                y_np = y_np.reshape(y_np.shape[0], y_np.shape[1] * y_np.shape[2])
+            if len(y_np.shape) == 1:
+                y_np = np.expand_dims(y_np, axis=0)
+            # reshape to (pixels, 1)
             y_np = np.moveaxis(y_np, -1, 0)
 
             if self.normalizing_dict is not None:
@@ -515,34 +595,49 @@ class _BaseIter:
         )
         return normalizing_array
 
-    def _calculate_aggs(self, x: xr.Dataset) -> np.ndarray:
-        yearly_mean = x.mean(dim=["time", "lat", "lon"])
-        yearly_agg = yearly_mean.to_array().values
+    def _calculate_aggs(
+        self, x: xr.Dataset, reducing_dims: List[str] = ["lat", "lon"]
+    ) -> np.ndarray:
+        reducing_dims = (
+            ["time"] + reducing_dims if "time" not in reducing_dims else reducing_dims
+        )
+        global_mean = x.mean(dim=reducing_dims)
+        global_agg = global_mean.to_array().values
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
             self.normalizing_array_ym = self.calculate_normalizing_array(
-                list(yearly_mean.data_vars)
+                list(global_mean.data_vars)
             )
 
         if self.normalizing_array_ym is not None:
-            yearly_agg = (
-                yearly_agg - self.normalizing_array_ym["mean"]
+            global_agg = (
+                global_agg - self.normalizing_array_ym["mean"]
             ) / self.normalizing_array_ym["std"]
-        return yearly_agg
+        return global_agg
 
     def _calculate_historical(
         self, x: xr.Dataset, y: xr.Dataset
     ) -> Tuple[np.ndarray, np.ndarray]:
-        x = self._add_extra_dims(x, self.surrounding_pixels, self.monthly_aggs)
+        x = self._add_extra_dims(
+            x, self.surrounding_pixels, self.timestep_aggs, self.reducing_dims
+        )
 
         x_np, y_np = x.to_array().values, y.to_array().values
 
         # first, x
-        x_np = x_np.reshape(x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3])
+        if len(x_np.shape) == 4:
+            #  if 4 dimensions (time, vars, lat, lon)
+            # then collapse to 3 d (time, vars, latlon)
+            x_np = x_np.reshape(
+                x_np.shape[0], x_np.shape[1], x_np.shape[2] * x_np.shape[3]
+            )
         x_np = np.moveaxis(np.moveaxis(x_np, 0, 1), -1, 0)
 
         # then, y
-        y_np = y_np.reshape(y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3])
+        if len(x_np.shape) == 4:  #  if 4 dimensions (time, vars, lat, lon)
+            y_np = y_np.reshape(
+                y_np.shape[0], y_np.shape[1], y_np.shape[2] * y_np.shape[3]
+            )
         y_np = np.moveaxis(y_np, -1, 0).reshape(-1, 1)
 
         if (self.normalizing_dict is not None) and (self.normalizing_array is None):
@@ -573,34 +668,81 @@ class _BaseIter:
     @staticmethod
     def _calculate_target_months(y: xr.Dataset, num_instances: int) -> np.ndarray:
         # then, the x month
-        assert len(y.time) == 1, (
-            "Expected y to only have 1 timestamp!" f"Got {len(y.time)}"
-        )
+        try:
+            assert len(y.time) == 1, (
+                "Expected y to only have 1 timestamp!" f"Got {len(y.time)}"
+            )
+            time_value = y.time.values[0]
+        except TypeError:
+            assert y.time.shape == (), "Expected y to only have 1 timestamp!"
+            time_value = y.time.values
+
         target_month = datetime.strptime(
-            str(y.time.values[0])[:-3], "%Y-%m-%dT%H:%M:%S.%f"
+            str(time_value)[:-3], "%Y-%m-%dT%H:%M:%S.%f"
         ).month
         x_months = np.array([target_month] * num_instances)
 
         return x_months
 
+    def build_loc_to_idx_mapping(
+        self, x: xr.Dataset, notnan_indices: Optional[np.array] = None
+    ) -> Dict:
+        """ build a mapping from SPATIAL ID to the value
+        (pixel, station_id, admin_unit) removing the nan indices
+
+        Why? In order to track the spatial units so that we can
+        rebuild the predictions in the `evaluate` function. This
+        way it doesn't require (lat, lon) but also works for
+        station_id // flattened data (regions etc.)
+        """
+        reducing_coords = [c for c in x.coords if c != "time"]
+        if self.calculate_latlons:
+            lons, lats = np.meshgrid(x.lon.values, x.lat.values)
+            flat_lats, flat_lons = lats.reshape(-1, 1), lons.reshape(-1, 1)
+            latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
+            if notnan_indices is not None:
+                latlons = latlons[notnan_indices]
+            id_to_val_map = dict(zip(np.arange(latlons), latlons))
+
+        elif len(reducing_coords) == 1:
+            # working with 1D data (pixel, area, stations etc.)
+            # create a DUMMY latlon ([0], [idx])
+            ids = np.arange(len(x[reducing_coords[0]].values))
+            values = x[reducing_coords[0]].values
+            if notnan_indices is not None:
+                ids, values = ids[notnan_indices], values[notnan_indices]
+
+            id_to_val_map = dict(zip(ids, values))
+        else:
+            assert False, "Haven't included other dimensions (only 1D or latlon)"
+
+        return id_to_val_map
+
     def _calculate_latlons(self, x: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
+        """return raw and normalised latlons
+        """
         # then, latlons
-        lons, lats = np.meshgrid(x.lon.values, x.lat.values)
-        flat_lats, flat_lons = lats.reshape(-1, 1), lons.reshape(-1, 1)
-        latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
-        train_latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
+        if self.calculate_latlons:
+            lons, lats = np.meshgrid(x.lon.values, x.lat.values)
+            flat_lats, flat_lons = lats.reshape(-1, 1), lons.reshape(-1, 1)
+            latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
+            train_latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
 
-        if self.normalizing_array is not None:
-            train_latlons / [90, 180]
-
+            if self.normalizing_array is not None:
+                train_latlons / [90, 180]
+        else:
+            latlons, train_latlons = None, None
         return latlons, train_latlons
 
     def _calculate_static(self, num_instances: int) -> np.ndarray:
         if self.static_array is None:
             static_np = self.static.to_array().values  # type: ignore
-            static_np = static_np.reshape(
-                static_np.shape[0], static_np.shape[1] * static_np.shape[2]
-            )
+            if len(static_np.shape) == 3:
+                #  if 3 dimensions (vars, lat, lon)
+                # collapse to 2 dimensions (vars, pixels)
+                static_np = static_np.reshape(
+                    static_np.shape[0], static_np.shape[1] * static_np.shape[2]
+                )
             static_np = np.moveaxis(static_np, -1, 0)
             assert static_np.shape[0] == num_instances
 
@@ -611,8 +753,14 @@ class _BaseIter:
                 )
 
                 static_np = (
-                    static_np - self.static_normalizing_array["mean"]
-                ) / self.static_normalizing_array["std"]
+                    (static_np - self.static_normalizing_array["mean"])
+                    / [
+                        s if s != 0 else 1e-10
+                        for s in self.static_normalizing_array["std"]
+                    ]
+                    # TODO: only use STD if non-zero!
+                )
+
             self.static_array = static_np
         return self.static_array
 
@@ -664,7 +812,11 @@ class _BaseIter:
         return (y[y_var] - prev_ts).to_dataset(name=y_var)
 
     def ds_folder_to_np(
-        self, folder: Path, clear_nans: bool = True, to_tensor: bool = False
+        self,
+        folder: Path,
+        clear_nans: bool = True,
+        to_tensor: bool = False,
+        reducing_dims: List[str] = ["lat", "lon"],
     ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / "x.nc"), xr.open_dataset(folder / "y.nc")
@@ -682,7 +834,10 @@ class _BaseIter:
             ]
             x = x.drop(self.ignore_vars)
 
-        target_time = pd.to_datetime(y.time.values[0])
+        try:
+            target_time = pd.to_datetime(y.time.values[0])
+        except IndexError:
+            target_time = pd.to_datetime(y.time.values)
         if self.experiment == "nowcast":
             x_datetimes = [
                 pd.to_datetime(time)
@@ -695,7 +850,7 @@ class _BaseIter:
         x, y = self.apply_spatial_mask(x, y)
 
         yearly_agg = self._calculate_aggs(
-            x
+            x, reducing_dims=reducing_dims
         )  # before to avoid aggs from surrounding pixels
 
         # calculate normalized values in these functions
@@ -707,8 +862,14 @@ class _BaseIter:
         else:
             static_np = None
 
-        prev_y_var = self._get_prev_y_var(folder, list(y.data_vars)[0], y_np.shape[0])
+        if self.use_prev_y_var:
+            prev_y_var = self._get_prev_y_var(
+                folder, list(y.data_vars)[0], y_np.shape[0]
+            )
+        else:
+            prev_y_var = None
 
+        # raw & normalised latlons
         latlons, train_latlons = self._calculate_latlons(x)
 
         if self.experiment == "nowcast":
@@ -721,7 +882,7 @@ class _BaseIter:
             train_data = TrainData(
                 current=current,
                 historical=historical,
-                pred_months=x_months,
+                pred_month=x_months,
                 latlons=train_latlons,
                 yearly_aggs=yearly_agg,
                 static=static_np,
@@ -732,7 +893,7 @@ class _BaseIter:
             train_data = TrainData(
                 current=None,
                 historical=x_np,
-                pred_months=x_months,
+                pred_month=x_months,
                 latlons=train_latlons,
                 yearly_aggs=yearly_agg,
                 static=static_np,
@@ -758,29 +919,54 @@ class _BaseIter:
                 historical_nans.shape[1] * historical_nans.shape[2],
             ).sum(axis=-1)
             y_nans_summed = y_nans.sum(axis=-1)
-            prev_y_var_summed = np.isnan(prev_y_var).sum(axis=-1)
 
-            notnan_indices = np.where(
-                (historical_nans_summed == 0)
-                & (y_nans_summed == 0)
-                & (static_nans_summed == 0)
-                & (prev_y_var_summed == 0)
-            )[0]
-            if self.experiment == "nowcast":
-                current_nans = np.isnan(train_data.current)
-                current_nans_summed = current_nans.sum(axis=-1)
+            if prev_y_var is not None:
+                prev_y_var_summed = np.isnan(prev_y_var).sum(axis=-1)
+
                 notnan_indices = np.where(
                     (historical_nans_summed == 0)
                     & (y_nans_summed == 0)
-                    & (current_nans_summed == 0)
                     & (static_nans_summed == 0)
                     & (prev_y_var_summed == 0)
                 )[0]
+            else:
+                notnan_indices = np.where(
+                    (historical_nans_summed == 0)
+                    & (y_nans_summed == 0)
+                    & (static_nans_summed == 0)
+                )[0]
+
+            if self.experiment == "nowcast":
+                current_nans = np.isnan(train_data.current)
+                current_nans_summed = current_nans.sum(axis=-1)
+
+                if prev_y_var is not None:
+                    notnan_indices = np.where(
+                        (historical_nans_summed == 0)
+                        & (y_nans_summed == 0)
+                        & (current_nans_summed == 0)
+                        & (static_nans_summed == 0)
+                        & (prev_y_var_summed == 0)
+                    )[0]
+                else:
+                    notnan_indices = np.where(
+                        (historical_nans_summed == 0)
+                        & (y_nans_summed == 0)
+                        & (current_nans_summed == 0)
+                        & (static_nans_summed == 0)
+                    )[0]
 
             train_data.filter(notnan_indices)
 
             y_np = y_np[notnan_indices]
-            latlons = latlons[notnan_indices]
+            if latlons is not None:
+                latlons = latlons[notnan_indices]
+
+            id_to_loc_map = self.build_loc_to_idx_mapping(
+                x, notnan_indices=notnan_indices
+            )
+        else:
+            id_to_loc_map = self.build_loc_to_idx_mapping(x, notnan_indices=None)
 
         y_var = list(y.data_vars)[0]
         model_arrays = ModelArrays(
@@ -791,6 +977,7 @@ class _BaseIter:
             latlons=latlons,
             target_time=target_time,
             historical_times=x_datetimes,
+            id_to_loc_map=id_to_loc_map,
         )
 
         if to_tensor:
@@ -802,23 +989,31 @@ class _BaseIter:
             historical_target_np = self._calculate_historical_target(x, y_var)
             historical_target_np = historical_target_np[notnan_indices].flatten()
             model_arrays.historical_target = historical_target_np
+
         return model_arrays
 
     @staticmethod
     def _add_extra_dims(
-        x: xr.Dataset, surrounding_pixels: Optional[int], monthly_agg: bool
+        x: xr.Dataset,
+        surrounding_pixels: Optional[int],
+        timestep_agg: bool,
+        reducing_dims: List[str],
     ) -> xr.Dataset:
         original_vars = list(x.data_vars)
 
-        if monthly_agg:
+        if timestep_agg:
             # first, the means
-            monthly_mean_values = x.mean(dim=["lat", "lon"])
-            mean_dataset = xr.ones_like(x) * monthly_mean_values
+            timestep_mean_values = x.mean(dim=reducing_dims)
+            mean_dataset = xr.ones_like(x) * timestep_mean_values
 
             for var in mean_dataset.data_vars:
                 x[f"spatial_mean_{var}"] = mean_dataset[var]
 
         if surrounding_pixels is not None:
+            assert reducing_dims == [
+                "lat",
+                "lon",
+            ], "This only works with lat,lon pixel data"
             lat_shifts = lon_shifts = range(-surrounding_pixels, surrounding_pixels + 1)
             for var in original_vars:
                 for lat_shift in lat_shifts:
@@ -869,7 +1064,10 @@ class _TrainIter(_BaseIter):
             while self.idx < cur_max_idx:
                 subfolder = self.data_files[self.idx]
                 arrays = self.ds_folder_to_np(
-                    subfolder, clear_nans=self.clear_nans, to_tensor=False
+                    subfolder,
+                    clear_nans=self.clear_nans,
+                    to_tensor=False,
+                    reducing_dims=self.reducing_dims,
                 )
                 if arrays.x.historical.shape[0] == 0:
                     print(f"{subfolder} returns no values. Skipping")
@@ -894,7 +1092,7 @@ class _TrainIter(_BaseIter):
                 return (
                     (
                         global_modelarrays.x.historical,
-                        global_modelarrays.x.pred_months,
+                        global_modelarrays.x.pred_month,
                         global_modelarrays.x.latlons,
                         global_modelarrays.x.current,
                         global_modelarrays.x.yearly_aggs,
@@ -920,7 +1118,10 @@ class _TestIter(_BaseIter):
             while self.idx < cur_max_idx:
                 subfolder = self.data_files[self.idx]
                 arrays = self.ds_folder_to_np(
-                    subfolder, clear_nans=self.clear_nans, to_tensor=self.to_tensor
+                    subfolder,
+                    clear_nans=self.clear_nans,
+                    to_tensor=self.to_tensor,
+                    reducing_dims=self.reducing_dims,
                 )
                 if arrays.x.historical.shape[0] == 0:
                     print(f"{subfolder} returns no values. Skipping")

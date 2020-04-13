@@ -5,6 +5,7 @@ import xarray as xr
 import datetime as dt
 
 from src.engineer import _OneMonthForecastEngineer as OneMonthForecastEngineer
+from src.engineer import _OneTimestepForecastEngineer as OneTimestepForecastEngineer
 
 from ..utils import _make_dataset
 from .test_base import _setup
@@ -14,12 +15,14 @@ class TestOneMonthForecastEngineer:
     def test_init(self, tmp_path):
 
         with pytest.raises(AssertionError) as e:
-            OneMonthForecastEngineer(tmp_path)
+            # OneMonthForecastEngineer(tmp_path)
+            OneTimestepForecastEngineer(tmp_path, resolution="M")
             assert "does not exist. Has the preprocesser been run?" in str(e)
 
         (tmp_path / "interim").mkdir()
 
-        OneMonthForecastEngineer(tmp_path)
+        # OneMonthForecastEngineer(tmp_path)
+        OneTimestepForecastEngineer(tmp_path, "M")
 
         assert (tmp_path / "features").exists(), "Features directory not made!"
         assert (
@@ -29,7 +32,8 @@ class TestOneMonthForecastEngineer:
 
     def test_static(self, tmp_path):
         _, expected_vars = _setup(tmp_path, add_times=False, static=True)
-        engineer = OneMonthForecastEngineer(tmp_path, process_static=True)
+        # engineer = OneMonthForecastEngineer(tmp_path, process_static=True)
+        engineer = OneTimestepForecastEngineer(tmp_path, process_static=True, "M")
 
         assert (
             tmp_path / "features/static"
@@ -50,12 +54,13 @@ class TestOneMonthForecastEngineer:
 
         dataset, _, _ = _make_dataset(size=(2, 2))
 
-        engineer = OneMonthForecastEngineer(tmp_path)
+        # engineer = OneMonthForecastEngineer(tmp_path)
+        engineer = OneTimestepForecastEngineer(tmp_path, resolution="M")
         train = engineer._train_test_split(
             dataset,
             years=[2001],
             target_variable="VHI",
-            pred_months=11,
+            seq_length=11,
             expected_length=11,
         )
 
@@ -67,13 +72,14 @@ class TestOneMonthForecastEngineer:
 
         _setup(tmp_path)
 
-        pred_months = expected_length = 11
+        seq_length = expected_length = 11
 
-        engineer = OneMonthForecastEngineer(tmp_path)
+        # engineer = OneMonthForecastEngineer(tmp_path)
+        engineer = OneTimestepForecastEngineer(tmp_path, resolution="M")
         engineer.engineer(
             test_year=2001,
             target_variable="a",
-            pred_months=pred_months,
+            seq_length=seq_length,
             expected_length=expected_length,
         )
 
@@ -116,7 +122,8 @@ class TestOneMonthForecastEngineer:
 
     def test_stratify(self, tmp_path):
         _setup(tmp_path)
-        engineer = OneMonthForecastEngineer(tmp_path)
+        # engineer = OneMonthForecastEngineer(tmp_path)
+        engineer = OneTimestepForecastEngineer(tmp_path, resolution="M")
         ds_target, _, _ = _make_dataset(size=(20, 20))
         ds_predictor, _, _ = _make_dataset(size=(20, 20))
         ds_predictor = ds_predictor.rename({"VHI": "predictor"})
@@ -127,7 +134,7 @@ class TestOneMonthForecastEngineer:
             year=2001,
             target_variable="VHI",
             target_month=1,
-            pred_months=4,
+            seq_length=4,
             expected_length=4,
         )
 

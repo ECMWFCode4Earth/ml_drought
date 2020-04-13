@@ -48,6 +48,8 @@ def load_model(
     model: Union[RecurrentNetwork, LinearNetwork, LinearRegression]
         A model object loaded from the model_path
     """
+    if isinstance(model_path, str):
+        model_path = Path(model_path)
 
     str_to_model = {
         "rnn": RecurrentNetwork,

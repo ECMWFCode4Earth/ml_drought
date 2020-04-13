@@ -78,10 +78,10 @@ class TestRecurrentNetwork:
         assert model_dict["normalize_y"] == normalize_y
 
     @pytest.mark.parametrize(
-        "use_pred_months,predict_delta",
+        "use_seq_length,predict_delta",
         [(True, True), (False, True), (True, False), (False, False)],
     )
-    def test_train(self, tmp_path, capsys, use_pred_months, predict_delta):
+    def test_train(self, tmp_path, capsys, use_seq_length, predict_delta):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -128,10 +128,10 @@ class TestRecurrentNetwork:
         assert type(model.model) == RNN, f"Model attribute not an RNN!"
 
     @pytest.mark.parametrize(
-        "use_pred_months,predict_delta",
+        "use_seq_length,predict_delta",
         [(True, True), (False, True), (True, False), (False, False)],
     )
-    def test_predict(self, tmp_path, use_pred_months, predict_delta):
+    def test_predict(self, tmp_path, use_seq_length, predict_delta):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 

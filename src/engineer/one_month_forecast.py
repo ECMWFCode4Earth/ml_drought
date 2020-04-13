@@ -19,11 +19,11 @@ class _OneMonthForecastEngineer(_EngineerBase):
         year: int,
         target_variable: str,
         target_month: int,
-        pred_months: int = 11,
+        seq_length: int = 11,
         expected_length: Optional[int] = 11,
     ) -> Tuple[Optional[Dict[str, xr.Dataset]], date]:
         """
-        Note: expected_length should be the same as pred_months when the timesteps
+        Note: expected_length should be the same as seq_length when the timesteps
         are monthly, but should be more if the timesteps are at shorter resolution
         than monthly.
         """
@@ -34,7 +34,7 @@ class _OneMonthForecastEngineer(_EngineerBase):
         mx_year, mx_month, max_train_date = minus_months(
             year, target_month, diff_months=1
         )
-        _, _, min_date = minus_months(mx_year, mx_month, diff_months=pred_months)
+        _, _, min_date = minus_months(mx_year, mx_month, diff_months=seq_length)
 
         # `max_date` is the date to be predicted;
         # `max_train_date` is one timestep before;
@@ -70,7 +70,7 @@ class _OneMonthForecastEngineer(_EngineerBase):
             # catch the errors as we get closer to the MINIMUM year
             warnings.warn(
                 "For the `nowcast` experiment we expect the\
-                number of timesteps to be: {pred_months}.\
+                number of timesteps to be: {seq_length}.\
                 Currently: {x_dataset.time.size}"
             )
             return None, cast(date, max_train_date)

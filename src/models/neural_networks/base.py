@@ -4,6 +4,7 @@ from pathlib import Path
 import pickle
 import math
 import xarray as xr
+import tqdm
 
 import torch
 from torch.nn import functional as F
@@ -21,15 +22,22 @@ class NNBase(ModelBase):
     def __init__(
         self,
         data_folder: Path = Path("data"),
-        batch_size: int = 1,
+        dynamic: bool = False,
+        batch_size: int = 256,
         experiment: str = "one_month_forecast",
+        forecast_horizon: int = 1,
+        target_var: Optional[str] = None,
+        test_years: Optional[Union[List[str], str]] = None,
+        seq_length: int = 3,
         pred_months: Optional[List[int]] = None,
         include_pred_month: bool = True,
         include_latlons: bool = False,
-        include_monthly_aggs: bool = True,
+        include_timestep_aggs: bool = True,
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
+        dynamic_ignore_vars: Optional[List[str]] = None,
+        static_ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
         device: str = "cuda:0",
         predict_delta: bool = False,
@@ -38,13 +46,14 @@ class NNBase(ModelBase):
         normalize_y: bool = True,
     ) -> None:
         super().__init__(
+            dynamic=dynamic,
             data_folder=data_folder,
             batch_size=batch_size,
             experiment=experiment,
-            pred_months=pred_months,
+            seq_length=seq_length,
             include_pred_month=include_pred_month,
             include_latlons=include_latlons,
-            include_monthly_aggs=include_monthly_aggs,
+            include_timestep_aggs=include_timestep_aggs,
             include_yearly_aggs=include_yearly_aggs,
             surrounding_pixels=surrounding_pixels,
             ignore_vars=ignore_vars,
@@ -53,6 +62,12 @@ class NNBase(ModelBase):
             spatial_mask=spatial_mask,
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
+            pred_months=pred_months,
+            dynamic_ignore_vars=dynamic_ignore_vars,
+            static_ignore_vars=static_ignore_vars,
+            target_var=target_var,
+            test_years=test_years,
+            forecast_horizon=forecast_horizon,
         )
 
         # for reproducibility
@@ -81,39 +96,46 @@ class NNBase(ModelBase):
         self,
         num_epochs: int = 1,
         early_stopping: Optional[int] = None,
-        batch_size: int = 256,
         learning_rate: float = 1e-3,
         val_split: float = 0.1,
     ) -> None:
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
         if early_stopping is not None:
-            len_mask = len(
-                DataLoader._load_datasets(
-                    self.data_path,
-                    mode="train",
-                    experiment=self.experiment,
-                    shuffle_data=False,
-                    pred_months=self.pred_months,
+            if self.dynamic:
+                assert False, "Need to implement early stopping for Dynamic dataloader"
+                len_mask = len(dl.valid_train_times)
+                train_mask, val_mask = train_val_mask(len_mask, 0.1)
+            else:
+                len_mask = len(
+                    DataLoader._load_datasets(
+                        self.data_path,
+                        mode="train",
+                        experiment=self.experiment,
+                        shuffle_data=False,
+                        pred_months=self.pred_months,
+                    )
                 )
-            )
-            train_mask, val_mask = train_val_mask(len_mask, val_split)
+                train_mask, val_mask = train_val_mask(len_mask, val_split)
 
-            train_dataloader = self.get_dataloader(
-                mode="train", mask=train_mask, to_tensor=True, shuffle_data=True
-            )
-            val_dataloader = self.get_dataloader(
-                mode="train", mask=val_mask, to_tensor=True, shuffle_data=False
-            )
+                print("\n** Loading Dataloaders ... **")
+                train_dataloader = self.get_dataloader(
+                    mode="train", mask=train_mask, to_tensor=True, shuffle_data=True
+                )
+                val_dataloader = self.get_dataloader(
+                    mode="train", mask=val_mask, to_tensor=True, shuffle_data=False
+                )
 
-            batches_without_improvement = 0
-            best_val_score = np.inf
+                batches_without_improvement = 0
+                best_val_score = np.inf
         else:
+            print("\n** Loading Dataloaders ... **")
             train_dataloader = self.get_dataloader(
                 mode="train", to_tensor=True, shuffle_data=True
             )
 
         # initialize the model
+        print("\n** Initializing Model ... **")
         if self.model is None:
             x_ref, _ = next(iter(train_dataloader))
             model = self._initialize_model(x_ref)
@@ -123,12 +145,17 @@ class NNBase(ModelBase):
             [pam for pam in self.model.parameters()], lr=learning_rate
         )
 
+        print("\n** Running Epochs ... **")
         for epoch in range(num_epochs):
             train_rmse = []
             train_l1 = []
             self.model.train()
-            for x, y in train_dataloader:
-                for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
+            # load in timesteps a few at a time
+            for x, y in tqdm.tqdm(train_dataloader):
+                # chunk into n_pixels
+                for x_batch, y_batch in chunk_array(
+                    x, y, self.batch_size, shuffle=True
+                ):
                     optimizer.zero_grad()
                     pred = self.model(
                         *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
@@ -173,6 +200,7 @@ class NNBase(ModelBase):
                         return None
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
+        print(f"** Making Predictions for {self.model_name} **")
 
         test_arrays_loader = self.get_dataloader(
             mode="test", to_tensor=True, shuffle_data=False
@@ -187,7 +215,7 @@ class NNBase(ModelBase):
 
         self.model.eval()
         with torch.no_grad():
-            for dict in test_arrays_loader:
+            for dict in tqdm.tqdm(test_arrays_loader):
                 for key, val in dict.items():
 
                     input_tuple = self._input_to_tuple(val.x)
@@ -215,6 +243,7 @@ class NNBase(ModelBase):
                         "latlons": val.latlons,
                         "time": val.target_time,
                         "y_var": val.y_var,
+                        "id_to_loc_map": val.id_to_loc_map,
                     }
                     if self.predict_delta:
                         assert val.historical_target.shape[0] == val.y.shape[0], (
@@ -315,18 +344,18 @@ class NNBase(ModelBase):
         Tuple:
             [0] historical data
             [1] months (one hot encoded)
-            [2] latlons
-            [3] current data
+            [2] latlons (optional)
+            [3] current data (optional - Nowcast)
             [4] yearly aggregations
-            [5] static data
-            [6] prev y var
+            [5] static data (optional)
+            [6] prev y var (optional)
         """
         # mypy totally fails to handle what's going on here
 
         if type(x) is TrainData:  # type: ignore
             return (  # type: ignore
                 x.historical,  # type: ignore
-                self._one_hot(x.pred_months, 12),  # type: ignore
+                self._one_hot(x.pred_month, 12),  # type: ignore
                 x.latlons,  # type: ignore
                 x.current,  # type: ignore
                 x.yearly_aggs,  # type: ignore
@@ -433,7 +462,7 @@ class NNBase(ModelBase):
         for _, val in sorted(idx_to_input.items()):
             tensor = x.__getattribute__(val)
             if tensor is not None:
-                if val == "pred_months":
+                if val == "seq_length":
                     output_tensors.append(
                         self._one_hot(tensor[start_idx : start_idx + num_inputs], 12)
                     )
@@ -473,7 +502,7 @@ class NNBase(ModelBase):
                 val.requires_grad = True
         outputs = self.model(
             x.historical,
-            self._one_hot(x.pred_months, 12),
+            self._one_hot(x.seq_length, 12),
             x.latlons,
             x.current,
             x.yearly_aggs,

@@ -33,17 +33,17 @@ class _NowcastEngineer(_EngineerBase):
         year: int,
         target_variable: str,
         target_month: int,
-        pred_months: int,
+        seq_length: int,
         expected_length: Optional[int] = 11,
     ) -> Tuple[Optional[Dict[str, xr.Dataset]], date]:
         """
         The nowcasting experiment has different lengths for the
          `target` variable vs. the `non_target` variables.
 
-        e.g. if I set the `pred_months = 11`
+        e.g. if I set the `seq_length = 11`
 
         `x_target_variable` = 11 timesteps
-        `x_non_target_variable` = 12 timesteps (`pred_months + 1`).
+        `x_non_target_variable` = 12 timesteps (`seq_length + 1`).
 
         We overcome this by creating an extra timestep with all nan values
         in the `x_dataset`. This way the `x_dataset` contains the `y_dataset`
@@ -57,7 +57,7 @@ class _NowcastEngineer(_EngineerBase):
         mx_year, mx_month, max_train_date = minus_months(
             year, target_month, diff_months=1
         )
-        _, _, min_date = minus_months(mx_year, mx_month, diff_months=pred_months)
+        _, _, min_date = minus_months(mx_year, mx_month, diff_months=seq_length)
 
         # convert to numpy datetime
         min_date_np = np.datetime64(str(min_date))
@@ -127,7 +127,7 @@ class _NowcastEngineer(_EngineerBase):
             # catch the errors as we get closer to the MINIMUM year
             print(
                 "For the `nowcast` experiment we expect the\
-                  number of timesteps to be: {pred_months + 1}.\
+                  number of timesteps to be: {seq_length + 1}.\
                   Currently: {x_dataset.time.size}"
             )
             return None, cast(date, max_train_date)

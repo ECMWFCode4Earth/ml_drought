@@ -11,7 +11,7 @@ from ..utils import _make_dataset
 class TestGBDT:
     @pytest.mark.xfail(reason="XGBoost not part of the test environment")
     @pytest.mark.parametrize(
-        "use_pred_months,experiment,monthly_agg",
+        "use_seq_length,experiment,monthly_agg",
         [
             (True, "one_month_forecast", True),
             (True, "nowcast", False),
@@ -19,7 +19,7 @@ class TestGBDT:
             (False, "nowcast", True),
         ],
     )
-    def test_train(self, tmp_path, use_pred_months, experiment, monthly_agg):
+    def test_train(self, tmp_path, use_seq_length, experiment, monthly_agg):
 
         import xgboost as xgb
 
@@ -60,7 +60,7 @@ class TestGBDT:
 
         model = GBDT(
             tmp_path,
-            include_pred_month=use_pred_months,
+            include_pred_month=use_seq_length,
             experiment=experiment,
             include_monthly_aggs=monthly_agg,
             normalize_y=False,

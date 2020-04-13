@@ -8,6 +8,7 @@ import random
 from sklearn.metrics import mean_squared_error
 
 from .data import TrainData, DataLoader
+from .dynamic_data import DynamicDataLoader
 
 from typing import cast, Any, Dict, List, Optional, Union, Tuple
 
@@ -21,6 +22,7 @@ class ModelBase:
     batch_size: int 1
         The number of files to load at once. These will be chunked and shuffled, so
         a higher value will lead to better shuffling (but will require more memory)
+    seq_length:
     pred_months: Optional[List[int]] = None
         The months the model should predict. If None, all months are predicted
     include_pred_month: bool = True
@@ -46,33 +48,42 @@ class ModelBase:
     def __init__(
         self,
         data_folder: Path = Path("data"),
+        dynamic: bool = False,
+        target_var: Optional[str] = None,
+        test_years: Optional[Union[List[str], str]] = None,
+        forecast_horizon: int = 1,
         batch_size: int = 1,
         experiment: str = "one_month_forecast",
+        seq_length: Optional[int] = 3,  # why do we need this?
         pred_months: Optional[List[int]] = None,
         include_pred_month: bool = True,
         include_latlons: bool = False,
-        include_monthly_aggs: bool = True,
+        include_timestep_aggs: bool = True,
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
+        dynamic_ignore_vars: Optional[List[str]] = None,
+        static_ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "embedding",
         predict_delta: bool = False,
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = False,
     ) -> None:
-
         self.batch_size = batch_size
         self.include_pred_month = include_pred_month
         self.include_latlons = include_latlons
-        self.include_monthly_aggs = include_monthly_aggs
+        self.include_timestep_aggs = include_timestep_aggs
         self.include_yearly_aggs = include_yearly_aggs
         self.data_path = data_folder
         self.experiment = experiment
+        self.seq_length = seq_length
         self.pred_months = pred_months
         self.models_dir = data_folder / "models" / self.experiment
         self.surrounding_pixels = surrounding_pixels
         self.ignore_vars = ignore_vars
+        self.dynamic_ignore_vars = dynamic_ignore_vars
+        self.static_ignore_vars = static_ignore_vars
         self.static = static
         self.predict_delta = predict_delta
         self.include_prev_y = include_prev_y
@@ -82,6 +93,32 @@ class ModelBase:
                 "rb"
             ) as f:
                 self.normalizing_dict = pickle.load(f)
+
+        self.forecast_horizon = forecast_horizon
+        self.dynamic = dynamic
+        if self.dynamic:
+            assert (
+                target_var is not None
+            ), "If using the dynamic DataLoader require a `target_var` parameter to be provided"
+            assert (
+                test_years is not None
+            ), "If using the dynamic DataLoader require a `test_years` parameter to be provided"
+            self.target_var = target_var
+            self.test_years = test_years
+            if self.include_yearly_aggs:
+                print(
+                    "`include_yearly_aggs` does not yet work for dynamic dataloder. Setting to False"
+                )
+                self.include_yearly_aggs = False
+            if self.include_prev_y:
+                print(
+                    "`include_prev_y` does not yet work for dynamic dataloder. Setting to False"
+                )
+                self.include_prev_y = False
+
+            print("Using the Dynamic DataLoader")
+            print(f"\tTarget Var: {target_var}")
+            print(f"\tTest Years: {test_years}")
 
         # needs to be set by the train function
         self.num_locations: Optional[int] = None
@@ -157,7 +194,7 @@ class ModelBase:
         raise NotImplementedError
 
     def denormalize_y(self, y: np.ndarray, var_name: str) -> np.ndarray:
-
+        """to compare """
         if not self.normalize_y:
             return y
         else:
@@ -167,7 +204,18 @@ class ModelBase:
                 y = y + self.normalizing_dict[var_name]["mean"]
         return y
 
-    def evaluate(self, save_results: bool = True, save_preds: bool = False) -> None:
+    def undo_log_transform(self, y: np.ndarray) -> np.ndarray:
+        if self.logy:
+            return np.exp(y) + 0.001
+        else:
+            return y
+
+    def evaluate(
+        self,
+        save_results: bool = True,
+        save_preds: bool = False,
+        spatial_unit_name: Optional[str] = None,
+    ) -> None:
         """
         Evaluate the trained model on the TEST data
 
@@ -205,9 +253,11 @@ class ModelBase:
                 json.dump(output_dict, outfile)
 
         if save_preds:
+            print(f"** Saving Predictions for {self.model_name} **")
             # convert from test_arrays_dict to xarray object
             for key, val in test_arrays_dict.items():
-                latlons = cast(np.ndarray, val["latlons"])
+                if val["latlons"] is not None:
+                    latlons = cast(np.ndarray, val["latlons"])
                 preds = self.denormalize_y(preds_dict[key], val["y_var"])
 
                 if len(preds.shape) > 1:
@@ -217,20 +267,46 @@ class ModelBase:
                 time = val["time"]
                 times = [time for _ in range(len(preds))]
 
-                preds_xr = (
-                    pd.DataFrame(
-                        data={
-                            "preds": preds,
-                            "lat": latlons[:, 0],
-                            "lon": latlons[:, 1],
-                            "time": times,
-                        }
+                # get the spatial_unit from the ModelArrays
+                # TODO: how are we selecting the id_to_loc_map taking into account the
+                # dropped nans ?
+                spatial_unit = np.array([v for v in val["id_to_loc_map"].values()])
+
+                #  WORK with latlon or with 1D data
+                try:
+                    preds_xr = (
+                        pd.DataFrame(
+                            data={
+                                "preds": preds,
+                                "lat": latlons[:, 0],
+                                "lon": latlons[:, 1],
+                                "time": times,
+                            }
+                        )
+                        .set_index(["lat", "lon", "time"])
+                        .to_xarray()
                     )
-                    .set_index(["lat", "lon", "time"])
-                    .to_xarray()
-                )
+                except NameError as E:  # non latlon data
+                    # print(f"data is not 2D (latlons):\n{E}")
+                    spatial_unit_name = (
+                        "spatial_unit"
+                        if spatial_unit_name is None
+                        else spatial_unit_name
+                    )
+                    preds_xr = (
+                        pd.DataFrame(
+                            data={
+                                "preds": preds,
+                                spatial_unit_name: spatial_unit,
+                                "time": times,
+                            }
+                        )
+                        .set_index([spatial_unit_name, "time"])
+                        .to_xarray()
+                    )
 
                 if self.predict_delta:
+                    # TODO: fix the predict_delta to work with the spatial unit too ...
                     # get the NON-NORMALIZED data (from ModelArrays.historical_target)
                     historical_y = val["historical_target"]
                     y_var = val["y_var"]
@@ -270,7 +346,7 @@ class ModelBase:
         elif type(x) == TrainData:
             x_his, x_pm, x_latlons = (
                 x.historical,  # type: ignore
-                x.pred_months,  # type: ignore
+                x.seq_length,  # type: ignore
                 x.latlons,  # type: ignore
             )  # type: ignore
             x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
@@ -285,8 +361,8 @@ class ModelBase:
         if self.include_pred_month:
             # one hot encoding, should be num_classes + 1, but
             # for us its + 2, since 0 is not a class either
-            pred_months_onehot = self._one_hot(x_pm, 12)
-            x_in = np.concatenate((x_in, pred_months_onehot), axis=-1)
+            seq_length_onehot = self._one_hot(x_pm, 12)
+            x_in = np.concatenate((x_in, seq_length_onehot), axis=-1)
         if self.include_latlons:
             x_in = np.concatenate((x_in, x_latlons), axis=-1)
         if self.experiment == "nowcast":
@@ -316,32 +392,70 @@ class ModelBase:
         Return the correct dataloader for this model
         """
 
-        default_args: Dict[str, Any] = {
-            "data_path": self.data_path,
-            "batch_file_size": self.batch_size,
-            "shuffle_data": shuffle_data,
-            "mode": mode,
-            "mask": None,
-            "experiment": self.experiment,
-            "pred_months": self.pred_months,
-            "to_tensor": to_tensor,
-            "ignore_vars": self.ignore_vars,
-            "monthly_aggs": self.include_monthly_aggs,
-            "surrounding_pixels": self.surrounding_pixels,
-            "static": self.static,
-            "device": self.device,
-            "clear_nans": True,
-            "normalize": True,
-            "predict_delta": self.predict_delta,
-            "spatial_mask": self.spatial_mask,
-            "normalize_y": self.normalize_y,
-        }
+        if self.dynamic:
+            default_args: Dict[str, Any] = {
+                "target_var": self.target_var,
+                "test_years": self.test_years,
+                "seq_length": self.seq_length,  # changed this default arg
+                "forecast_horizon": self.forecast_horizon,
+                "data_path": self.data_path,
+                "batch_file_size": self.batch_size,
+                "mode": mode,
+                "shuffle_data": True,
+                "clear_nans": True,
+                "normalize": True,
+                "predict_delta": False,
+                "experiment": "one_timestep_forecast",  # changed this default arg
+                "mask": None,
+                "pred_months": None,
+                "to_tensor": to_tensor,
+                "surrounding_pixels": False,
+                "dynamic_ignore_vars": self.dynamic_ignore_vars,
+                "static_ignore_vars": self.static_ignore_vars,
+                "timestep_aggs": False,  # changed this default arg
+                "static": self.static,
+                "device": self.device,
+                "spatial_mask": None,
+                "normalize_y": True,
+                "reducing_dims": None,
+                "calculate_latlons": False,  # changed this default arg
+                "use_prev_y_var": False,
+                "resolution": "D",
+            }
+
+        else:
+            default_args: Dict[str, Any] = {
+                "data_path": self.data_path,
+                "batch_file_size": self.batch_size,
+                "shuffle_data": shuffle_data,
+                "mode": mode,
+                "mask": None,
+                "experiment": self.experiment,
+                "seq_length": self.seq_length,
+                "pred_months": self.pred_months,
+                "to_tensor": to_tensor,
+                "ignore_vars": self.ignore_vars,
+                "timestep_aggs": self.include_timestep_aggs,
+                "surrounding_pixels": self.surrounding_pixels,
+                "static": self.static,
+                "device": self.device,
+                "clear_nans": True,
+                "normalize": True,
+                "predict_delta": self.predict_delta,
+                "spatial_mask": self.spatial_mask,
+                "normalize_y": self.normalize_y,
+                "calculate_latlons": self.include_latlons,
+                "use_prev_y_var": self.include_prev_y,
+            }
 
         for key, val in kwargs.items():
             # override the default args
             default_args[key] = val
 
-        dl = DataLoader(**default_args)
+        if self.dynamic:
+            dl = DynamicDataLoader(**default_args)
+        else:
+            dl = DataLoader(**default_args)
 
         if (self.static == "embeddings") and (self.num_locations is None):
             self.num_locations = cast(int, dl.max_loc_int)

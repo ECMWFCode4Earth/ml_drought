@@ -13,11 +13,15 @@ class _EngineerBase:
     name: str
 
     def __init__(
-        self, data_folder: Path = Path("data"), process_static: bool = False
+        self,
+        data_folder: Path = Path("data"),
+        process_static: bool = False,
+        resolution: str = "D",
     ) -> None:
 
         self.data_folder = data_folder
         self.process_static = process_static
+        self.resolution = resolution
 
         self.interim_folder = data_folder / "interim"
         assert (
@@ -41,11 +45,16 @@ class _EngineerBase:
         self,
         test_year: Union[int, List[int]],
         target_variable: str = "VHI",
-        pred_months: int = 12,
+        seq_length: int = 12,
         expected_length: Optional[int] = 12,
     ) -> None:
 
-        self._process_dynamic(test_year, target_variable, pred_months, expected_length)
+        self._process_dynamic(
+            test_year=test_year,
+            target_variable=target_variable,
+            seq_length=seq_length,
+            expected_length=expected_length,
+        )
         if self.process_static:
             self._process_static()
 
@@ -88,7 +97,7 @@ class _EngineerBase:
         self,
         test_year: Union[int, List[int]],
         target_variable: str = "VHI",
-        pred_months: int = 12,
+        seq_length: int = 12,
         expected_length: Optional[int] = 12,
     ) -> None:
         if expected_length is None:
@@ -109,7 +118,7 @@ class _EngineerBase:
             ds=data,
             years=cast(List, test_year),
             target_variable=target_variable,
-            pred_months=pred_months,
+            seq_length=seq_length,
             expected_length=expected_length,
         )
 
@@ -119,7 +128,7 @@ class _EngineerBase:
         self._stratify_training_data(
             train_ds=train_ds,
             target_variable=target_variable,
-            pred_months=pred_months,
+            seq_length=seq_length,
             expected_length=expected_length,
         )
 
@@ -131,42 +140,59 @@ class _EngineerBase:
         processed_files = []
         if static:
             interim_folder = self.interim_folder / "static"
+            processed_files.extend(list(interim_folder.glob("*.nc")))
         else:
             interim_folder = self.interim_folder
-        for subfolder in interim_folder.iterdir():
-            if str(subfolder).endswith("_preprocessed") and subfolder.is_dir():
-                processed_files.extend(list(subfolder.glob("*.nc")))
+            for subfolder in interim_folder.iterdir():
+                if str(subfolder).endswith("_preprocessed") and subfolder.is_dir():
+                    processed_files.extend(list(subfolder.glob("*.nc")))
         return processed_files
 
-    def _make_dataset(self, static: bool, overwrite_dims: bool = False) -> xr.Dataset:
-
+    def _make_dataset(
+        self, static: bool, overwrite_dims: bool = False, latlon: bool = True
+    ) -> xr.Dataset:
+        """Make one dataset by joining all of the different
+        datasets (spatial coords should be constant).
+        """
         datasets = []
-        dims = ["lon", "lat"]
-        coords = {}
-        for idx, file in enumerate(self._get_preprocessed_files(static)):
-            print(f"Processing {file}")
-            datasets.append(xr.open_dataset(file))
+        if latlon:
+            dims = ["lon", "lat"]
+            coords = {}
+            for idx, file in enumerate(self._get_preprocessed_files(static)):
+                print(f"Processing {file}")
+                datasets.append(xr.open_dataset(file))
 
-            if idx == 0:
-                for dim in dims:
-                    coords[dim] = datasets[idx][dim].values
-            else:
-                for dim in dims:
-                    array_equal = np.array_equal(datasets[idx][dim].values, coords[dim])
-                    if (not overwrite_dims) and (not array_equal):
-                        # SORT the values first (xarray clever enough to figure out joining)
-                        assert np.array_equal(
-                            np.sort(datasets[idx][dim].values), np.sort(coords[dim])
-                        ), f"{dim} is different! Was this run using the preprocessor?"
-                    elif overwrite_dims and (not array_equal):
-                        assert len(datasets[idx][dim].values) == len(coords[dim])
-                        datasets[idx][dim] = coords[dim]
+                if idx == 0:
+                    for dim in dims:
+                        coords[dim] = datasets[idx][dim].values
+                else:
+                    for dim in dims:
+                        array_equal = np.array_equal(
+                            datasets[idx][dim].values, coords[dim]
+                        )
+                        if (not overwrite_dims) and (not array_equal):
+                            # SORT the values first (xarray clever enough to figure out joining)
+                            assert np.array_equal(
+                                np.sort(datasets[idx][dim].values), np.sort(coords[dim])
+                            ), f"{dim} is different! Was this run using the preprocessor?"
+                        elif overwrite_dims and (not array_equal):
+                            assert len(datasets[idx][dim].values) == len(coords[dim])
+                            datasets[idx][dim] = coords[dim]
+        else:
+            for idx, file in enumerate(self._get_preprocessed_files(static)):
+                datasets.append(xr.open_dataset(file))
 
         # join all preprocessed datasets
         main_dataset = datasets[0]
-        for dataset in datasets[1:]:
-            # ensure equal timesteps ('inner' join)
-            main_dataset = main_dataset.merge(dataset, join="inner")
+        if len(datasets) > 1:
+            for dataset in datasets[1:]:
+                # ensure equal timesteps ('inner' join)
+                main_dataset = main_dataset.merge(dataset, join="inner")
+
+        # Transpose to ensure that first dimension is time
+        if not static:
+            reducing_dims = [c for c in main_dataset.coords if c != "time"]
+            main_dataset = main_dataset.transpose(*(["time"] + reducing_dims))
 
         return main_dataset
 
@@ -174,7 +200,7 @@ class _EngineerBase:
         self,
         train_ds: xr.Dataset,
         target_variable: str,
-        pred_months: int,
+        seq_length: int,
         expected_length: Optional[int],
     ) -> None:
         """split `train_ds` into x, y and save the outputs to
@@ -194,7 +220,7 @@ class _EngineerBase:
                 year=cur_pred_year,
                 target_variable=target_variable,
                 target_month=cur_pred_month,
-                pred_months=pred_months,
+                seq_length=seq_length,
                 expected_length=expected_length,
             )
             if arrays is not None:
@@ -211,7 +237,7 @@ class _EngineerBase:
         ds: xr.Dataset,
         years: List[int],
         target_variable: str,
-        pred_months: int,
+        seq_length: int,
         expected_length: Optional[int],
     ) -> xr.Dataset:
         """save the test data and return the training dataset"""
@@ -224,7 +250,7 @@ class _EngineerBase:
             year=years[0],
             target_variable=target_variable,
             target_month=1,
-            pred_months=pred_months,
+            seq_length=seq_length,
             expected_length=expected_length,
         )
 
@@ -246,7 +272,7 @@ class _EngineerBase:
                         year=year,
                         target_variable=target_variable,
                         target_month=month,
-                        pred_months=pred_months,
+                        seq_length=seq_length,
                         expected_length=expected_length,
                     )
                     if xy_test is not None:
@@ -259,7 +285,7 @@ class _EngineerBase:
         year: int,
         target_variable: str,
         target_month: int,
-        pred_months: int,
+        seq_length: int,
         expected_length: Optional[int],
     ) -> Tuple[Optional[Dict[str, xr.Dataset]], date]:
         raise NotImplementedError
@@ -283,15 +309,22 @@ class _EngineerBase:
             output_ds.to_netcdf(output_location / f"{x_or_y}.nc")
 
     def _calculate_normalization_values(
-        self, x_data: xr.Dataset
+        self, train_data: xr.Dataset, latlon: bool = True
     ) -> DefaultDict[str, Dict[str, float]]:
         normalization_values: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 
-        for var in x_data.data_vars:
-            mean = float(
-                x_data[var].mean(dim=["lat", "lon", "time"], skipna=True).values
-            )
-            std = float(x_data[var].std(dim=["lat", "lon", "time"], skipna=True).values)
+        for var in train_data.data_vars:
+            if latlon:
+                dims = ["lat", "lon", "time"]
+            else:  # ASSUME 1D
+                assert (
+                    len([c for c in train_data.coords if c != "time"]) == 1
+                ), "Only works with one dimension"
+                dimension_name = [c for c in train_data.coords][0]
+                dims = [dimension_name, "time"]
+
+            mean = float(train_data[var].mean(dim=dims, skipna=True).values)
+            std = float(train_data[var].std(dim=dims, skipna=True).values)
             normalization_values[var]["mean"] = mean
             normalization_values[var]["std"] = std
 

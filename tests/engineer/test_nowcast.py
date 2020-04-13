@@ -56,7 +56,7 @@ class TestNowcastEngineer:
             years=[2001],
             target_variable="VHI",
             expected_length=11,
-            pred_months=11,
+            seq_length=11,
         )
 
         assert (
@@ -69,7 +69,7 @@ class TestNowcastEngineer:
 
         engineer = NowcastEngineer(tmp_path)
         engineer.engineer(
-            test_year=2001, target_variable="a", pred_months=11, expected_length=11
+            test_year=2001, target_variable="a", seq_length=11, expected_length=11
         )
 
         def check_folder(folder_path):
@@ -121,7 +121,7 @@ class TestNowcastEngineer:
             year=2001,
             target_variable="VHI",
             target_month=1,
-            pred_months=4,
+            seq_length=4,
             expected_length=4,
         )
 
@@ -156,7 +156,7 @@ class TestNowcastEngineer:
             year=2001,
             target_variable="VHI",
             target_month=1,
-            pred_months=4,
+            seq_length=4,
             expected_length=5,
         )
 
