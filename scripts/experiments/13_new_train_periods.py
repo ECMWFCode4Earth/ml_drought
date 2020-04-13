@@ -80,7 +80,7 @@ def calculate_length_of_hi_med_lo_experiment_train_years(
 
 
 def sort_by_median_target_var(
-    target_data: xr.DataArray
+    target_data: xr.DataArray,
 ) -> Tuple[pd.DataFrame, pd.DatetimeIndex]:
     target_variable = [v for v in target_data.data_vars][0]
 
