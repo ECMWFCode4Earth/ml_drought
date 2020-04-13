@@ -108,23 +108,23 @@ def main():
 
     # ----------------------------------------------------------------
     # CODE
-    # engineer(
-    #     data_dir=data_dir,
-    #     static_ignore_vars=static_ignore_vars,
-    #     dynamic_ignore_vars=dynamic_ignore_vars,
-    #     logy=logy,
-    #     test_years=test_years,
-    # )
-    # ealstm = train_model(
-    #         data_dir=data_dir,
-    #         static_ignore_vars=static_ignore_vars,
-    #         dynamic_ignore_vars=dynamic_ignore_vars,
-    #         n_epochs=num_epochs,
-    #         seq_length=seq_length,
-    #         test_years=test_years,
-    #         target_var=target_var,
-    #         batch_size=batch_size,
-    # )
+    engineer(
+        data_dir=data_dir,
+        static_ignore_vars=static_ignore_vars,
+        dynamic_ignore_vars=dynamic_ignore_vars,
+        logy=logy,
+        test_years=test_years,
+    )
+    ealstm = train_model(
+            data_dir=data_dir,
+            static_ignore_vars=static_ignore_vars,
+            dynamic_ignore_vars=dynamic_ignore_vars,
+            n_epochs=num_epochs,
+            seq_length=seq_length,
+            test_years=test_years,
+            target_var=target_var,
+            batch_size=batch_size,
+    )
     run_evaluation(data_dir)
 
     # datestamp the model directory so that we can run multiple experiments

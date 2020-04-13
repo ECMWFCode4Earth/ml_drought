@@ -88,7 +88,7 @@ static_ignore_vars = [
     "elev_90",
     "elev_max",
     ## hydrologic_attributes (?? I like these ??)
-    "q_mean",
+    # "q_mean",
     "runoff_ratio",
     "stream_elas",
     # "slope_fdc",
@@ -96,7 +96,7 @@ static_ignore_vars = [
     "baseflow_index_ceh",
     "hfd_mean",
     "Q5",
-    "Q95",
+    # "Q95",
     "high_q_freq",
     "high_q_dur",
     "low_q_freq",
@@ -134,8 +134,8 @@ static_ignore_vars = [
     "surfacewater_abs",
     "groundwater_abs",
     ## climatic_attributes
-    "p_mean",
-    "pet_mean",
+    # "p_mean",
+    # "pet_mean",
     "p_seasonality",
     "high_prec_freq",
     "high_prec_dur",
