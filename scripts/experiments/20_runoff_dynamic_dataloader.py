@@ -45,6 +45,7 @@ def train_model(
     test_years=np.arange(2011, 2017),
     target_var = "discharge_spec",
     batch_size=1000,
+    static_embedding_size = 64,
 ) -> EARecurrentNetwork:
     # initialise the model
     ealstm = EARecurrentNetwork(
@@ -58,6 +59,7 @@ def train_model(
         static_ignore_vars=static_ignore_vars,
         target_var=target_var,
         test_years=np.arange(2011, 2017),
+        static_embedding_size=static_embedding_size
     )
     print("\n\n** Initialised Models! **\n\n")
 
@@ -72,10 +74,12 @@ def train_model(
 
 def run_evaluation(data_dir, ealstm):
     print("** Running Model Evaluation **")
-    # ealstm = load_model(
-    #     data_dir / 'models/one_timestep_forecast/ealstm/model.pt', device="cpu"
-    # )
-    ealstm.move_model('cpu')
+    if ealstm is None:
+        ealstm = load_model(
+            data_dir / 'models/one_timestep_forecast/ealstm/model.pt', device="cpu"
+        )
+    else:
+        ealstm.move_model('cpu')
 
     # evaluate on the test set
     ealstm.evaluate(
@@ -106,6 +110,7 @@ def main():
     # Model Vars
     test_years = [2011, 2012, 2013, 2014, 2015]
     num_epochs = 100
+    static_embedding_size = 64
 
     # ----------------------------------------------------------------
     # CODE
@@ -125,6 +130,7 @@ def main():
             test_years=test_years,
             target_var=target_var,
             batch_size=batch_size,
+            static_embedding_size=static_embedding_size,
     )
     run_evaluation(data_dir, ealstm)
 
@@ -136,5 +142,11 @@ def main():
     )
 
 
+def evaluate_only():
+    data_dir = get_data_path()
+    run_evaluation(data_dir, ealstm=None)
+
+
 if __name__ == "__main__":
     main()
+    # evaluate_only()
