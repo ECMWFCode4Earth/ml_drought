@@ -150,10 +150,10 @@ def main():
 
 
 def evaluate_only():
-    # data_dir = get_data_path()
+    data_dir = get_data_path()
     run_evaluation(data_dir, ealstm=None)
 
 
 if __name__ == "__main__":
-    main()
-    # evaluate_only()
+    # main()
+    evaluate_only()
