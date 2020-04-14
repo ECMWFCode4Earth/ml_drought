@@ -150,7 +150,7 @@ def main():
 
 
 def evaluate_only():
-    data_dir = get_data_path()
+    # data_dir = get_data_path()
     run_evaluation(data_dir, ealstm=None)
 
 
