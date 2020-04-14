@@ -81,6 +81,7 @@ def run_evaluation(data_dir, ealstm=None):
         ealstm = load_model(
             data_dir / 'models/one_timestep_forecast/ealstm/model.pt', device="cpu"
         )
+        ealstm.move_model('cpu')
     else:
         ealstm.move_model('cpu')
 
