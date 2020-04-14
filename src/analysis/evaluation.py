@@ -218,6 +218,11 @@ def _r2_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
     )
 
 
+def _bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
+    """Bias calculation"""
+    return 100 * (pred_vals / true_vals) - 1
+
+
 def spatial_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
 
