@@ -101,20 +101,22 @@ def main():
     # ----------------------------------------------------------------
     # PARAMETERS
     # General Vars
-    # dynamic_ignore_vars = ['discharge_vol', 'discharge_spec', 'pet']
-    dynamic_ignore_vars = ['temperature', 'discharge_vol', 'discharge_spec',
-               'pet', 'humidity', 'shortwave_rad', 'longwave_rad', 'windspeed']
+    dynamic_ignore_vars = ['discharge_vol', 'discharge_spec', 'pet']
+    # dynamic_ignore_vars = ['temperature', 'discharge_vol', 'discharge_spec',
+    #            'pet', 'humidity', 'shortwave_rad', 'longwave_rad', 'windspeed',
+    #            # 'peti', 'precipitation',
+    #            ]
     target_var = "discharge_spec"
     seq_length = 365
     forecast_horizon = 1
-    logy = True
+    logy = False
     batch_size = 2000  # 1000
 
     # Model Vars
     num_epochs = 100
     test_years = [2011, 2012, 2013, 2014, 2015]
     static_embedding_size = 256  # 64
-    hidden_size = 128
+    hidden_size = 256  # 128
 
     # ----------------------------------------------------------------
     # CODE
