@@ -138,7 +138,7 @@ class DynamicDataLoader(DataLoader):
             return len(self.valid_test_times) // self.batch_file_size
 
     def get_train_test_times(
-        self, test_years: Union[List[str], str]
+        self, test_years: Union[List[str], str], mask: Optional[List[bool]] = None
     ) -> Tuple[List[datetime]]:
         """Get a list of the test timestamps, train_timestamps"""
         min_test_date, max_train_date, _ = self.get_max_train_date(
@@ -148,6 +148,8 @@ class DynamicDataLoader(DataLoader):
         # use pandas .loc functionality with timeseries to get train_test periods
         ds_times = pd.DataFrame(index=pd.DatetimeIndex(self.dynamic_ds.time.values))
         valid_train_times = ds_times.loc[:max_train_date].index.values
+        if mask:
+            valid_train_times = np.array(valid_train_times)[mask]
         valid_test_times = ds_times.loc[min_test_date:].index.values
 
         return valid_train_times, valid_test_times
@@ -233,7 +235,7 @@ class DynamicDataLoader(DataLoader):
 
     @staticmethod
     def calculate_legitimate_target_times(
-        data_times: List[pd.Timestamp], seq_length: int, resolution: str = "D"
+        data_times: List[pd.Timestamp], seq_length: int, resolution: str = "D",
     ) -> List[pd.Timestamp]:
         """return a list of the target times that we have enough data for"""
         min_data_date = min(data_times)
