@@ -94,6 +94,14 @@ class NNBase(ModelBase):
     ) -> None:
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
+        trainer = pl.Trainer(
+            logger=tb_logger,
+            max_epochs=num_epochs,
+            gpus=[0] if self.device != 'cpu' else None,
+
+        )
+
+
         if early_stopping is not None:
             len_mask = len(
                 DataLoader._load_datasets(
