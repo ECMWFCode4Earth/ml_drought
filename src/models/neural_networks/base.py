@@ -4,6 +4,8 @@ from pathlib import Path
 import pickle
 import math
 import xarray as xr
+import pytorch_lightning as pl
+
 
 import torch
 from torch.nn import functional as F
@@ -15,6 +17,11 @@ from typing import cast, Dict, List, Optional, Tuple, Union
 from ..base import ModelBase
 from ..utils import chunk_array
 from ..data import DataLoader, train_val_mask, TrainData, idx_to_input
+
+class PytorchLightningBase(pl.LightningModule):
+    def __init__():
+        super(PytorchLightningBase, self).__init__()
+
 
 
 class NNBase(ModelBase):
