@@ -135,7 +135,13 @@ class DynamicEngineer(_EngineerBase):
         test_years: Optional[Union[List[str], str]] = None,
         static_ignore_vars: Optional[List[str]] = None,
         variables_for_ohe: Optional[List[str]] = None,
+        spatial_units: Optional[List[Union[str, int]]] = None,
     ) -> None:
+        """
+        : spatial_units: Optional[List[Union[str, int]]] = None
+            Which spatial units to include in the engineered data
+            e.g. might only want to train on specific stations / pixels?
+        """
         self.check_and_move_already_existing_nc_file(self.static_output_folder)
 
         print("Engineering the static data\n" f"\tAugment: {augment_static}")
@@ -176,6 +182,13 @@ class DynamicEngineer(_EngineerBase):
         # drop the ignore vars
         static_ds = self._drop_ignore_vars(static_ds, ignore_vars=static_ignore_vars)
 
+        # only include spatial_units from spatial_units List
+        if spatial_units is not None:
+            spatial_coord = [c for c in static_ds.coords if c != 'time']
+            assert len(spatial_coord) == 1, "Expect spatial coord to be 1D"
+            spatial_coord = spatial_coord[0]
+            static_ds = static_ds.sel({spatial_coord: spatial_units})
+
         # calculate normalization dict
         static_normalization_dict = self.create_normalization_dict(
             static_ds, static=True, latlon=latlon
@@ -213,7 +226,13 @@ class DynamicEngineer(_EngineerBase):
         logy: bool = False,
         target_variable: str = "discharge_spec",
         dynamic_ignore_vars: Optional[List[str]] = None,
+        spatial_units: Optional[List[Union[str, int]]] = None,
     ) -> xr.Dataset:
+        """
+        : spatial_units: Optional[List[Union[str, int]]] = None
+            Which spatial units to include in the engineered data
+            e.g. might only want to train on specific stations / pixels?
+        """
         self.check_and_move_already_existing_nc_file(self.output_folder)
 
         print(
@@ -250,6 +269,13 @@ class DynamicEngineer(_EngineerBase):
 
             dynamic_ds = self._drop_ignore_vars(dynamic_ds, ignore_vars=dynamic_ignore_vars)
 
+        # only include spatial_units from spatial_units List
+        if spatial_units is not None:
+            spatial_coord = [c for c in dynamic_ds.coords if c != 'time']
+            assert len(spatial_coord) == 1, "Expect spatial coord to be 1D"
+            spatial_coord = spatial_coord[0]
+            dynamic_ds = dynamic_ds.sel({spatial_coord: spatial_units})
+
         # calculate the normalization dict
         dynamic_normalization_dict = self.create_normalization_dict(
             dynamic_ds, static=False, test_year=test_years, latlon=latlon
@@ -270,6 +296,7 @@ class DynamicEngineer(_EngineerBase):
         dynamic_ignore_vars: Optional[List[str]] = None,
         latlon: bool = False,
         variables_for_ohe: Optional[List[str]] = None,
+        spatial_units: Optional[List[Union[str, int]]] = None,
     ) -> None:
         dynamic_ds = self.engineer_dynamic(
             test_years=test_years,
@@ -277,6 +304,7 @@ class DynamicEngineer(_EngineerBase):
             target_variable=target_variable,
             dynamic_ignore_vars=dynamic_ignore_vars,
             logy=logy,
+            spatial_units=spatial_units,
         )
 
         if augment_static:
@@ -286,12 +314,14 @@ class DynamicEngineer(_EngineerBase):
                 dynamic_ds=dynamic_ds,
                 static_ignore_vars=static_ignore_vars,
                 variables_for_ohe=variables_for_ohe,
+                spatial_units=spatial_units,
             )
         else:
             self.engineer_static(
                 latlon=latlon,
                 augment_static=False,
                 static_ignore_vars=static_ignore_vars,
+                spatial_units=spatial_units,
             )
 
     def augment_static_data(
