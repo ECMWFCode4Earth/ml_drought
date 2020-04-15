@@ -73,10 +73,12 @@ class DynamicDataLoader(DataLoader):
         calculate_latlons: bool = False,  # changed this default arg
         use_prev_y_var: bool = False,
         resolution: str = "D",
+        logy: bool = False,
     ) -> None:
         self.data_path = data_path
         self.forecast_horizon = forecast_horizon
         self.target_var = target_var
+        self.logy = logy
 
         self.dynamic_ignore_vars = dynamic_ignore_vars
         self.static_ignore_vars = static_ignore_vars
@@ -169,6 +171,14 @@ class DynamicDataLoader(DataLoader):
         min_ds_date = pd.to_datetime(ds.time.min().values)
 
         return min_test_date, max_train_date, min_ds_date
+
+    def log_target_variable(self, dynamic_ds: xr.Dataset, offset=0.001) -> xr.Dataset:
+        dynamic_ds[self.target_var] = np.log(dynamic_ds[self.target_var] + offset)
+        return dynamic_ds
+
+    def unlog_target_variable(self, dynamic_ds: xr.Dataset, offset=0.001) -> xr.Dataset:
+        dynamic_ds[self.target_var] = np.exp(dynamic_ds[self.target_var]) - offset
+        return dynamic_ds
 
     def get_reducing_dims(self, reducing_dims: Optional[List[str]] = None) -> List[str]:
         return [c for c in self.dynamic_ds.coords if c != "time"]

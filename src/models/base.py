@@ -238,6 +238,9 @@ class ModelBase:
             true = self.denormalize_y(vals["y"], vals["y_var"])
             preds = self.denormalize_y(preds_dict[key], vals["y_var"])
 
+            # if self.logy:
+            #     self.undo_log_transform(vals["y_var"])
+
             output_dict[key] = np.sqrt(mean_squared_error(true, preds)).item()
 
             total_preds.append(preds)
