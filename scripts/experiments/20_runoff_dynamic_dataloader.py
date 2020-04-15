@@ -23,6 +23,7 @@ def engineer(
     dynamic_ignore_vars,
     logy=True,
     test_years=np.arange(2011, 2017),
+    stations=None,
 ) -> None:
     de = DynamicEngineer(data_dir, process_static=True)
 
@@ -32,6 +33,7 @@ def engineer(
         dynamic_ignore_vars=dynamic_ignore_vars,
         logy=logy,
         test_years=test_years,
+        spatial_units=stations,
     )
     print("\n\n** Data Engineered! **\n\n")
 
@@ -81,9 +83,9 @@ def run_evaluation(data_dir, ealstm=None):
         ealstm = load_model(
             data_dir / 'models/one_timestep_forecast/ealstm/model.pt', device="cpu"
         )
-        ealstm.move_model('cpu')
-    else:
-        ealstm.move_model('cpu')
+
+    # move to CPU
+    ealstm.move_model('cpu')
 
     # evaluate on the test set
     ealstm.evaluate(
@@ -93,7 +95,6 @@ def run_evaluation(data_dir, ealstm=None):
     )
     results_dict = json.load(open(data_dir / 'models/one_timestep_forecast/ealstm/results.json', 'rb'))
     print("** Overall RMSE: ", results_dict['total'], " **\n\n")
-
 
 
 def main():
@@ -112,6 +113,8 @@ def main():
     forecast_horizon = 1
     logy = False
     batch_size = 2000  # 1000
+    catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
+    catchment_ids = [int(c_id) for c_id in catchment_ids]
 
     # Model Vars
     num_epochs = 100
@@ -127,6 +130,7 @@ def main():
         dynamic_ignore_vars=dynamic_ignore_vars,
         logy=logy,
         test_years=test_years,
+        stations=catchment_ids,
     )
     ealstm = train_model(
             data_dir=data_dir,
