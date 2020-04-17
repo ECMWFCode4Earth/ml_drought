@@ -266,7 +266,10 @@ class NNBase(ModelBase):
                     output_cur.append(x[3][idx])
 
                 # yearly aggs
-                output_ym.append(x[4][idx])
+                if x[4] is None:
+                    output_ym.append(torch.zeros(1))
+                else:
+                    output_ym.append(x[4][idx])
 
                 # static data
                 if self.static == "embeddings":
