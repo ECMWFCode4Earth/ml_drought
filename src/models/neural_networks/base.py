@@ -269,13 +269,11 @@ class NNBase(ModelBase):
                 else:
                     output_cur.append(x[3][idx])
 
-                if x[4] is not None:
-                    # TODO: Gabi help for situations where not include yearly_aggs
-                    # yearly aggs
-                    output_ym = []
-                    output_ym.append(x[4][idx])
+                # yearly aggs
+                if x[4] is None:
+                    output_ym.append(torch.zeros(1))
                 else:
-                    output_ym = None
+                    output_ym.append(x[4][idx])
 
                 # static data
                 if self.static == "embeddings":
