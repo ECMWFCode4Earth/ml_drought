@@ -271,7 +271,10 @@ class NNBase(ModelBase):
 
                 # yearly aggs
                 if x[4] is None:
-                    output_ym.append(torch.zeros(1))
+                    if output_ym is None:
+                        output_ym = [torch.zeros(1)]
+                    else:
+                        output_ym.append(torch.zeros(1))
                 else:
                     output_ym.append(x[4][idx])
 
