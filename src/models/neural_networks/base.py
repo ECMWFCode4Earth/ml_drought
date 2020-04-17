@@ -451,6 +451,8 @@ class NNBase(ModelBase):
                         output_tensors.append(
                             x.static[start_idx : start_idx + num_inputs]
                         )
+                else:
+                    output_tensors.append(tensor[start_idx : start_idx + num_inputs])
             else:
                 output_tensors.append(torch.zeros(num_inputs, 1))
 
