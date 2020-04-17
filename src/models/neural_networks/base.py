@@ -191,8 +191,27 @@ class NNBase(ModelBase):
         with torch.no_grad():
             for dict in test_arrays_loader:
                 for key, val in dict.items():
-                    preds = self.model(*self._input_to_tuple(val.x))
-                    preds_dict[key] = preds.cpu().numpy()
+
+                    input_tuple = self._input_to_tuple(val.x)
+
+                    # TODO - this code is mostly copied from
+                    # models.utils - can be cleaned up
+                    # with a default batch size of 256
+                    num_sections = max(input_tuple[0].shape[0] // 256, 1)
+                    split_x = []
+                    for idx, x_section in enumerate(input_tuple):
+                        if x_section is not None:
+                            split_x.append(torch.chunk(x_section, num_sections))
+                        else:
+                            split_x.append([None] * num_sections)  # type: ignore
+
+                    chunked_input = list(zip(*split_x))
+
+                    all_preds = []
+                    for batch in chunked_input:
+                        all_preds.append(self.model(*batch).cpu().numpy())
+                    preds_dict[key] = np.concatenate(all_preds)
+
                     test_arrays_dict[key] = {
                         "y": val.y.cpu().numpy(),
                         "latlons": val.latlons,
@@ -441,6 +460,8 @@ class NNBase(ModelBase):
                         output_tensors.append(
                             x.static[start_idx : start_idx + num_inputs]
                         )
+                else:
+                    output_tensors.append(tensor[start_idx : start_idx + num_inputs])
             else:
                 output_tensors.append(torch.zeros(num_inputs, 1))
 
