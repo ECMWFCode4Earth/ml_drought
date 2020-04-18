@@ -196,6 +196,7 @@ def all_explanations_for_file(
             background_size=background_size,
             start_idx=start_idx,
             num_inputs=num_inputs,
+            method=method,
         )
 
         if start_idx == 0:
