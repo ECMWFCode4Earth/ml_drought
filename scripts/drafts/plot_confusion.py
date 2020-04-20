@@ -3,7 +3,7 @@ from sklearn.utils.multiclass import unique_labels
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
-from typing import Optional
+from typing import Optional, Tuple, List, Any
 
 
 def vdi_confusion_matrix(
@@ -11,28 +11,36 @@ def vdi_confusion_matrix(
     vdi_pred: xr.DataArray,
     normalize: bool = False,
     title: Optional[str] = None,
+    # classes: Optional[List[Any]] = None,
+    ax: Optional[plt.Axes] = None,
     **kwargs,
-) -> plt.Axes:
+) -> Tuple[plt.Axes, np.ndarray]:
+    """Create and Plot Confusion Matrix for
+    Vegetation Deficit Index
+    """
     # 1. convert xarray -> numpy format
     true_np = vdi_true.stack(pixel=["lat", "lon"]).values.flatten().clip(min=1, max=5)
     pred_np = vdi_pred.stack(pixel=["lat", "lon"]).values.flatten().clip(min=1, max=5)
 
     # plot confusion matrix
-    ax = plot_confusion_matrix(
-        y_true=true_np, y_pred=pred_np, normalize=normalize, title=title, **kwargs
+    ax, conf_mat = plot_confusion_matrix(
+        y_true=true_np, y_pred=pred_np, normalize=normalize,
+        title=title, ax=ax, #classes=classes,
+        **kwargs
     )
-    return ax
+    return ax, conf_mat
 
 
 def plot_confusion_matrix(
     y_true: np.ndarray,
     y_pred: np.ndarray,
-    #  classes: Optional[] = None,
+    # classes: Optional[List[Any]] = None,
     normalize: bool = False,
     title: Optional[str] = None,
     cmap=plt.cm.Blues,
+    ax: Optional[plt.Axes] = None,
     **imshow_kwargs,
-) -> plt.Axes:
+) -> Tuple[plt.Axes, np.ndarray]:
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
@@ -48,24 +56,28 @@ def plot_confusion_matrix(
     # Compute confusion matrix
     cm = confusion_matrix(y_true, y_pred)
     # Only use the labels that appear in the data
-    #     classes = classes[unique_labels(y_true, y_pred)]
     if normalize:
         cm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
         print("Normalized confusion matrix")
     else:
         print("Confusion matrix, without normalization")
 
-    print(cm)
-
-    fig, ax = plt.subplots(figsize=(12, 8))
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(12, 8))
+    else:
+        fig = plt.gcf()
     im = ax.imshow(cm, interpolation="nearest", cmap=cmap, **imshow_kwargs)
     ax.figure.colorbar(im, ax=ax)
     # We want to show all ticks...
+    if classes is None:
+        classes = unique_labels(y_true, y_pred)
+    # default_labels = np.arange(cm.shape[0])
     ax.set(
         xticks=np.arange(cm.shape[1]),
         yticks=np.arange(cm.shape[0]),
         # ... and label them with the respective list entries
-        #  xticklabels=classes, yticklabels=classes,
+        xticklabels=classes,  # default_labels if classes is None else classes,
+        yticklabels=classes,  # default_labels if classes is None else classes,
         title=title,
         ylabel="True label",
         xlabel="Predicted label",
@@ -89,4 +101,4 @@ def plot_confusion_matrix(
             )
 
     fig.tight_layout()
-    return ax
+    return ax, cm
