@@ -48,12 +48,14 @@ class BokuNDVIExporter(BaseExporter):
 
         self.resolution = str(resolution)
         if self.resolution == "1000":
-            # 1km pixel
+            # 1000m pixel
             self.dataset: str = "boku_ndvi_1000"  # type: ignore
+            # Get the url from the environment variable FTP_1000
             self.base_url: str = os.environ.get("FTP_1000")  # type: ignore
         elif self.resolution == "250":
             # 250m pixel
             self.dataset: str = "boku_ndvi_250"  # type: ignore
+            # Get the url from the environment variable FTP_1000
             self.base_url: str = os.environ.get("FTP_250")  # type: ignore
         else:
             assert False, (
@@ -100,6 +102,7 @@ class BokuNDVIExporter(BaseExporter):
 
     @staticmethod
     def tif_to_nc(tif_file: Path, nc_file: Path) -> None:
+        """convert .tif -> .nc using GDAL"""
         ds = gdal.Open(tif_file.resolve().as_posix())  # type: ignore
         _ = gdal.Translate(  # type: ignore
             format="NetCDF",

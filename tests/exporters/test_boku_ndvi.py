@@ -57,6 +57,7 @@ class TestBokuNDVIExporter:
             tmp_path / "raw/boku_ndvi"
         ).exists(), "Expected a raw/boku_ndvi folder to be created!"
 
+    @pytest.mark.xfail(reason="GDAL not part of the testing environment")
     @patch("os.system", autospec=True)
     def test_checkpointing(self, mock_system, tmp_path, capsys):
         # checks we don't redownload files
@@ -78,43 +79,42 @@ class TestBokuNDVIExporter:
         ), f"Expected stdout to be {expected_stdout}, got {captured.out}"
         mock_system.assert_not_called(), "os.system was called! Should have been skipped"
 
+    @pytest.mark.xfail(reason="GDAL not part of the testing environment")
     @patch("urllib.request.Request", autospec=True)
     def test_get_filenames(self, request_patch, monkeypatch, tmp_path):
         # First 1000 characters of the urllib response from the ftp for africa data,
         # pulled on May 23 2019
         request_patch.return_value = MagicMock()
         response = (
-            "-rw-r--r--    1 31094    31111     4172329 Feb 01  2015 "
-            "chirps-v2.0.1981.01.1.tif.gz\r\n-rw-r--r--    1 31094    "
-            "31111     4133059 Feb 01  2015 chirps-v2.0.1981.01.2.tif."
-            "gz\r\n-rw-r--r--    1 31094    31111     3948001 Feb 01  20"
-            "15 chirps-v2.0.1981.01.3.tif.gz\r\n-rw-r--r--    1 31094    "
-            "31111     3942431 Feb 01  2015 chirps-v2.0.1981.01.4.tif.g"
-            "z\r\n-rw-r--r--    1 31094    31111     4176578 Feb 01  201"
-            "5 chirps-v2.0.1981.01.5.tif.gz\r\n-rw-r--r--    1 31094    "
-            "31111     4333592 Feb 01  2015 chirps-v2.0.1981.01.6.tif."
-            "gz\r\n-rw-r--r--    1 31094    31111     4129989 Feb 02  2015"
-            " chirps-v2.0.1981.02.1.tif.gz\r\n-rw-r--r--    1 31094    3"
-            "1111     4067482 Feb 02  2015 chirps-v2.0.1981.02.2.tif."
-            "gz\r\n-rw-r--r--    1 31094    31111     3927390 Feb 02  2015"
-            " chirps-v2.0.1981.02.3.tif.gz\r\n-rw-r--r--    1 31094    311"
-            "11     4208427 Feb 02  2015 chirps-v2.0.1981.02.4.tif.gz\r\n-"
-            "rw-r--r--    1 31094    31111     4301096 Feb 02  2015 chirps-v"
-            "2.0.1981.02.5.tif.gz\r\n"
+            "drwxrwxr-x    2 1000     1000        61440 Nov 20 09:09 "
+            "Bw\r\n-rw-rw-r--    1 1000     1000     14118491 Nov 22 17:26 "
+            "MCD13A2.t200133.006.EAv1.1_km_10_days_NDVI.O1.tif\r\n-rw-rw-r--    "
+            "1 1000     1000     14314223 Nov 22 17:26 "
+            "MCD13A2.t200134.006.EAv1.1_km_10_days_NDVI.O1.tif\r\n-rw-rw-r--    "
+            "1 1000     1000     14126921 Nov 22 17:26 "
+            "MCD13A2.t200135.006.EAv1.1_km_10_days_NDVI.O1.tif\r\n-rw-rw-r--    "
+            "1 1000     1000     13919032 Nov 22 17:26 "
+            "MCD13A2.t200136.006.EAv1.1_km_10_days_NDVI.O1.tif\r\n-rw-rw-r--    "
+            "1 1000     1000     14162913 Nov 22 17:26 "
+            "MCD13A2.t200201.006.EAv1.1_km_10_days_NDVI.O1.tif\r\n-rw-rw-r--    "
+            "1 1000     1000     13853999 Nov 22 17:26 "
+            "MCD13A2.t200202.006.EAv1.1_km_10_days_NDVI.O1.tif\r\n-rw-rw-r--    "
+            "1 1000     1000     13610468 Nov 22 17:26 "
+            "MCD13A2.t200203.006.EAv1.1_km_10_days_NDVI.O1.tif\r\n-rw-rw-r--    "
+            "1 1000     1000     13877936 Nov 22 17:26 "
+            "MCD13A2.t200204.006.EAv1.1_km_10_days_NDVI.O1.tif\r\n-rw-rw-r--    "
+            "1 1000     1000     13477749 Nov 22 17:26 MCD13A2.t200205.006.EAv1.1_k"
         )
 
         expected_filenames = [
-            "chirps-v2.0.1981.01.1.tif.gz",
-            "chirps-v2.0.1981.01.2.tif.gz",
-            "chirps-v2.0.1981.01.3.tif.gz",
-            "chirps-v2.0.1981.01.4.tif.gz",
-            "chirps-v2.0.1981.01.5.tif.gz",
-            "chirps-v2.0.1981.01.6.tif.gz",
-            "chirps-v2.0.1981.02.1.tif.gz",
-            "chirps-v2.0.1981.02.2.tif.gz",
-            "chirps-v2.0.1981.02.3.tif.gz",
-            "chirps-v2.0.1981.02.4.tif.gz",
-            "chirps-v2.0.1981.02.5.tif.gz",
+            "MCD13A2.t200133.006.EAv1.1_km_10_days_NDVI.O1.tif",
+            "MCD13A2.t200134.006.EAv1.1_km_10_days_NDVI.O1.tif",
+            "MCD13A2.t200135.006.EAv1.1_km_10_days_NDVI.O1.tif",
+            "MCD13A2.t200136.006.EAv1.1_km_10_days_NDVI.O1.tif",
+            "MCD13A2.t200201.006.EAv1.1_km_10_days_NDVI.O1.tif",
+            "MCD13A2.t200202.006.EAv1.1_km_10_days_NDVI.O1.tif",
+            "MCD13A2.t200203.006.EAv1.1_km_10_days_NDVI.O1.tif",
+            "MCD13A2.t200204.006.EAv1.1_km_10_days_NDVI.O1.tif",
         ]
 
         def mockreturn(request):
@@ -128,11 +128,11 @@ class TestBokuNDVIExporter:
         monkeypatch.setattr(urllib.request, "urlopen", mockreturn)
 
         exporter = BokuNDVIExporter(tmp_path)
-        filenames = exporter.get_chirps_filenames(region="africa", period="pentad")
+        filenames = exporter.get_filenames(exporter.base_url, identifying_string=".tif")
 
         assert filenames == expected_filenames
 
         # Can't get assert_called_with to work, this is a hackey workaround
         assert (
-            request_patch.call_args[0][0] == self.africa_url
+            request_patch.call_args[0][0] == exporter.base_url
         ), f"Expected the urllib request to use following url: {self.africa_url}"
