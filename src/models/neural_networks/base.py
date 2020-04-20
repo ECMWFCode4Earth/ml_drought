@@ -439,7 +439,6 @@ class NNBase(ModelBase):
 
         # make val.x a list of tensors, as is required by the shap explainer
         output_tensors = []
-        assert False
         for _, val in sorted(idx_to_input.items()):
             tensor = x.__getattribute__(val)
             if tensor is not None:
@@ -466,6 +465,7 @@ class NNBase(ModelBase):
             else:
                 output_tensors.append(torch.zeros(num_inputs, 1))
 
+        assert False
         explain_arrays = self.explainer.shap_values(output_tensors)
 
         return {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)}
