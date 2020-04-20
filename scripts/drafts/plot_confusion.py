@@ -2,7 +2,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.utils.multiclass import unique_labels
 import matplotlib.pyplot as plt
 import numpy as np
-import xarry as xr
+import xarray as xr
 from typing import Optional
 
 
