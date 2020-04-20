@@ -11,7 +11,7 @@ def vdi_confusion_matrix(
     vdi_pred: xr.DataArray,
     normalize: bool = False,
     title: Optional[str] = None,
-    # classes: Optional[List[Any]] = None,
+    classes: Optional[List[Any]] = None,
     ax: Optional[plt.Axes] = None,
     **kwargs,
 ) -> Tuple[plt.Axes, np.ndarray]:
@@ -25,7 +25,7 @@ def vdi_confusion_matrix(
     # plot confusion matrix
     ax, conf_mat = plot_confusion_matrix(
         y_true=true_np, y_pred=pred_np, normalize=normalize,
-        title=title, ax=ax, #classes=classes,
+        title=title, ax=ax, classes=classes,
         **kwargs
     )
     return ax, conf_mat
@@ -34,7 +34,7 @@ def vdi_confusion_matrix(
 def plot_confusion_matrix(
     y_true: np.ndarray,
     y_pred: np.ndarray,
-    # classes: Optional[List[Any]] = None,
+    classes: Optional[List[Any]] = None,
     normalize: bool = False,
     title: Optional[str] = None,
     cmap=plt.cm.Blues,
