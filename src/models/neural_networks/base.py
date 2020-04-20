@@ -439,7 +439,7 @@ class NNBase(ModelBase):
 
         # make val.x a list of tensors, as is required by the shap explainer
         output_tensors = []
-
+        assert False
         for _, val in sorted(idx_to_input.items()):
             tensor = x.__getattribute__(val)
             if tensor is not None:

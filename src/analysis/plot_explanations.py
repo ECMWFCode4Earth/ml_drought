@@ -201,7 +201,8 @@ def all_explanations_for_file(
 
         if start_idx == 0:
             for input_name, expl_array in explanations.__dict__.items():
-                output_dict[input_name] = expl_array
+                if expl_array is not None:
+                    output_dict[input_name] = expl_array
         else:
             for input_name, expl_array in explanations.__dict__.items():
                 try:
