@@ -402,7 +402,6 @@ class NNBase(ModelBase):
         elif method == "morris":
             explanations = self._get_morris_explanations(x)
 
-        assert False
         if save_explanations:
             analysis_folder = self._make_analysis_folder()
             for idx, expl_array in enumerate(explanations):
