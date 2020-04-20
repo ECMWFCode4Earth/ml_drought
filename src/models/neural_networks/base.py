@@ -402,6 +402,7 @@ class NNBase(ModelBase):
         elif method == "morris":
             explanations = self._get_morris_explanations(x)
 
+        assert False
         if save_explanations:
             analysis_folder = self._make_analysis_folder()
             for idx, expl_array in enumerate(explanations):
@@ -466,7 +467,7 @@ class NNBase(ModelBase):
                 output_tensors.append(torch.zeros(num_inputs, 1))
 
         explain_arrays = self.explainer.shap_values(output_tensors)
-        assert False
+
         return {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)}
 
     def _get_morris_explanations(self, x: TrainData) -> Dict[str, np.ndarray]:
