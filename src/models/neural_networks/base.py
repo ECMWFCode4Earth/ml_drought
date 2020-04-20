@@ -465,9 +465,8 @@ class NNBase(ModelBase):
             else:
                 output_tensors.append(torch.zeros(num_inputs, 1))
 
-        assert False
         explain_arrays = self.explainer.shap_values(output_tensors)
-
+        assert False
         return {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)}
 
     def _get_morris_explanations(self, x: TrainData) -> Dict[str, np.ndarray]:
