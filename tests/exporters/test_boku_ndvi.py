@@ -2,6 +2,7 @@ import urllib.request
 from unittest.mock import patch, MagicMock
 import os
 from pathlib import Path
+import pytest
 
 from src.exporters.boku_ndvi import BokuNDVIExporter
 
@@ -49,6 +50,7 @@ class TestBokuNDVIExporter:
         with open(conda_prefix / "etc/conda/deactivate.d/env_vars.sh", "wb") as fp:
             fp.write(write_to_file)
 
+    @pytest.mark.xfail(reason="GDAL not part of the testing environment")
     def test_init(self, tmp_path):
         BokuNDVIExporter(tmp_path)
         assert (

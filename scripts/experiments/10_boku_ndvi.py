@@ -36,12 +36,16 @@ def engineer(pred_months=3, target_var="boku_VCI"):
     )
 
 
+<<<<<<< HEAD
 def models(
     target_var: str = "boku_VCI",
     adede_only=False,
     experiment_name=None,
     check_inversion=False,
 ):
+=======
+def models(target_var: str = "boku_VCI", adede_only=False):
+>>>>>>> f371ece16fee55a6fb6d7ab302ab79d11cb1a134
     if adede_only:
         ignore_vars = [
             "p84.162",
@@ -57,6 +61,7 @@ def models(
             "SMsurf",
         ]
     else:
+<<<<<<< HEAD
         ignore_vars = [
             "p84.162",
             "sp",
@@ -67,6 +72,9 @@ def models(
             "SMroot",
             "SMsurf",
         ]
+=======
+        ignore_vars = ["p84.162", "sp", "tp", "Eb", "VCI", "modis_ndvi"]
+>>>>>>> f371ece16fee55a6fb6d7ab302ab79d11cb1a134
 
     # drop the target variable from ignore_vars
     ignore_vars = [v for v in ignore_vars if v != target_var]
@@ -89,6 +97,7 @@ def models(
         include_pred_month=True,
         surrounding_pixels=None,
         explain=False,
+<<<<<<< HEAD
         static="features",
         ignore_vars=ignore_vars,
         num_epochs=50,  # 1,  # 50 ,
@@ -96,6 +105,14 @@ def models(
         hidden_size=256,
         include_latlons=True,
         check_inversion=check_inversion,
+=======
+        static=None if adede_only else "features",
+        ignore_vars=ignore_vars,
+        num_epochs=50,
+        early_stopping=5,
+        hidden_size=256,
+        include_latlons=True,
+>>>>>>> f371ece16fee55a6fb6d7ab302ab79d11cb1a134
     )
 
     # -------------
@@ -107,6 +124,7 @@ def models(
         surrounding_pixels=None,
         pretrained=False,
         explain=False,
+<<<<<<< HEAD
         static="features",
         ignore_vars=ignore_vars,
         num_epochs=50,  # 1,  # 50 ,
@@ -115,10 +133,20 @@ def models(
         static_embedding_size=64,
         include_latlons=True,
         check_inversion=check_inversion,
+=======
+        static=None if adede_only else "features",
+        ignore_vars=ignore_vars,
+        num_epochs=50,
+        early_stopping=5,
+        hidden_size=256,
+        static_embedding_size=None if adede_only else 64,
+        include_latlons=True,
+>>>>>>> f371ece16fee55a6fb6d7ab302ab79d11cb1a134
     )
 
     # rename the output file
     data_path = get_data_path()
+<<<<<<< HEAD
     if experiment_name is None:
         experiment_name = (
             f"one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
@@ -140,10 +168,41 @@ def move_features_dir(target_var, adede_only=False, experiment_name=None):
         from_path=data_path / "features" / "one_month_forecast",
         to_path=data_path / "features" / experiment_name,
     )
+=======
+
+    _rename_directory(
+        from_path=data_path / "models" / "one_month_forecast",
+        to_path=data_path
+        / "models"
+        / f"one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
+    )
+
+
+def move_features_dir(target_var, adede_only=False):
+    # rename the features dir
+    data_path = get_data_path()
+    try:
+        _rename_directory(
+            from_path=data_path / "features" / "one_month_forecast",
+            to_path=data_path
+            / "features"
+            / f"one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
+        )
+    except Exception as E:
+        print(E)
+        date = datetime.datetime.now().strftime("%Y%M%d_%H%M")
+        _rename_directory(
+            from_path=data_path / "features" / "one_month_forecast",
+            to_path=data_path
+            / "features"
+            / f"one_month_forecast_BOKU_{target_var}_our_vars_{date}",
+        )
+>>>>>>> f371ece16fee55a6fb6d7ab302ab79d11cb1a134
 
 
 def main(monthly=True):
     # preprocess(monthly=monthly)
+<<<<<<< HEAD
     ADEDE_ONLY = False
     TARGET_VARS = ["boku_VCI", "VCI3M"]  # "boku_VCI", "VCI3M"
 
@@ -159,6 +218,18 @@ def main(monthly=True):
         )
         print(f"\n\n ** Target Variable: {target_var} DONE ** \n\n")
         # move_features_dir(target_var=target_var, adede_only=adede_only)
+=======
+
+    adede_only = True
+    target_vars = ["VCI3M"]  # "boku_VCI",
+    for target_var in target_vars:
+        print(f"\n\n ** Target Variable: {target_var} ** \n\n")
+        engineer(target_var=target_var)
+        print(f"\n\n ** RUNNING MODELS FOR Target Variable: {target_var} ** \n\n")
+        models(target_var=target_var, adede_only=adede_only)
+        print(f"\n\n ** Target Variable: {target_var} DONE ** \n\n")
+        move_features_dir(target_var=target_var, adede_only=adede_only)
+>>>>>>> f371ece16fee55a6fb6d7ab302ab79d11cb1a134
 
 
 if __name__ == "__main__":

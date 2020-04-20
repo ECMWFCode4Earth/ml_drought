@@ -47,6 +47,10 @@ def spatial_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     pred_da_shape = (pred_da.lat.shape[0], pred_da.lon.shape[0])
     assert true_da_shape == pred_da_shape
 
+    # sort the dimensions so that no inversions (e.g. lat)
+    true_da = true_da.sortby(["time", "lat", "lon"])
+    pred_da = pred_da.sortby(["time", "lat", "lon"])
+
     r2_vals = 1 - (np.nansum((true_da.values - pred_da.values) ** 2, axis=0)) / (
         np.nansum((true_da.values - np.nanmean(pred_da.values)) ** 2, axis=0)
     )
@@ -325,7 +329,7 @@ def _read_data(
 
     # LOAD the X files
     X_data_paths = [
-        f for f in (data_dir / "features" / experiment / train_or_test).glob("*/X.nc")
+        f for f in (data_dir / "features" / experiment / train_or_test).glob("*/x.nc")
     ]
     X_ds = _read_multi_data_paths(X_data_paths)
 
