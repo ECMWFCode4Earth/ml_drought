@@ -19,6 +19,7 @@ data/*.zip*
 *.nc
 *.grib
 *.idx
+*.pkl
 scripts/*.png
 scripts/variables.txt
 
