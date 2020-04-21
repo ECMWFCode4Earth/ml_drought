@@ -154,7 +154,7 @@ def save_shap(
     shap_data: TrainData,
     input_arrays: ModelArrays,
     model: NNBase,
-) -> Tuple[xr.Dataset, xr.Dataset, xr.Dataset]:
+) -> Union[Tuple[xr.Dataset, xr.Dataset, xr.Dataset], None]:
     """Convert shap data in TrainData object to xarray objects"""
     # 1. get lats, lons, time
     latlons = input_arrays.latlons
@@ -166,9 +166,17 @@ def save_shap(
     dynamic_vars = input_arrays.x_vars
     static_vars = list(dataloader.static.data_vars)  # type: ignore
 
+    # 3. check they haven't been calculated before
+    analysis_folder = _make_analysis_folder(model)
+    if (analysis_folder / date_str).exists():
+        print(f"---- Skipping {date_str} ----")
+        return None
+    else:
+        (analysis_folder / date_str).mkdir(exist_ok=True, parents=True)
+
     # check that the shapes are correct
     assert shap_data.historical.shape == (
-        len(latlons),
+        len(latlons),  # type: ignore
         len(times),
         len(dynamic_vars),
     )  # type: ignore
@@ -181,7 +189,6 @@ def save_shap(
     return_arrays = (shap_historical_ds, shap_static, shap_pred_month)
 
     # 4. save the xarray objects
-    analysis_folder = _make_analysis_folder(model)
     shap_historical_ds.to_netcdf(analysis_folder / date_str / "shap_historical_ds.nc")
     shap_static.to_netcdf(analysis_folder / date_str / "shap_static.nc")
     shap_pred_month.to_netcdf(analysis_folder / date_str / "shap_pred_month.nc")
@@ -236,7 +243,6 @@ def main() -> None:
     # 2. get all the TEST timesteps in the test directory
     test_folders = [d for d in (data_dir / f"features/{EXPERIMENT}/test").iterdir()]
     #  TODO: remove this test
-    test_folders = [test_folders[0]]
 
     #  3. run the shap analysis for each test timestep
     for test_folder in test_folders:
