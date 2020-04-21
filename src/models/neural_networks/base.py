@@ -280,7 +280,13 @@ class NNBase(ModelBase):
                     output_cur.append(x[3][idx])
 
                 # yearly aggs
-                output_ym.append(x[4][idx])
+                if x[4] is None:
+                    if output_ym is None:
+                        output_ym = [torch.zeros(1)]
+                    else:
+                        output_ym.append(torch.zeros(1))
+                else:
+                    output_ym.append(x[4][idx])
 
                 # static data
                 if self.static == "embeddings":
@@ -296,13 +302,15 @@ class NNBase(ModelBase):
 
                 if len(output_tensors) >= sample_size:
                     return [
-                        torch.stack(output_tensors),  # type: ignore
-                        torch.cat(output_pm, dim=0),
-                        torch.stack(output_ll),
-                        torch.stack(output_cur),
-                        torch.stack(output_ym),
-                        torch.stack(output_static),
-                        torch.stack(output_prev_y),
+                        torch.stack(output_tensors).to(self.device),  # type: ignore
+                        torch.cat(output_pm, dim=0).to(self.device),
+                        torch.stack(output_ll).to(self.device),
+                        torch.stack(output_cur).to(self.device),
+                        torch.stack(output_ym).to(self.device)
+                        if output_ym is not None
+                        else None,
+                        torch.stack(output_static).to(self.device),
+                        torch.stack(output_prev_y).to(self.device),
                     ]
 
         return [
@@ -465,6 +473,8 @@ class NNBase(ModelBase):
                         output_tensors.append(
                             x.static[start_idx : start_idx + num_inputs]
                         )
+                else:
+                    output_tensors.append(tensor[start_idx : start_idx + num_inputs])
             else:
                 output_tensors.append(torch.zeros(num_inputs, 1))
 
