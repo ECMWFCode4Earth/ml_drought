@@ -272,7 +272,7 @@ def main() -> None:
     # 2. get all the TEST timesteps in the test directory
     test_folders = [d for d in (data_dir / f"features/{EXPERIMENT}/test").iterdir()]
     #  TODO: remove this test
-    test_folders = [test_folders[:2]]
+    test_folders = test_folders[:2]
 
     #  3. run the shap analysis for each test timestep
     for test_folder in test_folders:
