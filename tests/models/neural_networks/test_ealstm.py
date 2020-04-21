@@ -80,9 +80,17 @@ class TestEARecurrentNetwork:
         assert model_dict["normalize_y"] == normalize_y
 
     @pytest.mark.parametrize(
-        "use_pred_months,use_static_embedding", [(True, 10), (False, None)]
+        "use_pred_months,use_static_embedding,check_inversion",
+        [
+            (True, 10, False),
+            (False, None, False),
+            (True, 10, True),
+            (False, None, True),
+        ],
     )
-    def test_train(self, tmp_path, capsys, use_pred_months, use_static_embedding):
+    def test_train(
+        self, tmp_path, capsys, use_pred_months, use_static_embedding, check_inversion
+    ):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -120,7 +128,7 @@ class TestEARecurrentNetwork:
             static_embedding_size=use_static_embedding,
             normalize_y=True,
         )
-        model.train()
+        model.train(check_inversion=check_inversion)
 
         captured = capsys.readouterr()
         expected_stdout = "Epoch 1, train smooth L1: 0."

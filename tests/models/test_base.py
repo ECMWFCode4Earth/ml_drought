@@ -11,10 +11,21 @@ class TestBase:
         assert (tmp_path / "models").exists(), f"Models dir not made!"
 
     @pytest.mark.parametrize(
-        "save_preds,predict_delta",
-        [(True, True), (False, True), (True, False), (False, False)],
+        "save_preds,predict_delta,check_inverted",
+        [
+            (True, True, False),
+            (False, True, False),
+            (True, False, False),
+            (False, False, False),
+            (True, True, True),
+            (False, True, True),
+            (True, False, True),
+            (False, False, True),
+        ],
     )
-    def test_evaluate(self, tmp_path, monkeypatch, capsys, save_preds, predict_delta):
+    def test_evaluate(
+        self, tmp_path, monkeypatch, capsys, save_preds, predict_delta, check_inverted
+    ):
         def mockreturn(self):
 
             y = np.array([1, 1, 1, 1, 1])
@@ -47,7 +58,9 @@ class TestBase:
         if not model_dir.exists():
             model_dir.mkdir(exist_ok=True, parents=True)
         base.model_dir = model_dir
-        base.evaluate(save_results=False, save_preds=save_preds)
+        base.evaluate(
+            save_results=False, save_preds=save_preds, check_inverted=check_inverted
+        )
 
         captured = capsys.readouterr()
         expected_stdout = "RMSE: 0.0"

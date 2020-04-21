@@ -1,6 +1,5 @@
 from pathlib import Path
 import warnings
-import itertools
 import re
 from pprint import pprint
 import multiprocessing
@@ -358,19 +357,15 @@ class ERA5Exporter(CDSExporter):
         if n_parallel_requests < 1:
             n_parallel_requests = 1
 
-        # break up by month
+        # break up by year
         if break_up:
             if n_parallel_requests > 1:  # Run in parallel
                 p = multiprocessing.Pool(int(n_parallel_requests))
 
             output_paths = []
-            for year, month in itertools.product(
-                processed_selection_request["year"],
-                processed_selection_request["month"],
-            ):
+            for year in processed_selection_request["year"]:
                 updated_request = processed_selection_request.copy()
                 updated_request["year"] = [year]
-                updated_request["month"] = [month]
 
                 if n_parallel_requests > 1:  # Run in parallel
                     # multiprocessing of the paths
