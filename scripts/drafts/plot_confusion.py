@@ -13,6 +13,7 @@ def vdi_confusion_matrix(
     title: Optional[str] = None,
     classes: Optional[List[Any]] = None,
     ax: Optional[plt.Axes] = None,
+    dropnan: bool = False,
     **kwargs,
 ) -> Tuple[plt.Axes, np.ndarray]:
     """Create and Plot Confusion Matrix for
@@ -23,13 +24,21 @@ def vdi_confusion_matrix(
     pred_np = vdi_pred.stack(pixel=["lat", "lon"]).values.flatten().clip(min=1, max=5)
 
     # 2. drop nas
-    nan_index = np.argwhere(true_np==np.nan)
+    if dropnan:
+        nan_index = np.argwhere(np.isnan(true_np))
+        nan_index += np.argwhere(np.isnan(pred_np))
+        true_np = true_np[~nan_index]
+        pred_np = pred_np[~nan_index]
 
     # plot confusion matrix
     ax, conf_mat = plot_confusion_matrix(
-        y_true=true_np, y_pred=pred_np, normalize=normalize,
-        title=title, ax=ax, classes=classes,
-        **kwargs
+        y_true=true_np,
+        y_pred=pred_np,
+        normalize=normalize,
+        title=title,
+        ax=ax,
+        classes=classes,
+        **kwargs,
     )
     return ax, conf_mat
 

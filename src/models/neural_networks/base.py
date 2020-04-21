@@ -276,7 +276,7 @@ class NNBase(ModelBase):
                     else:
                         output_ym.append(torch.zeros(1))
                 else:
-                    output_ym.append(x[4][idx])
+                    output_ym.append(x[4][idx])  # type: ignore
 
                 # static data
                 if self.static == "embeddings":
@@ -296,7 +296,9 @@ class NNBase(ModelBase):
                         torch.cat(output_pm, dim=0).to(self.device),
                         torch.stack(output_ll).to(self.device),
                         torch.stack(output_cur).to(self.device),
-                        torch.stack(output_ym).to(self.device) if output_ym is not None else None,
+                        torch.stack(output_ym).to(self.device)
+                        if output_ym is not None
+                        else None,
                         torch.stack(output_static).to(self.device),
                         torch.stack(output_prev_y).to(self.device),
                     ]
@@ -367,7 +369,7 @@ class NNBase(ModelBase):
         start_idx: int = 0,
         num_inputs: int = 10,
         method: str = "shap",
-    ) -> TrainData:
+    ) -> Tuple[TrainData, List[Union[torch.Tensor, None]]]:
         """
         Expain the outputs of a trained model.
 
@@ -396,7 +398,7 @@ class NNBase(ModelBase):
             x = val.x
 
         if method == "shap":
-            explanations = self._get_shap_explanations(
+            explanations, background_samples = self._get_shap_explanations(
                 x, background_size, start_idx, num_inputs
             )
         elif method == "morris":
@@ -421,7 +423,7 @@ class NNBase(ModelBase):
                 with (analysis_folder / "input_variable_names.pkl").open("wb") as f:
                     pickle.dump(var_names, f)
 
-        return TrainData(**explanations)
+        return TrainData(**explanations), background_samples
 
     def _get_shap_explanations(
         self,
@@ -429,7 +431,7 @@ class NNBase(ModelBase):
         background_size: int = 100,
         start_idx: int = 0,
         num_inputs: int = 10,
-    ) -> Dict[str, np.ndarray]:
+    ) -> Tuple[Dict[str, np.ndarray], List[Union[torch.Tensor, None]]]:
 
         if self.explainer is None:
             background_samples = self._get_background(sample_size=background_size)
@@ -467,7 +469,10 @@ class NNBase(ModelBase):
 
         explain_arrays = self.explainer.shap_values(output_tensors)
 
-        return {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)}
+        return (
+            {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)},
+            background_samples,
+        )
 
     def _get_morris_explanations(self, x: TrainData) -> Dict[str, np.ndarray]:
         """
