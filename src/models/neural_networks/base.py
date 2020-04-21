@@ -292,7 +292,9 @@ class NNBase(ModelBase):
                         torch.cat(output_pm, dim=0).to(self.device),
                         torch.stack(output_ll).to(self.device),
                         torch.stack(output_cur).to(self.device),
-                        torch.stack(output_ym).to(self.device) if output_ym is not None else None,
+                        torch.stack(output_ym).to(self.device)
+                        if output_ym is not None
+                        else None,
                         torch.stack(output_static).to(self.device),
                         torch.stack(output_prev_y).to(self.device),
                     ]
