@@ -5,6 +5,8 @@ import xarray as xr
 from typing import List, Union, Any, Tuple, Dict, Optional
 import sys
 import calendar
+from pandas.tseries.offsets import MonthEnd
+from collections import namedtuple
 
 sys.path.append("../..")
 
@@ -141,6 +143,10 @@ def create_folder_date_str(ts: pd.Timestamp) -> str:
     return f"{ts.year}_{ts.month}"
 
 
+def get_timestep_from_date_str(date_str) -> pd.Timestamp:
+    return pd.to_datetime(date_str, format="%Y_%m") + MonthEnd()
+
+
 def drop_vals(ds: xr.Dataset, ignore_vars: List[str]):
     ignore_vars = [v for v in ignore_vars if v in [var_ for var_ in ds.data_vars]]
     return ds.drop(ignore_vars)
@@ -232,6 +238,29 @@ def run_shap_for_folder(data_dir: Path, test_folder: Path, model: NNBase) -> Non
     )
 
 
+def open_shap_analysis(model) -> Dict[str, namedtuple]:  # type: ignore
+    """Read the data from the SHAP analysis run in the other functions"""
+    ShapValues = namedtuple(
+        "ShapValues", ["date_str", "target_time", "historical", "pred_month", "static"]
+    )
+
+    analysis_dir = model.model_dir / "analysis"
+    dirs = [d for d in analysis_dir.iterdir() if len(list(d.glob("*.nc"))) > 0]
+
+    out_dict = {}
+    for shap_analysis_dir in dirs:
+        shap = ShapValues(
+            date_str=shap_analysis_dir.name,
+            target_time=get_timestep_from_date_str(shap_analysis_dir.name),
+            historical=xr.open_dataset(shap_analysis_dir / "shap_historical_ds.nc"),
+            pred_month=xr.open_dataset(shap_analysis_dir / "shap_pred_month.nc"),
+            static=xr.open_dataset(shap_analysis_dir / "shap_static.nc"),
+        )
+        out_dict[shap_analysis_dir.name] = shap
+
+    return out_dict
+
+
 def main() -> None:
     data_dir = get_data_path()
 
@@ -243,6 +272,7 @@ def main() -> None:
     # 2. get all the TEST timesteps in the test directory
     test_folders = [d for d in (data_dir / f"features/{EXPERIMENT}/test").iterdir()]
     #  TODO: remove this test
+    test_folders = [test_folders[0]]
 
     #  3. run the shap analysis for each test timestep
     for test_folder in test_folders:

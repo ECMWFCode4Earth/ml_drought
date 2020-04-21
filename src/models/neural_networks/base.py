@@ -471,7 +471,7 @@ class NNBase(ModelBase):
 
         return (
             {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)},
-            background_samples,
+            None,  # background_samples,
         )
 
     def _get_morris_explanations(self, x: TrainData) -> Dict[str, np.ndarray]:
