@@ -18,9 +18,12 @@ def vdi_confusion_matrix(
     """Create and Plot Confusion Matrix for
     Vegetation Deficit Index
     """
-    # 1. convert xarray -> numpy format
+    # 1. 3D lat-lon-time -> 1D pixel-time flattened arrays
     true_np = vdi_true.stack(pixel=["lat", "lon"]).values.flatten().clip(min=1, max=5)
     pred_np = vdi_pred.stack(pixel=["lat", "lon"]).values.flatten().clip(min=1, max=5)
+
+    # 2. drop nas
+    nan_index = np.argwhere(true_np==np.nan)
 
     # plot confusion matrix
     ax, conf_mat = plot_confusion_matrix(
@@ -58,14 +61,12 @@ def plot_confusion_matrix(
     # Only use the labels that appear in the data
     if normalize:
         cm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
-        print("Normalized confusion matrix")
-    else:
-        print("Confusion matrix, without normalization")
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 8))
     else:
         fig = plt.gcf()
+
     im = ax.imshow(cm, interpolation="nearest", cmap=cmap, **imshow_kwargs)
     ax.figure.colorbar(im, ax=ax)
     # We want to show all ticks...
