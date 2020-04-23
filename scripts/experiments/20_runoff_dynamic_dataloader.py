@@ -49,6 +49,7 @@ def train_model(
     batch_size=1000,
     static_embedding_size = 64,
     hidden_size = 128,
+    early_stopping: Optional[int] = None,
 ) -> EARecurrentNetwork:
     # initialise the model
     ealstm = EARecurrentNetwork(
@@ -68,7 +69,7 @@ def train_model(
     print("\n\n** Initialised Models! **\n\n")
 
     # Train the model on train set
-    ealstm.train(num_epochs=n_epochs)
+    ealstm.train(num_epochs=n_epochs, early_stopping=early_stopping)
     print("\n\n** Model Trained! **\n\n")
 
     # save the model
@@ -97,7 +98,7 @@ def run_evaluation(data_dir, ealstm=None):
     print("** Overall RMSE: ", results_dict['total'], " **\n\n")
 
 
-def main(engineer_only=False):
+def main(engineer_only=False, model_only=False):
     data_dir = get_data_path()
 
     # ----------------------------------------------------------------
@@ -118,21 +119,24 @@ def main(engineer_only=False):
     catchment_ids = None
 
     # Model Vars
-    num_epochs = 50   # 100
+    num_epochs = 1 # 50   # 100
     test_years = [2011, 2012, 2013, 2014, 2015]
     static_embedding_size = 64  # 64
     hidden_size = 256  # 128
+    # early_stopping = None
+    early_stopping = 10
 
     # ----------------------------------------------------------------
     # CODE
-    engineer(
-        data_dir=data_dir,
-        static_ignore_vars=static_ignore_vars,
-        dynamic_ignore_vars=dynamic_ignore_vars,
-        logy=logy,
-        test_years=test_years,
-        stations=catchment_ids,
-    )
+    if not model_only:
+        engineer(
+            data_dir=data_dir,
+            static_ignore_vars=static_ignore_vars,
+            dynamic_ignore_vars=dynamic_ignore_vars,
+            logy=logy,
+            test_years=test_years,
+            stations=catchment_ids,
+        )
 
     if not engineer_only:
         ealstm = train_model(
@@ -146,6 +150,7 @@ def main(engineer_only=False):
                 batch_size=batch_size,
                 static_embedding_size=static_embedding_size,
                 hidden_size=hidden_size,
+                early_stopping=early_stopping,
         )
         run_evaluation(data_dir, ealstm)
 
@@ -164,5 +169,6 @@ def evaluate_only():
 
 if __name__ == "__main__":
     engineer_only = False
-    main(engineer_only=engineer_only)
+    model_only = True
+    main(model_only=model_only, engineer_only=engineer_only)
     # evaluate_only()

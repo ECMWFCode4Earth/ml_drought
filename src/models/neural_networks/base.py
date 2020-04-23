@@ -114,10 +114,9 @@ class NNBase(ModelBase):
                 val_dataloader = self.get_dataloader(
                     mode="train", mask=val_mask, to_tensor=True, shuffle_data=False
                 )
-
                 batches_without_improvement = 0
                 best_val_score = np.inf
-                assert False, "Need to implement early stopping for Dynamic dataloader"
+                # assert False, "Need to implement early stopping for Dynamic dataloader"
             else:
                 len_mask = len(
                     DataLoader._load_datasets(

@@ -88,6 +88,7 @@ class DynamicDataLoader(DataLoader):
             experiment=experiment,
             static=True if static is not None else False,
             test_years=test_years,
+            mask=mask,
         )
 
         # init the super class
@@ -121,6 +122,7 @@ class DynamicDataLoader(DataLoader):
         self.resolution = resolution
         data_times = [pd.to_datetime(t) for t in self.dynamic_ds.time.values]
 
+        # TODO: add mask here?
         self.legit_target_times = self.calculate_legitimate_target_times(
             seq_length=self.seq_length,
             data_times=data_times,
@@ -151,6 +153,7 @@ class DynamicDataLoader(DataLoader):
         ds_times = pd.DataFrame(index=pd.DatetimeIndex(self.dynamic_ds.time.values))
         valid_train_times = ds_times.loc[:max_train_date].index.values
         if mask:
+            # get the train / validation data using mask
             valid_train_times = np.array(valid_train_times)[mask]
         valid_test_times = ds_times.loc[min_test_date:].index.values
 
@@ -184,7 +187,8 @@ class DynamicDataLoader(DataLoader):
         return [c for c in self.dynamic_ds.coords if c != "time"]
 
     def load_data(
-        self, experiment: str, static: bool, test_years: Union[List[str], str]
+        self, experiment: str, static: bool, test_years: Union[List[str], str],
+        mask: Optional[List[bool]] = None,
     ) -> None:
         """load static and dynamic data into memory for
         dynamic sampling!
@@ -199,7 +203,7 @@ class DynamicDataLoader(DataLoader):
 
         # split into TRAIN/TEST data
         self.valid_train_times, self.valid_test_times = self.get_train_test_times(
-            test_years
+            test_years, mask=mask,
         )
         self.train_dynamic = self.dynamic_ds.sel(time=self.valid_train_times)
 
