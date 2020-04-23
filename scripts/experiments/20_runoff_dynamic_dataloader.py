@@ -97,29 +97,30 @@ def run_evaluation(data_dir, ealstm=None):
     print("** Overall RMSE: ", results_dict['total'], " **\n\n")
 
 
-def main():
+def main(engineer_only=False):
     data_dir = get_data_path()
 
     # ----------------------------------------------------------------
     # PARAMETERS
     # General Vars
-    dynamic_ignore_vars = ['discharge_vol', 'discharge_spec', 'pet']
-    # dynamic_ignore_vars = ['temperature', 'discharge_vol', 'discharge_spec',
-    #            'pet', 'humidity', 'shortwave_rad', 'longwave_rad', 'windspeed',
-    #            # 'peti', 'precipitation',
-    #            ]
+    # dynamic_ignore_vars = ['discharge_vol', 'discharge_spec', 'pet']
+    dynamic_ignore_vars = ['temperature', 'discharge_vol', 'discharge_spec',
+               'pet', 'humidity', 'shortwave_rad', 'longwave_rad', 'windspeed',
+               # 'peti', 'precipitation',
+               ]
     target_var = "discharge_spec"
     seq_length = 365
     forecast_horizon = 1
     logy = True
     batch_size = 2000  # 1000
-    catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
-    catchment_ids = [int(c_id) for c_id in catchment_ids]
+    # catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
+    # catchment_ids = [int(c_id) for c_id in catchment_ids]
+    catchment_ids = None
 
     # Model Vars
-    num_epochs = 100
+    num_epochs = 50   # 100
     test_years = [2011, 2012, 2013, 2014, 2015]
-    static_embedding_size = 256  # 64
+    static_embedding_size = 64  # 64
     hidden_size = 256  # 128
 
     # ----------------------------------------------------------------
@@ -132,26 +133,28 @@ def main():
         test_years=test_years,
         stations=catchment_ids,
     )
-    ealstm = train_model(
-            data_dir=data_dir,
-            static_ignore_vars=static_ignore_vars,
-            dynamic_ignore_vars=dynamic_ignore_vars,
-            n_epochs=num_epochs,
-            seq_length=seq_length,
-            test_years=test_years,
-            target_var=target_var,
-            batch_size=batch_size,
-            static_embedding_size=static_embedding_size,
-            hidden_size=hidden_size,
-    )
-    run_evaluation(data_dir, ealstm)
 
-    # datestamp the model directory so that we can run multiple experiments
-    _rename_directory(
-        from_path=data_dir / "models" / "one_timestep_forecast",
-        to_path=data_dir / "models" / "one_timestep_forecast",
-        with_datetime=True,
-    )
+    if not engineer_only:
+        ealstm = train_model(
+                data_dir=data_dir,
+                static_ignore_vars=static_ignore_vars,
+                dynamic_ignore_vars=dynamic_ignore_vars,
+                n_epochs=num_epochs,
+                seq_length=seq_length,
+                test_years=test_years,
+                target_var=target_var,
+                batch_size=batch_size,
+                static_embedding_size=static_embedding_size,
+                hidden_size=hidden_size,
+        )
+        run_evaluation(data_dir, ealstm)
+
+        # datestamp the model directory so that we can run multiple experiments
+        _rename_directory(
+            from_path=data_dir / "models" / "one_timestep_forecast",
+            to_path=data_dir / "models" / "one_timestep_forecast",
+            with_datetime=True,
+        )
 
 
 def evaluate_only():
@@ -160,5 +163,6 @@ def evaluate_only():
 
 
 if __name__ == "__main__":
-    main()
+    engineer_only = False
+    main(engineer_only=engineer_only)
     # evaluate_only()
