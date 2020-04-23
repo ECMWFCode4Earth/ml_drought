@@ -62,7 +62,7 @@ def train_model(
         dynamic_ignore_vars=dynamic_ignore_vars,
         static_ignore_vars=static_ignore_vars,
         target_var=target_var,
-        test_years=np.arange(2011, 2017),
+        test_years=test_years,
         static_embedding_size=static_embedding_size
     )
     assert ealstm.seq_length == seq_length
