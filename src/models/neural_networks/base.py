@@ -116,6 +116,7 @@ class NNBase(ModelBase):
                 )
                 batches_without_improvement = 0
                 best_val_score = np.inf
+                assert False
                 # assert False, "Need to implement early stopping for Dynamic dataloader"
             else:
                 len_mask = len(
