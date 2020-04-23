@@ -106,7 +106,7 @@ def main(engineer_only=False, model_only=False):
     # General Vars
     # dynamic_ignore_vars = ['discharge_vol', 'discharge_spec', 'pet']
     dynamic_ignore_vars = ['temperature', 'discharge_vol', 'discharge_spec',
-               'pet', 'humidity', 'shortwave_rad', 'longwave_rad', 'windspeed',
+               'pet', 'humidity', 'shortwave_rad', #'longwave_rad', 'windspeed',
                # 'peti', 'precipitation',
                ]
     target_var = "discharge_spec"
