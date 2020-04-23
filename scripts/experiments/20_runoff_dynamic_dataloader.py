@@ -119,7 +119,7 @@ def main(engineer_only=False, model_only=False):
     catchment_ids = None
 
     # Model Vars
-    num_epochs = 1 # 50   # 100
+    num_epochs = 50   # 100
     test_years = [2011, 2012, 2013, 2014, 2015]
     static_embedding_size = 64  # 64
     hidden_size = 256  # 128
