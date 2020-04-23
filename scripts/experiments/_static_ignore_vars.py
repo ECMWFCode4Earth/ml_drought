@@ -143,8 +143,8 @@ static_ignore_vars = [
     "groundwater_abs",
     ## climatic_attributes -------------------
     # 'aridity',
-    # "p_mean",
-    # "pet_mean",
+    "p_mean",
+    "pet_mean",
     "p_seasonality",
     "high_prec_freq",
     "high_prec_dur",

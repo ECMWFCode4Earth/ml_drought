@@ -110,7 +110,7 @@ def main(engineer_only=False, model_only=False):
                # 'peti', 'precipitation',
                ]
     target_var = "discharge_spec"
-    seq_length = 365 * 3
+    seq_length = 365 * 2
     forecast_horizon = 1
     logy = True
     batch_size = 2000  # 1000
