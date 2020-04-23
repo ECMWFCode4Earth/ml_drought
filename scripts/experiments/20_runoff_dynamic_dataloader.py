@@ -50,6 +50,8 @@ def train_model(
     static_embedding_size = 64,
     hidden_size = 128,
     early_stopping: Optional[int] = None,
+    dense_features: Optional[List[int]] = None,
+    rnn_dropout: float = 0.25,
 ) -> EARecurrentNetwork:
     # initialise the model
     ealstm = EARecurrentNetwork(
@@ -63,7 +65,9 @@ def train_model(
         static_ignore_vars=static_ignore_vars,
         target_var=target_var,
         test_years=test_years,
-        static_embedding_size=static_embedding_size
+        static_embedding_size=static_embedding_size,
+        dense_features=dense_features,
+        rnn_dropout=rnn_dropout,
     )
     assert ealstm.seq_length == seq_length
     print("\n\n** Initialised Models! **\n\n")
@@ -124,7 +128,9 @@ def main(engineer_only=False, model_only=False):
     static_embedding_size = 64  # 64
     hidden_size = 256  # 128
     # early_stopping = None
-    early_stopping = 10
+    early_stopping = 15
+    dense_features = [128, 64]
+    rnn_dropout = 0.3
 
     # ----------------------------------------------------------------
     # CODE
@@ -151,6 +157,8 @@ def main(engineer_only=False, model_only=False):
                 static_embedding_size=static_embedding_size,
                 hidden_size=hidden_size,
                 early_stopping=early_stopping,
+                dense_features=dense_features,
+                rnn_dropout=rnn_dropout,
         )
         run_evaluation(data_dir, ealstm)
 
