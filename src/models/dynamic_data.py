@@ -446,7 +446,7 @@ class _DynamicIter:
         train_data: TrainData,
         y_np: np.array,
         target_var_std: Optional[np.ndarray] = None,
-    ) -> Tuple[np.ndarray, TrainData, np.ndarray, Dict[int, Any]]:
+    ) -> Tuple[np.ndarray, TrainData, np.ndarray, Dict[int, Any], Union[None, np.ndarray]]:
         """remove the nans from the x/y data (stored in a TrainData object)"""
         # remove nans if they are in the x or y data
         historical_nans, y_nans = np.isnan(train_data.historical), np.isnan(y_np)
@@ -475,12 +475,12 @@ class _DynamicIter:
 
         # remove the stations that have nans
         if target_var_std is not None:
-            target_var_std = target_var_std[notnan_indices]
+            self.target_var_std = target_var_std[notnan_indices]
 
         # store the mapping from ID -> pixel/spatial code
         id_to_loc_map = self.build_loc_to_idx_mapping(x, notnan_indices=notnan_indices)
 
-        return notnan_indices, train_data, y_np, id_to_loc_map
+        return notnan_indices, train_data, y_np, id_to_loc_map, target_var_std
 
     def _calculate_static(self, num_instances: int) -> np.ndarray:
         """Create the static numpy array from the static_ds xr.Dataset object
@@ -690,7 +690,7 @@ class _DynamicIter:
 
         # 3. clear the nans
         if clear_nans:
-            notnan_indices, train_data, y_np, id_to_loc_map = self.clear_train_data_nans(
+            notnan_indices, train_data, y_np, id_to_loc_map, target_var_std_np = self.clear_train_data_nans(
                 x, train_data, y_np, target_var_std
             )
         else:
@@ -707,6 +707,7 @@ class _DynamicIter:
             target_time=target_time,
             historical_times=x_datetimes,
             id_to_loc_map=id_to_loc_map,
+            target_var_std=target_var_std_np,
         )
 
         if to_tensor:
