@@ -125,6 +125,7 @@ class EARecurrentNetwork(NNBase):
             "target_var": self.target_var,
             "test_years": self.test_years,
             "forecast_horizon": self.forecast_horizon,
+            "seq_length": self.seq_length,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")
@@ -155,6 +156,7 @@ class EARecurrentNetwork(NNBase):
             static_size=self.static_size,
             static_embedding_size=self.static_embedding_size,
             include_prev_y=self.include_prev_y,
+            seq_length=self.seq_length,
         )
         self.model.to(torch.device(self.device))
         self.model.load_state_dict(
