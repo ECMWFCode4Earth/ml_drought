@@ -143,7 +143,7 @@ class DynamicDataLoader(DataLoader):
 
     def get_train_test_times(
         self, test_years: Union[List[str], str], mask: Optional[List[bool]] = None
-    ) -> Tuple[List[datetime]]:
+    ) -> Tuple[List[datetime], List[datetime]]:
         """Get a list of the test timestamps, train_timestamps"""
         min_test_date, max_train_date, _ = self.get_max_train_date(
             self.dynamic_ds, test_year=test_years
@@ -160,7 +160,7 @@ class DynamicDataLoader(DataLoader):
         return valid_train_times, valid_test_times
 
     @staticmethod
-    def get_max_train_date(ds, test_year: Union[str, List[str]]) -> Tuple[pd.Timestamp]:
+    def get_max_train_date(ds, test_year: Union[str, List[str]]) -> Tuple[pd.Timestamp, pd.Timestamp, pd.Timestamp]:
         """"""
         # get the minimum test_year
         if isinstance(test_year, Iterable):
@@ -202,6 +202,8 @@ class DynamicDataLoader(DataLoader):
         self.dynamic_ds: xr.Dataset = xr.open_dataset(dynamic_path)
 
         # split into TRAIN/TEST data
+        self.valid_train_times: List[pd.Timestamp]
+        self.valid_test_times: List[pd.Timestamp]
         self.valid_train_times, self.valid_test_times = self.get_train_test_times(
             test_years, mask=mask,
         )
@@ -329,7 +331,7 @@ class _DynamicIter:
     Create a new Iterator each EPOCH.
     """
 
-    def __init__(self, loader: DataLoader, mode: str) -> None:
+    def __init__(self, loader: DynamicDataLoader, mode: str) -> None:
         # NEW
         self.target_var = loader.target_var
         self.legit_target_times = loader.legit_target_times
@@ -357,6 +359,10 @@ class _DynamicIter:
             assert False, "Mode must be one of train / test"
 
         self.max_idx = len(self.target_times)
+
+        # TODO: calculate q_std for calculation of NSE
+        # calculate the std of the target_var from the train_data period
+        self.target_var_std = self.calculate_target_var_std()
 
         # CHANGED
         if self.shuffle:
@@ -398,6 +404,10 @@ class _DynamicIter:
     def __iter__(self):
         return self
 
+    def calculate_target_var_std(self) -> np.ndarray:
+        y_da = self.dynamic_ds.sel(time=self.valid_train_times)[self.target_var]
+        return y_da.std(dim='time').values
+
     def build_loc_to_idx_mapping(
         self, x: xr.Dataset, notnan_indices: Optional[np.array] = None
     ) -> Dict:
@@ -425,7 +435,8 @@ class _DynamicIter:
         return id_to_val_map
 
     def clear_train_data_nans(
-        self, x: xr.Dataset, train_data: TrainData, y_np: np.array
+        self, x: xr.Dataset, train_data: TrainData, y_np: np.array,
+        target_var_std: Optional[np.ndrray] = None
     ) -> Tuple[np.ndarray, TrainData, np.ndarray, Dict[int, Any]]:
         """remove the nans from the x/y data (stored in a TrainData object)"""
         # remove nans if they are in the x or y data
@@ -452,6 +463,10 @@ class _DynamicIter:
         train_data.filter(notnan_indices)
 
         y_np = y_np[notnan_indices]
+
+        # remove the stations that have nans
+        if target_var_std is not None:
+            target_var_std = target_var_std[notnan_indices]
 
         # store the mapping from ID -> pixel/spatial code
         id_to_loc_map = self.build_loc_to_idx_mapping(x, notnan_indices=notnan_indices)
@@ -540,7 +555,7 @@ class _DynamicIter:
         forecast_horizon: int = 1,
         train: bool = True,
         resolution: str = "D",
-    ) -> Tuple[Tuple[xr.Dataset, xr.Dataset], pd.Timestamp]:
+    ) -> Tuple[Union[None, Tuple[xr.Dataset, xr.Dataset]], pd.Timestamp]:
         """Get the X, y pair from the dynamic data for a given
         target_timestep.
 
@@ -619,6 +634,7 @@ class _DynamicIter:
         clear_nans: bool = True,
         to_tensor: bool = False,
         reducing_dims: List[str] = ["lat", "lon"],
+        target_var_std: Optional[np.ndarray] = None,
     ) -> ModelArrays:
         """Convert the xr.Dataset objects in xy_sample into ModelArrays
         for passing to the models. This function works dynamically rather
@@ -666,7 +682,7 @@ class _DynamicIter:
         # 3. clear the nans
         if clear_nans:
             notnan_indices, train_data, y_np, id_to_loc_map = self.clear_train_data_nans(
-                x, train_data, y_np
+                x, train_data, y_np, target_var_std
             )
         else:
             id_to_loc_map = self.build_loc_to_idx_mapping(x, notnan_indices=None)
@@ -744,6 +760,7 @@ class _TrainDynamicIter(_DynamicIter):
                     clear_nans=self.clear_nans,
                     to_tensor=self.to_tensor,
                     reducing_dims=self.reducing_dims,
+                    target_var_std=self.target_var_std,
                 )
 
                 # If there are no values!

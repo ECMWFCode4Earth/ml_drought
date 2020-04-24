@@ -52,6 +52,7 @@ def train_model(
     early_stopping: Optional[int] = None,
     dense_features: Optional[List[int]] = None,
     rnn_dropout: float = 0.25,
+    loss_func: str = 'MSE',
 ) -> EARecurrentNetwork:
     # initialise the model
     ealstm = EARecurrentNetwork(
@@ -73,11 +74,17 @@ def train_model(
     print("\n\n** Initialised Models! **\n\n")
 
     # Train the model on train set
-    ealstm.train(num_epochs=n_epochs, early_stopping=early_stopping)
+    rmses, l1_losses = ealstm.train(
+        num_epochs=n_epochs,
+        early_stopping=early_stopping,
+        loss_func=loss_func
+    )
     print("\n\n** Model Trained! **\n\n")
 
     # save the model
     ealstm.save_model()
+    pickle.dump(rmses, open(self.model_dir / 'rmses.pkl', 'wb'))
+    pickle.dump(l1_losses, open(self.model_dir / 'l1_losses.pkl', 'wb'))
 
     return ealstm
 
@@ -131,6 +138,7 @@ def main(engineer_only=False, model_only=False):
     early_stopping = 15
     dense_features = [128, 64]
     rnn_dropout = 0.3
+    loss_func = 'NSE' # 'MSE'
 
     # ----------------------------------------------------------------
     # CODE
@@ -159,6 +167,7 @@ def main(engineer_only=False, model_only=False):
                 early_stopping=early_stopping,
                 dense_features=dense_features,
                 rnn_dropout=rnn_dropout,
+                loss_func=loss_func,
         )
         run_evaluation(data_dir, ealstm)
 
