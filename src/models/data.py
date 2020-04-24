@@ -16,6 +16,7 @@ from typing import cast, Dict, Optional, Union, List, Tuple
 
 @dataclass
 class TrainData:
+    """Data that is being passed to the models for training"""
     historical: Union[np.ndarray, torch.Tensor]
     current: Union[np.ndarray, torch.Tensor, None]
     pred_month: Union[np.ndarray, torch.Tensor]
@@ -26,6 +27,7 @@ class TrainData:
     yearly_aggs: Union[np.ndarray, torch.Tensor]
     static: Union[np.ndarray, torch.Tensor, None]
     prev_y_var: Union[np.ndarray, torch.Tensor, None]
+    target_var_std: Union[np.ndarray, torch.Tensor, None]
 
     def to_tensor(self, device: torch.device) -> None:
         for key, val in self.__dict__.items():
@@ -67,7 +69,6 @@ class ModelArrays:
     historical_times: Optional[List[Timestamp]] = None
     predict_delta: bool = False
     historical_target: Optional[xr.DataArray] = None
-    target_var_std: Union[None, np.ndarray] = None
 
     def to_tensor(self, device) -> None:
         self.x.to_tensor(device)
