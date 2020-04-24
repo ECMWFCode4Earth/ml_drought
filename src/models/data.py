@@ -17,6 +17,7 @@ from typing import cast, Dict, Optional, Union, List, Tuple
 @dataclass
 class TrainData:
     """Data that is being passed to the models for training"""
+
     historical: Union[np.ndarray, torch.Tensor]
     current: Union[np.ndarray, torch.Tensor, None]
     pred_month: Union[np.ndarray, torch.Tensor]
