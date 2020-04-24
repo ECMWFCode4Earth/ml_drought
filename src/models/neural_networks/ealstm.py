@@ -271,6 +271,7 @@ class EALSTM(nn.Module):
             dense_input_size += current_size
 
         dense_features.insert(0, dense_input_size)
+        # the final layer should make a scalar prediction!
         if dense_features[-1] != 1:
             dense_features.append(1)
 
