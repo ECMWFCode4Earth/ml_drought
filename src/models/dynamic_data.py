@@ -800,6 +800,7 @@ class _TrainDynamicIter(_DynamicIter):
                         global_modelarrays.x.yearly_aggs,
                         global_modelarrays.x.static,
                         global_modelarrays.x.prev_y_var,
+                        global_modelarrays.x.target_var_std,
                     ),
                     global_modelarrays.y,
                 )
