@@ -67,6 +67,7 @@ class ModelArrays:
     historical_times: Optional[List[Timestamp]] = None
     predict_delta: bool = False
     historical_target: Optional[xr.DataArray] = None
+    target_var_std: Union[None, np.ndarray]] = None
 
     def to_tensor(self, device) -> None:
         self.x.to_tensor(device)
