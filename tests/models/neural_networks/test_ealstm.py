@@ -27,6 +27,7 @@ class TestEARecurrentNetwork:
         yearly_agg_size = 3
         include_prev_y = True
         normalize_y = False
+        seq_length = 3
 
         def mocktrain(self):
             self.model = EALSTM(
@@ -54,6 +55,7 @@ class TestEARecurrentNetwork:
             data_folder=tmp_path,
             include_yearly_aggs=include_yearly_aggs,
             normalize_y=normalize_y,
+            seq_length=seq_length,
         )
         model.train()
         model.save_model()
@@ -78,6 +80,8 @@ class TestEARecurrentNetwork:
         assert model_dict["experiment"] == "one_month_forecast"
         assert model_dict["include_prev_y"] == include_prev_y
         assert model_dict["normalize_y"] == normalize_y
+
+        assert model.seq_length == 3
 
     @pytest.mark.parametrize(
         "use_seq_length,use_static_embedding", [(True, 10), (False, None)]

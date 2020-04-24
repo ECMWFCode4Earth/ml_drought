@@ -364,8 +364,8 @@ class ModelBase:
         if self.include_pred_month:
             # one hot encoding, should be num_classes + 1, but
             # for us its + 2, since 0 is not a class either
-            seq_length_onehot = self._one_hot(x_pm, 12)
-            x_in = np.concatenate((x_in, seq_length_onehot), axis=-1)
+            pred_month_onehot = self._one_hot(x_pm, 12)
+            x_in = np.concatenate((x_in, pred_month_onehot), axis=-1)
         if self.include_latlons:
             x_in = np.concatenate((x_in, x_latlons), axis=-1)
         if self.experiment == "nowcast":

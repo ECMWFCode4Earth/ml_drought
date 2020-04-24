@@ -157,7 +157,9 @@ class EARecurrentNetwork(NNBase):
             include_prev_y=self.include_prev_y,
         )
         self.model.to(torch.device(self.device))
-        self.model.load_state_dict(state_dict)  # self.model.load_state_dict(state_dict, strict=False)
+        self.model.load_state_dict(
+            state_dict
+        )  # self.model.load_state_dict(state_dict, strict=False)
 
     def _initialize_model(self, x_ref: Optional[Tuple[torch.Tensor, ...]]) -> nn.Module:
         if self.features_per_month is None:
@@ -271,25 +273,35 @@ class EALSTM(nn.Module):
             dense_input_size += current_size
 
         dense_features.insert(0, dense_input_size)
+        # the final layer should make a scalar prediction!
         if dense_features[-1] != 1:
             dense_features.append(1)
 
-        self.dense_layers = nn.ModuleList(
-            [
+        # add linear layer with nonlinear activation functions
+        dense_layers = []
+        for i in range(1, len(dense_features)):
+            dense_layers.append(
                 nn.Linear(
-                    in_features=dense_features[i - 1], out_features=dense_features[i]
+                    # in = size of previous dense layer
+                    in_features=dense_features[i - 1],
+                    # out = size of current dense layer
+                    out_features=dense_features[i],
                 )
-                for i in range(1, len(dense_features))
-            ]
-        )
+            )
+            if i < len(dense_features) - 1:
+                # add a ReLU to all layers except the final layer
+                dense_layers.append(nn.ReLU())
+
+        self.dense_layers = nn.ModuleList(dense_layers)
 
         self.initialize_weights()
 
     def initialize_weights(self):
-
         for dense_layer in self.dense_layers:
-            nn.init.kaiming_uniform_(dense_layer.weight.data)
-            nn.init.constant_(dense_layer.bias.data, 0)
+            # initialise weights for all linear layers
+            if not isinstance(dense_layer, nn.ReLU):
+                nn.init.kaiming_uniform_(dense_layer.weight.data)
+                nn.init.constant_(dense_layer.bias.data, 0)
 
     def forward(
         self,
