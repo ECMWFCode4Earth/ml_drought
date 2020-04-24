@@ -187,7 +187,9 @@ class NNBase(ModelBase):
                                 x[7]
                             ).to(self.device)
                         else:
-                            assert False, "x[7] should not be None, this is the target_var_std"
+                            assert (
+                                False
+                            ), "x[7] should not be None, this is the target_var_std"
 
                         loss = NSELoss(pred, y_batch, target_var_std)
                     elif loss_func == "MSE":

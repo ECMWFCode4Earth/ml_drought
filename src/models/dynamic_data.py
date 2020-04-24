@@ -446,7 +446,9 @@ class _DynamicIter:
         train_data: TrainData,
         y_np: np.array,
         target_var_std: Optional[np.ndarray] = None,
-    ) -> Tuple[np.ndarray, TrainData, np.ndarray, Dict[int, Any], Union[None, np.ndarray]]:
+    ) -> Tuple[
+        np.ndarray, TrainData, np.ndarray, Dict[int, Any], Union[None, np.ndarray]
+    ]:
         """remove the nans from the x/y data (stored in a TrainData object)"""
         # remove nans if they are in the x or y data
         historical_nans, y_nans = np.isnan(train_data.historical), np.isnan(y_np)
