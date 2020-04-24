@@ -698,6 +698,8 @@ class _DynamicIter:
         else:
             id_to_loc_map = self.build_loc_to_idx_mapping(x, notnan_indices=None)
 
+        train_data.target_var_std = target_var_std_np
+
         # 4. Create the ModelArrays (X-y pairs)
         y_var = list(y.data_vars)[0]
         model_arrays = ModelArrays(
@@ -709,7 +711,6 @@ class _DynamicIter:
             target_time=target_time,
             historical_times=x_datetimes,
             id_to_loc_map=id_to_loc_map,
-            target_var_std=target_var_std_np,
         )
 
         if to_tensor:
