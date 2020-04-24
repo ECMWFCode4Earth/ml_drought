@@ -186,7 +186,6 @@ class NNBase(ModelBase):
                                 # (train_dataloader.__iter__()).target_var_std
                                 x[7]
                             ).to(self.device)
-                            assert False
                         else:
                             assert (
                                 False

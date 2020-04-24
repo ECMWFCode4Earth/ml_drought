@@ -150,7 +150,7 @@ def main(engineer_only=False, model_only=False):
     early_stopping = 15
     dense_features = [128, 64]
     rnn_dropout = 0.3
-    loss_func = "NSE"  # 'MSE'
+    loss_func = "MSE"  # 'MSE'
 
     # ----------------------------------------------------------------
     # CODE
