@@ -99,14 +99,17 @@ class NNBase(ModelBase):
         early_stopping: Optional[int] = None,
         learning_rate: float = 1e-3,
         val_split: float = 0.1,
-        loss_func: str = 'MSE',
+        loss_func: str = "MSE",
     ) -> Tuple[List[float], List[float]]:
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
-        assert loss_func in ['MSE', 'NSE'], f"loss_func must be one of: ['MSE', 'NSE'] \nGot {loss_func}"
+        assert loss_func in [
+            "MSE",
+            "NSE",
+        ], f"loss_func must be one of: ['MSE', 'NSE'] \nGot {loss_func}"
         if early_stopping is not None:
             if self.dynamic:
-                dl = self.get_dataloader(mode='train')
+                dl = self.get_dataloader(mode="train")
                 len_mask = len(dl.valid_train_times)
                 train_mask, val_mask = train_val_mask(len_mask, 0.1)
 
@@ -176,11 +179,13 @@ class NNBase(ModelBase):
                         *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
                     )
                     # ------- LOSS FUNCTION ---------
-                    if loss_func == 'NSE':
+                    if loss_func == "NSE":
                         # NSELoss needs std of each basin for each sample
-                        target_var_std = torch.Tensor(train_dataloader.target_var_std).to(self.device)
+                        target_var_std = torch.Tensor(
+                            train_dataloader.target_var_std
+                        ).to(self.device)
                         loss = NSELoss(pred, y_batch, target_var_std)
-                    elif loss_func == 'MSE':
+                    elif loss_func == "MSE":
                         loss = F.smooth_l1_loss(pred, y_batch)
                     else:
                         assert False, "Only implemented MSE NSE loss functions"
@@ -224,7 +229,6 @@ class NNBase(ModelBase):
                         return (train_rmse, train_l1)
 
         return (train_rmse, train_l1)
-
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         print(f"** Making Predictions for {self.model_name} **")

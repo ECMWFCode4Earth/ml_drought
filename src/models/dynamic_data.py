@@ -160,7 +160,9 @@ class DynamicDataLoader(DataLoader):
         return valid_train_times, valid_test_times
 
     @staticmethod
-    def get_max_train_date(ds, test_year: Union[str, List[str]]) -> Tuple[pd.Timestamp, pd.Timestamp, pd.Timestamp]:
+    def get_max_train_date(
+        ds, test_year: Union[str, List[str]]
+    ) -> Tuple[pd.Timestamp, pd.Timestamp, pd.Timestamp]:
         """"""
         # get the minimum test_year
         if isinstance(test_year, Iterable):
@@ -187,7 +189,10 @@ class DynamicDataLoader(DataLoader):
         return [c for c in self.dynamic_ds.coords if c != "time"]
 
     def load_data(
-        self, experiment: str, static: bool, test_years: Union[List[str], str],
+        self,
+        experiment: str,
+        static: bool,
+        test_years: Union[List[str], str],
         mask: Optional[List[bool]] = None,
     ) -> None:
         """load static and dynamic data into memory for
@@ -205,7 +210,7 @@ class DynamicDataLoader(DataLoader):
         self.valid_train_times: List[pd.Timestamp]
         self.valid_test_times: List[pd.Timestamp]
         self.valid_train_times, self.valid_test_times = self.get_train_test_times(
-            test_years, mask=mask,
+            test_years, mask=mask
         )
         self.train_dynamic = self.dynamic_ds.sel(time=self.valid_train_times)
 
@@ -217,12 +222,12 @@ class DynamicDataLoader(DataLoader):
         # ignore_vars = only include the vars being used in X!
         if self.dynamic_ignore_vars is not None:
             data_vars: List[str] = [
-                v for v in self.normalizing_dict.keys() if v not in self.dynamic_ignore_vars
+                v
+                for v in self.normalizing_dict.keys()
+                if v not in self.dynamic_ignore_vars
             ]
         else:
-            data_vars: List[str] = [
-                v for v in self.normalizing_dict.keys()
-            ]
+            data_vars: List[str] = [v for v in self.normalizing_dict.keys()]
 
         data_vars = [v for v in data_vars if v != "target_var_original"]
 
@@ -251,7 +256,7 @@ class DynamicDataLoader(DataLoader):
 
     @staticmethod
     def calculate_legitimate_target_times(
-        data_times: List[pd.Timestamp], seq_length: int, resolution: str = "D",
+        data_times: List[pd.Timestamp], seq_length: int, resolution: str = "D"
     ) -> List[pd.Timestamp]:
         """return a list of the target times that we have enough data for"""
         min_data_date = min(data_times)
@@ -406,7 +411,7 @@ class _DynamicIter:
 
     def calculate_target_var_std(self) -> np.ndarray:
         y_da = self.dynamic_ds.sel(time=self.valid_train_times)[self.target_var]
-        return y_da.std(dim='time').values
+        return y_da.std(dim="time").values
 
     def build_loc_to_idx_mapping(
         self, x: xr.Dataset, notnan_indices: Optional[np.array] = None
@@ -435,8 +440,11 @@ class _DynamicIter:
         return id_to_val_map
 
     def clear_train_data_nans(
-        self, x: xr.Dataset, train_data: TrainData, y_np: np.array,
-        target_var_std: Optional[np.ndrray] = None
+        self,
+        x: xr.Dataset,
+        train_data: TrainData,
+        y_np: np.array,
+        target_var_std: Optional[np.ndarray] = None,
     ) -> Tuple[np.ndarray, TrainData, np.ndarray, Dict[int, Any]]:
         """remove the nans from the x/y data (stored in a TrainData object)"""
         # remove nans if they are in the x or y data
@@ -506,8 +514,8 @@ class _DynamicIter:
         self, x: xr.Dataset, y: xr.Dataset
     ) -> Tuple[np.ndarray, np.ndarray]:
 
-        if 'target_var_original' in list(x.data_vars):
-            x = x.drop('target_var_original')
+        if "target_var_original" in list(x.data_vars):
+            x = x.drop("target_var_original")
         x_np, y_np = x.to_array().values, y.to_array().values
 
         # first, x

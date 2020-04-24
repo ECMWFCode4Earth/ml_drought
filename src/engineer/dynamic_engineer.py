@@ -184,7 +184,7 @@ class DynamicEngineer(_EngineerBase):
 
         # only include spatial_units from spatial_units List
         if spatial_units is not None:
-            spatial_coord = [c for c in static_ds.coords if c != 'time']
+            spatial_coord = [c for c in static_ds.coords if c != "time"]
             assert len(spatial_coord) == 1, "Expect spatial coord to be 1D"
             spatial_coord = spatial_coord[0]
             static_ds = static_ds.sel({spatial_coord: spatial_units})
@@ -265,13 +265,17 @@ class DynamicEngineer(_EngineerBase):
         # NB: cannot ignore the target var here because need for creating
         # xy pairs in the DynamicDataLoader
         if dynamic_ignore_vars is not None:
-            dynamic_ignore_vars = [v for v in dynamic_ignore_vars if v != target_variable]
+            dynamic_ignore_vars = [
+                v for v in dynamic_ignore_vars if v != target_variable
+            ]
 
-            dynamic_ds = self._drop_ignore_vars(dynamic_ds, ignore_vars=dynamic_ignore_vars)
+            dynamic_ds = self._drop_ignore_vars(
+                dynamic_ds, ignore_vars=dynamic_ignore_vars
+            )
 
         # only include spatial_units from spatial_units List
         if spatial_units is not None:
-            spatial_coord = [c for c in dynamic_ds.coords if c != 'time']
+            spatial_coord = [c for c in dynamic_ds.coords if c != "time"]
             assert len(spatial_coord) == 1, "Expect spatial coord to be 1D"
             spatial_coord = spatial_coord[0]
             dynamic_ds = dynamic_ds.sel({spatial_coord: spatial_units})

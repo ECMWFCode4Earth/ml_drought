@@ -10,6 +10,7 @@ see <https://opensource.org/licenses/Apache-2.0>
 """
 import torch
 
+
 class NSELoss(torch.nn.Module):
     """Calculate (batch-wise) NSE Loss.
     Each sample i is weighted by 1 / (std_i + eps)^2, where std_i is the standard deviation of the
@@ -39,8 +40,8 @@ class NSELoss(torch.nn.Module):
         torch.Tenor
             The (batch-wise) NSE Loss
         """
-        squared_error = (y_pred - y_true)**2
-        weights = 1 / (q_stds + self.eps)**2
+        squared_error = (y_pred - y_true) ** 2
+        weights = 1 / (q_stds + self.eps) ** 2
         scaled_loss = weights * squared_error
 
         return torch.mean(scaled_loss)
