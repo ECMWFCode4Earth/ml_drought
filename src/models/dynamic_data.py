@@ -129,6 +129,10 @@ class DynamicDataLoader(DataLoader):
             resolution=self.resolution,
         )
 
+        # TODO: calculate q_std for calculation of NSE
+        # calculate the std of the target_var from the train_data period
+        self.target_var_std = self.calculate_target_var_std()
+
     def __iter__(self):
         if self.mode == "train":
             return _TrainDynamicIter(self, mode="train")
@@ -158,6 +162,10 @@ class DynamicDataLoader(DataLoader):
         valid_test_times = ds_times.loc[min_test_date:].index.values
 
         return valid_train_times, valid_test_times
+
+    def calculate_target_var_std(self) -> np.ndarray:
+        y_da = self.dynamic_ds.sel(time=self.valid_train_times)[self.target_var]
+        return y_da.std(dim="time").values
 
     @staticmethod
     def get_max_train_date(
@@ -338,6 +346,7 @@ class _DynamicIter:
 
     def __init__(self, loader: DynamicDataLoader, mode: str) -> None:
         # NEW
+        self.target_var_std = loader.target_var_std
         self.target_var = loader.target_var
         self.legit_target_times = loader.legit_target_times
         self.seq_length = loader.seq_length
@@ -364,10 +373,6 @@ class _DynamicIter:
             assert False, "Mode must be one of train / test"
 
         self.max_idx = len(self.target_times)
-
-        # TODO: calculate q_std for calculation of NSE
-        # calculate the std of the target_var from the train_data period
-        self.target_var_std = self.calculate_target_var_std()
 
         # CHANGED
         if self.shuffle:
@@ -408,10 +413,6 @@ class _DynamicIter:
 
     def __iter__(self):
         return self
-
-    def calculate_target_var_std(self) -> np.ndarray:
-        y_da = self.dynamic_ds.sel(time=self.valid_train_times)[self.target_var]
-        return y_da.std(dim="time").values
 
     def build_loc_to_idx_mapping(
         self, x: xr.Dataset, notnan_indices: Optional[np.array] = None
