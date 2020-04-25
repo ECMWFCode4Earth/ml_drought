@@ -156,7 +156,7 @@ class EARecurrentNetwork(NNBase):
             include_latlons=self.include_latlons,
             static_size=self.static_size,
             static_embedding_size=self.static_embedding_size,
-            include_prev_y=self.include_prev_y
+            include_prev_y=self.include_prev_y,
         )
         self.model.to(torch.device(self.device))
         self.model.load_state_dict(
@@ -220,6 +220,7 @@ class EALSTM(nn.Module):
         current_size=None,
         static_size=None,
         static_embedding_size=None,
+        seq_length: Optional[int] = None,
     ):
         super().__init__()
 
