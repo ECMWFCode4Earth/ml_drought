@@ -7,6 +7,11 @@ submitted to Hydrol. Earth Syst. Sci. Discussions (2019)
 
 You should have received a copy of the Apache-2.0 license along with the code. If not,
 see <https://opensource.org/licenses/Apache-2.0>
+
+
+segmentation fault:
+https://github.com/pytorch/pytorch/issues/926
+
 """
 import torch
 

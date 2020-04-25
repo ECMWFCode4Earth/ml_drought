@@ -137,6 +137,7 @@ class EARecurrentNetwork(NNBase):
         current_size: Optional[int],
         yearly_agg_size: Optional[int],
         static_size: Optional[int],
+        seq_length: int = 365,
     ) -> None:
         self.features_per_month = features_per_month
         self.current_size = current_size
@@ -156,7 +157,6 @@ class EARecurrentNetwork(NNBase):
             static_size=self.static_size,
             static_embedding_size=self.static_embedding_size,
             include_prev_y=self.include_prev_y,
-            seq_length=self.seq_length,
         )
         self.model.to(torch.device(self.device))
         self.model.load_state_dict(
@@ -220,6 +220,7 @@ class EALSTM(nn.Module):
         current_size=None,
         static_size=None,
         static_embedding_size=None,
+        seq_length: Optional[int] = None,
     ):
         super().__init__()
 

@@ -90,8 +90,8 @@ def train_model(
 
     # save the model
     ealstm.save_model()
-    pickle.dump(rmses, open(self.model_dir / "rmses.pkl", "wb"))
-    pickle.dump(l1_losses, open(self.model_dir / "l1_losses.pkl", "wb"))
+    pickle.dump(rmses, open(ealstm.model_dir / "rmses.pkl", "wb"))
+    pickle.dump(l1_losses, open(ealstm.model_dir / "l1_losses.pkl", "wb"))
 
     return ealstm
 
@@ -147,7 +147,7 @@ def main(engineer_only=False, model_only=False):
     static_embedding_size = 64  # 64
     hidden_size = 256  #  128
     # early_stopping = None
-    early_stopping = 15
+    early_stopping = 10
     dense_features = [128, 64]
     rnn_dropout = 0.3
     loss_func = "MSE"  # 'MSE'
