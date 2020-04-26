@@ -41,6 +41,7 @@ switch_data_dirs.sh
 
 # random python stuff
 core.python*
+core.ipython*
 
 # vscode settings
 .vscode
