@@ -3,6 +3,7 @@ import sys
 sys.path.append("../..")
 from src.models import (
     Persistence,
+    Climatology,
     LinearRegression,
     LinearNetwork,
     RecurrentNetwork,
@@ -17,6 +18,13 @@ from scripts.utils import get_data_path
 def parsimonious(experiment="one_month_forecast", include_yearly_aggs=True):
     predictor = Persistence(
         get_data_path(), experiment=experiment, include_yearly_aggs=include_yearly_aggs
+    )
+    predictor.evaluate(save_preds=True)
+
+
+def climatology(experiment="one_month_forecast"):
+    predictor = Climatology(
+        get_data_path(), experiment=experiment,
     )
     predictor.evaluate(save_preds=True)
 
