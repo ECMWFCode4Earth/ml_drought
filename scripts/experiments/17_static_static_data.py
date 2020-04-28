@@ -23,12 +23,16 @@ if __name__ == "__main__":
     # 1. Run the engineer
     target_var = "boku_VCI"
     pred_months = 3
-    engineer(pred_months=pred_months, target_var=target_var, process_static=True)
+    engineer(
+        pred_months=pred_months,
+        target_var=target_var,
+        process_static=True
+    )
 
     # NOTE: why have we downloaded 2 variables for ERA5 evaporaton
     # important_vars = ["VCI", "precip", "t2m", "pev", "p0005", "SMsurf", "SMroot"]
     # always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb", "E", "p0001"]
-    important_vars = ["boku_VCI", "precip", "t2m", "pev", "E", "SMsurf", "SMroot"]
+    important_vars = ["boku_VCI", "precip", "t2m", "pev", "E", "SMsurf"]
     always_ignore_vars = [
         "VCI",
         "p84.162",
@@ -39,6 +43,7 @@ if __name__ == "__main__":
         "RFE1M",
         "VCI3M",
         "modis_ndvi",
+        "SMroot",
     ]  # "ndvi",
 
     # -------------
@@ -48,7 +53,19 @@ if __name__ == "__main__":
 
     # regression(ignore_vars=always_ignore_vars)
     # gbdt(ignore_vars=always_ignore_vars)
-    # linear_nn(ignore_vars=always_ignore_vars)
+    linear_nn(
+        ignore_vars=always_ignore_vars,
+        experiment="one_month_forecast",
+        include_pred_month=True,
+        surrounding_pixels=None,
+        explain=False,
+        num_epochs=50,
+        early_stopping=5,
+        hidden_size=256,
+        include_latlons=True,
+        include_yearly_aggs=False,
+        clear_nans=True,
+    )
 
     # -------------
     # LSTM
