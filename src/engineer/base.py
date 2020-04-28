@@ -136,8 +136,8 @@ class _EngineerBase:
         static_mean_ds = self.calculate_static_means_ds(
             static_ds=static_ds,
             test_year=test_year,
-            global_means=global_means,
-            pixel_means=pixel_means,
+            global_means_bool=global_means,
+            pixel_means_bool=pixel_means,
         )
 
         if static_ds is None:
