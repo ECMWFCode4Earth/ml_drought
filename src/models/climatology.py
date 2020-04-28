@@ -7,14 +7,13 @@ from .base import ModelBase
 from src.analysis import read_train_data, read_test_data
 
 
-class Persistence(ModelBase):
-    """A parsimonious persistence model.
+class Climatology(ModelBase):
+    """A parsimonious Climatology model.
     This "model" predicts the mean value for that month. For example, its prediction
     for VHI in March 2018 will be mean VHI in March across all training data
     """
 
     model_name = "climatology"
-
 
     def train(self) -> None:
         pass
@@ -23,20 +22,19 @@ class Persistence(ModelBase):
         print("Move on! Nothing to save here!")
 
     def predict(
-        self,
-        all_data: bool = False
+        self, all_data: bool = False
     ) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
 
-        _, y_train = read_train_data(data_dir)
+        _, y_train = read_train_data(self.data_path)
         ds = y_train
 
         if all_data:
             # if want to calculate climatology for train+test data
-            _, y_test = read_test_data(data_dir)
-            ds = xr.merge([y_train, y_test]).sortby('time').sortby('lat')
+            _, y_test = read_test_data(self.data_path)
+            ds = xr.merge([y_train, y_test]).sortby("time").sortby("lat")
 
         target_var = [v for v in ds.data_vars][0]
-        monmean = ds.groupby('time.month').mean().target_var
+        monmean = ds.groupby("time.month").mean().target_var
 
         test_arrays_loader = self.get_dataloader(
             mode="test", shuffle_data=False, normalize=False, static=False
