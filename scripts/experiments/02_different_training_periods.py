@@ -40,7 +40,7 @@ import sys
 
 sys.path.append("../..")
 
-from _base_models import parsimonious, regression, linear_nn, rnn, earnn
+from _base_models import persistence, regression, linear_nn, rnn, earnn
 
 from src.analysis import all_explanations_for_file
 from src.analysis import read_train_data, read_test_data
@@ -220,7 +220,7 @@ def run_experiments(
 ):
     # run baseline model
     print("\n\nBASELINE MODEL:")
-    parsimonious()
+    persistence()
     print("\n\n")
 
     # RUN EXPERIMENTS

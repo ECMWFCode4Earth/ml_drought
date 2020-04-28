@@ -3,7 +3,7 @@ import torch
 
 from typing import cast, Optional, Union
 
-from .parsimonious import Persistence
+from .persistence import Persistence
 from .regression import LinearRegression
 from .gbdt import GBDT
 from .neural_networks.linear_network import LinearNetwork
