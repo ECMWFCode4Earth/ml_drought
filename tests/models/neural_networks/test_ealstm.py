@@ -83,12 +83,20 @@ class TestEARecurrentNetwork:
     @pytest.mark.parametrize(
         "use_pred_months,use_static_embedding,static,check_inversion",
         [
-            (True, 10, "features", True), (False, None, "features", True),
-            (True, 10, "features", False), (False, None, "features", False),
+            (True, 10, "features", True),
+            (False, None, "features", True),
+            (True, 10, "features", False),
+            (False, None, "features", False),
         ],
     )
     def test_train(
-        self, tmp_path, capsys, use_pred_months, use_static_embedding, static, check_inversion
+        self,
+        tmp_path,
+        capsys,
+        use_pred_months,
+        use_static_embedding,
+        static,
+        check_inversion,
     ):
         # make directories
         for ts in ["2001_11", "2001_12"]:

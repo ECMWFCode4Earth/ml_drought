@@ -45,20 +45,21 @@ class _EngineerBase:
         pred_months: int = 12,
         expected_length: Optional[int] = 12,
         global_means: bool = False,
-        pixel_means: bool = True
+        pixel_means: bool = True,
     ) -> None:
 
         self._process_dynamic(test_year, target_variable, pred_months, expected_length)
         if self.process_static:
             self._process_static(
-                test_year=test_year,
-                global_means=global_means,
-                pixel_means=pixel_means,
+                test_year=test_year, global_means=global_means, pixel_means=pixel_means
             )
 
     def calculate_static_means_ds(
-        self, static_ds: xr.Dataset, test_year: Union[int, List[int]],
-        global_means: bool = False, pixel_means: bool = True,
+        self,
+        static_ds: xr.Dataset,
+        test_year: Union[int, List[int]],
+        global_means: bool = False,
+        pixel_means: bool = True,
     ) -> xr.Dataset:
         dynamic_ds = self._make_dataset(static=False, overwrite_dims=False)
 
@@ -105,8 +106,10 @@ class _EngineerBase:
         return static_mean_ds
 
     def _process_static(
-        self, test_year: Union[int, List[int]],
-        global_means: bool = False, pixel_means: bool = True
+        self,
+        test_year: Union[int, List[int]],
+        global_means: bool = False,
+        pixel_means: bool = True,
     ) -> None:
         """
         Note:
@@ -131,7 +134,9 @@ class _EngineerBase:
             static_ds = None
         # create dynamic_variable means for input to static data
         static_mean_ds = self.calculate_static_means_ds(
-            static_ds=static_ds, test_year=test_year, global_means=global_means,
+            static_ds=static_ds,
+            test_year=test_year,
+            global_means=global_means,
             pixel_means=pixel_means,
         )
 

@@ -20,9 +20,7 @@ def persistence(experiment="one_month_forecast",):
 
 
 def climatology(experiment="one_month_forecast"):
-    predictor = Climatology(
-        get_data_path(), experiment=experiment,
-    )
+    predictor = Climatology(get_data_path(), experiment=experiment)
 
     predictor.evaluate(save_preds=True)
 
@@ -73,6 +71,7 @@ def linear_nn(
     spatial_mask=None,
     include_latlons=False,
     include_yearly_aggs=True,
+    clear_nans=True,
 ):
     predictor = LinearNetwork(
         layer_sizes=layer_sizes,
@@ -86,6 +85,7 @@ def linear_nn(
         spatial_mask=spatial_mask,
         include_latlons=include_latlons,
         include_yearly_aggs=include_yearly_aggs,
+        clear_nans=clear_nans,
     )
     predictor.train(
         num_epochs=num_epochs,
