@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # baseline models
     # -------------
     persistence()
-    climatology()
+    # climatology()
 
     regression(
         ignore_vars=always_ignore_vars,
