@@ -34,7 +34,9 @@ class Climatology(ModelBase):
             ds = xr.merge([y_train, y_test]).sortby("time").sortby("lat")
 
         target_var = [v for v in ds.data_vars][0]
-        monmean = ds.groupby("time.month").mean().target_var
+
+        # calculate climatology:
+        monmean = ds.groupby("time.month").mean(dim=['time'])[target_var]
 
         test_arrays_loader = self.get_dataloader(
             mode="test", shuffle_data=False, normalize=False, static=False
@@ -50,7 +52,13 @@ class Climatology(ModelBase):
                     print("Target variable not in prediction data!")
                     raise e
 
-                preds_dict[key] = monmean.sel(time=val.target_time).values
+                preds_dict[key] = (
+                    monmean
+                    .sel(month=val.target_time.month)
+                    .values
+                    .reshape(val.y.shape)
+                )
+
                 test_arrays_dict[key] = {
                     "y": val.y,
                     "latlons": val.latlons,
