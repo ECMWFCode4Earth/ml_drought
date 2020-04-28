@@ -42,5 +42,5 @@ class TestClimatology:
         ds = y_train
 
         assert (
-            preds["1980_1"].reshape(5, 5) == ds['VHI']['time.month' == 1].values
+            preds["1980_1"].reshape(5, 5) == ds["VHI"]["time.month" == 1].values
         ).all(), "Expect the month mean to be the calculated from the training data"
