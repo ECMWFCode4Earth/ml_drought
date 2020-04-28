@@ -90,7 +90,6 @@ def linear_nn(
     predictor.train(
         num_epochs=num_epochs,
         early_stopping=early_stopping,
-        check_inversion=check_inversion,
     )
     predictor.evaluate(save_preds=True)
     predictor.save_model()
@@ -136,7 +135,6 @@ def rnn(
     predictor.train(
         num_epochs=num_epochs,
         early_stopping=early_stopping,
-        check_inversion=check_inversion,
     )
     predictor.evaluate(save_preds=True)
     predictor.save_model()
@@ -188,7 +186,6 @@ def earnn(
         predictor.train(
             num_epochs=num_epochs,
             early_stopping=early_stopping,
-            check_inversion=check_inversion,
         )
         predictor.evaluate(save_preds=True)
         predictor.save_model()
