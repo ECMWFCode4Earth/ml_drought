@@ -123,7 +123,7 @@ class LinearNetwork(NNBase):
                 assert x_ref is not None
                 input_size += x_ref[5].shape[-1]
             elif self.static == "embeddings":
-                input_size += self.num_locations
+                input_size += self.num_locations  # type: ignore
             if self.include_prev_y:
                 input_size += 1
             self.input_size = input_size
