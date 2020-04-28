@@ -44,17 +44,25 @@ class _EngineerBase:
         target_variable: str = "VHI",
         pred_months: int = 12,
         expected_length: Optional[int] = 12,
+        global_means: bool = False,
+        pixel_means: bool = True
     ) -> None:
 
         self._process_dynamic(test_year, target_variable, pred_months, expected_length)
         if self.process_static:
-            self._process_static(test_year=test_year)
+            self._process_static(
+                test_year=test_year,
+                global_means=global_means,
+                pixel_means=pixel_means,
+            )
 
     def calculate_static_means_ds(
-        self, static_ds: xr.Dataset, test_year: Union[int, List[int]]
+        self, static_ds: xr.Dataset, test_year: Union[int, List[int]],
+        global_means: bool = False, pixel_means: bool = True,
     ) -> xr.Dataset:
         dynamic_ds = self._make_dataset(static=False, overwrite_dims=False)
-        # TODO: ignore test years
+
+        # ignore test years in calculation of means
         min_year = dynamic_ds.time.min()
         test_year = [test_year] if not isinstance(test_year, Iterable) else test_year
         dynamic_ds = dynamic_ds.sel(
@@ -67,25 +75,39 @@ class _EngineerBase:
         ones = xr.ones_like(static_ds)
         ones_da = ones[[v for v in ones.data_vars][0]]
 
-        # 1. create global means ds
-        global_means = dynamic_ds.mean(dim=["lat", "lon", "time"])
-        global_means = ones_da * global_means
-        # rename variables
-        rename_map = {v: f"{v}_global_mean" for v in global_means.data_vars}
-        global_means = global_means.rename(rename_map)
+        if global_means:
+            # 1. create global means ds
+            global_means = dynamic_ds.mean(dim=["lat", "lon", "time"])
+            global_means = ones_da * global_means
+            # rename variables
+            rename_map = {v: f"{v}_global_mean" for v in global_means.data_vars}
+            global_means = global_means.rename(rename_map)
 
-        # 2. create pixel means ds
-        pixel_means = dynamic_ds.mean(dim=["time"])
-        pixel_means = ones_da * pixel_means
-        # rename variables
-        rename_map = {v: f"{v}_pixel_mean" for v in pixel_means.data_vars}
-        pixel_means = pixel_means.rename(rename_map)
+        if pixel_means:
+            # 2. create pixel means ds
+            pixel_means = dynamic_ds.mean(dim=["time"])
+            pixel_means = ones_da * pixel_means
+            # rename variables
+            rename_map = {v: f"{v}_pixel_mean" for v in pixel_means.data_vars}
+            pixel_means = pixel_means.rename(rename_map)
 
-        static_mean_ds = xr.auto_combine([global_means, pixel_means])
+        # TODO: this can be cleaned
+        if global_means & pixel_means:
+            static_mean_ds = xr.auto_combine([global_means, pixel_means])
+        elif global_means & ~pixel_means:
+            static_mean_ds = xr.auto_combine([global_means])
+        elif ~global_means & pixel_means:
+            static_mean_ds = xr.auto_combine([pixel_means])
+        else:
+            # return an empty dataset
+            static_mean_ds = xr.Dataset()
 
         return static_mean_ds
 
-    def _process_static(self, test_year: Union[int, List[int]]):
+    def _process_static(
+        self, test_year: Union[int, List[int]],
+        global_means: bool = False, pixel_means: bool = True
+    ) -> None:
         """
         Note:
         requires `test_year` so that can ignore test years in the calculation
@@ -109,7 +131,8 @@ class _EngineerBase:
             static_ds = None
         # create dynamic_variable means for input to static data
         static_mean_ds = self.calculate_static_means_ds(
-            static_ds=static_ds, test_year=test_year
+            static_ds=static_ds, test_year=test_year, global_means=global_means,
+            pixel_means=pixel_means,
         )
 
         if static_ds is None:
