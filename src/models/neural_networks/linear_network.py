@@ -110,7 +110,9 @@ class LinearNetwork(NNBase):
     def _initialize_model(self, x_ref: Optional[Tuple[torch.Tensor, ...]]) -> nn.Module:
         if self.input_size is None:
             assert x_ref is not None, "x_ref can't be None if no input size is defined!"
-            input_size = x_ref[0].view(x_ref[0].shape[0], -1).shape[1]
+            # input_size = x_ref[0].view(x_ref[0].shape[0], -1).shape[1]
+            input_size = x_ref[0].reshape(x_ref[0].shape[0], -1).shape[1]
+
             if self.experiment == "nowcast":
                 current_tensor = x_ref[3]
                 input_size += current_tensor.shape[-1]

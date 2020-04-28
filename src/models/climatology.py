@@ -47,7 +47,7 @@ class Climatology(ModelBase):
         for dict in test_arrays_loader:
             for key, val in dict.items():
                 try:
-                    target_idx = val.x_vars.index(val.y_var)
+                    _ = val.x_vars.index(val.y_var)
                 except ValueError as e:
                     print("Target variable not in prediction data!")
                     raise e
