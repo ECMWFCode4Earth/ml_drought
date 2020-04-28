@@ -58,8 +58,8 @@ class _EngineerBase:
         self,
         static_ds: xr.Dataset,
         test_year: Union[int, List[int]],
-        global_means: bool = False,
-        pixel_means: bool = True,
+        global_means_bool: bool = False,
+        pixel_means_bool: bool = True,
     ) -> xr.Dataset:
         dynamic_ds = self._make_dataset(static=False, overwrite_dims=False)
 
@@ -76,7 +76,7 @@ class _EngineerBase:
         ones = xr.ones_like(static_ds)
         ones_da = ones[[v for v in ones.data_vars][0]]
 
-        if global_means:
+        if global_means_bool:
             # 1. create global means ds
             global_means = dynamic_ds.mean(dim=["lat", "lon", "time"])
             global_means = ones_da * global_means
@@ -84,7 +84,7 @@ class _EngineerBase:
             rename_map = {v: f"{v}_global_mean" for v in global_means.data_vars}
             global_means = global_means.rename(rename_map)
 
-        if pixel_means:
+        if pixel_means_bool:
             # 2. create pixel means ds
             pixel_means = dynamic_ds.mean(dim=["time"])
             pixel_means = ones_da * pixel_means
@@ -93,11 +93,11 @@ class _EngineerBase:
             pixel_means = pixel_means.rename(rename_map)
 
         # TODO: this can be cleaned
-        if global_means & pixel_means:
+        if global_means_bool & pixel_means_bool:
             static_mean_ds = xr.auto_combine([global_means, pixel_means])
-        elif global_means & ~pixel_means:
+        elif global_means_bool & ~pixel_means_bool:
             static_mean_ds = xr.auto_combine([global_means])
-        elif ~global_means & pixel_means:
+        elif ~global_means_bool & pixel_means_bool:
             static_mean_ds = xr.auto_combine([pixel_means])
         else:
             # return an empty dataset

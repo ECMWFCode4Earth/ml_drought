@@ -40,6 +40,8 @@ if __name__ == "__main__":
         "VCI3M",
         "modis_ndvi",
         "SMroot",
+        "lc_class",
+        "no_data_one_hot",
     ]  # "ndvi",
 
     # -------------

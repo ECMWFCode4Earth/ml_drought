@@ -619,7 +619,7 @@ class _BaseIter:
         return latlons, train_latlons
 
     def _calculate_static(self, num_instances: int) -> np.ndarray:
-        # make sure values are DROPPED!
+        # TODO: test to make sure values are DROPPED!
         assert self.static is not None
         if self.ignore_vars is not None:
             include_vars = [
