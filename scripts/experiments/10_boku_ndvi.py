@@ -5,7 +5,7 @@ import datetime
 sys.path.append("../..")
 
 # from src.exporters import BokuNDVIExporter
-# from src.preprocess import BokuNDVIPreprocessor
+from src.preprocess import BokuNDVIPreprocessor
 
 from scripts.utils import _rename_directory, get_data_path
 from src.engineer import Engineer
@@ -36,7 +36,12 @@ def engineer(pred_months=3, target_var="boku_VCI"):
     )
 
 
-def models(target_var: str = "boku_VCI", adede_only=False):
+def models(
+    target_var: str = "boku_VCI",
+    adede_only=False,
+    experiment_name=None,
+    check_inversion=False,
+):
     if adede_only:
         ignore_vars = [
             "p84.162",
@@ -52,7 +57,16 @@ def models(target_var: str = "boku_VCI", adede_only=False):
             "SMsurf",
         ]
     else:
-        ignore_vars = ["p84.162", "sp", "tp", "Eb", "VCI", "modis_ndvi"]
+        ignore_vars = [
+            "p84.162",
+            "sp",
+            "tp",
+            "Eb",
+            "VCI",
+            "modis_ndvi",
+            "SMroot",
+            "SMsurf",
+        ]
 
     # drop the target variable from ignore_vars
     ignore_vars = [v for v in ignore_vars if v != target_var]
@@ -75,12 +89,13 @@ def models(target_var: str = "boku_VCI", adede_only=False):
         include_pred_month=True,
         surrounding_pixels=None,
         explain=False,
-        static=None if adede_only else "features",
+        static="features",
         ignore_vars=ignore_vars,
-        num_epochs=50,
+        num_epochs=50,  # 1,  # 50 ,
         early_stopping=5,
         hidden_size=256,
         include_latlons=True,
+        check_inversion=check_inversion,
     )
 
     # -------------
@@ -92,17 +107,22 @@ def models(target_var: str = "boku_VCI", adede_only=False):
         surrounding_pixels=None,
         pretrained=False,
         explain=False,
-        static=None if adede_only else "features",
+        static="features",
         ignore_vars=ignore_vars,
-        num_epochs=50,
+        num_epochs=50,  # 1,  # 50 ,
         early_stopping=5,
         hidden_size=256,
-        static_embedding_size=None if adede_only else 64,
+        static_embedding_size=64,
         include_latlons=True,
+        check_inversion=check_inversion,
     )
 
     # rename the output file
     data_path = get_data_path()
+    if experiment_name is None:
+        experiment_name = (
+            f"one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
+        )
 
     _rename_directory(
         from_path=data_path / "models" / "one_month_forecast",
@@ -112,7 +132,7 @@ def models(target_var: str = "boku_VCI", adede_only=False):
     )
 
 
-def move_features_dir(target_var, adede_only=False):
+def move_features_dir(target_var, adede_only=False, experiment_name=None):
     # rename the features dir
     data_path = get_data_path()
     try:
@@ -135,6 +155,8 @@ def move_features_dir(target_var, adede_only=False):
 
 def main(monthly=True):
     # preprocess(monthly=monthly)
+    ADEDE_ONLY = False
+    TARGET_VARS = ["boku_VCI", "VCI3M"]  # "boku_VCI", "VCI3M"
 
     adede_only = True
     target_vars = ["boku_VCI", "VCI3M"]  # "boku_VCI",
@@ -142,9 +164,14 @@ def main(monthly=True):
         print(f"\n\n ** Target Variable: {target_var} ** \n\n")
         engineer(target_var=target_var)
         print(f"\n\n ** RUNNING MODELS FOR Target Variable: {target_var} ** \n\n")
-        models(target_var=target_var, adede_only=adede_only)
+        models(
+            target_var=target_var,
+            adede_only=ADEDE_ONLY,
+            experiment_name=None,
+            check_inversion=True,
+        )
         print(f"\n\n ** Target Variable: {target_var} DONE ** \n\n")
-        move_features_dir(target_var=target_var, adede_only=adede_only)
+        # move_features_dir(target_var=target_var, adede_only=adede_only)
 
 
 if __name__ == "__main__":

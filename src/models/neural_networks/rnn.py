@@ -267,7 +267,7 @@ class RNN(nn.Module):
         hidden_state = torch.zeros(1, x.shape[0], self.hidden_size)
         cell_state = torch.zeros(1, x.shape[0], self.hidden_size)
 
-        # construct the vector to be appended to the dynamic steps
+        # construct the vector with static data to be appended to the dynamic steps
         input_tensors: List[torch.Tensor] = []
         if self.include_pred_month:
             input_tensors.append(pred_month)

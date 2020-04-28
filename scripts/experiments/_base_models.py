@@ -15,17 +15,15 @@ from src.analysis import all_explanations_for_file
 from scripts.utils import get_data_path
 
 
-def parsimonious(experiment="one_month_forecast", include_yearly_aggs=True):
-    predictor = Persistence(
-        get_data_path(), experiment=experiment, include_yearly_aggs=include_yearly_aggs
-    )
-    predictor.evaluate(save_preds=True)
+def persistence(experiment="one_month_forecast",):
+    predictor = Persistence(get_data_path(), experiment=experiment)
 
 
 def climatology(experiment="one_month_forecast"):
     predictor = Climatology(
         get_data_path(), experiment=experiment,
     )
+
     predictor.evaluate(save_preds=True)
 
 
@@ -89,7 +87,11 @@ def linear_nn(
         include_latlons=include_latlons,
         include_yearly_aggs=include_yearly_aggs,
     )
-    predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
+    predictor.train(
+        num_epochs=num_epochs,
+        early_stopping=early_stopping,
+        check_inversion=check_inversion,
+    )
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
@@ -131,7 +133,11 @@ def rnn(
         include_yearly_aggs=include_yearly_aggs,
         clear_nans=clear_nans,
     )
-    predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
+    predictor.train(
+        num_epochs=num_epochs,
+        early_stopping=early_stopping,
+        check_inversion=check_inversion,
+    )
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
@@ -179,7 +185,11 @@ def earnn(
             include_yearly_aggs=include_yearly_aggs,
             clear_nans=clear_nans,
         )
-        predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
+        predictor.train(
+            num_epochs=num_epochs,
+            early_stopping=early_stopping,
+            check_inversion=check_inversion,
+        )
         predictor.evaluate(save_preds=True)
         predictor.save_model()
     else:

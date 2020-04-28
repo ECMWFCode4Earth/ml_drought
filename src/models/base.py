@@ -8,6 +8,7 @@ import random
 from sklearn.metrics import mean_squared_error
 
 from .data import TrainData, DataLoader
+from .utils import vals_dict_to_xarray_dataset
 
 from typing import cast, Any, Dict, List, Optional, Union, Tuple
 
@@ -169,7 +170,12 @@ class ModelBase:
                 y = y + self.normalizing_dict[var_name]["mean"]
         return y
 
-    def evaluate(self, save_results: bool = True, save_preds: bool = False) -> None:
+    def evaluate(
+        self,
+        save_results: bool = True,
+        save_preds: bool = False,
+        check_inverted: bool = False,
+    ) -> None:
         """
         Evaluate the trained model on the TEST data
 
@@ -181,6 +187,9 @@ class ModelBase:
         save_preds: bool = False
             Whether to save the model predictions. If true, they are saved in
             self.model_dir / {year}_{month}.nc
+        check_inverted: bool = False
+            Whether to check if the models are somewhere inverting the data
+            (boolean switch because it can slow the code down)
         """
         test_arrays_dict, preds_dict = self.predict()
 
@@ -191,6 +200,22 @@ class ModelBase:
 
             true = self.denormalize_y(vals["y"], vals["y_var"])
             preds = self.denormalize_y(preds_dict[key], vals["y_var"])
+
+            if check_inverted:
+                # turn into xarray objects
+                pred_ds = vals_dict_to_xarray_dataset(vals, preds, "preds")
+                true_ds = vals_dict_to_xarray_dataset(vals, true, "y_true")
+                # check that the shapes are similar / same?
+                # TODO: how to do this in a general way ...? Choice of threshold
+                # check that the matching missing values are ~0.92
+                # (this catches the inversion problem)
+                assert (
+                    pred_ds.isnull().preds.values == true_ds.isnull().y_true.values
+                ).mean() > 0.92, (
+                    "The missing data should be the same for 92% of the data. "
+                    "This sometimes occurs when there has been a problem with an inversion "
+                    "somewhere in the data"
+                )
 
             output_dict[key] = np.sqrt(mean_squared_error(true, preds)).item()
 

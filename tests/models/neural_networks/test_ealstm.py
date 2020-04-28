@@ -81,11 +81,14 @@ class TestEARecurrentNetwork:
         assert model_dict["normalize_y"] == normalize_y
 
     @pytest.mark.parametrize(
-        "use_pred_months,use_static_embedding,static",
-        [(True, 10, "features"), (False, None, "features")],
+        "use_pred_months,use_static_embedding,static,check_inversion",
+        [
+            (True, 10, "features", True), (False, None, "features", True),
+            (True, 10, "features", False), (False, None, "features", False),
+        ],
     )
     def test_train(
-        self, tmp_path, capsys, use_pred_months, use_static_embedding, static
+        self, tmp_path, capsys, use_pred_months, use_static_embedding, static, check_inversion
     ):
         # make directories
         for ts in ["2001_11", "2001_12"]:
@@ -135,7 +138,7 @@ class TestEARecurrentNetwork:
             include_yearly_aggs=False,
             static=static,
         )
-        model.train()
+        model.train(check_inversion=check_inversion)
 
         captured = capsys.readouterr()
         expected_stdout = "Epoch 1, train smooth L1: 0."

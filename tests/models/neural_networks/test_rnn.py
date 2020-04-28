@@ -133,7 +133,7 @@ class TestRecurrentNetwork:
             predict_delta=predict_delta,
             static=static,
         )
-        model.train()
+        model.train(check_inversion=check_inversion)
 
         captured = capsys.readouterr()
         expected_stdout = "Epoch 1, train smooth L1:"

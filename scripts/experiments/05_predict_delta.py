@@ -1,4 +1,4 @@
-from _base_models import parsimonious, regression, linear_nn, rnn, earnn
+from _base_models import persistence, regression, linear_nn, rnn, earnn
 from scripts.utils import _rename_directory, get_data_path
 import sys
 
@@ -9,7 +9,7 @@ if __name__ == "__main__":
     important_vars = ["VCI", "precip", "t2m", "pev", "E", "SMsurf", "SMroot"]
     always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb"]
 
-    # parsimonious()
+    # persistence()
     # regression(ignore_vars=always_ignore_vars, predict_delta=True)
     # gbdt(ignore_vars=always_ignore_vars, predict_delta=True)
     # linear_nn(ignore_vars=always_ignore_vars, predict_delta=True)

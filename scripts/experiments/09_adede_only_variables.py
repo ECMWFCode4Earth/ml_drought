@@ -153,8 +153,8 @@ def run_models(target_var: str):
 
 
 if __name__ == "__main__":
-    # 1) MOVE the current interim_ and
-    #    change interim_adede -> interim
+    # 1) MOVE the current interim_adede_only and
+    #    change interim_adede_only -> interim
     rename_dirs()
 
     for target_var in ["VCI1M", "VCI3M"]:
@@ -163,4 +163,5 @@ if __name__ == "__main__":
         run_models(target_var=target_var)
         revert_features_dirs(target_var=target_var)
 
+    # change interim -> interim_adede_only
     revert_interim_dirs()

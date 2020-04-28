@@ -719,6 +719,10 @@ class _BaseIter:
     ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / "x.nc"), xr.open_dataset(folder / "y.nc")
+        # SORT values to make sure that predictions aren't upside down
+        # x = x.sortby(["time", "lat", "lon"])
+        # y = y.sortby(["time", "lat", "lon"])
+
         if self.predict_delta:
             # TODO: do this ONCE not at each read-in of the data
             y = self._calculate_change(x, y)
@@ -908,6 +912,18 @@ class _BaseIter:
 
 
 class _TrainIter(_BaseIter):
+    """ Returns a Tuple of the data for training the models as built by the Dataloader
+    Tuple Schema
+    ------------
+    0: historical data
+    1: pred_months OHE
+    2: latlons
+    3: current data
+    4: yearly_aggs data
+    5: static data
+    6: prev_y_var
+    """
+
     def __next__(
         self,
     ) -> Tuple[
