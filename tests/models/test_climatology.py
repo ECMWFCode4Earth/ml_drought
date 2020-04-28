@@ -20,7 +20,8 @@ class TestClimatology:
     def test_predict(self, tmp_path):
         self._create_train_samples(tmp_path, 12)
 
-        x, _, _ = _make_dataset(size=(5, 5))
+        # TEST with a random nan value included!
+        x, _, _ = _make_dataset(size=(5, 5), random_nan=1)
         y = x.isel(time=[-1])
 
         test_features = tmp_path / "features/one_month_forecast/test/1980_1"

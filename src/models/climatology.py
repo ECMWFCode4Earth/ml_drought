@@ -37,6 +37,7 @@ class Climatology(ModelBase):
 
         # calculate climatology:
         monmean = ds.groupby("time.month").mean(dim=["time"])[target_var]
+        monmean = monmean.stack(pixel=['lat', 'lon'])
 
         test_arrays_loader = self.get_dataloader(
             mode="test", shuffle_data=False, normalize=False, static=False
@@ -52,8 +53,9 @@ class Climatology(ModelBase):
                     print("Target variable not in prediction data!")
                     raise e
 
+                assert False, "Need to find a way to remove the latlon pairs that are dropped"
                 preds_dict[key] = monmean.sel(
-                    month=val.target_time.month
+                    month=val.target_time.month, pixel=val.latlons
                 ).values.reshape(val.y.shape)
 
                 test_arrays_dict[key] = {
