@@ -21,6 +21,7 @@ from .indices import (
     AnomalyIndex,
     MovingAverage,
     VegetationDeficitIndex,
+    ConditionIndex,
 )
 from .region_analysis import LandcoverRegionAnalysis, AdministrativeRegionAnalysis
 
@@ -34,6 +35,7 @@ __all__ = [
     "ChinaZIndex",
     "DecileIndex",
     "AnomalyIndex",
+    "ConditionIndex",
     "monthly_score",
     "annual_scores",
     "plot_predictions",

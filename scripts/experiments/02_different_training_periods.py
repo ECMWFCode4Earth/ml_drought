@@ -245,6 +245,11 @@ def run_experiments(
             except RuntimeError:
                 print(f"\n{'*'*10}\n FAILED: RNN \n{'*'*10}\n")
 
+            try:
+                earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
+            except RuntimeError:
+                print(f"\n{'*'*10}\n FAILED: EALSTM \n{'*'*10}\n")
+
     else:  # NO STATIC data
         try:
             rnn(ignore_vars=ignore_vars, static=None)
@@ -305,11 +310,6 @@ class Experiment:
 
         assert train_hilo in ["high", "med", "low"]
         assert test_hilo in ["high", "med", "low"]
-
-        try:
-            earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
-        except RuntimeError:
-            print(f"\n{'*'*10}\n FAILED: EALSTM \n{'*'*10}\n")
 
 
 def run_training_period_experiments(pred_months: int = 3):

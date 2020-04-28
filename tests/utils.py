@@ -124,4 +124,4 @@ def _create_features_dir(
         # if dir_name != '1998_12':
         # assert False
 
-        ds.to_netcdf(features_dir / dir_name / "X.nc")
+        ds.to_netcdf(features_dir / dir_name / "x.nc")

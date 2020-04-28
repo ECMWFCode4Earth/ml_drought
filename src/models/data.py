@@ -668,6 +668,9 @@ class _BaseIter:
     ) -> ModelArrays:
 
         x, y = xr.open_dataset(folder / "x.nc"), xr.open_dataset(folder / "y.nc")
+        # SORT values to make sure that predictions aren't upside down
+        # x = x.sortby(["time", "lat", "lon"])
+        # y = y.sortby(["time", "lat", "lon"])
 
         if self.predict_delta:
             # TODO: do this ONCE not at each read-in of the data
@@ -676,6 +679,10 @@ class _BaseIter:
             f"Expect only 1 target variable! " f"Got {len(list(y.data_vars))}"
         )
         if self.ignore_vars is not None:
+            #  only include the vars in ignore_vars that are in x.data_vars
+            self.ignore_vars = [
+                v for v in self.ignore_vars if v in [var_ for var_ in x.data_vars]
+            ]
             x = x.drop(self.ignore_vars)
 
         target_time = pd.to_datetime(y.time.values[0])
@@ -851,6 +858,18 @@ class _BaseIter:
 
 
 class _TrainIter(_BaseIter):
+    """ Returns a Tuple of the data for training the models as built by the Dataloader
+    Tuple Schema
+    ------------
+    0: historical data
+    1: pred_months OHE
+    2: latlons
+    3: current data
+    4: yearly_aggs data
+    5: static data
+    6: prev_y_var
+    """
+
     def __next__(
         self,
     ) -> Tuple[
