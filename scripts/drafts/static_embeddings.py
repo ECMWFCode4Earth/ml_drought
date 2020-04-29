@@ -531,6 +531,43 @@ def sort_by_another_list(list_to_sort, list_to_sort_on):
     return list_to_sort[sort_ixs]
 
 
+def run_clustering(
+    month_embeddings: np.ndarray,
+    month_pred_months: np.ndarray,
+    month_latlons: np.ndarray,
+    ks: List[int] = [5],
+) -> xr.Dataset:
+    """for each unique static embedding (currently months - to capture seasonality,
+    but could be 1D).
+    """
+    # calculate clusters for ALL x.nc inputs
+    all_cluster_ds = []
+
+    for ix, (embedding, pred_month, latlons) in enumerate(
+        zip(month_embeddings, month_pred_months, month_latlons)
+    ):
+        # fit the clusters
+        static_clusters = fit_kmeans(embedding, ks)
+        print(f"Fitted KMeans {ix}" if ix % 10 == 0 else None)
+
+        # convert to dataset
+        pixels = latlons
+        lons = latlons[:, 1]
+        lats = latlons[:, 0]
+        static_cluster_ds = convert_clusters_to_ds(
+            ks, static_clusters, pixels, lats, lons, time=ix
+        )
+        print(f"Converted to ds {ix}" if ix % 10 == 0 else None)
+
+        # append to final list
+        all_cluster_ds.append(static_cluster_ds)
+
+    #  combine into one xr.Dataset
+    cluster_ds = xr.auto_combine(all_cluster_ds)
+
+    return cluster_ds
+
+
 # ---------------------------------------------------------
 # Get the region bounding boxes
 # ---------------------------------------------------------
@@ -580,41 +617,41 @@ def get_regions_for_clustering_boxes(ds: xr.Dataset) -> List[Region]:
     return regions
 
 
-def run_clustering(
-    month_embeddings: np.ndarray,
-    month_pred_months: np.ndarray,
-    month_latlons: np.ndarray,
-    ks: List[int] = [5],
-) -> xr.Dataset:
-    """for each unique static embedding (currently months - to capture seasonality,
-    but could be 1D).
-    """
-    # calculate clusters for ALL x.nc inputs
-    all_cluster_ds = []
+# ---------------------------------------------------------
+# Remap the values in DataArray
+# ---------------------------------------------------------
 
-    for ix, (embedding, pred_month, latlons) in enumerate(
-        zip(month_embeddings, month_pred_months, month_latlons)
-    ):
-        # fit the clusters
-        static_clusters = fit_kmeans(embedding, ks)
-        print(f"Fitted KMeans {ix}" if ix % 10 == 0 else None)
 
-        # convert to dataset
-        pixels = latlons
-        lons = latlons[:, 1]
-        lats = latlons[:, 0]
-        static_cluster_ds = convert_clusters_to_ds(
-            ks, static_clusters, pixels, lats, lons, time=ix
+def remap_values(da: xr.DataArray, transdict: Dict) -> xr.DataArray:
+    vals = da.values
+    new_vals = np.copy(vals)
+
+    # replace values
+    for k, v in transdict.items():
+        new_vals[vals == k] = v
+
+    return xr.ones_like(da) * new_vals
+
+
+def remap_all_monthly_values(cluster_ds: xr.Dataset) -> xr.Dataset:
+    remapped_ds = cluster_ds.copy()
+    assert len(remapped_ds.time) == 12, "Expected time to be size 12 (monthly)"
+
+    # for each month in cluster_ds
+    all_remapped = []
+    for time in range(1, 12):
+        transdict = remap_dicts[calendar.month_abbr[time + 1]]
+
+        all_remapped.append(
+            remap_values(da=remapped_ds.cluster_5.isel(time=time), transdict=transdict)
         )
-        print(f"Converted to ds {ix}" if ix % 10 == 0 else None)
 
-        # append to final list
-        all_cluster_ds.append(static_cluster_ds)
-
-    #  combine into one xr.Dataset
-    cluster_ds = xr.auto_combine(all_cluster_ds)
-
-    return cluster_ds
+    # join each month back into one Dataset
+    remapped_ds = xr.concat(
+        [remapped_ds.cluster_5.isel(time=0)] + all_remapped, dim="time"
+    )
+    remapped_ds = remapped_ds.to_dataset()
+    return remapped_ds
 
 
 if __name__ == "__main__":
@@ -704,3 +741,7 @@ if __name__ == "__main__":
         remapping_dict=remap_dict,
         title=None,
     )
+
+    # -------------------
+    # 4. Get the matching groups
+    cluster_ds = remap_all_monthly_values(cluster_ds)
