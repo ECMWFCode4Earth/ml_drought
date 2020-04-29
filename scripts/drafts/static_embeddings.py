@@ -25,7 +25,7 @@ def sigmoid(x):
 
 
 def build_static_x(
-    x: Tuple[np.array], ealstm
+    x: Tuple[np.array], ealstm, expected_size: Optional[Tuple[float, float]] = None,
 ) -> Tuple[List[np.array], List[np.array], List[np.array]]:
     """From the x TrainData object (stored as a Tuple) and the ealstm model,
     calculate the static_data that is passed through the static embedding.
@@ -40,7 +40,11 @@ def build_static_x(
         latlons_data = x[i][2]
         yearly_aggs_data = x[i][4]
         static_data = x[i][5]
-        assert static_data.shape[-1] == 29, f"{static_data.shape}"
+
+        # expected size of the static data ?
+        print(f"Current size of static data: {static_data.shape[-1]}")
+        if expected_size is not None:
+            assert static_data.shape[-1] == expected_size, f"{static_data.shape}"
 
         # append the static_arrays
         static_x = []
