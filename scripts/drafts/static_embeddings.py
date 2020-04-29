@@ -174,7 +174,9 @@ def convert_clusters_to_ds(
     longitudes: np.ndarray,
     time: Union[pd.Timestamp, int] = 1,
 ) -> xr.Dataset:
-    """
+    """Create an xr.Dataset object from the output of the static
+    embedding clustering. Allows for easy plotting, subsetting
+    and all the other goodness of xarray objects.
     """
     out = []
     for k in ks:
@@ -527,43 +529,50 @@ def sort_by_another_list(list_to_sort, list_to_sort_on):
 # ---------------------------------------------------------
 # Get the region bounding boxes
 # ---------------------------------------------------------
-kitui = Region(
-    name="kitui",
-    lonmin=cluster_ds.isel(lon=13).lon.values,
-    lonmax=cluster_ds.isel(lon=19).lon.values,
-    latmin=cluster_ds.isel(lat=-34).lat.values,
-    latmax=cluster_ds.isel(lat=-24).lat.values,
-)
-victoria = Region(
-    name="victoria",
-    lonmin=cluster_ds.isel(lon=0).lon.values,
-    lonmax=cluster_ds.isel(lon=12).lon.values,
-    latmin=cluster_ds.isel(lat=-31).lat.values,
-    latmax=cluster_ds.isel(lat=-15).lat.values,
-)
-turkana_edge = Region(
-    name="turkana_edge",
-    lonmin=cluster_ds.isel(lon=14).lon.values,
-    lonmax=cluster_ds.isel(lon=29).lon.values,
-    latmin=cluster_ds.isel(lat=-9).lat.values,
-    latmax=cluster_ds.isel(lat=-2).lat.values,
-)
-nw_pastoral = Region(
-    name="nw_pastoral",
-    lonmin=cluster_ds.isel(lon=0).lon.values,
-    lonmax=cluster_ds.isel(lon=12).lon.values,
-    latmin=cluster_ds.isel(lat=-6).lat.values,
-    latmax=cluster_ds.isel(lat=-1).lat.values,
-)
-coastal = Region(
-    name="coastal",
-    lonmin=cluster_ds.isel(lon=21).lon.values,
-    lonmax=cluster_ds.isel(lon=34).lon.values,
-    latmin=cluster_ds.isel(lat=-25).lat.values,
-    latmax=cluster_ds.isel(lat=-13).lat.values,
-)
+def get_regions_for_clustering_boxes(ds: xr.Dataset) -> List[Region]:
+    """Because we defined the latlon boxes by their numerical
+    index we have to get the values for the latlon boxes by the
+    `.isel()` method on one of the preprocessed datasets.
+    """
+    kitui = Region(
+        name="kitui",
+        lonmin=ds.isel(lon=13).lon.values,
+        lonmax=ds.isel(lon=19).lon.values,
+        latmin=ds.isel(lat=-34).lat.values,
+        latmax=ds.isel(lat=-24).lat.values,
+    )
+    victoria = Region(
+        name="victoria",
+        lonmin=ds.isel(lon=0).lon.values,
+        lonmax=ds.isel(lon=12).lon.values,
+        latmin=ds.isel(lat=-31).lat.values,
+        latmax=ds.isel(lat=-15).lat.values,
+    )
+    turkana_edge = Region(
+        name="turkana_edge",
+        lonmin=ds.isel(lon=14).lon.values,
+        lonmax=ds.isel(lon=29).lon.values,
+        latmin=ds.isel(lat=-9).lat.values,
+        latmax=ds.isel(lat=-2).lat.values,
+    )
+    nw_pastoral = Region(
+        name="nw_pastoral",
+        lonmin=ds.isel(lon=0).lon.values,
+        lonmax=ds.isel(lon=12).lon.values,
+        latmin=ds.isel(lat=-6).lat.values,
+        latmax=ds.isel(lat=-1).lat.values,
+    )
+    coastal = Region(
+        name="coastal",
+        lonmin=ds.isel(lon=21).lon.values,
+        lonmax=ds.isel(lon=34).lon.values,
+        latmin=ds.isel(lat=-25).lat.values,
+        latmax=ds.isel(lat=-13).lat.values,
+    )
 
-regions = [coastal, victoria, nw_pastoral, kitui, turkana_edge]
+    regions = [coastal, victoria, nw_pastoral, kitui, turkana_edge]
+
+    return regions
 
 
 
@@ -642,6 +651,9 @@ if __name__ == "__main__":
 
     #  combine into one xr.Dataset
     cluster_ds = xr.auto_combine(all_cluster_ds)
+
+    # get the regions
+    regions = get_regions_for_clustering_boxes(cluster_ds)
 
     # -------------------
     # 4. Get the matching groups and plot
