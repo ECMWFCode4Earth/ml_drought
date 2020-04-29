@@ -116,9 +116,9 @@ def get_static_embedding(
     x = [x for (x, y) in dl]
 
     # build static_x matrix
-    all_static_x, all_latlons, all_pred_months = build_static_x(
+    all_static_x, all_latlons, all_pred_months = build_static_x(  # type: ignore
         x, ealstm
-    )  # type: ignore
+    )
     # check w^Tx + b is a valid matrix operation
     assert (
         W.T.shape[0] == all_static_x[0].shape[-1]
@@ -233,22 +233,22 @@ from src.preprocess.utils import select_bounding_box
 
 
 def get_matching_groups(
-    reference_ds: xr.DataArray,
-    comparison_ds: xr.DataArray,
+    reference_da: xr.DataArray,
+    comparison_da: xr.DataArray,
     percent: bool = True,
     regions: Optional[List[Region]] = None,
 ) -> Tuple[Dict[float, float], pd.DataFrame]:
-    # get the unique values from the reference_ds
-    group_vals = np.unique(reference_ds.values[~np.isnan(reference_ds.values)])
+    # get the unique values from the reference_da
+    group_vals = np.unique(reference_da.values[~np.isnan(reference_da.values)])
 
     if regions is not None:
-        df = count_mappings_for_regions(reference_ds, comparison_ds, regions)
+        df = count_mappings_for_regions(reference_da, comparison_da, regions)
         remap_dict = match_by_region_algorithm(df, regions)
 
     else:
         # calculate the number of matching pixels
         df = convert_counts_dict_to_dataframe(
-            count_matching_pixels(reference_ds, comparison_ds)
+            count_matching_pixels(reference_da, comparison_da)
         )
 
         # calculate_the remap_dict
@@ -265,25 +265,25 @@ def get_matching_groups(
 
 
 def count_matching_pixels(
-    reference_ds: xr.Dataset, comparison_ds: xr.Dataset
+    reference_da: xr.Dataset, comparison_da: xr.Dataset
 ) -> Dict[float, Dict[float, float]]:
     """Count the number of pixels for each value
-        in comparison_ds for each reference value
-        in reference_ds
+        in comparison_da for each reference value
+        in reference_da
 
     Returns:
     -------
      Dict[float, Dict[float, float]]
-        keys = reference_ds values "group_0"
-        values = {comparison_ds values: count of matches} "group_1"
+        keys = reference_da values "group_0"
+        values = {comparison_da values: count of matches} "group_1"
     """
     unique_counts = dict()
 
-    # for each reference value in reference_ds
+    # for each reference value in reference_da
     # excluding np.nan
-    for value in np.unique(reference_ds.values[~np.isnan(reference_ds.values)]):
+    for value in np.unique(reference_da.values[~np.isnan(reference_da.values)]):
         # get the pixels from Comparison corresponding to `value` in Reference
-        np_arr = comparison_ds.where(reference_ds == value).values
+        np_arr = comparison_da.where(reference_da == value).values
         # drop nans from matching values
         np_arr = np_arr[~np.isnan(np_arr)]
         # calculate the number of group_1 pixels
@@ -295,8 +295,8 @@ def count_matching_pixels(
 
 def convert_counts_dict_to_dataframe(unique_counts: dict) -> pd.DataFrame:
     """create long format dataframe from counts in unique_counts
-    reference_ds = group_0
-    comparison_ds = group_1
+    reference_da = group_0
+    comparison_da = group_1
     """
     df = pd.DataFrame(unique_counts)  # rows = group_1_values, cols = group_0_values
     df.columns = df.columns.rename("reference_group")
@@ -408,22 +408,22 @@ def most_overlapping_pixels_algorithm(
 
 
 def count_mappings_for_regions(
-    reference_ds: xr.DataArray, comparison_ds: xr.DataArray, regions: List[Region]
+    reference_da: xr.DataArray, comparison_da: xr.DataArray, regions: List[Region]
 ) -> pd.DataFrame:
     all_df = []
-    variable = reference_ds.name
+    variable = reference_da.name
 
     for region in regions:
-        region_reference_ds = select_bounding_box(reference_ds.to_dataset(), region)[
+        region_reference_da = select_bounding_box(reference_da.to_dataset(), region)[
             variable
         ]
-        region_comparison_ds = select_bounding_box(comparison_ds.to_dataset(), region)[
+        comparison_da = select_bounding_box(comparison_da.to_dataset(), region)[
             variable
         ]
 
         # count the pixels in each group
         d = convert_counts_dict_to_dataframe(
-            count_matching_pixels(region_reference_ds, region_comparison_ds)
+            count_matching_pixels(region_reference_da, comparison_da)
         )
         d["region"] = [region.name for _ in range(len(d))]
         all_df.append(d)
@@ -492,7 +492,7 @@ def plot_comparisons(
     reference_da: xr.DataArray,
     comparison_da: xr.DataArray,
     colors: List[str],
-    remapping_dict: Dict[int, int],
+    remapping_dict: Union[Dict[int, int], Dict[float, float]],
     title: Optional[str] = None,
 ) -> None:
     """check that the remapping is sensible"""
@@ -633,7 +633,9 @@ def remap_values(da: xr.DataArray, transdict: Dict) -> xr.DataArray:
     return xr.ones_like(da) * new_vals
 
 
-def remap_all_monthly_values(cluster_ds: xr.Dataset) -> xr.Dataset:
+def remap_all_monthly_values(
+    cluster_ds: xr.Dataset, remap_dicts: Dict[Union[str, int], Union[str, float]]
+) -> xr.Dataset:
     remapped_ds = cluster_ds.copy()
     assert len(remapped_ds.time) == 12, "Expected time to be size 12 (monthly)"
 
@@ -643,7 +645,9 @@ def remap_all_monthly_values(cluster_ds: xr.Dataset) -> xr.Dataset:
         transdict = remap_dicts[calendar.month_abbr[time + 1]]
 
         all_remapped.append(
-            remap_values(da=remapped_ds.cluster_5.isel(time=time), transdict=transdict)
+            remap_values(  # type: ignore
+                da=remapped_ds.cluster_5.isel(time=time), transdict=transdict
+            )
         )
 
     # join each month back into one Dataset
@@ -669,7 +673,11 @@ if __name__ == "__main__":
 
     # -------------------
     #  2. Calculate the static embedding
-    all_e, (all_static_x, all_latlons, all_pred_months) = get_static_embedding(
+    all_e, (
+        all_static_x,
+        all_latlons,
+        all_pred_months,
+    ) = get_static_embedding(  #  type: ignore
         ealstm=ealstm
     )
     pred_months_err_mask = [len(np.unique(pm)) == 1 for pm in all_pred_months]
@@ -678,8 +686,8 @@ if __name__ == "__main__":
     all_pred_months = np.array(all_pred_months)[pred_months_err_mask]  #  type: ignore
     all_latlons = np.array(all_latlons)[pred_months_err_mask]  #  type: ignore
 
-    assert all_latlons.shape == all_static_x.shape
-    assert all_pred_months.shape == all_e.shape
+    assert all_latlons.shape == all_static_x.shape  #  type: ignore
+    assert all_pred_months.shape == all_e.shape  #  type: ignore
 
     # assert all timsteps have only 1 pred month
     assert all([i == 1 for i in [len(np.unique(pm)) for pm in all_pred_months]])
@@ -722,26 +730,48 @@ if __name__ == "__main__":
     colors = np.array(["#fde832", "#67c962", "#43928d", "#3b528b", "#461954"])
     cmap = ListedColormap(colors)
 
-    # remap_dict, matches_df = get_matching_groups(reference_ds, comparison_ds)
+    # remap_dict, matches_df = get_matching_groups(reference_da, comparison_da)
     jan = cluster_ds.isel(time=0).cluster_5
     may = cluster_ds.isel(time=4).cluster_5
 
-    comparison_ds = may
-    reference_ds = jan
+    comparison_da = may
+    reference_da = jan
 
-    remap_dict, df = get_matching_groups(reference_ds, comparison_ds, regions=regions)
+    remap_dict, df = get_matching_groups(reference_da, comparison_da, regions=regions)
 
     print("Remapping:", remap_dict.values())
 
     ## CHECK that the remapping is sensible!
     plot_comparisons(
-        reference_ds,
-        comparison_ds,
+        reference_da,
+        comparison_da,
         colors=colors,
         remapping_dict=remap_dict,
         title=None,
     )
 
+    # get each month remapping dictionary and plot
+    fig, axs = plt.subplots(4, 3, figsize=(15, 8 * 3))
+    colors = np.array(["#fde832", "#67c962", "#43928d", "#3b528b", "#461954"])
+    cmap = ListedColormap(colors)
+    reference_da.plot(ax=axs[0, 0], add_colorbar=False, cmap=cmap)
+    axs[0, 0].set_title(calendar.month_abbr[1])
+
+    remap_dicts = {}
+
+    for mth in range(1, 12):
+        ax = axs[np.unravel_index(mth, (4, 3))]
+        comparison_da = cluster_ds.isel(time=mth).cluster_5
+        remap_dict, matches_df = get_matching_groups(
+            reference_da, comparison_da, regions=regions
+        )
+        new_cmap = ListedColormap(
+            colors[np.array([int(i) for i in remap_dict.values()])]
+        )
+        comparison_da.plot(add_colorbar=False, ax=ax, cmap=new_cmap)
+        ax.set_title(calendar.month_abbr[mth + 1])
+        remap_dicts[calendar.month_abbr[mth + 1]] = remap_dict
+
     # -------------------
     # 4. Get the matching groups
-    cluster_ds = remap_all_monthly_values(cluster_ds)
+    cluster_ds = remap_all_monthly_values(cluster_ds, remap_dicts)  # type: ignore
