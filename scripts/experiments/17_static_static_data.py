@@ -31,11 +31,7 @@ if __name__ == "__main__":
     # 1. Run the engineer
     target_var = "boku_VCI"
     pred_months = 3
-    engineer(
-        pred_months=pred_months,
-        target_var=target_var,
-        process_static=True
-    )
+    engineer(pred_months=pred_months, target_var=target_var, process_static=True)
 
     # NOTE: why have we downloaded 2 variables for ERA5 evaporaton
     # important_vars = ["VCI", "precip", "t2m", "pev", "p0005", "SMsurf", "SMroot"]
@@ -131,4 +127,3 @@ if __name__ == "__main__":
         to_path=data_path / "models" / "one_month_forecast_BASE_static_vars",
         with_datetime=True,
     )
-
