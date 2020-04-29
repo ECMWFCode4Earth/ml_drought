@@ -25,7 +25,7 @@ def sigmoid(x):
 
 
 def build_static_x(
-    x: Tuple[np.array], ealstm, expected_size: Optional[Tuple[float, float]] = None,
+    x: Tuple[np.array], ealstm, expected_size: Optional[Tuple[float, float]] = None
 ) -> Tuple[List[np.array], List[np.array], List[np.array]]:
     """From the x TrainData object (stored as a Tuple) and the ealstm model,
     calculate the static_data that is passed through the static embedding.
@@ -42,7 +42,8 @@ def build_static_x(
         static_data = x[i][5]
 
         # expected size of the static data ?
-        print(f"Current size of static data: {static_data.shape[-1]}")
+        if i == 0:
+            print(f"Current size of static data: {static_data.shape[-1]}")
         if expected_size is not None:
             assert static_data.shape[-1] == expected_size, f"{static_data.shape}"
 
@@ -579,6 +580,42 @@ def get_regions_for_clustering_boxes(ds: xr.Dataset) -> List[Region]:
     return regions
 
 
+def run_clustering(
+    month_embeddings: np.ndarray,
+    month_pred_months: np.ndarray,
+    month_latlons: np.ndarray,
+    ks: List[int] = [5],
+) -> xr.Dataset:
+    """for each unique static embedding (currently months - to capture seasonality,
+    but could be 1D).
+    """
+    # calculate clusters for ALL x.nc inputs
+    all_cluster_ds = []
+
+    for ix, (embedding, pred_month, latlons) in enumerate(
+        zip(month_embeddings, month_pred_months, month_latlons)
+    ):
+        # fit the clusters
+        static_clusters = fit_kmeans(embedding, ks)
+        print(f"Fitted KMeans {ix if ix % 10 == 0 else None}")
+
+        # convert to dataset
+        pixels = latlons
+        lons = latlons[:, 1]
+        lats = latlons[:, 0]
+        static_cluster_ds = convert_clusters_to_ds(
+            ks, static_clusters, pixels, lats, lons, time=ix
+        )
+        print(f"Converted to ds {ix if ix % 10 == 0 else None}")
+
+        # append to final list
+        all_cluster_ds.append(static_cluster_ds)
+
+    #  combine into one xr.Dataset
+    cluster_ds = xr.auto_combine(all_cluster_ds)
+
+    return cluster_ds
+
 
 if __name__ == "__main__":
     EXPERIMENT = "2020_04_28:143300_one_month_forecast_BASE_static_vars"
@@ -630,32 +667,14 @@ if __name__ == "__main__":
 
     # -------------------
     # 3. run the clustering
-    # calculate clusters for ALL x.nc inputs
-    all_cluster_ds = []
+    ks = [5]
 
-    for ix, (embedding, pred_month, latlons) in enumerate(
-        zip(month_embeddings, month_pred_months, month_latlons)
-    ):
-        ks = [5]
-        # fit the clusters
-        static_clusters = fit_kmeans(embedding, ks)
-        print(f"Fitted KMeans {ix if ix % 10 == 0 else None}")
-
-        # convert to dataset
-        pixels = latlons
-        lons = latlons[:, 1]
-        lats = latlons[:, 0]
-        static_cluster_ds = convert_clusters_to_ds(
-            ks, static_clusters, pixels, lats, lons, time=ix
-        )
-        print(f"Convert to ds {ix if ix % 10 == 0 else None}")
-
-        # append to final list
-        all_cluster_ds.append(static_cluster_ds)
-
-    #  combine into one xr.Dataset
-    cluster_ds = xr.auto_combine(all_cluster_ds)
-
+    cluster_ds = run_clustering(
+        month_embeddings=month_embeddings,
+        month_pred_months=month_pred_months,
+        month_latlons=month_latlons,
+        ks=ks,
+    )
     # get the regions
     regions = get_regions_for_clustering_boxes(cluster_ds)
 
