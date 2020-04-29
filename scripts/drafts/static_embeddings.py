@@ -11,7 +11,7 @@ import sys
 
 sys.path.append("../..")
 
-from src.scripts.utils import get_data_path
+from scripts.utils import get_data_path
 from src.models import load_model
 
 # ---------------------------------------------------------
