@@ -20,14 +20,22 @@ def engineer(pred_months=3, target_var="boku_VCI", process_static=False):
 
 
 if __name__ == "__main__":
+    # check if one_month_forecast
+    if (data_path / "features" / "one_month_forecast").exists():
+        _rename_directory(
+            from_path=data_path / "features" / "one_month_forecast",
+            to_path=data_path / "features" / "one_month_forecast_BASE_static_vars",
+            with_datetime=True,
+        )
+
     # 1. Run the engineer
     target_var = "boku_VCI"
     pred_months = 3
-    # engineer(
-    #     pred_months=pred_months,
-    #     target_var=target_var,
-    #     process_static=True
-    # )
+    engineer(
+        pred_months=pred_months,
+        target_var=target_var,
+        process_static=True
+    )
 
     # NOTE: why have we downloaded 2 variables for ERA5 evaporaton
     # important_vars = ["VCI", "precip", "t2m", "pev", "p0005", "SMsurf", "SMroot"]
@@ -51,31 +59,31 @@ if __name__ == "__main__":
     # -------------
     # baseline models
     # -------------
-    # persistence()
+    persistence()
     # climatology()
 
-    # regression(
-    #     ignore_vars=always_ignore_vars,
-    #     experiment="one_month_forecast",
-    #     include_pred_month=True,
-    #     surrounding_pixels=None,
-    #     explain=False,
-    # )
+    regression(
+        ignore_vars=always_ignore_vars,
+        experiment="one_month_forecast",
+        include_pred_month=True,
+        surrounding_pixels=None,
+        explain=False,
+    )
 
     # # gbdt(ignore_vars=always_ignore_vars)
-    # linear_nn(
-    #     ignore_vars=always_ignore_vars,
-    #     experiment="one_month_forecast",
-    #     include_pred_month=True,
-    #     surrounding_pixels=None,
-    #     explain=False,
-    #     num_epochs=50,
-    #     early_stopping=5,
-    #     layer_sizes=[256],
-    #     include_latlons=True,
-    #     include_yearly_aggs=False,
-    #     clear_nans=True,
-    # )
+    linear_nn(
+        ignore_vars=always_ignore_vars,
+        experiment="one_month_forecast",
+        include_pred_month=True,
+        surrounding_pixels=None,
+        explain=False,
+        num_epochs=50,
+        early_stopping=5,
+        layer_sizes=[256],
+        include_latlons=True,
+        include_yearly_aggs=False,
+        clear_nans=True,
+    )
 
     # -------------
     # LSTM
@@ -123,3 +131,4 @@ if __name__ == "__main__":
         to_path=data_path / "models" / "one_month_forecast_BASE_static_vars",
         with_datetime=True,
     )
+
