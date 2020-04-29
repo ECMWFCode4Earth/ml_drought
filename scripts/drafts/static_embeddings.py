@@ -497,7 +497,7 @@ def plot_comparisons(
 ) -> None:
     """check that the remapping is sensible"""
     # convert to numpy array
-    remapping_list = np.array([int(k) for k in remap_dict.values()])
+    remapping_list = np.array([int(k) for k in remapping_dict.values()])
 
     # plot the colormaps
     sns.palplot(colors)
@@ -597,7 +597,7 @@ def run_clustering(
     ):
         # fit the clusters
         static_clusters = fit_kmeans(embedding, ks)
-        print(f"Fitted KMeans {ix if ix % 10 == 0 else None}")
+        print(f"Fitted KMeans {ix}" if ix % 10 == 0 else None)
 
         # convert to dataset
         pixels = latlons
@@ -606,7 +606,7 @@ def run_clustering(
         static_cluster_ds = convert_clusters_to_ds(
             ks, static_clusters, pixels, lats, lons, time=ix
         )
-        print(f"Converted to ds {ix if ix % 10 == 0 else None}")
+        print(f"Converted to ds {ix}" if ix % 10 == 0 else None)
 
         # append to final list
         all_cluster_ds.append(static_cluster_ds)
