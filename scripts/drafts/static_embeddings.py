@@ -524,6 +524,49 @@ def sort_by_another_list(list_to_sort, list_to_sort_on):
     return list_to_sort[sort_ixs]
 
 
+# ---------------------------------------------------------
+# Get the region bounding boxes
+# ---------------------------------------------------------
+kitui = Region(
+    name="kitui",
+    lonmin=cluster_ds.isel(lon=13).lon.values,
+    lonmax=cluster_ds.isel(lon=19).lon.values,
+    latmin=cluster_ds.isel(lat=-34).lat.values,
+    latmax=cluster_ds.isel(lat=-24).lat.values,
+)
+victoria = Region(
+    name="victoria",
+    lonmin=cluster_ds.isel(lon=0).lon.values,
+    lonmax=cluster_ds.isel(lon=12).lon.values,
+    latmin=cluster_ds.isel(lat=-31).lat.values,
+    latmax=cluster_ds.isel(lat=-15).lat.values,
+)
+turkana_edge = Region(
+    name="turkana_edge",
+    lonmin=cluster_ds.isel(lon=14).lon.values,
+    lonmax=cluster_ds.isel(lon=29).lon.values,
+    latmin=cluster_ds.isel(lat=-9).lat.values,
+    latmax=cluster_ds.isel(lat=-2).lat.values,
+)
+nw_pastoral = Region(
+    name="nw_pastoral",
+    lonmin=cluster_ds.isel(lon=0).lon.values,
+    lonmax=cluster_ds.isel(lon=12).lon.values,
+    latmin=cluster_ds.isel(lat=-6).lat.values,
+    latmax=cluster_ds.isel(lat=-1).lat.values,
+)
+coastal = Region(
+    name="coastal",
+    lonmin=cluster_ds.isel(lon=21).lon.values,
+    lonmax=cluster_ds.isel(lon=34).lon.values,
+    latmin=cluster_ds.isel(lat=-25).lat.values,
+    latmax=cluster_ds.isel(lat=-13).lat.values,
+)
+
+regions = [coastal, victoria, nw_pastoral, kitui, turkana_edge]
+
+
+
 if __name__ == "__main__":
     EXPERIMENT = "2020_04_28:143300_one_month_forecast_BASE_static_vars"
     TRUE_EXPERIMENT = "one_month_forecast"
@@ -606,44 +649,6 @@ if __name__ == "__main__":
     #                    yellow,    green,    turqoise,   blue,      purple
     colors = np.array(["#fde832", "#67c962", "#43928d", "#3b528b", "#461954"])
     cmap = ListedColormap(colors)
-
-    kitui = Region(
-        name="kitui",
-        lonmin=cluster_ds.isel(lon=13).lon.values,
-        lonmax=cluster_ds.isel(lon=19).lon.values,
-        latmin=cluster_ds.isel(lat=-34).lat.values,
-        latmax=cluster_ds.isel(lat=-24).lat.values,
-    )
-    victoria = Region(
-        name="victoria",
-        lonmin=cluster_ds.isel(lon=0).lon.values,
-        lonmax=cluster_ds.isel(lon=12).lon.values,
-        latmin=cluster_ds.isel(lat=-31).lat.values,
-        latmax=cluster_ds.isel(lat=-15).lat.values,
-    )
-    turkana_edge = Region(
-        name="turkana_edge",
-        lonmin=cluster_ds.isel(lon=14).lon.values,
-        lonmax=cluster_ds.isel(lon=29).lon.values,
-        latmin=cluster_ds.isel(lat=-9).lat.values,
-        latmax=cluster_ds.isel(lat=-2).lat.values,
-    )
-    nw_pastoral = Region(
-        name="nw_pastoral",
-        lonmin=cluster_ds.isel(lon=0).lon.values,
-        lonmax=cluster_ds.isel(lon=12).lon.values,
-        latmin=cluster_ds.isel(lat=-6).lat.values,
-        latmax=cluster_ds.isel(lat=-1).lat.values,
-    )
-    coastal = Region(
-        name="coastal",
-        lonmin=cluster_ds.isel(lon=21).lon.values,
-        lonmax=cluster_ds.isel(lon=34).lon.values,
-        latmin=cluster_ds.isel(lat=-25).lat.values,
-        latmax=cluster_ds.isel(lat=-13).lat.values,
-    )
-
-    regions = [coastal, victoria, nw_pastoral, kitui, turkana_edge]
 
     # remap_dict, matches_df = get_matching_groups(reference_ds, comparison_ds)
     jan = cluster_ds.isel(time=0).cluster_5
