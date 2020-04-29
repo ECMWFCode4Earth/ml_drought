@@ -8,6 +8,7 @@ import seaborn as sns
 import torch
 import matplotlib.pyplot as plt
 import sys
+import tqdm
 
 sys.path.append("../..")
 
@@ -543,12 +544,11 @@ def run_clustering(
     # calculate clusters for ALL x.nc inputs
     all_cluster_ds = []
 
-    for ix, (embedding, pred_month, latlons) in enumerate(
+    for ix, (embedding, pred_month, latlons) in tqdm.tqdm(enumerate(
         zip(month_embeddings, month_pred_months, month_latlons)
-    ):
+    )):
         # fit the clusters
         static_clusters = fit_kmeans(embedding, ks)
-        print(f"Fitted KMeans {ix}" if ix % 10 == 0 else None)
 
         # convert to dataset
         pixels = latlons
@@ -557,7 +557,6 @@ def run_clustering(
         static_cluster_ds = convert_clusters_to_ds(
             ks, static_clusters, pixels, lats, lons, time=ix
         )
-        print(f"Converted to ds {ix}" if ix % 10 == 0 else None)
 
         # append to final list
         all_cluster_ds.append(static_cluster_ds)
@@ -774,4 +773,19 @@ if __name__ == "__main__":
 
     # -------------------
     # 4. Get the matching groups
-    cluster_ds = remap_all_monthly_values(cluster_ds, remap_dicts)  # type: ignore
+    remapped_ds = remap_all_monthly_values(cluster_ds, remap_dicts)  # type: ignore
+
+    remapped_ds.to_netcdf(data_dir/'tommy/cluster_ds.nc')
+
+    # plot each month with same colormap
+    fig, axs = plt.subplots(4, 3, figsize=(15, 8*3))
+
+    cmap = ListedColormap(colors)
+
+    for mth in range(0, 12):
+        ax = axs[np.unravel_index(mth, (4, 3))]
+        remapped_ds.cluster_5.isel(time=mth).plot(
+            add_colorbar=False, ax=ax, cmap=cmap
+        )
+        ax.set_title(calendar.month_abbr[mth+1])
+
