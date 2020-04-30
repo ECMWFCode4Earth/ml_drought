@@ -40,7 +40,7 @@ def regression(
     predict_delta=False,
     spatial_mask=None,
     include_latlons=False,
-    include_yearly_aggs=True,
+    include_yearly_aggs=False,
 ):
     predictor = LinearRegression(
         get_data_path(),
