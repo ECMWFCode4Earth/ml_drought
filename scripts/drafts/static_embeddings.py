@@ -415,12 +415,23 @@ def count_mappings_for_regions(
     variable = reference_da.name
 
     for region in regions:
-        region_reference_da = select_bounding_box(reference_da.to_dataset(), region)[
-            variable
-        ]
-        comparison_da = select_bounding_box(comparison_da.to_dataset(), region)[
-            variable
-        ]
+        # add error catching in case need to invert latlon
+        try:
+            region_reference_da = select_bounding_box(reference_da.to_dataset(), region)[
+                variable
+            ]
+        except AssertionError:
+            region_reference_da = select_bounding_box(
+                reference_da.to_dataset(), region, inverse_lat=True
+            )[variable]
+        try:
+            comparison_da = select_bounding_box(comparison_da.to_dataset(), region)[
+                variable
+            ]
+        except AssertionError:
+            comparison_da = select_bounding_box(
+                comparison_da.to_dataset(), region, inverse_lat=True
+            )[variable]
 
         # count the pixels in each group
         d = convert_counts_dict_to_dataframe(
