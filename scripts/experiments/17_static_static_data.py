@@ -86,7 +86,7 @@ if __name__ == "__main__":
         "VCI1M",
         "RFE1M",
         # "VCI3M",
-        "boku_VCI",
+        # "boku_VCI",
         "modis_ndvi",
         "SMroot",
         # "lc_class",
@@ -94,8 +94,8 @@ if __name__ == "__main__":
     ]  # "ndvi",
 
     assert target_var not in always_ignore_vars
-    other_target = "boku_VCI" if target_var == "VCI3M" else "VCI3M"
-    assert other_target in always_ignore_vars
+    # other_target = "boku_VCI" if target_var == "VCI3M" else "VCI3M"
+    # assert other_target in always_ignore_vars
 
     # -------------
     # baseline models
