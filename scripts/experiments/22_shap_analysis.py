@@ -262,6 +262,7 @@ def open_shap_analysis(model) -> Dict[str, namedtuple]:  # type: ignore
 
 
 def main() -> None:
+    print(f"Running DeepLIFT for {EXPERIMENT}")
     data_dir = get_data_path()
 
     # 1. open the model

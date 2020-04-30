@@ -544,9 +544,9 @@ def run_clustering(
     # calculate clusters for ALL x.nc inputs
     all_cluster_ds = []
 
-    for ix, (embedding, pred_month, latlons) in tqdm.tqdm(enumerate(
-        zip(month_embeddings, month_pred_months, month_latlons)
-    )):
+    for ix, (embedding, pred_month, latlons) in tqdm.tqdm(
+        enumerate(zip(month_embeddings, month_pred_months, month_latlons))
+    ):
         # fit the clusters
         static_clusters = fit_kmeans(embedding, ks)
 
@@ -775,17 +775,14 @@ if __name__ == "__main__":
     # 4. Get the matching groups
     remapped_ds = remap_all_monthly_values(cluster_ds, remap_dicts)  # type: ignore
 
-    remapped_ds.to_netcdf(data_dir/'tommy/cluster_ds.nc')
+    remapped_ds.to_netcdf(data_dir / "tommy/cluster_ds.nc")
 
     # plot each month with same colormap
-    fig, axs = plt.subplots(4, 3, figsize=(15, 8*3))
+    fig, axs = plt.subplots(4, 3, figsize=(15, 8 * 3))
 
     cmap = ListedColormap(colors)
 
     for mth in range(0, 12):
         ax = axs[np.unravel_index(mth, (4, 3))]
-        remapped_ds.cluster_5.isel(time=mth).plot(
-            add_colorbar=False, ax=ax, cmap=cmap
-        )
-        ax.set_title(calendar.month_abbr[mth+1])
-
+        remapped_ds.cluster_5.isel(time=mth).plot(add_colorbar=False, ax=ax, cmap=cmap)
+        ax.set_title(calendar.month_abbr[mth + 1])
