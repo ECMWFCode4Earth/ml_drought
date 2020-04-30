@@ -27,6 +27,7 @@ def load_model(
     data_path: Optional[Path] = None,
     model_type: Optional[str] = None,
     device: Optional[str] = "cpu",
+    # features_dir: Optional[str] = None,
 ) -> Union[RecurrentNetwork, LinearNetwork, LinearRegression, EARecurrentNetwork, GBDT]:
     """
     This function loads models from the output `.pkl` files generated when

@@ -5,7 +5,7 @@ import json
 import pandas as pd
 import xarray as xr
 import random
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
 
 from .data import TrainData, DataLoader
 from .utils import vals_dict_to_xarray_dataset
@@ -225,7 +225,9 @@ class ModelBase:
         output_dict["total"] = np.sqrt(
             mean_squared_error(np.concatenate(total_true), np.concatenate(total_preds))
         ).item()
+        r2 = r2_score(np.concatenate(total_true), np.concatenate(total_preds))
         print(f'RMSE: {output_dict["total"]}')
+        print(f'R2: {r2:.2f}')
 
         if save_results:
             with (self.model_dir / "results.json").open("w") as outfile:

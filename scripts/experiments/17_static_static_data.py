@@ -5,33 +5,73 @@ sys.path.append("../..")
 from scripts.utils import _rename_directory, get_data_path
 from _base_models import regression, linear_nn, rnn, earnn, persistence, climatology
 from src.engineer import Engineer
+from pathlib import Path
 
 
-def engineer(pred_months=3, target_var="boku_VCI", process_static=False):
+def rename_features_dir(data_path: Path):
+    """increment the features dir by 1"""
+    old_paths = [d for d in data_path.glob("*_features*")]
+    if old_paths == []:
+        integer = 0
+    else:
+        old_max = max([int(p.name.split('_')[0]) for p in old_paths])
+        integer = old_max + 1
+
+
+    _rename_directory(
+        from_path=data_path / "features",
+        to_path=data_path / f"{integer}_features",
+        with_datetime=False,
+    )
+
+def rename_models_dir(data_path: Path):
+    old_paths = [d for d in data_path.glob("*_models*")]
+    if old_paths == []:
+        integer = 0
+    else:
+        old_max = max([int(p.name.split('_')[0]) for p in old_paths])
+        integer = old_max + 1
+
+    _rename_directory(
+        from_path=data_path / "models",
+        to_path=data_path / f"{integer}_models",
+        with_datetime=False,
+    )
+
+
+def engineer(pred_months=3, target_var="boku_VCI", process_static=False, global_means: bool = True):
     engineer = Engineer(
-        get_data_path(), experiment="one_month_forecast", process_static=process_static
+        get_data_path(),
+        experiment="one_month_forecast",
+        process_static=process_static
     )
     engineer.engineer(
         test_year=[y for y in range(2016, 2019)],
         target_variable=target_var,
         pred_months=pred_months,
         expected_length=pred_months,
+        global_means=global_means,
     )
 
 
 if __name__ == "__main__":
-    # check if one_month_forecast
-    if (data_path / "features" / "one_month_forecast").exists():
-        _rename_directory(
-            from_path=data_path / "features" / "one_month_forecast",
-            to_path=data_path / "features" / "one_month_forecast_BASE_static_vars",
-            with_datetime=True,
-        )
+    data_path = get_data_path()
+
+    # check if features or models exists
+    if (data_path / "features").exists():
+        rename_features_dir(data_path)
+    if (data_path / "models").exists():
+        rename_models_dir(data_path)
 
     # 1. Run the engineer
-    target_var = "boku_VCI"
+    target_var = "VCI3M"
     pred_months = 3
-    engineer(pred_months=pred_months, target_var=target_var, process_static=True)
+    engineer(
+        pred_months=pred_months,
+        target_var=target_var,
+        process_static=True,
+        global_means=False,
+    )
 
     # NOTE: why have we downloaded 2 variables for ERA5 evaporaton
     # important_vars = ["VCI", "precip", "t2m", "pev", "p0005", "SMsurf", "SMroot"]
@@ -45,12 +85,17 @@ if __name__ == "__main__":
         "Eb",
         "VCI1M",
         "RFE1M",
-        "VCI3M",
+        # "VCI3M",
+        "boku_VCI",
         "modis_ndvi",
         "SMroot",
-        "lc_class",
+        # "lc_class",
         "no_data_one_hot",
     ]  # "ndvi",
+
+    assert target_var not in always_ignore_vars
+    other_target = "boku_VCI" if target_var == "VCI3M" else "VCI3M"
+    assert other_target in always_ignore_vars
 
     # -------------
     # baseline models
@@ -122,8 +167,8 @@ if __name__ == "__main__":
     # rename the output file
     data_path = get_data_path()
 
-    _rename_directory(
-        from_path=data_path / "models" / "one_month_forecast",
-        to_path=data_path / "models" / "one_month_forecast_BASE_static_vars",
-        with_datetime=True,
-    )
+    # _rename_directory(
+    #     from_path=data_path / "models" / "one_month_forecast",
+    #     to_path=data_path / "models" / "one_month_forecast_BASE_static_vars",
+    #     with_datetime=True,
+    # )
