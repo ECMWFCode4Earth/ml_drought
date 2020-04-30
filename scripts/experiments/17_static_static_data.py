@@ -91,11 +91,15 @@ if __name__ == "__main__":
         "SMroot",
         # "lc_class",
         "no_data_one_hot",
+        "t2m",
+        "SMsurf"
     ]  # "ndvi",
 
     assert target_var not in always_ignore_vars
     # other_target = "boku_VCI" if target_var == "VCI3M" else "VCI3M"
     # assert other_target in always_ignore_vars
+
+    early_stopping = 10
 
     # -------------
     # baseline models
@@ -119,7 +123,7 @@ if __name__ == "__main__":
         surrounding_pixels=None,
         explain=False,
         num_epochs=50,
-        early_stopping=5,
+        early_stopping=early_stopping,
         layer_sizes=[256],
         include_latlons=True,
         include_yearly_aggs=False,
@@ -137,7 +141,7 @@ if __name__ == "__main__":
         static="features",
         ignore_vars=always_ignore_vars,
         num_epochs=50,
-        early_stopping=5,
+        early_stopping=early_stopping,
         hidden_size=256,
         include_latlons=True,
         include_yearly_aggs=False,
@@ -156,7 +160,7 @@ if __name__ == "__main__":
         static="features",
         ignore_vars=always_ignore_vars,
         num_epochs=50,
-        early_stopping=5,
+        early_stopping=early_stopping,
         hidden_size=256,
         static_embedding_size=64,
         include_latlons=True,
