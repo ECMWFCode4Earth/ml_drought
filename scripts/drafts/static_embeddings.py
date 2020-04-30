@@ -425,17 +425,17 @@ def count_mappings_for_regions(
                 reference_da.to_dataset(), region, inverse_lat=True
             )[variable]
         try:
-            comparison_da = select_bounding_box(comparison_da.to_dataset(), region)[
+            region_comparison_da = select_bounding_box(comparison_da.to_dataset(), region)[
                 variable
             ]
         except AssertionError:
-            comparison_da = select_bounding_box(
+            region_comparison_da = select_bounding_box(
                 comparison_da.to_dataset(), region, inverse_lat=True
             )[variable]
 
         # count the pixels in each group
         d = convert_counts_dict_to_dataframe(
-            count_matching_pixels(region_reference_da, comparison_da)
+            count_matching_pixels(region_reference_da, region_comparison_da)
         )
         d["region"] = [region.name for _ in range(len(d))]
         all_df.append(d)
