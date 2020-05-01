@@ -28,6 +28,7 @@ from .base import BasePreProcessor
 from .dekad_utils import dekad_index
 
 from src.analysis import ConditionIndex
+from typing import Union, Tuple
 
 
 class BokuNDVIPreprocessor(BasePreProcessor):
