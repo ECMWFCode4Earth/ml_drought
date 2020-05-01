@@ -81,7 +81,7 @@ if __name__ == "__main__":
         pred_months=pred_months,
         target_var=target_var,
         process_static=True,
-        global_means=False,
+        global_means=True,
     )
 
     # NOTE: why have we downloaded 2 variables for ERA5 evaporaton

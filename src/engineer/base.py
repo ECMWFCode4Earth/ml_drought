@@ -44,7 +44,7 @@ class _EngineerBase:
         target_variable: str = "VHI",
         pred_months: int = 12,
         expected_length: Optional[int] = 12,
-        global_means: bool = False,
+        global_means: bool = True,
         pixel_means: bool = True,
     ) -> None:
 
@@ -108,7 +108,7 @@ class _EngineerBase:
     def _process_static(
         self,
         test_year: Union[int, List[int]],
-        global_means: bool = False,
+        global_means: bool = True,
         pixel_means: bool = True,
     ) -> None:
         """
