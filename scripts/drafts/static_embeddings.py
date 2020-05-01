@@ -148,16 +148,17 @@ from sklearn.cluster import KMeans
 
 def fit_kmeans(
     array: np.array, ks: List[int] = [4], init_array: Optional[np.ndarray] = None
-) -> Dict[int, Dict[int, int]]:
+) -> Tuple[Dict[int, Dict[int, int]], Dict[int, KMeans]]:
     """Fit k-means with multiple values for `k` and return
     the clusters (1:k) predicted for each pixel as a dictionary.
     """
     # initialise the output dictionary
     clusters: Dict[int, Dict[int, int]] = {k: {} for k in ks}
+    estimators: Dict[int, KMeans] = {}
 
     for k in ks:
         if init_array is not None:
-            assert init_array.shape[0] == k, "First dimension should be "
+            assert init_array.shape[0] == k, "First dimension should be"
             clusterer = KMeans(
                 n_clusters=k, random_state=0, init=init_array, n_init=1
             ).fit(array)
@@ -169,7 +170,10 @@ def fit_kmeans(
         for pixel in range(array.shape[0]):
             arr = array[pixel, :]
             clusters[k][pixel] = clusterer.predict(arr.reshape(1, -1))[0]
-    return clusters
+
+        estimators[k] = clusterer
+
+    return clusters, estimators
 
 
 def convert_clusters_to_ds(
@@ -548,7 +552,7 @@ def run_clustering(
     month_pred_months: np.ndarray,
     month_latlons: np.ndarray,
     ks: List[int] = [5],
-) -> xr.Dataset:
+) -> Tuple[xr.Dataset, Dict[int, KMeans]]:
     """for each unique static embedding (currently months - to capture seasonality,
     but could be 1D).
     """
@@ -559,7 +563,7 @@ def run_clustering(
         enumerate(zip(month_embeddings, month_pred_months, month_latlons))
     ):
         # fit the clusters
-        static_clusters = fit_kmeans(embedding, ks)
+        static_clusters, estimators = fit_kmeans(embedding, ks)
 
         # convert to dataset
         pixels = latlons
@@ -575,7 +579,7 @@ def run_clustering(
     #  combine into one xr.Dataset
     cluster_ds = xr.auto_combine(all_cluster_ds)
 
-    return cluster_ds
+    return cluster_ds, estimators
 
 
 # ---------------------------------------------------------
