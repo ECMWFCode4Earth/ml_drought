@@ -36,7 +36,7 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         data_folder: Path = Path("data"),
         output_name: Optional[str] = None,
         resolution: str = "1000",
-        downsample_first: bool = False
+        downsample_first: bool = False,
     ):
         self.resolution = str(resolution)
         self.static = False

@@ -32,7 +32,7 @@ def _base_increment_folder(data_path: Path, dir: str):
     if old_paths == []:
         integer = 0
     else:
-        old_max = max([int(p.name.split('_')[0]) for p in old_paths])
+        old_max = max([int(p.name.split("_")[0]) for p in old_paths])
         integer = old_max + 1
 
     _rename_directory(

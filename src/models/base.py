@@ -227,7 +227,7 @@ class ModelBase:
         ).item()
         r2 = r2_score(np.concatenate(total_true), np.concatenate(total_preds))
         print(f'RMSE: {output_dict["total"]}')
-        print(f'R2: {r2:.2f}')
+        print(f"R2: {r2:.2f}")
 
         if save_results:
             with (self.model_dir / "results.json").open("w") as outfile:

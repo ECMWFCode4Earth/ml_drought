@@ -154,7 +154,8 @@ def preprocess_era5_hourly():
 
 def preprocess_boku_ndvi():
     data_path = get_data_path()
-    processor = BokuNDVIPreprocessor(data_path)
+    # downsample_first = whether to calculate VCI before or after time downsampling?
+    processor = BokuNDVIPreprocessor(data_path, downsample_first=False)
 
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
@@ -171,8 +172,8 @@ if __name__ == "__main__":
     # preprocess_srtm()
     # preprocess_era5()
     # preprocess_kenya_boundaries(selection="level_1")
-    preprocess_kenya_boundaries(selection="level_2")
+    # preprocess_kenya_boundaries(selection="level_2")
     # preprocess_kenya_boundaries(selection="level_3")
     # preprocess_era5_hourly()
-    # preprocess_boku_ndvi()
+    preprocess_boku_ndvi()
     # preprocess_asal_mask()

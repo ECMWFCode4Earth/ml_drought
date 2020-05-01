@@ -22,9 +22,8 @@ def rename_features_dir(data_path: Path):
     if old_paths == []:
         integer = 0
     else:
-        old_max = max([int(p.name.split('_')[0]) for p in old_paths])
+        old_max = max([int(p.name.split("_")[0]) for p in old_paths])
         integer = old_max + 1
-
 
     _rename_directory(
         from_path=data_path / "features",
@@ -32,12 +31,13 @@ def rename_features_dir(data_path: Path):
         with_datetime=False,
     )
 
+
 def rename_models_dir(data_path: Path):
     old_paths = [d for d in data_path.glob("*_models*")]
     if old_paths == []:
         integer = 0
     else:
-        old_max = max([int(p.name.split('_')[0]) for p in old_paths])
+        old_max = max([int(p.name.split("_")[0]) for p in old_paths])
         integer = old_max + 1
 
     _rename_directory(
@@ -47,11 +47,14 @@ def rename_models_dir(data_path: Path):
     )
 
 
-def engineer(pred_months=3, target_var="boku_VCI", process_static=False, global_means: bool = True):
+def engineer(
+    pred_months=3,
+    target_var="boku_VCI",
+    process_static=False,
+    global_means: bool = True,
+):
     engineer = Engineer(
-        get_data_path(),
-        experiment="one_month_forecast",
-        process_static=process_static
+        get_data_path(), experiment="one_month_forecast", process_static=process_static
     )
     engineer.engineer(
         test_year=[y for y in range(2016, 2019)],
@@ -72,7 +75,7 @@ if __name__ == "__main__":
         rename_models_dir(data_path)
 
     # 1. Run the engineer
-    target_var = "boku_VCI"  # "VCI3M"
+    target_var = "boku_VCI"  #  "VCI3M"
     pred_months = 3
     engineer(
         pred_months=pred_months,

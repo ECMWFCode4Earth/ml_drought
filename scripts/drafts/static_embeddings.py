@@ -417,17 +417,17 @@ def count_mappings_for_regions(
     for region in regions:
         # add error catching in case need to invert latlon
         try:
-            region_reference_da = select_bounding_box(reference_da.to_dataset(), region)[
-                variable
-            ]
+            region_reference_da = select_bounding_box(
+                reference_da.to_dataset(), region
+            )[variable]
         except AssertionError:
             region_reference_da = select_bounding_box(
                 reference_da.to_dataset(), region, inverse_lat=True
             )[variable]
         try:
-            region_comparison_da = select_bounding_box(comparison_da.to_dataset(), region)[
-                variable
-            ]
+            region_comparison_da = select_bounding_box(
+                comparison_da.to_dataset(), region
+            )[variable]
         except AssertionError:
             region_comparison_da = select_bounding_box(
                 comparison_da.to_dataset(), region, inverse_lat=True

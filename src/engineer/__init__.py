@@ -63,7 +63,11 @@ class Engineer:
             time granularity different from `'M'`
         """
         self.engineer_class.engineer(
-            test_year, target_variable, pred_months, expected_length, global_means=global_means,
+            test_year,
+            target_variable,
+            pred_months,
+            expected_length,
+            global_means=global_means,
         )
 
     @staticmethod

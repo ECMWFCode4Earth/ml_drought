@@ -173,4 +173,4 @@ if __name__ == "__main__":
     # export_gleam()
     # export_esa()
     # export_s5()
-    # export_kenya_boundaries()
+    export_kenya_boundaries()
