@@ -555,9 +555,13 @@ def run_clustering(
 ) -> Tuple[xr.Dataset, Dict[int, KMeans]]:
     """for each unique static embedding (currently months - to capture seasonality,
     but could be 1D).
+
+    Returns:
+    One cluster_ds and one list of estimators (for different ks)
     """
-    # calculate clusters for ALL x.nc inputs
+    # calculate clusters for ALL x.nc inputs (each month)
     all_cluster_ds = []
+    all_estimators = []
 
     for ix, (embedding, pred_month, latlons) in tqdm.tqdm(
         enumerate(zip(month_embeddings, month_pred_months, month_latlons))
@@ -575,11 +579,12 @@ def run_clustering(
 
         # append to final list
         all_cluster_ds.append(static_cluster_ds)
+        all_estimators.append(estimators)
 
     #  combine into one xr.Dataset
     cluster_ds = xr.auto_combine(all_cluster_ds)
 
-    return cluster_ds, estimators
+    return cluster_ds, all_estimators
 
 
 # ---------------------------------------------------------
