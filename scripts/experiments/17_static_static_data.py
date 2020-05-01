@@ -1,3 +1,11 @@
+"""
+# from drought TO RUNOFF
+mv interim interim_; mv features features_; mv features__ features; mv interim__ interim
+
+# from runoff TO DROUGHT
+mv features features__; mv interim interim__; mv interim_ interim ; mv features_ features
+"""
+
 import sys
 
 sys.path.append("../..")
