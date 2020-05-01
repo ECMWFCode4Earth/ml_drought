@@ -64,7 +64,7 @@ if __name__ == "__main__":
         rename_models_dir(data_path)
 
     # 1. Run the engineer
-    target_var = "VCI3M"
+    target_var = "boku_VCI"  # "VCI3M"
     pred_months = 3
     engineer(
         pred_months=pred_months,
@@ -91,8 +91,9 @@ if __name__ == "__main__":
         "SMroot",
         # "lc_class",
         "no_data_one_hot",
-        "t2m",
-        "SMsurf"
+        # "t2m",
+        "SMsurf",
+        "pev",
     ]  # "ndvi",
 
     assert target_var not in always_ignore_vars

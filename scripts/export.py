@@ -159,6 +159,11 @@ def export_kenya_boundaries():
     exporter.export()
 
 
+def export_boku_ndvi():
+    exporter = BokuNDVIExporter(get_data_path())
+    exporter.export()
+
+
 if __name__ == "__main__":
     # export_era5_land()
     # export_era5()
@@ -168,4 +173,4 @@ if __name__ == "__main__":
     # export_gleam()
     # export_esa()
     # export_s5()
-    export_kenya_boundaries()
+    # export_kenya_boundaries()
