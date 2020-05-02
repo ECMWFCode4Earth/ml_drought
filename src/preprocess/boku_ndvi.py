@@ -142,7 +142,9 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         da.name = variable
         return da.to_dataset()
 
-    def _convert_to_VCI(self, ds: xr.Dataset, rolling_window: int = 1, variable: Optional[str] = None) -> xr.Dataset:
+    def _convert_to_VCI(
+        self, ds: xr.Dataset, rolling_window: int = 1, variable: Optional[str] = None
+    ) -> xr.Dataset:
         """Convert the BOKU NDVI data to VCI data
         """
         vci = ConditionIndex(ds=ds, resample_str=None)
@@ -231,7 +233,9 @@ class BokuNDVIPreprocessor(BasePreProcessor):
             assert vci.isnull().mean() < 1, "All NaN values!"
             ds = xr.auto_combine([ds, vci])
             # vci3m
-            vci = self._convert_to_VCI(ds, rolling_window=3, variable='modis_ndvi').rename({f"VCI": "VCI3M"})
+            vci = self._convert_to_VCI(
+                ds, rolling_window=3, variable="modis_ndvi"
+            ).rename({f"VCI": "VCI3M"})
             assert vci.isnull().mean() < 1, "All NaN values!"
             ds = xr.auto_combine([ds, vci])
 
