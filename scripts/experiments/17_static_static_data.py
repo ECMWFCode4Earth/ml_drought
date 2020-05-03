@@ -14,6 +14,7 @@ from scripts.utils import _rename_directory, get_data_path
 from _base_models import regression, linear_nn, rnn, earnn, persistence, climatology
 from src.engineer import Engineer
 from pathlib import Path
+from typing import Optional, List
 
 
 def rename_features_dir(data_path: Path):
@@ -52,9 +53,12 @@ def engineer(
     target_var="boku_VCI",
     process_static=False,
     global_means: bool = True,
+    log_vars: Optional[List[str]] = None,
 ):
     engineer = Engineer(
-        get_data_path(), experiment="one_month_forecast", process_static=process_static
+        get_data_path(),
+        experiment="one_month_forecast",
+        process_static=process_static
     )
     engineer.engineer(
         test_year=[y for y in range(2016, 2019)],
@@ -81,7 +85,7 @@ if __name__ == "__main__":
         pred_months=pred_months,
         target_var=target_var,
         process_static=True,
-        global_means=False,
+        global_means=True,
     )
 
     # NOTE: why have we downloaded 2 variables for ERA5 evaporaton
@@ -102,6 +106,7 @@ if __name__ == "__main__":
         "SMroot",
         # "lc_class",
         "no_data_one_hot",
+        "lichens_and_mosses_one_hot",
         # "t2m",
         "SMsurf",
         "pev",

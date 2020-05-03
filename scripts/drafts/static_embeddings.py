@@ -462,8 +462,9 @@ def match_by_region_algorithm(
 
     reference_group_list = []
     comparison_group_list = []
+    n_clusters = len(all_df['comparison_group'].unique())
 
-    for region in regions:
+    for region in regions[:n_clusters]:
         region_name = region.name
 
         # IF only one group-value left, assign it to the final remaining group (itself)
