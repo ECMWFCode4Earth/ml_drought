@@ -24,7 +24,7 @@ from src.models.data import TrainData, ModelArrays, DataLoader
 from src.models.neural_networks.base import NNBase
 from src.models import load_model
 
-EXPERIMENT = "2020_04_28:143300_one_month_forecast_BASE_static_vars"
+EXPERIMENT = "one_month_forecast"
 TRUE_EXPERIMENT = "one_month_forecast"
 MODEL = "ealstm"
 

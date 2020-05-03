@@ -116,7 +116,13 @@ if __name__ == "__main__":
     # other_target = "boku_VCI" if target_var == "VCI3M" else "VCI3M"
     # assert other_target in always_ignore_vars
 
+    # -------------
+    # Model Parameters
+    # -------------
     early_stopping = 10
+    hidden_size = 256
+    static_size = 64
+
 
     # -------------
     # baseline models
@@ -141,7 +147,7 @@ if __name__ == "__main__":
         explain=False,
         num_epochs=50,
         early_stopping=early_stopping,
-        layer_sizes=[256],
+        layer_sizes=[hidden_size],
         include_latlons=True,
         include_yearly_aggs=False,
         clear_nans=True,
@@ -159,7 +165,7 @@ if __name__ == "__main__":
         ignore_vars=always_ignore_vars,
         num_epochs=50,
         early_stopping=early_stopping,
-        hidden_size=256,
+        hidden_size=hidden_size,
         include_latlons=True,
         include_yearly_aggs=False,
         clear_nans=True,
@@ -178,8 +184,8 @@ if __name__ == "__main__":
         ignore_vars=always_ignore_vars,
         num_epochs=50,
         early_stopping=early_stopping,
-        hidden_size=256,
-        static_embedding_size=64,
+        hidden_size=hidden_size,
+        static_embedding_size=static_size,
         include_latlons=True,
         include_yearly_aggs=False,
         clear_nans=True,

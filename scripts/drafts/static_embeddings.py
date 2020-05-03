@@ -665,8 +665,8 @@ def remap_all_monthly_values(
     remapped_ds = cluster_ds.copy()
     assert len(remapped_ds.time) == 12, "Expected time to be size 12 (monthly)"
 
-    # for each month in cluster_ds
     k = len([v for v in remap_dicts['Feb'].values()])
+    # for each month in cluster_ds
     all_remapped = []
     for time in range(1, 12):
         transdict = remap_dicts[calendar.month_abbr[time + 1]]
@@ -679,7 +679,7 @@ def remap_all_monthly_values(
 
     # join each month back into one Dataset
     remapped_ds = xr.concat(
-        [remapped_ds.cluster_5.isel(time=0)] + all_remapped, dim="time"
+        [remapped_ds[f"cluster_{k}"].isel(time=0)] + all_remapped, dim="time"
     )
     remapped_ds = remapped_ds.to_dataset()
     return remapped_ds
