@@ -654,19 +654,26 @@ def remap_values(da: xr.DataArray, transdict: Dict) -> xr.DataArray:
 
 
 def remap_all_monthly_values(
-    cluster_ds: xr.Dataset, remap_dicts: Dict[Union[str, int], Union[str, float]]
+    cluster_ds: xr.Dataset,
+    remap_dicts: Dict[Union[str, int], Union[str, float]],
+
 ) -> xr.Dataset:
+    """From the remap dictionaries, select the correct cluster variable
+    from cluster_ds (the value for k) and remap all those values using the values
+    seen in the remap_dict.
+    """
     remapped_ds = cluster_ds.copy()
     assert len(remapped_ds.time) == 12, "Expected time to be size 12 (monthly)"
 
     # for each month in cluster_ds
+    k = len([v for v in remap_dicts['Feb'].values()])
     all_remapped = []
     for time in range(1, 12):
         transdict = remap_dicts[calendar.month_abbr[time + 1]]
 
         all_remapped.append(
             remap_values(  # type: ignore
-                da=remapped_ds.cluster_5.isel(time=time), transdict=transdict
+                da=remapped_ds[f"cluster_{k}"].isel(time=time), transdict=transdict
             )
         )
 
