@@ -79,7 +79,7 @@ if __name__ == "__main__":
         rename_models_dir(data_path)
 
     # 1. Run the engineer
-    target_var = "VCI3M"  #  "VCI3M"
+    target_var = "boku_VCI"  #  "VCI3M" "boku_VCI"
     pred_months = 3
     engineer(
         pred_months=pred_months,
@@ -108,8 +108,9 @@ if __name__ == "__main__":
         "no_data_one_hot",
         "lichens_and_mosses_one_hot",
         # "t2m",
-        "SMsurf",
+        # "SMsurf",
         "pev",
+        # "E",
     ]  # "ndvi",
 
     assert target_var not in always_ignore_vars
@@ -119,10 +120,10 @@ if __name__ == "__main__":
     # -------------
     # Model Parameters
     # -------------
+    num_epochs = 50
     early_stopping = 10
     hidden_size = 256
     static_size = 64
-
 
     # -------------
     # baseline models
@@ -145,7 +146,7 @@ if __name__ == "__main__":
         include_pred_month=True,
         surrounding_pixels=None,
         explain=False,
-        num_epochs=50,
+        num_epochs=num_epochs,
         early_stopping=early_stopping,
         layer_sizes=[hidden_size],
         include_latlons=True,
@@ -163,7 +164,7 @@ if __name__ == "__main__":
         explain=False,
         static="features",
         ignore_vars=always_ignore_vars,
-        num_epochs=50,
+        num_epochs=num_epochs,
         early_stopping=early_stopping,
         hidden_size=hidden_size,
         include_latlons=True,
@@ -182,7 +183,7 @@ if __name__ == "__main__":
         explain=False,
         static="features",
         ignore_vars=always_ignore_vars,
-        num_epochs=50,
+        num_epochs=num_epochs,
         early_stopping=early_stopping,
         hidden_size=hidden_size,
         static_embedding_size=static_size,
