@@ -92,6 +92,8 @@ if __name__ == "__main__":
     # important_vars = ["VCI", "precip", "t2m", "pev", "p0005", "SMsurf", "SMroot"]
     # always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb", "E", "p0001"]
     important_vars = ["boku_VCI", "precip", "t2m", "pev", "E", "SMsurf"]
+
+    # NOTE: if commented out then INCLUDED in the model
     always_ignore_vars = [
         "VCI",
         "p84.162",
@@ -100,16 +102,16 @@ if __name__ == "__main__":
         "Eb",
         "VCI1M",
         "RFE1M",
-        # "VCI3M",
+        "VCI3M",
         # "boku_VCI",
         "modis_ndvi",
         "SMroot",
         # "lc_class",
         "no_data_one_hot",
         "lichens_and_mosses_one_hot",
-        # "t2m",
+        "t2m",
         # "SMsurf",
-        "pev",
+        # "pev",
         # "E",
     ]  # "ndvi",
 
