@@ -72,12 +72,19 @@ def engineer(
 if __name__ == "__main__":
     data_path = get_data_path()
 
+    # ----------------------------------
+    # Setup the experiment
+    # ----------------------------------
     # check if features or models exists
     if (data_path / "features").exists():
         rename_features_dir(data_path)
     if (data_path / "models").exists():
         rename_models_dir(data_path)
 
+
+    # ----------------------------------
+    # Run the Experiment
+    # ----------------------------------
     # 1. Run the engineer
     target_var = "boku_VCI"  #  "VCI3M" "boku_VCI"
     pred_months = 3
