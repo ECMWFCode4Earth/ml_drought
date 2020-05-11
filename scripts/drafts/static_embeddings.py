@@ -591,31 +591,86 @@ def run_clustering(
 # ---------------------------------------------------------
 # Get the region bounding boxes
 # ---------------------------------------------------------
+# def get_regions_for_clustering_boxes(ds: xr.Dataset) -> List[Region]:
+#     """Because we defined the latlon boxes by their numerical
+#     index we have to get the values for the latlon boxes by the
+#     `.isel()` method on one of the preprocessed datasets.
+#     """
+#     kitui = Region(
+#         name="kitui",
+#         lonmin=ds.isel(lon=13).lon.values,
+#         lonmax=ds.isel(lon=19).lon.values,
+#         latmin=ds.isel(lat=-34).lat.values,
+#         latmax=ds.isel(lat=-24).lat.values,
+#     )
+#     victoria = Region(
+#         name="victoria",
+#         lonmin=ds.isel(lon=0).lon.values,
+#         lonmax=ds.isel(lon=12).lon.values,
+#         latmin=ds.isel(lat=-31).lat.values,
+#         latmax=ds.isel(lat=-15).lat.values,
+#     )
+#     turkana_edge = Region(
+#         name="turkana_edge",
+#         lonmin=ds.isel(lon=14).lon.values,
+#         lonmax=ds.isel(lon=29).lon.values,
+#         latmin=ds.isel(lat=-9).lat.values,
+#         latmax=ds.isel(lat=-2).lat.values,
+#     )
+#     nw_pastoral = Region(
+#         name="nw_pastoral",
+#         lonmin=ds.isel(lon=0).lon.values,
+#         lonmax=ds.isel(lon=12).lon.values,
+#         latmin=ds.isel(lat=-6).lat.values,
+#         latmax=ds.isel(lat=-1).lat.values,
+#     )
+#     coastal = Region(
+#         name="coastal",
+#         lonmin=ds.isel(lon=21).lon.values,
+#         lonmax=ds.isel(lon=34).lon.values,
+#         latmin=ds.isel(lat=-25).lat.values,
+#         latmax=ds.isel(lat=-13).lat.values,
+#     )
+
+#     regions = [coastal, victoria, nw_pastoral, kitui, turkana_edge]
+
+#     return regions
+
+
 def get_regions_for_clustering_boxes(ds: xr.Dataset) -> List[Region]:
     """Because we defined the latlon boxes by their numerical
     index we have to get the values for the latlon boxes by the
     `.isel()` method on one of the preprocessed datasets.
+
+    FOR THE NEW CLUSTERINGS
     """
-    kitui = Region(
-        name="kitui",
-        lonmin=ds.isel(lon=13).lon.values,
-        lonmax=ds.isel(lon=19).lon.values,
-        latmin=ds.isel(lat=-34).lat.values,
-        latmax=ds.isel(lat=-24).lat.values,
-    )
     victoria = Region(
-        name="victoria",
-        lonmin=ds.isel(lon=0).lon.values,
-        lonmax=ds.isel(lon=12).lon.values,
-        latmin=ds.isel(lat=-31).lat.values,
-        latmax=ds.isel(lat=-15).lat.values,
+        name='victoria',
+        lonmin=cluster_ds.isel(lon=0).lon.values,
+        lonmax=cluster_ds.isel(lon=7).lon.values,
+        latmin=cluster_ds.isel(lat=-28).lat.values,
+        latmax=cluster_ds.isel(lat=-18).lat.values,
     )
-    turkana_edge = Region(
-        name="turkana_edge",
-        lonmin=ds.isel(lon=14).lon.values,
-        lonmax=ds.isel(lon=29).lon.values,
-        latmin=ds.isel(lat=-9).lat.values,
-        latmax=ds.isel(lat=-2).lat.values,
+    turkana = Region(
+        name='turkana',
+        lonmin=cluster_ds.isel(lon=5).lon.values,
+        lonmax=cluster_ds.isel(lon=16).lon.values,
+        latmin=cluster_ds.isel(lat=-16).lat.values,
+        latmax=cluster_ds.isel(lat=-6).lat.values,
+    )
+    southern_highlands = Region(
+        name='southern_highlands',
+        lonmin=cluster_ds.isel(lon=3).lon.values,
+        lonmax=cluster_ds.isel(lon=13).lon.values,
+        latmin=cluster_ds.isel(lat=-41).lat.values,
+        latmax=cluster_ds.isel(lat=-31).lat.values,
+    )
+    coastal = Region(
+        name='coastal',
+        lonmin=cluster_ds.isel(lon=15).lon.values,
+        lonmax=cluster_ds.isel(lon=20).lon.values,
+        latmin=cluster_ds.isel(lat=-44).lat.values,
+        latmax=cluster_ds.isel(lat=-34).lat.values,
     )
     nw_pastoral = Region(
         name="nw_pastoral",
@@ -624,19 +679,10 @@ def get_regions_for_clustering_boxes(ds: xr.Dataset) -> List[Region]:
         latmin=ds.isel(lat=-6).lat.values,
         latmax=ds.isel(lat=-1).lat.values,
     )
-    coastal = Region(
-        name="coastal",
-        lonmin=ds.isel(lon=21).lon.values,
-        lonmax=ds.isel(lon=34).lon.values,
-        latmin=ds.isel(lat=-25).lat.values,
-        latmax=ds.isel(lat=-13).lat.values,
-    )
 
-    regions = [coastal, victoria, nw_pastoral, kitui, turkana_edge]
+    regions = [coastal, victoria, turkana, southern_highlands, nw_pastoral]
 
     return regions
-
-
 # ---------------------------------------------------------
 # Remap the values in DataArray
 # ---------------------------------------------------------
