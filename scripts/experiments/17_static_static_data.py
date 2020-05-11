@@ -4,6 +4,9 @@ mv interim interim_; mv features features_; mv features__ features; mv interim__
 
 # from runoff TO DROUGHT
 mv features features__; mv interim interim__; mv interim_ interim ; mv features_ features
+
+# Experiment #7 is VCI3M results
+# Experiment #8 is boku_VCI results
 """
 
 import sys
@@ -116,6 +119,7 @@ if __name__ == "__main__":
         # "lc_class",
         "no_data_one_hot",
         "lichens_and_mosses_one_hot",
+        "permanent_snow_and_ice_one_hot",
         "t2m",
         # "SMsurf",
         # "pev",
