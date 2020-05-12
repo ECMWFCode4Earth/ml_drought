@@ -13,6 +13,7 @@ from src.preprocess import (
     ERA5HourlyPreprocessor,
     BokuNDVIPreprocessor,
     KenyaASALMask,
+    ERA5LandPreprocessor,
 )
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
@@ -51,6 +52,25 @@ def process_era5POS_2018():
         parallel=False,
         resample_time="M",
         upsampling=False,
+    )
+
+
+def process_era5_land(variable: str):
+    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
+        data_path = Path("data")
+    else:
+        data_path = Path("../data")
+    regrid_path = data_path / "interim/chirps_preprocessed/chirps_kenya.nc"
+    assert regrid_path.exists(), f"{regrid_path} not available"
+
+    processor = ERA5LandPreprocessor(data_path)
+
+    processor.preprocess(
+        subset_str="kenya",
+        regrid=None,
+        resample_time="M",
+        upsampling=False,
+        variable=variable,
     )
 
 
