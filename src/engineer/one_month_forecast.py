@@ -11,7 +11,7 @@ from .base import _EngineerBase
 
 
 class _OneMonthForecastEngineer(_EngineerBase):
-    name = 'one_month_forecast'
+    name = "one_month_forecast"
 
     @staticmethod
     def _stratify_xy(

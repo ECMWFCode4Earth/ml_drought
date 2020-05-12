@@ -1,10 +1,12 @@
 import xarray as xr
 import numpy as np
 from pathlib import Path
-from xclim.run_length import rle, longest_run  # , windowed_run_events
 from typing import Tuple, Optional, Any
 import warnings
 from ..utils import get_ds_mask, create_shape_aligned_climatology
+
+rle = None
+longest_run = None
 
 
 class EventDetector:
@@ -20,10 +22,19 @@ class EventDetector:
     >>> e.detect(variable='precip', method='std', time_period='month', hilo='low')
     >>> e.calculate_runs()
     """
-    def __init__(self,
-                 path_to_data: Path) -> None:
 
-        assert path_to_data.exists(), f"{path_to_data} does not point to an existing file!"
+    def __init__(self, path_to_data: Path) -> None:
+
+        global rle
+        global longest_run
+        if rle is None:
+            from xclim.run_length import rle
+        if longest_run is None:
+            from xclim.run_length import longest_run
+
+        assert (
+            path_to_data.exists()
+        ), f"{path_to_data} does not point to an existing file!"
         self.path_to_data = path_to_data
         self.ds = self.read_data(path_to_data)
 
@@ -39,18 +50,20 @@ class EventDetector:
             ds = xr.open_dataset(path_to_data, decode_times=False)
 
         print(f"{path_to_data.name} read!")
-        ds = ds.sortby('time')
+        ds = ds.sortby("time")
         # TODO: infer time frequency ?
         return ds
 
     @staticmethod
-    def calculate_threshold(ds: xr.Dataset,
-                            clim: xr.Dataset,
-                            method: str,
-                            time_period: str,
-                            variable: str,
-                            hilo: Optional[str] = None,
-                            value: Optional[float] = None,) -> xr.DataArray:
+    def calculate_threshold(
+        ds: xr.Dataset,
+        clim: xr.Dataset,
+        method: str,
+        time_period: str,
+        variable: str,
+        hilo: Optional[str] = None,
+        value: Optional[float] = None,
+    ) -> xr.DataArray:
         """Calculate the threshold using the method defined in `method`.
         This calculates a threshold value above/below which a value is
         defined as anomalous and therefore, set to true. Compared against
@@ -86,72 +99,80 @@ class EventDetector:
             be used as the threshold value.
         """
         if method == "q90":
-            warnings.warn(f'this method ({method}) is currently super slow')
+            warnings.warn(f"this method ({method}) is currently super slow")
             thresh = (
-                ds
-                .groupby(f'time.{time_period}')
+                ds.groupby(f"time.{time_period}")
                 # .quantile(q=0.9)  # updated v0.12.2
-                .reduce(np.nanpercentile, dim='time', q=90)
+                .reduce(np.nanpercentile, dim="time", q=90)
             )
 
         elif method == "q10":
-            warnings.warn(f'this method ({method}) is currently super slow')
+            warnings.warn(f"this method ({method}) is currently super slow")
             thresh = (
-                ds
-                .groupby(f'time.{time_period}')
-                .reduce(np.nanpercentile, dim='time', q=10)
+                ds.groupby(f"time.{time_period}").reduce(
+                    np.nanpercentile, dim="time", q=10
+                )
                 # .quantile(q=0.1)
             )
 
         elif method == "std":
-            assert hilo is not None, f"If you want to calculate the threshold as std \
+            assert (
+                hilo is not None
+            ), f"If you want to calculate the threshold as std \
                 from mean, then have to specify `hilo` = ['low','high']"
-            std = ds.groupby(f'time.{time_period}').std(dim='time')
-            thresh = clim - std if hilo == 'low' else clim + std
+            std = ds.groupby(f"time.{time_period}").std(dim="time")
+            thresh = clim - std if hilo == "low" else clim + std
 
         elif method == "abs":
             values = np.ones(ds[variable].shape) * value
             thresh = xr.Dataset(
-                {variable: (['time', 'lat', 'lon'], values)},
-                coords={
-                    'lat': ds.lat,
-                    'lon': ds.lon,
-                    'time': ds.time,
-                }
+                {variable: (["time", "lat", "lon"], values)},
+                coords={"lat": ds.lat, "lon": ds.lon, "time": ds.time},
             )
-            thresh = thresh.groupby(f'time.{time_period}').first()
+            thresh = thresh.groupby(f"time.{time_period}").first()
 
         else:
-            assert False, 'Only implemented threshold calculations for \
+            assert (
+                False
+            ), 'Only implemented threshold calculations for \
                 ["q90","q10","std","abs",]'
 
         return thresh
 
-    def get_thresh_clim_dataarrays(self,
-                                   ds: xr.Dataset,
-                                   time_period: str,
-                                   variable: str,
-                                   hilo: str = None,
-                                   method: str = 'std',
-                                   value: Optional[float] = None) -> Tuple[xr.Dataset, xr.Dataset]:
+    def get_thresh_clim_dataarrays(
+        self,
+        ds: xr.Dataset,
+        time_period: str,
+        variable: str,
+        hilo: str = None,
+        method: str = "std",
+        value: Optional[float] = None,
+    ) -> Tuple[xr.Dataset, xr.Dataset]:
         """Get the climatology and threshold xarray objects """
         # compute climatology (`mean` over `time_period`)
-        clim = ds.groupby(f'time.{time_period}').mean(dim='time')
+        clim = ds.groupby(f"time.{time_period}").mean(dim="time")
         print(f"Calculated climatology (mean for each {time_period}) - `clim`")
         # compute the threshold value based on `method`
         thresh = self.calculate_threshold(
-            ds, clim, method=method, time_period=time_period,
-            hilo=hilo, variable=variable, value=value
+            ds,
+            clim,
+            method=method,
+            time_period=time_period,
+            hilo=hilo,
+            variable=variable,
+            value=value,
         )
         print("Calculated threshold - `thresh`")
         return clim, thresh
 
-    def calculate_threshold_exceedences(self,
-                                        variable: str,
-                                        time_period: str,
-                                        hilo: str,
-                                        method: str = 'std',
-                                        value: Optional[float] = None) -> Tuple[Any, Any, Any]:
+    def calculate_threshold_exceedences(
+        self,
+        variable: str,
+        time_period: str,
+        hilo: str,
+        method: str = "std",
+        value: Optional[float] = None,
+    ) -> Tuple[Any, Any, Any]:
         """Flag the pixel-times that exceed a threshold defined via
         the `method` argument.
         """
@@ -159,8 +180,7 @@ class EventDetector:
 
         # calculate climatology and threshold
         clim, thresh = self.get_thresh_clim_dataarrays(
-            ds, time_period, hilo=hilo, method=method,
-            variable=variable, value=value
+            ds, time_period, hilo=hilo, method=method, variable=variable, value=value
         )
 
         # assign objects to object here because the copying
@@ -170,28 +190,26 @@ class EventDetector:
         self.thresh = thresh
 
         # make them the same size as the ds variable
-        clim_ext = create_shape_aligned_climatology(
-            ds, clim, variable, time_period
-        )
-        thresh_ext = create_shape_aligned_climatology(
-            ds, thresh, variable, time_period
-        )
+        clim_ext = create_shape_aligned_climatology(ds, clim, variable, time_period)
+        thresh_ext = create_shape_aligned_climatology(ds, thresh, variable, time_period)
         # TODO: do I want to store these extended datasets?
 
         # flag exceedences
-        if hilo == 'low':
+        if hilo == "low":
             exceed = (ds < thresh_ext)[variable]
-        elif hilo == 'high':
+        elif hilo == "high":
             exceed = (ds > thresh_ext)[variable]
 
         return clim_ext, thresh_ext, exceed
 
-    def detect(self,
-               variable: str,
-               time_period: str,
-               hilo: str,
-               method: str = 'std',
-               value: Optional[float] = None) -> None:
+    def detect(
+        self,
+        variable: str,
+        time_period: str,
+        hilo: str,
+        method: str = "std",
+        value: Optional[float] = None,
+    ) -> None:
         """
         Detect threshold exceedences above or below a threshold. The threshold
         can also be calculated or applied from elsewhere.
@@ -216,8 +234,10 @@ class EventDetector:
              Valid values: {'q90', 'q10', 'std', 'abs',}
 
         """
-        print(f"Detecting {variable} exceedences ({hilo}) of threshold:\
-         {method}. The threshold is unique for each {time_period}")
+        print(
+            f"Detecting {variable} exceedences ({hilo}) of threshold:\
+         {method}. The threshold is unique for each {time_period}"
+        )
         self.variable = variable
         _, _, exceed = self.calculate_threshold_exceedences(
             variable, time_period, hilo, method=method, value=value
@@ -227,9 +247,9 @@ class EventDetector:
         self.exceedences = exceed
         print(f"** exceedences calculated **")
 
-    def reapply_mask_to_boolean_xarray(self,
-                                       variable_of_mask: str,
-                                       da: xr.DataArray) -> xr.DataArray:
+    def reapply_mask_to_boolean_xarray(
+        self, variable_of_mask: str, da: xr.DataArray
+    ) -> xr.DataArray:
         """Because boolean comparisons in xarray return False for nan values
         we need to reapply the mask from the original `da` to mask out the sea
         or invalid values (for example).
@@ -253,7 +273,9 @@ class EventDetector:
             1. Uses the input dataset for the mask - TODO: does this make
              sense?
         """
-        assert da.dtype == np.dtype('bool'), f"This function \
+        assert da.dtype == np.dtype(
+            "bool"
+        ), f"This function \
         currrently works on boolean xr.Dataset objects only"
 
         mask = get_ds_mask(self.ds[variable_of_mask])
@@ -272,11 +294,13 @@ class EventDetector:
 
             TODO: want to make this general enough to work with subset data too
         """
-        assert self.exceedences.dtype == np.dtype('bool'), f"\
+        assert self.exceedences.dtype == np.dtype(
+            "bool"
+        ), f"\
             Expected exceedences to be an array of boolean type.\
              Got {self.exceedences.dtype}"
 
-        runs = rle(self.exceedences).load()
+        runs = rle(self.exceedences).load()  # type: ignore
 
         # apply the same mask as TIME=0 (e.g. for the sea-land mask)
         mask = get_ds_mask(self.ds[self.variable])
@@ -284,8 +308,7 @@ class EventDetector:
 
         return runs
 
-    def calculate_longest_run(self,
-                              resample_str: Optional[str] = None) -> xr.Dataset:
+    def calculate_longest_run(self, resample_str: Optional[str] = None) -> xr.Dataset:
         """ Calculate the longest run in the dataset
         TODO: fix this argument to work with other resample_str """
-        return longest_run(self.exceedences, dim='time').load()
+        return longest_run(self.exceedences, dim="time").load()  # type: ignore

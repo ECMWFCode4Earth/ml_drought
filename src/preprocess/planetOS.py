@@ -12,32 +12,30 @@ from .base import BasePreProcessor
 
 class PlanetOSPreprocessor(BasePreProcessor):
 
-    dataset = 'era5POS'
+    dataset = "era5POS"
 
     @staticmethod
     def _rename_time_dim(df: xr.Dataset) -> xr.Dataset:
 
-        dims = [x for x in df.dims if x != 'nv']
+        dims = [x for x in df.dims if x != "nv"]
         for dim in dims:
-            if 'time' in dim:
-                df = df.rename({dim: 'time'})
+            if "time" in dim:
+                df = df.rename({dim: "time"})
         return df
 
     @staticmethod
     def _rotate_and_filter(ds: xr.Dataset) -> xr.Dataset:
         # rotates the longitudes so they are in the -180 to 180 range
-        data_vars = [x for x in ds.data_vars if x != 'time1_bounds']
-        dims = ['time', 'lat', 'lon']
-        _time = (
-            int(ds['time.year'].min().values),
-            int(ds['time.month'].min().values)
-        )
+        data_vars = [x for x in ds.data_vars if x != "time1_bounds"]
+        dims = ["time", "lat", "lon"]
+        _time = (int(ds["time.year"].min().values), int(ds["time.month"].min().values))
 
-        print(f'Rotating {data_vars} on {dims} for {_time}')
+        print(f"Rotating {data_vars} on {dims} for {_time}")
 
         boundary = sum(ds.lon.values < 180)
-        new_lon = np.concatenate([ds.lon.values[boundary:] - 360,
-                                  ds.lon.values[:boundary]])
+        new_lon = np.concatenate(
+            [ds.lon.values[boundary:] - 360, ds.lon.values[:boundary]]
+        )
 
         dataarrays: Dict[str, Tuple[List[str], np.ndarray]] = {}
 
@@ -48,29 +46,33 @@ class PlanetOSPreprocessor(BasePreProcessor):
 
             dataarrays[var] = (dims, rotated_var)
 
-        return xr.Dataset(dataarrays,
-                          coords={'lat': ds.lat.values,
-                                  'lon': new_lon,
-                                  'time': ds.time.values})
+        return xr.Dataset(
+            dataarrays,
+            coords={"lat": ds.lat.values, "lon": new_lon, "time": ds.time.values},
+        )
 
     @staticmethod
-    def create_filename(netcdf_filepath: Path,
-                        subset_name: Optional[str] = None) -> str:
+    def create_filename(
+        netcdf_filepath: Path, subset_name: Optional[str] = None
+    ) -> str:
 
         var_name = netcdf_filepath.name[:-3]
         month = netcdf_filepath.parts[-2]
         year = netcdf_filepath.parts[-3]
 
-        stem = f'{year}_{month}_{var_name}'
+        stem = f"{year}_{month}_{var_name}"
         if subset_name is not None:
-            stem = f'{stem}_{subset_name}'
-        return f'{stem}.nc'
+            stem = f"{stem}_{subset_name}"
+        return f"{stem}.nc"
 
-    def _preprocess_single(self, netcdf_filepath: Path,
-                           subset_str: Optional[str] = 'kenya',
-                           regrid: Optional[xr.Dataset] = None) -> None:
+    def _preprocess_single(
+        self,
+        netcdf_filepath: Path,
+        subset_str: Optional[str] = "kenya",
+        regrid: Optional[xr.Dataset] = None,
+    ) -> None:
 
-        print(f'Processing {netcdf_filepath.name}')
+        print(f"Processing {netcdf_filepath.name}")
         # 1. read in the dataset
         ds = self._rename_time_dim(xr.open_dataset(netcdf_filepath))
         ds = self._rotate_and_filter(ds)
@@ -83,20 +85,22 @@ class PlanetOSPreprocessor(BasePreProcessor):
             ds = self.regrid(ds, regrid)
 
         filename = self.create_filename(
-            netcdf_filepath,
-            subset_name=subset_str if subset_str is not None else None
+            netcdf_filepath, subset_name=subset_str if subset_str is not None else None
         )
-        print(f'Saving to {self.interim}/{filename}')
+        print(f"Saving to {self.interim}/{filename}")
         ds.to_netcdf(self.interim / filename)
 
-        print(f'Done for ERA5 Planet OS {netcdf_filepath.name}')
+        print(f"Done for ERA5 Planet OS {netcdf_filepath.name}")
 
-    def preprocess(self, subset_str: Optional[str] = 'kenya',
-                   regrid: Optional[Path] = None,
-                   resample_time: Optional[str] = 'M',
-                   upsampling: bool = False,
-                   parallel: bool = False,
-                   cleanup: bool = True) -> None:
+    def preprocess(
+        self,
+        subset_str: Optional[str] = "kenya",
+        regrid: Optional[Path] = None,
+        resample_time: Optional[str] = "M",
+        upsampling: bool = False,
+        parallel: bool = False,
+        cleanup: bool = True,
+    ) -> None:
         """ Preprocess all of the era5 POS .nc files to produce
         one subset file.
 
@@ -117,7 +121,7 @@ class PlanetOSPreprocessor(BasePreProcessor):
         cleanup: bool = True
             If true, delete interim files created by the class
         """
-        print(f'Reading data from {self.raw_folder}. Writing to {self.interim}')
+        print(f"Reading data from {self.raw_folder}. Writing to {self.interim}")
 
         # get the filepaths for all of the downloaded data
         nc_files = self.get_filepaths()
@@ -127,8 +131,10 @@ class PlanetOSPreprocessor(BasePreProcessor):
 
         if parallel:
             pool = multiprocessing.Pool(processes=100)
-            outputs = pool.map(partial(self._preprocess_single, subset_str=subset_str,
-                                       regrid=regrid), nc_files)
+            outputs = pool.map(
+                partial(self._preprocess_single, subset_str=subset_str, regrid=regrid),
+                nc_files,
+            )
             print("\nOutputs (errors):\n\t", outputs)
         else:
             for file in nc_files:
