@@ -179,6 +179,7 @@ class NNBase(ModelBase):
                     pred = self.model(
                         *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
                     )
+                    assert False
                     # ------- LOSS FUNCTION ---------
                     if loss_func == "NSE":
                         # NSELoss needs std of each basin for each sample
@@ -191,7 +192,7 @@ class NNBase(ModelBase):
                             assert (
                                 False
                             ), "x[7] should not be None, this is the target_var_std"
-                        assert False
+
                         loss = NSELoss(pred, y_batch, target_var_std)
                     elif loss_func == "MSE":
                         loss = F.smooth_l1_loss(pred, y_batch)
