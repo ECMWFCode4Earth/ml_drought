@@ -114,16 +114,21 @@ def run_evaluation(data_dir, ealstm=None):
     print("** Overall RMSE: ", results_dict["total"], " **\n\n")
 
 
-def main(engineer_only=False, model_only=False):
+def main(
+    engineer_only: bool = False,
+    model_only: bool = False,
+    reset_data_files: bool = False,
+):
     data_dir = get_data_path()
     # ----------------------------------
     # Setup the experiment
     # ----------------------------------
-    # check if features or models exists
-    if (data_dir / "features").exists():
-        rename_features_dir(data_dir)
-    if (data_dir / "models").exists():
-        rename_models_dir(data_dir)
+    if reset_data_files:
+        # check if features or models exists
+        if (data_dir / "features").exists():
+            rename_features_dir(data_dir)
+        if (data_dir / "models").exists():
+            rename_models_dir(data_dir)
 
     # ----------------------------------------------------------------
     # PARAMETERS
@@ -207,5 +212,10 @@ def evaluate_only():
 if __name__ == "__main__":
     engineer_only = False
     model_only = True
-    main(model_only=model_only, engineer_only=engineer_only)
+    reset_data_files = False
+    main(
+        model_only=model_only,
+        engineer_only=engineer_only,
+        reset_data_files=reset_data_files,
+    )
     # evaluate_only()
