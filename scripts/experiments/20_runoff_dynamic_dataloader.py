@@ -18,7 +18,7 @@ import sys
 sys.path.append("../..")
 
 from typing import DefaultDict, Dict, Tuple, Optional, Union, List, Any
-from scripts.utils import _rename_directory, get_data_path
+from scripts.utils import _rename_directory, get_data_path, rename_features_dir
 from scripts.experiments._static_ignore_vars import static_ignore_vars
 
 from src.engineer.dynamic_engineer import DynamicEngineer
@@ -116,6 +116,14 @@ def run_evaluation(data_dir, ealstm=None):
 
 def main(engineer_only=False, model_only=False):
     data_dir = get_data_path()
+    # ----------------------------------
+    # Setup the experiment
+    # ----------------------------------
+    # check if features or models exists
+    if (data_dir / "features").exists():
+        rename_features_dir(data_dir)
+    if (data_dir / "models").exists():
+        rename_models_dir(data_dir)
 
     # ----------------------------------------------------------------
     # PARAMETERS
@@ -150,7 +158,7 @@ def main(engineer_only=False, model_only=False):
     early_stopping = 10
     dense_features = [128, 64]
     rnn_dropout = 0.3
-    loss_func = "MSE"  # 'MSE'
+    loss_func = "NSE"  # "MSE" "NSE"
 
     # ----------------------------------------------------------------
     # CODE
@@ -184,11 +192,11 @@ def main(engineer_only=False, model_only=False):
         run_evaluation(data_dir, ealstm)
 
         # datestamp the model directory so that we can run multiple experiments
-        _rename_directory(
-            from_path=data_dir / "models" / "one_timestep_forecast",
-            to_path=data_dir / "models" / "one_timestep_forecast",
-            with_datetime=True,
-        )
+        # _rename_directory(
+        #     from_path=data_dir / "models" / "one_timestep_forecast",
+        #     to_path=data_dir / "models" / "one_timestep_forecast",
+        #     with_datetime=True,
+        # )
 
 
 def evaluate_only():
