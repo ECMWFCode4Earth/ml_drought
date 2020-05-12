@@ -10,24 +10,29 @@ from .base import BasePreProcessor
 
 class ERA5LandPreprocessor(BasePreProcessor):
     """ Preprocesses the ERA5 Land data """
-    dataset = 'reanalysis-era5-land'
+
+    dataset = "reanalysis-era5-land"
 
     @staticmethod
-    def create_filename(netcdf_filepath: Path,
-                        subset_name: Optional[str] = None) -> str:
+    def create_filename(
+        netcdf_filepath: Path, subset_name: Optional[str] = None
+    ) -> str:
 
         var_name = netcdf_filepath.parts[-3]
         months = netcdf_filepath.parts[-1][:-3]
         year = netcdf_filepath.parts[-2]
 
-        stem = f'{year}_{months}_{var_name}'
+        stem = f"{year}_{months}_{var_name}"
         if subset_name is not None:
-            stem = f'{stem}_{subset_name}'
-        return f'{stem}.nc'
+            stem = f"{stem}_{subset_name}"
+        return f"{stem}.nc"
 
-    def _preprocess_single(self, netcdf_filepath: Path,
-                           subset_str: Optional[str] = 'kenya',
-                           regrid: Optional[xr.Dataset] = None) -> None:
+    def _preprocess_single(
+        self,
+        netcdf_filepath: Path,
+        subset_str: Optional[str] = "kenya",
+        regrid: Optional[xr.Dataset] = None,
+    ) -> None:
         """ Preprocess a single netcdf file (run in parallel if
         `parallel_processes` arg > 1)
 
@@ -42,10 +47,12 @@ class ERA5LandPreprocessor(BasePreProcessor):
         # read the variable name from the fpath
         # variable = netcdf_filepath.parents[1].name
         """
-        print(f'Processing {netcdf_filepath.name}')
+        print(f"Processing {netcdf_filepath.name}")
 
         # 1. read in the dataset
-        ds = xr.open_dataset(netcdf_filepath).rename({'longitude': 'lon', 'latitude': 'lat'})
+        ds = xr.open_dataset(netcdf_filepath).rename(
+            {"longitude": "lon", "latitude": "lat"}
+        )
 
         # 2. chop out EastAfrica
         if subset_str is not None:
@@ -55,22 +62,24 @@ class ERA5LandPreprocessor(BasePreProcessor):
             ds = self.regrid(ds, regrid)
 
         filename = self.create_filename(
-            netcdf_filepath,
-            subset_name=subset_str if subset_str is not None else None
+            netcdf_filepath, subset_name=subset_str if subset_str is not None else None
         )
-        print(f'Saving to {self.interim}/{filename}')
+        print(f"Saving to {self.interim}/{filename}")
         ds.to_netcdf(self.interim / filename)
 
-        print(f'Done for ERA5-Land {netcdf_filepath.name}')
+        print(f"Done for ERA5-Land {netcdf_filepath.name}")
 
-    def preprocess(self, subset_str: Optional[str] = 'kenya',
-                   regrid: Optional[Path] = None,
-                   resample_time: Optional[str] = 'M',
-                   upsampling: bool = False,
-                   parallel_processes: int = 1,
-                   variable: Optional[str] = None,
-                   years: Optional[List[int]] = None,
-                   cleanup: bool = True) -> None:
+    def preprocess(
+        self,
+        subset_str: Optional[str] = "kenya",
+        regrid: Optional[Path] = None,
+        resample_time: Optional[str] = "M",
+        upsampling: bool = False,
+        parallel_processes: int = 1,
+        variable: Optional[str] = None,
+        years: Optional[List[int]] = None,
+        cleanup: bool = True,
+    ) -> None:
         """Preprocess all of the ERA5-Land .nc files to produce
         one subset file.
         Arguments
@@ -100,20 +109,20 @@ class ERA5LandPreprocessor(BasePreProcessor):
         ----
         - the raw data is downloaded at annual resolution by default
         """
-        print(f'Reading data from {self.raw_folder}. Writing to {self.interim}')
+        print(f"Reading data from {self.raw_folder}. Writing to {self.interim}")
         nc_files = self.get_filepaths()
         if years is not None:
-            nc_files = [f for f in nc_files if int(f.parents[0]) in years]  # type: ignore
+            nc_files = [
+                f for f in nc_files if int(f.parents[0]) in years
+            ]  # type: ignore
 
         # run for one variable or all variables?
         if variable is not None:
-            variables = [
-                d.name
-                for d in (self.raw_folder / self.dataset).iterdir()
-            ]
-            assert variable in variables, 'Expect the variable provided' \
-                f'to be in {variables}'
-            print(f'Running preprocessor for var: {variable}')
+            variables = [d.name for d in (self.raw_folder / self.dataset).iterdir()]
+            assert variable in variables, (
+                "Expect the variable provided" f"to be in {variables}"
+            )
+            print(f"Running preprocessor for var: {variable}")
             nc_files = [f for f in nc_files if f.parents[1].name == variable]
 
         if regrid is not None:
@@ -126,10 +135,9 @@ class ERA5LandPreprocessor(BasePreProcessor):
         else:
             pool = multiprocessing.Pool(processes=parallel_processes)
             outputs = pool.map(
-                partial(self._preprocess_single,
-                        subset_str=subset_str,
-                        regrid=regrid),
-                nc_files)
+                partial(self._preprocess_single, subset_str=subset_str, regrid=regrid),
+                nc_files,
+            )
             print("\nOutputs (errors):\n\t", outputs)
 
         # merge and resample files
@@ -137,7 +145,7 @@ class ERA5LandPreprocessor(BasePreProcessor):
             subset_str=subset_str,
             resample_time=resample_time,
             upsampling=upsampling,
-            variable=variable
+            variable=variable,
         )
 
         if cleanup:

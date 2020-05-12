@@ -9,14 +9,18 @@ from .neural_networks.linear_network import LinearNetwork
 from .neural_networks.rnn import RecurrentNetwork
 from .neural_networks.ealstm import EARecurrentNetwork
 
-__all__ = ['Persistence', 'LinearRegression', 'LinearNetwork',
-           'RecurrentNetwork', 'EARecurrentNetwork']
+__all__ = [
+    "Persistence",
+    "LinearRegression",
+    "LinearNetwork",
+    "RecurrentNetwork",
+    "EARecurrentNetwork",
+]
 
 
-def load_model(model_path: Path, data_path: Optional[Path] = None,
-               model_type: Optional[str] = None) -> Union[RecurrentNetwork,
-                                                          LinearNetwork,
-                                                          LinearRegression]:
+def load_model(
+    model_path: Path, data_path: Optional[Path] = None, model_type: Optional[str] = None
+) -> Union[RecurrentNetwork, LinearNetwork, LinearRegression]:
     """
     This function loads models from the output `.pkl` files generated when
     calling model.save()
@@ -39,9 +43,9 @@ def load_model(model_path: Path, data_path: Optional[Path] = None,
     """
 
     str_to_model = {
-        'rnn': RecurrentNetwork,
-        'linear_network': LinearNetwork,
-        'linear_regression': LinearRegression
+        "rnn": RecurrentNetwork,
+        "linear_network": LinearNetwork,
+        "linear_regression": LinearRegression,
     }
 
     # The assumption that model type is index -2 and that the data path
@@ -52,16 +56,16 @@ def load_model(model_path: Path, data_path: Optional[Path] = None,
     if data_path is None:
         data_path = cast(Path, model_path.parts[-5])
 
-    with model_path.open('rb') as f:
+    with model_path.open("rb") as f:
         model_dict = pickle.load(f)
 
-    init_kwargs = {'data_folder': data_path}
+    init_kwargs = {"data_folder": data_path}
     for key, val in model_dict.items():
-        if key != 'model':
+        if key != "model":
             init_kwargs[key] = val
 
     model = str_to_model[model_type](**init_kwargs)
 
-    model.load(**model_dict['model'])
+    model.load(**model_dict["model"])
 
     return model

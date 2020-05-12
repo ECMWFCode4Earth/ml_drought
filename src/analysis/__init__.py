@@ -11,7 +11,13 @@ from .indices import (
 )
 
 __all__ = [
-    'plot_shap_values', 'EventDetector', 'SPI', 'ZScoreIndex',
-    'PercentNormalIndex', 'DroughtSeverityIndex',
-    'ChinaZIndex', 'DecileIndex', 'AnomalyIndex',
+    "plot_shap_values",
+    "EventDetector",
+    "SPI",
+    "ZScoreIndex",
+    "PercentNormalIndex",
+    "DroughtSeverityIndex",
+    "ChinaZIndex",
+    "DecileIndex",
+    "AnomalyIndex",
 ]

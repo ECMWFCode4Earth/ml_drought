@@ -32,3 +32,9 @@ data/features/*
 data/models/*
 Code
 scripts/variables*.txt
+
+# coverage
+.coverage
+.coverage.*
+.vscode/
+switch_data_dirs.sh

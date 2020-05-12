@@ -11,23 +11,22 @@ from ..utils import get_modal_value_across_time
 class ESACCIPreprocessor(BasePreProcessor):
     """ Preprocesses the ESA CCI Landcover data """
 
-    dataset = 'esa_cci_landcover'
+    dataset = "esa_cci_landcover"
     static = True
 
     @staticmethod
-    def create_filename(netcdf_filepath: str,
-                        subset_name: Optional[str] = None) -> str:
+    def create_filename(netcdf_filepath: str, subset_name: Optional[str] = None) -> str:
         """
         ESACCI-LC-L4-LCCS-Map-300m-P1Y-1992-v2.0.7b.nc
             =>
         ESACCI-LC-L4-LCCS-Map-300m-P1Y-1992-v2.0.7b_kenya.nc
         """
-        if netcdf_filepath[-3:] == '.nc':
+        if netcdf_filepath[-3:] == ".nc":
             filename_stem = netcdf_filepath[:-3]
         else:
             filename_stem = netcdf_filepath
 
-        year = filename_stem.split('-')[-2]
+        year = filename_stem.split("-")[-2]
 
         if subset_name is not None:
             new_filename = f"{year}_{filename_stem}_{subset_name}.nc"
@@ -37,18 +36,23 @@ class ESACCIPreprocessor(BasePreProcessor):
 
     def _one_hot_encode(self, ds: xr.Dataset) -> xr.Dataset:
 
-        legend = pd.read_csv(self.raw_folder / self.dataset / 'legend.csv')
+        legend = pd.read_csv(self.raw_folder / self.dataset / "legend.csv")
         # no data should have a value of 0 in the legend
 
         for idx, row in legend.iterrows():
             value, label = row.code, row.label_text
-            ds[f'{label}_one_hot'] = ds.lc_class.where(ds.lc_class == value, 0).clip(min=0, max=1)
-        ds.drop('lc_class')
+            ds[f"{label}_one_hot"] = ds.lc_class.where(ds.lc_class == value, 0).clip(
+                min=0, max=1
+            )
+        ds.drop("lc_class")
         return ds
 
-    def _preprocess_single(self, netcdf_filepath: Path,
-                           subset_str: Optional[str] = 'kenya',
-                           regrid: Optional[xr.Dataset] = None) -> None:
+    def _preprocess_single(
+        self,
+        netcdf_filepath: Path,
+        subset_str: Optional[str] = "kenya",
+        regrid: Optional[xr.Dataset] = None,
+    ) -> None:
         """ Preprocess a single netcdf file (run in parallel if
         `parallel_processes` arg > 1)
 
@@ -60,10 +64,11 @@ class ESACCIPreprocessor(BasePreProcessor):
         * assign time stamp
         * Save the output file to new folder
         """
-        assert netcdf_filepath.name[-3:] == '.nc', \
-            f'filepath name should be a .nc file. Currently: {netcdf_filepath.name}'
+        assert (
+            netcdf_filepath.name[-3:] == ".nc"
+        ), f"filepath name should be a .nc file. Currently: {netcdf_filepath.name}"
 
-        print(f'Starting work on {netcdf_filepath.name}')
+        print(f"Starting work on {netcdf_filepath.name}")
         ds = xr.open_dataset(netcdf_filepath)
 
         # 2. chop out EastAfrica
@@ -76,40 +81,48 @@ class ESACCIPreprocessor(BasePreProcessor):
 
         # 3. regrid to same spatial resolution ...?
         # NOTE: have to remove the extra vars for the regridder
-        ds = ds.drop([
-            'processed_flag', 'current_pixel_state',
-            'observation_count', 'change_count', 'crs'
-        ])
+        ds = ds.drop(
+            [
+                "processed_flag",
+                "current_pixel_state",
+                "observation_count",
+                "change_count",
+                "crs",
+            ]
+        )
         if regrid is not None:
             ds = self.regrid(ds, regrid)
 
         try:  # try inferring from the ds.attrs
-            time = pd.to_datetime(ds.attrs['time_coverage_start'])
+            time = pd.to_datetime(ds.attrs["time_coverage_start"])
         except KeyError:  # else infer from filename (for tests)
-            year = netcdf_filepath.name.split('-')[-2]
-            time = pd.to_datetime(f'{year}-01-01')
+            year = netcdf_filepath.name.split("-")[-2]
+            time = pd.to_datetime(f"{year}-01-01")
 
         ds = ds.assign_coords(time=time)
-        ds = ds.expand_dims('time')
+        ds = ds.expand_dims("time")
 
         # 5. extract the landcover data (reduce storage use)
-        ds = ds.lccs_class.to_dataset(name='lc_class')
+        ds = ds.lccs_class.to_dataset(name="lc_class")
 
         # save to specific filename
         filename = self.create_filename(
             netcdf_filepath.name,
-            subset_name=subset_str if subset_str is not None else None
+            subset_name=subset_str if subset_str is not None else None,
         )
         print(f"Saving to {self.interim}/{filename}")
         ds.to_netcdf(self.interim / filename)
 
         print(f"** Done for ESA CCI landcover: {filename} **")
 
-    def preprocess(self, subset_str: Optional[str] = 'kenya',
-                   regrid: Optional[Path] = None,
-                   years: Optional[List[int]] = None,
-                   cleanup: bool = True,
-                   one_hot_encode: bool = True) -> None:
+    def preprocess(
+        self,
+        subset_str: Optional[str] = "kenya",
+        regrid: Optional[Path] = None,
+        years: Optional[List[int]] = None,
+        cleanup: bool = True,
+        one_hot_encode: bool = True,
+    ) -> None:
         """Preprocess all of the ESA CCI landcover .nc files to produce
         one subset file resampled to the timestep of interest.
         (downloaded as annual timesteps)
@@ -136,7 +149,7 @@ class ESACCIPreprocessor(BasePreProcessor):
         - This assumes that landcover is relatively consistent in the 1980s
         as the 1990s, 2000s and 2010s
         """
-        print(f'Reading data from {self.raw_folder}. Writing to {self.interim}')
+        print(f"Reading data from {self.raw_folder}. Writing to {self.interim}")
 
         nc_files = self.get_filepaths()
         if years is not None:
@@ -148,7 +161,7 @@ class ESACCIPreprocessor(BasePreProcessor):
         for file in nc_files:
             self._preprocess_single(file, subset_str, regrid)
 
-        ds = xr.open_mfdataset(self.get_filepaths('interim'))
+        ds = xr.open_mfdataset(self.get_filepaths("interim"))
 
         ds = get_modal_value_across_time(ds.lc_class).to_dataset()
 
@@ -159,8 +172,8 @@ class ESACCIPreprocessor(BasePreProcessor):
         if subset_str is not None:
             filename = f'{filename}{"_" + subset_str}'
         if one_hot_encode:
-            filename = f'{filename}_one_hot'
-        filename = f'{filename}.nc'
+            filename = f"{filename}_one_hot"
+        filename = f"{filename}.nc"
 
         out = self.out_dir / filename
         ds.to_netcdf(out)

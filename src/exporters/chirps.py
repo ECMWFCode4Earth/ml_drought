@@ -16,24 +16,28 @@ class CHIRPSExporter(BaseExporter):
     # 0.25degree
     ftp://ftp.chg.ucsb.edu/pub/org/chg/products/CHIRPS-2.0/africa_pentad/tifs/
     """
-    dataset = 'chirps'
 
-    def __init__(self, data_folder: Path = Path('data')) -> None:
+    dataset = "chirps"
+
+    def __init__(self, data_folder: Path = Path("data")) -> None:
         super().__init__(data_folder)
 
         self.region_folder: Optional[Path] = None
 
-        self.base_url = 'ftp://ftp.chg.ucsb.edu/pub/org/chg'
+        self.base_url = "ftp://ftp.chg.ucsb.edu/pub/org/chg"
 
-    def get_url(self, region: str = 'africa', period: str = 'monthly') -> str:
-        filetype = 'tifs' if region == 'africa' else 'netcdf'
-        url = f'/products/CHIRPS-2.0/{region}_{period}/{filetype}/'
+    def get_url(self, region: str = "africa", period: str = "monthly") -> str:
+        filetype = "tifs" if region == "africa" else "netcdf"
+        url = f"/products/CHIRPS-2.0/{region}_{period}/{filetype}/"
 
         return self.base_url + url
 
-    def get_chirps_filenames(self, years: Optional[List[int]] = None,
-                             region: str = 'africa',
-                             period: str = 'monthly') -> List[str]:
+    def get_chirps_filenames(
+        self,
+        years: Optional[List[int]] = None,
+        region: str = "africa",
+        period: str = "monthly",
+    ) -> List[str]:
         """
         ftp://ftp.chg.ucsb.edu/pub/org/chg/products/
             CHIRPS-2.0/global_pentad/netcdf/
@@ -50,17 +54,15 @@ class CHIRPSExporter(BaseExporter):
         page = str(BeautifulSoup(the_page, features="lxml"))
 
         # split the page to get the filenames as a list
-        firstsplit = page.split('\r\n')  # split the newlines
-        secondsplit = [x.split(' ') for x in firstsplit]  # split the spaces
+        firstsplit = page.split("\r\n")  # split the newlines
+        secondsplit = [x.split(" ") for x in firstsplit]  # split the spaces
         flatlist = [item for sublist in secondsplit for item in sublist]  # flatten
-        chirpsfiles = [x for x in flatlist if 'chirps' in x]
+        chirpsfiles = [x for x in flatlist if "chirps" in x]
 
         # extract only the years of interest
         if years is not None:
             chirpsfiles = [
-                f for f in chirpsfiles if any(
-                    [f'.{yr}.' in f for yr in years]
-                )
+                f for f in chirpsfiles if any([f".{yr}." in f for yr in years])
             ]
         return chirpsfiles
 
@@ -69,19 +71,24 @@ class CHIRPSExporter(BaseExporter):
         https://explainshell.com/explain?cmd=wget+-np+-nH+--cut
         -dirs+7+www.google.come+-P+folder
         """
-        assert self.region_folder is not None, \
-            f'A region folder must be defined and made'
+        assert (
+            self.region_folder is not None
+        ), f"A region folder must be defined and made"
         if (self.region_folder / filepath).exists():
-            print(f'{filepath} already exists! Skipping')
+            print(f"{filepath} already exists! Skipping")
         else:
-            os.system(f"wget -np -nH --cut-dirs 7 {filepath} \
-                -P {self.region_folder.as_posix()}")
+            os.system(
+                f"wget -np -nH --cut-dirs 7 {filepath} \
+                -P {self.region_folder.as_posix()}"
+            )
 
-    def download_chirps_files(self,
-                              chirps_files: List[str],
-                              region: str = 'africa',
-                              period: str = 'monthly',
-                              parallel: bool = False) -> None:
+    def download_chirps_files(
+        self,
+        chirps_files: List[str],
+        region: str = "africa",
+        period: str = "monthly",
+        parallel: bool = False,
+    ) -> None:
         """ download the chirps files using wget """
         # build the base url
 
@@ -97,10 +104,13 @@ class CHIRPSExporter(BaseExporter):
             for file in filepaths:
                 self.wget_file(file)
 
-    def export(self, years: Optional[List[int]] = None,
-               region: str = 'global',
-               period: str = 'monthly',
-               parallel: bool = False) -> None:
+    def export(
+        self,
+        years: Optional[List[int]] = None,
+        region: str = "global",
+        period: str = "monthly",
+        parallel: bool = False,
+    ) -> None:
         """Export functionality for the CHIRPS precipitation product
         Arguments
         ----------
@@ -116,11 +126,14 @@ class CHIRPSExporter(BaseExporter):
         """
 
         if years is not None:
-            assert min(years) >= 1981, f"Minimum year cannot be less than 1981. " \
-                f"Currently: {min(years)}"
+            assert min(years) >= 1981, (
+                f"Minimum year cannot be less than 1981. " f"Currently: {min(years)}"
+            )
             if max(years) > 2020:
-                warnings.warn(f"Non-breaking change: max(years) is: {max(years)}. "
-                              f"But no files later than 2019")
+                warnings.warn(
+                    f"Non-breaking change: max(years) is: {max(years)}. "
+                    f"But no files later than 2019"
+                )
 
         # write the region download to a unique file location
         self.region_folder = self.output_folder / region
@@ -132,8 +145,7 @@ class CHIRPSExporter(BaseExporter):
 
         # check if they already exist
         existing_files = [
-            f.as_posix().split('/')[-1]
-            for f in self.region_folder.glob('*.nc')
+            f.as_posix().split("/")[-1] for f in self.region_folder.glob("*.nc")
         ]
         chirps_files = [f for f in chirps_files if f not in existing_files]
 

@@ -13,7 +13,7 @@ from scipy import stats
 from typing import Optional, Tuple
 
 
-Region = namedtuple('Region', ['name', 'lonmin', 'lonmax', 'latmin', 'latmax'])
+Region = namedtuple("Region", ["name", "lonmin", "lonmax", "latmin", "latmax"])
 
 
 def get_kenya() -> Region:
@@ -21,22 +21,28 @@ def get_kenya() -> Region:
     This function allows Kenya's bounding box to be easily accessed
     by all exporters.
     """
-    return Region(name='kenya', lonmin=33.501, lonmax=42.283,
-                  latmin=-5.202, latmax=6.002)
+    return Region(
+        name="kenya", lonmin=33.501, lonmax=42.283, latmin=-5.202, latmax=6.002
+    )
 
 
 def get_ethiopia() -> Region:
-    return Region(name='ethiopia', lonmin=32.9975838, lonmax=47.9823797,
-                  latmin=3.397448, latmax=14.8940537)
+    return Region(
+        name="ethiopia",
+        lonmin=32.9975838,
+        lonmax=47.9823797,
+        latmin=3.397448,
+        latmax=14.8940537,
+    )
 
 
 def get_east_africa() -> Region:
-    return Region(name='east_africa', lonmin=21, lonmax=51.8,
-                  latmin=-11, latmax=23)
+    return Region(name="east_africa", lonmin=21, lonmax=51.8, latmin=-11, latmax=23)
 
 
-def minus_months(cur_year: int, cur_month: int, diff_months: int,
-                 to_endmonth_datetime: bool = True) -> Tuple[int, int, Optional[date]]:
+def minus_months(
+    cur_year: int, cur_month: int, diff_months: int, to_endmonth_datetime: bool = True
+) -> Tuple[int, int, Optional[date]]:
     """Given a year-month pair (e.g. 2018, 1), and a number of months subtracted
     from that `diff_months` (e.g. 2), return the new year-month pair (e.g. 2017, 11).
 
@@ -51,8 +57,9 @@ def minus_months(cur_year: int, cur_month: int, diff_months: int,
         new_year = cur_year
 
     if to_endmonth_datetime:
-        newdate: Optional[date] = date(new_year, new_month,
-                                       calendar.monthrange(new_year, new_month)[-1])
+        newdate: Optional[date] = date(
+            new_year, new_month, calendar.monthrange(new_year, new_month)[-1]
+        )
     else:
         newdate = None
     return new_year, new_month, newdate
@@ -65,8 +72,8 @@ def get_ds_mask(ds: xr.Dataset) -> xr.Dataset:
         water bodies). Could also be invalid nulls due to poor data processing /
         lack of satellite input data for a pixel!
     """
-    mask = ds.isnull().isel(time=0).drop('time')
-    mask.name = 'mask'
+    mask = ds.isnull().isel(time=0).drop("time")
+    mask.name = "mask"
 
     return mask
 
@@ -95,10 +102,10 @@ def create_shape_aligned_climatology(ds, clim, variable, time_period):
         coord names in ds
 
     """
-    for coord in ['lat', 'lon']:
+    for coord in ["lat", "lon"]:
         assert coord in [c for c in ds.coords]
 
-    ds[time_period] = ds[f'time.{time_period}']
+    ds[time_period] = ds[f"time.{time_period}"]
 
     values = clim[variable].values
     keys = clim[time_period].values
@@ -112,19 +119,17 @@ def create_shape_aligned_climatology(ds, clim, variable, time_period):
     #  to time_period values defined in `timevals` and stack into new array
     new_clim_vals = np.stack([lookup_dict[timevals[i]] for i in range(len(timevals))])
 
-    assert new_clim_vals.shape == ds[variable].shape, f"\
+    assert (
+        new_clim_vals.shape == ds[variable].shape
+    ), f"\
         Shapes for new_clim_vals and ds must match! \
          new_clim_vals.shape: {new_clim_vals.shape} \
          ds.shape: {ds[variable].shape}"
 
     # copy that forward in time
     new_clim = xr.Dataset(
-        {variable: (['time', 'lat', 'lon'], new_clim_vals)},
-        coords={
-            'lat': clim.lat,
-            'lon': clim.lon,
-            'time': ds.time,
-        }
+        {variable: (["time", "lat", "lon"], new_clim_vals)},
+        coords={"lat": clim.lat, "lon": clim.lon, "time": ds.time},
     )
 
     return new_clim
@@ -157,7 +162,7 @@ def get_modal_value_across_time(da: xr.DataArray) -> xr.DataArray:
     mode_da.values = mode
 
     # return a lat, lon array (remove time dimension)
-    mode_da = mode_da.squeeze('time').drop('time')
+    mode_da = mode_da.squeeze("time").drop("time")
 
     return mode_da
 

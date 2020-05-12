@@ -27,13 +27,15 @@ from typing import Any, List, Optional, Tuple, Union
 class VHIPreprocessor(BasePreProcessor):
     """ Preprocesses the VHI data """
 
-    dataset = 'vhi'
+    dataset = "vhi"
 
-    def _preprocess(self,
-                    netcdf_filepath: str,
-                    output_dir: str,
-                    subset_str: Optional[str] = 'kenya',
-                    regrid: Optional[Dataset] = None) -> Path:
+    def _preprocess(
+        self,
+        netcdf_filepath: str,
+        output_dir: str,
+        subset_str: Optional[str] = "kenya",
+        regrid: Optional[Dataset] = None,
+    ) -> Path:
         """Run the Preprocessing steps for the NOAA VHI data
 
         Process:
@@ -47,22 +49,20 @@ class VHIPreprocessor(BasePreProcessor):
         # 1. read in the dataset
         ds = xr.open_dataset(netcdf_filepath)
         # FLIP the `HEIGHT` array
-        ds = ds.sortby('HEIGHT', ascending=False)
+        ds = ds.sortby("HEIGHT", ascending=False)
 
         # 2. extract the timestamp for that file (from the filepath)
         timestamp = self.extract_timestamp(ds, netcdf_filepath, use_filepath=True)
 
         # 3. create the filepath
         filename = self.create_filename(
-            timestamp,
-            netcdf_filepath,
-            subset_name=subset_str,
+            timestamp, netcdf_filepath, subset_name=subset_str
         )
 
         # test if the file already exists
-        if Path(f'{output_dir}/{filename}').exists():
-            print(f'{output_dir}/{filename} Already exists!')
-            return Path(f'{output_dir}/{filename}')
+        if Path(f"{output_dir}/{filename}").exists():
+            print(f"{output_dir}/{filename} Already exists!")
+            return Path(f"{output_dir}/{filename}")
 
         # 4. extract the lat/lon vectors
         longitudes, latitudes = self.create_lat_lon_vectors(ds)
@@ -78,19 +78,20 @@ class VHIPreprocessor(BasePreProcessor):
             new_ds = self.regrid(new_ds, regrid)
 
         # 7. save to filepath location
-        print(f'Saving to {output_dir}/{filename}')
+        print(f"Saving to {output_dir}/{filename}")
         # TODO: change to pathlib.Path objects
-        new_ds.to_netcdf(f'{output_dir}/{filename}')
+        new_ds.to_netcdf(f"{output_dir}/{filename}")
 
         print(f'** Done for VHI {netcdf_filepath.split("/")[-1]} **')
 
-        return Path(f'{output_dir}/{filename}')
+        return Path(f"{output_dir}/{filename}")
 
-    def _preprocess_wrapper(self,
-                            netcdf_filepath: str,
-                            subset_str: Optional[str] = 'kenya',
-                            regrid: Optional[Dataset] = None
-                            ) -> Union[Path, Tuple[Exception, str]]:
+    def _preprocess_wrapper(
+        self,
+        netcdf_filepath: str,
+        subset_str: Optional[str] = "kenya",
+        regrid: Optional[Dataset] = None,
+    ) -> Union[Path, Tuple[Exception, str]]:
         """ function to be run in parallel & safely catch errors
 
         https://stackoverflow.com/a/24683990/9940782
@@ -110,13 +111,15 @@ class VHIPreprocessor(BasePreProcessor):
             print(f"### FAILED: {netcdf_filepath}")
             return e, netcdf_filepath
 
-    def preprocess(self,
-                   subset_str: Optional[str] = 'kenya',
-                   regrid: Optional[Path] = None,
-                   parallel: bool = True,
-                   resample_time: Optional[str] = 'M',
-                   upsampling: bool = False,
-                   cleanup: bool = True) -> None:
+    def preprocess(
+        self,
+        subset_str: Optional[str] = "kenya",
+        regrid: Optional[Path] = None,
+        parallel: bool = True,
+        resample_time: Optional[str] = "M",
+        upsampling: bool = False,
+        cleanup: bool = True,
+    ) -> None:
         """ Preprocess all of the NOAA VHI .nc files to produce
         one subset file with consistent lat/lon and timestamps.
 
@@ -145,13 +148,16 @@ class VHIPreprocessor(BasePreProcessor):
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
 
-        print(f"Reading data from {self.raw_folder}. \
-            Writing to {self.interim}")
+        print(
+            f"Reading data from {self.raw_folder}. \
+            Writing to {self.interim}"
+        )
         if parallel:
             pool = multiprocessing.Pool(processes=100)
-            outputs = pool.map(partial(self._preprocess_wrapper,
-                                       subset_str=subset_str,
-                                       regrid=regrid), nc_files)
+            outputs = pool.map(
+                partial(self._preprocess_wrapper, subset_str=subset_str, regrid=regrid),
+                nc_files,
+            )
             errors = [o for o in outputs if not isinstance(o, Path)]
 
             # TODO check how these errors are being saved (now all paths returned)
@@ -161,10 +167,13 @@ class VHIPreprocessor(BasePreProcessor):
             self.save_errors(errors)
         else:
             for file in nc_files:
-                self._preprocess_wrapper(str(file), subset_str=subset_str, regrid=regrid)
+                self._preprocess_wrapper(
+                    str(file), subset_str=subset_str, regrid=regrid
+                )
 
-        self.merge_files(subset_str=subset_str, resample_time=resample_time,
-                         upsampling=upsampling)
+        self.merge_files(
+            subset_str=subset_str, resample_time=resample_time, upsampling=upsampling
+        )
         if cleanup:
             rmtree(self.interim)
 
@@ -175,20 +184,21 @@ class VHIPreprocessor(BasePreProcessor):
         print("*************************")
         print("Paths:")
         print("\nPaths: ", [o for o in outputs if o is not None])
-        print("\n__Failed File List:",
-              [o[-1] for o in outputs if not isinstance(o, Path)])
+        print(
+            "\n__Failed File List:", [o[-1] for o in outputs if not isinstance(o, Path)]
+        )
 
     def save_errors(self, outputs: List) -> Path:
         # write output of failed files to python.txt
-        with open(self.interim / 'vhi_preprocess_errors.pkl', 'wb') as f:
+        with open(self.interim / "vhi_preprocess_errors.pkl", "wb") as f:
             pickle.dump([error[-1] for error in outputs if error is not None], f)
 
-        return self.interim / 'vhi_preprocess_errors.pkl'
+        return self.interim / "vhi_preprocess_errors.pkl"
 
     @staticmethod
-    def create_filename(t: Timestamp,
-                        netcdf_filepath: str,
-                        subset_name: Optional[str] = None) -> str:
+    def create_filename(
+        t: Timestamp, netcdf_filepath: str, subset_name: Optional[str] = None
+    ) -> str:
         """ create a sensible output filename (HARDCODED for this problem)
         Arguments:
         ---------
@@ -200,18 +210,22 @@ class VHIPreprocessor(BasePreProcessor):
         STAR_VHP.G04.C07.NN.P_20110101_VH.nc
         VHP.G04.C07.NJ.P1996027.VH.nc
         """
-        substr = netcdf_filepath.split('/')[-1].split('.P')[0]
+        substr = netcdf_filepath.split("/")[-1].split(".P")[0]
         if subset_name is not None:
-            new_filename = f"STAR_{substr}_{t.year}_{t.month}_{t.day}_{subset_name}_VH.nc"
+            new_filename = (
+                f"STAR_{substr}_{t.year}_{t.month}_{t.day}_{subset_name}_VH.nc"
+            )
         else:
             new_filename = f"STAR_{substr}_{t.year}_{t.month}_{t.day}_VH.nc"
         return new_filename
 
     @staticmethod
-    def extract_timestamp(ds: Dataset,
-                          netcdf_filepath: str,
-                          use_filepath: bool = True,
-                          time_begin: bool = True) -> Timestamp:
+    def extract_timestamp(
+        ds: Dataset,
+        netcdf_filepath: str,
+        use_filepath: bool = True,
+        time_begin: bool = True,
+    ) -> Timestamp:
         """from the `attrs` or filename create a datetime object for acquisition time.
 
         NOTE: the acquisition date is SOMEWHERE in this time range (satuday-friday)
@@ -221,23 +235,21 @@ class VHIPreprocessor(BasePreProcessor):
 
         if use_filepath:  # use the weeknumber in filename
             # https://stackoverflow.com/a/22789330/9940782
-            YYYYWWW = netcdf_filepath.split('P')[-1].split('.')[0]
+            YYYYWWW = netcdf_filepath.split("P")[-1].split(".")[0]
             year = YYYYWWW[:4]
             week = YYYYWWW[5:7]
             atime = time.asctime(
-                time.strptime('{} {} 1'.format(year, week), '%Y %W %w')
+                time.strptime("{} {} 1".format(year, week), "%Y %W %w")
             )
 
         else:
-            year = ds.attrs['YEAR']
+            year = ds.attrs["YEAR"]
             if time_begin:
-                day_num = ds.attrs['DATE_BEGIN']
+                day_num = ds.attrs["DATE_BEGIN"]
             else:  # time_end
-                day_num = ds.attrs['DATE_END']
+                day_num = ds.attrs["DATE_END"]
 
-            atime = time.asctime(
-                time.strptime('{} {}'.format(year, day_num), '%Y %j')
-            )
+            atime = time.asctime(time.strptime("{} {}".format(year, day_num), "%Y %j"))
 
         date = pd.to_datetime(atime)
         return date
@@ -245,12 +257,14 @@ class VHIPreprocessor(BasePreProcessor):
     @staticmethod
     def create_lat_lon_vectors(ds: Dataset) -> Tuple[Any, Any]:
         """ read the `ds.attrs` and create new latitude, longitude vectors """
-        assert ds.WIDTH.size == 10000, \
-            f'We are hardcoding the lat/lon values so we need to ensure that all dims ' \
-            f'are the same. WIDTH != 10000, == {ds.WIDTH.size}'
-        assert ds.HEIGHT.size == 3616, \
-            f'We are hardcoding the lat/lon values so we need to ensure that all dims ' \
-            f'are the same. HEIGHT != 3616, == {ds.HEIGHT.size}'
+        assert ds.WIDTH.size == 10000, (
+            f"We are hardcoding the lat/lon values so we need to ensure that all dims "
+            f"are the same. WIDTH != 10000, == {ds.WIDTH.size}"
+        )
+        assert ds.HEIGHT.size == 3616, (
+            f"We are hardcoding the lat/lon values so we need to ensure that all dims "
+            f"are the same. HEIGHT != 3616, == {ds.HEIGHT.size}"
+        )
 
         # NOTE: hardcoded for the VHI data (some files don't have the attrs)
         lonmin, lonmax = -180.0, 180.0
@@ -266,45 +280,55 @@ class VHIPreprocessor(BasePreProcessor):
         return longitudes, latitudes
 
     @staticmethod
-    def create_new_dataarray(ds: Dataset,
-                             variable: str,
-                             longitudes: np.ndarray,
-                             latitudes: np.ndarray,
-                             timestamp: Timestamp) -> DataArray:
+    def create_new_dataarray(
+        ds: Dataset,
+        variable: str,
+        longitudes: np.ndarray,
+        latitudes: np.ndarray,
+        timestamp: Timestamp,
+    ) -> DataArray:
         """ Create a new dataarray for the `variable` from `ds` with geocoding and timestamp """
         # Assert statements - to a test function?
         dims = list(ds.dims)
         variables = list(ds.variables.keys())
 
-        assert variable in variables, \
-            f'variable: {variable} need to be a variable in the ds! Currently {variables}'
-        assert (ds[dims[0]].size == longitudes.size) or (ds[dims[1]].size == longitudes.size), \
-            f'Size of dimensions {dims} should be equal either to the size of longitudes.' \
-            f' \n Currently longitude: {longitudes.size}. {ds[dims[0]]}: {ds[dims[0]].size},' \
-            f' {ds[dims[1]]}: {ds[dims[1]].size}'
-        assert (ds[dims[0]].size == latitudes.size) or (ds[dims[1]].size == latitudes.size), \
-            f'Size of dimensions {dims} should be equal either to the size of latitudes' \
-            f'. \n Currently latitude: {latitudes.size}. {ds[dims[0]]}: {ds[dims[0]].size},' \
-            f' {ds[dims[1]]}: {ds[dims[1]].size}'
-        assert np.array(timestamp).size == 1, \
-            'The function only currently works with SINGLE TIMESTEPS.'
+        assert (
+            variable in variables
+        ), f"variable: {variable} need to be a variable in the ds! Currently {variables}"
+        assert (ds[dims[0]].size == longitudes.size) or (
+            ds[dims[1]].size == longitudes.size
+        ), (
+            f"Size of dimensions {dims} should be equal either to the size of longitudes."
+            f" \n Currently longitude: {longitudes.size}. {ds[dims[0]]}: {ds[dims[0]].size},"
+            f" {ds[dims[1]]}: {ds[dims[1]].size}"
+        )
+        assert (ds[dims[0]].size == latitudes.size) or (
+            ds[dims[1]].size == latitudes.size
+        ), (
+            f"Size of dimensions {dims} should be equal either to the size of latitudes"
+            f". \n Currently latitude: {latitudes.size}. {ds[dims[0]]}: {ds[dims[0]].size},"
+            f" {ds[dims[1]]}: {ds[dims[1]].size}"
+        )
+        assert (
+            np.array(timestamp).size == 1
+        ), "The function only currently works with SINGLE TIMESTEPS."
 
         da = xr.DataArray(
             [ds[variable].values],
-            dims=['time', 'lat', 'lon'],
-            coords={'lon': longitudes,
-                    'lat': latitudes,
-                    'time': [timestamp]}
+            dims=["time", "lat", "lon"],
+            coords={"lon": longitudes, "lat": latitudes, "time": [timestamp]},
         )
         da.name = variable
         return da
 
-    def create_new_dataset(self,
-                           ds: Dataset,
-                           longitudes: np.ndarray,
-                           latitudes: np.ndarray,
-                           timestamp: Timestamp,
-                           all_vars: bool = False) -> Dataset:
+    def create_new_dataset(
+        self,
+        ds: Dataset,
+        longitudes: np.ndarray,
+        latitudes: np.ndarray,
+        timestamp: Timestamp,
+        all_vars: bool = False,
+    ) -> Dataset:
         """ Create a new dataset from ALL the variables in `ds` with the dims"""
         # initialise the list
         da_list = []
@@ -313,10 +337,13 @@ class VHIPreprocessor(BasePreProcessor):
         if all_vars:
             variables = list(ds.variables.keys())
         else:
-            variables = ['VHI']
+            variables = ["VHI"]
         for variable in variables:
-            da_list.append(self.create_new_dataarray(ds, variable, longitudes,
-                                                     latitudes, timestamp))
+            da_list.append(
+                self.create_new_dataarray(
+                    ds, variable, longitudes, latitudes, timestamp
+                )
+            )
         # merge all of the variables into one dataset
         new_ds = xr.merge(da_list)
         new_ds.attrs = ds.attrs

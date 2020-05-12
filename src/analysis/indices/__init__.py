@@ -7,6 +7,11 @@ from .decile_index import DecileIndex
 from .anomaly_index import AnomalyIndex
 
 __all__ = [
-    'SPI', 'ZScoreIndex', 'PercentNormalIndex', 'DroughtSeverityIndex',
-    'ChinaZIndex', 'DecileIndex', 'AnomalyIndex',
+    "SPI",
+    "ZScoreIndex",
+    "PercentNormalIndex",
+    "DroughtSeverityIndex",
+    "ChinaZIndex",
+    "DecileIndex",
+    "AnomalyIndex",
 ]

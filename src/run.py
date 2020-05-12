@@ -7,7 +7,6 @@ from src.preprocess import VHIPreprocessor
 
 
 class DictWithDefaults:
-
     def __init__(self, user_config: Dict, default_config: Dict) -> None:
         self.user_config = user_config
         self.default_config = default_config
@@ -16,7 +15,7 @@ class DictWithDefaults:
     def _check_keys(self) -> None:
 
         # To be updated as the pipeline grows
-        expected_keys = {'data', 'export', 'preprocess'}
+        expected_keys = {"data", "export", "preprocess"}
 
         for key in expected_keys:
             try:
@@ -25,9 +24,11 @@ class DictWithDefaults:
                 try:
                     self.default_config[key]
                 except KeyError:
-                    assert False, f'{key} is not defined ' \
-                        f'in the user config or the default config. Try using ' \
-                        f'the default config in pipeline_config/(minimal, full).json'
+                    assert False, (
+                        f"{key} is not defined "
+                        f"in the user config or the default config. Try using "
+                        f"the default config in pipeline_config/(minimal, full).json"
+                    )
 
     def __getitem__(self, key: str):
 
@@ -45,6 +46,7 @@ class Run:
     data: pathlib.Path
         The path to the data folder
     """
+
     def __init__(self, data: Path) -> None:
         self.data = data
 
@@ -59,19 +61,21 @@ class Run:
         """
 
         dataset2exporter = {
-            'era5': ERA5Exporter,
-            'vhi': VHIExporter,
-            'era5POS': ERA5ExporterPOS,
+            "era5": ERA5Exporter,
+            "vhi": VHIExporter,
+            "era5POS": ERA5ExporterPOS,
         }
 
         for dataset, variables in export_args.items():
 
             # check the format is as we expected
-            assert dataset in dataset2exporter, \
-                f'{dataset} is not supported! Supported datasets are {dataset2exporter.keys()}'
+            assert (
+                dataset in dataset2exporter
+            ), f"{dataset} is not supported! Supported datasets are {dataset2exporter.keys()}"
 
-            assert type(variables) is list, \
-                f'Expected {dataset} values to be a list. Got {type(variables)} instead'
+            assert (
+                type(variables) is list
+            ), f"Expected {dataset} values to be a list. Got {type(variables)} instead"
 
             exporter = dataset2exporter[dataset](self.data)
 
@@ -88,18 +92,18 @@ class Run:
         --------
         preprocess_args:
         """
-        dataset2preprocessor = {
-            'vhi': VHIPreprocessor,
-        }
+        dataset2preprocessor = {"vhi": VHIPreprocessor}
 
         for dataset, variables in preprocess_args.items():
 
             # check the format is as we expected
-            assert dataset in dataset2preprocessor, \
-                f'{dataset} is not supported! Supported datasets are {dataset2preprocessor.keys()}'
+            assert (
+                dataset in dataset2preprocessor
+            ), f"{dataset} is not supported! Supported datasets are {dataset2preprocessor.keys()}"
 
-            assert type(variables) is list, \
-                f'Expected {dataset} values to be a list. Got {type(variables)} instead'
+            assert (
+                type(variables) is list
+            ), f"Expected {dataset} values to be a list. Got {type(variables)} instead"
 
             preprocessor = dataset2preprocessor[dataset](self.data)
 
@@ -108,4 +112,4 @@ class Run:
 
     def run(self, config: DictWithDefaults) -> None:
 
-        self.export(config['export'])
+        self.export(config["export"])

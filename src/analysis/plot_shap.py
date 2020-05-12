@@ -7,13 +7,15 @@ import numpy as np
 from typing import Dict, List
 
 
-def plot_shap_values(x: np.ndarray,
-                     shap_values: np.ndarray,
-                     val_list: List[str],
-                     normalizing_dict: Dict[str, Dict[str, float]],
-                     value_to_plot: str,
-                     normalize_shap_plots: bool = True,
-                     show: bool = False) -> None:
+def plot_shap_values(
+    x: np.ndarray,
+    shap_values: np.ndarray,
+    val_list: List[str],
+    normalizing_dict: Dict[str, Dict[str, float]],
+    value_to_plot: str,
+    normalize_shap_plots: bool = True,
+    show: bool = False,
+) -> None:
     """Plots the denormalized values against their shap values, so that
     variations in the input features to the model can be compared to their effect
     on the model. For example plots, see notebooks/08_gt_recurrent_model.ipynb.
@@ -44,8 +46,9 @@ def plot_shap_values(x: np.ndarray,
     # we also want to denormalize
     for norm_var in normalizing_dict.keys():
         if value_to_plot.endswith(norm_var):
-            x_val = (x_val * normalizing_dict[norm_var]['std']) + \
-                normalizing_dict[norm_var]['mean']
+            x_val = (x_val * normalizing_dict[norm_var]["std"]) + normalizing_dict[
+                norm_var
+            ]["mean"]
             break
 
     shap_val = shap_values[:, idx]

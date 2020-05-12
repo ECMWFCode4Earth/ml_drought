@@ -7,8 +7,13 @@ from .era5_land import ERA5LandPreprocessor
 from .esa_cci import ESACCIPreprocessor
 from .srtm import SRTMPreprocessor
 
-__all__ = ['VHIPreprocessor', 'CHIRPSPreprocesser',
-           'PlanetOSPreprocessor', 'GLEAMPreprocessor',
-           'ERA5MonthlyMeanPreprocessor',
-           'ERA5LandPreprocessor',
-           'ESACCIPreprocessor', 'SRTMPreprocessor']
+__all__ = [
+    "VHIPreprocessor",
+    "CHIRPSPreprocesser",
+    "PlanetOSPreprocessor",
+    "GLEAMPreprocessor",
+    "ERA5MonthlyMeanPreprocessor",
+    "ERA5LandPreprocessor",
+    "ESACCIPreprocessor",
+    "SRTMPreprocessor",
+]

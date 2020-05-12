@@ -35,17 +35,20 @@ class ModelBase:
 
     model_name: str  # to be added by the model classes
 
-    def __init__(self, data_folder: Path = Path('data'),
-                 batch_size: int = 1,
-                 experiment: str = 'one_month_forecast',
-                 pred_months: Optional[List[int]] = None,
-                 include_pred_month: bool = True,
-                 include_latlons: bool = False,
-                 include_monthly_aggs: bool = True,
-                 include_yearly_aggs: bool = True,
-                 surrounding_pixels: Optional[int] = None,
-                 ignore_vars: Optional[List[str]] = None,
-                 include_static: bool = True) -> None:
+    def __init__(
+        self,
+        data_folder: Path = Path("data"),
+        batch_size: int = 1,
+        experiment: str = "one_month_forecast",
+        pred_months: Optional[List[int]] = None,
+        include_pred_month: bool = True,
+        include_latlons: bool = False,
+        include_monthly_aggs: bool = True,
+        include_yearly_aggs: bool = True,
+        surrounding_pixels: Optional[int] = None,
+        ignore_vars: Optional[List[str]] = None,
+        include_static: bool = True,
+    ) -> None:
 
         self.batch_size = batch_size
         self.include_pred_month = include_pred_month
@@ -55,7 +58,7 @@ class ModelBase:
         self.data_path = data_folder
         self.experiment = experiment
         self.pred_months = pred_months
-        self.models_dir = data_folder / 'models' / self.experiment
+        self.models_dir = data_folder / "models" / self.experiment
         self.surrounding_pixels = surrounding_pixels
         self.ignore_vars = ignore_vars
         self.include_static = include_static
@@ -68,7 +71,9 @@ class ModelBase:
             if not self.model_dir.exists():
                 self.model_dir.mkdir()
         except AttributeError:
-            print('Model name attribute must be defined for the model directory to be created')
+            print(
+                "Model name attribute must be defined for the model directory to be created"
+            )
 
         self.model: Any = None  # to be added by the model classes
         self.data_vars: Optional[List[str]] = None  # to be added by the train step
@@ -98,8 +103,7 @@ class ModelBase:
     def save_model(self) -> None:
         raise NotImplementedError
 
-    def evaluate(self, save_results: bool = True,
-                 save_preds: bool = False) -> None:
+    def evaluate(self, save_results: bool = True, save_preds: bool = False) -> None:
         """
         Evaluate the trained model
 
@@ -118,7 +122,7 @@ class ModelBase:
         total_preds: List[np.ndarray] = []
         total_true: List[np.ndarray] = []
         for key, vals in test_arrays_dict.items():
-            true = vals['y']
+            true = vals["y"]
             preds = preds_dict[key]
 
             output_dict[key] = np.sqrt(mean_squared_error(true, preds)).item()
@@ -126,27 +130,34 @@ class ModelBase:
             total_preds.append(preds)
             total_true.append(true)
 
-        output_dict['total'] = np.sqrt(
-            mean_squared_error(np.concatenate(total_true),
-                               np.concatenate(total_preds))
+        output_dict["total"] = np.sqrt(
+            mean_squared_error(np.concatenate(total_true), np.concatenate(total_preds))
         ).item()
 
         print(f'RMSE: {output_dict["total"]}')
 
         if save_results:
-            with (self.model_dir / 'results.json').open('w') as outfile:
+            with (self.model_dir / "results.json").open("w") as outfile:
                 json.dump(output_dict, outfile)
 
         if save_preds:
             for key, val in test_arrays_dict.items():
-                latlons = cast(np.ndarray, val['latlons'])
+                latlons = cast(np.ndarray, val["latlons"])
                 preds = preds_dict[key]
 
                 if len(preds.shape) > 1:
                     preds = preds.squeeze(-1)
 
-                preds_xr = pd.DataFrame(data={
-                    'preds': preds, 'lat': latlons[:, 0],
-                    'lon': latlons[:, 1]}).set_index(['lat', 'lon']).to_xarray()
+                preds_xr = (
+                    pd.DataFrame(
+                        data={
+                            "preds": preds,
+                            "lat": latlons[:, 0],
+                            "lon": latlons[:, 1],
+                        }
+                    )
+                    .set_index(["lat", "lon"])
+                    .to_xarray()
+                )
 
-                preds_xr.to_netcdf(self.model_dir / f'preds_{key}.nc')
+                preds_xr.to_netcdf(self.model_dir / f"preds_{key}.nc")

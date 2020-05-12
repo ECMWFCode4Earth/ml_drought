@@ -2,10 +2,7 @@ import xarray as xr
 import numpy as np
 
 from .base import BaseIndices
-from .utils import (
-    rolling_cumsum,
-    apply_over_period
-)
+from .utils import rolling_cumsum, apply_over_period
 
 
 class DecileIndex(BaseIndices):
@@ -44,11 +41,13 @@ class DecileIndex(BaseIndices):
     White, D.H. and B. O'Meagher. 1995. Coping with exceptional circumstances:
      Droughts in Australia. Drought Network News 7:13–17.
     """
-    name = 'decile_index'
+
+    name = "decile_index"
 
     @staticmethod
-    def bin_to_quintiles(da: xr.DataArray,
-                         new_variable_name: str = 'quintile') -> xr.Dataset:
+    def bin_to_quintiles(
+        da: xr.DataArray, new_variable_name: str = "quintile"
+    ) -> xr.Dataset:
         """use the numpy `np.digitize` function to bin the
         variables to quintile labels
         https://stackoverflow.com/a/56514582/9940782
@@ -71,43 +70,38 @@ class DecileIndex(BaseIndices):
              [(0, 20) (20,40) (40,60) (60,80) (80,100)]
         """
         # calculate the quintiles using `np.digitize`
-        bins = [0.0, 20., 40., 60., 80.]
+        bins = [0.0, 20.0, 40.0, 60.0, 80.0]
         result = xr.apply_ufunc(np.digitize, da, bins)
         result = result.rename(new_variable_name)
         return result
 
     @staticmethod
-    def rank_norm(ds, dim='time'):
+    def rank_norm(ds, dim="time"):
         return (ds.rank(dim=dim) - 1) / (ds.sizes[dim] - 1) * 100
 
-    def fit(self, variable: str,
-            time_period: str = 'month',
-            rolling_window: int = 3,) -> None:
+    def fit(
+        self, variable: str, time_period: str = "month", rolling_window: int = 3
+    ) -> None:
         print("Fitting Decile Index")
         # 1. calculate a cumsum over `rolling_window` timesteps
         ds_window = rolling_cumsum(self.ds, rolling_window)
 
         # 2. calculate the normalised rank (of each month) for the variable
-        out_variable = 'rank_norm'
+        out_variable = "rank_norm"
         normalised_rank = apply_over_period(
-            ds_window, self.rank_norm, variable,
+            ds_window,
+            self.rank_norm,
+            variable,
             out_variable=out_variable,
             time_str=time_period,
         )
-        ds_window = (
-            ds_window
-            .merge(normalised_rank.drop('month'))
-        )
+        ds_window = ds_window.merge(normalised_rank.drop("month"))
 
         # bin the normalised_rank into quintiles
-        new_variable_name = 'DecileIndex'
-        quintile = self.bin_to_quintiles(
-            ds_window[variable], new_variable_name
-        )
-        ds_window = (
-            ds_window
-            .merge(quintile.to_dataset(name='quintile'))
-            .rename({variable: f'{variable}_cumsum'})
+        new_variable_name = "DecileIndex"
+        quintile = self.bin_to_quintiles(ds_window[variable], new_variable_name)
+        ds_window = ds_window.merge(quintile.to_dataset(name="quintile")).rename(
+            {variable: f"{variable}_cumsum"}
         )
 
         self.index = ds_window
