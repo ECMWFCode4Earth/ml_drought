@@ -159,8 +159,6 @@ class TestESACCIPreprocessor:
             lats.max() <= kenya.latmax
         ), "Latitudes not correctly subset"
 
-        assert out_data.lc_class.values.shape == (20, 20)
-
         if cleanup:
             assert (
                 not processor.interim.exists()

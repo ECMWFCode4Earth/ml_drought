@@ -3,10 +3,11 @@ from pathlib import Path
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error
 import pickle
+import xarray as xr
 
 import shap
 
-from typing import cast, Dict, List, Union, Tuple, Optional
+from typing import cast, Dict, List, Tuple, Optional, Union
 
 from .base import ModelBase
 from .utils import chunk_array
@@ -29,7 +30,11 @@ class LinearRegression(ModelBase):
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
-        include_static: bool = True,
+        static: Optional[str] = "features",
+        predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
+        include_prev_y: bool = True,
+        normalize_y: bool = True,
     ) -> None:
         super().__init__(
             data_folder,
@@ -42,7 +47,11 @@ class LinearRegression(ModelBase):
             include_yearly_aggs,
             surrounding_pixels,
             ignore_vars,
-            include_static,
+            static,
+            predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
+            include_prev_y=include_prev_y,
+            normalize_y=normalize_y,
         )
 
         self.explainer: Optional[shap.LinearExplainer] = None
@@ -53,6 +62,7 @@ class LinearRegression(ModelBase):
         early_stopping: Optional[int] = None,
         batch_size: int = 256,
         val_split: float = 0.1,
+        initial_learning_rate: float = 1e-15,
     ) -> None:
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
@@ -67,49 +77,21 @@ class LinearRegression(ModelBase):
             )
             train_mask, val_mask = train_val_mask(len_mask, val_split)
 
-            train_dataloader = DataLoader(
-                data_path=self.data_path,
-                batch_file_size=self.batch_size,
-                experiment=self.experiment,
-                shuffle_data=True,
-                mode="train",
-                pred_months=self.pred_months,
-                mask=train_mask,
-                ignore_vars=self.ignore_vars,
-                monthly_aggs=self.include_monthly_aggs,
-                surrounding_pixels=self.surrounding_pixels,
-                static=self.include_static,
+            train_dataloader = self.get_dataloader(
+                mode="train", mask=train_mask, shuffle_data=True
+            )
+            val_dataloader = self.get_dataloader(
+                mode="train", mask=val_mask, shuffle_data=False
             )
 
-            val_dataloader = DataLoader(
-                data_path=self.data_path,
-                batch_file_size=self.batch_size,
-                experiment=self.experiment,
-                shuffle_data=False,
-                mode="train",
-                pred_months=self.pred_months,
-                mask=val_mask,
-                ignore_vars=self.ignore_vars,
-                monthly_aggs=self.include_monthly_aggs,
-                surrounding_pixels=self.surrounding_pixels,
-                static=self.include_static,
-            )
             batches_without_improvement = 0
             best_val_score = np.inf
         else:
-            train_dataloader = DataLoader(
-                data_path=self.data_path,
-                experiment=self.experiment,
-                batch_file_size=self.batch_size,
-                pred_months=self.pred_months,
-                shuffle_data=True,
-                mode="train",
-                ignore_vars=self.ignore_vars,
-                monthly_aggs=self.include_monthly_aggs,
-                surrounding_pixels=self.surrounding_pixels,
-                static=self.include_static,
-            )
-        self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
+            train_dataloader = self.get_dataloader(mode="train", shuffle_data=True)
+
+        self.model: linear_model.SGDRegressor = linear_model.SGDRegressor(
+            eta0=initial_learning_rate
+        )
 
         for epoch in range(num_epochs):
             train_rmse = []
@@ -117,6 +99,9 @@ class LinearRegression(ModelBase):
                 for batch_x, batch_y in chunk_array(x, y, batch_size, shuffle=True):
                     batch_y = cast(np.ndarray, batch_y)
                     x_in = self._concatenate_data(batch_x)
+
+                    if x_in.shape[0] == 0:
+                        pass
 
                     # fit the model
                     self.model.partial_fit(x_in, batch_y.ravel())
@@ -150,28 +135,38 @@ class LinearRegression(ModelBase):
                         self.model.intercept_ = best_intercept
                         return None
 
-    def explain(self, data: TrainData) -> Tuple[np.ndarray, ...]:
+    def explain(
+        self, x: Optional[TrainData] = None, save_shap_values: bool = True
+    ) -> np.ndarray:
 
         assert self.model is not None, "Model must be trained!"
 
         if self.explainer is None:
             mean = self._calculate_big_mean()
-            self.explainer: shap.LinearExplainer = shap.LinearExplainer(
+            self.explainer: shap.LinearExplainer = shap.LinearExplainer(  # type: ignore
                 self.model, (mean, None), feature_dependence="independent"
             )
 
-        x = data.historical
-        batch, timesteps, dims = x.shape[0], x.shape[1], x.shape[2]
-        reshaped_x = self._concatenate_data(data)
+        if x is None:
+            test_arrays_loader = self.get_dataloader(
+                mode="test", batch_file_size=1, shuffle_data=False
+            )
 
+            _, val = list(next(iter(test_arrays_loader)).items())[0]
+            x = val.x
+
+        reshaped_x = self._concatenate_data(x)
         explanations = self.explainer.shap_values(reshaped_x)
 
-        historical = explanations[:, : timesteps * dims]
-        additional = explanations[:, timesteps * dims :]
+        if save_shap_values:
+            analysis_folder = self.model_dir / "analysis"
+            if not analysis_folder.exists():
+                analysis_folder.mkdir()
 
-        # TODO: properly split the additional arrays
+            np.save(analysis_folder / f"shap_values.npy", explanations)
+            np.save(analysis_folder / f"input.npy", reshaped_x)
 
-        return historical.reshape(batch, timesteps, dims), additional
+        return explanations
 
     def save_model(self) -> None:
 
@@ -187,30 +182,22 @@ class LinearRegression(ModelBase):
             "ignore_vars": self.ignore_vars,
             "include_monthly_aggs": self.include_monthly_aggs,
             "include_yearly_aggs": self.include_yearly_aggs,
-            "include_static": self.include_static,
+            "static": self.static,
+            "spatial_mask": self.spatial_mask,
+            "include_prev_y": self.include_prev_y,
+            "normalize_y": self.normalize_y,
         }
 
         with (self.model_dir / "model.pkl").open("wb") as f:
             pickle.dump(model_data, f)
 
     def load(self, coef: np.ndarray, intercept: np.ndarray) -> None:
-        self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()
+        self.model: linear_model.SGDRegressor = linear_model.SGDRegressor()  # type: ignore
         self.model.coef_ = coef
         self.model.intercept_ = intercept
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
-        test_arrays_loader = DataLoader(
-            data_path=self.data_path,
-            batch_file_size=self.batch_size,
-            experiment=self.experiment,
-            shuffle_data=False,
-            mode="test",
-            pred_months=self.pred_months,
-            surrounding_pixels=self.surrounding_pixels,
-            ignore_vars=self.ignore_vars,
-            monthly_aggs=self.include_monthly_aggs,
-            static=self.include_static,
-        )
+        test_arrays_loader = self.get_dataloader(mode="test", shuffle_data=False)
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
@@ -222,7 +209,20 @@ class LinearRegression(ModelBase):
                 x = self._concatenate_data(val.x)
                 preds = self.model.predict(x)
                 preds_dict[key] = preds
-                test_arrays_dict[key] = {"y": val.y, "latlons": val.latlons}
+                test_arrays_dict[key] = {
+                    "y": val.y,
+                    "latlons": val.latlons,
+                    "time": val.target_time,
+                    "y_var": val.y_var,
+                }
+                if self.predict_delta:
+                    assert val.historical_target.shape[0] == val.y.shape[0], (
+                        "Expect"
+                        f"the shape of the y ({val.y.shape})"
+                        f" and historical_target ({val.historical_target.shape})"
+                        " to be the same!"
+                    )
+                    test_arrays_dict[key]["historical_target"] = val.historical_target
 
         return test_arrays_dict, preds_dict
 
@@ -233,70 +233,16 @@ class LinearRegression(ModelBase):
         since it wouldn't fit in memory either
         """
         print("Calculating the mean of the training data")
-        train_dataloader = DataLoader(
-            data_path=self.data_path,
-            batch_file_size=1,
-            pred_months=self.pred_months,
-            shuffle_data=False,
-            mode="train",
-            surrounding_pixels=self.surrounding_pixels,
-            ignore_vars=self.ignore_vars,
-            monthly_aggs=self.include_monthly_aggs,
-            static=self.include_static,
+        train_dataloader = self.get_dataloader(
+            mode="train", batch_file_size=1, shuffle_data=False
         )
 
         means, sizes = [], []
         for x, _ in train_dataloader:
-            # first, flatten x
-            x_in = x[0].reshape(x[0].shape[0], x[0].shape[1] * x[0].shape[2])
-            if self.include_pred_month:
-                pred_months = x[1]
-                # one hot encoding, should be num_classes + 1, but
-                # for us its + 2, since 0 is not a class either
-                pred_months_onehot = np.eye(14)[pred_months][:, 1:-1]
-                x_in = np.concatenate((x_in, pred_months_onehot), axis=-1)
-            if self.experiment == "nowcast":
-                current = x[3]
-                x_in = np.concatenate((x_in, current), axis=-1)
+            x_in = self._concatenate_data(x)
             sizes.append(x_in.shape[0])
             means.append(x_in.mean(axis=0))
 
         total_size = sum(sizes)
         weighted_means = [mean * size / total_size for mean, size in zip(means, sizes)]
         return sum(weighted_means)
-
-    def _concatenate_data(
-        self, x: Union[Tuple[Optional[np.ndarray], ...], TrainData]
-    ) -> np.ndarray:
-
-        if type(x) is tuple:
-            x_his, x_pm, x_latlons, x_cur, x_ym, x_static = x  # type: ignore
-        elif type(x) == TrainData:
-            x_his, x_pm, x_latlons = (
-                x.historical,
-                x.pred_months,
-                x.latlons,
-            )  # type: ignore
-            x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
-            x_static = x.static  # type: ignore
-
-        assert (
-            x_his is not None
-        ), "x[0] should be historical data, and therefore should not be None"
-        x_in = x_his.reshape(x_his.shape[0], x_his.shape[1] * x_his.shape[2])
-
-        if self.include_pred_month:
-            # one hot encoding, should be num_classes + 1, but
-            # for us its + 2, since 0 is not a class either
-            pred_months_onehot = np.eye(14)[x_pm][:, 1:-1]
-            x_in = np.concatenate((x_in, pred_months_onehot), axis=-1)
-        if self.include_latlons:
-            x_in = np.concatenate((x_in, x_latlons), axis=-1)
-        if self.experiment == "nowcast":
-            x_in = np.concatenate((x_in, x_cur), axis=-1)
-        if self.include_yearly_aggs:
-            x_in = np.concatenate((x_in, x_ym), axis=-1)
-        if self.include_static:
-            x_in = np.concatenate((x_in, x_static), axis=-1)
-
-        return x_in

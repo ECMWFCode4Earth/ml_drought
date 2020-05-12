@@ -40,10 +40,8 @@ class SRTMExporter(BaseExporter):
 
     def _tif_to_nc(self, tif_file: Path, nc_file: Path) -> None:
         ds = gdal.Open(tif_file.resolve().as_posix())  # type: ignore
-        _ = gdal.Translate(
-            format="NetCDF",
-            srcDS=ds,  # type: ignore
-            destName=nc_file.resolve().as_posix(),
+        _ = gdal.Translate(  # type: ignore
+            format="NetCDF", srcDS=ds, destName=nc_file.resolve().as_posix()
         )
 
     def export(
@@ -75,8 +73,8 @@ class SRTMExporter(BaseExporter):
         if not output_tif.exists():
             print(f"Downloading tiles. Saving as tif to {output_tif}")
             try:
-                elevation.clip(
-                    bounds=self._region_to_tuple(region),  # type: ignore
+                elevation.clip(  # type: ignore
+                    bounds=self._region_to_tuple(region),
                     output=output_tif.resolve().as_posix(),
                     product=product,
                     max_download_tiles=max_download_tiles,

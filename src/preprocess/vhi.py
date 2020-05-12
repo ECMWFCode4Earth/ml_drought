@@ -29,6 +29,21 @@ class VHIPreprocessor(BasePreProcessor):
 
     dataset = "vhi"
 
+    raw_height: int = 3616
+    raw_width: int = 10000
+
+    def __init__(self, data_folder: Path = Path("data"), var: str = "VHI") -> None:
+        """
+        var: str
+            The variable to output. This will be output to its own
+            folder, so it is safe to run this preprocessor for each var
+            (the data won't be overwritten). Must be one of {'VCI', 'VHI', 'TCI'}
+        """
+        assert var in ["VCI", "VHI", "TCI"]
+        self.data_var = var
+
+        super().__init__(data_folder, var)
+
     def _preprocess(
         self,
         netcdf_filepath: str,
@@ -68,7 +83,9 @@ class VHIPreprocessor(BasePreProcessor):
         longitudes, latitudes = self.create_lat_lon_vectors(ds)
 
         # 5. create new dataset with these dimensions
-        new_ds = self.create_new_dataset(ds, longitudes, latitudes, timestamp)
+        new_ds = self.create_new_dataset(
+            ds, longitudes, latitudes, timestamp, [self.data_var]
+        )
 
         # 6. chop out EastAfrica
         if subset_str is not None:
@@ -115,7 +132,7 @@ class VHIPreprocessor(BasePreProcessor):
         self,
         subset_str: Optional[str] = "kenya",
         regrid: Optional[Path] = None,
-        parallel: bool = True,
+        n_parallel_processes: int = 1,
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
         cleanup: bool = True,
@@ -123,7 +140,7 @@ class VHIPreprocessor(BasePreProcessor):
         """ Preprocess all of the NOAA VHI .nc files to produce
         one subset file with consistent lat/lon and timestamps.
 
-        Run in parallel
+        Run in parallel if n_parallel_processes > 1
 
         Arguments
         ----------
@@ -137,8 +154,8 @@ class VHIPreprocessor(BasePreProcessor):
         upsampling: bool = False
             If true, tells the class the time-sampling will be upsampling. In this case,
             nearest instead of mean is used for the resampling
-        parallel: bool = True
-            If true, run the preprocessing in parallel
+        n_parallel_processes: int = 1
+            If > 1, run the preprocessing in n_parallel_processes
         cleanup: bool = True
             If true, delete interim files created by the class
         """
@@ -152,8 +169,9 @@ class VHIPreprocessor(BasePreProcessor):
             f"Reading data from {self.raw_folder}. \
             Writing to {self.interim}"
         )
-        if parallel:
-            pool = multiprocessing.Pool(processes=100)
+        n_parallel_processes = max(n_parallel_processes, 1)
+        if n_parallel_processes > 1:
+            pool = multiprocessing.Pool(processes=n_parallel_processes)
             outputs = pool.map(
                 partial(self._preprocess_wrapper, subset_str=subset_str, regrid=regrid),
                 nc_files,
@@ -254,14 +272,13 @@ class VHIPreprocessor(BasePreProcessor):
         date = pd.to_datetime(atime)
         return date
 
-    @staticmethod
-    def create_lat_lon_vectors(ds: Dataset) -> Tuple[Any, Any]:
+    def create_lat_lon_vectors(self, ds: Dataset) -> Tuple[Any, Any]:
         """ read the `ds.attrs` and create new latitude, longitude vectors """
-        assert ds.WIDTH.size == 10000, (
+        assert ds.WIDTH.size == self.raw_width, (
             f"We are hardcoding the lat/lon values so we need to ensure that all dims "
             f"are the same. WIDTH != 10000, == {ds.WIDTH.size}"
         )
-        assert ds.HEIGHT.size == 3616, (
+        assert ds.HEIGHT.size == self.raw_height, (
             f"We are hardcoding the lat/lon values so we need to ensure that all dims "
             f"are the same. HEIGHT != 3616, == {ds.HEIGHT.size}"
         )
@@ -327,18 +344,17 @@ class VHIPreprocessor(BasePreProcessor):
         longitudes: np.ndarray,
         latitudes: np.ndarray,
         timestamp: Timestamp,
-        all_vars: bool = False,
+        var_selection: Optional[List[str]] = None,
     ) -> Dataset:
-        """ Create a new dataset from ALL the variables in `ds` with the dims"""
+        """ Create a new dataset from ALL the variables in `ds` with the dims.
+            If no vars are selected, all are used"""
         # initialise the list
         da_list = []
 
         # for each variable create a new data array and append to list
-        if all_vars:
-            variables = list(ds.variables.keys())
-        else:
-            variables = ["VHI"]
-        for variable in variables:
+        if var_selection is None:
+            var_selection = list(ds.variables.keys())
+        for variable in var_selection:
             da_list.append(
                 self.create_new_dataarray(
                     ds, variable, longitudes, latitudes, timestamp

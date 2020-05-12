@@ -1,6 +1,5 @@
 from pathlib import Path
 import warnings
-import itertools
 import re
 from pprint import pprint
 import multiprocessing
@@ -28,6 +27,37 @@ class CDSExporter(BaseExporter):
         self.client = cdsapi.Client()  # type: ignore
 
     @staticmethod
+    def _correct_input(value, key):
+        if type(value) is str:
+
+            # check the string is correctly formatted
+            if key == "time":
+                assert re.match(
+                    r"\d{2}:0{2}", value
+                ), f"Expected time string {value} to be in hour:minute format, \
+                    e.g. 01:00. Minutes MUST be `00`"
+            return value
+        else:
+            if key == "year":
+                return str(value)
+            elif key in {"month", "day"}:
+                return "{:02d}".format(value)
+            elif key == "time":
+                return "{:02d}:00".format(value)
+        return str(value)
+
+    @staticmethod
+    def _check_iterable(value, key):
+        if (key == "time") and (type(value) is str):
+            return [value]
+        try:
+            iter(value)
+        except TypeError as te:
+            warnings.warn(f"{key}: {te}. Converting to list")
+            value = [value]
+        return value
+
+    @staticmethod
     def create_area(region: Region) -> str:
         """Create an area string for the CDS API from a Region object
 
@@ -46,6 +76,40 @@ class CDSExporter(BaseExporter):
         x = [region.latmax, region.lonmin, region.latmin, region.lonmax]
 
         return "/".join(["{:.3f}".format(x) for x in x])
+
+    @staticmethod
+    def get_default_era5_times(granularity: str = "hourly", land: bool = False) -> Dict:
+        """Returns the era5 selection request arguments
+        for the hourly or monthly data
+
+        Parameters
+        ----------
+        granularity: str, {'monthly', 'hourly'}, default: 'hourly'
+            The granularity of data being pulled
+
+        land: bool = False
+            ERA5 or ERA5 land
+            Currently ERA5 Land only goes back to 2001
+
+        Returns
+        ----------
+        selection_dict: dict
+            A dictionary with all the time-related arguments of the
+            selection dict filled out
+        """
+        months = ["{:02d}".format(month) for month in range(1, 12 + 1)]
+        days = ["{:02d}".format(day) for day in range(1, 31 + 1)]
+        times = ["{:02d}:00".format(hour) for hour in range(24)]
+
+        if land:
+            years = [str(year) for year in range(2001, 2019 + 1)]
+        else:  # era5-land
+            years = [str(year) for year in range(1979, 2019 + 1)]
+
+        selection_dict = {"year": years, "month": months, "time": times}
+        if granularity == "hourly":
+            selection_dict["day"] = days
+        return selection_dict
 
     @staticmethod
     def _filename_from_selection_request(time_array: List, time: str) -> str:
@@ -203,37 +267,6 @@ class ERA5Exporter(CDSExporter):
 
         return dataset
 
-    @staticmethod
-    def _correct_input(value, key):
-        if type(value) is str:
-
-            # check the string is correctly formatted
-            if key == "time":
-                assert re.match(
-                    r"\d{2}:0{2}", value
-                ), f"Expected time string {value} to be in hour:minute format, \
-                    e.g. 01:00. Minutes MUST be `00`"
-            return value
-        else:
-            if key == "year":
-                return str(value)
-            elif key in {"month", "day"}:
-                return "{:02d}".format(value)
-            elif key == "time":
-                return "{:02d}:00".format(value)
-        return str(value)
-
-    @staticmethod
-    def _check_iterable(value, key):
-        if (key == "time") and (type(value) is str):
-            return [value]
-        try:
-            iter(value)
-        except TypeError as te:
-            warnings.warn(f"{key}: {te}. Converting to list")
-            value = [value]
-        return value
-
     def create_selection_request(
         self,
         variable: str,
@@ -249,7 +282,7 @@ class ERA5Exporter(CDSExporter):
             "format": "netcdf",
             "variable": [variable],
         }
-        for key, val in self.get_era5_times(granularity).items():
+        for key, val in self.get_default_era5_times(granularity).items():
             processed_selection_request[key] = val
 
         # by default, we investigate Kenya
@@ -279,7 +312,7 @@ class ERA5Exporter(CDSExporter):
         show_api_request: bool = True,
         selection_request: Optional[Dict] = None,
         break_up: bool = False,
-        n_parallel_requests: int = 3,
+        n_parallel_requests: int = 1,
     ) -> List[Path]:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
@@ -324,19 +357,15 @@ class ERA5Exporter(CDSExporter):
         if n_parallel_requests < 1:
             n_parallel_requests = 1
 
-        # break up by month
+        # break up by year
         if break_up:
             if n_parallel_requests > 1:  # Run in parallel
                 p = multiprocessing.Pool(int(n_parallel_requests))
 
             output_paths = []
-            for year, month in itertools.product(
-                processed_selection_request["year"],
-                processed_selection_request["month"],
-            ):
+            for year in processed_selection_request["year"]:
                 updated_request = processed_selection_request.copy()
                 updated_request["year"] = [year]
-                updated_request["month"] = [month]
 
                 if n_parallel_requests > 1:  # Run in parallel
                     # multiprocessing of the paths

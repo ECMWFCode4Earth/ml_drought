@@ -19,6 +19,7 @@ data/*.zip*
 *.nc
 *.grib
 *.idx
+*.pkl
 scripts/*.png
 scripts/variables.txt
 
@@ -33,8 +34,12 @@ data/models/*
 Code
 scripts/variables*.txt
 
-# coverage
-.coverage
-.coverage.*
-.vscode/
 switch_data_dirs.sh
+
+# pytest coverage files
+.coverage*
+
+# vscode settings
+.vscode
+# vscode options
+settings.json

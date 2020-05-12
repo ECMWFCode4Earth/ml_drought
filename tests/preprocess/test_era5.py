@@ -1,9 +1,12 @@
 import xarray as xr
 import numpy as np
-from datetime import datetime
-from pathlib import Path
 
-from src.preprocess import ERA5MonthlyMeanPreprocessor
+# from datetime import datetime
+import pandas as pd
+from pathlib import Path
+import pytest
+
+from src.preprocess import ERA5MonthlyMeanPreprocessor, ERA5HourlyPreprocessor
 from src.utils import get_kenya
 
 from ..utils import _make_dataset
@@ -12,7 +15,15 @@ from ..utils import _make_dataset
 class TestPlanetOSPreprocessor:
     @staticmethod
     def _make_era5_dataset(
-        size, lonmin=33.75, lonmax=42.25, latmin=6.0, latmax=-5.0, add_times=True
+        size,
+        lonmin=33.75,
+        lonmax=42.25,
+        latmin=6.0,
+        latmax=-5.0,
+        add_times=True,
+        monthly=True,
+        min_date="2019-01-01",
+        max_date="2019-03-01",
     ):
         # Same as make_chirps_dataset, except already truncated
         # since we can just download Kenya from the cds api
@@ -25,9 +36,15 @@ class TestPlanetOSPreprocessor:
         coords = {"latitude": latitudes, "longitude": longitudes}
 
         if add_times:
-            size = (2, size[0], size[1])
             dims.insert(0, "time")
-            coords["time"] = [datetime(2019, 1, 1), datetime(2019, 1, 2)]
+
+            if monthly:
+                times = pd.date_range(min_date, max_date, freq="M")
+            else:
+                times = pd.date_range(min_date, max_date, freq="H")[:10]
+
+            size = (len(times), size[0], size[1])
+            coords["time"] = times
         t2m = np.random.randint(100, size=size)
 
         return xr.Dataset({"t2m": (dims, t2m)}, coords=coords)
@@ -44,47 +61,64 @@ class TestPlanetOSPreprocessor:
             tmp_path / "interim/reanalysis-era5-single-levels-" "monthly-means_interim"
         ).exists()
 
-    @staticmethod
-    def test_make_filename():
-        path = Path(
-            "reanalysis-era5-single-levels-monthly-means"
-            "/2m_temperature/1979_2019/01_12.nc"
-        )
+    def test_init_hourly(self, tmp_path):
 
-        name = ERA5MonthlyMeanPreprocessor.create_filename(path, "kenya")
+        ERA5HourlyPreprocessor(tmp_path)
+
+        assert (
+            tmp_path / "interim/reanalysis-era5-single-levels_preprocessed"
+        ).exists()
+        assert (tmp_path / "interim/reanalysis-era5-single-levels_interim").exists()
+
+    @staticmethod
+    @pytest.mark.parametrize("granularity", [("hourly"), ("monthly")])
+    def test_make_filename(tmp_path, granularity):
+        if granularity == "monthly":
+            basename = "reanalysis-era5-single-levels-monthly-means"
+            processor = ERA5MonthlyMeanPreprocessor(tmp_path)
+        elif granularity == "hourly":
+            basename = "reanalysis-era5-single-levels"
+            processor = ERA5HourlyPreprocessor(tmp_path)
+
+        path = Path(basename + "/2m_temperature/1979_2019/01_12.nc")
+
+        name = processor.create_filename(path, "kenya")
         expected_name = "1979_2019_01_12_2m_temperature_kenya.nc"
         assert name == expected_name, f"{name} generated, expected {expected_name}"
 
     @staticmethod
-    def test_get_filenames(tmp_path):
+    @pytest.mark.parametrize("granularity", [("hourly"), ("monthly")])
+    def test_get_filenames(tmp_path, granularity):
 
-        (
-            tmp_path / "raw/reanalysis-era5-single-levels-monthly-means/"
-            "2m_temperature/1979_2019"
-        ).mkdir(parents=True)
+        if granularity == "monthly":
+            basename = "reanalysis-era5-single-levels-monthly-means"
+            processor = ERA5MonthlyMeanPreprocessor(tmp_path)
+        elif granularity == "hourly":
+            basename = "reanalysis-era5-single-levels"
+            processor = ERA5HourlyPreprocessor(tmp_path)
+        (tmp_path / f"raw/{basename}/" "2m_temperature/1979_2019").mkdir(parents=True)
 
-        test_file = (
-            tmp_path / "raw/reanalysis-era5-single-levels-"
-            "monthly-means/2m_temperature/1979_2019.01_12.nc"
-        )
+        test_file = tmp_path / f"raw/{basename}/" "/2m_temperature/1979_2019.01_12.nc"
         test_file.touch()
-
-        processor = ERA5MonthlyMeanPreprocessor(tmp_path)
 
         files = processor.get_filepaths()
         assert files[0] == test_file, f"Expected {test_file} to be retrieved"
 
-    def test_preprocess(self, tmp_path):
+    @pytest.mark.parametrize("granularity", [("hourly"), ("monthly")])
+    def test_preprocess(self, tmp_path, granularity):
+        if granularity == "monthly":
+            basename = "reanalysis-era5-single-levels-monthly-means"
+            processor = ERA5MonthlyMeanPreprocessor(tmp_path)
+        elif granularity == "hourly":
+            basename = "reanalysis-era5-single-levels"
+            processor = ERA5HourlyPreprocessor(tmp_path)
 
-        (
-            tmp_path / "raw/reanalysis-era5-single-levels-monthly-means/"
-            "2m_temperature/1979_2019"
-        ).mkdir(parents=True)
-        data_path = (
-            tmp_path / "raw/reanalysis-era5-single-levels-monthly-means/"
-            "2m_temperature/1979_2019/01_12.nc"
-        )
-        dataset = self._make_era5_dataset(size=(100, 100))
+        (tmp_path / f"raw/{basename}/" "2m_temperature/1979_2019").mkdir(parents=True)
+        data_path = tmp_path / f"raw/{basename}/" "2m_temperature/1979_2019/01_12.nc"
+        if granularity == "hourly":
+            dataset = self._make_era5_dataset(size=(100, 100), monthly=False)
+        else:
+            dataset = self._make_era5_dataset(size=(100, 100), monthly=True)
         dataset.to_netcdf(path=data_path)
 
         kenya = get_kenya()
@@ -99,13 +133,10 @@ class TestPlanetOSPreprocessor:
         regrid_path = tmp_path / "regridder.nc"
         regrid_dataset.to_netcdf(regrid_path)
 
-        processor = ERA5MonthlyMeanPreprocessor(tmp_path)
         processor.preprocess(subset_str="kenya", regrid=regrid_path, parallel=False)
 
         expected_out_path = (
-            tmp_path / "interim/reanalysis-era5-single-levels-monthly-"
-            "means_preprocessed/reanalysis-era5-single-levels-"
-            "monthly-means_kenya.nc"
+            tmp_path / f"interim/{basename}" "_preprocessed/data_kenya.nc"
         )
         assert (
             expected_out_path.exists()

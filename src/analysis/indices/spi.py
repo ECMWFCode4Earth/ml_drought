@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Optional, Tuple
 from enum import Enum
 
-import climate_indices
-from climate_indices import indices
-
 from .base import BaseIndices
+
+climate_indices = None
+indices = None
 
 
 class SPI(BaseIndices):
@@ -58,8 +58,18 @@ class SPI(BaseIndices):
     resample = True
     resample_str = "month"
 
-    def __init__(self, data_path: Path) -> None:
-        super().__init__(data_path, resample_str=self.resample_str)
+    def __init__(
+        self, file_path: Optional[Path] = None, ds: Optional[xr.Dataset] = None
+    ) -> None:
+        super().__init__(file_path, ds=ds, resample_str=self.resample_str)
+
+        global indices
+        global climate_indices
+
+        if climate_indices is None:
+            import climate_indices
+        if indices is None:
+            from climate_indices import indices
 
     @staticmethod
     def stack_pixels(da: xr.DataArray) -> xr.DataArray:
@@ -67,9 +77,9 @@ class SPI(BaseIndices):
 
     def init_distribution(self, distribution: str) -> Enum:
         if distribution == "gamma":
-            dist = climate_indices.indices.Distribution.gamma
+            dist = climate_indices.indices.Distribution.gamma  # type: ignore
         elif distribution == "pearson":
-            dist = climate_indices.indices.Distribution.pearson
+            dist = climate_indices.indices.Distribution.pearson  # type: ignore
         else:
             assert False, f"{distribution} is not a valid distribution fit for SPI"
 
@@ -124,9 +134,9 @@ class SPI(BaseIndices):
             periodicity = "gamma"
 
         if periodicity == "monthly":
-            period = climate_indices.compute.Periodicity.monthly
+            period = climate_indices.compute.Periodicity.monthly  # type: ignore
         elif periodicity == "daily":
-            period = climate_indices.compute.Periodicity.daily
+            period = climate_indices.compute.Periodicity.daily  # type: ignore
         else:
             assert False, f"{periodicity} is not a valid periodicity for SPI"
 
@@ -147,9 +157,10 @@ class SPI(BaseIndices):
         # distribution must be a climate_indices enum type
         dist = self.init_distribution(distribution)
         self.data_start_year = self.init_start_year(data_start_year)
-        self.calibration_year_initial, self.calibration_year_final = self.init_calib_year(
-            calibration_year_initial, calibration_year_final
-        )
+        (
+            self.calibration_year_initial,
+            self.calibration_year_final,
+        ) = self.init_calib_year(calibration_year_initial, calibration_year_final)
         # period must be a climate_indices enum type
         period = self.init_periodicity(periodicity)
 
@@ -236,16 +247,34 @@ class SPI(BaseIndices):
             "---------------\n",
         )
 
-        index = xr.apply_ufunc(
-            indices.spi,
-            da,
-            self.scale,
-            dist,
-            self.data_start_year,
-            self.calibration_year_initial,
-            self.calibration_year_final,
-            period,
-        )
+        try:
+            index = xr.apply_ufunc(  # type: ignore
+                indices.spi,  # type: ignore
+                da,
+                self.scale,
+                dist,
+                self.data_start_year,
+                self.calibration_year_initial,
+                self.calibration_year_final,
+                period,
+            )
+        except ValueError as E:
+            print("** ValueError: ")
+            print(E)
+            print("\the current fix is rather nasty edit of xarray")
+            print(
+                "the indices.spi computation sometimes collapses the dimensionality"
+                " of the groupby object. "
+                "Therefore added some code to L578 "
+                "~/miniconda3/envs/crop/lib/python3.7/site-packages/xarray/core/computation.py)"
+                "\n> # TODO: TOMMY ADDED\n"
+                "\nif (data.ndim == 1) and (len(dims) == 2):"
+                "\n\tdata = np.expand_dims(data, -1)"
+                "\n"
+            )
+            print(
+                "I am pretty sure that this is probably something that we need to fix from the indices code"
+            )
 
         self.index = index.unstack("point").to_dataset(name=f"SPI{scale}")
 

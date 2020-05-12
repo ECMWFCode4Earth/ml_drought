@@ -40,6 +40,10 @@ def get_east_africa() -> Region:
     return Region(name="east_africa", lonmin=21, lonmax=51.8, latmin=-11, latmax=23)
 
 
+def get_africa() -> Region:
+    return Region(name="africa", lonmin=-31.6, lonmax=51.8, latmin=-35.8, latmax=37.2)
+
+
 def minus_months(
     cur_year: int, cur_month: int, diff_months: int, to_endmonth_datetime: bool = True
 ) -> Tuple[int, int, Optional[date]]:
@@ -67,6 +71,7 @@ def minus_months(
 
 def get_ds_mask(ds: xr.Dataset) -> xr.Dataset:
     """ Return a boolean Dataset which is a mask of the first timestep in `ds`
+
     NOTE:
         assumes that all of the null values from `ds` are valid null values (e.g.
         water bodies). Could also be invalid nulls due to poor data processing /
@@ -78,7 +83,9 @@ def get_ds_mask(ds: xr.Dataset) -> xr.Dataset:
     return mask
 
 
-def create_shape_aligned_climatology(ds, clim, variable, time_period):
+def create_shape_aligned_climatology(
+    ds: xr.Dataset, clim: xr.Dataset, variable: str, time_period: str
+):
     """match the time dimension of `clim` to the shape of `ds` so that can
     perform simple calculations / arithmetic on the values of clim
 
@@ -179,9 +186,14 @@ def drop_nans_and_flatten(dataArray: xr.DataArray) -> np.ndarray:
     return dataArray.values[~np.isnan(dataArray.values)]
 
 
+def _sort_lat_lons(da: xr.DataArray) -> xr.DataArray:
+    return da.sortby(["time", "lat", "lon"])
+
+
 # dictionary lookup of regions
 region_lookup = {
     "kenya": get_kenya(),
     "ethiopia": get_ethiopia(),
     "east_africa": get_east_africa(),
+    "africa": get_africa(),
 }

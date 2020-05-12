@@ -5,6 +5,9 @@ from .drought_severity_index import DroughtSeverityIndex
 from .china_z_index import ChinaZIndex
 from .decile_index import DecileIndex
 from .anomaly_index import AnomalyIndex
+from .moving_average import MovingAverage
+from .vegetation_deficit_index import VegetationDeficitIndex
+from .condition_index import ConditionIndex
 
 __all__ = [
     "SPI",
@@ -14,4 +17,7 @@ __all__ = [
     "ChinaZIndex",
     "DecileIndex",
     "AnomalyIndex",
+    "MovingAverage",
+    "VegetationDeficitIndex",
+    "ConditionIndex",
 ]

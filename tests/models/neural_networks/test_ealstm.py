@@ -1,9 +1,14 @@
-import numpy as np
 import pickle
 import pytest
+from copy import copy
+import numpy as np
 
-from src.models.neural_networks.ealstm import EALSTM
+import torch
+from torch import nn
+
+from src.models.neural_networks.ealstm import EALSTM, EALSTMCell, OrgEALSTMCell
 from src.models import EARecurrentNetwork
+from src.models.data import TrainData
 
 from tests.utils import _make_dataset
 
@@ -13,12 +18,15 @@ class TestEARecurrentNetwork:
 
         features_per_month = 5
         dense_features = [10]
+        input_dense_features = copy(dense_features)
         hidden_size = 128
         rnn_dropout = 0.25
         include_latlons = True
         include_pred_month = True
         include_yearly_aggs = True
         yearly_agg_size = 3
+        include_prev_y = True
+        normalize_y = False
 
         def mocktrain(self):
             self.model = EALSTM(
@@ -30,6 +38,7 @@ class TestEARecurrentNetwork:
                 include_pred_month,
                 experiment="one_month_forecast",
                 yearly_agg_size=yearly_agg_size,
+                include_prev_y=include_prev_y,
             )
             self.features_per_month = features_per_month
             self.yearly_agg_size = yearly_agg_size
@@ -44,16 +53,16 @@ class TestEARecurrentNetwork:
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
             include_yearly_aggs=include_yearly_aggs,
+            normalize_y=normalize_y,
         )
         model.train()
         model.save_model()
 
         assert (
-            tmp_path / "models/one_month_forecast/ealstm/model.pkl"
+            tmp_path / "models/one_month_forecast/ealstm/model.pt"
         ).exists(), f"Model not saved!"
 
-        with (model.model_dir / "model.pkl").open("rb") as f:
-            model_dict = pickle.load(f)
+        model_dict = torch.load(model.model_dir / "model.pt", map_location="cpu")
 
         for key, val in model_dict["model"]["state_dict"].items():
             assert (model.model.state_dict()[key] == val).all()
@@ -62,26 +71,33 @@ class TestEARecurrentNetwork:
         assert model_dict["model"]["yearly_agg_size"] == yearly_agg_size
         assert model_dict["hidden_size"] == hidden_size
         assert model_dict["rnn_dropout"] == rnn_dropout
-        assert model_dict["dense_features"] == dense_features
+        assert model_dict["dense_features"] == input_dense_features
         assert model_dict["include_pred_month"] == include_pred_month
         assert model_dict["include_latlons"] == include_latlons
         assert model_dict["include_yearly_aggs"] == include_yearly_aggs
         assert model_dict["experiment"] == "one_month_forecast"
+        assert model_dict["include_prev_y"] == include_prev_y
+        assert model_dict["normalize_y"] == normalize_y
 
-    @pytest.mark.parametrize("use_pred_months", [True, False])
-    def test_train(self, tmp_path, capsys, use_pred_months):
+    @pytest.mark.parametrize(
+        "use_pred_months,use_static_embedding,check_inversion",
+        [
+            (True, 10, False),
+            (False, None, False),
+            (True, 10, True),
+            (False, None, True),
+        ],
+    )
+    def test_train(
+        self, tmp_path, capsys, use_pred_months, use_static_embedding, check_inversion
+    ):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        test_features = tmp_path / "features/one_month_forecast/train/hello"
+        test_features = tmp_path / "features/one_month_forecast/train/1980_1"
         test_features.mkdir(parents=True)
 
-        norm_dict = {
-            "VHI": {
-                "mean": np.zeros(x.to_array().values.shape[:2]),
-                "std": np.ones(x.to_array().values.shape[:2]),
-            }
-        }
+        norm_dict = {"VHI": {"mean": 0, "std": 1}}
         with (tmp_path / "features/one_month_forecast/normalizing_dict.pkl").open(
             "wb"
         ) as f:
@@ -109,8 +125,10 @@ class TestEARecurrentNetwork:
             dense_features=dense_features,
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
+            static_embedding_size=use_static_embedding,
+            normalize_y=True,
         )
-        model.train()
+        model.train(check_inversion=check_inversion)
 
         captured = capsys.readouterr()
         expected_stdout = "Epoch 1, train smooth L1: 0."
@@ -118,23 +136,21 @@ class TestEARecurrentNetwork:
 
         assert type(model.model) == EALSTM, f"Model attribute not an EALSTM!"
 
-    @pytest.mark.parametrize("use_pred_months", [True, False])
-    def test_predict(self, tmp_path, use_pred_months):
+    @pytest.mark.parametrize(
+        "use_pred_months,predict_delta",
+        [(True, True), (False, True), (True, False), (False, False)],
+    )
+    def test_predict_and_explain(self, tmp_path, use_pred_months, predict_delta):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        train_features = tmp_path / "features/one_month_forecast/train/hello"
+        train_features = tmp_path / "features/one_month_forecast/train/1980_1"
         train_features.mkdir(parents=True)
 
-        test_features = tmp_path / "features/one_month_forecast/test/hello"
+        test_features = tmp_path / "features/one_month_forecast/test/1980_1"
         test_features.mkdir(parents=True)
 
-        norm_dict = {
-            "VHI": {
-                "mean": np.zeros(x.to_array().values.shape[:2]),
-                "std": np.ones(x.to_array().values.shape[:2]),
-            }
-        }
+        norm_dict = {"VHI": {"mean": 0.0, "std": 1.0}}
         with (tmp_path / "features/one_month_forecast/normalizing_dict.pkl").open(
             "wb"
         ) as f:
@@ -165,13 +181,93 @@ class TestEARecurrentNetwork:
             dense_features=dense_features,
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
+            predict_delta=predict_delta,
+            normalize_y=True,
         )
         model.train()
         test_arrays_dict, pred_dict = model.predict()
 
-        # the foldername "hello" is the only one which should be in the dictionaries
-        assert ("hello" in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1)
-        assert ("hello" in pred_dict.keys()) and (len(pred_dict) == 1)
+        # the foldername "1980_1" is the only one which should be in the dictionaries
+        assert ("1980_1" in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1)
+        assert ("1980_1" in pred_dict.keys()) and (len(pred_dict) == 1)
 
-        # _make_dataset with const=True returns all ones
-        assert (test_arrays_dict["hello"]["y"] == 1).all()
+        if not predict_delta:
+            # _make_dataset with const=True returns all ones
+            assert (test_arrays_dict["1980_1"]["y"] == 1).all()
+        else:
+            # _make_dataset with const=True & predict_delta
+            # returns a change of 0
+            assert (test_arrays_dict["1980_1"]["y"] == 0).all()
+
+        # test the Morris explanation works
+        test_dl = next(
+            iter(model.get_dataloader(mode="test", to_tensor=True, shuffle_data=False))
+        )
+
+        for key, val in test_dl.items():
+            output_m = model.explain(val.x, save_explanations=True, method="morris")
+            assert type(output_m) is TrainData
+            assert (model.model_dir / "analysis/morris_value_historical.npy").exists()
+
+            # TODO fix a bug in shap preventing this from passing
+            # output_s = model.explain(val.x, save_explanations=True, method="shap")
+            # assert type(output_s) is TrainData
+            # assert (model.model_dir / "analysis/shap_value_historical.npy").exists()
+
+
+class TestEALSTMCell:
+    @staticmethod
+    def test_ealstm(monkeypatch):
+        """
+        We implement our own unrolled RNN, so that it can be explained with
+        shap. This test makes sure it roughly mirrors the behaviour of the pytorch
+        LSTM.
+        """
+
+        batch_size, hidden_size, timesteps, dyn_input, static_input = 3, 5, 2, 6, 4
+
+        @staticmethod
+        def i_init(layer):
+            nn.init.constant_(layer.weight.data, val=1)
+
+        monkeypatch.setattr(EALSTMCell, "_reset_i", i_init)
+
+        def org_init(self):
+            """Initialize all learnable parameters of the LSTM"""
+            nn.init.constant_(self.weight_ih.data, val=1)
+            nn.init.constant_(self.weight_sh, val=1)
+
+            weight_hh_data = torch.eye(self.hidden_size)
+            weight_hh_data = weight_hh_data.repeat(1, 3)
+            self.weight_hh.data = weight_hh_data
+
+            nn.init.constant_(self.bias.data, val=0)
+            nn.init.constant_(self.bias_s.data, val=0)
+
+        monkeypatch.setattr(OrgEALSTMCell, "reset_parameters", org_init)
+
+        org_ealstm = OrgEALSTMCell(
+            input_size_dyn=dyn_input,
+            input_size_stat=static_input,
+            hidden_size=hidden_size,
+        )
+
+        our_ealstm = EALSTMCell(
+            input_size_dyn=dyn_input,
+            input_size_stat=static_input,
+            hidden_size=hidden_size,
+        )
+
+        static = torch.rand(batch_size, static_input)
+        dynamic = torch.rand(batch_size, timesteps, dyn_input)
+
+        with torch.no_grad():
+            org_hn, org_cn = org_ealstm(dynamic, static)
+            our_hn, our_cn = our_ealstm(dynamic, static)
+
+        assert np.isclose(
+            org_hn.numpy(), our_hn.numpy(), 0.01
+        ).all(), "Difference in hidden state"
+        assert np.isclose(
+            org_cn.numpy(), our_cn.numpy(), 0.01
+        ).all(), "Difference in cell state"

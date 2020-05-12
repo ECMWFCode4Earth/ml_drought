@@ -2,7 +2,7 @@ import xarray as xr
 import numpy as np
 from datetime import datetime
 
-from src.preprocess import CHIRPSPreprocesser
+from src.preprocess import CHIRPSPreprocessor
 from src.utils import get_kenya, get_ethiopia
 
 from ..utils import _make_dataset
@@ -15,7 +15,7 @@ class TestCHIRPSPreprocessor:
         test_file = "testy_test.nc"
         expected_output = "testy_test_kenya.nc"
 
-        filename = CHIRPSPreprocesser.create_filename(test_file, "kenya")
+        filename = CHIRPSPreprocessor.create_filename(test_file, "kenya")
         assert (
             filename == expected_output
         ), f"Expected output to be {expected_output}, got {filename}"
@@ -42,7 +42,7 @@ class TestCHIRPSPreprocessor:
 
     @staticmethod
     def test_directories_created(tmp_path):
-        v = CHIRPSPreprocesser(tmp_path)
+        v = CHIRPSPreprocessor(tmp_path)
 
         assert (
             tmp_path / v.preprocessed_folder / "chirps_preprocessed"
@@ -62,7 +62,7 @@ class TestCHIRPSPreprocessor:
         test_file = tmp_path / "raw/chirps/testy_test.nc"
         test_file.touch()
 
-        processor = CHIRPSPreprocesser(tmp_path)
+        processor = CHIRPSPreprocessor(tmp_path)
 
         files = processor.get_filepaths()
         assert files[0] == test_file, f"Expected {test_file} to be retrieved"
@@ -86,10 +86,10 @@ class TestCHIRPSPreprocessor:
         regrid_path = tmp_path / "regridder.nc"
         regrid_dataset.to_netcdf(regrid_path)
 
-        processor = CHIRPSPreprocesser(tmp_path)
+        processor = CHIRPSPreprocessor(tmp_path)
         processor.preprocess(subset_str="kenya", regrid=regrid_path, parallel=False)
 
-        expected_out_path = tmp_path / "interim/chirps_preprocessed/chirps_kenya.nc"
+        expected_out_path = tmp_path / "interim/chirps_preprocessed/data_kenya.nc"
         assert (
             expected_out_path.exists()
         ), f"Expected processed file to be saved to {expected_out_path}"
@@ -139,10 +139,10 @@ class TestCHIRPSPreprocessor:
         regrid_dataset.to_netcdf(regrid_path)
 
         # build the Preprocessor object and subset with a different subset_str
-        processor = CHIRPSPreprocesser(tmp_path)
+        processor = CHIRPSPreprocessor(tmp_path)
         processor.preprocess(subset_str="ethiopia", regrid=regrid_path, parallel=False)
 
-        expected_out_path = tmp_path / "interim/chirps_preprocessed/chirps_ethiopia.nc"
+        expected_out_path = tmp_path / "interim/chirps_preprocessed/data_ethiopia.nc"
         assert (
             expected_out_path.exists()
         ), f"Expected processed file to be saved to {expected_out_path}"
