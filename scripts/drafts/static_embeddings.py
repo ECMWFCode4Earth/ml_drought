@@ -646,31 +646,31 @@ def get_regions_for_clustering_boxes(ds: xr.Dataset) -> List[Region]:
     """
     victoria = Region(
         name='victoria',
-        lonmin=cluster_ds.isel(lon=0).lon.values,
-        lonmax=cluster_ds.isel(lon=7).lon.values,
-        latmin=cluster_ds.isel(lat=-28).lat.values,
-        latmax=cluster_ds.isel(lat=-18).lat.values,
+        lonmin=ds.isel(lon=0).lon.values,
+        lonmax=ds.isel(lon=7).lon.values,
+        latmin=ds.isel(lat=-28).lat.values,
+        latmax=ds.isel(lat=-18).lat.values,
     )
     turkana = Region(
         name='turkana',
-        lonmin=cluster_ds.isel(lon=5).lon.values,
-        lonmax=cluster_ds.isel(lon=16).lon.values,
-        latmin=cluster_ds.isel(lat=-16).lat.values,
-        latmax=cluster_ds.isel(lat=-6).lat.values,
+        lonmin=ds.isel(lon=5).lon.values,
+        lonmax=ds.isel(lon=16).lon.values,
+        latmin=ds.isel(lat=-16).lat.values,
+        latmax=ds.isel(lat=-6).lat.values,
     )
     southern_highlands = Region(
         name='southern_highlands',
-        lonmin=cluster_ds.isel(lon=3).lon.values,
-        lonmax=cluster_ds.isel(lon=13).lon.values,
-        latmin=cluster_ds.isel(lat=-41).lat.values,
-        latmax=cluster_ds.isel(lat=-31).lat.values,
+        lonmin=ds.isel(lon=3).lon.values,
+        lonmax=ds.isel(lon=13).lon.values,
+        latmin=ds.isel(lat=-41).lat.values,
+        latmax=ds.isel(lat=-31).lat.values,
     )
     coastal = Region(
         name='coastal',
-        lonmin=cluster_ds.isel(lon=15).lon.values,
-        lonmax=cluster_ds.isel(lon=20).lon.values,
-        latmin=cluster_ds.isel(lat=-44).lat.values,
-        latmax=cluster_ds.isel(lat=-34).lat.values,
+        lonmin=ds.isel(lon=15).lon.values,
+        lonmax=ds.isel(lon=20).lon.values,
+        latmin=ds.isel(lat=-44).lat.values,
+        latmax=ds.isel(lat=-34).lat.values,
     )
     nw_pastoral = Region(
         name="nw_pastoral",
