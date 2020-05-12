@@ -113,8 +113,8 @@ class ERA5LandPreprocessor(BasePreProcessor):
         nc_files = self.get_filepaths()
         if years is not None:
             nc_files = [
-                f for f in nc_files if int(f.parents[0]) in years
-            ]  # type: ignore
+                f for f in nc_files if int(f.parents[0]) in years  # type: ignore
+            ]
 
         # run for one variable or all variables?
         if variable is not None:
@@ -145,7 +145,7 @@ class ERA5LandPreprocessor(BasePreProcessor):
             subset_str=subset_str,
             resample_time=resample_time,
             upsampling=upsampling,
-            variable=variable,
+            # variable=variable,
         )
 
         if cleanup:

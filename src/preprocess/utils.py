@@ -11,6 +11,7 @@ Affine = None
 gpd = None
 Polygon = None
 
+
 def select_bounding_box(
     ds: xr.Dataset, region: Region, inverse_lat: bool = False, inverse_lon: bool = False
 ) -> xr.Dataset:

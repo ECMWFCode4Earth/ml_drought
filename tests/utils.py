@@ -6,6 +6,7 @@ import pandas as pd
 Point = None
 gpd = None
 
+
 def _make_dataset(
     size,
     variable_name="VHI",

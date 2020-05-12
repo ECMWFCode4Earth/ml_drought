@@ -531,7 +531,6 @@ def apply_same_mask(ds, reference_ds):
 # -------------------------------------------------------------------------
 
 
-
 def replace_with_dict(ar, dic):
     """ Replace the values in an np.ndarray with a dictionary
 
@@ -619,7 +618,6 @@ def get_lookup_val(xr_obj, variable, new_variable, lookup_dict):
 # -------------------------------------------------------------------------
 
 
-
 def select_pixel(ds, loc):
     """ (lat,lon) """
     return ds.sel(lat=loc[1], lon=loc[0], method="nearest")
@@ -636,7 +634,6 @@ def turn_tuple_to_point(loc):
 # -------------------------------------------------------------------------
 # I/O
 # -------------------------------------------------------------------------
-
 
 
 def merge_data_arrays(*DataArrays):

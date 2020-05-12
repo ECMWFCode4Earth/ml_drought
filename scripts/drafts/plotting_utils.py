@@ -484,6 +484,7 @@ def plot_xarray_on_map(
 
     return fig, ax, cbar
 
+
 def get_river_features():
     """ Get the 10m river features from NaturalEarth and turn into shapely.geom
     Note: https://github.com/SciTools/cartopy/issues/945
