@@ -164,9 +164,10 @@ class NNBase(ModelBase):
         )
 
         print("\n** Running Epochs ... **")
+        train_rmse = []
+        train_l1 = []
+
         for epoch in range(num_epochs):
-            train_rmse = []
-            train_l1 = []
             self.model.train()
             # load in timesteps a few at a time
             for x, y in tqdm.tqdm(train_dataloader):
