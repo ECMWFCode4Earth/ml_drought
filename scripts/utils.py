@@ -1,6 +1,50 @@
 import shutil
 from pathlib import Path
 import time
+from typing import Optional
+
+
+def rename_features_dir(data_path: Path, suffix: Optional[str] = None):
+    """increment the features dir by 1"""
+    old_paths = [d for d in data_path.glob("*_features*")]
+    if old_paths == []:
+        integer = 0
+    else:
+        old_max = max([int(p.name.split("_")[0]) for p in old_paths])
+        integer = old_max + 1
+
+    to_path = (
+        data_path / f"{integer}_features_{suffix}"
+        if suffix is not None
+        else data_path / f"{integer}_features"
+    )
+
+    _rename_directory(
+        from_path=data_path / "features",
+        to_path=data_path / f"{integer}_features",
+        with_datetime=False,
+    )
+
+
+def rename_models_dir(data_path: Path, suffix: Optional[str] = None):
+    old_paths = [d for d in data_path.glob("*_models*")]
+    if old_paths == []:
+        integer = 0
+    else:
+        old_max = max([int(p.name.split("_")[0]) for p in old_paths])
+        integer = old_max + 1
+
+    to_path = (
+        data_path / f"{integer}_models_{suffix}"
+        if suffix is not None
+        else data_path / f"{integer}_models"
+    )
+
+    _rename_directory(
+        from_path=data_path / "models",
+        to_path=data_path / f"{integer}_models",
+        with_datetime=False,
+    )
 
 
 def get_data_path() -> Path:
