@@ -6,7 +6,6 @@ import math
 import xarray as xr
 import tqdm
 
-import cv2
 import torch
 from torch.nn import functional as F
 
