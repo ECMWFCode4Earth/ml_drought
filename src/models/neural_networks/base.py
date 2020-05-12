@@ -191,7 +191,7 @@ class NNBase(ModelBase):
                             assert (
                                 False
                             ), "x[7] should not be None, this is the target_var_std"
-
+                        assert False
                         loss = NSELoss(pred, y_batch, target_var_std)
                     elif loss_func == "MSE":
                         loss = F.smooth_l1_loss(pred, y_batch)

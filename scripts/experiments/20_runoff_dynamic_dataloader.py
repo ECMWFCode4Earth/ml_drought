@@ -21,6 +21,7 @@ from typing import DefaultDict, Dict, Tuple, Optional, Union, List, Any
 from scripts.utils import _rename_directory, get_data_path, rename_features_dir
 from scripts.experiments._static_ignore_vars import static_ignore_vars
 
+import cv2
 from src.engineer.dynamic_engineer import DynamicEngineer
 from src.models import EARecurrentNetwork
 from src.models import load_model
