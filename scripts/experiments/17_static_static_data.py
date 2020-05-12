@@ -6,7 +6,7 @@ mv interim interim_; mv features features_; mv features__ features; mv interim__
 mv features features__; mv interim interim__; mv interim_ interim ; mv features_ features
 
 # Experiment #7 is VCI3M results
-# Experiment #8 is boku_VCI results
+# Experiment #9 is boku_VCI results
 """
 
 import sys
