@@ -47,4 +47,4 @@ core.python*
 .vscode
 # vscode options
 settings.json
-
+core.ipython*
