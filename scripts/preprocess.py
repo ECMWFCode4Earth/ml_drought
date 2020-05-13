@@ -19,6 +19,7 @@ from src.preprocess import (
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
 
 from scripts.utils import get_data_path
+from typing import Optional
 
 
 def process_vci_2018():
@@ -55,19 +56,16 @@ def process_era5POS_2018():
     )
 
 
-def process_era5_land(variable: str):
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
-    regrid_path = data_path / "interim/chirps_preprocessed/chirps_kenya.nc"
+def process_era5_land(variable: Optional[str] = None):
+    data_path = get_data_path()
+    regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
 
     processor = ERA5LandPreprocessor(data_path)
 
     processor.preprocess(
         subset_str="kenya",
-        regrid=None,
+        regrid=regrid_path,
         resample_time="M",
         upsampling=False,
         variable=variable,
@@ -194,5 +192,6 @@ if __name__ == "__main__":
     # preprocess_kenya_boundaries(selection="level_2")
     # preprocess_kenya_boundaries(selection="level_3")
     # preprocess_era5_hourly()
-    preprocess_boku_ndvi()
+    # preprocess_boku_ndvi()
     # preprocess_asal_mask()
+    process_era5_land()
