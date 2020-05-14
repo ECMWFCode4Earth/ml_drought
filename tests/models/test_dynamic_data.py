@@ -1,20 +1,29 @@
+"""
+
+[d.name for d in (tmp_path / 'features').iterdir()]
+"""
+
 import numpy as np
-from src.models import DynamicDataLoader
+from src.models.dynamic_data import DynamicDataLoader
+import xarray as xr
+from ..utils import _create_runoff_features_dir
 
 
 class TestDynamicDataLoader:
     def test_dynamic_dataloader(self, tmp_path):
+        x, y, static = _create_runoff_features_dir(tmp_path)
         # initialise the data as an OUTPUT of the engineers
-        static_ignore_vars = ["var1"]
-        dynamic_ignore_vars = ["var1"]
-        target_var = "discharge_spec"
-        seq_length = 365
+        static_ignore_vars = ["area"]
+        dynamic_ignore_vars = ["pet"]
+        target_var = "discharge"
+        seq_length = 5
 
         # initialize the object
+        # dl = DynamicDataLoader(target_var=target_var,test_years=np.arange(2011, 2016),data_path=tmp_path,seq_length=seq_length,static_ignore_vars=static_ignore_vars,dynamic_ignore_vars=dynamic_ignore_vars,)
         dl = DynamicDataLoader(
             target_var=target_var,
             test_years=np.arange(2011, 2016),
-            data_path=data_dir,
+            data_path=tmp_path,
             seq_length=seq_length,
             static_ignore_vars=static_ignore_vars,
             dynamic_ignore_vars=dynamic_ignore_vars,

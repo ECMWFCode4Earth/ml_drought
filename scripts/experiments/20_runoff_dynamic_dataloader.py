@@ -18,7 +18,7 @@ import sys
 sys.path.append("../..")
 
 from typing import DefaultDict, Dict, Tuple, Optional, Union, List, Any
-from scripts.utils import _rename_directory, get_data_path, rename_features_dir
+from scripts.utils import _rename_directory, get_data_path, rename_features_dir, rename_models_dir
 from scripts.experiments._static_ignore_vars import static_ignore_vars
 
 from src.engineer.dynamic_engineer import DynamicEngineer
@@ -63,6 +63,7 @@ def train_model(
     rnn_dropout: float = 0.25,
     dropout: float = 0.25,
     loss_func: str = "MSE",
+    forecast_horizon: int = forecast_horizon,
 ) -> EARecurrentNetwork:
     # initialise the model
     ealstm = EARecurrentNetwork(
@@ -80,6 +81,7 @@ def train_model(
         dense_features=dense_features,
         rnn_dropout=rnn_dropout,
         dropout=dropout,
+        forecast_horizon=forecast_horizon,
     )
     assert ealstm.seq_length == seq_length
     print("\n\n** Initialised Models! **\n\n")
@@ -138,18 +140,18 @@ def main(
     # dynamic_ignore_vars = ['discharge_vol', 'discharge_spec', 'pet']
     dynamic_ignore_vars = [
         "temperature",
-        # "discharge_vol",
-        # "discharge_spec",
-        # "pet",
+        "discharge_vol",
+        "discharge_spec",
+        "pet",
         "humidity",
         "shortwave_rad",
         "longwave_rad",
         "windspeed",
-        'peti', 'precipitation',
+        # 'peti', 'precipitation',
     ]
     target_var = "discharge_spec"
     seq_length = 365 * 2
-    forecast_horizon = 1
+    forecast_horizon = 0
     logy = False
     batch_size = 2000  # 1000
     # catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
@@ -197,6 +199,7 @@ def main(
             rnn_dropout=rnn_dropout,
             loss_func=loss_func,
             dropout=dropout,
+            forecast_horizon=forecast_horizon,
         )
         run_evaluation(data_dir, ealstm)
 
@@ -216,7 +219,7 @@ def evaluate_only():
 if __name__ == "__main__":
     engineer_only = False
     model_only = True
-    reset_data_files = False
+    reset_data_files = True
     main(
         model_only=model_only,
         engineer_only=engineer_only,
