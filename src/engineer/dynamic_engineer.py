@@ -190,9 +190,7 @@ class DynamicEngineer(_EngineerBase):
             static_ds = static_ds.sel({spatial_coord: spatial_units})
 
         # calculate normalization dict
-        self.create_normalization_dict(
-            static_ds, static=True, latlon=latlon
-        )
+        self.create_normalization_dict(static_ds, static=True, latlon=latlon)
 
         # save static_ds to `features/static/data.nc`
         static_ds.to_netcdf(self.static_output_folder / "data.nc")

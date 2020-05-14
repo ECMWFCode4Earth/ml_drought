@@ -82,7 +82,9 @@ class CreateSHPFile:
         gdf.to_file(driver="ESRI Shapefile", filename=filepath)
 
 
-def _make_features_directory(tmp_path, train=False, expt_name="one_month_forecast") -> Path:
+def _make_features_directory(
+    tmp_path, train=False, expt_name="one_month_forecast"
+) -> Path:
     if train:
         features_dir = tmp_path / "features" / expt_name / "train"
     else:
@@ -181,7 +183,7 @@ def _ds_to_features_dirs(
     date_range: pd.DatetimeIndex,
     train: bool = False,
     x: bool = True,
-    expt_name = "one_timestep_forecast",
+    expt_name="one_timestep_forecast",
 ):
     # create features directory setup
     # e.g. features/train/2000_1/x.nc
@@ -223,10 +225,10 @@ def _create_normalization_dict(tmp_path, X_data, static):
     static_normalizing_dict = _calculate_normalization_dict(static, static=True)
     normalizing_dict = _calculate_normalization_dict(X_data, static=False)
     (tmp_path / "features/one_timestep_forecast").mkdir(exist_ok=True, parents=True)
-    static_savepath = (
-        tmp_path / "features/static") / "normalizing_dict.pkl"
+    static_savepath = (tmp_path / "features/static") / "normalizing_dict.pkl"
     dynamic_savepath = (
-        tmp_path / "features/one_timestep_forecast") / "normalizing_dict.pkl"
+        tmp_path / "features/one_timestep_forecast"
+    ) / "normalizing_dict.pkl"
 
     with dynamic_savepath.open("wb") as f:
         pickle.dump(normalizing_dict, f)
@@ -265,8 +267,8 @@ def _create_runoff_features_dir(
         )
 
     if not (tmp_path / "features/one_timestep_forecast").exists():
-         (tmp_path / "features/one_timestep_forecast").mkdir(exist_ok=True, parents=True)
-         ds.to_netcdf(tmp_path / "features/one_timestep_forecast/data.nc")
+        (tmp_path / "features/one_timestep_forecast").mkdir(exist_ok=True, parents=True)
+        ds.to_netcdf(tmp_path / "features/one_timestep_forecast/data.nc")
 
     # static_data
     if not (tmp_path / "features/static").exists():
