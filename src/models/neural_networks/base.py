@@ -184,7 +184,7 @@ class NNBase(ModelBase):
                         # NSELoss needs std of each basin for each sample
                         if x_batch[7] is not None:
                             target_var_std = x_batch[7]
-                                # (train_dataloader.__iter__()).target_var_std
+                            # (train_dataloader.__iter__()).target_var_std
                         else:
                             assert (
                                 False

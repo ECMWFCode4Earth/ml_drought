@@ -661,7 +661,7 @@ class _DynamicIter:
         ## normalize values in these functions
         x_np, y_np = self._calculate_historical(x, y)
 
-        spatial_coord = [c for c in list(x.coords) if c != 'time'][0]
+        spatial_coord = [c for c in list(x.coords) if c != "time"][0]
         num_instances = x[spatial_coord].shape[0]
         x_months = self._calculate_target_months(y, num_instances)
 
