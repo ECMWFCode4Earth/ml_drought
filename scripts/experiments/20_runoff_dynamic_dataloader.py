@@ -61,6 +61,7 @@ def train_model(
     early_stopping: Optional[int] = None,
     dense_features: Optional[List[int]] = None,
     rnn_dropout: float = 0.25,
+    dropout: float = 0.25,
     loss_func: str = "MSE",
 ) -> EARecurrentNetwork:
     # initialise the model
@@ -78,6 +79,7 @@ def train_model(
         static_embedding_size=static_embedding_size,
         dense_features=dense_features,
         rnn_dropout=rnn_dropout,
+        dropout=dropout,
     )
     assert ealstm.seq_length == seq_length
     print("\n\n** Initialised Models! **\n\n")
@@ -163,6 +165,7 @@ def main(
     early_stopping = 10
     dense_features = [128, 64]
     rnn_dropout = 0
+    dropout = 0.3
     loss_func = "MSE"  # "MSE" "NSE"
 
     # ----------------------------------------------------------------

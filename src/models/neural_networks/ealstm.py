@@ -20,6 +20,7 @@ class EARecurrentNetwork(NNBase):
         dense_features: Optional[List[int]] = None,
         dynamic: bool = False,
         rnn_dropout: float = 0.25,
+        dropout: float = 0.25,
         data_folder: Path = Path("data"),
         forecast_horizon: int = 1,
         target_var: Optional[str] = None,
@@ -73,6 +74,7 @@ class EARecurrentNetwork(NNBase):
         # to initialize and save the model
         self.hidden_size = hidden_size
         self.rnn_dropout = rnn_dropout
+        self.dropout = dropout
         self.input_dense = copy(
             dense_features
         )  # this is to make sure we can reload the model
@@ -105,6 +107,7 @@ class EARecurrentNetwork(NNBase):
             "batch_size": self.batch_size,
             "hidden_size": self.hidden_size,
             "rnn_dropout": self.rnn_dropout,
+            "dropout": self.dropout,
             "dense_features": self.input_dense,
             "include_pred_month": self.include_pred_month,
             "include_latlons": self.include_latlons,
@@ -149,6 +152,7 @@ class EARecurrentNetwork(NNBase):
             dense_features=self.dense_features,
             hidden_size=self.hidden_size,
             rnn_dropout=self.rnn_dropout,
+            dropout=self.dropout,
             include_pred_month=self.include_pred_month,
             experiment=self.experiment,
             current_size=self.current_size,
@@ -192,6 +196,7 @@ class EARecurrentNetwork(NNBase):
             dense_features=self.dense_features,
             hidden_size=self.hidden_size,
             rnn_dropout=self.rnn_dropout,
+            dropout=self.dropout,
             include_pred_month=self.include_pred_month,
             experiment=self.experiment,
             yearly_agg_size=self.yearly_agg_size,
@@ -212,6 +217,7 @@ class EALSTM(nn.Module):
         dense_features,
         hidden_size,
         rnn_dropout,
+        dropout,
         include_latlons,
         include_pred_month,
         experiment,
@@ -260,7 +266,7 @@ class EALSTM(nn.Module):
 
             ea_static_size = static_embedding_size
 
-        self.dropout = nn.Dropout(rnn_dropout)
+        self.dropout = nn.Dropout(dropout)
         self.rnn = OrgEALSTMCell(
             input_size_dyn=features_per_month,
             input_size_stat=ea_static_size,
@@ -342,7 +348,7 @@ class EALSTM(nn.Module):
 
         hidden_state, cell_state = self.rnn(x, static_tensor)
 
-        x = self.rnn_dropout(hidden_state[:, -1, :])
+        x = self.dropout(hidden_state[:, -1, :])
 
         if self.experiment == "nowcast":
             assert current is not None
