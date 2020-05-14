@@ -16,7 +16,7 @@ class TestDynamicDataLoader:
         static_ignore_vars = ["area"]
         dynamic_ignore_vars = ["pet"]
         target_var = "discharge"
-        seq_length = 365
+        seq_length = 5
 
         # initialize the object
         # dl = DynamicDataLoader(target_var=target_var,test_years=np.arange(2011, 2016),data_path=tmp_path,seq_length=seq_length,static_ignore_vars=static_ignore_vars,dynamic_ignore_vars=dynamic_ignore_vars,)

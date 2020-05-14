@@ -1,6 +1,7 @@
 import numpy as np
 import xarray as xr
-
+import pickle
+from collections import defaultdict
 import pandas as pd
 from pathlib import Path
 from typing import Tuple
@@ -194,6 +195,45 @@ def _ds_to_features_dirs(
         data.to_netcdf(features_dir / dir_name / "x.nc" if x else "y.nc")
 
 
+def _calculate_normalization_dict(train_ds: xr.Dataset, static: bool):
+    normalization_dict = defaultdict(dict)
+    if static:
+        dims = [c for c in train_ds.coords]
+    else:  # dynamic
+        assert (
+            len([c for c in train_ds.coords if c != "time"]) == 1
+        ), "Only works with one dimension"
+        dimension_name = [c for c in train_ds.coords][0]
+        dims = [dimension_name, "time"]
+
+    for var in train_ds.data_vars:
+        if var.endswith("one_hot"):
+            mean = 0
+            std = 1
+
+        mean = float(train_ds[var].mean(dim=dims, skipna=True).values)
+        std = float(train_ds[var].std(dim=dims, skipna=True).values)
+        normalization_dict[var]["mean"] = mean
+        normalization_dict[var]["std"] = std
+
+    return normalization_dict
+
+
+def _create_normalization_dict(tmp_path, X_data, static):
+    static_normalizing_dict = _calculate_normalization_dict(static, static=True)
+    normalizing_dict = _calculate_normalization_dict(X_data, static=False)
+    (tmp_path / "features/one_timestep_forecast").mkdir(exist_ok=True, parents=True)
+    static_savepath = (
+        tmp_path / "features/static") / "normalizing_dict.pkl"
+    dynamic_savepath = (
+        tmp_path / "features/one_timestep_forecast") / "normalizing_dict.pkl"
+
+    with dynamic_savepath.open("wb") as f:
+        pickle.dump(normalizing_dict, f)
+    with static_savepath.open("wb") as f:
+        pickle.dump(static_normalizing_dict, f)
+
+
 def _create_runoff_features_dir(
     tmp_path, train=False, start_date="1999-01-01", end_date="2001-12-31"
 ) -> Tuple[xr.Dataset, xr.Dataset, xr.Dataset]:
@@ -233,7 +273,7 @@ def _create_runoff_features_dir(
         (tmp_path / "features/static").mkdir(exist_ok=True, parents=True)
     static.to_netcdf(tmp_path / "features/static/data.nc")
 
-    # normalizing_dict
-    / "features/one_timestep_forecast"
+    # Calculate normalizing_dict
+    _create_normalization_dict(tmp_path, X_data, static)
 
     return X_data, y_data, static

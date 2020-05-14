@@ -18,7 +18,7 @@ import sys
 sys.path.append("../..")
 
 from typing import DefaultDict, Dict, Tuple, Optional, Union, List, Any
-from scripts.utils import _rename_directory, get_data_path, rename_features_dir
+from scripts.utils import _rename_directory, get_data_path, rename_features_dir, rename_models_dir
 from scripts.experiments._static_ignore_vars import static_ignore_vars
 
 from src.engineer.dynamic_engineer import DynamicEngineer
@@ -219,7 +219,7 @@ def evaluate_only():
 if __name__ == "__main__":
     engineer_only = False
     model_only = True
-    reset_data_files = False
+    reset_data_files = True
     main(
         model_only=model_only,
         engineer_only=engineer_only,
