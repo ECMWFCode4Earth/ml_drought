@@ -190,7 +190,7 @@ class DynamicEngineer(_EngineerBase):
             static_ds = static_ds.sel({spatial_coord: spatial_units})
 
         # calculate normalization dict
-        static_normalization_dict = self.create_normalization_dict(
+        self.create_normalization_dict(
             static_ds, static=True, latlon=latlon
         )
 
@@ -281,7 +281,7 @@ class DynamicEngineer(_EngineerBase):
             dynamic_ds = dynamic_ds.sel({spatial_coord: spatial_units})
 
         # calculate the normalization dict
-        dynamic_normalization_dict = self.create_normalization_dict(
+        self.create_normalization_dict(
             dynamic_ds, static=False, test_year=test_years, latlon=latlon
         )
 
