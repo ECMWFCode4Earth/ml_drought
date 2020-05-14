@@ -68,7 +68,7 @@ def train_model(
     rnn_dropout: float = 0.25,
     dropout: float = 0.25,
     loss_func: str = "MSE",
-    forecast_horizon: int = forecast_horizon,
+    forecast_horizon: int = 1,
 ) -> EARecurrentNetwork:
     # initialise the model
     ealstm = EARecurrentNetwork(
