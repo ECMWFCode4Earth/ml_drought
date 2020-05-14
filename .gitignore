@@ -22,6 +22,7 @@ data/*.zip*
 scripts/*.png
 scripts/variables.txt
 data/*
+data*
 
 .ipynb_checkpoints
 
