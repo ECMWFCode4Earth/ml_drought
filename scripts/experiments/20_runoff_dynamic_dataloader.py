@@ -196,6 +196,7 @@ def main(
             dense_features=dense_features,
             rnn_dropout=rnn_dropout,
             loss_func=loss_func,
+            dropout=dropout,
         )
         run_evaluation(data_dir, ealstm)
 
