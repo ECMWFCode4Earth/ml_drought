@@ -309,6 +309,7 @@ class RNN(nn.Module):
             # The reason the RNN is unrolled here is to apply dropout to each timestep;
             # The rnn_dropout argument only applies it after each layer.
             # https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell/DropoutWrapper
+            # https://www.tensorflow.org/api_docs/python/tf/compat/v1/nn/rnn_cell/DropoutWrapper
             input_x = x[:, i, :].unsqueeze(1)
             _, (hidden_state, cell_state) = self.rnn(
                 input_x, (hidden_state, cell_state)
