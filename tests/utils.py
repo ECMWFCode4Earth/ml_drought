@@ -81,11 +81,11 @@ class CreateSHPFile:
         gdf.to_file(driver="ESRI Shapefile", filename=filepath)
 
 
-def _make_features_directory(tmp_path, train=False) -> Path:
+def _make_features_directory(tmp_path, train=False, expt_name="one_month_forecast") -> Path:
     if train:
-        features_dir = tmp_path / "features" / "one_month_forecast" / "train"
+        features_dir = tmp_path / "features" / expt_name / "train"
     else:
-        features_dir = tmp_path / "features" / "one_month_forecast" / "test"
+        features_dir = tmp_path / "features" / expt_name / "test"
 
     if not features_dir.exists():
         features_dir.mkdir(parents=True, exist_ok=True)
@@ -180,10 +180,11 @@ def _ds_to_features_dirs(
     date_range: pd.DatetimeIndex,
     train: bool = False,
     x: bool = True,
+    expt_name = "one_timestep_forecast",
 ):
     # create features directory setup
     # e.g. features/train/2000_1/x.nc
-    features_dir = _make_features_directory(tmp_path, train=train)
+    features_dir = _make_features_directory(tmp_path, train=train, expt_name=expt_name)
 
     dates = [f"{d.year}-{d.month}-{d.day}" for d in date_range]
     dir_names = [f"{d.year}_{d.month}" for d in date_range]
@@ -203,24 +204,36 @@ def _create_runoff_features_dir(
     y_daterange = pd.DatetimeIndex([target_time])
     y_data = ds.sel(time=target_time)[["discharge"]]
 
-    _ds_to_features_dirs(
-        tmp_path, data=y_data, date_range=y_daterange, train=True, x=False
-    )
-
     # non-target data
     X_data = ds.isel(time=slice(0, -1))
 
-    X_daterange = pd.date_range(
-        X_data.time.min().values, X_data.time.max().values, freq="D"
-    )
+    x_y_separate = False
+    if x_y_separate:
+        _ds_to_features_dirs(
+            tmp_path, data=y_data, date_range=y_daterange, train=True, x=False
+        )
 
-    _ds_to_features_dirs(
-        tmp_path, data=X_data, date_range=X_daterange, train=True, x=True
-    )
+        # non-target data
+        X_data = ds.isel(time=slice(0, -1))
+
+        X_daterange = pd.date_range(
+            X_data.time.min().values, X_data.time.max().values, freq="D"
+        )
+
+        _ds_to_features_dirs(
+            tmp_path, data=X_data, date_range=X_daterange, train=True, x=True
+        )
+
+    if not (tmp_path / "features/one_timestep_forecast").exists():
+         (tmp_path / "features/one_timestep_forecast").mkdir(exist_ok=True, parents=True)
+         ds.to_netcdf(tmp_path / "features/one_timestep_forecast/data.nc")
 
     # static_data
     if not (tmp_path / "features/static").exists():
         (tmp_path / "features/static").mkdir(exist_ok=True, parents=True)
     static.to_netcdf(tmp_path / "features/static/data.nc")
+
+    # normalizing_dict
+    / "features/one_timestep_forecast"
 
     return X_data, y_data, static
