@@ -136,34 +136,34 @@ def main(
     # dynamic_ignore_vars = ['discharge_vol', 'discharge_spec', 'pet']
     dynamic_ignore_vars = [
         "temperature",
-        "discharge_vol",
-        "discharge_spec",
-        "pet",
+        # "discharge_vol",
+        # "discharge_spec",
+        # "pet",
         "humidity",
         "shortwave_rad",
         "longwave_rad",
         "windspeed",
-        # 'peti', 'precipitation',
+        'peti', 'precipitation',
     ]
     target_var = "discharge_spec"
     seq_length = 365 * 2
     forecast_horizon = 1
-    logy = True
+    logy = False
     batch_size = 2000  # 1000
     # catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
     # catchment_ids = [int(c_id) for c_id in catchment_ids]
     catchment_ids = None
 
     # Model Vars
-    num_epochs = 50  # 100
-    test_years = [2014, 2015]
+    num_epochs = 100  # 100
+    test_years = np.arange(2010, 2016)
     static_embedding_size = 64  # 64
     hidden_size = 256  #  128
     # early_stopping = None
     early_stopping = 10
     dense_features = [128, 64]
-    rnn_dropout = 0.3
-    loss_func = "NSE"  # "MSE" "NSE"
+    rnn_dropout = 0
+    loss_func = "MSE"  # "MSE" "NSE"
 
     # ----------------------------------------------------------------
     # CODE
