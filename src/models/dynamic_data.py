@@ -521,8 +521,8 @@ class _DynamicIter:
 
         # ENSURE that time is the first dimension
         spatial_coords = [c for c in list(x.coords) if c != "time"]
-        x = x.transpose(*(['time'] + spatial_coords))
-        y = y.transpose(*(spatial_coords))  # Assumes only 1 time
+        x = x.transpose(*(["time"] + spatial_coords))
+        y = y.transpose(*(spatial_coords))  #  Assumes only 1 time
 
         x_np, y_np = x.to_array().values, y.to_array().values
 
