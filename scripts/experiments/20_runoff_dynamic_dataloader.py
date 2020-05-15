@@ -92,15 +92,16 @@ def train_model(
     print("\n\n** Initialised Models! **\n\n")
 
     # Train the model on train set
-    rmses, l1_losses = ealstm.train(
+    train_rmses, huber_losses, val_rmses = ealstm.train(
         num_epochs=n_epochs, early_stopping=early_stopping, loss_func=loss_func
     )
     print("\n\n** Model Trained! **\n\n")
 
     # save the model
     ealstm.save_model()
-    pickle.dump(rmses, open(ealstm.model_dir / "rmses.pkl", "wb"))
-    pickle.dump(l1_losses, open(ealstm.model_dir / "l1_losses.pkl", "wb"))
+    pickle.dump(train_rmses, open(ealstm.model_dir / "train_rmses.pkl", "wb"))
+    pickle.dump(huber_losses, open(ealstm.model_dir / "huber_losses.pkl", "wb"))
+    pickle.dump(val_rmses, open(ealstm.model_dir / "val_rmses.pkl", "wb"))
 
     return ealstm
 
@@ -111,7 +112,7 @@ def run_evaluation(data_dir, ealstm=None):
         ealstm = load_model(
             data_dir / "models/one_timestep_forecast/ealstm/model.pt", device="cpu"
         )
-
+    ealstm.batch_size = 10
     # move to CPU
     ealstm.move_model("cpu")
 
@@ -222,12 +223,12 @@ def evaluate_only():
 
 
 if __name__ == "__main__":
-    engineer_only = False
-    model_only = False
-    reset_data_files = True
-    main(
-        model_only=model_only,
-        engineer_only=engineer_only,
-        reset_data_files=reset_data_files,
-    )
-    # evaluate_only()
+    # engineer_only = False
+    # model_only = False
+    # reset_data_files = True
+    # main(
+    #     model_only=model_only,
+    #     engineer_only=engineer_only,
+    #     reset_data_files=reset_data_files,
+    # )
+    evaluate_only()

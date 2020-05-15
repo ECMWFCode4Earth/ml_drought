@@ -100,7 +100,7 @@ class NNBase(ModelBase):
         learning_rate: float = 1e-3,
         val_split: float = 0.1,
         loss_func: str = "MSE",
-    ) -> Tuple[List[float], List[float]]:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
         assert loss_func in [
@@ -220,6 +220,10 @@ class NNBase(ModelBase):
                 f"RMSE: {np.mean(train_rmse)}"
             )
 
+            train_rmse = np.mean(train_rmse)
+            train_huber = np.mean(train_l1)
+
+            epoch_val_rmse = np.array([])
             if early_stopping is not None:
                 epoch_val_rmse = np.mean(val_rmse)
                 print(f"Val RMSE: {epoch_val_rmse}")
@@ -232,9 +236,9 @@ class NNBase(ModelBase):
                     if batches_without_improvement == early_stopping:
                         print("Early stopping!")
                         self.model.load_state_dict(best_model_dict)
-                        return (train_rmse, train_l1)
+                        return (train_rmse, train_l1, epoch_val_rmse)
 
-        return (train_rmse, train_l1)
+        return (train_rmse, train_huber, epoch_val_rmse)
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         print(f"** Making Predictions for {self.model_name} **")
@@ -252,8 +256,8 @@ class NNBase(ModelBase):
 
         self.model.eval()
         with torch.no_grad():
-            for dict in tqdm.tqdm(test_arrays_loader):
-                for key, val in dict.items():
+            for dict in test_arrays_loader:
+                for key, val in tqdm.tqdm(dict.items()):
 
                     # TODO: this is where the code breaks down
                     # ipdb> self.x.historical.shape => (659, 365, 8)
