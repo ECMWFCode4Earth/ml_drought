@@ -201,9 +201,9 @@ class NNBase(ModelBase):
 
                     with torch.no_grad():
                         rmse = F.mse_loss(pred, y_batch)
-                        train_rmse.append(math.sqrt(rmse.cpu().item()))
+                        train_rmse = np.append(train_rmse, math.sqrt(rmse.cpu().item()))
 
-                    train_l1.append(loss.item())
+                    train_l1 = np.append(train_l1, loss.item())
 
             if early_stopping is not None:
                 self.model.eval()
@@ -213,7 +213,7 @@ class NNBase(ModelBase):
                         val_pred_y = self.model(*self._input_to_tuple(x))
                         val_loss = F.mse_loss(val_pred_y, y)
 
-                        val_rmse.append(math.sqrt(val_loss.cpu().item()))
+                        val_rmse = np.append(val_rmse, math.sqrt(val_loss.cpu().item()))
 
             print(
                 f"Epoch {epoch + 1}, train smooth L1: {np.mean(train_l1)}, "

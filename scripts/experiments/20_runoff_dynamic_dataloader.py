@@ -224,8 +224,8 @@ def evaluate_only():
 
 if __name__ == "__main__":
     engineer_only = False
-    model_only = False
-    reset_data_files = True
+    model_only = True
+    reset_data_files = False
     main(
         model_only=model_only,
         engineer_only=engineer_only,
