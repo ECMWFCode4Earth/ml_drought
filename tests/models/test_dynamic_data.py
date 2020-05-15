@@ -39,28 +39,6 @@ class TestDynamicDataLoader:
             X[0].shape[-1] == 2
         ), "Dynamic data: Should be (#non-nan stations, seq_length, n_predictors)"
 
-        valid_static_vars = [
-            "aridity",
-            "frac_snow",
-            "surfacewater_abs",
-            "groundwater_abs",
-            "reservoir_cap",
-            "dwood_perc",
-            "ewood_perc",
-            "crop_perc",
-            "urban_perc",
-            "porosity_hypres",
-            "conductivity_hypres",
-            "dpsbar",
-        ]
-        assert X[5].shape[-1] == len(
-            valid_static_vars
-        ), "Static Data Should be (#non-nan stations, n_predictors)"
-        assert (
-            X[0].shape[0] == y.shape[0]
-        ), "Expect the same number of instances in X, y"
-        assert y.shape[1] == 1, "Expect only one feature in the target data (y)"
-
         assert isinstance(dl.static_ds, xr.Dataset)
         assert isinstance(dl.dynamic_ds, xr.Dataset)
         assert len(dl) == 16070

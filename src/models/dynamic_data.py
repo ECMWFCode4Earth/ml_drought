@@ -257,6 +257,15 @@ class DynamicDataLoader(DataLoader):
             self.normalizing_array_static: Optional[
                 Dict[str, np.ndarray]
             ] = self.calculate_normalizing_array(data_vars, static=True)
+
+            # drop the static features
+            self.static_ds = self.static_ds[
+                [
+                    v
+                    for v in self.static_ds.data_vars
+                    if v not in self.static_ignore_vars
+                ]
+            ]
         else:
             assert False, "Should provide static data for this loader ..."
             self.static_ds = None
@@ -509,6 +518,12 @@ class _DynamicIter:
 
         if "target_var_original" in list(x.data_vars):
             x = x.drop("target_var_original")
+
+        # ENSURE that time is the first dimension
+        spatial_coords = [c for c in list(x.coords) if c != "time"]
+        x = x.transpose(*(['time'] + spatial_coords))
+        y = y.transpose(*(spatial_coords))  # Assumes only 1 time
+
         x_np, y_np = x.to_array().values, y.to_array().values
 
         # first, x
