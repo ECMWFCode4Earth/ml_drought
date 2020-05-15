@@ -256,7 +256,7 @@ class NNBase(ModelBase):
 
         self.model.eval()
         with torch.no_grad():
-            for dict in test_arrays_loader:
+            for dict in tqdm.tqdm(test_arrays_loader):
                 for key, val in tqdm.tqdm(dict.items()):
 
                     # TODO: this is where the code breaks down

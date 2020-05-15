@@ -158,7 +158,7 @@ def main(
     target_var = "discharge_spec"
     seq_length = 365 * 2
     forecast_horizon = 0
-    logy = False
+    logy = True
     batch_size = 2000  # 1000
     # catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
     # catchment_ids = [int(c_id) for c_id in catchment_ids]
@@ -166,11 +166,11 @@ def main(
 
     # Model Vars
     num_epochs = 100  # 100
-    test_years = np.arange(2010, 2016)
+    test_years = np.arange(2014, 2016)
     static_embedding_size = 64  # 64
     hidden_size = 256  #  128
     # early_stopping = None
-    early_stopping = 10
+    early_stopping = 20
     dense_features = [128, 64]
     rnn_dropout = 0
     dropout = 0.3
@@ -223,12 +223,12 @@ def evaluate_only():
 
 
 if __name__ == "__main__":
-    # engineer_only = False
-    # model_only = False
-    # reset_data_files = True
-    # main(
-    #     model_only=model_only,
-    #     engineer_only=engineer_only,
-    #     reset_data_files=reset_data_files,
-    # )
-    evaluate_only()
+    engineer_only = False
+    model_only = False
+    reset_data_files = True
+    main(
+        model_only=model_only,
+        engineer_only=engineer_only,
+        reset_data_files=reset_data_files,
+    )
+    # evaluate_only()
