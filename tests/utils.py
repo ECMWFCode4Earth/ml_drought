@@ -278,4 +278,4 @@ def _create_runoff_features_dir(
     # Calculate normalizing_dict
     _create_normalization_dict(tmp_path, X_data, static)
 
-    return X_data, y_data, static
+    return ds, static

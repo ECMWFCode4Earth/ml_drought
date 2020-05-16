@@ -165,9 +165,12 @@ class NNBase(ModelBase):
 
         print("\n** Running Epochs ... **")
         train_rmse = []
-        train_l1 = []
+        train_huber = []
+        val_rmses = []
 
         for epoch in range(num_epochs):
+            epoch_rmses = []
+            epoch_l1s = []
             self.model.train()
             # load in timesteps a few at a time
             for x, y in tqdm.tqdm(train_dataloader):
@@ -194,16 +197,18 @@ class NNBase(ModelBase):
                     elif loss_func == "MSE":
                         loss = F.smooth_l1_loss(pred, y_batch)
                     else:
-                        assert False, "Only implemented MSE NSE loss functions"
+                        assert False, "Only implemented MSE / NSE loss functions"
                     # -------------------------------
                     loss.backward()
                     optimizer.step()
 
                     with torch.no_grad():
                         rmse = F.mse_loss(pred, y_batch)
-                        train_rmse = np.append(train_rmse, math.sqrt(rmse.cpu().item()))
+                        epoch_rmses = np.append(
+                            epoch_rmses, math.sqrt(rmse.cpu().item())
+                        )
 
-                    train_l1 = np.append(train_l1, loss.item())
+                    epoch_l1s = np.append(epoch_l1s, loss.item())
 
             if early_stopping is not None:
                 self.model.eval()
@@ -216,12 +221,12 @@ class NNBase(ModelBase):
                         val_rmse = np.append(val_rmse, math.sqrt(val_loss.cpu().item()))
 
             print(
-                f"Epoch {epoch + 1}, train smooth L1: {np.mean(train_l1)}, "
+                f"Epoch {epoch + 1}, train smooth L1: {np.mean(epoch_l1s)}, "
                 f"RMSE: {np.mean(train_rmse)}"
             )
 
-            train_rmse = np.mean(train_rmse)
-            train_huber = np.mean(train_l1)
+            train_rmse.append(np.mean(epoch_rmses))
+            train_huber.append(np.mean(epoch_l1s))
 
             epoch_val_rmse = np.array([])
             if early_stopping is not None:
@@ -236,9 +241,9 @@ class NNBase(ModelBase):
                     if batches_without_improvement == early_stopping:
                         print("Early stopping!")
                         self.model.load_state_dict(best_model_dict)
-                        return (train_rmse, train_l1, epoch_val_rmse)
-
-        return (train_rmse, train_huber, epoch_val_rmse)
+                        return (train_rmse, train_huber, epoch_val_rmse)
+                val_rmses.append(epoch_val_rmse)
+        return (train_rmse, train_huber, val_rmses)
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         print(f"** Making Predictions for {self.model_name} **")
@@ -392,6 +397,7 @@ class NNBase(ModelBase):
             [4] yearly aggregations
             [5] static data (optional)
             [6] prev y var (optional)
+            [7] y var std (optional - req for NSE loss function)
         """
         # mypy totally fails to handle what's going on here
 
@@ -545,7 +551,7 @@ class NNBase(ModelBase):
                 val.requires_grad = True
         outputs = self.model(
             x.historical,
-            self._one_hot(x.pred_months, self.seq_length),
+            self._one_hot(x.pred_month, self.seq_length),
             x.latlons,
             x.current,
             x.yearly_aggs,

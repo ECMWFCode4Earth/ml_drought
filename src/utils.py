@@ -90,9 +90,16 @@ def minus_timesteps(
     if freq == "M":
         from pandas.tseries.offsets import MonthEnd
 
-        # our pipeline mostly works with 'MS' resampled data
+        # ensure we go into the PREVIOUS MONTH
+        minus_time = minus_time - pd.Timedelta(2, "D")
+
+        # our pipeline mostly works with 'M' resampled data
         # so monthly data is always at the END of the month
         minus_time = minus_time + MonthEnd(1)
+
+    if freq != "H":
+        # NOTE: pipeline doesn't work
+        minus_time.replace(hour=0, minute=0, second=0)
 
     return minus_time
 
