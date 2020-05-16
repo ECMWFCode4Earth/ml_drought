@@ -87,6 +87,10 @@ def train_model(
         rnn_dropout=rnn_dropout,
         dropout=dropout,
         forecast_horizon=forecast_horizon,
+        include_latlons=False,
+        include_pred_month=False,
+        include_timestep_aggs=False,
+        include_yearly_aggs=False,
     )
     assert ealstm.seq_length == seq_length
     print("\n\n** Initialised Models! **\n\n")
@@ -170,7 +174,7 @@ def main(
     static_embedding_size = 64  # 64
     hidden_size = 256  #  128
     # early_stopping = None
-    early_stopping = 20
+    early_stopping = 10
     dense_features = [128, 64]
     rnn_dropout = 0
     dropout = 0.3

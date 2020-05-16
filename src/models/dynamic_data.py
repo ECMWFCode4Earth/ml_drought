@@ -581,7 +581,6 @@ class _DynamicIter:
         target_time: np.datetime64
         seq_length: int
             How long is the sequence length for the calculation of the
-        forecast_horizon: int = 1
         min_ds_date: pd.Timestamp
             If we have a min_X_date smaller than min_ds_date
             then we don't have sufficient training examples to
@@ -599,7 +598,16 @@ class _DynamicIter:
         # min/max date for X data
         # forecast_horizon: how many days gap between X -> y
         max_X_date = minus_timesteps(target_time, forecast_horizon, resolution)
-        min_X_date = minus_timesteps(target_time, seq_length, resolution)
+
+        # if the FH == 0 then we want are including target_time in X.
+        # Therefore, we want (seq_length - 1) so that the total length
+        # is still seq_length because of the inclusion of 1 extra time,
+        # which is the target_time.
+        min_X_date = minus_timesteps(
+            time=target_time,
+            time_delta=seq_length - 1 if forecast_horizon == 0 else seq_length,
+            freq=resolution,
+        )
 
         # check whether enough data
         if min_X_date < min_ds_date:

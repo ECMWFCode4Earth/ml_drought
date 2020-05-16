@@ -191,6 +191,7 @@ idx_to_input = {
     4: "yearly_aggs",
     5: "static",
     6: "prev_y_var",
+    7: "target_var_std",
 }
 
 
@@ -699,13 +700,13 @@ class _BaseIter:
         station_id // flattened data (regions etc.)
         """
         reducing_coords = [c for c in x.coords if c != "time"]
-        if self.calculate_latlons:
+        if self.calculate_latlons or all(np.isin(["lat", "lon"], reducing_coords)):
             lons, lats = np.meshgrid(x.lon.values, x.lat.values)
             flat_lats, flat_lons = lats.reshape(-1, 1), lons.reshape(-1, 1)
             latlons = np.concatenate((flat_lats, flat_lons), axis=-1)
             if notnan_indices is not None:
                 latlons = latlons[notnan_indices]
-            id_to_val_map = dict(zip(np.arange(latlons), latlons))
+            id_to_val_map = dict(zip(np.arange(len(latlons)), latlons))
 
         elif len(reducing_coords) == 1:
             # working with 1D data (pixel, area, stations etc.)
@@ -890,6 +891,7 @@ class _BaseIter:
                 yearly_aggs=yearly_agg,
                 static=static_np,
                 prev_y_var=prev_y_var,
+                target_var_std=None,
             )
 
         else:
@@ -901,6 +903,7 @@ class _BaseIter:
                 yearly_aggs=yearly_agg,
                 static=static_np,
                 prev_y_var=prev_y_var,
+                target_var_std=None,
             )
 
         assert y_np.shape[0] == x_np.shape[0], (
