@@ -165,12 +165,12 @@ class NNBase(ModelBase):
 
         print("\n** Running Epochs ... **")
         train_rmse = []
-        train_huber = []
+        train_losses = []
         val_rmses = []
 
         for epoch in range(num_epochs):
             epoch_rmses = []
-            epoch_l1s = []
+            epoch_losses = []
             self.model.train()
             # load in timesteps a few at a time
             for x, y in tqdm.tqdm(train_dataloader):
@@ -208,7 +208,7 @@ class NNBase(ModelBase):
                             epoch_rmses, math.sqrt(rmse.cpu().item())
                         )
 
-                    epoch_l1s = np.append(epoch_l1s, loss.item())
+                    epoch_losses = np.append(epoch_losses, loss.item())
 
             if early_stopping is not None:
                 self.model.eval()
@@ -221,12 +221,12 @@ class NNBase(ModelBase):
                         val_rmse = np.append(val_rmse, math.sqrt(val_loss.cpu().item()))
 
             print(
-                f"Epoch {epoch + 1}, train smooth L1: {np.mean(epoch_l1s)}, "
+                f"Epoch {epoch + 1}, train smooth L1: {np.mean(epoch_losses)}, "
                 f"RMSE: {np.mean(train_rmse)}"
             )
 
             train_rmse.append(np.mean(epoch_rmses))
-            train_huber.append(np.mean(epoch_l1s))
+            train_losses.append(np.mean(epoch_losses))
 
             epoch_val_rmse = np.array([])
             if early_stopping is not None:
@@ -241,9 +241,9 @@ class NNBase(ModelBase):
                     if batches_without_improvement == early_stopping:
                         print("Early stopping!")
                         self.model.load_state_dict(best_model_dict)
-                        return (train_rmse, train_huber, epoch_val_rmse)
+                        return (train_rmse, train_losses, epoch_val_rmse)
                 val_rmses.append(epoch_val_rmse)
-        return (train_rmse, train_huber, val_rmses)
+        return (train_rmse, train_losses, val_rmses)
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         print(f"** Making Predictions for {self.model_name} **")
