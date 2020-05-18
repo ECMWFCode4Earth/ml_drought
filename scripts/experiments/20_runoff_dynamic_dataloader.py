@@ -236,10 +236,10 @@ def main(
         "windspeed",
         # 'peti', 'precipitation',
     ]
-    target_var = "discharge_vol"
+    target_var = "discharge_spec"  # discharge_spec  discharge_vol
     seq_length = 365 * 2
     forecast_horizon = 0
-    logy = True
+    logy = False
     batch_size = 1000  # 1000 2000
     catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
     catchment_ids = [int(c_id) for c_id in catchment_ids]
