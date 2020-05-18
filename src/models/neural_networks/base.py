@@ -415,7 +415,7 @@ class NNBase(ModelBase):
         if type(x) is TrainData:  # type: ignore
             return (  # type: ignore
                 x.historical,  # type: ignore
-                self._one_hot(x.pred_month, 12),  # type: ignore
+                self._one_hot(x.pred_month, 12) if x[1] is not None else None,  # type: ignore
                 x.latlons,  # type: ignore
                 x.current,  # type: ignore
                 x.yearly_aggs,  # type: ignore
@@ -427,7 +427,7 @@ class NNBase(ModelBase):
         else:
             return (
                 x[0],  # type: ignore
-                self._one_hot(x[1], 12),  # type: ignore
+                self._one_hot(x[1], 12) if x[1] is not None else None,  # type: ignore
                 x[2],  # type: ignore
                 x[3],  # type: ignore
                 x[4],  # type: ignore
