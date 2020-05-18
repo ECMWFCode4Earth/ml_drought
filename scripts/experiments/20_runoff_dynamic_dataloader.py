@@ -71,7 +71,7 @@ def train_lstm(
     forecast_horizon: int = 1,
     normalize_y: bool = True,
     learning_rate: float = 1e-3,
-    clip_zeros: bool = False,
+    # clip_zeros: bool = False,
     static: Optional[str] = "features",
 ) -> RecurrentNetwork:
     lstm = RecurrentNetwork(
@@ -103,7 +103,7 @@ def train_lstm(
         early_stopping=early_stopping,
         loss_func=loss_func,
         learning_rate=learning_rate,
-        clip_zeros=clip_zeros,
+        # clip_zeros=clip_zeros,
     )
     print("\n\n** LSTM Model Trained! **\n\n")
 
@@ -135,7 +135,7 @@ def train_ealstm(
     forecast_horizon: int = 1,
     normalize_y: bool = True,
     learning_rate: float = 1e-3,
-    clip_zeros: bool = False,
+    # clip_zeros: bool = False,
     static: Optional[str] = "features",
 ) -> EARecurrentNetwork:
     # initialise the model
@@ -171,7 +171,7 @@ def train_ealstm(
         early_stopping=early_stopping,
         loss_func=loss_func,
         learning_rate=learning_rate,
-        clip_zeros=clip_zeros,
+        # clip_zeros=clip_zeros,
     )
     print("\n\n** EALSTM Model Trained! **\n\n")
 
@@ -258,13 +258,8 @@ def main(
     loss_func = "MSE"  # "MSE" "NSE"
     normalize_y = True
     learning_rate = {0: 1e-3, 11: 5e-4, 21: 1e-4}  # 1e-4  # 5e-4
-    clip_zeros = True
+    # clip_zeros = True
     static = "features"  #  embedding features None
-
-    if logy:
-        assert (
-            clip_zeros == False
-        ), "Can only clip zero flows if training on raw discharge_vol"
 
     # if running on Tommy's machine (DEBUG)
     try:
@@ -305,7 +300,6 @@ def main(
         forecast_horizon=forecast_horizon,
         normalize_y=normalize_y,
         learning_rate=learning_rate,
-        clip_zeros=clip_zeros,
         static=static,
     )
     if not engineer_only:

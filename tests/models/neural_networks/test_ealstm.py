@@ -297,7 +297,6 @@ class TestEALSTMDynamic:
 
         loss_func = "MSE"
         learning_rate = 1e-4
-        clip_zeros = True
 
         # Model
         ealstm = EARecurrentNetwork(
@@ -365,8 +364,6 @@ class TestEALSTMDynamic:
 
             # make predictions with this data
             pred = model(x=x, static=x_static)
-            if clip_zeros:
-                pred = F.relu(pred)
 
             # calculate the loss
             loss = F.smooth_l1_loss(pred, y_batch)
