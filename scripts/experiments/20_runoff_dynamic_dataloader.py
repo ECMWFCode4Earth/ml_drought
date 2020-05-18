@@ -259,7 +259,7 @@ def main(
     normalize_y = True
     learning_rate = 1e-4  # 5e-4
     clip_zeros = False
-    static = None  #  embedding features None
+    static = "features"  #  embedding features None
 
     if logy:
         assert (
