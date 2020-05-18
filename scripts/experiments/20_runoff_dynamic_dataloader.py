@@ -69,6 +69,8 @@ def train_model(
     dropout: float = 0.25,
     loss_func: str = "MSE",
     forecast_horizon: int = 1,
+    normalize_y: bool = True,
+    learning_rate: float = 1e-3,
 ) -> EARecurrentNetwork:
     # initialise the model
     ealstm = EARecurrentNetwork(
@@ -91,20 +93,22 @@ def train_model(
         include_pred_month=False,
         include_timestep_aggs=False,
         include_yearly_aggs=False,
+        normalize_y=True,
     )
     assert ealstm.seq_length == seq_length
     print("\n\n** Initialised Models! **\n\n")
 
     # Train the model on train set
-    train_rmses, huber_losses, val_rmses = ealstm.train(
-        num_epochs=n_epochs, early_stopping=early_stopping, loss_func=loss_func
+    train_rmses, train_losses, val_rmses = ealstm.train(
+        num_epochs=n_epochs, early_stopping=early_stopping, loss_func=loss_func,
+        learning_rate=learning_rate,
     )
     print("\n\n** Model Trained! **\n\n")
 
     # save the model
     ealstm.save_model()
     pickle.dump(train_rmses, open(ealstm.model_dir / "train_rmses.pkl", "wb"))
-    pickle.dump(huber_losses, open(ealstm.model_dir / "huber_losses.pkl", "wb"))
+    pickle.dump(train_losses, open(ealstm.model_dir / "train_losses.pkl", "wb"))
     pickle.dump(val_rmses, open(ealstm.model_dir / "val_rmses.pkl", "wb"))
 
     return ealstm
@@ -163,7 +167,7 @@ def main(
     seq_length = 365 * 2
     forecast_horizon = 0
     logy = True
-    batch_size = 2000  # 1000
+    batch_size = 300  # 1000 2000
     # catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
     # catchment_ids = [int(c_id) for c_id in catchment_ids]
     catchment_ids = None
@@ -179,6 +183,8 @@ def main(
     rnn_dropout = 0
     dropout = 0.3
     loss_func = "MSE"  # "MSE" "NSE"
+    normalize_y = True
+    learning_rate = 1e-4  # 5e-4
 
     # ----------------------------------------------------------------
     # CODE
@@ -210,6 +216,7 @@ def main(
             loss_func=loss_func,
             dropout=dropout,
             forecast_horizon=forecast_horizon,
+            normalize_y=normalize_y,
         )
         run_evaluation(data_dir, ealstm)
 
@@ -228,7 +235,7 @@ def evaluate_only():
 
 if __name__ == "__main__":
     engineer_only = False
-    model_only = True
+    model_only = False
     reset_data_files = False
     main(
         model_only=model_only,
