@@ -302,7 +302,7 @@ class NNBase(ModelBase):
                             f"the shape of the y ({val.y.shape})"
                             f" and historical_target ({val.historical_target.shape})"
                             " to be the same!"
-
+                        )
                         test_arrays_dict[key][
                             "historical_target"
                         ] = val.historical_target
