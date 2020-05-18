@@ -77,6 +77,14 @@ class NNBase(ModelBase):
     def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> torch.nn.Module:
         raise NotImplementedError
 
+    def _make_weights(self, target: torch.Tensor) -> torch.Tensor:
+
+        lower_threshold = -1 if self.normalize_y else 15
+        weight = 10
+        weights = torch.ones_like(target)
+        weights[target <= lower_threshold] = weight
+        return weights
+
     def train(
         self,
         num_epochs: int = 1,
@@ -147,11 +155,17 @@ class NNBase(ModelBase):
                             "somewhere in the data"
                         )
 
-                    loss = F.smooth_l1_loss(pred, y_batch)
+                    weights = self._make_weights(y_batch)
+
+                    loss = F.smooth_l1_loss(pred, y_batch, reduce=False)
+                    loss = (weights * loss).mean()
+
                     loss.backward()
                     optimizer.step()
 
                     with torch.no_grad():
+                        # could optionally weight the rmse, but it makes things
+                        # less interpretable and doesn't help with model learning
                         rmse = F.mse_loss(pred, y_batch)
                         train_rmse.append(math.sqrt(rmse.cpu().item()))
 
