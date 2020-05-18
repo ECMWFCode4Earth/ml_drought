@@ -267,9 +267,12 @@ def main(
         ), "Can only clip zero flows if training on raw discharge_spec"
 
     # if running on Tommy's machine (DEBUG)
-    if data_dir.parents[3].name == ("Volumes"):
-        model_only = True
-        num_epochs = 1
+    try:
+        if data_dir.parents[3].name == ("Volumes"):
+            model_only = True
+            num_epochs = 1
+    except IndexError:
+        pass
 
     # ----------------------------------------------------------------
     # CODE
