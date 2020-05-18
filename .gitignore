@@ -22,6 +22,7 @@ data/*.zip*
 scripts/*.png
 scripts/variables.txt
 data/*
+data*
 
 .ipynb_checkpoints
 
@@ -41,6 +42,7 @@ switch_data_dirs.sh
 
 # random python stuff
 core.python*
+core.ipython*
 
 # vscode settings
 .vscode
