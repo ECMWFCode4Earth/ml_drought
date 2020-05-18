@@ -27,7 +27,7 @@ from scripts.utils import (
 from scripts.experiments._static_ignore_vars import static_ignore_vars
 
 from src.engineer.dynamic_engineer import DynamicEngineer
-from src.models import EARecurrentNetwork
+from src.models import EARecurrentNetwork, RecurrentNetwork
 from src.models import load_model
 
 
@@ -52,7 +52,7 @@ def engineer(
     print("\n\n** Data Engineered! **\n\n")
 
 
-def train_model(
+def train_lstm(
     data_dir,
     static_ignore_vars,
     dynamic_ignore_vars,
@@ -72,6 +72,71 @@ def train_model(
     normalize_y: bool = True,
     learning_rate: float = 1e-3,
     clip_zeros: bool = False,
+    static: Optional[str] = "features",
+) -> RecurrentNetwork:
+    lstm = RecurrentNetwork(
+        data_folder=data_dir,
+        batch_size=batch_size,
+        hidden_size=hidden_size,
+        experiment="one_timestep_forecast",
+        dynamic=True,
+        seq_length=seq_length,
+        dynamic_ignore_vars=dynamic_ignore_vars,
+        static_ignore_vars=static_ignore_vars,
+        target_var=target_var,
+        test_years=test_years,
+        static_embedding_size=static_embedding_size,
+        dense_features=dense_features,
+        rnn_dropout=rnn_dropout,
+        dropout=dropout,
+        forecast_horizon=forecast_horizon,
+        include_latlons=False,
+        include_pred_month=False,
+        include_timestep_aggs=False,
+        include_yearly_aggs=False,
+        normalize_y=True,
+        static=static,
+    )
+    # Train the model on train set
+    train_rmses, train_losses, val_rmses = lstm.train(
+        num_epochs=n_epochs,
+        early_stopping=early_stopping,
+        loss_func=loss_func,
+        learning_rate=learning_rate,
+        clip_zeros=clip_zeros,
+    )
+    print("\n\n** LSTM Model Trained! **\n\n")
+
+    # save the model
+    lstm.save_model()
+    pickle.dump(train_rmses, open(lstm.model_dir / "train_rmses.pkl", "wb"))
+    pickle.dump(train_losses, open(lstm.model_dir / "train_losses.pkl", "wb"))
+    pickle.dump(val_rmses, open(lstm.model_dir / "val_rmses.pkl", "wb"))
+
+    return lstm
+
+
+def train_ealstm(
+    data_dir,
+    static_ignore_vars,
+    dynamic_ignore_vars,
+    n_epochs=100,
+    seq_length=365,
+    test_years=np.arange(2011, 2017),
+    target_var="discharge_spec",
+    batch_size=1000,
+    static_embedding_size=64,
+    hidden_size=128,
+    early_stopping: Optional[int] = None,
+    dense_features: Optional[List[int]] = None,
+    rnn_dropout: float = 0.25,
+    dropout: float = 0.25,
+    loss_func: str = "MSE",
+    forecast_horizon: int = 1,
+    normalize_y: bool = True,
+    learning_rate: float = 1e-3,
+    clip_zeros: bool = False,
+    static: Optional[str] = "features",
 ) -> EARecurrentNetwork:
     # initialise the model
     ealstm = EARecurrentNetwork(
@@ -95,9 +160,10 @@ def train_model(
         include_timestep_aggs=False,
         include_yearly_aggs=False,
         normalize_y=True,
+        static=static,
     )
     assert ealstm.seq_length == seq_length
-    print("\n\n** Initialised Models! **\n\n")
+    print("\n\n** EALSTM Initialised Models! **\n\n")
 
     # Train the model on train set
     train_rmses, train_losses, val_rmses = ealstm.train(
@@ -107,7 +173,7 @@ def train_model(
         learning_rate=learning_rate,
         clip_zeros=clip_zeros,
     )
-    print("\n\n** Model Trained! **\n\n")
+    print("\n\n** EALSTM Model Trained! **\n\n")
 
     # save the model
     ealstm.save_model()
@@ -142,6 +208,9 @@ def main(
     reset_data_files: bool = False,
 ):
     data_dir = get_data_path()
+    # data_dir = Path("/Volumes/Lees_Extend/data/ecmwf_sowc/data")
+    assert data_dir.exists()
+
     # ----------------------------------
     # Setup the experiment
     # ----------------------------------
@@ -190,11 +259,17 @@ def main(
     normalize_y = True
     learning_rate = 1e-4  # 5e-4
     clip_zeros = False
+    static = None  #  embedding features None
 
     if logy:
         assert (
             clip_zeros == False
         ), "Can only clip zero flows if training on raw discharge_spec"
+
+    # if running on Tommy's machine (DEBUG)
+    if data_dir.parents[3].name == ("Volumes"):
+        model_only = True
+        num_epochs = 1
 
     # ----------------------------------------------------------------
     # CODE
@@ -208,29 +283,34 @@ def main(
             stations=catchment_ids,
         )
 
+    model_kwargs = dict(
+        data_dir=data_dir,
+        static_ignore_vars=static_ignore_vars,
+        dynamic_ignore_vars=dynamic_ignore_vars,
+        n_epochs=num_epochs,
+        seq_length=seq_length,
+        test_years=test_years,
+        target_var=target_var,
+        batch_size=batch_size,
+        static_embedding_size=static_embedding_size,
+        hidden_size=hidden_size,
+        early_stopping=early_stopping,
+        dense_features=dense_features,
+        rnn_dropout=rnn_dropout,
+        loss_func=loss_func,
+        dropout=dropout,
+        forecast_horizon=forecast_horizon,
+        normalize_y=normalize_y,
+        learning_rate=learning_rate,
+        clip_zeros=clip_zeros,
+        static=static,
+    )
     if not engineer_only:
-        ealstm = train_model(
-            data_dir=data_dir,
-            static_ignore_vars=static_ignore_vars,
-            dynamic_ignore_vars=dynamic_ignore_vars,
-            n_epochs=num_epochs,
-            seq_length=seq_length,
-            test_years=test_years,
-            target_var=target_var,
-            batch_size=batch_size,
-            static_embedding_size=static_embedding_size,
-            hidden_size=hidden_size,
-            early_stopping=early_stopping,
-            dense_features=dense_features,
-            rnn_dropout=rnn_dropout,
-            loss_func=loss_func,
-            dropout=dropout,
-            forecast_horizon=forecast_horizon,
-            normalize_y=normalize_y,
-            learning_rate=learning_rate,
-            clip_zeros=clip_zeros,
-        )
+        ealstm = train_ealstm(**model_kwargs)
         run_evaluation(data_dir, ealstm)
+
+        # lstm = train_lstm(**model_kwargs)
+        # run_evaluation(data_dir, lstm)
 
         # datestamp the model directory so that we can run multiple experiments
         # _rename_directory(
