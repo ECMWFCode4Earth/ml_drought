@@ -71,6 +71,7 @@ def train_model(
     forecast_horizon: int = 1,
     normalize_y: bool = True,
     learning_rate: float = 1e-3,
+    clip_zeros: bool = False,
 ) -> EARecurrentNetwork:
     # initialise the model
     ealstm = EARecurrentNetwork(
@@ -101,7 +102,7 @@ def train_model(
     # Train the model on train set
     train_rmses, train_losses, val_rmses = ealstm.train(
         num_epochs=n_epochs, early_stopping=early_stopping, loss_func=loss_func,
-        learning_rate=learning_rate,
+        learning_rate=learning_rate, clip_zeros=clip_zeros
     )
     print("\n\n** Model Trained! **\n\n")
 
@@ -153,14 +154,14 @@ def main(
     # General Vars
     # dynamic_ignore_vars = ['discharge_vol', 'discharge_spec', 'pet']
     dynamic_ignore_vars = [
-        "temperature",
+        # "temperature",
         "discharge_vol",
         "discharge_spec",
         "pet",
-        "humidity",
-        "shortwave_rad",
-        "longwave_rad",
-        "windspeed",
+        # "humidity",
+        # "shortwave_rad",
+        # "longwave_rad",
+        # "windspeed",
         # 'peti', 'precipitation',
     ]
     target_var = "discharge_spec"
@@ -180,11 +181,15 @@ def main(
     # early_stopping = None
     early_stopping = 10
     dense_features = [128, 64]
-    rnn_dropout = 0
+    rnn_dropout = 0.3
     dropout = 0.3
     loss_func = "MSE"  # "MSE" "NSE"
     normalize_y = True
     learning_rate = 1e-4  # 5e-4
+    clip_zeros = False
+
+    if logy:
+        assert clip_zeros == False, "Can only clip zero flows if training on raw discharge_spec"
 
     # ----------------------------------------------------------------
     # CODE
@@ -217,6 +222,8 @@ def main(
             dropout=dropout,
             forecast_horizon=forecast_horizon,
             normalize_y=normalize_y,
+            learning_rate=learning_rate,
+            clip_zeros=clip_zeros
         )
         run_evaluation(data_dir, ealstm)
 
