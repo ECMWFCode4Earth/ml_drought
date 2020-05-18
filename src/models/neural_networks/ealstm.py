@@ -606,7 +606,7 @@ class OrgEALSTMCell(nn.Module):
             x_d = x_d.transpose(0, 1)
 
         seq_len, batch_size, _ = x_d.size()
-        assert seq_len == self.seq_length
+        assert False
 
         h_0 = x_d.data.new(batch_size, self.hidden_size).zero_()
         c_0 = x_d.data.new(batch_size, self.hidden_size).zero_()
