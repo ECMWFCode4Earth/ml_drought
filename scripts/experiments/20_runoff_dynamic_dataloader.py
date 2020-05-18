@@ -101,8 +101,11 @@ def train_model(
 
     # Train the model on train set
     train_rmses, train_losses, val_rmses = ealstm.train(
-        num_epochs=n_epochs, early_stopping=early_stopping, loss_func=loss_func,
-        learning_rate=learning_rate, clip_zeros=clip_zeros
+        num_epochs=n_epochs,
+        early_stopping=early_stopping,
+        loss_func=loss_func,
+        learning_rate=learning_rate,
+        clip_zeros=clip_zeros,
     )
     print("\n\n** Model Trained! **\n\n")
 
@@ -189,7 +192,9 @@ def main(
     clip_zeros = False
 
     if logy:
-        assert clip_zeros == False, "Can only clip zero flows if training on raw discharge_spec"
+        assert (
+            clip_zeros == False
+        ), "Can only clip zero flows if training on raw discharge_spec"
 
     # ----------------------------------------------------------------
     # CODE
@@ -223,7 +228,7 @@ def main(
             forecast_horizon=forecast_horizon,
             normalize_y=normalize_y,
             learning_rate=learning_rate,
-            clip_zeros=clip_zeros
+            clip_zeros=clip_zeros,
         )
         run_evaluation(data_dir, ealstm)
 
