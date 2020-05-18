@@ -192,7 +192,7 @@ class NNBase(ModelBase):
                         *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
                     )
                     if clip_zeros:
-                        pred = F.relu(pred)
+                        pred = F.relu(-pred)
                     # ------- LOSS FUNCTION ---------
                     if loss_func == "NSE":
                         # NSELoss needs std of each basin for each sample
