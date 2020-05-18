@@ -100,6 +100,7 @@ class NNBase(ModelBase):
         learning_rate: float = 1e-3,
         val_split: float = 0.1,
         loss_func: str = "MSE",
+        clip_zeros: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
@@ -182,6 +183,8 @@ class NNBase(ModelBase):
                     pred = self.model(
                         *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
                     )
+                    if clip_zeros:
+                        pred = F.relu(pred)
                     # ------- LOSS FUNCTION ---------
                     if loss_func == "NSE":
                         # NSELoss needs std of each basin for each sample
@@ -241,7 +244,7 @@ class NNBase(ModelBase):
                     if batches_without_improvement == early_stopping:
                         print("Early stopping!")
                         self.model.load_state_dict(best_model_dict)
-                        return (train_rmse, train_losses, epoch_val_rmse)
+                        return (train_rmse, train_losses, val_rmses)
                 val_rmses.append(epoch_val_rmse)
         return (train_rmse, train_losses, val_rmses)
 
@@ -299,7 +302,7 @@ class NNBase(ModelBase):
                             f"the shape of the y ({val.y.shape})"
                             f" and historical_target ({val.historical_target.shape})"
                             " to be the same!"
-                        )
+
                         test_arrays_dict[key][
                             "historical_target"
                         ] = val.historical_target

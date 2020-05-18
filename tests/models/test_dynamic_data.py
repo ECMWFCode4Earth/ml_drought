@@ -52,6 +52,9 @@ class TestDynamicDataLoader:
             forecast_horizon=forecast_horizon,
             batch_file_size=batch_file_size,
         )
+        #  ------------------------------
+        #  Test the DataLoader
+        #  ------------------------------
 
         ## check that dealing with spatial variable correctly
         assert "station_id" in dl.reducing_dims
@@ -268,7 +271,7 @@ class TestDynamicDataLoader:
         )
 
         #  ------------------------------
-        #  Test the iterators
+        #  Test the returned Tuples (data)
         #  ------------------------------
         # resolution = "D"
         # iterator = dl.__iter__()
