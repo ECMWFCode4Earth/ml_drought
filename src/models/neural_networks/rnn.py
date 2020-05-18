@@ -19,14 +19,16 @@ class RecurrentNetwork(NNBase):
         self,
         hidden_size: int,
         dense_features: Optional[List[int]] = None,
+        dynamic: bool = False,
         rnn_dropout: float = 0.25,
+        dropout: float = 0.25,
         data_folder: Path = Path("data"),
         forecast_horizon: int = 1,
         target_var: Optional[str] = None,
         test_years: Optional[Union[List[str], str]] = None,
         batch_size: int = 1,
         experiment: str = "one_month_forecast",
-        seq_length: int = 3,
+        seq_length: int = 365,
         pred_months: Optional[List[int]] = None,
         include_pred_month: bool = True,
         include_latlons: bool = False,
@@ -42,27 +44,26 @@ class RecurrentNetwork(NNBase):
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = True,
-        dynamic: bool = False,
     ) -> None:
         super().__init__(
-            data_folder,
-            batch_size,
-            experiment,
-            seq_length,
-            include_pred_month,
-            include_latlons,
-            include_timestep_aggs,
-            include_yearly_aggs,
-            surrounding_pixels,
-            ignore_vars,
-            static,
-            device,
+            dynamic=dynamic,
+            data_folder=data_folder,
+            batch_size=batch_size,
+            experiment=experiment,
+            seq_length=seq_length,
+            include_pred_month=include_pred_month,
+            include_latlons=include_latlons,
+            include_timestep_aggs=include_timestep_aggs,
+            include_yearly_aggs=include_yearly_aggs,
+            surrounding_pixels=surrounding_pixels,
+            ignore_vars=ignore_vars,
+            static=static,
+            device=device,
             predict_delta=predict_delta,
             spatial_mask=spatial_mask,
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
             pred_months=pred_months,
-            dynamic=dynamic,
             dynamic_ignore_vars=dynamic_ignore_vars,
             static_ignore_vars=static_ignore_vars,
             target_var=target_var,
@@ -73,6 +74,7 @@ class RecurrentNetwork(NNBase):
         # to initialize and save the model
         self.hidden_size = hidden_size
         self.rnn_dropout = rnn_dropout
+        self.dropout = dropout
         self.input_dense_features = copy(dense_features)
         if dense_features is None:
             dense_features = []
@@ -111,6 +113,13 @@ class RecurrentNetwork(NNBase):
             "spatial_mask": self.spatial_mask,
             "include_prev_y": self.include_prev_y,
             "normalize_y": self.normalize_y,
+            "dynamic": self.dynamic,
+            "dynamic_ignore_vars": self.dynamic_ignore_vars,
+            "static_ignore_vars": self.static_ignore_vars,
+            "target_var": self.target_var,
+            "test_years": self.test_years,
+            "forecast_horizon": self.forecast_horizon,
+            "seq_length": self.seq_length,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")
@@ -122,6 +131,7 @@ class RecurrentNetwork(NNBase):
         current_size: Optional[int],
         yearly_agg_size: Optional[int],
         static_size: Optional[int],
+        seq_length: int = 365,
     ) -> None:
         self.features_per_month = features_per_month
         self.current_size = current_size
@@ -177,6 +187,7 @@ class RecurrentNetwork(NNBase):
             dense_features=self.dense_features,
             hidden_size=self.hidden_size,
             rnn_dropout=self.rnn_dropout,
+            dropout=self.dropout,
             include_pred_month=self.include_pred_month,
             include_latlons=self.include_latlons,
             experiment=self.experiment,
@@ -184,6 +195,7 @@ class RecurrentNetwork(NNBase):
             yearly_agg_size=self.yearly_agg_size,
             static_size=self.static_size,
             include_prev_y=self.include_prev_y,
+            seq_length=seq_length,
         )
         return model.to(torch.device(self.device))
 
@@ -195,6 +207,7 @@ class RNN(nn.Module):
         dense_features,
         hidden_size,
         rnn_dropout,
+        dropout,
         include_pred_month,
         include_latlons,
         experiment,
@@ -202,6 +215,7 @@ class RNN(nn.Module):
         current_size=None,
         yearly_agg_size=None,
         static_size=None,
+        seq_length: Optional[int] = None,
     ):
         super().__init__()
 
@@ -211,8 +225,6 @@ class RNN(nn.Module):
         self.include_yearly_agg = False
         self.include_static = False
         self.include_prev_y = include_prev_y
-
-        self.dropout = nn.Dropout(rnn_dropout)
 
         if include_pred_month:
             features_per_month += 12
@@ -227,10 +239,12 @@ class RNN(nn.Module):
         if include_prev_y:
             features_per_month += 1
 
+        self.dropout = nn.Dropout(dropout)
         self.rnn = UnrolledRNN(
             input_size=features_per_month, hidden_size=hidden_size, batch_first=True
         )
         self.hidden_size = hidden_size
+        self.rnn_dropout = nn.Dropout(rnn_dropout)
 
         dense_input_size = hidden_size
         if experiment == "nowcast":
@@ -241,14 +255,19 @@ class RNN(nn.Module):
         if dense_features[-1] != 1:
             dense_features.append(1)
 
-        self.dense_layers = nn.ModuleList(
-            [
+        # add linear layer with nonlinear activation functions
+        dense_layers = []
+        for i in range(1, len(dense_features)):
+            dense_layers.append(
                 nn.Linear(
                     in_features=dense_features[i - 1], out_features=dense_features[i]
                 )
-                for i in range(1, len(dense_features))
-            ]
-        )
+            )
+            if i < len(dense_features) - 1:
+                # add a ReLU to all layers except the final layer
+                dense_layers.append(nn.ReLU())
+
+        self.dense_layers = nn.ModuleList(dense_layers)
 
         self.initialize_weights()
 
@@ -275,6 +294,7 @@ class RNN(nn.Module):
     ):
 
         sequence_length = x.shape[1]
+        assert sequence_length == seq_length
 
         hidden_state = torch.zeros(1, x.shape[0], self.hidden_size)
         cell_state = torch.zeros(1, x.shape[0], self.hidden_size)
@@ -314,9 +334,9 @@ class RNN(nn.Module):
             _, (hidden_state, cell_state) = self.rnn(
                 input_x, (hidden_state, cell_state)
             )
-            hidden_state = self.dropout(hidden_state)
+            hidden_state = self.rnn_dropout(hidden_state)
 
-        x = hidden_state.squeeze(0)
+        x = self.dropout(hidden_state.squeeze(0))
 
         if self.experiment == "nowcast":
             assert current is not None

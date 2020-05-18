@@ -669,6 +669,7 @@ class _DynamicIter:
         - Removed the predict delta
         - Removed the spatial_mask
         - Removed the calculation of aggs (done before in the static data)
+        - Removed pred_month, yearly_aggs, current, latlons, prev_y_var from data
         """
         # vars are already ignored in `get_sample_from_dynamic_data`
         x, y = xy_sample
@@ -698,7 +699,7 @@ class _DynamicIter:
         # 2. Build the X data object
         train_data = TrainData(
             historical=x_np,
-            pred_month=x_months,
+            pred_month=None,
             yearly_aggs=None,
             current=None,
             latlons=None,

@@ -236,14 +236,14 @@ def main(
         "windspeed",
         # 'peti', 'precipitation',
     ]
-    target_var = "discharge_spec"
+    target_var = "discharge_vol"
     seq_length = 365 * 2
     forecast_horizon = 0
     logy = True
-    batch_size = 300  # 1000 2000
-    # catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
-    # catchment_ids = [int(c_id) for c_id in catchment_ids]
-    catchment_ids = None
+    batch_size = 1000  # 1000 2000
+    catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
+    catchment_ids = [int(c_id) for c_id in catchment_ids]
+    # catchment_ids = None
 
     # Model Vars
     num_epochs = 100  # 100
@@ -257,14 +257,14 @@ def main(
     dropout = 0.3
     loss_func = "MSE"  # "MSE" "NSE"
     normalize_y = True
-    learning_rate = 1e-4  # 5e-4
-    clip_zeros = False
+    learning_rate = {0: 1e-3, 11: 5e-4, 21: 1e-4}  # 1e-4  # 5e-4
+    clip_zeros = True
     static = "features"  #  embedding features None
 
     if logy:
         assert (
             clip_zeros == False
-        ), "Can only clip zero flows if training on raw discharge_spec"
+        ), "Can only clip zero flows if training on raw discharge_vol"
 
     # if running on Tommy's machine (DEBUG)
     try:

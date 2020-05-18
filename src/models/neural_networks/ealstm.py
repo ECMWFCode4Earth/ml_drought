@@ -168,21 +168,32 @@ class EARecurrentNetwork(NNBase):
         )  # self.model.load_state_dict(state_dict, strict=False)
 
     def _initialize_model(self, x_ref: Optional[Tuple[torch.Tensor, ...]]) -> nn.Module:
+        """Initialize the model architecture (weight shapes/sizes)
+        determined by the functions passed to the initialisation
+        of the model run:
+        - features_per_month
+        - experiment
+        - include_yearly_aggs
+        - static
+        """
         if self.features_per_month is None:
             assert (
                 x_ref is not None
             ), f"x_ref can't be None if features_per_month or current_size is not defined"
             self.features_per_month = x_ref[0].shape[-1]
+
         if self.experiment == "nowcast":
             if self.current_size is None:
                 assert (
                     x_ref is not None
                 ), f"x_ref can't be None if features_per_month or current_size is not defined"
                 self.current_size = x_ref[3].shape[-1]
+
         if self.include_yearly_aggs:
             if self.yearly_agg_size is None:
                 assert x_ref is not None
                 self.yearly_agg_size = x_ref[4].shape[-1]
+
         if self.static:
             if self.static_size is None:
                 if self.static == "features":
@@ -205,6 +216,7 @@ class EARecurrentNetwork(NNBase):
             static_size=self.static_size,
             static_embedding_size=self.static_embedding_size,
             include_prev_y=self.include_prev_y,
+            seq_length=seq_length,
         )
 
         return model.to(torch.device(self.device))
@@ -594,6 +606,7 @@ class OrgEALSTMCell(nn.Module):
             x_d = x_d.transpose(0, 1)
 
         seq_len, batch_size, _ = x_d.size()
+        assert seq_len == seq_length
 
         h_0 = x_d.data.new(batch_size, self.hidden_size).zero_()
         c_0 = x_d.data.new(batch_size, self.hidden_size).zero_()

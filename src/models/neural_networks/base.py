@@ -97,7 +97,7 @@ class NNBase(ModelBase):
         self,
         num_epochs: int = 1,
         early_stopping: Optional[int] = None,
-        learning_rate: float = 1e-3,
+        learning_rate: Union[Dict[int, float], float] = 1e-3,
         val_split: float = 0.1,
         loss_func: str = "MSE",
         clip_zeros: bool = False,
@@ -161,7 +161,8 @@ class NNBase(ModelBase):
             self.model = model
 
         optimizer = torch.optim.Adam(
-            [pam for pam in self.model.parameters()], lr=learning_rate
+            [pam for pam in self.model.parameters()],
+            lr=learning_rate if isinstance(learning_rate, float) else learning_rate[0],
         )
 
         print("\n** Running Epochs ... **")
@@ -170,6 +171,13 @@ class NNBase(ModelBase):
         val_rmses = []
 
         for epoch in range(num_epochs):
+
+            ## Adaptive Learning Rate
+            if isinstance(learning_rate, dict):
+                if epoch in learning_rate.keys():
+                    for param_group in optimizer.param_groups:
+                        param_group["lr"] = learning_rate[epoch]
+
             epoch_rmses = []
             epoch_losses = []
             self.model.train()
