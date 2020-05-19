@@ -181,7 +181,7 @@ def temporal_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     return ones * time_values
 
 
-def _nse_func(obs: np.ndarray, sim: np.ndarray) -> float:
+def _nse_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> float:
     """Nash-Sutcliffe-Effiency
 
     Parameters
@@ -204,14 +204,14 @@ def _nse_func(obs: np.ndarray, sim: np.ndarray) -> float:
         If all values in the observations are equal
     """
     # make sure that metric is calculated over the same dimension
-    obs = obs.flatten()
-    sim = sim.flatten()
+    true_vals = true_vals.flatten()
+    pred_vals = pred_vals.flatten()
 
-    if obs.shape != sim.shape:
-        raise RuntimeError("obs and sim must be of the same length.")
+    if true_vals.shape != pred_vals.shape:
+        raise RuntimeError("true_vals and pred_vals must be of the same length.")
 
     # denominator of the fraction term
-    denominator = np.sum((obs - np.mean(obs))**2)
+    denominator = np.sum((true_vals - np.mean(true_vals))**2)
 
     # this would lead to a division by zero error and nse is defined as -inf
     if denominator == 0:
@@ -223,7 +223,7 @@ def _nse_func(obs: np.ndarray, sim: np.ndarray) -> float:
         raise RuntimeError("".join(msg))
 
     # numerator of the fraction term
-    numerator = np.sum((sim - obs)**2)
+    numerator = np.sum((pred_vals - true_vals)**2)
 
     # calculate the NSE
     nse_val = 1 - numerator / denominator
