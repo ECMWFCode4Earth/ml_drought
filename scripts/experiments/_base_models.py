@@ -117,6 +117,7 @@ def rnn(
     include_prev_y=True,
     include_yearly_aggs=True,
     clear_nans=True,
+    weight_observations=False,
 ):
     predictor = RecurrentNetwork(
         hidden_size=hidden_size,
@@ -133,6 +134,7 @@ def rnn(
         include_prev_y=include_prev_y,
         include_yearly_aggs=include_yearly_aggs,
         clear_nans=clear_nans,
+        weight_observations=weight_observations,
     )
     predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)
@@ -161,6 +163,7 @@ def earnn(
     include_prev_y=True,
     include_yearly_aggs=True,  # new
     clear_nans=True,
+    weight_observations=False,
 ):
     data_path = get_data_path()
 
@@ -181,6 +184,7 @@ def earnn(
             include_prev_y=include_prev_y,
             include_yearly_aggs=include_yearly_aggs,
             clear_nans=clear_nans,
+            weight_observations=weight_observations,
         )
         predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
         predictor.evaluate(save_preds=True)

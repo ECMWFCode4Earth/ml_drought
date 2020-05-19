@@ -37,6 +37,7 @@ class RecurrentNetwork(NNBase):
         include_prev_y: bool = True,
         normalize_y: bool = True,
         clear_nans: bool = True,
+        weight_observations: bool = False,
     ) -> None:
         super().__init__(
             data_folder,
@@ -56,6 +57,7 @@ class RecurrentNetwork(NNBase):
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
             clear_nans=clear_nans,
+            weight_observations=weight_observations,
         )
 
         # to initialize and save the model

@@ -37,6 +37,7 @@ class NNBase(ModelBase):
         include_prev_y: bool = True,
         normalize_y: bool = True,
         clear_nans: bool = True,
+        weight_observations: bool = False,
     ) -> None:
         super().__init__(
             data_folder=data_folder,
@@ -65,6 +66,7 @@ class NNBase(ModelBase):
         torch.manual_seed(42)
 
         self.explainer: Optional[shap.DeepExplainer] = None
+        self.weight_observations = weight_observations
 
     def to(self, device: str = "cpu"):
         # move the model onto the right device
@@ -78,6 +80,35 @@ class NNBase(ModelBase):
 
     def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> torch.nn.Module:
         raise NotImplementedError
+
+    def _make_weights(
+        self,
+        target: torch.Tensor,
+        threshold_value: float = 15,
+        weight_value: float = 10
+    ) -> torch.Tensor:
+        """weight the gradient updates to learn more from certain
+        observations!
+
+        Returns a vector of the same size as target.
+        The values are weight else 1
+
+        E.g. upweight the low VCI examples so the model pays
+        greater attention to these layers.
+
+        Arguments:
+        ---------
+        target: torch.Tensor
+            The y variable (the regression target)
+        """
+        # if normalize y then use -1 STD otherwise use
+        # the extreme droughts (<= threshold value)
+        # threshold_value = -1 if self.normalize_y else threshold_value
+        # weight = 10
+        weights = torch.ones_like(target)
+        weights[target <= threshold_value] = weight_value
+
+        return weights
 
     def train(
         self,
@@ -150,6 +181,17 @@ class NNBase(ModelBase):
                         )
 
                     loss = F.smooth_l1_loss(pred, y_batch)
+
+                    # upweight the losses on the extreme deficits
+                    if self.weight_observations:
+                        weights = self._make_weights(
+                            y_batch,
+                            threshold_value=15,
+                            weight_value=10,
+                        )
+
+                        loss = (weights * loss).mean()
+
                     loss.backward()
                     optimizer.step()
 

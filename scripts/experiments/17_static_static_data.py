@@ -183,6 +183,7 @@ if __name__ == "__main__":
         include_latlons=True,
         include_yearly_aggs=False,
         clear_nans=True,
+        weight_observations=False,
     )
 
     # -------------
@@ -203,6 +204,7 @@ if __name__ == "__main__":
         include_latlons=True,
         include_yearly_aggs=False,
         clear_nans=True,
+        weight_observations=False,
     )
 
     # rename the output file
