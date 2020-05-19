@@ -237,13 +237,13 @@ def main(
         # 'peti', 'precipitation',
     ]
     target_var = "discharge_spec"  # discharge_spec  discharge_vol
-    seq_length = 365 * 2
+    seq_length = 365  # * 2
     forecast_horizon = 0
-    logy = False
+    logy = True
     batch_size = 1000  # 1000 2000
-    catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
-    catchment_ids = [int(c_id) for c_id in catchment_ids]
-    # catchment_ids = None
+    # catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
+    # catchment_ids = [int(c_id) for c_id in catchment_ids]
+    catchment_ids = None
 
     # Model Vars
     num_epochs = 100  # 100
@@ -251,13 +251,13 @@ def main(
     static_embedding_size = 64  # 64
     hidden_size = 256  #  128
     # early_stopping = None
-    early_stopping = 10
-    dense_features = [128, 64]
-    rnn_dropout = 0.3
-    dropout = 0.3
+    early_stopping = 15
+    dense_features = [128, 64]  # [128, 64]
+    rnn_dropout = 0
+    dropout = 0
     loss_func = "MSE"  # "MSE" "NSE"
     normalize_y = True
-    learning_rate = {0: 1e-3, 11: 5e-4, 21: 1e-4}  # 1e-4  # 5e-4
+    learning_rate = {0: 1e-3, 5: 5e-4, 11: 1e-4}  # 1e-4  # 5e-4
     # clip_zeros = True
     static = "features"  #  embedding features None
 
@@ -303,11 +303,11 @@ def main(
         static=static,
     )
     if not engineer_only:
+        lstm = train_lstm(**model_kwargs)
+        run_evaluation(data_dir, lstm)
+
         ealstm = train_ealstm(**model_kwargs)
         run_evaluation(data_dir, ealstm)
-
-        # lstm = train_lstm(**model_kwargs)
-        # run_evaluation(data_dir, lstm)
 
         # datestamp the model directory so that we can run multiple experiments
         # _rename_directory(
