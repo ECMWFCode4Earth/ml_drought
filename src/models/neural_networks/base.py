@@ -106,7 +106,8 @@ class NNBase(ModelBase):
         assert loss_func in [
             "MSE",
             "NSE",
-        ], f"loss_func must be one of: ['MSE', 'NSE'] \nGot {loss_func}"
+            "huber",
+        ], f"loss_func must be one of: ['MSE', 'NSE', 'huber'] \nGot {loss_func}"
         if early_stopping is not None:
             if self.dynamic:
                 dl = self.get_dataloader(mode="train")
@@ -203,6 +204,8 @@ class NNBase(ModelBase):
 
                         loss = NSELoss().forward(pred, y_batch, target_var_std)
                     elif loss_func == "MSE":
+                        loss = F.mse_loss(pred, y_batch)
+                    elif loss_func == "huber":
                         loss = F.smooth_l1_loss(pred, y_batch)
                     else:
                         assert False, "Only implemented MSE / NSE loss functions"
@@ -216,7 +219,7 @@ class NNBase(ModelBase):
                             epoch_rmses, math.sqrt(rmse.cpu().item())
                         )
 
-                    epoch_losses = np.append(epoch_losses, loss.item())
+                    epoch_losses.append(loss.item())
 
             if early_stopping is not None:
                 self.model.eval()
