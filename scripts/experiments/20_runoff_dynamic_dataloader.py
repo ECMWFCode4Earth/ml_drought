@@ -96,7 +96,9 @@ def train_lstm(
         normalize_y=True,
         static=static,
     )
+
     # Train the model on train set
+    print("\n** Training LSTM **\n")
     train_rmses, train_losses, val_rmses = lstm.train(
         num_epochs=n_epochs,
         early_stopping=early_stopping,
@@ -162,7 +164,7 @@ def train_ealstm(
         static=static,
     )
     assert ealstm.seq_length == seq_length
-    print("\n\n** EALSTM Initialised Models! **\n\n")
+    print("\n\n** Training EALSTM! **\n\n")
 
     # Train the model on train set
     train_rmses, train_losses, val_rmses = ealstm.train(
