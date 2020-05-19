@@ -71,8 +71,10 @@ def train_lstm(
     forecast_horizon: int = 1,
     normalize_y: bool = True,
     learning_rate: float = 1e-3,
-    # clip_zeros: bool = False,
     static: Optional[str] = "features",
+    clip_values_to_zero: bool = False,
+    train_years: Optional[List[int]] = None,
+    val_years: Optional[List[int]] = None,
 ) -> RecurrentNetwork:
     lstm = RecurrentNetwork(
         data_folder=data_dir,
@@ -95,6 +97,9 @@ def train_lstm(
         include_yearly_aggs=False,
         normalize_y=True,
         static=static,
+        clip_values_to_zero=clip_values_to_zero,
+        train_years=train_years,
+        val_years=val_years,
     )
 
     # Train the model on train set
@@ -137,9 +142,9 @@ def train_ealstm(
     normalize_y: bool = True,
     learning_rate: float = 1e-3,
     static: Optional[str] = "features",
-    clip_values_to_zero: bool =False,
-    train_years: Optional[List[int]] = train_years,
-    val_years: Optional[List[int]] = val_years,
+    clip_values_to_zero: bool = False,
+    train_years: Optional[List[int]] = None,
+    val_years: Optional[List[int]] = None,
 ) -> EARecurrentNetwork:
     # initialise the model
     ealstm = EARecurrentNetwork(
@@ -322,8 +327,8 @@ def main(
         val_years=val_years,
     )
     if not engineer_only:
-        lstm = train_lstm(**model_kwargs)
-        run_evaluation(data_dir, lstm)
+        # lstm = train_lstm(**model_kwargs)
+        # run_evaluation(data_dir, lstm)
 
         ealstm = train_ealstm(**model_kwargs)
         run_evaluation(data_dir, ealstm)
