@@ -281,8 +281,9 @@ class RNN(nn.Module):
                 nn.init.uniform_(pam.data, -sqrt_k, sqrt_k)
 
         for dense_layer in self.dense_layers:
-            nn.init.kaiming_uniform_(dense_layer.weight.data)
-            nn.init.constant_(dense_layer.bias.data, 0)
+            if not isinstance(dense_layer, nn.ReLU):
+                nn.init.kaiming_uniform_(dense_layer.weight.data)
+                nn.init.constant_(dense_layer.bias.data, 0)
 
     def forward(
         self,
