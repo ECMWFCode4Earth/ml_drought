@@ -641,7 +641,6 @@ class _DynamicIter:
             ]
             X_dataset = X_dataset.drop(dynamic_ignore_vars)
 
-        assert False
         return (X_dataset, y_dataset), target_time
 
     @staticmethod
@@ -728,6 +727,7 @@ class _DynamicIter:
         else:
             id_to_loc_map = self.build_loc_to_idx_mapping(x, notnan_indices=None)
 
+        assert False
         # train_data.target_var_std = target_var_std_np
 
         # 4. Create the ModelArrays (X-y pairs)
