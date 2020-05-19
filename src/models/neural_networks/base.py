@@ -259,11 +259,14 @@ class NNBase(ModelBase):
                     # evaluation / keeping track of losses over time
                     with torch.no_grad():
                         rmse = F.mse_loss(pred, y_batch)
-                        epoch_rmses.append(math.sqrt(rmse.cpu().item()))
-                        epoch_losses.append(loss.cpu().item())
 
-                        # TODO: check that moost recent loss is notnan
-                        assert not np.isnan(epoch_losses[-1])
+                    # TODO: check that most recent loss is notnan
+                    assert not np.isnan(epoch_losses[-1])
+
+                    epoch_losses.append(loss.cpu().item())
+                    epoch_rmses.append(math.sqrt(rmse.cpu().item()))
+                    assert len(epoch_losses >= 1)
+                    assert len(epoch_rmses >= 1)
 
             # update the lists of mean epoch loss
             train_rmse.append(np.mean(epoch_rmses))
