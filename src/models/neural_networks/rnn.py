@@ -137,6 +137,7 @@ class RecurrentNetwork(NNBase):
         self.current_size = current_size
         self.yearly_agg_size = yearly_agg_size
         self.static_size = static_size
+        self.seq_length = seq_length
 
         self.model: RNN = RNN(
             features_per_month=self.features_per_month,
@@ -150,6 +151,7 @@ class RecurrentNetwork(NNBase):
             yearly_agg_size=self.yearly_agg_size,
             static_size=self.static_size,
             include_prev_y=self.include_prev_y,
+            seq_length=self.seq_length,
         )
         self.model.to(torch.device(self.device))
         self.model.load_state_dict(state_dict)
@@ -195,7 +197,7 @@ class RecurrentNetwork(NNBase):
             yearly_agg_size=self.yearly_agg_size,
             static_size=self.static_size,
             include_prev_y=self.include_prev_y,
-            seq_length=seq_length,
+            seq_length=self.seq_length,
         )
         return model.to(torch.device(self.device))
 
