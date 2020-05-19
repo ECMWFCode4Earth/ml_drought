@@ -727,7 +727,7 @@ class _DynamicIter:
         else:
             id_to_loc_map = self.build_loc_to_idx_mapping(x, notnan_indices=None)
 
-        assert False
+        assert len(notnan_indices) == len(y_np)
         # train_data.target_var_std = target_var_std_np
 
         # 4. Create the ModelArrays (X-y pairs)
