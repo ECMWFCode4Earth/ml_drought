@@ -181,28 +181,77 @@ def temporal_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     return ones * time_values
 
 
-def _nse_func(true_vals: np.array, pred_vals: np.array) -> float:
-    """Calculate Nash-Sutcliff-Efficiency.
+def _nse_func(obs: np.ndarray, sim: np.ndarray) -> float:
+    """Nash-Sutcliffe-Effiency
 
-    :param true_vals: Array containing the observations
-    :param pred_vals: Array containing the simulations
-    :return: NSE value.
+    Parameters
+    ----------
+    obs : np.ndarray
+        Array containing the discharge observations
+    sim : np.ndarray
+        Array containing the discharge simulations
+
+    Returns
+    -------
+    float
+        Nash-Sutcliffe-Efficiency
+
+    Raises
+    ------
+    RuntimeError
+        If `obs` and `sim` don't have the same length
+    RuntimeError
+        If all values in the observations are equal
     """
-    # only consider time steps, where observations are available
-    pred_vals = np.delete(pred_vals, np.argwhere(true_vals < 0), axis=0)
-    true_vals = np.delete(true_vals, np.argwhere(true_vals < 0), axis=0)
+    # make sure that metric is calculated over the same dimension
+    obs = obs.flatten()
+    sim = sim.flatten()
 
-    # check for NaNs in observations
-    # TODO: this is raising ValueErrors because the np.argwhere(np.isnan(true_vals)) is returning
-    # indices that are too large for the array
-    pred_vals = np.delete(pred_vals, np.argwhere(np.isnan(true_vals)), axis=0)
-    true_vals = np.delete(true_vals, np.argwhere(np.isnan(true_vals)), axis=0)
+    if obs.shape != sim.shape:
+        raise RuntimeError("obs and sim must be of the same length.")
 
-    denominator = np.sum((true_vals - np.mean(true_vals)) ** 2)
-    numerator = np.sum((pred_vals - true_vals) ** 2)
+    # denominator of the fraction term
+    denominator = np.sum((obs - np.mean(obs))**2)
+
+    # this would lead to a division by zero error and nse is defined as -inf
+    if denominator == 0:
+        msg = [
+            "The Nash-Sutcliffe-Efficiency coefficient is not defined ",
+            "for the case, that all values in the observations are equal.",
+            " Maybe you should use the Mean-Squared-Error instead."
+        ]
+        raise RuntimeError("".join(msg))
+
+    # numerator of the fraction term
+    numerator = np.sum((sim - obs)**2)
+
+    # calculate the NSE
     nse_val = 1 - numerator / denominator
 
     return nse_val
+
+# def _nse_func(true_vals: np.array, pred_vals: np.array) -> float:
+#     """Calculate Nash-Sutcliff-Efficiency.
+
+#     :param true_vals: Array containing the observations
+#     :param pred_vals: Array containing the simulations
+#     :return: NSE value.
+#     """
+#     # only consider time steps, where observations are available
+#     pred_vals = np.delete(pred_vals, np.argwhere(true_vals < 0), axis=0)
+#     true_vals = np.delete(true_vals, np.argwhere(true_vals < 0), axis=0)
+
+#     # check for NaNs in observations
+#     # TODO: this is raising ValueErrors because the np.argwhere(np.isnan(true_vals)) is returning
+#     # indices that are too large for the array
+#     pred_vals = np.delete(pred_vals, np.argwhere(np.isnan(true_vals)), axis=0)
+#     true_vals = np.delete(true_vals, np.argwhere(np.isnan(true_vals)), axis=0)
+
+#     denominator = np.sum((true_vals - np.mean(true_vals)) ** 2)
+#     numerator = np.sum((pred_vals - true_vals) ** 2)
+#     nse_val = 1 - numerator / denominator
+
+#     return nse_val
 
 
 def _rmse_func(
