@@ -262,7 +262,7 @@ def main(
     static_embedding_size = 64  # 64
     hidden_size = 256  #  128
     # early_stopping = None
-    early_stopping = 10
+    early_stopping = 5
     dense_features = []  # [128, 64]
     rnn_dropout = 0
     dropout = 0
