@@ -255,7 +255,7 @@ class NNBase(ModelBase):
                         val_pred_y = self.model(*self._input_to_tuple(x))
                         val_loss = F.mse_loss(val_pred_y, y)
 
-                        val_rmse = val_rmse.append(math.sqrt(val_loss.cpu().item()))
+                        val_rmse.append(math.sqrt(val_loss.cpu().item()))
 
             print(
                 f"Epoch {epoch + 1}, train smooth L1: {np.mean(epoch_losses)}, "
