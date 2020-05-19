@@ -332,6 +332,7 @@ class DynamicEngineer(_EngineerBase):
                 spatial_units=spatial_units,
             )
 
+    @staticmethod
     def augment_static_data(
         dynamic_ds: xr.Dataset,
         static_ds: xr.Dataset,
@@ -433,7 +434,7 @@ class DynamicEngineer(_EngineerBase):
         print(f"Calculating OHE features for {legend.variable_name.unique()[0]}")
 
         list_of_hot_encoded_das = []
-        for idx, row in legend.iterrows():
+        for _, row in legend.iterrows():
             key, value = row.key, row.value
             # convert to 0, 1 for that value
             ones = xr.ones_like(da)
