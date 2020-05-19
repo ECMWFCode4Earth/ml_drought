@@ -370,11 +370,10 @@ class _DynamicIter:
         assert (
             len(spatial_coord) == 1
         ), "Expect only one spatial coord (remove for latlon)"
-        spatial_coord = spatial_coord[0]
-        self.dynamic_ds = self.dynamic_ds.transpose((*["time"] + spatial_coord)).sortby(
-            *["time"] + spatial_coord
+        self.dynamic_ds = self.dynamic_ds.transpose(*(["time"] + spatial_coord)).sortby(
+            *(["time"] + spatial_coord)
         )
-        self.static_ds = self.static_ds.sortby(*[spatial_coord])
+        self.static_ds = self.static_ds.sortby(*spatial_coord)
 
         self.shuffle = loader.shuffle
 

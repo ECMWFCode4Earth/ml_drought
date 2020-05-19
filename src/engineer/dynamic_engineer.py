@@ -285,8 +285,8 @@ class DynamicEngineer(_EngineerBase):
         )
 
         # Sortby time/spatial coord
-        dynamic_ds = dynamic_ds.transpose((*["time"] + spatial_coord)).sortby(
-            *["time"] + spatial_coord
+        dynamic_ds = dynamic_ds.transpose(*("time", spatial_coord)).sortby(
+            *("time", spatial_coord)
         )
 
         # save to `data.nc`
