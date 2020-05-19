@@ -297,7 +297,6 @@ class RNN(nn.Module):
     ):
 
         sequence_length = x.shape[1]
-        assert sequence_length == seq_length
 
         hidden_state = torch.zeros(1, x.shape[0], self.hidden_size)
         cell_state = torch.zeros(1, x.shape[0], self.hidden_size)

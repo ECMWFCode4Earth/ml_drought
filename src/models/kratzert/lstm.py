@@ -33,11 +33,13 @@ class LSTM(nn.Module):
         Value of the initial forget gate bias, by default 0
     """
 
-    def __init__(self,
-                 input_size: int,
-                 hidden_size: int,
-                 batch_first: bool = True,
-                 initial_forget_bias: int = 0):
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size: int,
+        batch_first: bool = True,
+        initial_forget_bias: int = 0,
+    ):
         super(LSTM, self).__init__()
 
         self.input_size = input_size
@@ -63,7 +65,7 @@ class LSTM(nn.Module):
         nn.init.constant_(self.bias.data, val=0)
 
         if self.initial_forget_bias != 0:
-            self.bias.data[:self.hidden_size] = self.initial_forget_bias
+            self.bias.data[: self.hidden_size] = self.initial_forget_bias
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """[summary]
@@ -94,14 +96,16 @@ class LSTM(nn.Module):
         h_n, c_n = [], []
 
         # expand bias vectors to batch size
-        bias_batch = (self.bias.unsqueeze(0).expand(batch_size, *self.bias.size()))
+        bias_batch = self.bias.unsqueeze(0).expand(batch_size, *self.bias.size())
 
         # perform forward steps over input sequence
         for t in range(seq_len):
             h_0, c_0 = h_x
 
             # calculate gates
-            gates = (torch.addmm(bias_batch, h_0, self.weight_hh) + torch.mm(x[t], self.weight_ih))
+            gates = torch.addmm(bias_batch, h_0, self.weight_hh) + torch.mm(
+                x[t], self.weight_ih
+            )
             f, i, o, g = gates.chunk(4, 1)
 
             c_1 = torch.sigmoid(f) * c_0 + torch.sigmoid(i) * torch.tanh(g)

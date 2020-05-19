@@ -271,16 +271,22 @@ class DynamicEngineer(_EngineerBase):
                 dynamic_ds, ignore_vars=dynamic_ignore_vars
             )
 
+        # NOTE: will not work with latlon data
         # only include spatial_units from spatial_units List
+        spatial_coord = [c for c in dynamic_ds.coords if c != "time"]
+        assert len(spatial_coord) == 1, "Expect spatial coord to be 1D"
+        spatial_coord = spatial_coord[0]
         if spatial_units is not None:
-            spatial_coord = [c for c in dynamic_ds.coords if c != "time"]
-            assert len(spatial_coord) == 1, "Expect spatial coord to be 1D"
-            spatial_coord = spatial_coord[0]
             dynamic_ds = dynamic_ds.sel({spatial_coord: spatial_units})
 
         # calculate the normalization dict
         self.create_normalization_dict(
             dynamic_ds, static=False, test_year=test_years, latlon=latlon
+        )
+
+        # Sortby time/spatial coord
+        dynamic_ds = dynamic_ds.transpose((*["time"] + spatial_coord)).sortby(
+            *["time"] + spatial_coord
         )
 
         # save to `data.nc`

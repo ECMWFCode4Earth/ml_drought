@@ -364,6 +364,18 @@ class _DynamicIter:
         self.static_ignore_vars = loader.static_ignore_vars
         self.dynamic_ds = loader.dynamic_ds
         self.static_ds = loader.static_ds
+
+        # ensure data in correct format (transposed / sorted)
+        spatial_coord = [c for c in self.static_ds.coords]
+        assert (
+            len(spatial_coord) == 1
+        ), "Expect only one spatial coord (remove for latlon)"
+        spatial_coord = spatial_coord[0]
+        self.dynamic_ds = self.dynamic_ds.transpose((*["time"] + spatial_coord)).sortby(
+            *["time"] + spatial_coord
+        )
+        self.static_ds = self.static_ds.sortby(*[spatial_coord])
+
         self.shuffle = loader.shuffle
 
         self.idx = 0
@@ -630,6 +642,7 @@ class _DynamicIter:
             ]
             X_dataset = X_dataset.drop(dynamic_ignore_vars)
 
+        assert False
         return (X_dataset, y_dataset), target_time
 
     @staticmethod

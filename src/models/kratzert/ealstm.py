@@ -36,12 +36,14 @@ class EALSTM(nn.Module):
 
     """
 
-    def __init__(self,
-                 input_size_dyn: int,
-                 input_size_stat: int,
-                 hidden_size: int,
-                 batch_first: bool = True,
-                 initial_forget_bias: int = 0):
+    def __init__(
+        self,
+        input_size_dyn: int,
+        input_size_stat: int,
+        hidden_size: int,
+        batch_first: bool = True,
+        initial_forget_bias: int = 0,
+    ):
         super(EALSTM, self).__init__()
 
         self.input_size_dyn = input_size_dyn
@@ -51,7 +53,9 @@ class EALSTM(nn.Module):
         self.initial_forget_bias = initial_forget_bias
 
         # create tensors of learnable parameters
-        self.weight_ih = nn.Parameter(torch.FloatTensor(input_size_dyn, 3 * hidden_size))
+        self.weight_ih = nn.Parameter(
+            torch.FloatTensor(input_size_dyn, 3 * hidden_size)
+        )
         self.weight_hh = nn.Parameter(torch.FloatTensor(hidden_size, 3 * hidden_size))
         self.weight_sh = nn.Parameter(torch.FloatTensor(input_size_stat, hidden_size))
         self.bias = nn.Parameter(torch.FloatTensor(3 * hidden_size))
@@ -73,9 +77,11 @@ class EALSTM(nn.Module):
         nn.init.constant_(self.bias_s.data, val=0)
 
         if self.initial_forget_bias != 0:
-            self.bias.data[:self.hidden_size] = self.initial_forget_bias
+            self.bias.data[: self.hidden_size] = self.initial_forget_bias
 
-    def forward(self, x_d: torch.Tensor, x_s: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, x_d: torch.Tensor, x_s: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """[summary]
 
         Parameters
@@ -106,10 +112,10 @@ class EALSTM(nn.Module):
         h_n, c_n = [], []
 
         # expand bias vectors to batch size
-        bias_batch = (self.bias.unsqueeze(0).expand(batch_size, *self.bias.size()))
+        bias_batch = self.bias.unsqueeze(0).expand(batch_size, *self.bias.size())
 
         # calculate input gate only once because inputs are static
-        bias_s_batch = (self.bias_s.unsqueeze(0).expand(batch_size, *self.bias_s.size()))
+        bias_s_batch = self.bias_s.unsqueeze(0).expand(batch_size, *self.bias_s.size())
         i = torch.sigmoid(torch.addmm(bias_s_batch, x_s, self.weight_sh))
 
         # perform forward steps over input sequence
@@ -117,8 +123,9 @@ class EALSTM(nn.Module):
             h_0, c_0 = h_x
 
             # calculate gates
-            gates = (torch.addmm(bias_batch, h_0, self.weight_hh) +
-                     torch.mm(x_d[t], self.weight_ih))
+            gates = torch.addmm(bias_batch, h_0, self.weight_hh) + torch.mm(
+                x_d[t], self.weight_ih
+            )
             f, o, g = gates.chunk(3, 1)
 
             c_1 = torch.sigmoid(f) * c_0 + i * torch.tanh(g)
