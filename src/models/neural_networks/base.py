@@ -204,16 +204,23 @@ class NNBase(ModelBase):
                     for param_group in optimizer.param_groups:
                         param_group["lr"] = learning_rate[epoch]
 
+
             epoch_rmses = []
             epoch_losses = []
+
+            # ----------------------------------------
+            # Training
+            # ----------------------------------------
             self.model.train()
             # load in timesteps a few at a time
             for x, y in tqdm.tqdm(train_dataloader):
-                # chunk into n_pixels
+                # chunk into n_pixels (BATCHES)
                 for x_batch, y_batch in chunk_array(
                     x, y, self.batch_size, shuffle=True
                 ):
                     optimizer.zero_grad()
+
+                    # ------- FORWARD PASS ---------
                     pred = self.model(
                         *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
                     )
@@ -237,49 +244,70 @@ class NNBase(ModelBase):
                         assert (
                             False
                         ), "Only implemented MSE / NSE  / huber loss functions"
-                    # -------------------------------
+
+                    # ------- BACKWARD PASS ---------
                     loss.backward()
                     optimizer.step()
 
+                    # evaluation / keeping track of losses over time
                     with torch.no_grad():
                         rmse = F.mse_loss(pred, y_batch)
                         epoch_rmses.append(math.sqrt(rmse.cpu().item()))
+                        epoch_losses.append(loss.cpu().item())
 
-                    epoch_losses.append(loss.item())
+                        # TODO: check that moost recent loss is notnan
+                        assert not np.isnan(epoch_losses[-1])
 
+            # update the lists of mean epoch loss
+            train_rmse.append(np.mean(epoch_rmses))
+            train_losses.append(np.mean(epoch_losses))
+
+            # check the losses are not nans
+            assert not np.isnan(np.mean(epoch_losses))
+            assert not np.isnan(np.mean(epoch_rmses))
+
+            # Print the losses to the user
+            print(
+                f"Epoch {epoch + 1}, train loss: {np.mean(epoch_losses)}, "
+                f"RMSE: {np.mean(train_rmse)}"
+            )
+
+            # ----------------------------------------
+            # Validation
+            # ----------------------------------------
+            # epoch - check the accuracy on the validation set
             if early_stopping is not None:
                 self.model.eval()
                 val_rmse = []
+
                 with torch.no_grad():
                     for x, y in val_dataloader:
                         val_pred_y = self.model(*self._input_to_tuple(x))
                         val_loss = F.mse_loss(val_pred_y, y)
 
+                        # validation loss
                         val_rmse.append(math.sqrt(val_loss.cpu().item()))
 
-            print(
-                f"Epoch {epoch + 1}, train smooth L1: {np.mean(epoch_losses)}, "
-                f"RMSE: {np.mean(train_rmse)}"
-            )
-
-            train_rmse.append(np.mean(epoch_rmses))
-            train_losses.append(np.mean(epoch_losses))
-
             epoch_val_rmse = np.array([])
+
             if early_stopping is not None:
                 epoch_val_rmse = np.mean(val_rmse)
                 print(f"Val RMSE: {epoch_val_rmse}")
+
+                # new best score
                 if epoch_val_rmse < best_val_score:
                     batches_without_improvement = 0
                     best_val_score = epoch_val_rmse
                     best_model_dict = self.model.state_dict()
-                else:
+                else:  # early stopping
                     batches_without_improvement += 1
                     if batches_without_improvement == early_stopping:
                         print("Early stopping!")
                         self.model.load_state_dict(best_model_dict)
                         return (train_rmse, train_losses, val_rmses)
+
                 val_rmses.append(epoch_val_rmse)
+
         return (train_rmse, train_losses, val_rmses)
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
