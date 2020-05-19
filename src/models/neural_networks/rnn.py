@@ -120,6 +120,7 @@ class RecurrentNetwork(NNBase):
             "test_years": self.test_years,
             "forecast_horizon": self.forecast_horizon,
             "seq_length": self.seq_length,
+            "dropout": self.dropout,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")
