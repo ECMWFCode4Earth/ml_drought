@@ -218,9 +218,7 @@ def train_val_mask(
 
 
 def timestamp_train_val_mask(
-    all_times: List[np.datetime64],
-    train_years: List[int],
-    val_years: List[int],
+    all_times: List[np.datetime64], train_years: List[int], val_years: List[int]
 ) -> Tuple[List[bool], List[bool]]:
     """Rather than returning a random train-val split return
     a train-val split determined by times
@@ -250,7 +248,9 @@ def timestamp_train_val_mask(
         train_mask = [dt.year in train_years for dt in all_times]
         val_mask = [dt.year in val_years for dt in all_times]
     else:
-        assert False, f"Should provide values for val_years: {val_years}, train_years: {train_years}"
+        assert (
+            False
+        ), f"Should provide values for val_years: {val_years}, train_years: {train_years}"
 
     return train_mask, val_mask
 

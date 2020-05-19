@@ -16,7 +16,13 @@ from typing import cast, Dict, List, Optional, Tuple, Union
 from .nseloss import NSELoss
 from ..base import ModelBase
 from ..utils import chunk_array
-from ..data import DataLoader, train_val_mask, TrainData, idx_to_input, timestamp_train_val_mask
+from ..data import (
+    DataLoader,
+    train_val_mask,
+    TrainData,
+    idx_to_input,
+    timestamp_train_val_mask,
+)
 
 
 class NNBase(ModelBase):
@@ -88,7 +94,9 @@ class NNBase(ModelBase):
         self.val_years = val_years
 
         if self.train_years is not None:
-            assert not any(np.isin(test_years, train_years)), "MODEL LEAKAGE - Train > Test"
+            assert not any(
+                np.isin(test_years, train_years)
+            ), "MODEL LEAKAGE - Train > Test"
         if self.val_years is not None:
             assert not any(np.isin(test_years, val_years)), "MODEL LEAKAGE - Val > Test"
 
@@ -137,7 +145,7 @@ class NNBase(ModelBase):
                     train_mask, val_mask = timestamp_train_val_mask(
                         all_times=all_times,
                         train_years=self.val_years,
-                        val_years=self.val_years
+                        val_years=self.val_years,
                     )
 
                 print("\n** Loading Dataloaders ... **")
@@ -203,7 +211,6 @@ class NNBase(ModelBase):
                 if epoch in learning_rate.keys():
                     for param_group in optimizer.param_groups:
                         param_group["lr"] = learning_rate[epoch]
-
 
             epoch_rmses = []
             epoch_losses = []

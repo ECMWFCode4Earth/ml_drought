@@ -281,7 +281,6 @@ def main(
     assert not any(np.isin(test_years, train_years)), "MODEL LEAKAGE"
     assert not any(np.isin(test_years, val_years)), "MODEL LEAKAGE"
 
-
     # if running on Tommy's machine (DEBUG)
     try:
         if data_dir.parents[3].name == ("Volumes"):
@@ -339,6 +338,7 @@ def main(
         #     to_path=data_dir / "models" / "one_timestep_forecast",
         #     with_datetime=True,
         # )
+
 
 def evaluate_only():
     data_dir = get_data_path()

@@ -11,7 +11,11 @@ from torch.nn import functional as F
 
 from src.models.neural_networks.ealstm import EALSTM, EALSTMCell, OrgEALSTMCell
 from src.models import EARecurrentNetwork
-from src.models.neural_networks.base import train_val_mask, chunk_array, timestamp_train_val_mask
+from src.models.neural_networks.base import (
+    train_val_mask,
+    chunk_array,
+    timestamp_train_val_mask,
+)
 
 # from src.models.data import TrainData
 
@@ -345,7 +349,7 @@ class TestEALSTMDynamic:
             train_mask, val_mask = timestamp_train_val_mask(
                 all_times=all_times,
                 train_years=ealstm.train_years,
-                val_years=ealstm.val_years
+                val_years=ealstm.val_years,
             )
 
         train_dataloader = ealstm.get_dataloader(
@@ -429,7 +433,16 @@ class TestEALSTMDynamic:
             pred[pred < 0] = 0
             assert all(pred >= 0)
 
-
-        assert all([pd.to_datetime(dt).year == ealstm.val_years for dt in val_dataloader.valid_train_times])
-        assert all([pd.to_datetime(dt).year == ealstm.train_years for dt in train_dataloader.valid_train_times])
+        assert all(
+            [
+                np.isin(pd.to_datetime(dt).year, ealstm.val_years)
+                for dt in val_dataloader.valid_train_times
+            ]
+        )
+        assert all(
+            [
+                np.isin(pd.to_datetime(dt).year, ealstm.train_years)
+                for dt in train_dataloader.valid_train_times
+            ]
+        )
         assert False
