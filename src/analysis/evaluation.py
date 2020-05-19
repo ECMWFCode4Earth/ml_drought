@@ -211,24 +211,25 @@ def _nse_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> float:
         raise RuntimeError("true_vals and pred_vals must be of the same length.")
 
     # denominator of the fraction term
-    denominator = np.sum((true_vals - np.mean(true_vals))**2)
+    denominator = np.sum((true_vals - np.mean(true_vals)) ** 2)
 
     # this would lead to a division by zero error and nse is defined as -inf
     if denominator == 0:
         msg = [
             "The Nash-Sutcliffe-Efficiency coefficient is not defined ",
             "for the case, that all values in the observations are equal.",
-            " Maybe you should use the Mean-Squared-Error instead."
+            " Maybe you should use the Mean-Squared-Error instead.",
         ]
         raise RuntimeError("".join(msg))
 
     # numerator of the fraction term
-    numerator = np.sum((pred_vals - true_vals)**2)
+    numerator = np.sum((pred_vals - true_vals) ** 2)
 
     # calculate the NSE
     nse_val = 1 - numerator / denominator
 
     return nse_val
+
 
 # def _nse_func(true_vals: np.array, pred_vals: np.array) -> float:
 #     """Calculate Nash-Sutcliff-Efficiency.

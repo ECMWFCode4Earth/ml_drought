@@ -44,6 +44,9 @@ class RecurrentNetwork(NNBase):
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = True,
+        val_years: Optional[List[Union[float, int]]] = None,
+        train_years: Optional[List[Union[float, int]]] = None,
+        clip_values_to_zero: bool = False,
     ) -> None:
         super().__init__(
             dynamic=dynamic,
@@ -69,6 +72,9 @@ class RecurrentNetwork(NNBase):
             target_var=target_var,
             test_years=test_years,
             forecast_horizon=forecast_horizon,
+            val_years=val_years,
+            train_years=train_years,
+            clip_values_to_zero=clip_values_to_zero,
         )
 
         # to initialize and save the model
@@ -121,6 +127,7 @@ class RecurrentNetwork(NNBase):
             "forecast_horizon": self.forecast_horizon,
             "seq_length": self.seq_length,
             "dropout": self.dropout,
+            "clip_values_to_zero": self.clip_values_to_zero,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")

@@ -2,6 +2,7 @@ import pickle
 import pytest
 from copy import copy
 import numpy as np
+import pandas as pd
 
 import torch
 from torch import nn
@@ -10,7 +11,7 @@ from torch.nn import functional as F
 
 from src.models.neural_networks.ealstm import EALSTM, EALSTMCell, OrgEALSTMCell
 from src.models import EARecurrentNetwork
-from src.models.neural_networks.base import train_val_mask, chunk_array
+from src.models.neural_networks.base import train_val_mask, chunk_array, timestamp_train_val_mask
 
 # from src.models.data import TrainData
 
@@ -295,6 +296,10 @@ class TestEALSTMDynamic:
         dropout = 0.3
         dense_features = None
 
+        train_years = [1999]
+        val_years = [2000]
+        clip_values_to_zero = True
+
         loss_func = "MSE"
         learning_rate = 1e-4
 
@@ -319,14 +324,30 @@ class TestEALSTMDynamic:
             include_pred_month=False,
             include_timestep_aggs=False,
             include_yearly_aggs=False,
+            val_years=val_years,
+            train_years=train_years,
+            clip_values_to_zero=clip_values_to_zero,
         )
 
         assert isinstance(ealstm, EARecurrentNetwork)
 
-        # get the dataloaders
         dl = ealstm.get_dataloader(mode="train")
-        len_mask = len(dl.valid_train_times)
-        train_mask, val_mask = train_val_mask(len_mask, 0.1)
+
+        # get the train / validation period
+        # randomly selected
+        if (ealstm.val_years is None) and (ealstm.train_years is None):
+            len_mask = len(dl.valid_train_times)
+            train_mask, val_mask = train_val_mask(len_mask, 0.1)
+
+        # Provided by the user
+        else:
+            all_times = dl.valid_train_times
+            train_mask, val_mask = timestamp_train_val_mask(
+                all_times=all_times,
+                train_years=ealstm.train_years,
+                val_years=ealstm.val_years
+            )
+
         train_dataloader = ealstm.get_dataloader(
             mode="train", mask=train_mask, to_tensor=True, shuffle_data=True
         )
@@ -364,8 +385,6 @@ class TestEALSTMDynamic:
 
             # make predictions with this data
             pred = model(x=x, static=x_static)
-            if clip_zeros:
-                pred = F.relu(pred)
 
             # calculate the loss
             loss = F.smooth_l1_loss(pred, y_batch)
@@ -406,7 +425,11 @@ class TestEALSTMDynamic:
         assert len(train_rmse) == 2
         assert len(train_losses) == 2
 
-        if clip_zeros:
+        if ealstm.clip_values_to_zero:
+            pred[pred < 0] = 0
             assert all(pred >= 0)
 
+
+        assert all([pd.to_datetime(dt).year == ealstm.val_years for dt in val_dataloader.valid_train_times])
+        assert all([pd.to_datetime(dt).year == ealstm.train_years for dt in train_dataloader.valid_train_times])
         assert False

@@ -136,8 +136,10 @@ def train_ealstm(
     forecast_horizon: int = 1,
     normalize_y: bool = True,
     learning_rate: float = 1e-3,
-    # clip_zeros: bool = False,
     static: Optional[str] = "features",
+    clip_values_to_zero: bool =False,
+    train_years: Optional[List[int]] = train_years,
+    val_years: Optional[List[int]] = val_years,
 ) -> EARecurrentNetwork:
     # initialise the model
     ealstm = EARecurrentNetwork(
@@ -162,6 +164,9 @@ def train_ealstm(
         include_yearly_aggs=False,
         normalize_y=True,
         static=static,
+        clip_values_to_zero=clip_values_to_zero,
+        train_years=train_years,
+        val_years=val_years,
     )
     assert ealstm.seq_length == seq_length
     print("\n\n** Training EALSTM! **\n\n")
@@ -240,7 +245,7 @@ def main(
     target_var = "discharge_spec"  # discharge_spec  discharge_vol
     seq_length = 365  # * 2
     forecast_horizon = 0
-    logy = True
+    logy = False
     batch_size = 1000  # 1000 2000
     # catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
     # catchment_ids = [int(c_id) for c_id in catchment_ids]
@@ -248,19 +253,29 @@ def main(
 
     # Model Vars
     num_epochs = 100  # 100
-    test_years = np.arange(2014, 2016)
+    test_years = np.arange(2010, 2016)
     static_embedding_size = 64  # 64
     hidden_size = 256  #  128
     # early_stopping = None
-    early_stopping = 15
-    dense_features = [128, 64]  # [128, 64]
+    early_stopping = 10
+    dense_features = []  # [128, 64]
     rnn_dropout = 0
     dropout = 0
-    loss_func = "MSE"  # "MSE" "NSE"
+    loss_func = "MSE"  # "MSE" "NSE" "huber"
     normalize_y = True
     learning_rate = {0: 1e-3, 5: 5e-4, 11: 1e-4}  # 1e-4  # 5e-4
-    # clip_zeros = True
+    clip_values_to_zero = True
     static = "features"  #  embedding features None
+
+    train_years = np.arange(1979, 2010)
+    val_years = np.arange(1970, 1979)
+
+    if logy:
+        assert clip_values_to_zero is False, "Don't clip to zero if log transform y"
+
+    assert not any(np.isin(test_years, train_years)), "MODEL LEAKAGE"
+    assert not any(np.isin(test_years, val_years)), "MODEL LEAKAGE"
+
 
     # if running on Tommy's machine (DEBUG)
     try:
@@ -302,6 +317,9 @@ def main(
         normalize_y=normalize_y,
         learning_rate=learning_rate,
         static=static,
+        clip_values_to_zero=clip_values_to_zero,
+        train_years=train_years,
+        val_years=val_years,
     )
     if not engineer_only:
         lstm = train_lstm(**model_kwargs)

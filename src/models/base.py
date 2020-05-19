@@ -69,6 +69,7 @@ class ModelBase:
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = False,
+        clip_values_to_zero: bool = False,
     ) -> None:
         self.batch_size = batch_size
         self.include_pred_month = include_pred_month
@@ -144,6 +145,8 @@ class ModelBase:
         self.device = "cpu"
         np.random.seed(42)
         random.seed(42)
+
+        self.clip_values_to_zero = clip_values_to_zero
 
     @staticmethod
     def _load_spatial_mask(
@@ -233,13 +236,17 @@ class ModelBase:
         output_dict: Dict[str, int] = {}
         total_preds: List[np.ndarray] = []
         total_true: List[np.ndarray] = []
-        for key, vals in test_arrays_dict.items():
 
+        for key, vals in test_arrays_dict.items():
             true = self.denormalize_y(vals["y"], vals["y_var"])
             preds = self.denormalize_y(preds_dict[key], vals["y_var"])
 
             # if self.logy:
             #     self.undo_log_transform(vals["y_var"])
+
+            if self.clip_values_to_zero:
+                # set discharges < 0 to zero
+                preds[preds < 0] = 0
 
             output_dict[key] = np.sqrt(mean_squared_error(true, preds)).item()
 

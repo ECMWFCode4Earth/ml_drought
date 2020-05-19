@@ -217,6 +217,44 @@ def train_val_mask(
     return train_mask.tolist(), val_mask.tolist()
 
 
+def timestamp_train_val_mask(
+    all_times: List[np.datetime64],
+    train_years: List[int],
+    val_years: List[int],
+) -> Tuple[List[bool], List[bool]]:
+    """Rather than returning a random train-val split return
+    a train-val split determined by times
+    Arguments
+    ----------
+    train_years: List[int]
+    val_years: List[int]
+    Returns
+    ----------
+    The train mask and the val mask, both as lists
+
+    """
+    all_times = [pd.to_datetime(dt) for dt in all_times]
+
+    if (train_years is not None) and (val_years is None):
+        # set the val_years to the remaining times
+        train_mask = [dt.year in train_years for dt in all_times]
+        val_mask = [dt.year not in train_years for dt in all_times]
+
+    elif (train_years is None) and (val_years is not None):
+        # Set the train_years to the remaining times
+        val_mask = [dt.year in val_years for dt in all_times]
+        train_mask = [dt.year not in val_years for dt in all_times]
+
+    elif (train_years is not None) and (val_years is not None):
+        # both train and validation years are passed by the user
+        train_mask = [dt.year in train_years for dt in all_times]
+        val_mask = [dt.year in val_years for dt in all_times]
+    else:
+        assert False, f"Should provide values for val_years: {val_years}, train_years: {train_years}"
+
+    return train_mask, val_mask
+
+
 class DataLoader:
     """Dataloader; lazily load the training and test data
     Attributes:

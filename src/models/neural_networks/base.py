@@ -16,7 +16,7 @@ from typing import cast, Dict, List, Optional, Tuple, Union
 from .nseloss import NSELoss
 from ..base import ModelBase
 from ..utils import chunk_array
-from ..data import DataLoader, train_val_mask, TrainData, idx_to_input
+from ..data import DataLoader, train_val_mask, TrainData, idx_to_input, timestamp_train_val_mask
 
 
 class NNBase(ModelBase):
@@ -45,6 +45,9 @@ class NNBase(ModelBase):
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = True,
+        val_years: Optional[List[Union[float, int]]] = None,
+        train_years: Optional[List[Union[float, int]]] = None,
+        clip_values_to_zero: bool = False,
     ) -> None:
         super().__init__(
             dynamic=dynamic,
@@ -69,6 +72,7 @@ class NNBase(ModelBase):
             target_var=target_var,
             test_years=test_years,
             forecast_horizon=forecast_horizon,
+            clip_values_to_zero=clip_values_to_zero,
         )
 
         # for reproducibility
@@ -79,6 +83,14 @@ class NNBase(ModelBase):
         torch.manual_seed(42)
 
         self.explainer: Optional[shap.DeepExplainer] = None
+
+        self.train_years = train_years
+        self.val_years = val_years
+
+        if self.train_years is not None:
+            assert not any(np.isin(test_years, train_years)), "MODEL LEAKAGE - Train > Test"
+        if self.val_years is not None:
+            assert not any(np.isin(test_years, val_years)), "MODEL LEAKAGE - Val > Test"
 
     def to(self, device: str = "cpu"):
         # move the model onto the right device
@@ -111,8 +123,22 @@ class NNBase(ModelBase):
         if early_stopping is not None:
             if self.dynamic:
                 dl = self.get_dataloader(mode="train")
-                len_mask = len(dl.valid_train_times)
-                train_mask, val_mask = train_val_mask(len_mask, 0.1)
+
+                # get the train / validation period
+                # randomly selected
+                if (self.val_years is None) and (self.train_years is None):
+                    len_mask = len(dl.valid_train_times)
+                    train_mask, val_mask = train_val_mask(len_mask, 0.1)
+
+                # Provided by the user
+                else:
+                    all_times = dl.valid_train_times
+                    # TODO: select the validation period
+                    train_mask, val_mask = timestamp_train_val_mask(
+                        all_times=all_times,
+                        train_years=self.val_years,
+                        val_years=self.val_years
+                    )
 
                 print("\n** Loading Dataloaders ... **")
                 train_dataloader = self.get_dataloader(
@@ -208,16 +234,16 @@ class NNBase(ModelBase):
                     elif loss_func == "huber":
                         loss = F.smooth_l1_loss(pred, y_batch)
                     else:
-                        assert False, "Only implemented MSE / NSE loss functions"
+                        assert (
+                            False
+                        ), "Only implemented MSE / NSE  / huber loss functions"
                     # -------------------------------
                     loss.backward()
                     optimizer.step()
 
                     with torch.no_grad():
                         rmse = F.mse_loss(pred, y_batch)
-                        epoch_rmses = np.append(
-                            epoch_rmses, math.sqrt(rmse.cpu().item())
-                        )
+                        epoch_rmses.append(math.sqrt(rmse.cpu().item()))
 
                     epoch_losses.append(loss.item())
 
@@ -229,7 +255,7 @@ class NNBase(ModelBase):
                         val_pred_y = self.model(*self._input_to_tuple(x))
                         val_loss = F.mse_loss(val_pred_y, y)
 
-                        val_rmse = np.append(val_rmse, math.sqrt(val_loss.cpu().item()))
+                        val_rmse = val_rmse.append(math.sqrt(val_loss.cpu().item()))
 
             print(
                 f"Epoch {epoch + 1}, train smooth L1: {np.mean(epoch_losses)}, "
