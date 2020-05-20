@@ -131,7 +131,7 @@ class NNBase(ModelBase):
                 # validation loss
                 val_rmse.append(math.sqrt(val_loss.cpu().item()))
 
-    return val_rmses
+        return val_rmses
 
     def _train_epoch(
         self,
