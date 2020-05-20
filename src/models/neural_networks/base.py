@@ -119,7 +119,7 @@ class NNBase(ModelBase):
         val_dataloader: Union[DataLoader, DynamicDataLoader],
     ) -> List[float]:
         self.model.eval()
-        val_rmse = []
+        val_batch_rmse = []
 
         with torch.no_grad():
             for x, y in val_dataloader:
@@ -130,9 +130,10 @@ class NNBase(ModelBase):
                 assert not np.isnan(val_loss.cpu().item())
 
                 # validation loss
-                val_rmse.append(np.sqrt(val_loss.cpu().item()))
+                val_batch_rmse.append(np.sqrt(val_loss.cpu().item()))
 
-        assert val_rmse != []
+        assert val_batch_rmse != []
+        val_rmses.append(np.mean(val_batch_rmse))
 
         return val_rmses
 
@@ -341,11 +342,11 @@ class NNBase(ModelBase):
             # ----------------------------------------
             # epoch - check the accuracy on the validation set
             if early_stopping is not None:
-                val_rmse = self._val_epoch(
+                val_rmses = self._val_epoch(
                     val_rmses=val_rmses, val_dataloader=val_dataloader
                 )
 
-                epoch_val_rmse = np.mean(val_rmse)
+                epoch_val_rmse = val_rmses[-1]
                 assert not np.isnan(epoch_val_rmse)
 
                 # do we want to stop training?
