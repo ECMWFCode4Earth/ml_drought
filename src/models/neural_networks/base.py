@@ -345,6 +345,7 @@ class NNBase(ModelBase):
 
             if early_stopping is not None:
                 print(f"Val RMSE: {epoch_val_rmse}")
+                best_model_dict = self.model.state_dict()
 
                 # new best score
                 if epoch_val_rmse < best_val_score:
