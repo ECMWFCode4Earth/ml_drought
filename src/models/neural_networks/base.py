@@ -126,6 +126,9 @@ class NNBase(ModelBase):
                 val_pred_y = self.model(*self._input_to_tuple(x))
                 val_loss = F.mse_loss(val_pred_y, y)
 
+                # check for nan loss
+                assert not np.isnan(val_loss.cpu().item())
+
                 # validation loss
                 val_rmse.append(np.sqrt(val_loss.cpu().item()))
 
@@ -324,7 +327,7 @@ class NNBase(ModelBase):
         val_rmses = []
 
         for epoch in range(num_epochs):
-            self._train_epoch(
+            train_rmse, train_losses = self._train_epoch(
                 epoch=epoch,
                 train_dataloader=train_dataloader,
                 train_rmse=train_rmse,
@@ -343,8 +346,9 @@ class NNBase(ModelBase):
                 )
 
                 epoch_val_rmse = np.mean(val_rmse)
+                assert not np.isnan(epoch_val_rmse)
 
-            if early_stopping is not None:
+                # do we want to stop training?
                 print(f"Val RMSE: {epoch_val_rmse}")
                 best_model_dict = self.model.state_dict()
 
