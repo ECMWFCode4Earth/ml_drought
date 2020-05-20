@@ -140,6 +140,7 @@ class NNBase(ModelBase):
         train_rmse: List[float],
         train_losses: List[float],
         learning_rate: Union[float, Dict[int, float]],
+        loss_func: str,
     ) -> Union[List[float], List[float]]:
         """Run epoch training step"""
         # Adaptive Learning Rate
@@ -322,16 +323,6 @@ class NNBase(ModelBase):
         train_losses = []
         val_rmses = []
 
-        # self._train_epoch(
-        #     epoch=epoch,
-        #     train_dataloader=train_dataloader,
-        #     train_rmse=train_rmse,
-        #     train_losses=train_losses,
-        #     val_rmses=val_rmses,
-        #     learning_rate=learning_rate,
-        #     val_dataloader=val_dataloader,
-        # )
-
         for epoch in range(num_epochs):
             self._train_epoch(
                 epoch=epoch,
@@ -339,6 +330,7 @@ class NNBase(ModelBase):
                 train_rmse=train_rmse,
                 train_losses=train_losses,
                 learning_rate=learning_rate,
+                loss_func=loss_func
             )
 
             # ----------------------------------------
