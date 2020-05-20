@@ -2,7 +2,6 @@ import numpy as np
 import random
 from pathlib import Path
 import pickle
-import math
 import xarray as xr
 import tqdm
 
@@ -128,7 +127,9 @@ class NNBase(ModelBase):
                 val_loss = F.mse_loss(val_pred_y, y)
 
                 # validation loss
-                val_rmse.append(math.sqrt(val_loss.cpu().item()))
+                val_rmse.append(np.sqrt(val_loss.cpu().item()))
+
+        assert val_rmse != []
 
         return val_rmses
 
@@ -193,7 +194,7 @@ class NNBase(ModelBase):
                     rmse = F.mse_loss(pred, y_batch)
 
                 epoch_losses.append(loss.cpu().item())
-                epoch_rmses.append(math.sqrt(rmse.cpu().item()))
+                epoch_rmses.append(np.sqrt(rmse.cpu().item()))
                 assert len(epoch_losses) >= 1
                 assert len(epoch_rmses) >= 1
 
