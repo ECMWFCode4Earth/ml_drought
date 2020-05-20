@@ -23,6 +23,7 @@ from ..data import (
     idx_to_input,
     timestamp_train_val_mask,
 )
+from ..dynamic_data import DynamicDataLoader
 
 
 class NNBase(ModelBase):
@@ -113,6 +114,128 @@ class NNBase(ModelBase):
     def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> torch.nn.Module:
         raise NotImplementedError
 
+    def _val_epoch(
+        self,
+        epoch: int,
+        val_rmses: List[float],
+        val_dataloader: Optional[Union[DataLoader, DynamicDataLoader]] = None,
+    ) -> List[float]:
+        self.model.eval()
+        val_rmse = []
+
+        with torch.no_grad():
+            for x, y in val_dataloader:
+                val_pred_y = self.model(*self._input_to_tuple(x))
+                val_loss = F.mse_loss(val_pred_y, y)
+
+                # validation loss
+                val_rmse.append(math.sqrt(val_loss.cpu().item()))
+
+    return val_rmses
+
+    def _train_epoch(
+        self,
+        epoch: int,
+        train_dataloader: Union[DataLoader, DynamicDataLoader],
+        train_rmse: List[float],
+        train_losses: List[float],
+        learning_rate: Union[float, Dict[int, float]],
+    ) -> Union[List[float], List[float]]:
+        """Run epoch training step"""
+        # Adaptive Learning Rate
+        if isinstance(learning_rate, dict):
+            if epoch in learning_rate.keys():
+                for param_group in self.optimizer.param_groups:
+                    param_group["lr"] = learning_rate[epoch]
+
+        epoch_rmses = []
+        epoch_losses = []
+
+        # ----------------------------------------
+        # Training
+        # ----------------------------------------
+        self.model.train()
+        # load in timesteps a few at a time
+        for x, y in tqdm.tqdm(train_dataloader):
+            # chunk into n_pixels (BATCHES)
+            for x_batch, y_batch in chunk_array(x, y, self.batch_size, shuffle=True):
+                self.optimizer.zero_grad()
+
+                # ------- FORWARD PASS ---------
+                pred = self.model(
+                    *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
+                )
+                # ------- LOSS FUNCTION ---------
+                if loss_func == "NSE":
+                    # NSELoss needs std of each basin for each sample
+                    if x_batch[7] is not None:
+                        target_var_std = x_batch[7]
+                        # (train_dataloader.__iter__()).target_var_std
+                    else:
+                        assert (
+                            False
+                        ), "x[7] should not be None, this is the target_var_std"
+
+                    loss = NSELoss().forward(pred, y_batch, target_var_std)
+                elif loss_func == "MSE":
+                    loss = F.mse_loss(pred, y_batch)
+                elif loss_func == "huber":
+                    loss = F.smooth_l1_loss(pred, y_batch)
+                else:
+                    assert False, "Only implemented MSE / NSE / huber loss functions"
+
+                # ------- BACKWARD PASS ---------
+                loss.backward()
+                self.optimizer.step()
+
+                # evaluation / keeping track of losses over time
+                with torch.no_grad():
+                    rmse = F.mse_loss(pred, y_batch)
+
+                epoch_losses.append(loss.cpu().item())
+                epoch_rmses.append(math.sqrt(rmse.cpu().item()))
+                assert len(epoch_losses) >= 1
+                assert len(epoch_rmses) >= 1
+
+                # TODO: check that most recent loss is notnan
+                assert not np.isnan(epoch_losses[-1])
+
+        # update the lists of mean epoch loss
+        train_rmse.append(np.mean(epoch_rmses))
+        train_losses.append(np.mean(epoch_losses))
+
+        # check the losses are not nans
+        assert not np.isnan(np.mean(epoch_losses))
+        assert not np.isnan(np.mean(epoch_rmses))
+
+        # Print the losses to the user
+        print(
+            f"Epoch {epoch + 1}, train loss: {np.mean(epoch_losses)}, "
+            f"RMSE: {np.mean(train_rmse)}"
+        )
+
+        return train_rmse, train_losses
+
+    def _init_train_val_periods(
+        self, dataloader: Union[DataLoader, DynamicDataLoader]
+    ) -> Tuple[List[bool], List[bool]]:
+        """Return a boolean list of the train and validation periods"""
+        # randomly selected
+        if (self.val_years is None) and (self.train_years is None):
+            len_mask = len(dataloader.valid_train_times)
+            train_mask, val_mask = train_val_mask(len_mask, 0.1)
+
+        # Provided by the user
+        else:
+            all_times = dataloader.valid_train_times
+            # TODO: select the validation period
+            train_mask, val_mask = timestamp_train_val_mask(
+                all_times=all_times,
+                train_years=self.val_years,
+                val_years=self.val_years,
+            )
+        return train_mask, val_mask
+
     def train(
         self,
         num_epochs: int = 1,
@@ -128,25 +251,16 @@ class NNBase(ModelBase):
             "NSE",
             "huber",
         ], f"loss_func must be one of: ['MSE', 'NSE', 'huber'] \nGot {loss_func}"
+
+        # ----------------------------------------
+        # Initialize the DataLoaders
+        # ----------------------------------------
         if early_stopping is not None:
             if self.dynamic:
                 dl = self.get_dataloader(mode="train")
 
                 # get the train / validation period
-                # randomly selected
-                if (self.val_years is None) and (self.train_years is None):
-                    len_mask = len(dl.valid_train_times)
-                    train_mask, val_mask = train_val_mask(len_mask, 0.1)
-
-                # Provided by the user
-                else:
-                    all_times = dl.valid_train_times
-                    # TODO: select the validation period
-                    train_mask, val_mask = timestamp_train_val_mask(
-                        all_times=all_times,
-                        train_years=self.val_years,
-                        val_years=self.val_years,
-                    )
+                train_mask, val_mask = self._init_train_val_periods(dl)
 
                 print("\n** Loading Dataloaders ... **")
                 train_dataloader = self.get_dataloader(
@@ -157,6 +271,8 @@ class NNBase(ModelBase):
                 )
                 batches_without_improvement = 0
                 best_val_score = np.inf
+
+                # check correct length of the train/validation periods
                 assert len(val_dataloader.valid_train_times) == np.sum(val_mask)
                 assert len(train_dataloader.valid_train_times) == np.sum(train_mask)
             else:
@@ -187,14 +303,16 @@ class NNBase(ModelBase):
                 mode="train", to_tensor=True, shuffle_data=True
             )
 
-        # initialize the model
+        # ----------------------------------------
+        # Initialize the Model & Optimizer
+        # ----------------------------------------
         print("\n** Initializing Model ... **")
         if self.model is None:
             x_ref, _ = next(iter(train_dataloader))
             model = self._initialize_model(x_ref)
             self.model = model
 
-        optimizer = torch.optim.Adam(
+        self.optimizer = torch.optim.Adam(
             [pam for pam in self.model.parameters()],
             lr=learning_rate if isinstance(learning_rate, float) else learning_rate[0],
         )
@@ -204,82 +322,23 @@ class NNBase(ModelBase):
         train_losses = []
         val_rmses = []
 
+        # self._train_epoch(
+        #     epoch=epoch,
+        #     train_dataloader=train_dataloader,
+        #     train_rmse=train_rmse,
+        #     train_losses=train_losses,
+        #     val_rmses=val_rmses,
+        #     learning_rate=learning_rate,
+        #     val_dataloader=val_dataloader,
+        # )
+
         for epoch in range(num_epochs):
-
-            ## Adaptive Learning Rate
-            if isinstance(learning_rate, dict):
-                if epoch in learning_rate.keys():
-                    for param_group in optimizer.param_groups:
-                        param_group["lr"] = learning_rate[epoch]
-
-            epoch_rmses = []
-            epoch_losses = []
-
-            # ----------------------------------------
-            # Training
-            # ----------------------------------------
-            self.model.train()
-            # load in timesteps a few at a time
-            for x, y in tqdm.tqdm(train_dataloader):
-                # chunk into n_pixels (BATCHES)
-                for x_batch, y_batch in chunk_array(
-                    x, y, self.batch_size, shuffle=True
-                ):
-                    optimizer.zero_grad()
-
-                    # ------- FORWARD PASS ---------
-                    pred = self.model(
-                        *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
-                    )
-                    # ------- LOSS FUNCTION ---------
-                    if loss_func == "NSE":
-                        # NSELoss needs std of each basin for each sample
-                        if x_batch[7] is not None:
-                            target_var_std = x_batch[7]
-                            # (train_dataloader.__iter__()).target_var_std
-                        else:
-                            assert (
-                                False
-                            ), "x[7] should not be None, this is the target_var_std"
-
-                        loss = NSELoss().forward(pred, y_batch, target_var_std)
-                    elif loss_func == "MSE":
-                        loss = F.mse_loss(pred, y_batch)
-                    elif loss_func == "huber":
-                        loss = F.smooth_l1_loss(pred, y_batch)
-                    else:
-                        assert (
-                            False
-                        ), "Only implemented MSE / NSE  / huber loss functions"
-
-                    # ------- BACKWARD PASS ---------
-                    loss.backward()
-                    optimizer.step()
-
-                    # evaluation / keeping track of losses over time
-                    with torch.no_grad():
-                        rmse = F.mse_loss(pred, y_batch)
-
-                    epoch_losses.append(loss.cpu().item())
-                    epoch_rmses.append(math.sqrt(rmse.cpu().item()))
-                    assert len(epoch_losses) >= 1
-                    assert len(epoch_rmses) >= 1
-
-                    # TODO: check that most recent loss is notnan
-                    assert not np.isnan(epoch_losses[-1])
-
-            # update the lists of mean epoch loss
-            train_rmse.append(np.mean(epoch_rmses))
-            train_losses.append(np.mean(epoch_losses))
-
-            # check the losses are not nans
-            assert not np.isnan(np.mean(epoch_losses))
-            assert not np.isnan(np.mean(epoch_rmses))
-
-            # Print the losses to the user
-            print(
-                f"Epoch {epoch + 1}, train loss: {np.mean(epoch_losses)}, "
-                f"RMSE: {np.mean(train_rmse)}"
+            self._train_epoch(
+                epoch=epoch,
+                train_dataloader=train_dataloader,
+                train_rmse=train_rmse,
+                train_losses=train_losses,
+                learning_rate=learning_rate,
             )
 
             # ----------------------------------------
@@ -287,21 +346,13 @@ class NNBase(ModelBase):
             # ----------------------------------------
             # epoch - check the accuracy on the validation set
             if early_stopping is not None:
-                self.model.eval()
-                val_rmse = []
+                val_rmse = self._val_epoch(
+                    val_rmses=val_rmses, val_dataloader=val_dataloader
+                )
 
-                with torch.no_grad():
-                    for x, y in val_dataloader:
-                        val_pred_y = self.model(*self._input_to_tuple(x))
-                        val_loss = F.mse_loss(val_pred_y, y)
-
-                        # validation loss
-                        val_rmse.append(math.sqrt(val_loss.cpu().item()))
-
-            epoch_val_rmse = np.array([])
+                epoch_val_rmse = np.mean(val_rmse)
 
             if early_stopping is not None:
-                epoch_val_rmse = np.mean(val_rmse)
                 print(f"Val RMSE: {epoch_val_rmse}")
 
                 # new best score
@@ -479,9 +530,9 @@ class NNBase(ModelBase):
         if type(x) is TrainData:  # type: ignore
             return (  # type: ignore
                 x.historical,  # type: ignore
-                self._one_hot(x.pred_month, 12)
-                if x.pred_month is not None
-                else None,  # type: ignore
+                self._one_hot(x.pred_month, 12)  # type: ignore
+                if x.pred_month is not None  # type: ignore
+                else None,
                 x.latlons,  # type: ignore
                 x.current,  # type: ignore
                 x.yearly_aggs,  # type: ignore
