@@ -116,9 +116,8 @@ class NNBase(ModelBase):
 
     def _val_epoch(
         self,
-        epoch: int,
         val_rmses: List[float],
-        val_dataloader: Optional[Union[DataLoader, DynamicDataLoader]] = None,
+        val_dataloader: Union[DataLoader, DynamicDataLoader],
     ) -> List[float]:
         self.model.eval()
         val_rmse = []
