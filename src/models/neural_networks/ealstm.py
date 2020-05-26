@@ -37,7 +37,7 @@ class EARecurrentNetwork(NNBase):
         include_prev_y: bool = True,
         normalize_y: bool = True,
         clear_nans: bool = True,
-        weight_observations: bool = False
+        weight_observations: bool = False,
     ) -> None:
         super().__init__(
             data_folder,

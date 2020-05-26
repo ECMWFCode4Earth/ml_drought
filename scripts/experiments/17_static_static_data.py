@@ -59,9 +59,7 @@ def engineer(
     log_vars: Optional[List[str]] = None,
 ):
     engineer = Engineer(
-        get_data_path(),
-        experiment="one_month_forecast",
-        process_static=process_static
+        get_data_path(), experiment="one_month_forecast", process_static=process_static
     )
     engineer.engineer(
         test_year=[y for y in range(2016, 2019)],
@@ -83,7 +81,6 @@ if __name__ == "__main__":
         rename_features_dir(data_path)
     if (data_path / "models").exists():
         rename_models_dir(data_path)
-
 
     # ----------------------------------
     # Run the Experiment

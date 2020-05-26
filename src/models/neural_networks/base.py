@@ -85,7 +85,7 @@ class NNBase(ModelBase):
         self,
         target: torch.Tensor,
         threshold_value: float = 15,
-        weight_value: float = 10
+        weight_value: float = 10,
     ) -> torch.Tensor:
         """weight the gradient updates to learn more from certain
         observations!
@@ -185,9 +185,7 @@ class NNBase(ModelBase):
                     # upweight the losses on the extreme deficits
                     if self.weight_observations:
                         weights = self._make_weights(
-                            y_batch,
-                            threshold_value=15,
-                            weight_value=10,
+                            y_batch, threshold_value=15, weight_value=10
                         )
 
                         loss = (weights * loss).mean()

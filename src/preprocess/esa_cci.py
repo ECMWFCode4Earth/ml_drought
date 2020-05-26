@@ -40,9 +40,9 @@ class ESACCIPreprocessor(BasePreProcessor):
         # no data should have a value of 0 in the legend
 
         for idx, row in legend.iterrows():
-            value, label = row.code, row.label_text
-            ds[f"{label}_one_hot"] = ds.lc_class.where(ds.lc_class == value, 0).clip(
-                min=0, max=1
+            value, label = row["code"], row["label_text"]
+            ds[f"{label}_one_hot"] = (
+                ds["lc_class"].where(ds["lc_class"] == value, 0).clip(min=0, max=1)
             )
         ds = ds.drop("lc_class")
         return ds

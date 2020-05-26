@@ -462,7 +462,7 @@ def match_by_region_algorithm(
 
     reference_group_list = []
     comparison_group_list = []
-    n_clusters = len(all_df['comparison_group'].unique())
+    n_clusters = len(all_df["comparison_group"].unique())
 
     for region in regions[:n_clusters]:
         region_name = region.name
@@ -645,28 +645,28 @@ def get_regions_for_clustering_boxes(ds: xr.Dataset) -> List[Region]:
     FOR THE NEW CLUSTERINGS
     """
     victoria = Region(
-        name='victoria',
+        name="victoria",
         lonmin=ds.isel(lon=0).lon.values,
         lonmax=ds.isel(lon=7).lon.values,
         latmin=ds.isel(lat=-28).lat.values,
         latmax=ds.isel(lat=-18).lat.values,
     )
     turkana = Region(
-        name='turkana',
+        name="turkana",
         lonmin=ds.isel(lon=5).lon.values,
         lonmax=ds.isel(lon=16).lon.values,
         latmin=ds.isel(lat=-16).lat.values,
         latmax=ds.isel(lat=-6).lat.values,
     )
     southern_highlands = Region(
-        name='southern_highlands',
+        name="southern_highlands",
         lonmin=ds.isel(lon=3).lon.values,
         lonmax=ds.isel(lon=13).lon.values,
         latmin=ds.isel(lat=-41).lat.values,
         latmax=ds.isel(lat=-31).lat.values,
     )
     coastal = Region(
-        name='coastal',
+        name="coastal",
         lonmin=ds.isel(lon=15).lon.values,
         lonmax=ds.isel(lon=20).lon.values,
         latmin=ds.isel(lat=-44).lat.values,
@@ -683,6 +683,8 @@ def get_regions_for_clustering_boxes(ds: xr.Dataset) -> List[Region]:
     regions = [coastal, victoria, turkana, southern_highlands, nw_pastoral]
 
     return regions
+
+
 # ---------------------------------------------------------
 # Remap the values in DataArray
 # ---------------------------------------------------------
@@ -700,9 +702,7 @@ def remap_values(da: xr.DataArray, transdict: Dict) -> xr.DataArray:
 
 
 def remap_all_monthly_values(
-    cluster_ds: xr.Dataset,
-    remap_dicts: Dict[Union[str, int], Union[str, float]],
-
+    cluster_ds: xr.Dataset, remap_dicts: Dict[Union[str, int], Union[str, float]]
 ) -> xr.Dataset:
     """From the remap dictionaries, select the correct cluster variable
     from cluster_ds (the value for k) and remap all those values using the values
@@ -711,7 +711,7 @@ def remap_all_monthly_values(
     remapped_ds = cluster_ds.copy()
     assert len(remapped_ds.time) == 12, "Expected time to be size 12 (monthly)"
 
-    k = len([v for v in remap_dicts['Feb'].values()])
+    k = len([v for v in remap_dicts["Feb"].values()])
     # for each month in cluster_ds
     all_remapped = []
     for time in range(1, 12):
