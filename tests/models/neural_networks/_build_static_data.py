@@ -37,7 +37,8 @@ def build_static_x(
                 static_x.append(yearly_aggs_data)  # 2: 9
             static_x.append(static_data)
 
-            if ealstm.include_pred_month:
+            # NO LONGER INCLUDING the pred month
+            if False:  #  ealstm.include_pred_month:
                 # one_hot_encode the pred_month_data
                 try:
                     static_x.append(

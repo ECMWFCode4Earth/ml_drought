@@ -457,6 +457,7 @@ class NNBase(ModelBase):
             )
         elif method == "morris":
             explanations = self._get_morris_explanations(x)
+            background_samples = None
 
         if save_explanations:
             analysis_folder = self._make_analysis_folder()

@@ -224,8 +224,11 @@ class EALSTM(nn.Module):
         if static_size is not None:
             self.include_static = True
             ea_static_size += static_size
+
+        # append pred month to DYNAMIC data
         if include_pred_month:
-            ea_static_size += 12
+            # ea_static_size += 12
+            features_per_month += 12
 
         # append prev_y to DYNAMIC data
         if self.include_prev_y:
@@ -310,8 +313,19 @@ class EALSTM(nn.Module):
             static_x.append(yearly_aggs)
         if self.include_static:
             static_x.append(static)
+
+        # append pred_month to DYNAMIC data
         if self.include_pred_month:
-            static_x.append(pred_month)
+            # static_x.append(pred_month)
+            x = torch.cat(
+                (
+                    x,
+                    pred_month.view(-1, 12)
+                    .repeat(1, x.shape[1])
+                    .view(x.shape[0], x.shape[1], 12),
+                ),
+                axis=-1,
+            )
 
         # append prev_y to DYNAMIC data
         if self.include_prev_y:

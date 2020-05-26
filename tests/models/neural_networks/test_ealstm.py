@@ -167,13 +167,15 @@ class TestEARecurrentNetwork:
             assert (
                 all_latlons[0].shape[0] == 25
             ), f"Expect 25 latlon values (pixels). Got: {all_e[0].shape}"
+
+            # Moved the PredMonth OHE to the dynamic data
             assert all_static_x[0].shape == (
                 25,
-                13,
+                1,  #  13,
             ), f"Expect 13 static dimensions Got: {all_static_x[0].shape}"
-            assert (
-                len(set(all_pred_months[0])) == 1
-            ), "Only expect one pred month (12=December)"
+            # assert (
+            #     len(set(all_pred_months[0])) == 1
+            # ), "Only expect one pred month (12=December)"
 
             # TODO: why is it only loading one month of data?
             # > [d.name for d in model.get_dataloader('train').data_files[0].parents[0].iterdir()]
@@ -248,7 +250,7 @@ class TestEARecurrentNetwork:
         )
 
         for key, val in test_dl.items():
-            output_m = model.explain(val.x, save_explanations=True, method="morris")
+            output_m, _ = model.explain(val.x, save_explanations=True, method="morris")
             assert type(output_m) is TrainData
             assert (model.model_dir / "analysis/morris_value_historical.npy").exists()
 
