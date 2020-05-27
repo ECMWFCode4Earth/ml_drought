@@ -106,7 +106,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
         filename: Optional[str] = None,
-    ) -> Tuple[Path]:  #  type: ignore
+    ) -> Union[Tuple[Path], Tuple[Optional[Path]]]:
 
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
@@ -174,10 +174,12 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 
             # save legend if exists:
             if "slt" in list(ds_stat_new.data_vars):
-                legend.to_csv(output_folder / "legend.csv")
+                soil_type_legend.to_csv(output_folder / "legend.csv")
 
             ds_stat_new.to_netcdf(out_static)
             print(f"\n**** {out_static} Created! ****\n")
+        else:
+            out_static = None
 
         return out_dyn, out_static  # type: ignore
 
