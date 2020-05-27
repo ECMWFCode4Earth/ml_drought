@@ -7,7 +7,7 @@ import re
 import numpy as np
 import pandas as pd
 
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Union
 
 from .base import BasePreProcessor
 from ..utils import get_modal_value_across_time
@@ -275,7 +275,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
         resample_time: Optional[str] = "W-MON",
         upsampling: bool = False,
         filename: Optional[str] = None,
-    ) -> Tuple[Path]:
+    ) -> Union[Tuple[Path], Tuple[Optional[Path]]]:
 
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
@@ -374,5 +374,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
             # save to netcdf
             ds_stat_new.to_netcdf(out_static)
             print(f"\n**** {out_static} Created! ****\n")
+        else:
+            out_static = None
 
-        return out_dyn, out_static  # type: ignore
+        return out_dyn, out_static
