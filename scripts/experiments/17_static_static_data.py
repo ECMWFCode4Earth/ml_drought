@@ -118,10 +118,11 @@ if __name__ == "__main__":
         "lichens_and_mosses_one_hot",
         "permanent_snow_and_ice_one_hot",
         "t2m",
-        # "SMsurf",
+        "SMsurf",
         # "pev",
-        # "E",
-    ]  # "ndvi",
+        # "e",
+        "E",
+    ]
 
     assert target_var not in always_ignore_vars
     # other_target = "boku_VCI" if target_var == "VCI3M" else "VCI3M"
@@ -202,6 +203,7 @@ if __name__ == "__main__":
         include_yearly_aggs=False,
         clear_nans=True,
         weight_observations=False,
+        pred_month_static=False,
     )
 
     # rename the output file

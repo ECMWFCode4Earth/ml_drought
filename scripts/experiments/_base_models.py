@@ -164,6 +164,7 @@ def earnn(
     include_yearly_aggs=True,  # new
     clear_nans=True,
     weight_observations=False,
+    pred_month_static=False,
 ):
     data_path = get_data_path()
 
@@ -185,6 +186,7 @@ def earnn(
             include_yearly_aggs=include_yearly_aggs,
             clear_nans=clear_nans,
             weight_observations=weight_observations,
+            pred_month_static=pred_month_static,
         )
         predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
         predictor.evaluate(save_preds=True)

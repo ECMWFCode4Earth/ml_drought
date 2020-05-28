@@ -38,6 +38,7 @@ class EARecurrentNetwork(NNBase):
         normalize_y: bool = True,
         clear_nans: bool = True,
         weight_observations: bool = False,
+        pred_month_static: bool = True,
     ) -> None:
         super().__init__(
             data_folder,
@@ -75,6 +76,7 @@ class EARecurrentNetwork(NNBase):
             ), "Can't have a static embedding without input static information!"
         self.static_embedding_size = static_embedding_size
 
+        self.pred_month_static = pred_month_static
         self.features_per_month: Optional[int] = None
         self.current_size: Optional[int] = None
         self.yearly_agg_size: Optional[int] = None
@@ -109,6 +111,7 @@ class EARecurrentNetwork(NNBase):
             "spatial_mask": self.spatial_mask,
             "include_prev_y": self.include_prev_y,
             "normalize_y": self.normalize_y,
+            "pred_month_static": self.pred_month_static,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")
@@ -139,6 +142,7 @@ class EARecurrentNetwork(NNBase):
             static_size=self.static_size,
             static_embedding_size=self.static_embedding_size,
             include_prev_y=self.include_prev_y,
+            pred_month_static=self.pred_month_static,
         )
         self.model.to(torch.device(self.device))
         self.model.load_state_dict(state_dict)
@@ -200,6 +204,7 @@ class EALSTM(nn.Module):
         current_size=None,
         static_size=None,
         static_embedding_size=None,
+        pred_month_static=False,
     ):
         super().__init__()
 
@@ -316,16 +321,18 @@ class EALSTM(nn.Module):
 
         # append pred_month to DYNAMIC data
         if self.include_pred_month:
-            # static_x.append(pred_month)
-            x = torch.cat(
-                (
-                    x,
-                    pred_month.view(-1, 12)
-                    .repeat(1, x.shape[1])
-                    .view(x.shape[0], x.shape[1], 12),
-                ),
-                axis=-1,
-            )
+            if self.pred_month_static:  #  append to static
+                static_x.append(pred_month)
+            else:  #  append to dynamic data
+                x = torch.cat(
+                    (
+                        x,
+                        pred_month.view(-1, 12)
+                        .repeat(1, x.shape[1])
+                        .view(x.shape[0], x.shape[1], 12),
+                    ),
+                    axis=-1,
+                )
 
         # append prev_y to DYNAMIC data
         if self.include_prev_y:
