@@ -214,6 +214,7 @@ class EALSTM(nn.Module):
         self.include_yearly_agg = False
         self.include_static = False
         self.include_prev_y = include_prev_y
+        self.pred_month_static = pred_month_static
 
         assert (
             include_latlons
@@ -232,8 +233,12 @@ class EALSTM(nn.Module):
 
         # append pred month to DYNAMIC data
         if include_pred_month:
-            # ea_static_size += 12
-            features_per_month += 12
+            if self.pred_month_static:
+                # append to static
+                ea_static_size += 12
+            else:
+                # append to dynamic
+                features_per_month += 12
 
         # append prev_y to DYNAMIC data
         if self.include_prev_y:
