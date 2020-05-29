@@ -86,7 +86,7 @@ if __name__ == "__main__":
     # Run the Experiment
     # ----------------------------------
     # 1. Run the engineer
-    target_var = "boku_VCI"  #  "VCI3M" "boku_VCI"
+    target_var = "VCI3M"  #  "VCI3M" "boku_VCI"
     pred_months = 3
     engineer(
         pred_months=pred_months,
