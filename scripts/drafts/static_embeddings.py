@@ -56,15 +56,18 @@ def build_static_x(
         )  # 0, 1
         static_x.append(yearly_aggs_data)  # 2: 9
         static_x.append(static_data)
+
         # one_hot_encode the pred_month_data
-        try:
-            static_x.append(
-                ealstm._one_hot(torch.from_numpy(pred_month_data), 12).numpy()
-            )
-        except TypeError:
-            static_x.append(
-                ealstm._one_hot(torch.from_numpy(pred_month_data), 12).cpu().numpy()
-            )
+        # ONLY if pred_month is included in ealstm
+        if ealstm.pred_month_static:
+            try:
+                static_x.append(
+                    ealstm._one_hot(torch.from_numpy(pred_month_data), 12).numpy()
+                )
+            except TypeError:
+                static_x.append(
+                    ealstm._one_hot(torch.from_numpy(pred_month_data), 12).cpu().numpy()
+                )
 
         # exclude Nones
         static_x = np.concatenate([x for x in static_x if x is not None], axis=-1)
