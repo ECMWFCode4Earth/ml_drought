@@ -259,6 +259,10 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
             ds.data_vars
         ), f"expect {variable} to be in data vars: {list(ds.data_vars)}"
 
+        # ensure categorical is type int
+        # (prevents rounding errors)
+        ds = ds.astype('int')
+
         for idx, row in legend.iterrows():
             value, label = row["code"], row["label_text"]
             ds[f"{label}_one_hot"] = (
@@ -336,7 +340,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
 
             # one hot encode the soil-type if in dataset!
             if "slt" in list(ds_stat_new.data_vars):
-                legend = pd.DataFrame(
+                soil_type_legend = pd.DataFrame(
                     {
                         "code": [1, 2, 3, 4, 5, 6, 7],
                         "label_text": [
