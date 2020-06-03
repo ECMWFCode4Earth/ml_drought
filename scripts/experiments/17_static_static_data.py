@@ -113,10 +113,13 @@ if __name__ == "__main__":
         "boku_VCI",
         "modis_ndvi",
         "SMroot",
-        # "lc_class",
+        "lc_class",  # remove for good clustering (?)
+        "lc_class_group",  # remove for good clustering (?)
         "no_data_one_hot",
         "lichens_and_mosses_one_hot",
         "permanent_snow_and_ice_one_hot",
+        "urban_areas_one_hot",
+        "water_bodies_one_hot",
         "t2m",
         "SMsurf",
         # "pev",
@@ -135,6 +138,7 @@ if __name__ == "__main__":
     early_stopping = 10
     hidden_size = 256
     static_size = 64
+    normalize_y =
 
     # -------------
     # baseline models
