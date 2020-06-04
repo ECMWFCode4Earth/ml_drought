@@ -347,7 +347,7 @@ class NNBase(ModelBase):
                 )
 
                 # TODO: why are there nan validation scores?
-                epoch_val_rmse = np.nanmean(epoch_val_rmse)
+                epoch_val_rmse = np.nanmean(val_rmses)
                 assert not np.isnan(epoch_val_rmse)
 
                 # do we want to stop training?
