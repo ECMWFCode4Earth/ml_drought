@@ -57,9 +57,9 @@ def _chunk_ndarray(
 ) -> Iterable[Tuple[Tuple[Optional[np.ndarray], ...], np.ndarray]]:
 
     split_x = []
-    for idx, x_section in enumerate(x):
-        if x_section is not None:
-            split_x.append(np.array_split(x_section, num_sections))
+    for idx, x_data_section in enumerate(x):
+        if x_data_section is not None:
+            split_x.append(np.array_split(x_data_section, num_sections))
         else:
             split_x.append([None] * num_sections)
     split_y = np.array_split(y, num_sections)
@@ -76,16 +76,18 @@ def _chunk_tensor(
     num_sections: int,
     shuffle: bool,
 ) -> Iterable[Tuple[Tuple[Optional[torch.Tensor], ...], torch.Tensor]]:
+    """For each data section in X (historical, static etc.)
+    chunk into batches (for each station/timestep)
+    """
     split_x = []
 
-    for idx, x_section in enumerate(x):
-        if x_section is not None:
-            split_x.append(torch.chunk(x_section, num_sections))
+    for idx, x_data_section in enumerate(x):
+        if x_data_section is not None:
+            split_x.append(torch.chunk(x_data_section, num_sections))
         else:
             split_x.append([None] * num_sections)  # type: ignore
     split_y = torch.chunk(y, num_sections)
     return_arrays = list(zip(*split_x, split_y))
-    assert False
 
     if shuffle:
         shuffle_list(return_arrays)
