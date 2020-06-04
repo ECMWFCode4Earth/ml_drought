@@ -250,7 +250,7 @@ def main(
     target_var = "discharge_spec"  # discharge_spec  discharge_vol
     seq_length = 365  # * 2
     forecast_horizon = 0
-    logy = False
+    logy = True
     batch_size = 1000  # 1000 2000
     # catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
     # catchment_ids = [int(c_id) for c_id in catchment_ids]
@@ -266,7 +266,7 @@ def main(
     dense_features = []  # [128, 64]
     rnn_dropout = 0
     dropout = 0
-    loss_func = "MSE"  # "MSE" "NSE" "huber"
+    loss_func = "huber"  # "MSE" "NSE" "huber"
     normalize_y = True
     learning_rate = {0: 1e-3, 5: 5e-4, 11: 1e-4}  # 1e-4  # 5e-4
     clip_values_to_zero = True
