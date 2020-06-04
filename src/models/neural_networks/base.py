@@ -199,6 +199,7 @@ class NNBase(ModelBase):
 
                 epoch_losses.append(loss.cpu().item())
                 epoch_rmses.append(np.sqrt(rmse.cpu().item()))
+
                 assert len(epoch_losses) >= 1
                 assert len(epoch_rmses) >= 1
 
