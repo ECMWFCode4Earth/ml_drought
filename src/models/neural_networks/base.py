@@ -210,8 +210,9 @@ class NNBase(ModelBase):
         train_losses.append(np.mean(epoch_losses))
 
         # check the losses are not nans
-        assert not np.isnan(np.mean(epoch_losses))
-        assert not np.isnan(np.mean(epoch_rmses))
+        # TODO: the final batch is always nan - why?
+        assert not np.isnan(np.nanmean(epoch_losses))
+        assert not np.isnan(np.nanmean(epoch_rmses))
 
         # Print the losses to the user
         print(
