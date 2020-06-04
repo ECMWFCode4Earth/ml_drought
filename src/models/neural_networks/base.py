@@ -132,7 +132,7 @@ class NNBase(ModelBase):
                 # validation loss
                 val_batch_rmse.append(np.sqrt(val_loss.cpu().item()))
 
-        assert val_batch_rmse != []
+        # assert val_batch_rmse != []
         val_rmses.append(np.mean(val_batch_rmse))
 
         return val_rmses
