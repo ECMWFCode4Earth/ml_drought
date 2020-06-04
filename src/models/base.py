@@ -54,7 +54,7 @@ class ModelBase:
         forecast_horizon: int = 1,
         batch_size: int = 1,
         experiment: str = "one_month_forecast",
-        seq_length: Optional[int] = 365,  # why do we need this?
+        seq_length: int = 365,  # why do we need this?
         pred_months: Optional[List[int]] = None,
         include_pred_month: bool = True,
         include_latlons: bool = False,
@@ -208,7 +208,7 @@ class ModelBase:
         return y
 
     def undo_log_transform(self, y: np.ndarray) -> np.ndarray:
-        if self.logy:
+        if self.logy:  # type: ignore
             return np.exp(y) + 0.001
         else:
             return y
@@ -397,7 +397,7 @@ class ModelBase:
 
     def get_dataloader(
         self, mode: str, to_tensor: bool = False, shuffle_data: bool = False, **kwargs
-    ) -> DataLoader:
+    ) -> Union[DataLoader, DynamicDataLoader]:
         """
         Return the correct dataloader for this model
         """
@@ -434,7 +434,7 @@ class ModelBase:
             }
 
         else:
-            default_args: Dict[str, Any] = {
+            default_args = {
                 "data_path": self.data_path,
                 "batch_file_size": self.batch_size,
                 "shuffle_data": shuffle_data,
@@ -462,6 +462,7 @@ class ModelBase:
             # override the default args
             default_args[key] = val
 
+        dl: Union[DataLoader, DynamicDataLoader]
         if self.dynamic:
             dl = DynamicDataLoader(**default_args)
         else:

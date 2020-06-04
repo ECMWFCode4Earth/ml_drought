@@ -10,7 +10,7 @@ from torch.nn import functional as F
 
 import shap
 
-from typing import cast, Dict, List, Optional, Tuple, Union
+from typing import cast, Dict, List, Optional, Tuple, Union, Any
 
 from .nseloss import NSELoss
 from ..base import ModelBase
@@ -145,12 +145,12 @@ class NNBase(ModelBase):
         train_losses: List[float],
         learning_rate: Union[float, Dict[int, float]],
         loss_func: str,
-    ) -> Union[List[float], List[float]]:
+    ) -> Tuple[List[float], List[float]]:
         """Run epoch training step"""
         # Adaptive Learning Rate
         if isinstance(learning_rate, dict):
             if epoch in learning_rate.keys():
-                for param_group in self.optimizer.param_groups:
+                for param_group in self.optimizer.param_groups:  # type: ignore
                     param_group["lr"] = learning_rate[epoch]
 
         epoch_rmses = []
@@ -207,9 +207,9 @@ class NNBase(ModelBase):
                 assert not np.isnan(epoch_losses[-1])
 
         # check the losses are not nans
-        assert isinstance(y, torch.Tensor), "Why does y not persist beyond the forloop?"
-        assert not np.isnan(np.nanmean(epoch_losses))
-        assert not np.isnan(np.nanmean(epoch_rmses))
+        # assert isinstance(y, torch.Tensor), "Why does y not persist beyond the forloop?"
+        # assert not np.isnan(np.nanmean(epoch_losses))
+        # assert not np.isnan(np.nanmean(epoch_rmses))
 
         # update the lists of mean epoch loss
         train_rmse.append(np.mean(epoch_rmses))
@@ -229,16 +229,26 @@ class NNBase(ModelBase):
         """Return a boolean list of the train and validation periods"""
         # randomly selected
         if (self.val_years is None) and (self.train_years is None):
-            len_mask = len(dataloader.valid_train_times)
+
+            if isinstance(dataloader, DynamicDataLoader):
+                len_mask = len(dataloader.valid_train_times)
+            else:
+                assert False, "Functionality for original DataLoader"
+                # the DataLoader has no attribute `valid_train_times`
+
             train_mask, val_mask = train_val_mask(len_mask, 0.1)
 
         # Provided by the user
         else:
-            all_times = dataloader.valid_train_times
+            if isinstance(dataloader, DynamicDataLoader):
+                all_times = dataloader.valid_train_times
+            else:
+                assert False, "Functionality for original DataLoader"
+
             # TODO: select the validation period
             train_mask, val_mask = timestamp_train_val_mask(
                 all_times=all_times,
-                train_years=self.val_years,
+                train_years=self.train_years,
                 val_years=self.val_years,
             )
         return train_mask, val_mask
@@ -280,8 +290,10 @@ class NNBase(ModelBase):
                 best_val_score = np.inf
 
                 # check correct length of the train/validation periods
-                assert len(val_dataloader.valid_train_times) == np.sum(val_mask)
-                assert len(train_dataloader.valid_train_times) == np.sum(train_mask)
+                if isinstance(val_dataloader, DynamicDataLoader):
+                    assert len(val_dataloader.valid_train_times) == np.sum(val_mask)
+                if isinstance(train_dataloader, DynamicDataLoader):
+                    assert len(train_dataloader.valid_train_times) == np.sum(train_mask)
             else:
                 len_mask = len(
                     DataLoader._load_datasets(
@@ -325,9 +337,9 @@ class NNBase(ModelBase):
         )
 
         print("\n** Running Epochs ... **")
-        train_rmse = []
-        train_losses = []
-        val_rmses = []
+        train_rmse: List[float] = []
+        train_losses: List[float] = []
+        val_rmses: List[float] = []
 
         for epoch in range(num_epochs):
             train_rmse, train_losses = self._train_epoch(
@@ -336,7 +348,7 @@ class NNBase(ModelBase):
                 train_rmse=train_rmse,
                 train_losses=train_losses,
                 learning_rate=learning_rate,
-                loss_func=loss_func
+                loss_func=loss_func,
             )
 
             # ----------------------------------------
@@ -512,7 +524,7 @@ class NNBase(ModelBase):
 
     def _input_to_tuple(
         self, x: Union[Tuple[torch.Tensor, ...], TrainData]
-    ) -> Tuple[torch.Tensor, ...]:
+    ) -> Tuple[Union[torch.Tensor, Any], ...]:
         """
         Returns:
         --------
@@ -680,7 +692,7 @@ class NNBase(ModelBase):
                 val.requires_grad = True
         outputs = self.model(
             x.historical,
-            self._one_hot(x.pred_month, self.seq_length),
+            self._one_hot(x.pred_month, self.seq_length) if self.seq_length is not None else None,
             x.latlons,
             x.current,
             x.yearly_aggs,

@@ -174,7 +174,7 @@ class DynamicDataLoader(DataLoader):
         """"""
         # get the minimum test_year
         if isinstance(test_year, Iterable):
-            test_year = min([int(y) for y in test_year])
+            test_year = str(min([int(y) for y in test_year]))
 
         # because of time-series nature of data
         # ASSUMPTION: only train on timesteps before the minimum test-date
@@ -235,7 +235,7 @@ class DynamicDataLoader(DataLoader):
                 if v not in self.dynamic_ignore_vars
             ]
         else:
-            data_vars: List[str] = [v for v in self.normalizing_dict.keys()]
+            data_vars = [v for v in self.normalizing_dict.keys()]
 
         data_vars = [v for v in data_vars if v != "target_var_original"]
 
@@ -249,23 +249,26 @@ class DynamicDataLoader(DataLoader):
                 open(self.data_path / "features/static/normalizing_dict.pkl", "rb")
             )
             # calculate the normalizing_array in the loader too
-            data_vars: List[str] = [
-                v
-                for v in self.static_normalizing_dict.keys()
-                if v not in self.static_ignore_vars
-            ]
+
+            if self.static_ignore_vars is not None:
+                data_vars = [
+                    v
+                    for v in self.static_normalizing_dict.keys()
+                    if v not in self.static_ignore_vars
+                ]
             self.normalizing_array_static: Optional[
                 Dict[str, np.ndarray]
             ] = self.calculate_normalizing_array(data_vars, static=True)
 
             # drop the static features
-            self.static_ds = self.static_ds[
-                [
-                    v
-                    for v in self.static_ds.data_vars
-                    if v not in self.static_ignore_vars
+            if self.static_ignore_vars is not None:
+                self.static_ds = self.static_ds[
+                    [
+                        v
+                        for v in self.static_ds.data_vars
+                        if v not in self.static_ignore_vars
+                    ]
                 ]
-            ]
         else:
             assert False, "Should provide static data for this loader ..."
             self.static_ds = None
