@@ -269,7 +269,7 @@ def main(
     loss_func = "huber"  # "MSE" "NSE" "huber"
     normalize_y = True
     learning_rate = {0: 1e-3, 5: 5e-4, 11: 1e-4}  # 1e-4  # 5e-4
-    clip_values_to_zero = True
+    clip_values_to_zero = False
     static = "features"  #  embedding features None
 
     train_years = np.arange(1979, 2010)
