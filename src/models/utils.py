@@ -77,6 +77,7 @@ def _chunk_tensor(
     shuffle: bool,
 ) -> Iterable[Tuple[Tuple[Optional[torch.Tensor], ...], torch.Tensor]]:
     split_x = []
+
     for idx, x_section in enumerate(x):
         if x_section is not None:
             split_x.append(torch.chunk(x_section, num_sections))
@@ -84,6 +85,7 @@ def _chunk_tensor(
             split_x.append([None] * num_sections)  # type: ignore
     split_y = torch.chunk(y, num_sections)
     return_arrays = list(zip(*split_x, split_y))
+    assert False
 
     if shuffle:
         shuffle_list(return_arrays)

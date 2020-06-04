@@ -160,7 +160,7 @@ class NNBase(ModelBase):
         # Training
         # ----------------------------------------
         self.model.train()
-        # load in timesteps a few at a time
+        # load in a few timesteps at a time (sample xy by TIME)
         for x, y in tqdm.tqdm(train_dataloader):
             # chunk into n_pixels (BATCHES)
             for x_batch, y_batch in chunk_array(x, y, self.batch_size, shuffle=True):
