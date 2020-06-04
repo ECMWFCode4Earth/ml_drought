@@ -218,7 +218,9 @@ def train_val_mask(
 
 
 def timestamp_train_val_mask(
-    all_times: List[np.datetime64], train_years: List[int], val_years: List[int]
+    all_times: List[np.datetime64],
+    train_years: Optional[List[Union[int, float]]],
+    val_years: Optional[List[Union[int, float]]]
 ) -> Tuple[List[bool], List[bool]]:
     """Rather than returning a random train-val split return
     a train-val split determined by times

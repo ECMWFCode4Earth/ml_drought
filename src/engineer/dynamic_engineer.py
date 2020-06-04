@@ -7,6 +7,7 @@ import pandas as pd
 from pandas.tseries.offsets import Day
 from typing import DefaultDict, Dict, Tuple, Optional, Union, List, Any
 from collections import Iterable
+import warnings
 
 from src.engineer.base import _EngineerBase
 from scripts.utils import _rename_directory
@@ -50,8 +51,8 @@ class DynamicEngineer(_EngineerBase):
 
         for var in train_ds.data_vars:
             if var.endswith("one_hot"):
-                mean = 0
-                std = 1
+                mean = 0.0
+                std = 1.0
 
             mean = float(train_ds[var].mean(dim=dims, skipna=True).values)
             std = float(train_ds[var].std(dim=dims, skipna=True).values)
@@ -77,11 +78,11 @@ class DynamicEngineer(_EngineerBase):
             pickle.dump(normalization_dict, f)
 
     @staticmethod
-    def get_max_train_date(ds, test_year: Union[str, List[str]]) -> Tuple[pd.Timestamp]:
+    def get_max_train_date(ds, test_year: Union[str, List[str]]) -> Tuple[pd.Timestamp, pd.Timestamp, pd.Timestamp]:
         """"""
         # get the minimum test_year
         if isinstance(test_year, Iterable):
-            test_year = min([int(y) for y in test_year])
+            test_year = str(min([int(y) for y in test_year]))
 
         # because of time-series nature of data
         # ASSUMPTION: only train on timesteps before the minimum test-date
@@ -168,12 +169,20 @@ class DynamicEngineer(_EngineerBase):
 
         # ONE HOT ENCODE features
         if variables_for_ohe is not None:
-            variables_for_ohe = [
-                v
-                for v in variables_for_ohe
-                if (v not in [ign for ign in static_ignore_vars])
-                & (v in List(static_ds.data_vars))
-            ]
+            if static_ignore_vars is not None:
+                variables_for_ohe = [
+                    v
+                    for v in variables_for_ohe
+                    if (v not in [ign for ign in static_ignore_vars])
+                    & (v in List(static_ds.data_vars))
+                ]
+            else:
+                variables_for_ohe = [
+                    v
+                    for v in variables_for_ohe
+                    if (v in List(static_ds.data_vars))
+                ]
+
             if variables_for_ohe != []:
                 static_ds = self.one_hot_encode_vars(
                     static_ds, variables_for_ohe, static=True
@@ -294,7 +303,7 @@ class DynamicEngineer(_EngineerBase):
 
         return dynamic_ds
 
-    def engineer(
+    def engineer(  # type: ignore
         self,
         test_years: Union[List[str], str],
         target_variable: str = "discharge_spec",
@@ -336,7 +345,7 @@ class DynamicEngineer(_EngineerBase):
     def augment_static_data(
         dynamic_ds: xr.Dataset,
         static_ds: xr.Dataset,
-        test_year: Optional[List[str]] = None,
+        test_years: Optional[List[str]] = None,
         dynamic_ignore_vars: List[str] = None,
         global_means: bool = True,
         spatial_means: bool = True,
@@ -347,8 +356,8 @@ class DynamicEngineer(_EngineerBase):
         just be taken from pre-computed means
         """
         # get the minimum test_year
-        if isinstance(test_year, Iterable):
-            test_year = min(test_year)
+        if isinstance(test_years, Iterable):
+            test_year = str(min([int(y) for y in test_year]))  # type: ignore
 
         # PREVENT temporal leakage of information
         min_test_date = pd.to_datetime(f"{test_year}-01-01")
@@ -409,6 +418,7 @@ class DynamicEngineer(_EngineerBase):
 
         return static_ds
 
+    @staticmethod
     def create_legend_df(ds: xr.Dataset, variable: str):
         """Create a UNIQUE key-value mapping describing the one hot encoding"""
         mapping = dict(enumerate(set(ds[variable].values)))
@@ -426,6 +436,7 @@ class DynamicEngineer(_EngineerBase):
         )
         return legend
 
+    @staticmethod
     def _one_hot_encode(da: xr.DataArray, legend: pd.DataFrame):
         """create a boolean DataArray for that value of the feature in `da`"""
         assert all(
@@ -458,8 +469,8 @@ class DynamicEngineer(_EngineerBase):
         # iterate over each variable for one hot encoding
         for variable in variables_for_ohe:
             da = ds[variable]
-            legend = create_legend_df(ds, variable)
-            ohe_ds = _one_hot_encode(da, legend)
+            legend = self.create_legend_df(ds, variable)
+            ohe_ds = self._one_hot_encode(da, legend)
 
             # merge back into the original Dataset
             ds = ds.merge(ohe_ds)

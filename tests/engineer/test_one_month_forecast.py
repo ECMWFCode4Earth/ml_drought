@@ -33,7 +33,7 @@ class TestOneMonthForecastEngineer:
     def test_static(self, tmp_path):
         _, expected_vars = _setup(tmp_path, add_times=False, static=True)
         # engineer = OneMonthForecastEngineer(tmp_path, process_static=True)
-        engineer = OneTimestepForecastEngineer(tmp_path, process_static=True, "M")
+        engineer = OneTimestepForecastEngineer(tmp_path, process_static=True, resolution="M")
 
         assert (
             tmp_path / "features/static"
