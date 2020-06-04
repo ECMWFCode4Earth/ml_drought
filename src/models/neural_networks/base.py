@@ -195,10 +195,10 @@ class NNBase(ModelBase):
 
                 # evaluation / keeping track of losses over time
                 with torch.no_grad():
-                    rmse = F.mse_loss(pred, y_batch)
+                    mse = F.mse_loss(pred, y_batch)
 
                 epoch_losses.append(loss.cpu().item())
-                epoch_rmses.append(np.sqrt(rmse.cpu().item()))
+                epoch_rmses.append(np.sqrt(mse.cpu().item()))
 
                 assert len(epoch_losses) >= 1
                 assert len(epoch_rmses) >= 1
@@ -206,14 +206,14 @@ class NNBase(ModelBase):
                 # TODO: check that most recent loss is notnan
                 assert not np.isnan(epoch_losses[-1])
 
+        # check the losses are not nans
+        assert isinstance(y, torch.Tensor), "Why does y not persist beyond the forloop?"
+        assert not np.isnan(np.nanmean(epoch_losses))
+        assert not np.isnan(np.nanmean(epoch_rmses))
+
         # update the lists of mean epoch loss
         train_rmse.append(np.mean(epoch_rmses))
         train_losses.append(np.mean(epoch_losses))
-
-        # check the losses are not nans
-        # TODO: the final batch is always nan - why?
-        assert not np.isnan(np.nanmean(epoch_losses))
-        assert not np.isnan(np.nanmean(epoch_rmses))
 
         # Print the losses to the user
         print(
