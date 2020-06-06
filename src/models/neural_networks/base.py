@@ -161,7 +161,7 @@ class NNBase(ModelBase):
         # ----------------------------------------
         self.model.train()
         # load in a few timesteps at a time (sample xy by TIME)
-        for x, y in tqdm.tqdm(train_dataloader, desc='Validation'):
+        for x, y in tqdm.tqdm(train_dataloader, desc='Training'):
             # chunk into n_pixels (BATCHES)
             for x_batch, y_batch in chunk_array(
                 x, y, self.batch_size, shuffle=True
