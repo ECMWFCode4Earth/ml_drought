@@ -78,7 +78,9 @@ class DynamicEngineer(_EngineerBase):
             pickle.dump(normalization_dict, f)
 
     @staticmethod
-    def get_max_train_date(ds, test_year: Union[str, List[str]]) -> Tuple[pd.Timestamp, pd.Timestamp, pd.Timestamp]:
+    def get_max_train_date(
+        ds, test_year: Union[str, List[str]]
+    ) -> Tuple[pd.Timestamp, pd.Timestamp, pd.Timestamp]:
         """"""
         # get the minimum test_year
         if isinstance(test_year, Iterable):
@@ -178,9 +180,7 @@ class DynamicEngineer(_EngineerBase):
                 ]
             else:
                 variables_for_ohe = [
-                    v
-                    for v in variables_for_ohe
-                    if (v in List(static_ds.data_vars))
+                    v for v in variables_for_ohe if (v in List(static_ds.data_vars))
                 ]
 
             if variables_for_ohe != []:

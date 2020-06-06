@@ -207,11 +207,31 @@ def _nse_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> float:
     true_vals = true_vals.flatten()
     pred_vals = pred_vals.flatten()
 
+    # check for nans
+    true_vals = np.delete(
+        true_vals,
+        np.append(
+            (np.argwhere(np.isnan(true_vals))).flatten(),
+            (np.argwhere(np.isnan(pred_vals))).flatten(),
+        ),
+        axis=0,
+    )
+    pred_vals = np.delete(
+        pred_vals,
+        np.append(
+            (np.argwhere(np.isnan(true_vals))).flatten(),
+            (np.argwhere(np.isnan(pred_vals))).flatten(),
+        ),
+        axis=0,
+    )
     if true_vals.shape != pred_vals.shape:
         raise RuntimeError("true_vals and pred_vals must be of the same length.")
 
     # denominator of the fraction term
+    # (mean variance)
     denominator = np.sum((true_vals - np.mean(true_vals)) ** 2)
+
+    assert not np.isnan(denominator)
 
     # this would lead to a division by zero error and nse is defined as -inf
     if denominator == 0:
@@ -223,6 +243,7 @@ def _nse_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> float:
         raise RuntimeError("".join(msg))
 
     # numerator of the fraction term
+    # (sum of squared errors)
     numerator = np.sum((pred_vals - true_vals) ** 2)
 
     # calculate the NSE
