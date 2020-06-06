@@ -282,6 +282,8 @@ class NNBase(ModelBase):
 
                 # get the train / validation period
                 train_mask, val_mask = self._init_train_val_periods(dl)
+                print(f"Train Timesteps: {len(train_mask)}")
+                print(f"Validation Timesteps: {len(val_mask)}")
 
                 print("\n** Loading Dataloaders ... **")
                 train_dataloader = self.get_dataloader(
