@@ -161,7 +161,7 @@ class NNBase(ModelBase):
         # ----------------------------------------
         self.model.train()
         # load in a few timesteps at a time (sample xy by TIME)
-        for x, y in tqdm.tqdm(train_dataloader, desc='Validation'):
+        for x, y in tqdm.tqdm(train_dataloader, desc='Training'):
             # chunk into n_pixels (BATCHES)
             for x_batch, y_batch in chunk_array(
                 x, y, self.batch_size, shuffle=True
@@ -282,6 +282,8 @@ class NNBase(ModelBase):
 
                 # get the train / validation period
                 train_mask, val_mask = self._init_train_val_periods(dl)
+                print(f"Train Timesteps: {len(train_mask)}")
+                print(f"Validation Timesteps: {len(val_mask)}")
 
                 print("\n** Loading Dataloaders ... **")
                 train_dataloader = self.get_dataloader(
