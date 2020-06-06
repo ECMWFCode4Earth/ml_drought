@@ -122,7 +122,7 @@ class NNBase(ModelBase):
         val_batch_rmse = []
 
         with torch.no_grad():
-            for x, y in val_dataloader:
+            for x, y in tqdm.tqdm(val_dataloader, desc='Validation'):
                 val_pred_y = self.model(*self._input_to_tuple(x))
                 val_loss = F.mse_loss(val_pred_y, y)
 
@@ -161,14 +161,18 @@ class NNBase(ModelBase):
         # ----------------------------------------
         self.model.train()
         # load in a few timesteps at a time (sample xy by TIME)
-        for x, y in tqdm.tqdm(train_dataloader):
+        for x, y in tqdm.tqdm(train_dataloader, desc='Validation'):
             # chunk into n_pixels (BATCHES)
-            for x_batch, y_batch in chunk_array(x, y, self.batch_size, shuffle=True):
+            for x_batch, y_batch in chunk_array(
+                x, y, self.batch_size, shuffle=True
+            ):
                 self.optimizer.zero_grad()
 
                 # ------- FORWARD PASS ---------
                 pred = self.model(
-                    *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
+                    *self._input_to_tuple(
+                        cast(Tuple[torch.Tensor, ...], x_batch)
+                    )
                 )
                 # ------- LOSS FUNCTION ---------
                 if loss_func == "NSE":
