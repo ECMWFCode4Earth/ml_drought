@@ -685,6 +685,11 @@ class _DynamicIter:
         - Removed the calculation of aggs (done before in the static data)
         - Removed pred_month, yearly_aggs, current, latlons, prev_y_var from data
         """
+        if xy_sample is None:
+            # TODO: TOMMY
+            pass
+
+
         # vars are already ignored in `get_sample_from_dynamic_data`
         x, y = xy_sample
 
@@ -795,11 +800,12 @@ class _TrainDynamicIter(_DynamicIter):
                 seq_length=self.seq_length,
                 dynamic_ignore_vars=self.dynamic_ignore_vars,
             )
+
             if xy_sample is None:
                 cur_max_idx = self.deal_with_no_values(
                     target_time=target_time, cur_max_idx=cur_max_idx
                 )
-            else:
+            else:  # Valid xy_sample
                 arrays = self.ds_sample_to_np(
                     xy_sample=xy_sample,
                     target_time=target_time,
@@ -885,28 +891,34 @@ class _TestDynamicIter(_DynamicIter):
                     dynamic_ignore_vars=self.dynamic_ignore_vars,
                 )
 
-                arrays = self.ds_sample_to_np(
-                    xy_sample=xy_sample,
-                    target_time=target_time,
-                    clear_nans=self.clear_nans,
-                    to_tensor=self.to_tensor,
-                    reducing_dims=self.reducing_dims,
-                )
-
-                # If there are no values!
-                if arrays.x.historical.shape[0] == 0:
+                if xy_sample is None:
                     cur_max_idx = self.deal_with_no_values(
                         target_time=target_time, cur_max_idx=cur_max_idx
                     )
-                else:
-                    timestamp = self.make_timestamp(target_time)
-                    out_dict[timestamp] = arrays
+
+                else:  # Valid xy_sample
+                    arrays = self.ds_sample_to_np(
+                        xy_sample=xy_sample,
+                        target_time=target_time,
+                        clear_nans=self.clear_nans,
+                        to_tensor=self.to_tensor,
+                        reducing_dims=self.reducing_dims,
+                    )
+
+                    # If there are no values!
+                    if arrays.x.historical.shape[0] == 0:
+                        cur_max_idx = self.deal_with_no_values(
+                            target_time=target_time, cur_max_idx=cur_max_idx
+                        )
+                    else:
+                        timestamp = self.make_timestamp(target_time)
+                        out_dict[timestamp] = arrays
                 self.idx += 1
 
-            # assert that it's not empty
-            if len(out_dict) == 0:
-                raise StopIteration()
-            return out_dict
+                # assert that it's not empty
+                if len(out_dict) == 0:
+                    raise StopIteration()
+                return out_dict
 
         else:
             # end of sequence!
