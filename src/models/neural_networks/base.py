@@ -692,7 +692,9 @@ class NNBase(ModelBase):
                 val.requires_grad = True
         outputs = self.model(
             x.historical,
-            self._one_hot(x.pred_month, self.seq_length) if self.seq_length is not None else None,
+            self._one_hot(x.pred_month, self.seq_length)
+            if self.seq_length is not None
+            else None,
             x.latlons,
             x.current,
             x.yearly_aggs,
