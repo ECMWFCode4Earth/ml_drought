@@ -281,6 +281,7 @@ class NNBase(ModelBase):
                 dl = self.get_dataloader(mode="train")
 
                 # get the train / validation period
+                assert False, "TOMMY WAS HERE ...."
                 train_mask, val_mask = self._init_train_val_periods(dl)
                 print(f"Train Timesteps: {len(train_mask)}")
                 print(f"Validation Timesteps: {len(val_mask)}")
