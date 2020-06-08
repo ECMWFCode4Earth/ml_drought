@@ -324,6 +324,8 @@ class NNBase(ModelBase):
                 mode="train", to_tensor=True, shuffle_data=True
             )
 
+        assert len(train_dataloader) == sum(train_mask) // dl.batch_file_size
+
         # ----------------------------------------
         # Initialize the Model & Optimizer
         # ----------------------------------------
