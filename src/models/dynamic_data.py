@@ -689,7 +689,6 @@ class _DynamicIter:
             # TODO: TOMMY
             pass
 
-
         # vars are already ignored in `get_sample_from_dynamic_data`
         x, y = xy_sample
 
@@ -871,7 +870,7 @@ class _TestDynamicIter(_DynamicIter):
         timestamp = f"{dt.year}-{dt.month}-{dt.day}"
         return timestamp
 
-    def __next__(self) -> Dict[str, ModelArrays]:
+    def __next__(self) -> Dict[str, ModelArrays]:  # type: ignore
         # self.max_idx = len(self.target_times)
         if self.idx < self.max_idx:
             out_dict = {}
@@ -918,6 +917,7 @@ class _TestDynamicIter(_DynamicIter):
                 # assert that it's not empty
                 if len(out_dict) == 0:
                     raise StopIteration()
+
                 return out_dict
 
         else:

@@ -240,11 +240,11 @@ class TestDynamicDataLoader:
         # final index is target_time!
         expected_precip = ds.sel(time=target_time)["precip"].values
         expected_pet = ds.sel(time=target_time)["pet"].values
-        assert all(
-            expected_precip == raw_data[:, -1, 0]
+        assert np.allclose(
+            expected_precip, raw_data[:, -1, 0]
         ), "Expect the final timestep to be the target time PRECIP"
-        assert all(
-            expected_pet == raw_data[:, -1, 1]
+        assert np.allclose(
+            expected_pet, raw_data[:, -1, 1]
         ), "Expect the final timestep to be the target time PET"
 
     def test_returned_data(self, tmp_path):
@@ -313,9 +313,10 @@ class TestDynamicDataLoader:
         np.where(ds["pet"].values == precip)
 
         # 1 pred_month
-        assert (
-            X[1][0] == target_time.month
-        ), f"Wrong month! Expected: {target_time.month} Got: {X[1][0]}"
+        if X[1] is not None:
+            assert (
+                X[1][0] == target_time.month
+            ), f"Wrong month! Expected: {target_time.month} Got: {X[1][0]}"
 
         # 5 static
         assert X[5].shape == (10, 2), "N Stations, N Variables"
@@ -339,3 +340,35 @@ class TestDynamicDataLoader:
         assert X[4] is None
         # 6 prev_y_var
         assert X[6] is None
+
+    def test_testdataloader(self, tmp_path):
+        ds, static = _create_runoff_features_dir(tmp_path)
+        # initialise the data as an OUTPUT of the engineers
+        static_ignore_vars = ["area"]
+        dynamic_ignore_vars = ["discharge"]
+        target_var = "discharge"
+        seq_length = 5
+        test_years = [2001]
+        forecast_horizon = 0
+        batch_file_size = 1
+
+        # initialize the object
+        dl = DynamicDataLoader(
+            mode="test",
+            target_var=target_var,
+            test_years=test_years,
+            data_path=tmp_path,
+            seq_length=seq_length,
+            static_ignore_vars=static_ignore_vars,
+            dynamic_ignore_vars=dynamic_ignore_vars,
+            forecast_horizon=forecast_horizon,
+            batch_file_size=batch_file_size,
+        )
+
+        out_dict = dl.__iter__().__next__()
+        key = [k for k in out_dict.keys()][0]
+        model_array = out_dict[key]
+
+        assert model_array.y.shape == (10, 1)
+        assert model_array.x.static.shape == (10, 2)
+        assert model_array.x.historical.shape == (10, 5, 2)
