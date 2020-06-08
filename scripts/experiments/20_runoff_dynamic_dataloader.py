@@ -76,7 +76,7 @@ def train_lstm(
     train_years: Optional[List[int]] = None,
     val_years: Optional[List[int]] = None,
 ) -> RecurrentNetwork:
-    lstm = RecurrentNetwork(
+    lstm = RecurrentNetwork(  # type: ignore
         data_folder=data_dir,
         batch_size=batch_size,
         hidden_size=hidden_size,
@@ -147,7 +147,7 @@ def train_ealstm(
     val_years: Optional[List[int]] = None,
 ) -> EARecurrentNetwork:
     # initialise the model
-    ealstm = EARecurrentNetwork(
+    ealstm = EARecurrentNetwork(  # type: ignore
         data_folder=data_dir,
         batch_size=batch_size,
         hidden_size=hidden_size,
@@ -263,7 +263,7 @@ def main(
     hidden_size = 256  #  128
     # early_stopping = None
     early_stopping = 5
-    dense_features = []  # [128, 64]
+    dense_features: List[int] = []  # [128, 64]
     rnn_dropout = 0
     dropout = 0
     loss_func = "huber"  # "MSE" "NSE" "huber"
