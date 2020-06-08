@@ -782,7 +782,8 @@ class _TrainDynamicIter(_DynamicIter):
     ]:
         # self.max_idx = len(self.target_times)
 
-        # TODO: gabi why do we have these global_modelarrays?
+        # TODO: Global Model Arrays concatenate the timesteps into
+        # a batch!
         global_modelarrays: Optional[ModelArrays] = None
         cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
 
@@ -830,7 +831,9 @@ class _TrainDynamicIter(_DynamicIter):
                     global_modelarrays = arrays
                 else:
                     global_modelarrays.concatenate(arrays)
-            self.idx += 1
+
+                # increment the index by one
+                self.idx += 1
 
             if global_modelarrays is not None:
                 # convert to Tensor object (pytorch)
