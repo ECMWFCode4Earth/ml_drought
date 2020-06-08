@@ -417,7 +417,7 @@ class ModelBase:
                 "predict_delta": False,
                 "experiment": "one_timestep_forecast",  # changed this default arg
                 "mask": None,
-                "pred_months": None,
+                "pred_months": None,  # changed this default arg
                 "to_tensor": to_tensor,
                 "surrounding_pixels": False,
                 "dynamic_ignore_vars": self.dynamic_ignore_vars,
