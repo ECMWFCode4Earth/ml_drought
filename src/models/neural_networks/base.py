@@ -163,7 +163,7 @@ class NNBase(ModelBase):
         # load in a few timesteps at a time (sample xy by TIME)
         for x, y in tqdm.tqdm(train_dataloader, desc="Training"):
             # chunk into n_pixels (BATCHES)
-            for x_batch, y_batch in tqdm.tqdm(chunk_array(x, y, self.batch_size, shuffle=True), desc="Train Batches"):
+            for x_batch, y_batch in chunk_array(x, y, self.batch_size, shuffle=True):
                 self.optimizer.zero_grad()
 
                 # ------- FORWARD PASS ---------
@@ -346,6 +346,9 @@ class NNBase(ModelBase):
         val_rmses: List[float] = []
 
         for epoch in range(num_epochs):
+            # ----------------------------------------
+            # Training
+            # ----------------------------------------
             train_rmse, train_losses = self._train_epoch(
                 epoch=epoch,
                 train_dataloader=train_dataloader,
@@ -354,18 +357,18 @@ class NNBase(ModelBase):
                 learning_rate=learning_rate,
                 loss_func=loss_func,
             )
-
+            assert False
             # ----------------------------------------
             # Validation
             # ----------------------------------------
             # epoch - check the accuracy on the validation set
             if early_stopping is not None:
-                val_rmses = self._val_epoch(
+                epoch_val_rmses = self._val_epoch(
                     val_rmses=val_rmses, val_dataloader=val_dataloader
                 )
 
                 # TODO: why are there nan validation scores?
-                epoch_val_rmse = np.nanmean(val_rmses)
+                epoch_val_rmse = np.nanmean(epoch_val_rmses)
                 assert not np.isnan(epoch_val_rmse)
 
                 # do we want to stop training?
