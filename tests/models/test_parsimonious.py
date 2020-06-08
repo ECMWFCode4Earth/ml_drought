@@ -1,4 +1,4 @@
-from src.models.parsimonious import Persistence
+from src.models.persistence import Persistence
 
 from ..utils import _make_dataset
 

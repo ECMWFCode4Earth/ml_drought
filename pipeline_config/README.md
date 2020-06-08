@@ -29,7 +29,7 @@ The following configurations have been implemented:
 #### [minimal](minimal.json)
 
 A minimal example configuration, in which VHI and ERA5 data are used. The VHI data is put through
-the parsimonious persistence model.
+the persistence persistence model.
 
 #### [era5_forecast](era5_forecast.json)
 

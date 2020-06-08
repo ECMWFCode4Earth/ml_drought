@@ -14,7 +14,7 @@ from src.analysis import all_explanations_for_file
 from scripts.utils import get_data_path
 
 
-def parsimonious(experiment="one_month_forecast",):
+def persistence(experiment="one_month_forecast",):
     predictor = Persistence(get_data_path(), experiment=experiment)
     predictor.evaluate(save_preds=True)
 
@@ -75,7 +75,11 @@ def linear_nn(
         spatial_mask=spatial_mask,
         include_latlons=include_latlons,
     )
-    predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
+    predictor.train(
+        num_epochs=num_epochs,
+        early_stopping=early_stopping,
+        check_inversion=check_inversion,
+    )
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
@@ -98,6 +102,7 @@ def rnn(
     include_latlons=False,
     normalize_y=True,
     include_prev_y=True,
+    check_inversion=False,
 ):
     predictor = RecurrentNetwork(
         hidden_size=hidden_size,
@@ -113,7 +118,11 @@ def rnn(
         normalize_y=normalize_y,
         include_prev_y=include_prev_y,
     )
-    predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
+    predictor.train(
+        num_epochs=num_epochs,
+        early_stopping=early_stopping,
+        check_inversion=check_inversion,
+    )
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
@@ -138,6 +147,7 @@ def earnn(
     include_latlons=False,
     normalize_y=True,
     include_prev_y=True,
+    check_inversion=False,
 ):
     data_path = get_data_path()
 
@@ -157,7 +167,11 @@ def earnn(
             normalize_y=normalize_y,
             include_prev_y=include_prev_y,
         )
-        predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
+        predictor.train(
+            num_epochs=num_epochs,
+            early_stopping=early_stopping,
+            check_inversion=check_inversion,
+        )
         predictor.evaluate(save_preds=True)
         predictor.save_model()
     else:

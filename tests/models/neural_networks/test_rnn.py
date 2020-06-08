@@ -78,10 +78,21 @@ class TestRecurrentNetwork:
         assert model_dict["normalize_y"] == normalize_y
 
     @pytest.mark.parametrize(
-        "use_pred_months,predict_delta",
-        [(True, True), (False, True), (True, False), (False, False)],
+        "use_pred_months,predict_delta,check_inversion",
+        [
+            (True, True, True),
+            (False, True, True),
+            (True, False, True),
+            (False, False, True),
+            (True, True, False),
+            (False, True, False),
+            (True, False, False),
+            (False, False, False),
+        ],
     )
-    def test_train(self, tmp_path, capsys, use_pred_months, predict_delta):
+    def test_train(
+        self, tmp_path, capsys, use_pred_months, predict_delta, check_inversion
+    ):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -119,7 +130,7 @@ class TestRecurrentNetwork:
             include_monthly_aggs=True,
             predict_delta=predict_delta,
         )
-        model.train()
+        model.train(check_inversion=check_inversion)
 
         captured = capsys.readouterr()
         expected_stdout = "Epoch 1, train smooth L1:"

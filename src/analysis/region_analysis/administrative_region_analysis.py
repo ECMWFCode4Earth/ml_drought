@@ -21,7 +21,7 @@ class AdministrativeRegionAnalysis(RegionAnalysis):
         super().__init__(
             data_dir=data_dir,
             experiment=experiment,
-            true_data_experiment="one_month_forecast",
+            true_data_experiment=true_data_experiment,
             admin_boundaries=self.admin_boundaries,
         )
 

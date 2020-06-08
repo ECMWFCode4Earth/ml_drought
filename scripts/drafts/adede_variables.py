@@ -27,14 +27,22 @@ from src.engineer import Engineer
 # data = e.engineer_class._make_dataset(static=False)
 
 from src.analysis import read_train_data, read_test_data
+from src.analysis.indices.utils import rolling_mean
 
-X_train, y_train = read_train_data(data_dir)
-X_test, y_test = read_test_data(data_dir)
+
+boku = True
+
+if boku:
+    experiment = "one_month_forecast_BOKU_boku_VCI"
+else:
+    experiment = "one_month_forecast"  # "one_month_forecast_BOKU_boku_VCI"
+
+X_train, y_train = read_train_data(data_dir, experiment=experiment)
+X_test, y_test = read_test_data(data_dir, experiment=experiment)
 ds = xr.merge([y_train, y_test]).sortby("time").sortby("lat")
 d_ = xr.merge([X_train, X_test]).sortby("time").sortby("lat")
 ds = xr.merge([ds, d_])
 
-from src.analysis.indices.utils import rolling_mean
 
 # ----------------------------------------
 # Create the features (pixel-by-pixel)
@@ -74,7 +82,6 @@ Therefore added the lines (L578: ~/miniconda3/envs/crop/lib/python3.7/site-packa
 # create SPI data
 from src.analysis import SPI
 
-spi = SPI(data_dir / "interim/chirps_preprocessed/data_kenya.nc")
 spi = SPI(ds=ds[["precip"]])
 spi.fit(variable="precip", scale=1, calibration_year_final=2010)
 SPI1M = spi.index
@@ -93,9 +100,14 @@ var_ = [v for v in rci.index.data_vars][0]
 RCI3M = rci.index.rename({var_: "RCI3M"})
 
 # create month aggregations VCI / precip
-vci = ds[["VCI"]].resample(time="M").mean(dim="time")
-VCI1M = rolling_mean(vci, 1).rename({"VCI": "VCI1M"})
-VCI3M = rolling_mean(vci, 3).rename({"VCI": "VCI3M"})
+if boku:
+    vci_variable = "boku_VCI"  # "VCI"
+else:
+    vci_variable = "VCI"
+
+vci = ds[[vci_variable]].resample(time="M").mean(dim="time")
+VCI1M = rolling_mean(vci, 1).rename({vci_variable: "VCI1M"})
+VCI3M = rolling_mean(vci, 3).rename({vci_variable: "VCI3M"})
 
 precip = ds[["precip"]].resample(time="M").mean(dim="time")
 RFE1M = rolling_mean(precip, 1).rename({"precip": "RFE1M"})
@@ -104,12 +116,19 @@ RFE3M = rolling_mean(precip, 3).rename({"precip": "RFE3M"})
 # make into one dataframe
 out_ds = xr.auto_combine([VCI1M, VCI3M, RFE1M, RFE3M, SPI1M, SPI3M, RCI1M, RCI3M])
 # select the legitimate timesteps (before all missing data)
-out_ds = out_ds.sel(time=slice("1981-10", "2020"))
+from_ = out_ds.isel(time=2).time
+to_ = f"{out_ds.isel(time=-1)['time.year'].values + 1}-01-01"
+out_ds = out_ds.sel(time=slice(from_, to_))
 
 # ---------------
 # Save to disk
 # ---------------
-out_dir = data_dir / "interim" / "adede_preprocessed"
+
+if boku:
+    out_dir = data_dir / "interim" / "BOKU_adede_preprocessed"
+else:
+    out_dir = data_dir / "interim" / "adede_preprocessed"
+
 if not (out_dir).exists():
     (out_dir).mkdir(parents=True, exist_ok=True)
 out_ds.to_netcdf(out_dir / "data_kenya.nc")

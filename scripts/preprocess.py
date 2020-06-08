@@ -10,12 +10,16 @@ from src.preprocess import (
     ESACCIPreprocessor,
     SRTMPreprocessor,
     ERA5MonthlyMeanPreprocessor,
+    ERA5HourlyPreprocessor,
+    BokuNDVIPreprocessor,
     KenyaASALMask,
+    ERA5LandPreprocessor,
 )
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
 
 from scripts.utils import get_data_path
+from typing import Optional
 
 
 def process_vci_2018():
@@ -49,6 +53,22 @@ def process_era5POS_2018():
         parallel=False,
         resample_time="M",
         upsampling=False,
+    )
+
+
+def process_era5_land(variable: Optional[str] = None):
+    data_path = get_data_path()
+    regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
+    assert regrid_path.exists(), f"{regrid_path} not available"
+
+    processor = ERA5LandPreprocessor(data_path)
+
+    processor.preprocess(
+        subset_str="kenya",
+        regrid=regrid_path,
+        resample_time="M",
+        upsampling=False,
+        variable=variable,
     )
 
 
@@ -137,15 +157,41 @@ def preprocess_era5():
     processor.preprocess(subset_str="kenya", regrid=regrid_path)
 
 
+def preprocess_era5_hourly():
+    data_path = get_data_path()
+
+    regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
+    assert regrid_path.exists(), f"{regrid_path} not available"
+
+    processor = ERA5HourlyPreprocessor(data_path)
+
+    # W-MON is weekly each monday (the same as the NDVI data from Atzberger)
+    processor.preprocess(subset_str="kenya", resample_time="W-MON")
+    # processor.merge_files(subset_str='W-MON')
+
+
+def preprocess_boku_ndvi():
+    data_path = get_data_path()
+    processor = BokuNDVIPreprocessor(data_path)
+
+    regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
+    assert regrid_path.exists(), f"{regrid_path} not available"
+
+    processor.preprocess(subset_str="kenya", resample_time="W-MON", regrid=regrid_path)
+
+
 if __name__ == "__main__":
-    process_vci_2018()
-    process_precip_2018()
-    process_era5POS_2018()
-    process_gleam()
-    process_esa_cci_landcover()
-    preprocess_srtm()
-    preprocess_era5()
-    preprocess_kenya_boundaries(selection="level_1")
-    preprocess_kenya_boundaries(selection="level_2")
-    preprocess_kenya_boundaries(selection="level_3")
-    preprocess_asal_mask()
+    # process_vci_2018()
+    # process_precip_2018()
+    # process_era5POS_2018()
+    # process_gleam()
+    # process_esa_cci_landcover()
+    # preprocess_srtm()
+    # preprocess_era5()
+    # preprocess_kenya_boundaries(selection="level_1")
+    # preprocess_kenya_boundaries(selection="level_2")
+    # preprocess_kenya_boundaries(selection="level_3")
+    # preprocess_era5_hourly()
+    # preprocess_boku_ndvi()
+    # preprocess_asal_mask()
+    process_era5_land()

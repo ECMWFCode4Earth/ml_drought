@@ -3,7 +3,7 @@ import sys
 sys.path.append("../..")
 
 from scripts.utils import _rename_directory, get_data_path
-from _base_models import parsimonious, regression, linear_nn, rnn, earnn
+from _base_models import persistence, regression, linear_nn, rnn, earnn
 
 
 if __name__ == "__main__":
@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # -------------
     # persistence
     # -------------
-    parsimonious()
+    persistence()
 
     # regression(ignore_vars=always_ignore_vars)
     # gbdt(ignore_vars=always_ignore_vars)

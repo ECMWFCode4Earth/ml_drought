@@ -15,7 +15,7 @@ import shap
 from typing import cast, Dict, List, Optional, Tuple, Union
 
 from ..base import ModelBase
-from ..utils import chunk_array
+from ..utils import chunk_array, _to_xarray_dataset
 from ..data import DataLoader, train_val_mask, TrainData, idx_to_input
 
 class PytorchLightningBase(pl.LightningModule):
@@ -91,6 +91,7 @@ class NNBase(ModelBase):
         batch_size: int = 256,
         learning_rate: float = 1e-3,
         val_split: float = 0.1,
+        check_inversion: bool = False,
     ) -> None:
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
@@ -148,6 +149,19 @@ class NNBase(ModelBase):
                     pred = self.model(
                         *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
                     )
+                    if (epoch == 0) & check_inversion:  # check only the first epoch
+                        # create xarray objects
+                        pred_xr = _to_xarray_dataset(latlons=x_batch[2], data=pred)
+                        true_xr = _to_xarray_dataset(latlons=x_batch[2], data=y_batch)
+                        # check that nans more or less the same
+                        assert (
+                            pred_xr.isnull().data.values == true_xr.isnull().data.values
+                        ).mean() > 0.92, (
+                            "The missing data should be the same for 92% of the data. "
+                            "This sometimes occurs when there has been a problem with an inversion "
+                            "somewhere in the data"
+                        )
+
                     loss = F.smooth_l1_loss(pred, y_batch)
                     loss.backward()
                     optimizer.step()
@@ -204,8 +218,27 @@ class NNBase(ModelBase):
         with torch.no_grad():
             for dict in test_arrays_loader:
                 for key, val in dict.items():
-                    preds = self.model(*self._input_to_tuple(val.x))
-                    preds_dict[key] = preds.cpu().numpy()
+
+                    input_tuple = self._input_to_tuple(val.x)
+
+                    # TODO - this code is mostly copied from
+                    # models.utils - can be cleaned up
+                    # with a default batch size of 256
+                    num_sections = max(input_tuple[0].shape[0] // 256, 1)
+                    split_x = []
+                    for idx, x_section in enumerate(input_tuple):
+                        if x_section is not None:
+                            split_x.append(torch.chunk(x_section, num_sections))
+                        else:
+                            split_x.append([None] * num_sections)  # type: ignore
+
+                    chunked_input = list(zip(*split_x))
+
+                    all_preds = []
+                    for batch in chunked_input:
+                        all_preds.append(self.model(*batch).cpu().numpy())
+                    preds_dict[key] = np.concatenate(all_preds)
+
                     test_arrays_dict[key] = {
                         "y": val.y.cpu().numpy(),
                         "latlons": val.latlons,
@@ -262,7 +295,13 @@ class NNBase(ModelBase):
                     output_cur.append(x[3][idx])
 
                 # yearly aggs
-                output_ym.append(x[4][idx])
+                if x[4] is None:
+                    if output_ym is None:
+                        output_ym = [torch.zeros(1)]
+                    else:
+                        output_ym.append(torch.zeros(1))
+                else:
+                    output_ym.append(x[4][idx])
 
                 # static data
                 if self.static == "embeddings":
@@ -278,13 +317,15 @@ class NNBase(ModelBase):
 
                 if len(output_tensors) >= sample_size:
                     return [
-                        torch.stack(output_tensors),  # type: ignore
-                        torch.cat(output_pm, dim=0),
-                        torch.stack(output_ll),
-                        torch.stack(output_cur),
-                        torch.stack(output_ym),
-                        torch.stack(output_static),
-                        torch.stack(output_prev_y),
+                        torch.stack(output_tensors).to(self.device),  # type: ignore
+                        torch.cat(output_pm, dim=0).to(self.device),
+                        torch.stack(output_ll).to(self.device),
+                        torch.stack(output_cur).to(self.device),
+                        torch.stack(output_ym).to(self.device)
+                        if output_ym is not None
+                        else None,
+                        torch.stack(output_static).to(self.device),
+                        torch.stack(output_prev_y).to(self.device),
                     ]
 
         return [
@@ -447,6 +488,8 @@ class NNBase(ModelBase):
                         output_tensors.append(
                             x.static[start_idx : start_idx + num_inputs]
                         )
+                else:
+                    output_tensors.append(tensor[start_idx : start_idx + num_inputs])
             else:
                 output_tensors.append(torch.zeros(num_inputs, 1))
 
