@@ -231,7 +231,7 @@ def _nse_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> float:
     # (mean variance)
     denominator = np.sum((true_vals - np.mean(true_vals)) ** 2)
 
-    assert not np.isnan(denominator)
+    # assert not np.isnan(denominator)
 
     # this would lead to a division by zero error and nse is defined as -inf
     if denominator == 0:
