@@ -163,7 +163,7 @@ class NNBase(ModelBase):
         # load in a few timesteps at a time (sample xy by TIME)
         for x, y in tqdm.tqdm(train_dataloader, desc="Training"):
             # chunk into n_pixels (BATCHES)
-            for x_batch, y_batch in chunk_array(x, y, self.batch_size, shuffle=True):
+            for x_batch, y_batch in tqdm.tqdm(chunk_array(x, y, self.batch_size, shuffle=True), desc="Train Batches"):
                 self.optimizer.zero_grad()
 
                 # ------- FORWARD PASS ---------
@@ -324,7 +324,7 @@ class NNBase(ModelBase):
                 mode="train", to_tensor=True, shuffle_data=True
             )
 
-        assert len(train_dataloader) == sum(train_mask) // dl.batch_file_size
+        assert len(train_dataloader) == sum(train_mask) // train_dataloader.batch_file_size
 
         # ----------------------------------------
         # Initialize the Model & Optimizer
