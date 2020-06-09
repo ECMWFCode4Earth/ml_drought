@@ -260,6 +260,7 @@ class NNBase(ModelBase):
         learning_rate: Union[Dict[int, float], float] = 1e-3,
         val_split: float = 0.1,
         loss_func: str = "MSE",
+        batch_size: int = 256,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
@@ -324,7 +325,9 @@ class NNBase(ModelBase):
                 mode="train", to_tensor=True, shuffle_data=True
             )
 
-        assert len(train_dataloader) == sum(train_mask) // train_dataloader.batch_file_size
+        assert (
+            len(train_dataloader) == sum(train_mask) // train_dataloader.batch_file_size
+        )
 
         # ----------------------------------------
         # Initialize the Model & Optimizer
