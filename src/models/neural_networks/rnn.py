@@ -152,6 +152,7 @@ class RecurrentNetwork(NNBase):
             dense_features=self.dense_features,
             hidden_size=self.hidden_size,
             rnn_dropout=self.rnn_dropout,
+            dropout=self.dropout,
             include_pred_month=self.include_pred_month,
             include_latlons=self.include_latlons,
             experiment=self.experiment,
@@ -199,10 +200,10 @@ class RecurrentNetwork(NNBase):
             rnn_dropout=self.rnn_dropout,
             dropout=self.dropout,
             include_pred_month=self.include_pred_month,
-            include_latlons=self.include_latlons,
             experiment=self.experiment,
-            current_size=self.current_size,
             yearly_agg_size=self.yearly_agg_size,
+            current_size=self.current_size,
+            include_latlons=self.include_latlons,
             static_size=self.static_size,
             include_prev_y=self.include_prev_y,
             seq_length=self.seq_length,
@@ -218,8 +219,8 @@ class RNN(nn.Module):
         hidden_size,
         rnn_dropout,
         dropout,
-        include_pred_month,
         include_latlons,
+        include_pred_month,
         experiment,
         include_prev_y,
         current_size=None,
@@ -250,9 +251,14 @@ class RNN(nn.Module):
             features_per_month += 1
 
         self.dropout = nn.Dropout(dropout)
-        self.rnn = UnrolledRNN(
-            input_size=features_per_month, hidden_size=hidden_size, batch_first=True
-        )
+        # self.rnn = UnrolledRNN(
+        #     input_size=features_per_month,
+        #     hidden_size=hidden_size,
+        #     batch_first=True
+        # )
+
+        # Use the pytorch LSTM
+        self.rnn = nn.LSTM(input_size=features_per_month, hidden_size=hidden_size)
         self.hidden_size = hidden_size
         self.rnn_dropout = nn.Dropout(rnn_dropout)
 

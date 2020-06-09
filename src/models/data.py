@@ -264,7 +264,7 @@ class DataLoader:
     data_path: Path = Path('data')
         Location of the data folder
     batch_file_size: int = 1
-        The number of files to load at a time
+        The number of xy_timesteps to load at a time
     mode: str {'test', 'train'} = 'train'
         Whether to load testing or training data. This also affects the way the data is
         returned; for train, it is a concatenated array, but for test it is a dict with dates

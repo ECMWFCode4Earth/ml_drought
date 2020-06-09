@@ -318,7 +318,7 @@ class EALSTM(nn.Module):
             )
             if i < len(dense_features) - 1:
                 # add a ReLU to all layers except the final layer
-                dense_layers.append(nn.ReLU())
+                dense_layers.append(nn.ReLU())  # type: ignore
 
         self.dense_layers = nn.ModuleList(dense_layers)
 

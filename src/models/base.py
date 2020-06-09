@@ -171,7 +171,9 @@ class ModelBase:
         # calculate the raw values
         return prev_ts + y["preds"]  # .to_dataset(name_of_preds_var)
 
-    def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
+    def predict(
+        self, batch_file_size: int = 3
+    ) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         # This method should return the test arrays as loaded by
         # the test array dataloader, and the corresponding predictions
         raise NotImplementedError
@@ -218,6 +220,7 @@ class ModelBase:
         save_results: bool = True,
         save_preds: bool = False,
         spatial_unit_name: Optional[str] = None,
+        batch_file_size: int = 3,
     ) -> None:
         """
         Evaluate the trained model on the TEST data
@@ -231,7 +234,7 @@ class ModelBase:
             Whether to save the model predictions. If true, they are saved in
             self.model_dir / {year}_{month}.nc
         """
-        test_arrays_dict, preds_dict = self.predict()
+        test_arrays_dict, preds_dict = self.predict(batch_file_size=batch_file_size)
 
         output_dict: Dict[str, int] = {}
         total_preds: List[np.ndarray] = []
@@ -396,7 +399,12 @@ class ModelBase:
         return np.eye(num_vals + 2)[x][:, 1:-1]
 
     def get_dataloader(
-        self, mode: str, to_tensor: bool = False, shuffle_data: bool = False, **kwargs
+        self,
+        mode: str,
+        to_tensor: bool = False,
+        shuffle_data: bool = False,
+        batch_file_size: int = 3,
+        **kwargs,
     ) -> Union[DataLoader, DynamicDataLoader]:
         """
         Return the correct dataloader for this model
@@ -409,7 +417,7 @@ class ModelBase:
                 "seq_length": self.seq_length,  # changed this default arg
                 "forecast_horizon": self.forecast_horizon,
                 "data_path": self.data_path,
-                "batch_file_size": 1,  #   self.batch_file_size,
+                "batch_file_size": batch_file_size,  #   self.batch_file_size,
                 "mode": mode,
                 "shuffle_data": True,
                 "clear_nans": True,
@@ -436,7 +444,7 @@ class ModelBase:
         else:
             default_args = {
                 "data_path": self.data_path,
-                "batch_file_size": self.batch_size,
+                "batch_file_size": batch_file_size,
                 "shuffle_data": shuffle_data,
                 "mode": mode,
                 "mask": None,

@@ -261,6 +261,7 @@ class NNBase(ModelBase):
         val_split: float = 0.1,
         loss_func: str = "MSE",
         batch_size: int = 256,
+        batch_file_size: int = 3,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
@@ -275,7 +276,7 @@ class NNBase(ModelBase):
         # ----------------------------------------
         if early_stopping is not None:
             if self.dynamic:
-                dl = self.get_dataloader(mode="train")
+                dl = self.get_dataloader(mode="train", batch_file_size=1)
 
                 # get the train / validation period
                 train_mask, val_mask = self._init_train_val_periods(dl)
@@ -284,10 +285,18 @@ class NNBase(ModelBase):
 
                 print("\n** Loading Dataloaders ... **")
                 train_dataloader = self.get_dataloader(
-                    mode="train", mask=train_mask, to_tensor=True, shuffle_data=True
+                    mode="train",
+                    mask=train_mask,
+                    to_tensor=True,
+                    shuffle_data=True,
+                    batch_file_size=batch_file_size,
                 )
                 val_dataloader = self.get_dataloader(
-                    mode="train", mask=val_mask, to_tensor=True, shuffle_data=False
+                    mode="train",
+                    mask=val_mask,
+                    to_tensor=True,
+                    shuffle_data=False,
+                    batch_file_size=batch_file_size,
                 )
                 batches_without_improvement = 0
                 best_val_score = np.inf
@@ -311,10 +320,18 @@ class NNBase(ModelBase):
 
                 print("\n** Loading Dataloaders ... **")
                 train_dataloader = self.get_dataloader(
-                    mode="train", mask=train_mask, to_tensor=True, shuffle_data=True
+                    mode="train",
+                    mask=train_mask,
+                    to_tensor=True,
+                    shuffle_data=True,
+                    batch_file_size=batch_file_size,
                 )
                 val_dataloader = self.get_dataloader(
-                    mode="train", mask=val_mask, to_tensor=True, shuffle_data=False
+                    mode="train",
+                    mask=val_mask,
+                    to_tensor=True,
+                    shuffle_data=False,
+                    batch_file_size=batch_file_size,
                 )
 
                 batches_without_improvement = 0
@@ -322,12 +339,11 @@ class NNBase(ModelBase):
         else:
             print("\n** Loading Dataloaders ... **")
             train_dataloader = self.get_dataloader(
-                mode="train", to_tensor=True, shuffle_data=True
+                mode="train",
+                to_tensor=True,
+                shuffle_data=True,
+                batch_file_size=batch_file_size,
             )
-
-        # assert (
-        #     len(train_dataloader) == sum(train_mask) // train_dataloader.batch_file_size
-        # )
 
         # ----------------------------------------
         # Initialize the Model & Optimizer
@@ -360,7 +376,7 @@ class NNBase(ModelBase):
                 learning_rate=learning_rate,
                 loss_func=loss_func,
             )
-            assert False
+
             # ----------------------------------------
             # Validation
             # ----------------------------------------
@@ -394,11 +410,16 @@ class NNBase(ModelBase):
 
         return (train_rmse, train_losses, val_rmses)
 
-    def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
+    def predict(
+        self, batch_file_size: int = 3
+    ) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
         print(f"** Making Predictions for {self.model_name} **")
 
         test_arrays_loader = self.get_dataloader(
-            mode="test", to_tensor=True, shuffle_data=False
+            mode="test",
+            to_tensor=True,
+            shuffle_data=False,
+            batch_file_size=batch_file_size,
         )
 
         preds_dict: Dict[str, np.ndarray] = {}
@@ -455,12 +476,17 @@ class NNBase(ModelBase):
 
         return test_arrays_dict, preds_dict
 
-    def _get_background(self, sample_size: int = 150) -> List[torch.Tensor]:
+    def _get_background(
+        self, sample_size: int = 150, batch_file_size: int = 3
+    ) -> List[torch.Tensor]:
 
         print("Extracting a sample of the training data")
 
         train_dataloader = self.get_dataloader(
-            mode="train", shuffle_data=True, to_tensor=True
+            mode="train",
+            shuffle_data=True,
+            to_tensor=True,
+            batch_file_size=batch_file_size,
         )
 
         output_tensors: List[torch.Tensor] = []
