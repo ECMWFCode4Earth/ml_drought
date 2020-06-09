@@ -144,22 +144,24 @@ class DynamicDataLoader(DataLoader):
         Length is (number of timesteps x number of stations) // batch_file_size
         """
         # get the spatial coord
-        spatial_coords = self.get_reducing_dims()
-        assert len(spatial_coords) == 1
-        spatial_coord = spatial_coords[0]
+        # spatial_coords = self.get_reducing_dims()
+        # assert len(spatial_coords) == 1
+        # spatial_coord = spatial_coords[0]
 
         if self.mode == "train":
-            return (
-                len(self.valid_train_times)
-                * len(self.dynamic_ds[spatial_coord])
-                // self.batch_file_size
-            )
+            return len(self.valid_train_times)
+            # return (
+            #     len(self.valid_train_times)
+            #     * len(self.dynamic_ds[spatial_coord])
+            #     // self.batch_file_size
+            # )
         else:
-            return (
-                len(self.valid_test_times)
-                * len(self.dynamic_ds[spatial_coord])
-                // self.batch_file_size
-            )
+            return len(self.valid_test_times)
+            # return (
+            #     len(self.valid_test_times)
+            #     * len(self.dynamic_ds[spatial_coord])
+            #     // self.batch_file_size
+            # )
 
     def get_train_test_times(
         self, test_years: Union[List[str], str], mask: Optional[List[bool]] = None
