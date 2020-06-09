@@ -149,14 +149,14 @@ class DynamicDataLoader(DataLoader):
         # spatial_coord = spatial_coords[0]
 
         if self.mode == "train":
-            return len(self.valid_train_times)
+            return len(self.valid_train_times) // self.batch_file_size
             # return (
             #     len(self.valid_train_times)
             #     * len(self.dynamic_ds[spatial_coord])
             #     // self.batch_file_size
             # )
         else:
-            return len(self.valid_test_times)
+            return len(self.valid_test_times) // self.batch_file_size
             # return (
             #     len(self.valid_test_times)
             #     * len(self.dynamic_ds[spatial_coord])

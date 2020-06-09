@@ -75,6 +75,7 @@ def train_lstm(
     clip_values_to_zero: bool = False,
     train_years: Optional[List[int]] = None,
     val_years: Optional[List[int]] = None,
+    batch_file_size: int = 3,
 ) -> RecurrentNetwork:
     lstm = RecurrentNetwork(  # type: ignore
         data_folder=data_dir,
@@ -109,6 +110,7 @@ def train_lstm(
         early_stopping=early_stopping,
         loss_func=loss_func,
         learning_rate=learning_rate,
+        batch_file_size=batch_file_size,
         # clip_zeros=clip_zeros,
     )
     print("\n\n** LSTM Model Trained! **\n\n")
@@ -145,6 +147,7 @@ def train_ealstm(
     clip_values_to_zero: bool = False,
     train_years: Optional[List[int]] = None,
     val_years: Optional[List[int]] = None,
+    batch_file_size: int = 3,
 ) -> EARecurrentNetwork:
     # initialise the model
     ealstm = EARecurrentNetwork(  # type: ignore
@@ -182,6 +185,7 @@ def train_ealstm(
         early_stopping=early_stopping,
         loss_func=loss_func,
         learning_rate=learning_rate,
+        batch_file_size=batch_file_size,
         # clip_zeros=clip_zeros,
     )
     print("\n\n** EALSTM Model Trained! **\n\n")
@@ -195,7 +199,7 @@ def train_ealstm(
     return ealstm
 
 
-def run_evaluation(data_dir, ealstm=None):
+def run_evaluation(data_dir, ealstm=None, batch_file_size: int = 3):
     print("** Running Model Evaluation **")
     if ealstm is None:
         ealstm = load_model(
@@ -206,7 +210,9 @@ def run_evaluation(data_dir, ealstm=None):
     ealstm.move_model("cpu")
 
     # evaluate on the test set
-    ealstm.evaluate(spatial_unit_name="station_id", save_preds=True)
+    ealstm.evaluate(
+        spatial_unit_name="station_id", save_preds=True, batch_file_size=batch_file_size
+    )
     results_dict = json.load(
         open(data_dir / "models/one_timestep_forecast/ealstm/results.json", "rb")
     )
@@ -252,6 +258,7 @@ def main(
     forecast_horizon = 0
     logy = True
     batch_size = 256  # 1000 2000
+    batch_file_size = 3
     # catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
     # catchment_ids = [int(c_id) for c_id in catchment_ids]
     catchment_ids = None
@@ -324,6 +331,7 @@ def main(
         clip_values_to_zero=clip_values_to_zero,
         train_years=train_years,
         val_years=val_years,
+        batch_file_size=batch_file_size,
     )
     if not engineer_only:
         # lstm = train_lstm(**model_kwargs)
