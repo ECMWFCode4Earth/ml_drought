@@ -140,10 +140,26 @@ class DynamicDataLoader(DataLoader):
             return _TestDynamicIter(self, mode="test")
 
     def __len__(self) -> int:
+        """
+        Length is (number of timesteps x number of stations) // batch_file_size
+        """
+        # get the spatial coord
+        spatial_coords = self.get_reducing_dims()
+        assert len(spatial_coords) == 1
+        spatial_coord = spatial_coords[0]
+
         if self.mode == "train":
-            return len(self.valid_train_times) // self.batch_file_size
+            return (
+                len(self.valid_train_times)
+                * len(self.dynamic_ds[spatial_coord])
+                // self.batch_file_size
+            )
         else:
-            return len(self.valid_test_times) // self.batch_file_size
+            return (
+                len(self.valid_test_times)
+                * len(self.dynamic_ds[spatial_coord])
+                // self.batch_file_size
+            )
 
     def get_train_test_times(
         self, test_years: Union[List[str], str], mask: Optional[List[bool]] = None
@@ -782,59 +798,63 @@ class _TrainDynamicIter(_DynamicIter):
     ]:
         # self.max_idx = len(self.target_times)
 
-        # TODO: Global Model Arrays concatenate the timesteps into
-        # a batch!
+        # TODO: Global Model Arrays generates the OVERALL batch of timesteps
+        # batch_file_size is different from batch_size
+        # batch_size = number of instances, batch_file_size = number of ts
         global_modelarrays: Optional[ModelArrays] = None
-        cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
 
-        # iterate over each timestamp in the training data
-        while self.idx < cur_max_idx:
-            # iterate over the X-y pairs by selecting the target_time
-            # dynamically from the self.dynamic_ds
-            target_time = self.target_times[self.idx]
+        if self.idx < self.max_idx:
+            cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
 
-            xy_sample, _ = self.get_sample_from_dynamic_data(
-                target_time=target_time,
-                forecast_horizon=self.forecast_horizon,
-                target_var=self.target_var,
-                seq_length=self.seq_length,
-                dynamic_ignore_vars=self.dynamic_ignore_vars,
-            )
+            # iterate over each timestamp in the training data
+            while self.idx < cur_max_idx:
+                # iterate over the X-y pairs by selecting the target_time
+                # dynamically from the self.dynamic_ds (instead of subfolder)
+                target_time = self.target_times[self.idx]
 
-            if xy_sample is None:
-                cur_max_idx = self.deal_with_no_values(
-                    target_time=target_time, cur_max_idx=cur_max_idx
-                )
-            else:  # Valid xy_sample
-                arrays = self.ds_sample_to_np(
-                    xy_sample=xy_sample,
+                xy_sample, _ = self.get_sample_from_dynamic_data(
                     target_time=target_time,
-                    clear_nans=self.clear_nans,
-                    to_tensor=self.to_tensor,
-                    reducing_dims=self.reducing_dims,
-                    target_var_std=self.target_var_std,
+                    forecast_horizon=self.forecast_horizon,
+                    target_var=self.target_var,
+                    seq_length=self.seq_length,
+                    dynamic_ignore_vars=self.dynamic_ignore_vars,
                 )
 
-                # If there are no values!
-                if arrays.x.historical.shape[0] == 0:
+                if xy_sample is None:
                     cur_max_idx = self.deal_with_no_values(
                         target_time=target_time, cur_max_idx=cur_max_idx
                     )
-                    # print(f"{pd.to_datetime(target_time)} returns no values. Skipping")
+                else:  # Valid xy_sample
+                    arrays = self.ds_sample_to_np(
+                        xy_sample=xy_sample,
+                        target_time=target_time,
+                        clear_nans=self.clear_nans,
+                        to_tensor=self.to_tensor,
+                        reducing_dims=self.reducing_dims,
+                        target_var_std=self.target_var_std,
+                    )
 
-                    # # remove the empty element from the list
-                    # self.data_files.pop(self.idx)
-                    # self.max_idx -= 1
-                    # cur_max_idx = min(cur_max_idx + 1, self.max_idx)
+                    # If there are no values!
+                    if arrays.x.historical.shape[0] == 0:
+                        cur_max_idx = self.deal_with_no_values(
+                            target_time=target_time, cur_max_idx=cur_max_idx
+                        )
+                        # print(f"{pd.to_datetime(target_time)} returns no values. Skipping")
 
-                if global_modelarrays is None:
-                    global_modelarrays = arrays
-                else:
-                    global_modelarrays.concatenate(arrays)
+                        # # remove the empty element from the list
+                        # self.data_files.pop(self.idx)
+                        # self.max_idx -= 1
+                        # cur_max_idx = min(cur_max_idx + 1, self.max_idx)
 
-                # increment the index by one
-                self.idx += 1
+                    if global_modelarrays is None:
+                        global_modelarrays = arrays
+                    else:
+                        global_modelarrays.concatenate(arrays)
 
+                    # increment the index by one
+                    self.idx += 1
+
+            # Return the global modelarrays
             if global_modelarrays is not None:
                 # convert to Tensor object (pytorch)
                 if self.to_tensor:
@@ -854,10 +874,12 @@ class _TrainDynamicIter(_DynamicIter):
                     ),
                     global_modelarrays.y,
                 )
-            else:
-                raise StopIteration()
+            # else:
+            #     print("global_modelarrays is None")
+            #     # assert False
+            #     # raise StopIteration()
 
-        else:  # final_x_curr >= self.max_idx
+        else:  # self.idx >= self.max_idx
             raise StopIteration()
 
 

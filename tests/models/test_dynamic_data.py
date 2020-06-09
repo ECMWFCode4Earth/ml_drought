@@ -92,9 +92,17 @@ class TestDynamicDataLoader:
         assert all(
             dl.dynamic_ds == ds
         ), "Expect data to be the same as created in `_create_runoff_features_dir`"
+
+        data = [d for d in dl]
+        # change the batch file size
+        dl.batch_file_size = 10
+        data2 = [d for d in dl]
         assert (
-            len(dl) == 731 // batch_file_size
-        ), "Expect 2 years of daily data. 730 + 1 (leap year in 2000). Should be batched."
+            len(data[0][-1]) == 10
+        ), "Expect data to have 10 instances per timestep (10 stations)"
+        assert (
+            len(data2[0][-1]) == 100
+        ), "Expect data2 (with larger batch_file_size) to be 10x more instances than data"
 
     def test_get_sample_from_dynamic_data(self, tmp_path):
         ds, static = _create_runoff_features_dir(tmp_path)

@@ -409,7 +409,7 @@ class ModelBase:
                 "seq_length": self.seq_length,  # changed this default arg
                 "forecast_horizon": self.forecast_horizon,
                 "data_path": self.data_path,
-                "batch_file_size": self.batch_size,
+                "batch_file_size": 1,  #   self.batch_file_size,
                 "mode": mode,
                 "shuffle_data": True,
                 "clear_nans": True,
