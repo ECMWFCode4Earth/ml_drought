@@ -355,7 +355,7 @@ def evaluate_only():
 
 if __name__ == "__main__":
     engineer_only = False
-    model_only = False
+    model_only = True
     reset_data_files = False
     main(
         model_only=model_only,
