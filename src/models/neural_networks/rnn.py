@@ -259,7 +259,12 @@ class RNN(nn.Module):
         # )
 
         # Use the pytorch LSTM
-        self.rnn = nn.LSTM(input_size=features_per_month, hidden_size=hidden_size)
+        self.rnn = nn.LSTM(
+            input_size=features_per_month,
+            hidden_size=hidden_size,
+            batch_first=True,
+            num_layers=1,
+        )
         self.hidden_size = hidden_size
         self.rnn_dropout = nn.Dropout(rnn_dropout)
 
