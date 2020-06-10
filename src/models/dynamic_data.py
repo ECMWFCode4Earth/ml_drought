@@ -643,7 +643,7 @@ class _DynamicIter:
 
         # check whether enough data
         if min_X_date < min_ds_date:
-            print(f"Not enough input timesteps for {target_time}")
+            # print(f"Not enough input timesteps for {target_time}")
             return None, target_time
 
         # get the X, y pairs
@@ -774,7 +774,7 @@ class _DynamicIter:
         return model_arrays
 
     def deal_with_no_values(self, target_time: pd.Timestamp, cur_max_idx: int) -> int:
-        print(f"{pd.to_datetime(target_time)} returns no values. Skipping")
+        # print(f"{pd.to_datetime(target_time)} returns no values. Skipping")
 
         # remove the empty element from the list
         self.target_times.pop(self.idx)

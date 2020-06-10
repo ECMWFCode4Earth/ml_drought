@@ -199,22 +199,22 @@ def train_ealstm(
     return ealstm
 
 
-def run_evaluation(data_dir, ealstm=None, batch_file_size: int = 3):
+def run_evaluation(data_dir, model=None, batch_file_size: int = 3):
     print("** Running Model Evaluation **")
-    if ealstm is None:
-        ealstm = load_model(
+    if model is None:  # load the ealstm by default
+        model = load_model(
             data_dir / "models/one_timestep_forecast/ealstm/model.pt", device="cpu"
         )
-    ealstm.batch_size = 10
+    model.batch_size = 10
     # move to CPU
-    ealstm.move_model("cpu")
+    model.move_model("cpu")
 
     # evaluate on the test set
-    ealstm.evaluate(
+    model.evaluate(
         spatial_unit_name="station_id", save_preds=True, batch_file_size=batch_file_size
     )
     results_dict = json.load(
-        open(data_dir / "models/one_timestep_forecast/ealstm/results.json", "rb")
+        open(data_dir / f"models/one_timestep_forecast/{model.name}/results.json", "rb")
     )
     print("** Overall RMSE: ", results_dict["total"], " **\n\n")
 

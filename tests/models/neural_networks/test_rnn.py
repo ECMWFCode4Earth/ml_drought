@@ -184,6 +184,11 @@ class TestRecurrentNetwork:
         assert ("1980_1" in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1)
         assert ("1980_1" in pred_dict.keys()) and (len(pred_dict) == 1)
 
+        assert pred_dict["1980_1"].shape == (25, 1,), (
+            "Should return array with n_locations as the first dim, "
+            "otherwise likely due to `batch_first=False`"
+        )
+
         if not predict_delta:
             # _make_dataset with const=True returns all ones
             assert (test_arrays_dict["1980_1"]["y"] == 1).all()
