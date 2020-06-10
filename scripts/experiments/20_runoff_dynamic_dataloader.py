@@ -334,11 +334,11 @@ def main(
         batch_file_size=batch_file_size,
     )
     if not engineer_only:
-        # lstm = train_lstm(**model_kwargs)
-        # run_evaluation(data_dir, lstm)
+        lstm = train_lstm(**model_kwargs)
+        run_evaluation(data_dir, lstm)
 
-        ealstm = train_ealstm(**model_kwargs)
-        run_evaluation(data_dir, ealstm)
+        # ealstm = train_ealstm(**model_kwargs)
+        # run_evaluation(data_dir, ealstm)
 
         # datestamp the model directory so that we can run multiple experiments
         # _rename_directory(

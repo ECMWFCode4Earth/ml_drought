@@ -28,12 +28,13 @@ class TestRecurrentNetwork:
 
         def mocktrain(self):
             self.model = RNN(
-                features_per_month,
-                dense_features,
-                hidden_size,
-                rnn_dropout,
-                include_pred_month,
-                include_latlons,
+                features_per_month=features_per_month,
+                dense_features=dense_features,
+                hidden_size=hidden_size,
+                rnn_dropout=rnn_dropout,
+                dropout=rnn_dropout,
+                include_pred_month=include_pred_month,
+                include_latlons=include_latlons,
                 experiment="one_month_forecast",
                 include_prev_y=include_prev_y,
             )
@@ -52,6 +53,8 @@ class TestRecurrentNetwork:
             include_latlons=include_latlons,
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
+            target_var="target",
+            test_years=[2000],
         )
 
         model.train()
@@ -116,13 +119,13 @@ class TestRecurrentNetwork:
             dense_features=dense_features,
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
-            include_monthly_aggs=True,
+            include_timestep_aggs=True,
             predict_delta=predict_delta,
         )
         model.train()
 
         captured = capsys.readouterr()
-        expected_stdout = "Epoch 1, train smooth L1:"
+        expected_stdout = "Epoch 1, train loss:"
         assert expected_stdout in captured.out
 
         assert type(model.model) == RNN, f"Model attribute not an RNN!"

@@ -70,8 +70,8 @@ class RecurrentNetwork(NNBase):
             dynamic_ignore_vars=dynamic_ignore_vars,
             static_ignore_vars=static_ignore_vars,
             target_var=target_var,
-            test_years=test_years,
             forecast_horizon=forecast_horizon,
+            test_years=test_years,
             val_years=val_years,
             train_years=train_years,
             clip_values_to_zero=clip_values_to_zero,
@@ -85,6 +85,7 @@ class RecurrentNetwork(NNBase):
         if dense_features is None:
             dense_features = []
         self.dense_features = dense_features
+        self.target_var = target_var
 
         self.features_per_month: Optional[int] = None
         self.current_size: Optional[int] = None
@@ -337,20 +338,27 @@ class RNN(nn.Module):
 
             x = torch.cat((x, with_time_dims), dim=-1)
 
-        if x.is_cuda:
-            hidden_state = hidden_state.cuda()
-            cell_state = cell_state.cuda()
+        if type(self.rnn) == nn.LSTM:
+            # efficient implementation from Pytorch
+            # NB. if (h_0, c_0) is not provided, both default to zero.
+            x, (hidden_state, cell_state) = self.rnn(x)
 
-        for i in range(sequence_length):
-            # The reason the RNN is unrolled here is to apply dropout to each timestep;
-            # The rnn_dropout argument only applies it after each layer.
-            # https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell/DropoutWrapper
-            # https://www.tensorflow.org/api_docs/python/tf/compat/v1/nn/rnn_cell/DropoutWrapper
-            input_x = x[:, i, :].unsqueeze(1)
-            _, (hidden_state, cell_state) = self.rnn(
-                input_x, (hidden_state, cell_state)
-            )
-            hidden_state = self.rnn_dropout(hidden_state)
+        else:
+            # need to apply the unrolled lstm time by time
+            if x.is_cuda:
+                hidden_state = hidden_state.cuda()
+                cell_state = cell_state.cuda()
+
+            for i in range(sequence_length):
+                # The reason the RNN is unrolled here is to apply dropout to each timestep;
+                # The rnn_dropout argument only applies it after each layer.
+                # https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell/DropoutWrapper
+                # https://www.tensorflow.org/api_docs/python/tf/compat/v1/nn/rnn_cell/DropoutWrapper
+                input_x = x[:, i, :].unsqueeze(1)
+                _, (hidden_state, cell_state) = self.rnn(
+                    input_x, (hidden_state, cell_state)
+                )
+                hidden_state = self.rnn_dropout(hidden_state)
 
         x = self.dropout(hidden_state.squeeze(0))
 
