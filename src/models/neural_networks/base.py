@@ -160,9 +160,9 @@ class NNBase(ModelBase):
         # Training
         # ----------------------------------------
         self.model.train()
-        # load in a few timesteps at a time (sample xy by TIME)
+        # load in a few timesteps at a time (sample xy by TIME) = batch_file_size
         for x, y in tqdm.tqdm(train_dataloader, desc="Training"):
-            # chunk into n_pixels (BATCHES)
+            # chunk into n_pixels (BATCHES) = batch_size
             for x_batch, y_batch in chunk_array(x, y, self.batch_size, shuffle=True):
                 self.optimizer.zero_grad()
 

@@ -257,7 +257,7 @@ def main(
     seq_length = 365  # * 2
     forecast_horizon = 0
     logy = True
-    batch_size = 256  # 1000 2000
+    batch_size = 100  # 1000 2000
     batch_file_size = 1
     # catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
     # catchment_ids = [int(c_id) for c_id in catchment_ids]
