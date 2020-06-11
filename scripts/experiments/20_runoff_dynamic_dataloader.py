@@ -264,7 +264,7 @@ def main(
     catchment_ids = None
 
     # Model Vars
-    num_epochs = 3 # 100
+    num_epochs = 100
     test_years = np.arange(2010, 2016)
     static_embedding_size = 64  # 64
     hidden_size = 256  #  128
@@ -279,7 +279,7 @@ def main(
     clip_values_to_zero = False
     static = "features"  #  embedding features None
 
-    train_years = np.arange(2000, 2002)  # np.arange(1979, 2010)
+    train_years = np.arange(1995, 2010)  # np.arange(1979, 2010)
     val_years = np.arange(1990, 1992)
 
     if logy:
