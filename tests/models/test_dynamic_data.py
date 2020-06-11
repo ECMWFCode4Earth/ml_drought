@@ -94,15 +94,59 @@ class TestDynamicDataLoader:
         ), "Expect data to be the same as created in `_create_runoff_features_dir`"
 
         data = [d for d in dl]
+        assert (
+            len(data[0][-1]) == 10
+        ), "Expect data to have 10 instances per timestep (10 stations)"
+
         # change the batch file size
         dl.batch_file_size = 10
         data2 = [d for d in dl]
         assert (
-            len(data[0][-1]) == 10
-        ), "Expect data to have 10 instances per timestep (10 stations)"
-        assert (
             len(data2[0][-1]) == 100
         ), "Expect data2 (with larger batch_file_size) to be 10x more instances than data"
+
+    def test_iteration_of_dynamic_data(self, tmp_path):
+        ds, static = _create_runoff_features_dir(tmp_path)
+        # initialise the data as an OUTPUT of the dynamic engineer
+        static_ignore_vars = ["area"]
+        dynamic_ignore_vars = ["discharge"]
+        target_var = "discharge"
+        seq_length = 5
+        test_years = [2001]
+        forecast_horizon = 0
+        batch_file_size = 1
+
+        # initialize the object
+        dl = DynamicDataLoader(
+            mode="train",
+            target_var=target_var,
+            test_years=test_years,
+            data_path=tmp_path,
+            seq_length=seq_length,
+            static_ignore_vars=static_ignore_vars,
+            dynamic_ignore_vars=dynamic_ignore_vars,
+            forecast_horizon=forecast_horizon,
+            batch_file_size=batch_file_size,
+        )
+        test_dl = DynamicDataLoader(
+            mode="test",
+            target_var=target_var,
+            test_years=test_years,
+            data_path=tmp_path,
+            seq_length=seq_length,
+            static_ignore_vars=static_ignore_vars,
+            dynamic_ignore_vars=dynamic_ignore_vars,
+            forecast_horizon=forecast_horizon,
+            batch_file_size=batch_file_size,
+        )
+
+        # train dataloader
+        data = [d for d in dl]
+        assert len(data) == 727
+
+        # test dataloader
+        test_data = [d for d in test_dl]
+        assert len(test_data) == 365
 
     def test_get_sample_from_dynamic_data(self, tmp_path):
         ds, static = _create_runoff_features_dir(tmp_path)

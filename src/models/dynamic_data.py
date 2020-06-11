@@ -857,11 +857,12 @@ class _TrainDynamicIter(_DynamicIter):
                     target_var_std=self.target_var_std,
                 )
 
-                # If there are no values!
-                if arrays.x.historical.shape[0] == 0:
-                    cur_max_idx = self.deal_with_no_values(
-                        target_time=target_time, cur_max_idx=cur_max_idx
-                    )
+                # # If there are no values!
+                # if arrays.x.historical.shape[0] == 0:
+                #     assert False
+                #     cur_max_idx = self.deal_with_no_values(
+                #         target_time=target_time, cur_max_idx=cur_max_idx
+                #     )
 
                 if global_modelarrays is None:
                     global_modelarrays = arrays
@@ -930,8 +931,10 @@ class _TestDynamicIter(_DynamicIter):
                     reducing_dims=self.reducing_dims,
                 )
 
+                # TODO: this should not be a problem ...
                 # If there are no values!
                 if arrays.x.historical.shape[0] == 0:
+                    assert False
                     cur_max_idx = self.deal_with_no_values(
                         target_time=target_time, cur_max_idx=cur_max_idx
                     )
