@@ -199,22 +199,22 @@ def train_ealstm(
     return ealstm
 
 
-def run_evaluation(data_dir, ealstm=None, batch_file_size: int = 3):
+def run_evaluation(data_dir, model=None, batch_file_size: int = 3):
     print("** Running Model Evaluation **")
-    if ealstm is None:
-        ealstm = load_model(
+    if model is None:  # load the ealstm by default
+        model = load_model(
             data_dir / "models/one_timestep_forecast/ealstm/model.pt", device="cpu"
         )
-    ealstm.batch_size = 10
+    model.batch_size = 10
     # move to CPU
-    ealstm.move_model("cpu")
+    model.move_model("cpu")
 
     # evaluate on the test set
-    ealstm.evaluate(
+    model.evaluate(
         spatial_unit_name="station_id", save_preds=True, batch_file_size=batch_file_size
     )
     results_dict = json.load(
-        open(data_dir / "models/one_timestep_forecast/ealstm/results.json", "rb")
+        open(data_dir / f"models/one_timestep_forecast/{model.name}/results.json", "rb")
     )
     print("** Overall RMSE: ", results_dict["total"], " **\n\n")
 
@@ -257,8 +257,8 @@ def main(
     seq_length = 365  # * 2
     forecast_horizon = 0
     logy = True
-    batch_size = 100  # 1000 2000
-    batch_file_size = 1
+    batch_size = 50  # 1000 2000
+    batch_file_size = 5
     # catchment_ids = ["12002", "15006", "27009", "27034", "27041", "39001", "39081", "43021", "47001", "54001", "54057", "71001", "84013",]
     # catchment_ids = [int(c_id) for c_id in catchment_ids]
     catchment_ids = None
@@ -356,7 +356,7 @@ def evaluate_only():
 if __name__ == "__main__":
     engineer_only = False
     model_only = False
-    reset_data_files = False
+    reset_data_files = True
     main(
         model_only=model_only,
         engineer_only=engineer_only,
