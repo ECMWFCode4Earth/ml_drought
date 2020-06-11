@@ -213,10 +213,10 @@ def run_evaluation(data_dir, model=None, batch_file_size: int = 3):
     model.evaluate(
         spatial_unit_name="station_id", save_preds=True, batch_file_size=batch_file_size
     )
-    results_dict = json.load(
-        open(data_dir / f"models/one_timestep_forecast/{model.name}/results.json", "rb")
-    )
-    print("** Overall RMSE: ", results_dict["total"], " **\n\n")
+    # results_dict = json.load(
+    #     open(data_dir / f"models/one_timestep_forecast/{model.name}/results.json", "rb")
+    # )
+    # print("** Overall RMSE: ", results_dict["total"], " **\n\n")
 
 
 def main(

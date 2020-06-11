@@ -60,7 +60,6 @@ class CamelsH5(Dataset):
         self.static_path = static_path
         self.basins = basins
         self.concat_static = concat_static
-        self.cache = cache
         self.no_static = no_static
 
         # Placeholder for catchment attributes stats
