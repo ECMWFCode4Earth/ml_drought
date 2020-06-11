@@ -306,6 +306,7 @@ class TestEALSTMDynamic:
 
         loss_func = "MSE"
         learning_rate = 1e-4
+        N_epochs = 10
 
         # Model
         ealstm = EARecurrentNetwork(
@@ -372,7 +373,7 @@ class TestEALSTMDynamic:
         train_losses = []
         val_rmses = []
 
-        for epoch in range(2):
+        for epoch in range(N_epochs):
             epoch_rmses = []
             epoch_l1s = []
 
@@ -425,9 +426,9 @@ class TestEALSTMDynamic:
             epoch_val_rmse = np.mean(val_rmse)
             val_rmses.append(epoch_val_rmse)
 
-        assert len(val_rmses) == 2
-        assert len(train_rmse) == 2
-        assert len(train_losses) == 2
+        assert len(val_rmses) == N_epochs
+        assert len(train_rmse) == N_epochs
+        assert len(train_losses) == N_epochs
 
         if ealstm.clip_values_to_zero:
             pred[pred < 0] = 0
@@ -438,11 +439,12 @@ class TestEALSTMDynamic:
                 np.isin(pd.to_datetime(dt).year, ealstm.val_years)
                 for dt in val_dataloader.valid_train_times
             ]
-        )
+        ), "All validation times should be from the model.val_years"
         assert all(
             [
                 np.isin(pd.to_datetime(dt).year, ealstm.train_years)
                 for dt in train_dataloader.valid_train_times
             ]
-        )
+        ), "All train times should be from the model.train_years"
+
         assert False
