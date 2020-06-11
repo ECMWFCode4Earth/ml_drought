@@ -264,7 +264,7 @@ def main(
     catchment_ids = None
 
     # Model Vars
-    num_epochs = 100  # 100
+    num_epochs = 3 # 100
     test_years = np.arange(2010, 2016)
     static_embedding_size = 64  # 64
     hidden_size = 256  #  128
