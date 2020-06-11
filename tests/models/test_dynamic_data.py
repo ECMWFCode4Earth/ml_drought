@@ -148,6 +148,8 @@ class TestDynamicDataLoader:
         test_data = [d for d in test_dl]
         assert len(test_data) == 365
 
+        assert False
+
     def test_get_sample_from_dynamic_data(self, tmp_path):
         ds, static = _create_runoff_features_dir(tmp_path)
         # initialise the data as an OUTPUT of the dynamic engineer

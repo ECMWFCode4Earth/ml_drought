@@ -783,7 +783,7 @@ class _DynamicIter:
 
         return cur_max_idx
 
-    def get_valid_xy_time(self, cur_max_idx: int) -> Tuple[Tuple[xr.Dataset, xr.Dataset], pd.Timestamp]:
+    def get_valid_xy_time(self, cur_max_idx: int) -> Tuple[Optional[Tuple[xr.Dataset, xr.Dataset]], Optional[pd.Timestamp]]:
         """Iterate through the timestamps until you get a valid timestamp.
         Invalid timestamps are usually those with fewer previous timesteps than `seq_len`.
         e.g. t - {seq_len} is data before the minimum date in the dataset.
@@ -794,8 +794,9 @@ class _DynamicIter:
         target_time: pd.Timestamp
         """
         xy_sample: Union[None, Tuple[xr.Dataset, xr.Dataset]] = None
+        target_time: Union[None, pd.Timestamp] = None
 
-        while (xy_sample is None) & (self.idx <= cur_max_idx):
+        while (xy_sample is None) & (self.idx < cur_max_idx):
             target_time = self.target_times[self.idx]
 
             xy_sample, _ = self.get_sample_from_dynamic_data(
@@ -811,8 +812,8 @@ class _DynamicIter:
                     target_time=target_time, cur_max_idx=cur_max_idx
                 )
 
-        if xy_sample is None:
-            assert False, "No valid timesteps in the data - try changing the `seq_len`"
+        if self.idx > cur_max_idx:
+            raise StopIteration()
 
         return xy_sample, target_time
 
@@ -846,6 +847,9 @@ class _TrainDynamicIter(_DynamicIter):
                 # iterate over the X-y pairs by selecting the target_time
                 # dynamically from the self.dynamic_ds (instead of subfolder)
                 xy_sample, target_time = self.get_valid_xy_time(cur_max_idx=cur_max_idx)
+
+                if (xy_sample is None) or (target_time is None):
+                    raise StopIteration()
 
                 # get the arrays from the xr.Dataset objects
                 arrays = self.ds_sample_to_np(
@@ -922,6 +926,9 @@ class _TestDynamicIter(_DynamicIter):
             cur_max_idx = min(self.idx + self.batch_file_size, self.max_idx)
             while self.idx < cur_max_idx:
                 xy_sample, target_time = self.get_valid_xy_time(cur_max_idx=cur_max_idx)
+
+                if (xy_sample is None) or (target_time is None):
+                    raise StopIteration()
 
                 arrays = self.ds_sample_to_np(
                     xy_sample=xy_sample,
