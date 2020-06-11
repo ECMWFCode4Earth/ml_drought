@@ -280,7 +280,7 @@ def main(
     static = "features"  #  embedding features None
 
     train_years = np.arange(2000, 2005)  # np.arange(1979, 2010)
-    val_years = np.arange(1970, 1979)
+    val_years = np.arange(1970, 1975)
 
     if logy:
         assert clip_values_to_zero is False, "Don't clip to zero if log transform y"
