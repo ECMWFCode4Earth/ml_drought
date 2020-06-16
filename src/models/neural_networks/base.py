@@ -432,7 +432,7 @@ class NNBase(ModelBase):
         self.model.eval()
         with torch.no_grad():
             for dict in tqdm.tqdm(test_arrays_loader):
-                for key, val in tqdm.tqdm(dict.items()):
+                for key, val in dict.items():
 
                     # TODO: this is where the code breaks down
                     # ipdb> self.x.historical.shape => (659, 365, 8)
