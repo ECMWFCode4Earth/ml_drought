@@ -279,7 +279,7 @@ def main(
     clip_values_to_zero = False
     static = "features"  #  embedding features None
 
-    train_years = np.arange(1995, 2010)  # np.arange(1979, 2010)
+    train_years = np.arange(1995, 2010)  #  np.arange(1979, 2010)
     val_years = np.arange(1990, 1992)
 
     if logy:
