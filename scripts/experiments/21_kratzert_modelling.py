@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.append("../..")
 
-from src.preprocess.camels_kratzert import get_basins, RunoffEngineer, CamelsH5
+from src.preprocess.camels_kratzert import get_basins, RunoffEngineer, CamelsDataLoader
 from src.preprocess import CAMELSGBPreprocessor
 
 import pandas as pd
@@ -12,8 +12,8 @@ import h5py
 import pytest
 from torch.utils.data import DataLoader
 
-from src.models.kratzert.main import train as train_model
-from src.models.kratzert.main import evaluate as evaluate_model
+from src.models.kratzert.main import train
+from src.models.kratzert.main import evaluate
 
 from scripts.utils import (
     _rename_directory,
@@ -21,6 +21,19 @@ from scripts.utils import (
     rename_features_dir,
     rename_models_dir,
 )
+import inspect
+from typing import Dict
+
+
+def get_valid_kwargs(py_object, kwargs: Dict) -> Dict:
+    """return a dict of the valid kwargs for a function
+    """
+    signature = inspect.signature(py_object)
+    valid_kwargs = {}
+    for arg in [k for k in signature.parameters.keys()]:
+        valid_kwargs[arg] = kwargs[arg]
+
+    return valid_kwargs
 
 
 def preprocess(data_dir: Path):
@@ -28,22 +41,37 @@ def preprocess(data_dir: Path):
     processor.preprocess()
 
 
-def engineer(data_dir: Path):
-    engineer = RunoffEngineer()
+def engineer(data_dir: Path, **kwargs):
+    # only pass the valid kwargs from dict to engineer
+    valid_kwargs = get_valid_kwargs(RunoffEngineer, kwargs)
+
+    engineer = RunoffEngineer(**valid_kwargs)
     engineer.create_training_data()
 
 
 def run_model(**kwargs):
     model = train_model(**kwargs)
+    evaluate_model(model, **kwargs)
 
+
+def train_model(**kwargs):
+    # only pass the valid kwargs from dict to engineer
+    valid_kwargs = get_valid_kwargs(train, kwargs)
+
+    model = train(**valid_kwargs)
+    return model
+
+
+def evaluate_model(model, **kwargs):
     eval_model_kwargs = dict(
         input_size_dyn=model.input_size_dyn,
         input_size_stat=model.input_size_stat,
         model_path=model.model_path,
     )
+    kwargs = {**kwargs, **eval_model_kwargs}
+    valid_kwargs = get_valid_kwargs(evaluate, kwargs)
 
-    updated_kwargs = {**kwargs, **eval_model_kwargs}
-    evaluate_model(**updated_kwargs)
+    evaluate(**valid_kwargs)
 
 
 def __main__():
@@ -53,13 +81,15 @@ def __main__():
     # SETTINGS
     all_settings = dict(
         data_dir=data_dir,
+        basins=get_basins(data_dir),
         train_dates=[2000],
+        with_basin_str=True,
         val_dates=[2001],
         target_var="discharge_spec",
         x_variables=["precipitation", "peti"],
         static_variables=["pet_mean", "aridity", "p_seasonality"],
+        ignore_static_vars=None,
         seq_length=10,
-        basins=get_basins(data_dir),
         dropout=0.4,
         hidden_size=256,
         seed=10101,

@@ -6,13 +6,10 @@ from torch.utils.data import DataLoader
 import random
 import pickle
 
-from src.preprocess.camels_kratzert import (
-    CAMELSCSV,
-    get_basins,
-    RunoffEngineer,
-    CamelsH5,
-    load_static_data,
-)
+from src.engineer.basin import CAMELSCSV
+from src.engineer.runoff import RunoffEngineer, CamelsDataLoader
+from src.engineer.runoff_utils import get_basins, load_static_data
+
 from .nseloss import NSELoss
 from . import Model
 import tqdm
@@ -134,7 +131,7 @@ def train(
     )
 
     # create dataloader
-    data = CamelsH5(
+    data = CamelsDataLoader(
         data_dir=data_dir,
         basins=basins,
         concat_static=concat_static,

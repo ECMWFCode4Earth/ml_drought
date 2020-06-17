@@ -191,7 +191,7 @@ class RunoffEngineer:
                 out_f.flush()
 
 
-class CamelsH5(Dataset):
+class CamelsDataLoader(Dataset):
     """PyTorch data set to work with pre-packed hdf5 data base files.
 
     Should be used only in combination with the files processed from `create_h5_files` in the

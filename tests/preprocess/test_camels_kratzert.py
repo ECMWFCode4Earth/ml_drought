@@ -4,7 +4,7 @@ from src.preprocess.camels_kratzert import (
     CAMELSCSV,
     get_basins,
     RunoffEngineer,
-    CamelsH5,
+    CamelsDataLoader,
 )
 from src.preprocess import CAMELSGBPreprocessor
 from ..utils import _copy_runoff_data_to_tmp_path
@@ -194,7 +194,7 @@ class TestH5Train:
 
         engineer.create_training_data()
 
-        data = CamelsH5(
+        data = CamelsDataLoader(
             data_dir=tmp_path,
             basins=basins,
             concat_static=concat_static,
