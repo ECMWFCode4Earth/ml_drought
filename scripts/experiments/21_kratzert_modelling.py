@@ -4,14 +4,12 @@ from pathlib import Path
 sys.path.append("../..")
 
 from src.preprocess.camels_kratzert import (
-    CalculateNormalizationParams,
-    # reshape_data,
-    CAMELSCSV,
     get_basins,
     RunoffEngineer,
     CamelsH5,
 )
 from src.preprocess import CAMELSGBPreprocessor
+
 import pandas as pd
 import numpy as np
 import h5py
@@ -34,7 +32,40 @@ def preprocess(data_dir: Path):
     processor.preprocess()
 
 
+def engineer(data_dir: Path):
+    engineer = RunoffEngineer()
+
+
 def __main__():
     data_dir = get_data_path()
-
     preprocess(data_dir)
+
+    # SETTINGS
+    all_settings = dict(
+        data_dir=data_dir,
+        train_dates=[2000],
+        val_dates=[2001]
+        target_var="discharge_spec",
+        x_variables=["precipitation", "peti"],
+        static_variables=["pet_mean", "aridity", "p_seasonality"],
+        seq_length=10,
+        basins=get_basins(data_dir),
+        dropout=0.4,
+        hidden_size=256,
+        seed=10101,
+        cache=True,
+        use_mse=True,
+        batch_size=50,
+        num_workers=4,
+        initial_forget_gate_bias=5,
+        learning_rate=1e-3,
+        epochs=30,
+    )
+    lstm_settings = dict(
+        with_static=True,
+        concat_static=True,
+    )
+    ealstm_settings = dict(
+        with_static=True,
+        concat_static=False,
+    )

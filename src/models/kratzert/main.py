@@ -347,7 +347,9 @@ def evaluate(
         )
         loader = DataLoader(ds_test, batch_size=1024, shuffle=False, num_workers=1)
 
-        preds, obs = evaluate_basin(model, loader, normalization_dict=normalization_dict)
+        preds, obs = evaluate_basin(
+            model, loader, normalization_dict=normalization_dict
+        )
 
         df = pd.DataFrame(
             data={"qobs": obs.flatten(), "qsim": preds.flatten()}, index=date_range
@@ -404,7 +406,9 @@ def rescale_features(
     variable: str = "target",
 ) -> np.ndarray:
     if variable == "target":
-        feature = (feature * normalization_dict["target_std"]) + normalization_dict["target_mean"]
+        feature = (feature * normalization_dict["target_std"]) + normalization_dict[
+            "target_mean"
+        ]
     else:
         assert False, "Not implemented other rescalings"
 
@@ -412,9 +416,7 @@ def rescale_features(
 
 
 def evaluate_basin(
-    model: nn.Module,
-    loader: DataLoader,
-    normalization_dict: Dict[str, np.ndarray]
+    model: nn.Module, loader: DataLoader, normalization_dict: Dict[str, np.ndarray]
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Evaluate model on a single basin
 
@@ -456,9 +458,7 @@ def evaluate_basin(
                 obs = torch.cat((obs, y.detach().cpu()), 0)
 
         preds = rescale_features(
-            preds.numpy(),
-            variable="target",
-            normalization_dict=normalization_dict
+            preds.numpy(), variable="target", normalization_dict=normalization_dict
         )
         obs = obs.numpy()
         # set discharges < 0 to zero

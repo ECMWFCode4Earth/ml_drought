@@ -264,7 +264,10 @@ class CAMELSCSV(Dataset):
         self.is_train = is_train
         self.train_dates = np.sort(train_dates)
         assert all(
-            [(isinstance(date, int) or (isinstance(int(date), int))) for date in train_dates]
+            [
+                (isinstance(date, int) or (isinstance(int(date), int)))
+                for date in train_dates
+            ]
         ), "train_dates must be an array of integers (the years to be used)"
 
         # means and stds
