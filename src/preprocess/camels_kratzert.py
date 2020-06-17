@@ -99,6 +99,10 @@ class CalculateNormalizationParams:
 
         Returns:
             Dict[str, float]: Normalisation dictionary
+                Keys: [ "static_means", "static_stds",
+                    "dynamic_means", "dynamic_stds", "target_mean",
+                    "target_std", "x_variables", "target_var",
+                    "static_variables", ]
         """
         print("Calculating mean and std for variables")
 
@@ -566,6 +570,7 @@ class RunoffEngineer:
         FileExistsError: If the h5 file is already created, raise a
             file exists error.
     """
+
     def __init__(
         self,
         data_dir: Path,
@@ -757,14 +762,6 @@ class CamelsH5(Dataset):
         self.x_variables = self.normalization_dict["x_variables"]
         self.static_variables = self.normalization_dict["static_variables"]
 
-        self.normalization_dict = CalculateNormalizationParams(
-            data_dir=self.data_dir,
-            train_dates=self.train_dates,
-            target_var=self.target_var,
-            x_variables=self.x_variables,
-            static_variables=self.static_variables,
-        ).normalization_dict
-
         # Placeholder for catchment attributes stats
         self.static_df = None
         self.attribute_means = None
@@ -881,17 +878,12 @@ class CamelsH5(Dataset):
         Returns:
             pd.DataFrame: Static catchment attributes (static over time)
         """
-        # load from the xarray object
-        if (self.data_dir / "interim/static/data.nc").exists():
-            static_ds = xr.open_dataset(self.data_dir / "interim/static/data.nc")
-        else:
-            assert False, "Have you run the preprocessor? `CAMELSGBPreprocessor()`"
-
-        # keep only these vars
-        if self.static_variables is not None:
-            static_ds = static_ds[self.static_variables]
-
-        static_df = static_ds.to_dataframe()
+        static_df = load_static_data(
+            data_dir=self.data_dir,
+            static_variables=self.static_variables,
+            drop_lat_lon=False,
+            basins=self.basins,
+        )
 
         # store the means and stds
         self.attribute_means = static_df.mean()
@@ -904,3 +896,39 @@ class CamelsH5(Dataset):
         ) / self.normalization_dict["static_stds"]
 
         return static_df
+
+
+def load_static_data(
+    data_dir: Path,
+    static_variables: Optional[List[str]] = None,
+    basins: Optional[List[str]] = None,
+    drop_lat_lon: bool = True,
+) -> pd.DataFrame:
+    """Return the static data as an pd.DataFrame, read from the
+    xr.Dataset (netcdf file).
+
+    Returns:
+        pd.DataFrame: Static catchment attributes (static over time)
+    """
+    # load from the xarray object
+    if (data_dir / "interim/static/data.nc").exists():
+        static_ds = xr.open_dataset(data_dir / "interim/static/data.nc")
+    else:
+        assert False, "Have you run the preprocessor? `CAMELSGBPreprocessor()`"
+
+    # keep only these vars
+    if static_variables is not None:
+        static_ds = static_ds[static_variables]
+
+    static_df = static_ds.to_dataframe()
+
+    # drop rows of basins not contained in data set
+    drop_basins = [b for b in static_df.index if b not in basins]
+    static_df = static_df.drop(drop_basins, axis=0)
+
+    # drop lat/lon col
+    if drop_lat_lon:
+        if ["gauge_lat", "gauge_lon"] in static_df.columns:
+            static_df = static_df.drop(["gauge_lat", "gauge_lon"], axis=1)
+
+    return static_df

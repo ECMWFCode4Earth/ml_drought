@@ -8,14 +8,16 @@ from typing import Tuple
 class Model(nn.Module):
     """Wrapper class that connects LSTM/EA-LSTM with fully connected layer"""
 
-    def __init__(self,
-                 input_size_dyn: int,
-                 input_size_stat: int,
-                 hidden_size: int,
-                 initial_forget_bias: int = 5,
-                 dropout: float = 0.0,
-                 concat_static: bool = False,
-                 no_static: bool = False):
+    def __init__(
+        self,
+        input_size_dyn: int,
+        input_size_stat: int,
+        hidden_size: int,
+        initial_forget_bias: int = 5,
+        dropout: float = 0.0,
+        concat_static: bool = False,
+        no_static: bool = False,
+    ):
         """Initialize model.
 
         Parameters
@@ -45,20 +47,28 @@ class Model(nn.Module):
         self.no_static = no_static
 
         if self.concat_static or self.no_static:
-            self.lstm = LSTM(input_size=input_size_dyn,
-                             hidden_size=hidden_size,
-                             initial_forget_bias=initial_forget_bias)
+            self.lstm = LSTM(
+                input_size=input_size_dyn,
+                hidden_size=hidden_size,
+                initial_forget_bias=initial_forget_bias,
+            )
         else:
-            self.lstm = EALSTM(input_size_dyn=input_size_dyn,
-                               input_size_stat=input_size_stat,
-                               hidden_size=hidden_size,
-                               initial_forget_bias=initial_forget_bias)
+            self.lstm = EALSTM(
+                input_size_dyn=input_size_dyn,
+                input_size_stat=input_size_stat,
+                hidden_size=hidden_size,
+                initial_forget_bias=initial_forget_bias,
+            )
 
         self.dropout = nn.Dropout(p=dropout)
         self.fc = nn.Linear(hidden_size, 1)
 
-    def forward(self, x_d: torch.Tensor, x_s: torch.Tensor = None) \
-            -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        # Placeholder for model path
+        self.model_path: Optional[Path] = None
+
+    def forward(
+        self, x_d: torch.Tensor, x_s: torch.Tensor = None
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Run forward pass through the model.
 
         Parameters
@@ -86,8 +96,4 @@ class Model(nn.Module):
         return out, h_n, c_n
 
 
-__all__ = [
-    "EALSTM",
-    "LSTM"
-    "Model"
-]
+__all__ = ["EALSTM", "LSTM" "Model"]
