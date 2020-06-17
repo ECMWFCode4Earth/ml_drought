@@ -17,9 +17,7 @@ from .runoff_utils import (
     CalculateNormalizationParams,
 )
 from .basin import CAMELSCSV
-
-# calculate normalization dict
-# calculate normalization array
+from src.utils import _rename_directory
 
 
 class RunoffEngineer:
@@ -78,7 +76,9 @@ class RunoffEngineer:
             self.out_file.parents[0].mkdir(exist_ok=True, parents=True)
 
         if self.out_file.is_file():
-            raise FileExistsError(f"File already exists at {self.out_file}")
+            print(f"File already exists at {self.out_file}")
+            # move file
+            _rename_directory(self.out_file, self.out_file, with_datetime=True)
 
         # Experiment Data Params
         self.train_dates = train_dates
