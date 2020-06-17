@@ -9,6 +9,7 @@ from .esa_cci import ESACCIPreprocessor
 from .srtm import SRTMPreprocessor
 from .admin_boundaries import KenyaAdminPreprocessor, KenyaASALMask
 from .boku_ndvi import BokuNDVIPreprocessor
+from .camels import CAMELSGBPreprocessor
 
 
 __all__ = [
@@ -25,4 +26,5 @@ __all__ = [
     "BokuNDVIPreprocessor",
     "KenyaASALMask",
     "ERA5LandPreprocessor",
+    "CAMELSGBPreprocessor",
 ]
