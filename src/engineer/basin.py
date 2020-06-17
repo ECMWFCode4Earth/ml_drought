@@ -112,6 +112,9 @@ class CAMELSCSV(Dataset):
         # NUM timesteps
         self.num_samples = self.x.shape[0]
 
+        # array of nans for missing timesteps
+        self.missing_timesteps: np.ndarray
+
     def __len__(self):
         return self.num_samples
 
@@ -213,18 +216,20 @@ class CAMELSCSV(Dataset):
 
         Returns:
             Tuple[np.ndarray, np.ndarray]: x, y
+            np.ndarray: array of the nans indicating timestep missing
         """
         # any nans in y? (2D)
         y_nans = np.any(np.isnan(y), axis=1)
-        y = y[~y_nans]
-        x = x[~y_nans]
-
         # any nans in x? (3D)
         x_nans = np.any(np.any(np.isnan(x), axis=1), axis=1)
-        y = y[~x_nans]
-        x = x[~x_nans]
 
-        total_nans = y_nans.sum() + x_nans.sum()
+        all_nans = np.any([y_nans, x_nans], axis=0)
+        self.missing_timesteps = all_nans
+        total_nans = all_nans.sum()
+
+        y = y[~all_nans]
+        x = x[~all_nans]
+
         if total_nans > 0:
             print(f"{total_nans} NaNs removed in Basin: {self.basin}")
 

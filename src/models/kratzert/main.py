@@ -342,14 +342,22 @@ def evaluate(
             with_static=with_static,
             concat_static=concat_static,
         )
+        # capture missing timesteps
+        missing_timesteps = ds_test.missing_timesteps
+
         loader = DataLoader(ds_test, batch_size=1024, shuffle=False, num_workers=1)
 
         preds, obs = evaluate_basin(
             model, loader, normalization_dict=normalization_dict
         )
 
+        valid_date_range = date_range[~missing_timesteps]
+        assert len(preds) == len(obs)
+        assert len(preds) == len(valid_date_range)
+
         df = pd.DataFrame(
-            data={"qobs": obs.flatten(), "qsim": preds.flatten()}, index=date_range
+            data={"qobs": obs.flatten(), "qsim": preds.flatten()},
+            index=valid_date_range,
         )
 
         results[basin] = df
