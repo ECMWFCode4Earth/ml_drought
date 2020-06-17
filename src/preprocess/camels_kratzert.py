@@ -1,5 +1,4 @@
 from pathlib import Path
-from .base import BasePreProcessor
 import numpy as np
 import xarray as xr
 import pandas as pd
@@ -265,7 +264,7 @@ class CAMELSCSV(Dataset):
         self.is_train = is_train
         self.train_dates = np.sort(train_dates)
         assert all(
-            [isinstance(date, int) for date in train_dates]
+            [(isinstance(date, int) or (isinstance(int(date), int))) for date in train_dates]
         ), "train_dates must be an array of integers (the years to be used)"
 
         # means and stds
@@ -928,7 +927,7 @@ def load_static_data(
 
     # drop lat/lon col
     if drop_lat_lon:
-        if ["gauge_lat", "gauge_lon"] in static_df.columns:
+        if all(np.isin(["gauge_lat", "gauge_lon"], static_df.columns)):
             static_df = static_df.drop(["gauge_lat", "gauge_lon"], axis=1)
 
     return static_df

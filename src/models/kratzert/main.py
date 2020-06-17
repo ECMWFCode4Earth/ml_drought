@@ -188,7 +188,7 @@ def train(
 
         # save the model
         model_str = _get_model_str(with_static=with_static, concat_static=concat_static)
-        model_path = data_dir / f"model/model_{model_str}_epoch{epoch}.pt"
+        model_path = data_dir / f"models/model_{model_str}_epoch{epoch}.pt"
         model_path.parents[0].mkdir(exist_ok=True, parents=True)
 
         model.model_path = model_path
@@ -328,10 +328,10 @@ def evaluate(
     results: Dict[pd.DataFrame] = {}
 
     normalization_dict = pickle.load(
-        open(data_dir / "/features/normalization_dict.pkl", "rb")
+        open(data_dir / "features/normalization_dict.pkl", "rb")
     )
 
-    for basin in tqdm(basins):
+    for basin in tqdm.tqdm(basins):
         ds_test = CAMELSCSV(
             data_dir=data_dir,
             basin=basin,
@@ -347,7 +347,7 @@ def evaluate(
         )
         loader = DataLoader(ds_test, batch_size=1024, shuffle=False, num_workers=1)
 
-        preds, obs = evaluate_basin(model, loader)
+        preds, obs = evaluate_basin(model, loader, normalization_dict=normalization_dict)
 
         df = pd.DataFrame(
             data={"qobs": obs.flatten(), "qsim": preds.flatten()}, index=date_range
@@ -392,9 +392,10 @@ def save_eval_results(
 
     dt = time.gmtime()
     dt_str = f"{dt.tm_year}_{dt.tm_mon:02}_{dt.tm_mday:02}:{dt.tm_hour:02}{dt.tm_min:02}{dt.tm_sec:02}"
-    name = "/" + dt_str + "_" + f"{model}_results.pkl"
+    name = dt_str + "_" + f"{model}_results.pkl"
 
-    pickle.dump(results, open(data_dir / "models" + name, "wb"))
+    (data_dir / "models").mkdir(exist_ok=True, parents=True)
+    pickle.dump(results, open(data_dir / "models" / name, "wb"))
 
 
 def rescale_features(
@@ -403,7 +404,7 @@ def rescale_features(
     variable: str = "target",
 ) -> np.ndarray:
     if variable == "target":
-        feature = (feature * ["target_std"]) + ["target_mean"]
+        feature = (feature * normalization_dict["target_std"]) + normalization_dict["target_mean"]
     else:
         assert False, "Not implemented other rescalings"
 
@@ -411,7 +412,9 @@ def rescale_features(
 
 
 def evaluate_basin(
-    model: nn.Module, loader: DataLoader, normalization_dict: Dict[str, np.ndarray]
+    model: nn.Module,
+    loader: DataLoader,
+    normalization_dict: Dict[str, np.ndarray]
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Evaluate model on a single basin
 
@@ -452,7 +455,11 @@ def evaluate_basin(
                 preds = torch.cat((preds, p.detach().cpu()), 0)
                 obs = torch.cat((obs, y.detach().cpu()), 0)
 
-        preds = rescale_features(preds.numpy(), variable="output")
+        preds = rescale_features(
+            preds.numpy(),
+            variable="target",
+            normalization_dict=normalization_dict
+        )
         obs = obs.numpy()
         # set discharges < 0 to zero
         preds[preds < 0] = 0

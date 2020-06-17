@@ -15,6 +15,8 @@ import pytest
 from torch.utils.data import DataLoader
 
 from src.models.kratzert.main import train as train_model
+from src.models.kratzert.main import evaluate as evaluate_model
+import pickle
 
 
 # class TestCAMELSCSV:
@@ -29,7 +31,7 @@ from src.models.kratzert.main import train as train_model
 #         target_var = "discharge_spec"
 #         x_variables = ["precipitation", "peti"]
 #         static_variables = ["pet_mean", "aridity", "p_seasonality"]
-#         seq_length = 365
+#         seq_length = 10
 #         with_static = True
 #         is_train = True
 #         concat_static = False
@@ -107,7 +109,7 @@ from src.models.kratzert.main import train as train_model
 #         target_var = "discharge_spec"
 #         x_variables = ["precipitation", "peti"]
 #         static_variables = ["pet_mean", "aridity", "p_seasonality"]
-#         seq_length = 365
+#         seq_length = 10
 #         with_static = True
 #         concat_static = False
 #         basins = get_basins(tmp_path)
@@ -172,7 +174,7 @@ from src.models.kratzert.main import train as train_model
 #         target_var = "discharge_spec"
 #         x_variables = ["precipitation", "peti"]
 #         static_variables = ["pet_mean", "aridity", "p_seasonality"]
-#         seq_length = 365
+#         seq_length = 5
 #         with_static = with_static
 #         concat_static = concat_static
 #         basins = get_basins(tmp_path)
@@ -263,7 +265,7 @@ class TestTrainModel:
         target_var = "discharge_spec"
         x_variables = ["precipitation", "peti"]
         static_variables = ["pet_mean", "aridity", "p_seasonality"]
-        seq_length = 365
+        seq_length = 10
         with_static = True
         concat_static = False
         basins = get_basins(tmp_path)
@@ -272,11 +274,11 @@ class TestTrainModel:
         seed = 10101
         cache = True
         use_mse = True
-        batch_size = 2
+        batch_size = 50
         num_workers = 1
         initial_forget_gate_bias = 5
         learning_rate = 1e-3
-        epochs = 10
+        epochs = 1
 
         model = train_model(
             data_dir=tmp_path,
@@ -292,14 +294,14 @@ class TestTrainModel:
             concat_static=concat_static,
             dropout=dropout,
             hidden_size=hidden_size,
-            seed=10101,
-            cache=True,
-            use_mse=True,
-            batch_size=2,
-            num_workers=1,
-            initial_forget_gate_bias=5,
-            learning_rate=1e-3,
-            epochs=10,
+            seed=seed,
+            cache=cache,
+            use_mse=use_mse,
+            batch_size=batch_size,
+            num_workers=num_workers,
+            initial_forget_gate_bias=initial_forget_gate_bias,
+            learning_rate=learning_rate,
+            epochs=epochs,
         )
 
         input_size_dyn = model.input_size_dyn
@@ -322,4 +324,15 @@ class TestTrainModel:
             seq_length=seq_length,
         )
 
-        assert False
+        # is the data directory correctly formatted?
+        dirs = ['features', 'models', 'interim', 'raw']
+        assert all(np.isin(dirs, [d.name for d in tmp_path.iterdir()]))
+
+        # are the models / predictions saved properly?
+        results_pkl = [f for f in (tmp_path / "models").glob("*.pkl")][0]
+        assert "ealstm_results.pkl" in results_pkl.name
+        assert "ealstm" in [f.name for f in (tmp_path / "models").glob("*.pt")][0]
+
+        # check that all basins are found as keys in results Dict
+        results = pickle.load(open(results_pkl, "rb"))
+        assert all(np.isin(basins, [k for k in results.keys()]))
