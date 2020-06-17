@@ -134,6 +134,9 @@ class CAMELSGBPreprocessor(BasePreProcessor):
 
         # join into one dataframe
         static_df = pd.concat(static_dfs, axis=1)
+        gauge_id = static_df['gauge_id'].iloc[:, 0]
+        static_df = static_df.drop('gauge_id', axis=1)
+        static_df['gauge_id'] = gauge_id
 
         # create xr object
         static_vars = [c for c in static_df.columns if c != "gauge_id"]
