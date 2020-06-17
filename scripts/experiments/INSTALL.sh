@@ -7,7 +7,7 @@ conda install ipython --yes
 conda install pip --yes
 conda install -c conda-forge xesmf --yes
 
-
 pip install netcdf4
 pip install pytorch-lightning
 pip install geopandas
+pip install sklearn
