@@ -10,6 +10,7 @@ from torch.utils.data import Dataset
 import torch
 import h5py
 import sys
+from .runoff_utils import reshape_data
 
 
 class CAMELSCSV(Dataset):
@@ -328,11 +329,7 @@ class CAMELSCSV(Dataset):
             static_ds = self._create_static_data_xr()
 
         # drop vars from all studies
-        if self.ignore_static_vars is None:
-            static_ds = static_ds.drop(
-                [v for v in INVALID_ATTR if v in static_ds.data_vars]
-            )
-        else:
+        if self.ignore_static_vars is not None:
             static_ds = static_ds.drop(
                 [v for v in self.ignore_static_vars if v in static_ds.data_vars]
             )

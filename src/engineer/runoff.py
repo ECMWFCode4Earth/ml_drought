@@ -16,6 +16,7 @@ from .runoff_utils import (
     reshape_data,
     CalculateNormalizationParams,
 )
+from .basin import CAMELSCSV
 
 # calculate normalization dict
 # calculate normalization array
@@ -128,8 +129,8 @@ class RunoffEngineer:
                 compression="gzip",
             )
 
-            q_stds = out_f.create_dataset(
-                "q_stds",
+            target_stds = out_f.create_dataset(
+                "target_stds",
                 shape=(0, 1),
                 maxshape=(None, 1),
                 dtype=np.float32,
@@ -173,11 +174,11 @@ class RunoffEngineer:
                 target_data[-num_samples:, :] = dataset.y
 
                 # store std of discharge of this basin for each sample
-                q_stds.resize((total_samples, 1))
-                q_std_array = np.array(
-                    [dataset.q_std] * num_samples, dtype=np.float32
+                target_stds.resize((total_samples, 1))
+                target_std_array = np.array(
+                    [dataset.target_std] * num_samples, dtype=np.float32
                 ).reshape(-1, 1)
-                q_stds[-num_samples:, :] = q_std_array
+                target_stds[-num_samples:, :] = target_std_array
 
                 # store the basin id as a string
                 if self.with_basin_str:
@@ -255,7 +256,7 @@ class CamelsH5(Dataset):
 
         # preload data if cached is true
         if self.cache:
-            (self.x, self.y, self.sample_2_basin, self.q_stds) = self._preload_data()
+            (self.x, self.y, self.sample_2_basin, self.target_stds) = self._preload_data()
 
         # load attributes into data frame
         self.static_df = self._load_static_data()
@@ -275,7 +276,7 @@ class CamelsH5(Dataset):
             x = self.x[idx]
             y = self.y[idx]
             basin = self.sample_2_basin[idx]
-            q_std = self.q_stds[idx]
+            target_std = self.target_stds[idx]
 
         else:
             with h5py.File(self.h5_file, "r") as f:
@@ -283,7 +284,7 @@ class CamelsH5(Dataset):
                 y = f["target_data"][idx]
                 basin = f["sample_2_basin"][idx]
                 basin = basin.decode("ascii")
-                q_std = f["q_stds"][idx]
+                target_std = f["target_stds"][idx]
 
         if self.with_static:
             # get attributes from data frame and create 2d array with copies
@@ -299,15 +300,15 @@ class CamelsH5(Dataset):
         # convert to torch tensors
         x = torch.from_numpy(x.astype(np.float32))
         y = torch.from_numpy(y.astype(np.float32))
-        q_std = torch.from_numpy(q_std)
+        target_std = torch.from_numpy(target_std)
 
         if self.with_static:
             if self.concat_static:
-                return x, y, q_std
+                return x, y, target_std
             else:
-                return x, attributes, y, q_std
+                return x, attributes, y, target_std
         else:
-            return x, y, q_std
+            return x, y, target_std
 
     def _preload_data(
         self
@@ -317,9 +318,9 @@ class CamelsH5(Dataset):
             y = f["target_data"][:]
             str_arr = f["sample_2_basin"][:]
             str_arr = [x.decode("ascii") for x in str_arr]
-            q_stds = f["q_stds"][:]
+            target_stds = f["target_stds"][:]
 
-        return x, y, str_arr, q_stds
+        return x, y, str_arr, target_stds
 
     def _get_basins(self) -> List[str]:
         """Return list of basins

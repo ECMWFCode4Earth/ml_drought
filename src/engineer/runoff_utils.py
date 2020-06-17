@@ -119,6 +119,7 @@ class CalculateNormalizationParams:
             self.data_dir / "interim/camels_preprocessed/data.nc"
         )
         static_ds = xr.open_dataset(self.data_dir / "interim/static/data.nc")
+        static_ds = static_ds[static_variables]
 
         self.normalization_dict = self.calculate_normalization_dict(
             dynamic_ds=dynamic_ds,
@@ -151,10 +152,10 @@ class CalculateNormalizationParams:
     ) -> DefaultDict[str, Dict[str, float]]:
         normalization_values: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 
-        for variable in ds.data_vars:
+        for var in ds.data_vars:
             if var.endswith("one_hot"):
-                mean = 0
-                std = 1
+                mean = 0.
+                std = 1.
             else:
                 mean = float(ds[var].mean(dim=reducing_dims, skipna=True).values)
                 std = float(ds[var].std(dim=reducing_dims, skipna=True).values)

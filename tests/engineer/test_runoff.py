@@ -2,7 +2,10 @@ from src.engineer.basin import CAMELSCSV
 from src.engineer.runoff import RunoffEngineer
 from ..utils import _copy_runoff_data_to_tmp_path
 from src.preprocess import CAMELSGBPreprocessor
-from src.engineer.runoff_utils import CalculateNormalizationParams
+from src.engineer.runoff_utils import (CalculateNormalizationParams, get_basins)
+import numpy as np
+import pandas as pd
+import h5py
 
 
 class TestCAMELSCSV:
@@ -21,6 +24,16 @@ class TestCAMELSCSV:
         with_static = True
         is_train = True
         concat_static = False
+
+        # DERIVED Values
+        n_times = len(
+            pd.date_range(
+                f"{train_dates[0]}-01-01", f"{train_dates[-1]}-12-31", freq="D"
+            )
+        )
+        n_features = len(x_variables)
+        n_stations = 2
+        n_static_features = len(static_variables)
 
         # Calculate normalization
         normalization_dict = CalculateNormalizationParams(
@@ -71,16 +84,6 @@ class TestCAMELSCSV:
             np.isin([k for k in scaler.keys()], expected)
         ), f"Expected: {expected} Got: {[k for k in scaler.keys()]}"
 
-        # DERIVED Values
-        n_times = len(
-            pd.date_range(
-                f"{train_dates[0]}-01-01", f"{train_dates[-1]}-12-31", freq="D"
-            )
-        )
-        n_features = len(x_variables)
-        n_stations = 2
-        n_static_features = len(static_variables)
-
         assert len([stn for stn in get_basins(tmp_path)]) == n_stations
 
 
@@ -126,14 +129,14 @@ class TestRunoffEngineer:
             y = f["target_data"][:]
             str_arr = f["sample_2_basin"][:]
             str_arr = [x.decode("ascii") for x in str_arr]
-            q_stds = f["q_stds"][:]
+            target_stds = f["target_stds"][:]
 
         assert isinstance(x, np.ndarray)
         assert isinstance(y, np.ndarray)
         assert isinstance(str_arr, list)
-        assert isinstance(q_stds, np.ndarray)
+        assert isinstance(target_stds, np.ndarray)
 
-        assert len(np.unique(q_stds)) == 2
+        assert len(np.unique(target_stds)) == 2
         assert len(np.unique(str_arr)) == 2
         assert x[0].shape == (seq_length, len(x_variables))
         assert len(x) == len(y)
