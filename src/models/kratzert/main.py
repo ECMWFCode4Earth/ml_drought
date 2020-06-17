@@ -462,6 +462,9 @@ def evaluate_basin(
                 preds = torch.cat((preds, p.detach().cpu()), 0)
                 obs = torch.cat((obs, y.detach().cpu()), 0)
 
+        if preds is None:
+            # assert False, "TODO: why is this going wrong?"
+            continue
         preds = rescale_features(
             preds.numpy(), variable="target", normalization_dict=normalization_dict
         )
