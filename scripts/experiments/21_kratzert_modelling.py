@@ -3,11 +3,7 @@ from pathlib import Path
 
 sys.path.append("../..")
 
-from src.preprocess.camels_kratzert import (
-    get_basins,
-    RunoffEngineer,
-    CamelsH5,
-)
+from src.preprocess.camels_kratzert import get_basins, RunoffEngineer, CamelsH5
 from src.preprocess import CAMELSGBPreprocessor
 
 import pandas as pd
@@ -43,13 +39,11 @@ def run_model(**kwargs):
     eval_model_kwargs = dict(
         input_size_dyn=model.input_size_dyn,
         input_size_stat=model.input_size_stat,
-        model_path = model.model_path
+        model_path=model.model_path,
     )
 
     updated_kwargs = {**kwargs, **eval_model_kwargs}
-    evaluate_model(
-        **updated_kwargs
-    )
+    evaluate_model(**updated_kwargs)
 
 
 def __main__():
@@ -77,14 +71,8 @@ def __main__():
         learning_rate=1e-3,
         epochs=1,
     )
-    lstm_settings = dict(
-        with_static=True,
-        concat_static=True,
-    )
-    ealstm_settings = dict(
-        with_static=True,
-        concat_static=False,
-    )
+    lstm_settings = dict(with_static=True, concat_static=True)
+    ealstm_settings = dict(with_static=True, concat_static=False)
 
     # run ealstm
     kwargs = {**all_settings, **ealstm_settings}
@@ -93,6 +81,3 @@ def __main__():
     # run lstm
     kwargs = {**all_settings, **lstm_settings}
     run_model(**kwargs)
-
-
-

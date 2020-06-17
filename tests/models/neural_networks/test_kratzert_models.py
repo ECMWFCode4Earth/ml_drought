@@ -15,12 +15,7 @@ class TestTrainModel:
         processsor = CAMELSGBPreprocessor(tmp_path, open_shapefile=False)
         processsor.preprocess()
 
-    @pytest.mark.parametrize(
-        "with_static,concat_static",
-        [
-            (True, False), (True, True),
-        ],
-    )
+    @pytest.mark.parametrize("with_static,concat_static", [(True, False), (True, True)])
     def test_(self, tmp_path, with_static, concat_static):
         self._initialise_data(tmp_path)
 
@@ -103,7 +98,9 @@ class TestTrainModel:
         elif (with_static) & (concat_static):
             assert "lstm_results.pkl" in results_pkl.name
             assert "lstm" in [f.name for f in (tmp_path / "models").glob("*.pt")][0]
-            assert "ealstm" not in [f.name for f in (tmp_path / "models").glob("*.pt")][0]
+            assert (
+                "ealstm" not in [f.name for f in (tmp_path / "models").glob("*.pt")][0]
+            )
 
         # check that all basins are found as keys in results Dict
         results = pickle.load(open(results_pkl, "rb"))
