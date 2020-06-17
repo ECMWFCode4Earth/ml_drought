@@ -54,7 +54,7 @@ class CAMELSGBPreprocessor(BasePreProcessor):
 
         if self.shp_path is not None:
             boundaries_gdf = self.load_boundaries_data()
-            pickle.dump(open(self.out_dir / "boundaries_gdf.pkl", "wb"), boundaries_gdf)
+            pickle.dump(boundaries_gdf, open(self.out_dir / "boundaries_gdf.pkl", "wb"))
 
         # SAVE the netcdf files
         dynamic_ds.to_netcdf(self.out_dir / "data.nc")
