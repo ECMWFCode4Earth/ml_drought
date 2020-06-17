@@ -226,7 +226,7 @@ class CAMELSCSV(Dataset):
 
         total_nans = y_nans.sum() + x_nans.sum()
         if total_nans > 0:
-            print(f"{np.isnan(y).sum()} NaNs removed in Basin: {self.basin}")
+            print(f"{total_nans} NaNs removed in Basin: {self.basin}")
 
         return x, y
 

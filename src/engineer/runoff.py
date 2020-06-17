@@ -164,6 +164,9 @@ class RunoffEngineer:
                 )
 
                 num_samples = len(dataset)
+                if num_samples < 1:
+                    print(f"No data for basin: {basin}. Skipping ...")
+                    continue
                 total_samples = input_data.shape[0] + num_samples
 
                 # store input / output samples
