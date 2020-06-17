@@ -54,7 +54,7 @@ class CAMELSGBPreprocessor(BasePreProcessor):
 
         if self.shp_path is not None:
             boundaries_gdf = self.load_boundaries_data()
-            pickle.dump(open(self.out_dir / "boundaries_gdf.pkl", "wb"), boundaries_gdf)
+            pickle.dump(boundaries_gdf, open(self.out_dir / "boundaries_gdf.pkl", "wb"))
 
         # SAVE the netcdf files
         dynamic_ds.to_netcdf(self.out_dir / "data.nc")
@@ -138,7 +138,9 @@ class CAMELSGBPreprocessor(BasePreProcessor):
         # create xr object
         static_vars = [c for c in static_df.columns if c != "gauge_id"]
         dims = ["station_id"]
-        coords = {"station_id": static_df["gauge_id"].values}
+
+        gauge_id = static_df['gauge_id'].iloc[:, 0].values
+        coords = {"station_id": gauge_id}
 
         static_ds = xr.Dataset(
             {
