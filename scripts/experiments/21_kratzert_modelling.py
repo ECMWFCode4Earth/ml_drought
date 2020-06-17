@@ -34,6 +34,20 @@ def preprocess(data_dir: Path):
 
 def engineer(data_dir: Path):
     engineer = RunoffEngineer()
+    engineer.create_training_data()
+
+
+def run_model(**kwargs):
+    model = train_model(**kwargs)
+    input_size_dyn = model.input_size_dyn
+    input_size_stat = model.input_size_stat
+    model_path = model.model_path
+
+    evaluate_model(
+        **kwargs
+    )
+
+
 
 
 def __main__():
