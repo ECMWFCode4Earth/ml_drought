@@ -39,15 +39,17 @@ def engineer(data_dir: Path):
 
 def run_model(**kwargs):
     model = train_model(**kwargs)
-    input_size_dyn = model.input_size_dyn
-    input_size_stat = model.input_size_stat
-    model_path = model.model_path
 
-    evaluate_model(
-        **kwargs
+    eval_model_kwargs = dict(
+        input_size_dyn=model.input_size_dyn,
+        input_size_stat=model.input_size_stat,
+        model_path = model.model_path
     )
 
-
+    updated_kwargs = {**kwargs, **eval_model_kwargs}
+    evaluate_model(
+        **updated_kwargs
+    )
 
 
 def __main__():
@@ -83,5 +85,14 @@ def __main__():
         with_static=True,
         concat_static=False,
     )
+
+    # run ealstm
+    kwargs = {**all_settings, **ealstm_settings}
+    run_model(**kwargs)
+
+    # run lstm
+    kwargs = {**all_settings, **lstm_settings}
+    run_model(**kwargs)
+
 
 
