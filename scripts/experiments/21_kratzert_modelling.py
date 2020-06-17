@@ -60,7 +60,7 @@ def __main__():
     all_settings = dict(
         data_dir=data_dir,
         train_dates=[2000],
-        val_dates=[2001]
+        val_dates=[2001],
         target_var="discharge_spec",
         x_variables=["precipitation", "peti"],
         static_variables=["pet_mean", "aridity", "p_seasonality"],
@@ -75,7 +75,7 @@ def __main__():
         num_workers=4,
         initial_forget_gate_bias=5,
         learning_rate=1e-3,
-        epochs=30,
+        epochs=1,
     )
     lstm_settings = dict(
         with_static=True,
