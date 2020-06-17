@@ -1,4 +1,8 @@
+import sys
 from pathlib import Path
+
+sys.path.append("../..")
+
 from src.preprocess.camels_kratzert import (
     CalculateNormalizationParams,
     # reshape_data,
