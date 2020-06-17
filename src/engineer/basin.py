@@ -215,14 +215,16 @@ class CAMELSCSV(Dataset):
             Tuple[np.ndarray, np.ndarray]: x, y
         """
         # any nans in y? (2D)
-        y = y[~np.any(np.isnan(y), axis=1)]
-        x = x[~np.any(np.isnan(y), axis=1)]
+        y_nans = np.any(np.isnan(y), axis=1)
+        y = y[~y_nans]
+        x = x[~y_nans]
 
         # any nans in x? (3D)
-        y = y[~np.any(np.any(np.isnan(x), axis=1), axis=1)]
-        x = x[~np.any(np.any(np.isnan(x), axis=1), axis=1)]
+        x_nans = np.any(np.any(np.isnan(x), axis=1), axis=1)
+        y = y[~x_nans]
+        x = x[~x_nans]
 
-        total_nans = np.isnan(y).sum() + np.any(np.isnan(x), axis=1).sum()
+        total_nans = y_nans.sum() + x_nans.sum()
         if total_nans > 0:
             print(f"{np.isnan(y).sum()} NaNs removed in Basin: {self.basin}")
 
