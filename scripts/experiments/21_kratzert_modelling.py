@@ -39,6 +39,7 @@ def get_valid_kwargs(py_object, kwargs: Dict) -> Dict:
 def preprocess(data_dir: Path):
     processor = CAMELSGBPreprocessor(data_dir, open_shapefile=False)
     processor.preprocess()
+    print("**Data Preprocessed**")
 
 
 def engineer(data_dir: Path, **kwargs):
@@ -47,6 +48,7 @@ def engineer(data_dir: Path, **kwargs):
 
     engineer = RunoffEngineer(**valid_kwargs)
     engineer.create_training_data()
+    print("**Training Data Created (engineer)**")
 
 
 def run_model(**kwargs):
@@ -59,6 +61,7 @@ def train_model(**kwargs):
     valid_kwargs = get_valid_kwargs(train, kwargs)
 
     model = train(**valid_kwargs)
+    print("**Model Trained**")
     return model
 
 
@@ -72,6 +75,7 @@ def evaluate_model(model, **kwargs):
     valid_kwargs = get_valid_kwargs(evaluate, kwargs)
 
     evaluate(**valid_kwargs)
+    print("**Model Evaluated**")
 
 
 def __main__():
