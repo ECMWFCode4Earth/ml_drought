@@ -78,7 +78,7 @@ def evaluate_model(model, **kwargs):
     print("**Model Evaluated**")
 
 
-def __main__():
+if __name__ == "__main__":
     data_dir = get_data_path()
     preprocess(data_dir)
 
