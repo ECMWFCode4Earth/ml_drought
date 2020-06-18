@@ -464,7 +464,8 @@ def evaluate_basin(
 
         if preds is None:
             # assert False, "TODO: why is this going wrong?"
-            continue
+            return None, None
+
         preds = rescale_features(
             preds.numpy(), variable="target", normalization_dict=normalization_dict
         )
