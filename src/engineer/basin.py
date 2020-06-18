@@ -365,14 +365,10 @@ class CamelsCSV(Dataset):
         )
 
         # select the min/max date range
-        period_start = self.period_start + pd.DateOffset(
-            days=self.seq_length - 1
-        )
+        period_start = self.period_start + pd.DateOffset(days=self.seq_length - 1)
 
         # create the date range (pd.Timestamps)
-        date_range = (
-            date_range.to_series().loc[period_start : self.period_end].index
-        )
+        date_range = date_range.to_series().loc[period_start : self.period_end].index
 
         # remove the missing dates
         date_range = date_range[~self.missing_timesteps]
