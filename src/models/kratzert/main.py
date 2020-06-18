@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 import random
 import pickle
 
-from src.engineer.basin import CAMELSCSV
+from src.engineer.basin import CamelsCSV
 from src.engineer.runoff import RunoffEngineer, CamelsDataLoader
 from src.engineer.runoff_utils import get_basins, load_static_data
 
@@ -150,6 +150,8 @@ def train(
     else:
         input_size_dyn = dynamic_size
 
+    if data.num_samples == 0:
+        raise ValueError(f"No data for train dates: {train_dates}")
     loader = DataLoader(
         data, batch_size=batch_size, shuffle=True, num_workers=num_workers
     )
@@ -319,9 +321,6 @@ def evaluate(
     model.load_state_dict(torch.load(weight_file, map_location=DEVICE))
 
     val_dates = np.sort(val_dates)
-    date_range = pd.date_range(
-        start=f"{val_dates[0]}-01-01", end=f"{val_dates[-1]}-12-31", freq="D"
-    )
     results: Dict[pd.DataFrame] = {}
 
     normalization_dict = pickle.load(
@@ -329,7 +328,7 @@ def evaluate(
     )
 
     for basin in tqdm.tqdm(basins):
-        ds_test = CAMELSCSV(
+        ds_test = CamelsCSV(
             data_dir=data_dir,
             basin=basin,
             train_dates=val_dates,
@@ -343,7 +342,7 @@ def evaluate(
             concat_static=concat_static,
         )
         # capture missing timesteps
-        missing_timesteps = ds_test.missing_timesteps
+        valid_date_range = ds_test.date_range
 
         loader = DataLoader(ds_test, batch_size=1024, shuffle=False, num_workers=1)
 
@@ -351,7 +350,11 @@ def evaluate(
             model, loader, normalization_dict=normalization_dict
         )
 
-        valid_date_range = date_range[~missing_timesteps]
+        # check if there is no data for that basin / time
+        if ((preds is None) & (obs is None)) & (len(valid_date_range) == 0):
+            print(f"No data for basin {basin} in val_period: {val_dates} ")
+            continue
+
         assert len(preds) == len(obs)
         assert len(preds) == len(valid_date_range)
 

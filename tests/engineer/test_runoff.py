@@ -1,4 +1,4 @@
-from src.engineer.basin import CAMELSCSV
+from src.engineer.basin import CamelsCSV
 from src.engineer.runoff import RunoffEngineer
 from ..utils import _copy_runoff_data_to_tmp_path
 from src.preprocess import CAMELSGBPreprocessor
@@ -8,7 +8,7 @@ import pandas as pd
 import h5py
 
 
-class TestCAMELSCSV:
+class TestCamelsCSV:
     def test(self, tmp_path):
         # preprocess the data
         _copy_runoff_data_to_tmp_path(tmp_path)
@@ -46,7 +46,7 @@ class TestCAMELSCSV:
 
         # Test the individual basin X, y engineer
         for basin in get_basins(tmp_path):
-            dataset = CAMELSCSV(
+            dataset = CamelsCSV(
                 data_dir=tmp_path,
                 basin=basin,
                 train_dates=train_dates,

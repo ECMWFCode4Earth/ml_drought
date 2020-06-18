@@ -16,7 +16,7 @@ from .runoff_utils import (
     reshape_data,
     CalculateNormalizationParams,
 )
-from .basin import CAMELSCSV
+from .basin import CamelsCSV
 from src.utils import _rename_directory
 
 
@@ -149,7 +149,7 @@ class RunoffEngineer:
                 )
 
             for basin in tqdm.tqdm(self.basins, file=sys.stdout):
-                dataset = CAMELSCSV(
+                dataset = CamelsCSV(
                     data_dir=self.data_dir,
                     basin=basin,
                     train_dates=self.train_dates,

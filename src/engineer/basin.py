@@ -13,7 +13,7 @@ import sys
 from .runoff_utils import reshape_data
 
 
-class CAMELSCSV(Dataset):
+class CamelsCSV(Dataset):
     """Load data for individual basin to np.ndarrays to be used
     as input to the models
 
@@ -103,6 +103,8 @@ class CAMELSCSV(Dataset):
         self.period_start = None
         self.period_end = None
         self.attribute_names = None
+        # array of nans for missing timesteps
+        self.missing_timesteps: np.ndarray
 
         self.x, self.y = self._load_dynamic_data()
 
@@ -112,8 +114,8 @@ class CAMELSCSV(Dataset):
         # NUM timesteps
         self.num_samples = self.x.shape[0]
 
-        # array of nans for missing timesteps
-        self.missing_timesteps: np.ndarray
+        # get the valid dates for all of the timesteps found in the data
+        self.date_range = self.get_date_range()
 
     def __len__(self):
         return self.num_samples
@@ -353,3 +355,25 @@ class CAMELSCSV(Dataset):
         ) / self.normalization_dict["static_stds"]
 
         return static_df
+
+    def get_date_range(self) -> pd.DatetimeIndex:
+        # create date range
+        date_range = pd.date_range(
+            start=f"{self.train_dates[0]}-01-01",
+            end=f"{self.train_dates[-1]}-12-31",
+            freq="D",
+        )
+
+        # select the min/max date range
+        period_start = self.period_start + pd.DateOffset(
+            days=self.seq_length - 1
+        )
+
+        # create the date range (pd.Timestamps)
+        date_range = (
+            date_range.to_series().loc[period_start : self.period_end].index
+        )
+
+        # remove the missing dates
+        date_range = date_range[~self.missing_timesteps]
+        return date_range

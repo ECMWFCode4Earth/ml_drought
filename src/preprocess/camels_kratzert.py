@@ -223,7 +223,7 @@ def _prepare_data(data_dir: Path, basins: List[str]):
     db_path = data_dir / "features/static/attributes.db"
 
 
-class CAMELSCSV(Dataset):
+class CamelsCSV(Dataset):
     def __init__(
         self,
         basin: str,
@@ -665,7 +665,7 @@ class RunoffEngineer:
                 )
 
             for basin in tqdm.tqdm(self.basins, file=sys.stdout):
-                dataset = CAMELSCSV(
+                dataset = CamelsCSV(
                     data_dir=self.data_dir,
                     basin=basin,
                     train_dates=self.train_dates,

@@ -1,7 +1,7 @@
 from src.preprocess.camels_kratzert import (
     CalculateNormalizationParams,
     # reshape_data,
-    CAMELSCSV,
+    CamelsCSV,
     get_basins,
     RunoffEngineer,
     CamelsDataLoader,
@@ -15,7 +15,7 @@ import pytest
 from torch.utils.data import DataLoader
 
 
-class TestCAMELSCSV:
+class TestCamelsCSV:
     def test(self, tmp_path):
         _copy_runoff_data_to_tmp_path(tmp_path)
 
@@ -53,7 +53,7 @@ class TestCAMELSCSV:
         assert len([stn for stn in get_basins(tmp_path)]) == n_stations
 
         for basin in get_basins(tmp_path):
-            dataset = CAMELSCSV(
+            dataset = CamelsCSV(
                 data_dir=tmp_path,
                 basin=basin,
                 train_dates=train_dates,

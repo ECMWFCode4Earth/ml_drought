@@ -16,12 +16,12 @@ class TestTrainModel:
         processsor.preprocess()
 
     @pytest.mark.parametrize("with_static,concat_static", [(True, False), (True, True)])
-    def test_(self, tmp_path, with_static, concat_static):
+    def test_(self, tmp_path, capsys, with_static, concat_static):
         self._initialise_data(tmp_path)
 
         # SETTINGS
         with_basin_str = True
-        train_dates = [2000]
+        train_dates = [1970, 1975]  # chosen because there is missing data
         target_var = "discharge_spec"
         x_variables = ["precipitation", "peti"]
         static_variables = ["pet_mean", "aridity", "p_seasonality"]
@@ -102,6 +102,19 @@ class TestTrainModel:
                 "ealstm" not in [f.name for f in (tmp_path / "models").glob("*.pt")][0]
             )
 
+        if train_dates == [1970, 1975]:
+            # check that 96004 has no data and this has been captured in the
+            # stdout
+            captured = capsys.readouterr()
+            expected_stdout = f"No data for basin 96004 in val_period: [{train_dates[0]} {train_dates[-1]}]"
+            assert (
+                expected_stdout in captured.out
+            ), f"Expected stdout to be {expected_stdout}, got {captured.out}"
+
         # check that all basins are found as keys in results Dict
         results = pickle.load(open(results_pkl, "rb"))
-        assert all(np.isin(basins, [k for k in results.keys()]))
+        if train_dates == [1970, 1975]:
+            assert basins[-1] in [k for k in results.keys()]
+        else:
+            # otherwise all basins should be in !
+            assert all(np.isin(basins, [k for k in results.keys()]))
