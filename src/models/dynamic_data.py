@@ -783,7 +783,9 @@ class _DynamicIter:
 
         return cur_max_idx
 
-    def get_valid_xy_time(self, cur_max_idx: int) -> Tuple[Optional[Tuple[xr.Dataset, xr.Dataset]], Optional[pd.Timestamp]]:
+    def get_valid_xy_time(
+        self, cur_max_idx: int
+    ) -> Tuple[Optional[Tuple[xr.Dataset, xr.Dataset]], Optional[pd.Timestamp]]:
         """Iterate through the timestamps until you get a valid timestamp.
         Invalid timestamps are usually those with fewer previous timesteps than `seq_len`.
         e.g. t - {seq_len} is data before the minimum date in the dataset.
