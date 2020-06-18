@@ -107,6 +107,9 @@ def train(
     learning_rate: float = 1e-3,
     epochs: int = 10,
 ):
+    # TODO: SEPARATE the engineering step from the model training step (maximise GPU)
+    # TOMMY: assert False,
+
     # Set seeds
     random.seed(seed)
     np.random.seed(seed)

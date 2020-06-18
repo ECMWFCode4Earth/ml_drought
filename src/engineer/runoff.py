@@ -55,6 +55,12 @@ class RunoffEngineer:
             file exists error.
     """
 
+    # TODO: SEPARATE the engineering step from the model training step (maximise GPU)
+    # - create a generic training dataset for a given `train_dates`, `seq_length`
+    # - i.e. the `with_static` and `concat_static` should be done by the models interacting
+    #    with the data differently, rather than engineering their own dataset.
+    # - That will allow us to run the engineer ONCE for each set of options.
+
     def __init__(
         self,
         data_dir: Path,
