@@ -82,14 +82,14 @@ def __main__():
     all_settings = dict(
         data_dir=data_dir,
         basins=get_basins(data_dir),
-        train_dates=[2000],
+        train_dates=[2000, 2010],
         with_basin_str=True,
-        val_dates=[2001],
+        val_dates=[2011, 2020],
         target_var="discharge_spec",
         x_variables=["precipitation", "peti"],
         static_variables=["pet_mean", "aridity", "p_seasonality"],
         ignore_static_vars=None,
-        seq_length=10,
+        seq_length=365,
         dropout=0.4,
         hidden_size=256,
         seed=10101,
@@ -99,7 +99,7 @@ def __main__():
         num_workers=4,
         initial_forget_gate_bias=5,
         learning_rate=1e-3,
-        epochs=1,
+        epochs=30,
     )
     lstm_settings = dict(with_static=True, concat_static=True)
     ealstm_settings = dict(with_static=True, concat_static=False)
