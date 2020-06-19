@@ -7,6 +7,9 @@ mv features features__; mv interim interim__; mv interim_ interim ; mv features_
 
 # Experiment #7 is VCI3M results
 # Experiment #9 is boku_VCI results
+
+mv features 5_features; mv models 5_models;
+mv 9_features features; mv 9_models models;
 """
 
 import sys
@@ -138,13 +141,13 @@ if __name__ == "__main__":
     early_stopping = 10
     hidden_size = 256
     static_size = 64
-    normalize_y =
+    # normalize_y = True
 
     # -------------
     # baseline models
     # -------------
     persistence()
-    # climatology()
+    climatology()
 
     regression(
         ignore_vars=always_ignore_vars,
