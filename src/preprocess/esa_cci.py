@@ -161,7 +161,7 @@ class ESACCIPreprocessor(BasePreProcessor):
         for file in nc_files:
             self._preprocess_single(file, subset_str, regrid)
 
-        ds = xr.open_mfdataset(self.get_filepaths("interim"))
+        ds = xr.open_mfdataset(self.get_filepaths("interim"), combine='nested')
 
         ds = get_modal_value_across_time(ds.lc_class).to_dataset()
 
