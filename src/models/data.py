@@ -66,6 +66,7 @@ class ModelArrays:
     historical_times: Optional[List[Timestamp]] = None
     predict_delta: bool = False
     historical_target: Optional[xr.DataArray] = None
+    notnan_indices: Optional[np.ndarray] = None
 
     def to_tensor(self, device) -> None:
         self.x.to_tensor(device)
@@ -456,6 +457,10 @@ class _BaseIter:
         self.idx = 0
         self.max_idx = len(loader.data_files)
 
+        # placeholder for notnan indices
+        # calculated in `ds_folder_to_np` under clear_nans
+        self.notnan_indices: np.ndarray = np.array([])
+
     def __iter__(self):
         return self
 
@@ -822,6 +827,7 @@ class _BaseIter:
                 & (static_nans_summed == 0)
                 & (prev_y_var_summed == 0)
             )[0]
+            self.notnan_indices = notnan_indices
             if self.experiment == "nowcast":
                 current_nans = np.isnan(train_data.current)
                 current_nans_summed = current_nans.sum(axis=-1)
@@ -847,6 +853,7 @@ class _BaseIter:
             latlons=latlons,
             target_time=target_time,
             historical_times=x_datetimes,
+            notnan_indices=notnan_indices,
         )
 
         if to_tensor:
@@ -991,6 +998,7 @@ class _TestIter(_BaseIter):
                 arrays = self.ds_folder_to_np(
                     subfolder, clear_nans=self.clear_nans, to_tensor=self.to_tensor
                 )
+
                 if arrays.x.historical.shape[0] == 0:
                     print(f"{subfolder} returns no values. Skipping")
                     # remove the empty element from the list
