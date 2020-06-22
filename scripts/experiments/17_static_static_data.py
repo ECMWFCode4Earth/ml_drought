@@ -89,7 +89,7 @@ if __name__ == "__main__":
     # Run the Experiment
     # ----------------------------------
     # 1. Run the engineer
-    target_var = "VCI3M"  #  "VCI3M" "boku_VCI"
+    target_var = "boku_VCI"  #  "VCI3M" "boku_VCI"
     pred_months = 3
     engineer(
         pred_months=pred_months,
@@ -112,12 +112,13 @@ if __name__ == "__main__":
         "Eb",
         "VCI1M",
         "RFE1M",
-        # "VCI3M",
-        "boku_VCI",
+        "VCI3M",
+        # "boku_VCI",
         "modis_ndvi",
         "SMroot",
         "lc_class",  # remove for good clustering (?)
         "lc_class_group",  # remove for good clustering (?)
+        "slt", # remove for good clustering (?)
         "no_data_one_hot",
         "lichens_and_mosses_one_hot",
         "permanent_snow_and_ice_one_hot",
@@ -131,8 +132,8 @@ if __name__ == "__main__":
     ]
 
     assert target_var not in always_ignore_vars
-    # other_target = "boku_VCI" if target_var == "VCI3M" else "VCI3M"
-    # assert other_target in always_ignore_vars
+    other_target = "boku_VCI" if target_var == "VCI3M" else "VCI3M"
+    assert other_target in always_ignore_vars
 
     # -------------
     # Model Parameters
