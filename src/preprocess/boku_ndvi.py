@@ -225,7 +225,7 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         we decrease the temporal resolution
         """
 
-        ds = xr.open_mfdataset(self.get_filepaths("interim"), combine='nested')
+        ds = xr.open_mfdataset(self.get_filepaths("interim"), combine='nested', concat_dim='time')
 
         if not self.downsample_first:
             # vci1,

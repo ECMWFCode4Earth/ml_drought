@@ -177,7 +177,7 @@ class S5Preprocessor(BasePreProcessor):
         subset_str: Optional[str] = None,
     ) -> Path:
         # open all interim processed files (all variables?)
-        ds = xr.open_mfdataset((self.interim / variable).as_posix() + "/*.nc", combine='nested')
+        ds = xr.open_mfdataset((self.interim / variable).as_posix() + "/*.nc", combine='nested', concat_dim='time')
         ds = ds.sortby("initialisation_date")
 
         # resample
