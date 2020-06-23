@@ -139,7 +139,7 @@ class CAMELSGBPreprocessor(BasePreProcessor):
         static_vars = [c for c in static_df.columns if c != "gauge_id"]
         dims = ["station_id"]
 
-        gauge_id = static_df['gauge_id'].iloc[:, 0].values
+        gauge_id = static_df["gauge_id"].iloc[:, 0].values
         coords = {"station_id": gauge_id}
 
         static_ds = xr.Dataset(
