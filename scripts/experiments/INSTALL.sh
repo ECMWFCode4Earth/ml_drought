@@ -11,3 +11,5 @@ pip install netcdf4
 pip install pytorch-lightning
 pip install geopandas
 pip install sklearn
+pip install mypy
+pip install pytest

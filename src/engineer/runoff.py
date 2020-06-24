@@ -232,10 +232,14 @@ class CamelsDataLoader(Dataset):
         concat_static: bool = False,
         cache: bool = False,
         with_static: bool = False,
+        h5_filepath: Optional[Path] = None,
     ):
-        # Paths to data
+        # Paths to data (default behaviour vs. specified fpath)
         self.data_dir = data_dir
-        self.h5_file = data_dir / "features/features.h5"
+        if h5_filepath is None:
+            self.h5_file = data_dir / "features/features.h5"
+        else:
+            self.h5_file = h5_filepath
         self.static_data_path = data_dir / "interim/static/data.nc"
 
         assert self.h5_file.exists(), "Has the `RunoffEngineer` been run?"

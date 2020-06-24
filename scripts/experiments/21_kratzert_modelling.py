@@ -111,11 +111,11 @@ if __name__ == "__main__":
 
     # # run ealstm
     kwargs = {**all_settings, **ealstm_settings}
-    # run_model(**kwargs)
+    run_model(**kwargs)
 
     # # run lstm
     # kwargs = {**all_settings, **lstm_settings}
     # run_model(**kwargs)
 
     # engineer data only
-    engineer(**kwargs)
+    # engineer(**kwargs)
