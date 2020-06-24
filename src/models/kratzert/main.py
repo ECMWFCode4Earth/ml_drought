@@ -43,13 +43,14 @@ import time
 
 # check if GPU is available
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print("Training the model on:", DEVICE)
 
 ###############
 # Prepare Run #
 ###############
 
 
-def _prepare_data(
+def engineer_data(
     data_dir: Path,
     basins: List[int],
     train_dates: List[int],
@@ -119,7 +120,7 @@ def train(
     basins = get_basins(data_dir)
 
     # engineer the data for this training run
-    _prepare_data(
+    engineer_data(
         data_dir=data_dir,
         basins=basins,
         train_dates=train_dates,
@@ -132,6 +133,7 @@ def train(
         with_static=with_static,
         concat_static=concat_static,
     )
+    assert (data_dir / "features/features.h5").exists(), "Has the engineer been run?"
 
     # create dataloader
     data = CamelsDataLoader(
@@ -186,6 +188,7 @@ def train(
             for param_group in optimizer.param_groups:  # type: ignore
                 param_group["lr"] = learning_rates[epoch]
 
+        # TODO: convert to self.train()
         train_epoch(model, optimizer, loss_func, loader, epoch, use_mse)
 
         # save the model

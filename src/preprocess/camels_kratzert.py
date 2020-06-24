@@ -219,7 +219,7 @@ def reshape_data(
     return x_new, y_new
 
 
-def _prepare_data(data_dir: Path, basins: List[str]):
+def engineer_data(data_dir: Path, basins: List[str]):
     db_path = data_dir / "features/static/attributes.db"
 
 
