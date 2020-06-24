@@ -42,7 +42,7 @@ def preprocess(data_dir: Path):
     print("**Data Preprocessed**")
 
 
-def engineer(data_dir: Path, **kwargs):
+def engineer(**kwargs):
     # only pass the valid kwargs from dict to engineer
     valid_kwargs = get_valid_kwargs(RunoffEngineer, kwargs)
 
@@ -108,10 +108,13 @@ if __name__ == "__main__":
     lstm_settings = dict(with_static=True, concat_static=True)
     ealstm_settings = dict(with_static=True, concat_static=False)
 
-    # run ealstm
+    # # run ealstm
     kwargs = {**all_settings, **ealstm_settings}
-    run_model(**kwargs)
+    # run_model(**kwargs)
 
-    # run lstm
-    kwargs = {**all_settings, **lstm_settings}
-    run_model(**kwargs)
+    # # run lstm
+    # kwargs = {**all_settings, **lstm_settings}
+    # run_model(**kwargs)
+
+    # engineer data only
+    engineer(**kwargs)
