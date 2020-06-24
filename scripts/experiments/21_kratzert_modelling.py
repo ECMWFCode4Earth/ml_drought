@@ -113,7 +113,7 @@ if __name__ == "__main__":
         seed=10101,
         cache=True,
         use_mse=True,
-        batch_size=1000,  # 50,
+        batch_size=1000,  # 50, 256, (small noisy gradients)
         num_workers=4,
         initial_forget_gate_bias=5,
         learning_rate=1e-3,

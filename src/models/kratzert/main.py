@@ -142,7 +142,6 @@ def train(
         concat_static=concat_static,
         cache=cache,
         with_static=with_static,
-        train_dates=train_dates,
     )
 
     # initialise key parameters of the Model
