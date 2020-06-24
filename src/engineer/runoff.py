@@ -21,7 +21,7 @@ from src.utils import _rename_directory
 
 
 class RunoffEngineer:
-    """Class to write the data to data/features/features.h5 file for training.
+    """Class to write the data to data/features/features_{self.mode}.h5 file for training.
 
     Functions:
         `self.create_training_data()`
@@ -61,11 +61,14 @@ class RunoffEngineer:
     #    with the data differently, rather than engineering their own dataset.
     # - That will allow us to run the engineer ONCE for each set of options.
 
+    # TODO: create ability to create different dataloaders train/test/val
+
     def __init__(
         self,
         data_dir: Path,
         basins: List[int],
         train_dates: List[int],
+        mode: str = "train",
         with_basin_str: bool = True,
         target_var: str = "discharge_spec",
         x_variables: Optional[List[str]] = ["precipitation", "peti"],
@@ -75,8 +78,9 @@ class RunoffEngineer:
         with_static: bool = True,
         concat_static: bool = False,
     ):
+        assert mode in ["train", "test", "val"], "mode can only be one of: [train test val]"
         self.data_dir = data_dir
-        self.out_file = self.data_dir / "features/features.h5"
+        self.out_file = self.data_dir / f"features/features_{mode}.h5"
 
         if not self.out_file.parents[0].exists():
             self.out_file.parents[0].mkdir(exist_ok=True, parents=True)
@@ -227,7 +231,6 @@ class CamelsDataLoader(Dataset):
         self,
         data_dir: Path,
         basins: List[str],
-        train_dates: List[int],
         target_var: str = "discharge_spec",
         concat_static: bool = False,
         cache: bool = False,
@@ -237,7 +240,7 @@ class CamelsDataLoader(Dataset):
         # Paths to data (default behaviour vs. specified fpath)
         self.data_dir = data_dir
         if h5_filepath is None:
-            self.h5_file = data_dir / "features/features.h5"
+            self.h5_file = data_dir / "features/features_train.h5"
         else:
             self.h5_file = h5_filepath
         self.static_data_path = data_dir / "interim/static/data.nc"
@@ -252,7 +255,6 @@ class CamelsDataLoader(Dataset):
         self.concat_static = concat_static
         self.cache = cache
         self.with_static = with_static
-        self.train_dates = train_dates
 
         self.normalization_dict = pickle.load(
             open(self.h5_file.parents[0] / "normalization_dict.pkl", "rb")

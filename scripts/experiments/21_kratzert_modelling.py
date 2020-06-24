@@ -44,6 +44,19 @@ def preprocess(data_dir: Path):
 
 
 def engineer(**kwargs):
+    """Take the preprocessed data and produce X, y pairs
+        data_dir: Path,
+        basins: List[int],
+        train_dates: List[int],
+        with_basin_str: bool = True,
+        target_var: str = "discharge_spec",
+        x_variables: Optional[List[str]] = ["precipitation", "peti"],
+        static_variables: Optional[List[str]] = None,
+        ignore_static_vars: Optional[List[str]] = None,
+        seq_length: int = 365,
+        with_static: bool = True,
+        concat_static: bool = False,
+    """
     # only pass the valid kwargs from dict to engineer
     valid_kwargs = get_valid_kwargs(RunoffEngineer, kwargs)
 
