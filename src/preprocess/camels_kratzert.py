@@ -401,16 +401,19 @@ class CamelsCSV(Dataset):
             Tuple[np.ndarray, np.ndarray]: x, y
         """
         # any nans in y? (2D)
-        y = y[~np.any(np.isnan(y), axis=1)]
-        x = x[~np.any(np.isnan(y), axis=1)]
-
+        y_nans = np.any(np.isnan(y), axis=1)
         # any nans in x? (3D)
-        y = y[~np.any(np.any(np.isnan(x), axis=1), axis=1)]
-        x = x[~np.any(np.any(np.isnan(x), axis=1), axis=1)]
+        x_nans = np.any(np.any(np.isnan(x), axis=1), axis=1)
 
-        total_nans = np.isnan(y).sum() + np.any(np.isnan(x), axis=1).sum()
+        all_nans = np.any([y_nans, x_nans], axis=0)
+        self.missing_timesteps = all_nans
+        total_nans = all_nans.sum()
+
+        y = y[~all_nans]
+        x = x[~all_nans]
+
         if total_nans > 0:
-            print(f"{np.isnan(y).sum()} NaNs removed in Basin: {self.basin}")
+            print(f"{total_nans} NaNs removed in Basin: {self.basin}")
 
         return x, y
 
