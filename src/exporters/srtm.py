@@ -13,6 +13,8 @@ class SRTMExporter(BaseExporter):
     """Export SRTM elevation data. This exporter leverages
     the elevation package, http://elevation.bopen.eu/en/stable/, to download
     SRTM topography data.
+
+    https://registry.opendata.aws/terrain-tiles/
     """
 
     dataset = "srtm"
