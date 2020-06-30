@@ -46,7 +46,7 @@ class DynamicEngineer(_EngineerBase):
                 assert (
                     len([c for c in train_ds.coords if c != "time"]) == 1
                 ), "Only works with one dimension"
-                dimension_name = [c for c in train_ds.coords][0]
+                dimension_name = [c for c in train_ds.coords if c != "time"][0]
                 dims = [dimension_name, "time"]
 
         for var in train_ds.data_vars:
