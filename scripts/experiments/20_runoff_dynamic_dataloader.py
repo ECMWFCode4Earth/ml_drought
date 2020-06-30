@@ -29,6 +29,7 @@ from scripts.experiments._static_ignore_vars import static_ignore_vars
 from src.engineer.dynamic_engineer import DynamicEngineer
 from src.models import EARecurrentNetwork, RecurrentNetwork
 from src.models import load_model
+from src.preprocess import CAMELSGBPreprocessor
 
 
 def engineer(
@@ -219,6 +220,11 @@ def run_evaluation(data_dir, model=None, batch_file_size: int = 3):
     # print("** Overall RMSE: ", results_dict["total"], " **\n\n")
 
 
+def preprocess(data_dir: Path):
+    processor = CAMELSGBPreprocessor(data_dir)
+    processor.preprocess()
+
+
 def main(
     engineer_only: bool = False,
     model_only: bool = False,
@@ -227,6 +233,13 @@ def main(
     data_dir = get_data_path()
     # data_dir = Path("/Volumes/Lees_Extend/data/ecmwf_sowc/data")
     assert data_dir.exists()
+
+    # ----------------------------------
+    # if not exist then run preprocessor
+    # ----------------------------------
+    if not (data_dir / "interim/camels_preprocessed").exists():
+        preprocess(data_dir)
+
 
     # ----------------------------------
     # Setup the experiment

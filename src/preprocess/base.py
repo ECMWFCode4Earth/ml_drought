@@ -33,12 +33,15 @@ class BasePreProcessor:
     analysis: bool = False
 
     def __init__(
-        self, data_folder: Path = Path("data"), output_name: Optional[str] = None
+        self, data_folder: Path = Path("data"), output_name: Optional[str] = None,
+        req_xesmf: bool = True
     ) -> None:
 
-        global xesmf
-        if xesmf is None:
-            import xesmf
+        if req_xesmf:
+            global xesmf
+            if xesmf is None:
+                import xesmf
+
         self.data_folder = data_folder
         self.raw_folder = self.data_folder / "raw"
         self.preprocessed_folder = self.data_folder / "interim"
