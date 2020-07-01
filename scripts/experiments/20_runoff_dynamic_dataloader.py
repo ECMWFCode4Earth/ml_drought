@@ -347,11 +347,11 @@ def main(
         batch_file_size=batch_file_size,
     )
     if not engineer_only:
-        lstm = train_lstm(**model_kwargs)
-        run_evaluation(data_dir, lstm)
+        # lstm = train_lstm(**model_kwargs)
+        # run_evaluation(data_dir, lstm)
 
-        # ealstm = train_ealstm(**model_kwargs)
-        # run_evaluation(data_dir, ealstm)
+        ealstm = train_ealstm(**model_kwargs)
+        run_evaluation(data_dir, ealstm)
 
         # datestamp the model directory so that we can run multiple experiments
         # _rename_directory(
@@ -368,7 +368,7 @@ def evaluate_only():
 
 if __name__ == "__main__":
     engineer_only = False
-    model_only = False
+    model_only = True
     reset_data_files = False
     main(
         model_only=model_only,
