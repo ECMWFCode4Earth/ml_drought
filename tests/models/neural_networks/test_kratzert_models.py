@@ -1,4 +1,4 @@
-from src.preprocess.camels_kratzert import get_basins
+from src.engineer.runoff_utils import get_basins
 from src.preprocess import CAMELSGBPreprocessor
 from tests.utils import _copy_runoff_data_to_tmp_path
 import numpy as np

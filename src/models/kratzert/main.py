@@ -133,7 +133,7 @@ def train(
         with_static=with_static,
         concat_static=concat_static,
     )
-    assert (data_dir / "features/features.h5").exists(), "Has the engineer been run?"
+    assert (data_dir / "features/features_train.h5").exists(), "Has the engineer been run?"
 
     # create dataloader
     data = CamelsDataLoader(

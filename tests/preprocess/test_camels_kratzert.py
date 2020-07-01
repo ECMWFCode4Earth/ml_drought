@@ -1,11 +1,10 @@
-from src.preprocess.camels_kratzert import (
-    CalculateNormalizationParams,
-    # reshape_data,
-    CamelsCSV,
-    get_basins,
+from src.engineer.basin import CamelsCSV
+from src.engineer.runoff import(
     RunoffEngineer,
+    get_basins,
     CamelsDataLoader,
 )
+from src.engineer.runoff_utils import CalculateNormalizationParams,
 from src.preprocess import CAMELSGBPreprocessor
 from ..utils import _copy_runoff_data_to_tmp_path
 import pandas as pd
@@ -172,7 +171,7 @@ class TestH5Train:
         basins = get_basins(tmp_path)
 
         # EXPECTED
-        out_file = tmp_path / "features/features.h5"
+        out_file = tmp_path / "features/features_train.h5"
         static_data_path = tmp_path / "interim/static/data.nc"
         n_variables = len(x_variables)
         n_static_features = len(static_variables)
