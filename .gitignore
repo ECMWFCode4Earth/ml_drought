@@ -32,6 +32,7 @@ data/analysis/*
 data/interim/*
 data/features/*
 data/models/*
+data/*models
 Code
 scripts/variables*.txt
 
@@ -44,3 +45,5 @@ switch_data_dirs.sh
 .vscode
 # vscode options
 settings.json
+
+lightning_logs

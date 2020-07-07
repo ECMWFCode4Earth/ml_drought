@@ -3,11 +3,11 @@ import pytorch_lightning as pl
 
 from .data import DataLoader, train_val_mask
 
-from typing import cast, Any, Dict, Optional
+from typing import cast, Any, Dict, Optional, Union
 
 
 class LightningBase(pl.LightningModule):
-    def __init__(self, hparams: Namespace) -> None:
+    def __init__(self, hparams: Union[Dict, Namespace]) -> None:
         super().__init__()
         self.hparams = hparams
         self.data_folder = hparams.data_folder
