@@ -48,3 +48,6 @@ core.ipython*
 .vscode
 # vscode options
 settings.json
+
+# lightning
+events.*
