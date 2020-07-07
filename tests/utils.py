@@ -1,7 +1,11 @@
 import numpy as np
 import xarray as xr
-
+import pickle
+from pathlib import Path
 import pandas as pd
+from typing import Tuple, Dict
+from src.models.data import DataLoader
+from argparse import Namespace
 
 Point = None
 gpd = None
@@ -125,3 +129,88 @@ def _create_features_dir(
         # assert False
 
         ds.to_netcdf(features_dir / dir_name / "x.nc")
+
+
+def _make_dynamic_data(tmp_path, dates, mode) -> Tuple[xr.Dataset, ...]:
+    for date in dates:
+        x, _, _ = _make_dataset(size=(5, 5), const=True)
+        y = x.isel(time=[-1])
+
+        date_str = f"{date.year}_{date.month}"
+        test_features = tmp_path / f"features/one_month_forecast/{mode}/{date_str}"
+        test_features.mkdir(parents=True)
+
+        norm_dict = {"VHI": {"mean": 0, "std": 1}}
+        with (tmp_path / "features/one_month_forecast/normalizing_dict.pkl").open(
+            "wb"
+        ) as f:
+            pickle.dump(norm_dict, f)
+
+        x.to_netcdf(test_features / "x.nc")
+        y.to_netcdf(test_features / "y.nc")
+
+    return x, y
+
+
+def make_drought_test_data(tmp_path: Path, len_dates: int = 1, test: bool = False) -> Tuple[xr.Dataset, ...]:
+    if len_dates == 1:
+        dates = [pd.to_datetime("1980-01-01")]
+    else:
+        dates = pd.date_range("1980-01-01", freq="M", periods=len_dates)
+
+    if test:
+        mode = "test"
+        x_static = None
+    else:
+        mode = "train"
+
+        # make static data
+        x_static, _, _ = _make_dataset(size=(5, 5), add_times=False)
+        static_features = tmp_path / f"features/static"
+        static_features.mkdir(parents=True)
+        x_static.to_netcdf(static_features / "data.nc")
+
+        static_norm_dict = {"VHI": {"mean": 0.0, "std": 1.0}}
+        with (tmp_path / f"features/static/normalizing_dict.pkl").open("wb") as f:
+            pickle.dump(static_norm_dict, f)
+
+    x, y = _make_dynamic_data(tmp_path, dates, mode)
+
+    return x, y, x_static
+
+
+def get_dataloader(
+    mode: str, hparams: Namespace, shuffle_data: bool = False, **kwargs
+) -> DataLoader:
+    """
+    Return the correct dataloader for this model
+    """
+
+    default_args: Dict[str, Any] = {
+        "data_path": hparams.data_path,
+        "batch_file_size": hparams.batch_size,
+        "shuffle_data": shuffle_data,
+        "mode": mode,
+        "mask": None,
+        "experiment": hparams.experiment,
+        "pred_months": hparams.pred_months,
+        "to_tensor": True,
+        "ignore_vars": hparams.ignore_vars,
+        "monthly_aggs": hparams.include_monthly_aggs,
+        "surrounding_pixels": hparams.surrounding_pixels,
+        "static": hparams.static,
+        "device": "cpu",
+        "clear_nans": True,
+        "normalize": True,
+        "predict_delta": hparams.predict_delta,
+        "spatial_mask": hparams.spatial_mask,
+        "normalize_y": hparams.normalize_y,
+    }
+
+    for key, val in kwargs.items():
+        # override the default args
+        default_args[key] = val
+
+    dl = DataLoader(**default_args)
+
+    return dl
