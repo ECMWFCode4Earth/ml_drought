@@ -9,6 +9,7 @@ from typing import cast, Any, Dict, Optional, Union, Tuple
 from .ealstm import EALSTM
 from .dataset import TrainData, train_val_mask
 from src.models.utils import chunk_array
+
 # from .lstm import LSTM
 # from .linear_nn import LinearNN
 
@@ -53,7 +54,9 @@ class LightningModel(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y = batch
-        for x_batch, y_batch in chunk_array(x, y, self.hparams.batch_size, shuffle=True):
+        for x_batch, y_batch in chunk_array(
+            x, y, self.hparams.batch_size, shuffle=True
+        ):
             pred = self.model(
                 *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
             )
@@ -62,50 +65,102 @@ class LightningModel(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        for x_batch, y_batch in chunk_array(x, y, self.hparams.batch_size, shuffle=False):
+        all_preds = []
+        all_obs = []
+        losses = []
+
+        for x_batch, y_batch in chunk_array(
+            x, y, self.hparams.batch_size, shuffle=False
+        ):
             pred = self.model(
                 *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
             )
             loss = F.smooth_l1_loss(pred, y_batch)
-        return {"val_loss": loss}
+            all_preds.append(pred)
+            all_obs.append(y_batch)
+            losses.append(loss)
 
-    # def validation_epoch_end(self, outputs):
-    #     avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
+        val_loss = torch.mean(torch.stack([l for l in losses]))
+        all_preds = torch.stack([x for x in all_preds])
+        all_obs = torch.stack([x for x in all_obs])
 
-    #     tensorboard_logs = {"val_loss": avg_loss}
+        return {"val_loss": loss, "preds": all_preds, "obs": all_obs}
 
-    #     return {"val_loss": avg_loss, "log": tensorboard_logs}
+    def validation_epoch_end(self, outputs):
+        avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
+        preds = torch.stack([x["preds"] for x in outputs]).mean()
+        obs = torch.stack([x["obs"] for x in outputs]).mean()
+
+        mse = F.mse_loss(preds, obs)
+
+        tensorboard_logs = {"val_loss": avg_loss, "val_mse": mse}
+
+        return {"val_loss": avg_loss, "log": tensorboard_logs}
 
     def test_dataloader(self):
-        return self.get_dataloader(
-            mode="test", shuffle_data=True,
-        )
+        return self.get_dataloader(mode="test", shuffle_data=True)
 
     def test_step(self, batch, batch_idx):
-        x, y = batch
-        for x_batch, y_batch in chunk_array(x, y, self.hparams.batch_size, shuffle=False):
-            pred = self.model(
-                *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
-            )
-            loss = F.smooth_l1_loss(pred, y_batch)
+        losses = []
+        for key, val in batch.items():
+            input_tuple = self._input_to_tuple(val.x)
 
-        return {"test_loss": loss}
+            # TODO: generalise the chunk_array to work with
+            # the test data as well as the train data
+            num_sections = max(input_tuple[0].shape[0] // self.hparams.batch_size, 1)
+            split_x = []
+            for idx, x_section in enumerate(input_tuple):
+                if x_section is not None:
+                    split_x.append(torch.chunk(x_section, num_sections))
+                else:
+                    split_x.append([None] * num_sections)  # type: ignore
 
+            chunked_input = list(zip(*split_x))
 
-    # ------------------------------------------------------
+            all_preds = []
+            for x_batch in chunked_input:
+                # make test prediction
+                pred = self.model(
+                    *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
+                )
+                all_preds.append(pred)
+
+            preds_dict[key] = np.concatenate(all_preds)
+
+        return {preds_dict}
+
+    # def test_epoch_end(self, outputs):
+    #     # TODO: save the netcdf obs / sim files
+    #     return
+
+    def fit(self, **kwargs):
+        trainer = pl.Trainer(**kwargs)
+        trainer.fit(self)
+
+    def predict(self, **kwargs):
+        trainer = pl.Trainer(**kwargs)
+        trainer.test(self)
+
+    # def predict(self):
+    #     # TODO: use the old predict code
+    #     return
+
+    #  ------------------------------------------------------
     # CUSTOM METHODS
-    # ------------------------------------------------------
+    #  ------------------------------------------------------
     @staticmethod
-    def _initialize_model(x_ref: Tuple[torch.Tensor, ...], hparams: Namespace) -> torch.nn.Module:
+    def _initialize_model(
+        x_ref: Tuple[torch.Tensor, ...], hparams: Namespace
+    ) -> torch.nn.Module:
         model_lookup = {
             "ealstm": EALSTM,
             # "lstm": LSTM,
             # "dense": LinearNN,
         }
         model_name = hparams.model_name.lower()
-        assert (
-            model_name in [k for k in model_lookup.keys()]
-        ), f"Model not found in: {[k for k in model_lookup.keys()]}"
+        assert model_name in [
+            k for k in model_lookup.keys()
+        ], f"Model not found in: {[k for k in model_lookup.keys()]}"
         model_class = model_lookup[model_name]
 
         # initialize the child_class
@@ -114,7 +169,7 @@ class LightningModel(pl.LightningModule):
         return model
 
     def _input_to_tuple(
-        self, x: Union[Tuple[torch.Tensor, ...], TrainData],
+        self, x: Union[Tuple[torch.Tensor, ...], TrainData]
     ) -> Tuple[torch.Tensor, ...]:
         """
         Returns:
