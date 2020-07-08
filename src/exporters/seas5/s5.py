@@ -105,6 +105,7 @@ class S5Exporter(CDSExporter):
         n_parallel_requests: int = 3,
         show_api_request: bool = True,
         break_up: bool = True,
+        region_str: str = "kenya",
     ) -> List[Path]:
         """
         Arguments
@@ -168,6 +169,7 @@ class S5Exporter(CDSExporter):
             max_year=max_year,
             min_month=min_month,
             max_month=max_month,
+            region_str=region_str,
         )
 
         if self.pressure_level:  # if we are using the pressure_level dataset
@@ -384,6 +386,7 @@ class S5Exporter(CDSExporter):
         max_year: int = 2019,
         min_month: int = 1,
         max_month: int = 12,
+        region_str: str = "kenya",
     ) -> Dict:
         """Build up the selection_request dictionary with defaults
 

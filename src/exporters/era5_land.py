@@ -143,6 +143,7 @@ class ERA5LandExporter(CDSExporter):
         selection_request: Optional[Dict] = None,
         break_up: Optional[str] = "yearly",
         n_parallel_requests: int = 1,
+        region_str: str = "kenya",
     ) -> List[Path]:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
@@ -180,7 +181,7 @@ class ERA5LandExporter(CDSExporter):
 
         # create the default template for the selection request
         processed_selection_request = self.create_selection_request(
-            variable, selection_request, granularity
+            variable, selection_request, granularity, region_str
         )
 
         if n_parallel_requests < 1:

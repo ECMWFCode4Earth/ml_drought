@@ -17,7 +17,7 @@ from src.exporters import (
 from scripts.utils import get_data_path
 
 
-def export_era5():
+def export_era5(region_str="kenya"):
     exporter = ERA5Exporter(get_data_path())
 
     # The ERA5 exporter downloads the data with wierd names.
@@ -68,10 +68,10 @@ def export_era5():
     ]
 
     for variable in era5_variables:
-        exporter.export(variable=variable, granularity="monthly")
+        exporter.export(variable=variable, granularity="monthly", region_str=region_str)
 
 
-def export_era5_land():
+def export_era5_land(region_str="kenya"):
     exporter = ERA5LandExporter(get_data_path())
 
     variables = [
@@ -85,7 +85,7 @@ def export_era5_land():
         "volumetric_soil_water_layer_4",
     ]
     for variable in variables:
-        exporter.export(variable=variable, break_up="yearly")
+        exporter.export(variable=variable, break_up="yearly", region_str=region_str)
 
 
 def export_vhi():
@@ -122,7 +122,7 @@ def export_esa():
     exporter.export()
 
 
-def export_s5():
+def export_s5(region_str="kenya"):
 
     granularity = "hourly"
     pressure_level = False
@@ -150,6 +150,7 @@ def export_s5():
         max_leadtime=max_leadtime,
         pressure_levels=pressure_levels,
         n_parallel_requests=n_parallel_requests,
+        region_str=region_str,
     )
 
 
@@ -160,12 +161,12 @@ def export_kenya_boundaries():
 
 
 if __name__ == "__main__":
-    export_era5_land()
-    # export_era5()
+    export_era5_land(region_str="kenya")
+    # export_era5(region_str="kenya")
     # export_vhi()
     # export_chirps()
     # export_era5POS()
     # export_gleam()
     # export_esa()
-    # export_s5()
+    # export_s5(region_str="kenya")
     # export_kenya_boundaries()

@@ -315,6 +315,7 @@ class ERA5Exporter(CDSExporter):
         selection_request: Optional[Dict] = None,
         break_up: bool = False,
         n_parallel_requests: int = 1,
+        region_str: str = "kenya",
     ) -> List[Path]:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
@@ -350,7 +351,7 @@ class ERA5Exporter(CDSExporter):
 
         # create the default template for the selection request
         processed_selection_request = self.create_selection_request(
-            variable, selection_request, granularity
+            variable, selection_request, granularity, region_str
         )
 
         if dataset is None:
