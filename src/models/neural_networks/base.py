@@ -10,7 +10,8 @@ import pytorch_lightning as pl
 import torch
 from torch.nn import functional as F
 
-import shap
+shap = None
+# import shap
 
 from typing import cast, Dict, List, Optional, Tuple, Union
 
@@ -43,6 +44,7 @@ class NNBase(ModelBase):
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = True,
+        explain: bool = True,
     ) -> None:
         super().__init__(
             data_folder=data_folder,
@@ -62,6 +64,12 @@ class NNBase(ModelBase):
             normalize_y=normalize_y,
         )
 
+        if explain:
+            global shap
+            if shap is None:
+                import shap
+            self.explainer: Optional[shap.DeepExplainer] = None
+
         # for reproducibility
         if (device != "cpu") and torch.cuda.is_available():
             self.device = device
@@ -69,7 +77,6 @@ class NNBase(ModelBase):
             self.device = "cpu"
         torch.manual_seed(42)
 
-        self.explainer: Optional[shap.DeepExplainer] = None
 
     def to(self, device: str = "cpu"):
         # move the model onto the right device
