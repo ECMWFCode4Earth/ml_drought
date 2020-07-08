@@ -95,7 +95,9 @@ class EALSTM(nn.Module):
         self.initialize_weights()
 
     @staticmethod
-    def _initialize_model(x_ref: Tuple[torch.Tensor, ...], hparams: Namespace) -> nn.Module:
+    def _initialize_model(
+        x_ref: Tuple[torch.Tensor, ...], hparams: Namespace
+    ) -> nn.Module:
         # how many input features to the RNN
         features_per_month = x_ref[0].shape[-1]
 
@@ -119,7 +121,7 @@ class EALSTM(nn.Module):
 
         model = EALSTM(
             features_per_month=features_per_month,
-            dense_features=hparams.dense_features,  # TODO: can we pass a list from hparams
+            dense_features=hparams.dense_features,  #  TODO: can we pass a list from hparams
             hidden_size=hparams.hidden_size,
             rnn_dropout=hparams.rnn_dropout,
             include_pred_month=hparams.include_pred_month,

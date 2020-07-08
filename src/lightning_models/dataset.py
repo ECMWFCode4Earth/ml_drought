@@ -189,7 +189,6 @@ class ModelArrays:
         return historical_ds, target_ds, current_ds
 
 
-
 def train_val_mask(
     mask_len: int, val_ratio: float = 0.3
 ) -> Tuple[List[bool], List[bool]]:

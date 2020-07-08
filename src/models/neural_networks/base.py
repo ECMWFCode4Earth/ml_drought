@@ -18,10 +18,10 @@ from ..base import ModelBase
 from ..utils import chunk_array, _to_xarray_dataset
 from ..data import DataLoader, train_val_mask, TrainData, idx_to_input
 
+
 class PytorchLightningBase(pl.LightningModule):
     def __init__():
         super(PytorchLightningBase, self).__init__()
-
 
 
 class NNBase(ModelBase):
@@ -98,10 +98,8 @@ class NNBase(ModelBase):
         trainer = pl.Trainer(
             logger=tb_logger,
             max_epochs=num_epochs,
-            gpus=[0] if self.device != 'cpu' else None,
-
+            gpus=[0] if self.device != "cpu" else None,
         )
-
 
         if early_stopping is not None:
             len_mask = len(

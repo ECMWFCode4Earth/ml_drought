@@ -152,7 +152,9 @@ def _make_dynamic_data(tmp_path, dates, mode) -> Tuple[xr.Dataset, ...]:
     return x, y
 
 
-def make_drought_test_data(tmp_path: Path, len_dates: int = 1, test: bool = False) -> Tuple[xr.Dataset, ...]:
+def make_drought_test_data(
+    tmp_path: Path, len_dates: int = 1, test: bool = False
+) -> Tuple[xr.Dataset, ...]:
     if len_dates == 1:
         dates = [pd.to_datetime("1980-01-01")]
     else:

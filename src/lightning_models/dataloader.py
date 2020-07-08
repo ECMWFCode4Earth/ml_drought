@@ -12,9 +12,7 @@ import torch
 import xarray as xr
 
 from typing import cast, Dict, Optional, Union, List, Tuple
-from .dataset import (
-    idx_to_input, TrainData, ModelArrays, train_val_mask
-)
+from .dataset import idx_to_input, TrainData, ModelArrays, train_val_mask
 
 
 class DataLoader:
