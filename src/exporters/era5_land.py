@@ -5,7 +5,7 @@ import multiprocessing
 import itertools
 
 from .cds import CDSExporter
-from .base import get_kenya
+from .base import region_lookup
 
 VALID_ERA5_LAND_VARS = [
     "10m_u_component_of_wind",
@@ -77,6 +77,7 @@ class ERA5LandExporter(CDSExporter):
         variable: str,
         selection_request: Optional[Dict] = None,
         granularity: str = "hourly",
+        region_str: str = "kenya",
     ) -> Dict:
         # setup the default selection request
         assert variable in VALID_ERA5_LAND_VARS, (
@@ -88,8 +89,9 @@ class ERA5LandExporter(CDSExporter):
             processed_selection_request[key] = val
 
         # by default, we investigate Kenya
-        kenya_region = get_kenya()
-        processed_selection_request["area"] = self.create_area(kenya_region)
+        # kenya_region = get_kenya()
+        region = region_lookup[region_str]
+        processed_selection_request["area"] = self.create_area(region)
 
         # update with user arguments
         if selection_request is not None:

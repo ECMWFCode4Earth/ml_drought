@@ -6,7 +6,7 @@ import multiprocessing
 
 from typing import Dict, Optional, List, cast
 
-from .base import BaseExporter, Region, get_kenya
+from .base import BaseExporter, Region, region_lookup
 
 cdsapi = None
 
@@ -272,6 +272,7 @@ class ERA5Exporter(CDSExporter):
         variable: str,
         selection_request: Optional[Dict] = None,
         granularity: str = "hourly",
+        region_str: str = "kenya",
     ) -> Dict:
         # setup the default selection request
         product_type = (
@@ -286,8 +287,9 @@ class ERA5Exporter(CDSExporter):
             processed_selection_request[key] = val
 
         # by default, we investigate Kenya
-        kenya_region = get_kenya()
-        processed_selection_request["area"] = self.create_area(kenya_region)
+        # kenya_region = get_kenya()
+        region = region_lookup[region_str]
+        processed_selection_request["area"] = self.create_area(region)
 
         # update with user arguments
         if selection_request is not None:

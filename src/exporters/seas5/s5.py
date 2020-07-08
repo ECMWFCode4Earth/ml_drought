@@ -4,7 +4,7 @@ import numpy as np
 
 from typing import cast, Dict, Optional, List
 from .all_valid_s5 import datasets as dataset_reference
-from ..base import get_kenya
+from ..base import region_lookup
 from ..cds import CDSExporter
 
 pool = None
@@ -435,8 +435,9 @@ class S5Exporter(CDSExporter):
             processed_selection_request[key] = val
 
         # by default, we investigate Kenya
-        kenya_region = get_kenya()
-        processed_selection_request["area"] = self.create_area(kenya_region)
+        # kenya_region = get_kenya()
+        region = region_lookup[region_str]
+        processed_selection_request["area"] = self.create_area(region)
 
         if self.product_type is None:
             keys = [k for k in processed_selection_request.keys()]
