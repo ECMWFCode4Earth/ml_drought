@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 
 sys.path.append("..")
 from src.preprocess import (
@@ -21,14 +22,14 @@ from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
 from scripts.utils import get_data_path
 
 
-def process_vci_2018():
+def process_vci_2018(subset_str: str = "kenya"):
 
     processor = VHIPreprocessor(get_data_path(), "VCI")
 
     processor.preprocess(subset_str="kenya", resample_time="M", upsampling=False)
 
 
-def process_precip_2018():
+def process_precip_2018(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
@@ -36,10 +37,10 @@ def process_precip_2018():
 
     processor = CHIRPSPreprocessor(data_path)
 
-    processor.preprocess(subset_str="kenya", regrid=regrid_path, parallel=False)
+    processor.preprocess(subset_str=subset_str, regrid=regrid_path, parallel=False)
 
 
-def process_era5POS_2018():
+def process_era5POS_2018(subset_str: str = "kenya"):
     data_path = get_data_path()
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
@@ -47,7 +48,7 @@ def process_era5POS_2018():
     processor = PlanetOSPreprocessor(data_path)
 
     processor.preprocess(
-        subset_str="kenya",
+        subset_str=subset_str,
         regrid=regrid_path,
         parallel=False,
         resample_time="M",
@@ -55,7 +56,7 @@ def process_era5POS_2018():
     )
 
 
-def process_era5_land(variable: str):
+def process_era5_land(variable: str, subset_str: str = "kenya"):
     if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
         data_path = Path("data")
     else:
@@ -66,7 +67,7 @@ def process_era5_land(variable: str):
     processor = ERA5LandPreprocessor(data_path)
 
     processor.preprocess(
-        subset_str="kenya",
+        subset_str=subset_str,
         regrid=None,
         resample_time="M",
         upsampling=False,
@@ -74,7 +75,7 @@ def process_era5_land(variable: str):
     )
 
 
-def process_gleam():
+def process_gleam(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
@@ -83,11 +84,11 @@ def process_gleam():
     processor = GLEAMPreprocessor(data_path)
 
     processor.preprocess(
-        subset_str="kenya", regrid=regrid_path, resample_time="M", upsampling=False
+        subset_str=subset_str, regrid=regrid_path, resample_time="M", upsampling=False
     )
 
 
-def process_seas5():
+def process_seas5(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = data_path / "interim/chirps_preprocessed/chirps_kenya.nc"
@@ -95,21 +96,21 @@ def process_seas5():
 
     processor = S5Preprocessor(data_path)
     processor.preprocess(
-        subset_str="kenya", regrid=regrid_path, resample_time="M", upsampling=False
+        subset_str=subset_str, regrid=regrid_path, resample_time="M", upsampling=False
     )
 
 
-def process_esa_cci_landcover():
+def process_esa_cci_landcover(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
 
     processor = ESACCIPreprocessor(data_path)
-    processor.preprocess(subset_str="kenya", regrid=regrid_path)
+    processor.preprocess(subset_str=subset_str, regrid=regrid_path)
 
 
-def preprocess_srtm():
+def preprocess_srtm(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
@@ -122,7 +123,7 @@ def preprocess_srtm():
     )
 
     processor = SRTMPreprocessor(data_path)
-    processor.preprocess(subset_str="kenya", regrid=regrid_path)
+    processor.preprocess(subset_str=subset_str, regrid=regrid_path)
 
 
 def preprocess_kenya_boundaries(selection: str = "level_1"):
@@ -149,17 +150,17 @@ def preprocess_asal_mask():
     processor.preprocess(reference_nc_filepath=regrid_path)
 
 
-def preprocess_era5():
+def preprocess_era5(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
 
     processor = ERA5MonthlyMeanPreprocessor(data_path)
-    processor.preprocess(subset_str="kenya", regrid=regrid_path)
+    processor.preprocess(subset_str=subset_str, regrid=regrid_path)
 
 
-def preprocess_era5_hourly():
+def preprocess_era5_hourly(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
@@ -168,31 +169,32 @@ def preprocess_era5_hourly():
     processor = ERA5HourlyPreprocessor(data_path)
 
     # W-MON is weekly each monday (the same as the NDVI data from Atzberger)
-    processor.preprocess(subset_str="kenya", resample_time="W-MON")
+    processor.preprocess(subset_str=subset_str, resample_time="W-MON")
     # processor.merge_files(subset_str='W-MON')
 
 
-def preprocess_boku_ndvi():
+def preprocess_boku_ndvi(subset_str: str = "kenya"):
     data_path = get_data_path()
     processor = BokuNDVIPreprocessor(data_path)
 
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
 
-    processor.preprocess(subset_str="kenya", resample_time="W-MON", regrid=regrid_path)
+    processor.preprocess(subset_str=subset_str, resample_time="W-MON", regrid=regrid_path)
 
 
 if __name__ == "__main__":
-    # process_vci_2018()
-    # process_precip_2018()
-    # process_era5POS_2018()
-    # process_gleam()
-    # process_esa_cci_landcover()
-    # preprocess_srtm()
-    # preprocess_era5()
+    subset_str = "india"
+    # process_vci_2018(subset_str=subset_str)
+    # process_precip_2018(subset_str=subset_str)
+    # process_era5POS_2018(subset_str=subset_str)
+    # process_gleam(subset_str=subset_str)
+    # process_esa_cci_landcover(subset_str=subset_str)
+    # preprocess_srtm(subset_str=subset_str)
+    # preprocess_era5(subset_str=subset_str)
     # preprocess_kenya_boundaries(selection="level_1")
     # preprocess_kenya_boundaries(selection="level_2")
     # preprocess_kenya_boundaries(selection="level_3")
-    # preprocess_era5_hourly()
-    preprocess_boku_ndvi()
-    # preprocess_asal_mask()
+    # preprocess_era5_hourly(subset_str=subset_str)
+    preprocess_boku_ndvi(subset_str=subset_str)
+    # preprocess_asal_mask(subset_str=subset_str)
