@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import random
 import pytest
 from argparse import Namespace
 import pytorch_lightning as pl
@@ -43,7 +44,9 @@ class TestLightningBase:
         x_ref, _ = next(iter(dataloader))
         EALSTM._initialize_model(x_ref=x_ref, hparams=hparams)
 
-    def test_(self, tmp_path, capsys):
+    def test_train(self, tmp_path, capsys):
+        random.seed(1)
+        np.random.seed(1)
         x, y, static = make_drought_test_data(tmp_path, len_dates=4, test=False)
         x_test, y_test, _ = make_drought_test_data(tmp_path, len_dates=2, test=True)
         hparams = Namespace(
@@ -77,6 +80,8 @@ class TestLightningBase:
 
         # print the output to the console
         with capsys.disabled():
-            trainer = pl.Trainer(fast_dev_run=True)
-            trainer.fit(model)
+            kwargs = dict(fast_dev_run=True)
+            model.fit(**kwargs)
 
+            kwargs = dict()
+            model.predict()
