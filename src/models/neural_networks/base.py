@@ -8,7 +8,9 @@ import tqdm
 import torch
 from torch.nn import functional as F
 
-import shap
+
+shap = None
+# import shap
 
 from typing import cast, Dict, List, Optional, Tuple, Union, Any
 
@@ -54,6 +56,7 @@ class NNBase(ModelBase):
         val_years: Optional[List[Union[float, int]]] = None,
         train_years: Optional[List[Union[float, int]]] = None,
         clip_values_to_zero: bool = False,
+        explain: bool = True,
     ) -> None:
         super().__init__(
             dynamic=dynamic,
@@ -88,7 +91,11 @@ class NNBase(ModelBase):
             self.device = "cpu"
         torch.manual_seed(42)
 
-        self.explainer: Optional[shap.DeepExplainer] = None
+        if explain:
+            global shap
+            if shap is None:
+                import shap
+            self.explainer: Optional[shap.DeepExplainer] = None  # type: ignore
 
         self.train_years = train_years
         self.val_years = val_years
