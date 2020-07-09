@@ -32,6 +32,8 @@ data/analysis/*
 data/interim/*
 data/features/*
 data/models/*
+data/gcloud*
+
 Code
 scripts/variables*.txt
 
@@ -51,3 +53,4 @@ settings.json
 
 # lightning
 events.*
+lightning_logs

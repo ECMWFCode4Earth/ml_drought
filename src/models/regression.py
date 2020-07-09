@@ -5,7 +5,8 @@ from sklearn.metrics import mean_squared_error
 import pickle
 import xarray as xr
 
-import shap
+shap = None
+# import shap
 
 from typing import cast, Dict, List, Tuple, Optional, Union
 
@@ -23,10 +24,10 @@ class LinearRegression(ModelBase):
         data_folder: Path = Path("data"),
         experiment: str = "one_month_forecast",
         batch_size: int = 1,
-        seq_length: Optional[List[int]] = None,
+        pred_months: Optional[List[int]] = None,
         include_pred_month: bool = True,
         include_latlons: bool = False,
-        include_timestep_aggs: bool = True,
+        include_monthly_aggs: bool = True,
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
@@ -35,27 +36,32 @@ class LinearRegression(ModelBase):
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = True,
+        explain: bool = True,
     ) -> None:
         super().__init__(
             data_folder,
-            batch_size=batch_size,
-            experiment=experiment,
-            seq_length=seq_length,
-            include_pred_month=include_pred_month,
-            include_latlons=include_latlons,
-            include_timestep_aggs=include_timestep_aggs,
-            include_yearly_aggs=include_yearly_aggs,
-            surrounding_pixels=surrounding_pixels,
-            ignore_vars=ignore_vars,
-            static=static,
+            batch_size,
+            experiment,
+            pred_months,
+            include_pred_month,
+            include_latlons,
+            include_monthly_aggs,
+            include_yearly_aggs,
+            surrounding_pixels,
+            ignore_vars,
+            static,
             predict_delta=predict_delta,
             spatial_mask=spatial_mask,
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
-            pred_months=pred_months,
         )
 
-        self.explainer: Optional[shap.LinearExplainer] = None
+        if explain:
+            global shap
+            if shap is None:
+                import shap
+
+            self.explainer: Optional[shap.LinearExplainer] = None
 
     def train(
         self,
@@ -176,12 +182,12 @@ class LinearRegression(ModelBase):
         model_data = {
             "model": {"coef": self.model.coef_, "intercept": self.model.intercept_},
             "experiment": self.experiment,
-            "seq_length": self.seq_length,
+            "pred_months": self.pred_months,
             "include_pred_month": self.include_pred_month,
             "surrounding_pixels": self.surrounding_pixels,
             "batch_size": self.batch_size,
             "ignore_vars": self.ignore_vars,
-            "include_timestep_aggs": self.include_timestep_aggs,
+            "include_monthly_aggs": self.include_monthly_aggs,
             "include_yearly_aggs": self.include_yearly_aggs,
             "static": self.static,
             "spatial_mask": self.spatial_mask,
