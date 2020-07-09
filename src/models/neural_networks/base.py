@@ -68,7 +68,7 @@ class NNBase(ModelBase):
             global shap
             if shap is None:
                 import shap
-            self.explainer: Optional[shap.DeepExplainer] = None
+            self.explainer: Optional[shap.DeepExplainer] = None  # type: ignore
 
         # for reproducibility
         if (device != "cpu") and torch.cuda.is_available():
