@@ -56,7 +56,7 @@ class NNBase(ModelBase):
         val_years: Optional[List[Union[float, int]]] = None,
         train_years: Optional[List[Union[float, int]]] = None,
         clip_values_to_zero: bool = False,
-        explain: bool = True,
+        explain: bool = False,
     ) -> None:
         super().__init__(
             dynamic=dynamic,
