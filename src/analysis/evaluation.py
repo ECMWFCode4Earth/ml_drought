@@ -208,20 +208,18 @@ def _nse_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> float:
     pred_vals = pred_vals.flatten()
 
     # check for nans
-    true_vals = np.delete(
-        true_vals,
-        np.append(
+    missing_data = np.append(
             (np.argwhere(np.isnan(true_vals))).flatten(),
             (np.argwhere(np.isnan(pred_vals))).flatten(),
-        ),
+        )
+    true_vals = np.delete(
+        true_vals,
+        missing_data,
         axis=0,
     )
     pred_vals = np.delete(
         pred_vals,
-        np.append(
-            (np.argwhere(np.isnan(true_vals))).flatten(),
-            (np.argwhere(np.isnan(pred_vals))).flatten(),
-        ),
+        missing_data,
         axis=0,
     )
     if true_vals.shape != pred_vals.shape:
