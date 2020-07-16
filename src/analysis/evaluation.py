@@ -293,17 +293,28 @@ def _r2_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
 
 def _bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
     """Bias calculation"""
-    return 100 * ((pred_vals / true_vals) - 1)
+    return np.nanmean(100 * ((pred_vals / true_vals) - 1))
 
 
 def spatial_bias(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
-    return (100 * ((pred_da / true_da) - 1)).mean(dim='time')
+    values = np.nanmean(100 * ((pred_da / true_da) - 1), axis=0)
+    bias = xr.Dataset(
+        {"bias": (["station_id"], values)},
+        coords={"station_id": pred_da["station_id"].values}
+    )["bias"]
+    return bias
 
 
 def temporal_bias(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    assert False, "TODO: get the nanmean working with n dimensions (axis = all except 0)"
     true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
     spatial_coords = [c for c in true_da.coords if c != "time"]
+    values = np.nanmean(100 * ((pred_da / true_da) - 1), axis=0)
+    bias = xr.Dataset(
+        {"bias": (["station_id"], values)},
+        coords={"station_id": pred_da["station_id"].values}
+    )["bias"]
     return (100 * ((pred_da / true_da) - 1)).mean(dim=spatial_coords)
 
 
