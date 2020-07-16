@@ -34,6 +34,10 @@ def _prepare_true_pred_da(
 
     assert true_da.dims == pred_da.dims, f"True: {true_da.dims} Preds: {pred_da.dims}"
 
+    # transpose to TIME first dimension
+    pred_da = pred_da.transpose(*(["time"] + pred_coords))
+    true_da = true_da.transpose(*(["time"] + true_coords))
+
     return true_da, pred_da
 
 
