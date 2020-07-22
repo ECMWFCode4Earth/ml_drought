@@ -34,7 +34,6 @@ class LightningModel(pl.LightningModule):
         # lots of attributes added by the dataloader
         dataloader = self.get_dataloader(mode="train", shuffle_data=True, mask=None)
         num_examples = len(dataloader)
-        assert False
         x_ref, _ = next(iter(dataloader))
 
         # initialize the model
