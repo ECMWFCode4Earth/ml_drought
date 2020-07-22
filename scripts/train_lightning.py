@@ -9,6 +9,7 @@ from src.lightning_models import LightningModel
 
 from scripts.utils import get_data_path
 from argparse import Namespace
+import pytorch_lightning as pl
 
 
 if __name__ == "__main__":
@@ -63,3 +64,5 @@ if __name__ == "__main__":
     )
 
     model = LightningModel(hparams)
+    kwargs = dict(fast_dev_run=True)
+    model.fit(**kwargs)
