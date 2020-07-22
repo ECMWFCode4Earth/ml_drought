@@ -64,5 +64,5 @@ if __name__ == "__main__":
     )
 
     model = LightningModel(hparams)
-    kwargs = dict(fast_dev_run=True)
+    kwargs = dict(fast_dev_run=True, gpus=[0])
     model.fit(**kwargs)
