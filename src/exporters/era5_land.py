@@ -113,7 +113,7 @@ class ERA5LandExporter(CDSExporter):
         output_paths: List,
         show_api_request: bool = True,
         n_parallel_requests: int = 1,
-        pool: Optional[multiprocessing.pool.Pool] = None,
+        pool: Optional[multiprocessing.Pool] = None,
     ) -> List:
         if n_parallel_requests > 1:  # Run in parallel
             assert pool is not None, (
@@ -184,7 +184,7 @@ class ERA5LandExporter(CDSExporter):
         if n_parallel_requests < 1:
             n_parallel_requests = 1
 
-        p: Optional[multiprocessing.pool.Pool]
+        p: Optional[multiprocessing.Pool]
         if n_parallel_requests > 1:  # Run in parallel
             p = multiprocessing.Pool(int(n_parallel_requests))
         else:
