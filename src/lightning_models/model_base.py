@@ -1,11 +1,14 @@
 from argparse import Namespace
 import pytorch_lightning as pl
 import torch
+import numpy as np
+import pandas as pd
 from torch.nn import functional as F
-
+import xarray as xr
+from pathlib import Path
 from .dataloader import DataLoader
 
-from typing import cast, Any, Dict, Optional, Union, Tuple
+from typing import cast, Any, Dict, Optional, Union, Tuple, List
 from .ealstm import EALSTM
 from .dataset import TrainData, train_val_mask
 from src.models.utils import chunk_array
@@ -19,6 +22,11 @@ class LightningModel(pl.LightningModule):
         super().__init__()
         self.hparams = hparams
         self.data_path = hparams.data_path
+        self.model_name = hparams.model_name.lower()
+        self.experiment = hparams.experiment
+
+        self.model_dir: Path = self.data_path / "models" / self.experiment / self.model_name
+        self.model_dir.mkdir(exist_ok=True, parents=True)
 
         # needs to be set by the train function
         self.num_locations: Optional[int] = None
@@ -100,8 +108,12 @@ class LightningModel(pl.LightningModule):
     def test_dataloader(self):
         return self.get_dataloader(mode="test", shuffle_data=True)
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch, batch_idx) -> Tuple[List[Dict[str, np.ndarray]], List[Dict[str, np.ndarray]]]:
+        # initilalise objects to write test results
+        preds_dict: Dict[str, np.ndarray] = {}
+        test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
         losses = []
+
         for key, val in batch.items():
             input_tuple = self._input_to_tuple(val.x)
 
@@ -120,30 +132,82 @@ class LightningModel(pl.LightningModule):
             all_preds = []
             for x_batch in chunked_input:
                 # make test prediction
-                pred = self.model(
-                    *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
-                )
+                pred = self.model(*x_batch)
                 all_preds.append(pred)
 
             preds_dict[key] = np.concatenate(all_preds)
 
-        return {preds_dict}
+            test_arrays_dict[key] = {
+                "y": val.y.numpy(),
+                "latlons": val.latlons,
+                "time": val.target_time,
+                "y_var": val.y_var,
+            }
 
-    # def test_epoch_end(self, outputs):
-    #     # TODO: save the netcdf obs / sim files
-    #     return
+        return preds_dict, test_arrays_dict
+
+    def test_epoch_end(self, outputs: Tuple[List[Dict[str, np.ndarray]], List[Dict[str, np.ndarray]]]):
+        # TODO: save the netcdf obs / sim files
+        preds_dict: Dict[str, np.ndarray] = {}
+        test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
+
+        # recreate the bigger dictionary with all keys
+        #  List[Dict[key, val]] -> Dict[keys, vals]
+        for preds, test_arrays in outputs:
+            key = [k for k in preds.keys()][0]
+            value = preds[key]
+            preds_dict[key] = value
+
+            test_arrays_dict[key] = {}
+            for key_l2 in [k for k in test_arrays[key].keys()]:
+                test_arrays_dict[key][key_l2] = test_arrays[key][key_l2]
+
+        if self.hparams.save_preds:
+            for key, val in test_arrays_dict.items():
+                latlons = cast(np.ndarray, val["latlons"])
+                # preds = self.denormalize_y(preds_dict[key], val["y_var"])
+                preds = preds_dict[key]
+                # obs = self.denormalize_y(val["y"], val["y_var"])
+                obs = val["y"]
+
+                if len(preds.shape) > 1:
+                    preds = preds.squeeze(-1)
+
+                # the prediction timestep
+                time = val["time"]
+                times = [time for _ in range(len(preds))]
+
+                preds_xr: xr.Dataset = (
+                    pd.DataFrame(
+                        data={
+                            "preds": preds.flatten(),
+                            "obs": obs.flatten(),
+                            "lat": latlons[:, 0],
+                            "lon": latlons[:, 1],
+                            "time": times,
+                        }
+                    )
+                    .set_index(["lat", "lon", "time"])
+                    .to_xarray()
+                )
+
+                preds_xr.to_netcdf(self.model_dir / f"preds_{key}.nc")
+
+        return
 
     def fit(self, **kwargs):
+        if "weights_save_path" not in kwargs.keys():
+            kwargs["weights_save_path"] = self.hparams.data_path
+
         trainer = pl.Trainer(**kwargs)
         trainer.fit(self)
 
     def predict(self, **kwargs):
+        if "weights_save_path" not in kwargs.keys():
+            kwargs["weights_save_path"] = self.hparams.data_path
+
         trainer = pl.Trainer(**kwargs)
         trainer.test(self)
-
-    # def predict(self):
-    #     # TODO: use the old predict code
-    #     return
 
     #  ------------------------------------------------------
     # CUSTOM METHODS
@@ -213,7 +277,7 @@ class LightningModel(pl.LightningModule):
     def _one_hot(self, indices: torch.Tensor, num_vals: int) -> torch.Tensor:
         if len(indices.shape) > 1:
             indices = indices.squeeze(-1)
-        return torch.eye(num_vals + 2, device=self.device)[indices.long()][:, 1:-1]
+        return torch.eye(num_vals + 2)[indices.long()][:, 1:-1]
 
     def get_dataloader(
         self, mode: str, shuffle_data: bool = False, **kwargs

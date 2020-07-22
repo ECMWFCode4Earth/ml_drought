@@ -77,7 +77,6 @@ class NNBase(ModelBase):
             self.device = "cpu"
         torch.manual_seed(42)
 
-
     def to(self, device: str = "cpu"):
         # move the model onto the right device
         raise NotImplementedError

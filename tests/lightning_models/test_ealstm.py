@@ -1,7 +1,7 @@
 import numpy as np
-import pandas as pd
+# import pandas as pd
 import random
-import pytest
+# import pytest
 from argparse import Namespace
 import pytorch_lightning as pl
 
@@ -37,6 +37,7 @@ class TestLightningBase:
                 "dense_features": [128],
                 "val_ratio": 0.3,
                 "learning_rate": 1e3,
+                "save_preds": True,
             }
         )
 
@@ -73,10 +74,13 @@ class TestLightningBase:
                 "dense_features": [128],
                 "val_ratio": 0.5,
                 "learning_rate": 1e3,
+                "save_preds": True,
             }
         )
 
         model = LightningModel(hparams)
+
+        assert isinstance(model, pl.LightningModule), "Expect an EALSTM Lightning Model"
 
         # print the output to the console
         with capsys.disabled():
@@ -85,3 +89,6 @@ class TestLightningBase:
 
             kwargs = dict()
             model.predict()
+
+        assert (tmp_path / "models/one_month_forecast/ealstm/").exists(), "Model should create the model dir"
+        assert all(np.isin(["preds_1980_1.nc", "preds_1980_2.nc"], [d.name for d in (tmp_path / "models/one_month_forecast/ealstm/").iterdir()]))
