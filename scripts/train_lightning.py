@@ -13,26 +13,34 @@ import pytorch_lightning as pl
 
 
 if __name__ == "__main__":
-    all_vars = [
+    always_ignore_vars = [
         "VCI",
-        "precip",
-        "t2m",
-        "pev",
-        "E",
-        "SMsurf",
-        "SMroot",
-        "Eb",
+        "p84.162",
         "sp",
         "tp",
-        "ndvi",
-        "p84.162",
-        "boku_VCI",
+        "Eb",
+        "VCI1M",
+        "RFE1M",
         "VCI3M",
+        # "boku_VCI",
         "modis_ndvi",
+        "SMroot",
+        "lc_class",  # remove for good clustering (?)
+        "lc_class_group",  # remove for good clustering (?)
+        "slt", # remove for good clustering (?)
+        "no_data_one_hot",
+        "lichens_and_mosses_one_hot",
+        "permanent_snow_and_ice_one_hot",
+        "urban_areas_one_hot",
+        "water_bodies_one_hot",
+        "t2m",
+        "SMsurf",
+        # "pev",
+        # "e",
+        "E",
     ]
     target_vars = ["boku_VCI"]
     dynamic_vars = ["precip", "t2m", "pet", "E", "SMsurf"]
-    ignore_vars = [v for v in all_vars if v not in dynamic_vars]
     static = True
 
     hparams = Namespace(
@@ -50,7 +58,7 @@ if __name__ == "__main__":
             "batch_size": 1,
             "include_pred_month": True,
             "pred_months": None,
-            "ignore_vars": ignore_vars,
+            "ignore_vars": always_ignore_vars,
             "include_monthly_aggs": False,
             "surrounding_pixels": None,
             "predict_delta": False,
