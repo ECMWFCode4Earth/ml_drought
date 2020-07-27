@@ -22,9 +22,11 @@ from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
 from scripts.utils import get_data_path
 
 
-def process_vci_2018(subset_str: str = "kenya"):
+def process_vci(subset_str: str = "kenya"):
 
     processor = VHIPreprocessor(get_data_path(), "VCI")
+    regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
+    assert regrid_path.exists(), f"{regrid_path} not available"
 
     processor.preprocess(subset_str="kenya", resample_time="M", upsampling=False)
 
@@ -153,8 +155,9 @@ def preprocess_asal_mask():
 def preprocess_era5(subset_str: str = "kenya"):
     data_path = get_data_path()
 
-    regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
-    assert regrid_path.exists(), f"{regrid_path} not available"
+    # regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
+    # assert regrid_path.exists(), f"{regrid_path} not available"
+    regrid_path = None
 
     processor = ERA5MonthlyMeanPreprocessor(data_path)
     processor.preprocess(subset_str=subset_str, regrid=regrid_path)
@@ -185,16 +188,16 @@ def preprocess_boku_ndvi(subset_str: str = "kenya"):
 
 if __name__ == "__main__":
     subset_str = "india"
-    # process_vci_2018(subset_str=subset_str)
+    preprocess_era5(subset_str=subset_str)
+    # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
     # process_era5POS_2018(subset_str=subset_str)
     # process_gleam(subset_str=subset_str)
     # process_esa_cci_landcover(subset_str=subset_str)
     # preprocess_srtm(subset_str=subset_str)
-    # preprocess_era5(subset_str=subset_str)
     # preprocess_kenya_boundaries(selection="level_1")
     # preprocess_kenya_boundaries(selection="level_2")
     # preprocess_kenya_boundaries(selection="level_3")
     # preprocess_era5_hourly(subset_str=subset_str)
-    preprocess_boku_ndvi(subset_str=subset_str)
+    # preprocess_boku_ndvi(subset_str=subset_str)
     # preprocess_asal_mask(subset_str=subset_str)
