@@ -103,7 +103,13 @@ def export_chirps():
 def export_era5POS():
     exporter = ERA5ExporterPOS(get_data_path())
 
-    exporter.export(variable="precipitation_amount_1hour_Accumulation")
+    variables = [
+        "air_temperature_at_2_metres",
+        "precipitation_amount_1hour_Accumulation",
+    ]
+
+    for variable in variables:
+        exporter.export(variable=variable)
 
 
 def export_gleam():
