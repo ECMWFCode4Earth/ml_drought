@@ -99,6 +99,8 @@ class VHIPreprocessor(BasePreProcessor):
         # TODO: change to pathlib.Path objects
         new_ds.to_netcdf(f"{output_dir}/{filename}")
 
+        assert False
+
         print(f'** Done for VHI {netcdf_filepath.split("/")[-1]} **')
 
         return Path(f"{output_dir}/{filename}")
