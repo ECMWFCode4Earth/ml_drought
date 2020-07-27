@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import Optional, Dict, List, cast
+from typing import Optional, Dict, List, cast, Any
 import warnings
-import multiprocessing.pool as Pool
+import multiprocessing
 import itertools
 
 from .cds import CDSExporter
@@ -115,7 +115,7 @@ class ERA5LandExporter(CDSExporter):
         output_paths: List,
         show_api_request: bool = True,
         n_parallel_requests: int = 1,
-        pool: Optional[Pool] = None,
+        pool: Optional[Any] = None,  # multiprocessing
     ) -> List:
         if n_parallel_requests > 1:  # Run in parallel
             assert pool is not None, (
@@ -187,7 +187,7 @@ class ERA5LandExporter(CDSExporter):
         if n_parallel_requests < 1:
             n_parallel_requests = 1
 
-        p: Optional[Pool]
+        p: Optional[Any]  # multiprocessing.Pool
         if n_parallel_requests > 1:  # Run in parallel
             p = multiprocessing.Pool(int(n_parallel_requests))
         else:
