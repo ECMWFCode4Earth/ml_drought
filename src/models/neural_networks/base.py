@@ -8,7 +8,8 @@ import xarray as xr
 import torch
 from torch.nn import functional as F
 
-import shap
+# import shap
+shap = None
 
 from typing import cast, Dict, List, Optional, Tuple, Union
 
@@ -36,6 +37,7 @@ class NNBase(ModelBase):
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = True,
+        explain: bool = False,
     ) -> None:
         super().__init__(
             data_folder=data_folder,
@@ -62,7 +64,11 @@ class NNBase(ModelBase):
             self.device = "cpu"
         torch.manual_seed(42)
 
-        self.explainer: Optional[shap.DeepExplainer] = None
+        if explain:
+            global shap
+            if shap is None:
+                import shap
+            self.explainer: Optional[shap.DeepExplainer] = None
 
     def to(self, device: str = "cpu"):
         # move the model onto the right device

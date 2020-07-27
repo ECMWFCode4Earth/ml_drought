@@ -5,7 +5,8 @@ from sklearn.metrics import mean_squared_error
 import pickle
 import xarray as xr
 
-import shap
+# import shap
+shap = None
 
 from typing import cast, Dict, List, Tuple, Optional, Union
 
@@ -35,6 +36,7 @@ class LinearRegression(ModelBase):
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = True,
+        explain: bool = False,
     ) -> None:
         super().__init__(
             data_folder,
@@ -53,8 +55,11 @@ class LinearRegression(ModelBase):
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
         )
-
-        self.explainer: Optional[shap.LinearExplainer] = None
+        if explain:
+            global shap
+            if shap is None:
+                import shap
+            self.explainer: Optional[shap.DeepExplainer] = None
 
     def train(
         self,
