@@ -189,6 +189,8 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         # get the filepaths for all of the downloaded data
         nc_files = self.get_filepaths()
 
+        assert nc_files != [], f"No files found for {self.dataset}. Have you run the ERA5 Exporter?"
+
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
 
