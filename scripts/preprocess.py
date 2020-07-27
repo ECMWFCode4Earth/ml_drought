@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from typing import Optional
 
 sys.path.append("..")
 from src.preprocess import (
@@ -58,7 +59,7 @@ def process_era5POS_2018(subset_str: str = "kenya"):
     )
 
 
-def process_era5_land(variable: str, subset_str: str = "kenya"):
+def process_era5_land(variable: Optional[str] = None, subset_str: str = "kenya"):
     data_path = get_data_path()
 
     variables = [d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()]
