@@ -62,10 +62,16 @@ def process_era5POS_2018(subset_str: str = "kenya"):
 def process_era5_land(variable: Optional[str] = None, subset_str: str = "kenya"):
     data_path = get_data_path()
 
-    variables = [d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()]
-    assert (
-        variables != []
-    ), f"Expecting to find some variables in: {(data_path / 'raw/reanalysis-era5-land')}"
+    if variable is None:
+        variables = [d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()]
+        assert (
+            variables != []
+        ), f"Expecting to find some variables in: {(data_path / 'raw/reanalysis-era5-land')}"
+    else:
+        assert variable in [
+            d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()
+        ], f"Expect to find {variable} in {(data_path / 'raw/reanalysis-era5-land')}"
+        variables = [variable]
 
     # regrid_path = data_path / "interim/chirps_preprocessed/chirps_kenya.nc"
     # assert regrid_path.exists(), f"{regrid_path} not available"
