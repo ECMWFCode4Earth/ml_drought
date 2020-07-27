@@ -61,19 +61,25 @@ def process_era5POS_2018(subset_str: str = "kenya"):
 def process_era5_land(variable: str, subset_str: str = "kenya"):
     data_path = get_data_path()
 
+    variables = [d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()]
+    assert (
+        variables != []
+    ), f"Expecting to find some variables in: {(data_path / 'raw/reanalysis-era5-land')}"
+
     # regrid_path = data_path / "interim/chirps_preprocessed/chirps_kenya.nc"
     # assert regrid_path.exists(), f"{regrid_path} not available"
     regrid_path = None
 
     processor = ERA5LandPreprocessor(data_path)
 
-    processor.preprocess(
-        subset_str=subset_str,
-        regrid=None,
-        resample_time="M",
-        upsampling=False,
-        variable=variable,
-    )
+    for variable in variables:
+        processor.preprocess(
+            subset_str=subset_str,
+            regrid=None,
+            resample_time="M",
+            upsampling=False,
+            variable=variable,
+        )
 
 
 def process_gleam(subset_str: str = "kenya"):
@@ -182,7 +188,9 @@ def preprocess_boku_ndvi(subset_str: str = "kenya"):
     regrid_path = data_path / "interim/VCI_preprocessed/data_kenya.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
 
-    processor.preprocess(subset_str=subset_str, resample_time="W-MON", regrid=regrid_path)
+    processor.preprocess(
+        subset_str=subset_str, resample_time="W-MON", regrid=regrid_path
+    )
 
 
 if __name__ == "__main__":

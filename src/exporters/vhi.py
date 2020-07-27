@@ -198,10 +198,18 @@ class VHIExporter(BaseExporter):
         # TODO: check that vhi files don't already exist
         if check_exists:
             vhi_files = np.array(sorted(vhi_files))
-            years: List[str] = [_parse_time_from_filename(vhi_file)[0] for vhi_file in vhi_files]
-            exists_bool: List[bool] = [(self.output_folder / years[ix] / filename).exists() for ix, filename in enumerate(vhi_files)]
+            years: List[str] = [
+                _parse_time_from_filename(vhi_file)[0] for vhi_file in vhi_files
+            ]
+            exists_bool: List[bool] = [
+                (self.output_folder / years[ix] / filename).exists()
+                for ix, filename in enumerate(vhi_files)
+            ]
             if sum(exists_bool) > 0:
-                print(f"{sum(exists_bool)} VHI Files already downloaded. Skipping:", vhi_files[exists_bool])
+                print(
+                    f"{sum(exists_bool)} VHI Files already downloaded. Skipping:",
+                    vhi_files[exists_bool],
+                )
 
             # convert back to a list and drop the already existing files
             vhi_files = list(vhi_files[~np.array(exists_bool)])

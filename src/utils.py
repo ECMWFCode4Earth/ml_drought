@@ -49,7 +49,7 @@ def get_india() -> Region:
     bbox = min Longitude , min Latitude , max Longitude , max Latitude
     67.3136031628,5.6447074785,97.6502883434,35.9374500152
     """
-    return Region(name='india', lonmin=67.3, lonmax=97.7, latmin=5.6, latmax=36)
+    return Region(name="india", lonmin=67.3, lonmax=97.7, latmin=5.6, latmax=36)
 
 
 def minus_months(
