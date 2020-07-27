@@ -24,7 +24,7 @@ from scripts.utils import get_data_path
 
 
 def process_vci(subset_str: str = "kenya"):
-
+    data_path = get_data_path()
     processor = VHIPreprocessor(get_data_path(), "VCI")
     regrid_path = (
         data_path
