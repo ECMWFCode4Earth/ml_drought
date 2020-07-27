@@ -59,12 +59,11 @@ def process_era5POS_2018(subset_str: str = "kenya"):
 
 
 def process_era5_land(variable: str, subset_str: str = "kenya"):
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
-    regrid_path = data_path / "interim/chirps_preprocessed/chirps_kenya.nc"
-    assert regrid_path.exists(), f"{regrid_path} not available"
+    data_path = get_data_path()
+
+    # regrid_path = data_path / "interim/chirps_preprocessed/chirps_kenya.nc"
+    # assert regrid_path.exists(), f"{regrid_path} not available"
+    regrid_path = None
 
     processor = ERA5LandPreprocessor(data_path)
 
@@ -188,7 +187,8 @@ def preprocess_boku_ndvi(subset_str: str = "kenya"):
 
 if __name__ == "__main__":
     subset_str = "india"
-    preprocess_era5(subset_str=subset_str)
+    # preprocess_era5(subset_str=subset_str)
+    process_era5_land(subset_str=subset_str)
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
     # process_era5POS_2018(subset_str=subset_str)
