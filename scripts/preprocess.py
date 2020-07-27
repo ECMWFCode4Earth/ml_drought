@@ -227,8 +227,8 @@ def preprocess_boku_ndvi(subset_str: str = "kenya"):
 if __name__ == "__main__":
     subset_str = "india"
     # preprocess_era5(subset_str=subset_str)
-    process_era5_land(subset_str=subset_str)
-    # process_vci(subset_str=subset_str)
+    # process_era5_land(subset_str=subset_str)
+    process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
     # process_era5POS_2018(subset_str=subset_str)
     # process_gleam(subset_str=subset_str)
