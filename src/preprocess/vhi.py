@@ -99,8 +99,6 @@ class VHIPreprocessor(BasePreProcessor):
         # TODO: change to pathlib.Path objects
         new_ds.to_netcdf(f"{output_dir}/{filename}")
 
-        assert False
-
         print(f'** Done for VHI {netcdf_filepath.split("/")[-1]} **')
 
         return Path(f"{output_dir}/{filename}")
@@ -187,8 +185,10 @@ class VHIPreprocessor(BasePreProcessor):
             self.save_errors(errors)
         else:
             for file in nc_files:
-                self._preprocess_wrapper(
-                    str(file), subset_str=subset_str, regrid=regrid
+                output_dir = self.interim.as_posix()
+                self._preprocess(
+                    str(file), subset_str=subset_str, regrid=regrid,
+                    output_dir=output_dir
                 )
 
         self.merge_files(
