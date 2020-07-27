@@ -76,6 +76,13 @@ docker run -it \
 ml_drought /bin/bash
 ```
 
+You will also need to create a .cdsapirc file with the following information:
+```bash
+url: https://cds.climate.copernicus.eu/api/v2
+key: <INSERT KEY HERE>
+verify: 1
+```
+
 ### Testing  <a name="testing"></a>
 
 This pipeline can be tested by running `pytest`. [flake8](http://flake8.pycqa.org) is used for linting.
