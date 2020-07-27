@@ -76,13 +76,13 @@ def export_era5_land(region_str="kenya"):
     exporter = ERA5LandExporter(get_data_path())
 
     variables = [
-        "total_precipitation",
+        # "total_precipitation",
         "2m_temperature",
         "evapotranspiration",
         "potential_evaporation",
         "volumetric_soil_water_layer_1",
-        "volumetric_soil_water_layer_2"
-        "volumetric_soil_water_layer_3"
+        "volumetric_soil_water_layer_2",
+        "volumetric_soil_water_layer_3",
         "volumetric_soil_water_layer_4",
     ]
     for variable in variables:
