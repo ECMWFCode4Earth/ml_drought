@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import numpy as np
 from typing import Optional, Union, List
 
 sys.path.append("..")
