@@ -206,10 +206,10 @@ class VHIExporter(BaseExporter):
                 for ix, filename in enumerate(vhi_files)
             ]
             if sum(exists_bool) > 0:
-                print(
+                print(  # type: ignore
                     f"{sum(exists_bool)} VHI Files already downloaded. Skipping:",
-                    vhi_files[exists_bool],
-                )
+                    vhi_files[exists_bool]  # type: ignore
+                )  # type: ignore
 
             # convert back to a list and drop the already existing files
             vhi_files = list(vhi_files[~np.array(exists_bool)])

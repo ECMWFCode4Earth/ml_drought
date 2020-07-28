@@ -99,7 +99,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 
         return outfiles
 
-    def merge_files(  #  type: ignore
+    def merge_files(  # type: ignore
         self,
         subset_str: Optional[str] = "kenya",
         resample_time: Optional[str] = "M",
@@ -220,13 +220,13 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
     dataset = "reanalysis-era5-single-levels"
 
-    def merge_files(  #  type: ignore
+    def merge_files(  # type: ignore
         self,
         subset_str: Optional[str] = "kenya",
         resample_time: Optional[str] = "W-MON",
         upsampling: bool = False,
         filename: Optional[str] = None,
-    ) -> Tuple[Optional[Path], ...]:  #  type: ignore
+    ) -> Tuple[Optional[Path], ...]:  # type: ignore
 
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
@@ -272,7 +272,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
             # ds_dyn.to_netcdf(out_dyn)
             # print(f"\n**** {out_dyn} Created! ****\n")
         else:
-            out_dyn = None  #  type: ignore
+            out_dyn = None  # type: ignore
 
         # then, static
         static_filepaths = self.get_filepaths("interim", filter_type="static")
@@ -300,6 +300,6 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
             ds_stat_new.to_netcdf(out_static)
             print(f"\n**** {out_static} Created! ****\n")
         else:
-            out_static = None
+            out_static = None  # type: ignore
 
         return out_dyn, out_static  # type: ignore
