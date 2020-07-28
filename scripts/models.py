@@ -59,6 +59,7 @@ def linear_nn(
     surrounding_pixels=None,
     ignore_vars=None,
     pretrained=False,
+    static=None,
 ):
     predictor = LinearNetwork(
         layer_sizes=[100],
@@ -67,6 +68,7 @@ def linear_nn(
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
         ignore_vars=ignore_vars,
+        static=static,
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
@@ -81,6 +83,7 @@ def rnn(
     surrounding_pixels=None,
     ignore_vars=None,
     pretrained=True,
+    static=None,
 ):
     predictor = RecurrentNetwork(
         hidden_size=128,
@@ -89,6 +92,7 @@ def rnn(
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
         ignore_vars=ignore_vars,
+        static=static,
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
@@ -103,8 +107,13 @@ def earnn(
     surrounding_pixels=None,
     pretrained=True,
     ignore_vars=None,
+    static="embeddings",
 ):
     data_path = get_data_path()
+
+    if static is None:
+        print("** Cannot fit EALSTM without spatial information **")
+        return
 
     if not pretrained:
         predictor = EARecurrentNetwork(
@@ -114,6 +123,7 @@ def earnn(
             include_pred_month=include_pred_month,
             surrounding_pixels=surrounding_pixels,
             ignore_vars=ignore_vars,
+            static=static,
         )
         predictor.train(num_epochs=50, early_stopping=5)
         predictor.evaluate(save_preds=True)
@@ -131,6 +141,6 @@ if __name__ == "__main__":
     ignore_vars = None
     persistence()
     # regression(ignore_vars=ignore_vars)
-    linear_nn(ignore_vars=ignore_vars)
-    rnn(ignore_vars=ignore_vars)
-    earnn(pretrained=True, ignore_vars=ignore_vars)
+    linear_nn(ignore_vars=ignore_vars, static="embeddings")
+    rnn(ignore_vars=ignore_vars, static="embeddings")
+    earnn(ignore_vars=ignore_vars, static="embeddings")
