@@ -141,6 +141,6 @@ if __name__ == "__main__":
     ignore_vars = None
     persistence()
     # regression(ignore_vars=ignore_vars)
-    # linear_nn(ignore_vars=ignore_vars, static="embeddings")
-    rnn(ignore_vars=ignore_vars, static="embeddings")
-    earnn(ignore_vars=ignore_vars, static="embeddings")
+    linear_nn(ignore_vars=ignore_vars, static=None)
+    rnn(ignore_vars=ignore_vars, static=None)
+    earnn(ignore_vars=ignore_vars, static=None)
