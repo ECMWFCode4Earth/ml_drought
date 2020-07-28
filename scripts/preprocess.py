@@ -237,7 +237,10 @@ if __name__ == "__main__":
     subset_str = "india"
     # preprocess_era5(subset_str=subset_str)
     process_era5_land(
-        subset_str=subset_str, variables=["evapotranspiration"]  #  total_precipitation 2m_temperature evapotranspiration
+        subset_str=subset_str,
+        variables=[
+            "evapotranspiration"
+        ],  #  total_precipitation 2m_temperature evapotranspiration
     )
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)

@@ -19,11 +19,7 @@ def persistence(experiment="one_month_forecast",):
     data_path = get_data_path()
     spatial_mask = data_path / "interim/boundaries_preprocessed/kenya_asal_mask.nc"
     spatial_mask = None
-    predictor = Persistence(
-        data_path,
-        experiment=experiment,
-        spatial_mask=spatial_mask,
-    )
+    predictor = Persistence(data_path, experiment=experiment, spatial_mask=spatial_mask)
     predictor.evaluate(save_preds=True)
 
 
@@ -50,7 +46,7 @@ def regression(
     predictor.evaluate(save_preds=True)
 
     # mostly to test it works
-    predictor.explain(save_shap_values=True)
+    # predictor.explain(save_shap_values=True)
 
 
 def linear_nn(
@@ -74,7 +70,7 @@ def linear_nn(
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
-    _ = predictor.explain(save_shap_values=True)
+    # _ = predictor.explain(save_shap_values=True)
 
 
 def rnn(
@@ -98,7 +94,7 @@ def rnn(
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
-    _ = predictor.explain(save_shap_values=True)
+    # _ = predictor.explain(save_shap_values=True)
 
 
 def earnn(
@@ -141,6 +137,6 @@ if __name__ == "__main__":
     ignore_vars = None
     persistence()
     # regression(ignore_vars=ignore_vars)
-    linear_nn(ignore_vars=ignore_vars, static=None)
+    # linear_nn(ignore_vars=ignore_vars, static=None)
     rnn(ignore_vars=ignore_vars, static=None)
     earnn(ignore_vars=ignore_vars, static=None)
