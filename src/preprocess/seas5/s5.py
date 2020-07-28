@@ -141,8 +141,7 @@ class S5Preprocessor(BasePreProcessor):
             # regrid each variable individually
             all_vars = []
             for var in vars:
-                if n_processes > 1:
-                    pool = multiprocessing.Pool(processes=n_processes)
+                if self.n_processes > 1:
                     # if parallel need to recreate new file each time
                     d_ = self.regrid(
                         ds[var].to_dataset(name=var),
