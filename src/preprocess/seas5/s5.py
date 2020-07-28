@@ -24,7 +24,6 @@ class S5Preprocessor(BasePreProcessor):
         self.n_processes = max(n_processes, 1)
         self.parallel = self.n_processes > 1
 
-
     def get_filepaths(  # type: ignore
         self, target_folder: Path, variable: str, grib: bool = True
     ) -> List[Path]:

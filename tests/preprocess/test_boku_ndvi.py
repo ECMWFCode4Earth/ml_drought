@@ -138,7 +138,7 @@ class TestBokuNDVIPreprocessor:
             lats.max() <= kenya.latmax
         ), "Latitudes not correctly subset"
 
-        assert out_data.VHI.values.shape[1:] == (20, 20)
+        assert out_data["boku_ndvi"].values.shape[1:] == (20, 20)
 
         assert (
             not processor.interim.exists()

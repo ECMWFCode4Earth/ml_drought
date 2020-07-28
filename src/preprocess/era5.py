@@ -163,7 +163,6 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         regrid: Optional[Path] = None,
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
-        # parallel: bool = False,
         n_processes: int = 1,
         cleanup: bool = True,
     ) -> None:
@@ -227,7 +226,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
         resample_time: Optional[str] = "W-MON",
         upsampling: bool = False,
         filename: Optional[str] = None,
-    ) -> Tuple[Path]:
+    ) -> Tuple[Optional[Path], ...]:
 
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
@@ -270,6 +269,8 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
 
             # ds_dyn.to_netcdf(out_dyn)
             # print(f"\n**** {out_dyn} Created! ****\n")
+        else:
+            out_dyn = None
 
         # then, static
         static_filepaths = self.get_filepaths("interim", filter_type="static")

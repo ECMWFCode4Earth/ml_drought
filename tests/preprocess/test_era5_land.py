@@ -96,7 +96,7 @@ class TestERA5LandPreprocessor:
 
         expected_out_path = (
             tmp_path / "interim/reanalysis-era5"
-            "-land_preprocessed/reanalysis-era5-land_kenya.nc"
+            "-land_preprocessed/2m_temperature_data_kenya.nc"
         )
         assert (
             expected_out_path.exists()
