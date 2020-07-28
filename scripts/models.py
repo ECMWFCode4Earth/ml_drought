@@ -16,10 +16,9 @@ from scripts.utils import get_data_path
 
 
 def persistence(experiment="one_month_forecast",):
-
+    data_path = get_data_path()
     spatial_mask = data_path / "interim/boundaries_preprocessed/kenya_asal_mask.nc"
     spatial_mask = None
-    data_path = get_data_path()
     predictor = Persistence(
         data_path,
         experiment=experiment,
@@ -34,10 +33,10 @@ def regression(
     surrounding_pixels=None,
     ignore_vars=None,
 ):
+    data_path = get_data_path()
     spatial_mask = data_path / "interim/boundaries_preprocessed/kenya_asal_mask.nc"
     spatial_mask = None
 
-    data_path = get_data_path()
     predictor = LinearRegression(
         data_path,
         experiment=experiment,
