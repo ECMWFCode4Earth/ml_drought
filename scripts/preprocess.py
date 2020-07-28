@@ -32,7 +32,12 @@ def process_vci(subset_str: str = "kenya"):
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
-    processor.preprocess(subset_str=subset_str, resample_time="M", upsampling=False)
+    processor.preprocess(
+        subset_str=subset_str,
+        resample_time="M",
+        upsampling=False,
+        regrid=regrid_path
+    )
 
 
 def process_precip_2018(subset_str: str = "kenya"):
