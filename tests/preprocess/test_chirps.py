@@ -87,7 +87,7 @@ class TestCHIRPSPreprocessor:
         regrid_dataset.to_netcdf(regrid_path)
 
         processor = CHIRPSPreprocessor(tmp_path)
-        processor.preprocess(subset_str="kenya", regrid=regrid_path, parallel=False)
+        processor.preprocess(subset_str="kenya", regrid=regrid_path, n_processes=1)
 
         expected_out_path = tmp_path / "interim/chirps_preprocessed/data_kenya.nc"
         assert (
@@ -140,7 +140,7 @@ class TestCHIRPSPreprocessor:
 
         # build the Preprocessor object and subset with a different subset_str
         processor = CHIRPSPreprocessor(tmp_path)
-        processor.preprocess(subset_str="ethiopia", regrid=regrid_path, parallel=False)
+        processor.preprocess(subset_str="ethiopia", regrid=regrid_path, n_processes=1)
 
         expected_out_path = tmp_path / "interim/chirps_preprocessed/data_ethiopia.nc"
         assert (

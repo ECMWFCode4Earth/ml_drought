@@ -161,7 +161,8 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         regrid: Optional[Path] = None,
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
-        parallel: bool = False,
+        # parallel: bool = False,
+        n_processes: int = 1,
         cleanup: bool = True,
     ) -> None:
         """ Preprocess all of the era5 POS .nc files to produce
@@ -179,8 +180,8 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         upsampling: bool = False
             If true, tells the class the time-sampling will be upsampling. In this case,
             nearest instead of mean is used for the resampling
-        parallel: bool = True
-            If true, run the preprocessing in parallel
+        n_processes: int = 1
+            If > 1, run the preprocessing in parallel with n_processes
         cleanup: bool = True
             If true, delete interim files created by the class
         """
@@ -196,8 +197,9 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
 
-        if parallel:
-            pool = multiprocessing.Pool(processes=100)
+        n_processes = max(n_processes, 1)
+        if n_processes > 1:
+            pool = multiprocessing.Pool(processes=n_processes)
             outputs = pool.map(
                 partial(self._preprocess_single, subset_str=subset_str, regrid=regrid),
                 nc_files,

@@ -133,7 +133,7 @@ class TestPlanetOSPreprocessor:
         regrid_path = tmp_path / "regridder.nc"
         regrid_dataset.to_netcdf(regrid_path)
 
-        processor.preprocess(subset_str="kenya", regrid=regrid_path, parallel=False)
+        processor.preprocess(subset_str="kenya", regrid=regrid_path, n_processes=1)
 
         expected_out_path = (
             tmp_path / f"interim/{basename}" "_preprocessed/data_kenya.nc"
