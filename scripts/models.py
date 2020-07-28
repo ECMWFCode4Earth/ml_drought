@@ -124,9 +124,10 @@ def earnn(
 
 
 if __name__ == "__main__":
-    ignore_vars = ["VCI", "p84.162", "sp", "tp", "VCI1M"]
-    persistence(ignore_vars=ignore_vars)
-    regression(ignore_vars=ignore_vars)
+    # ignore_vars = ["VCI", "p84.162", "sp", "tp", "VCI1M"]
+    ignore_vars = None
+    persistence()
+    # regression(ignore_vars=ignore_vars)
     linear_nn(ignore_vars=ignore_vars)
     rnn(ignore_vars=ignore_vars)
     earnn(pretrained=True, ignore_vars=ignore_vars)
