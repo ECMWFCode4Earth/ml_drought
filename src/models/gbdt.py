@@ -123,7 +123,7 @@ class GBDT(ModelBase):
             }
             fit_inputs.update(fit_val_inputs)
 
-        self.model.fit(**fit_inputs)
+        self.model.fit(**fit_inputs)  # type: ignore
 
     def explain(
         self, x: Optional[TrainData] = None, save_shap_values: bool = True

@@ -33,10 +33,7 @@ def process_vci(subset_str: str = "kenya"):
     assert regrid_path.exists(), f"{regrid_path} not available"
 
     processor.preprocess(
-        subset_str=subset_str,
-        resample_time="M",
-        upsampling=False,
-        regrid=regrid_path
+        subset_str=subset_str, resample_time="M", upsampling=False, regrid=regrid_path
     )
 
 
@@ -72,8 +69,7 @@ def process_era5POS_2018(subset_str: str = "kenya"):
 
 
 def process_era5_land(
-    variables: Optional[Union[List, str]] = None,
-    subset_str: str = "kenya"
+    variables: Optional[Union[List, str]] = None, subset_str: str = "kenya"
 ):
     data_path = get_data_path()
 
@@ -241,8 +237,7 @@ if __name__ == "__main__":
     subset_str = "india"
     # preprocess_era5(subset_str=subset_str)
     process_era5_land(
-        subset_str=subset_str,
-        variables=["2m_temperature"],  # "total_precipitation",
+        subset_str=subset_str, variables=["2m_temperature"]  #  "total_precipitation",
     )
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)

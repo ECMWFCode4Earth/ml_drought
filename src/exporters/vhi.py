@@ -198,11 +198,11 @@ class VHIExporter(BaseExporter):
         # TODO: check that vhi files don't already exist
         if check_exists:
             vhi_files = np.array(sorted(vhi_files))
-            years: List[str] = [
+            years_of_files: List[str] = [
                 _parse_time_from_filename(vhi_file)[0] for vhi_file in vhi_files
             ]
-            exists_bool: List[bool] = [
-                (self.output_folder / years[ix] / filename).exists()
+            exists_bool = [
+                (self.output_folder / years_of_files[ix] / filename).exists()
                 for ix, filename in enumerate(vhi_files)
             ]
             if sum(exists_bool) > 0:

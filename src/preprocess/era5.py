@@ -99,13 +99,13 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 
         return outfiles
 
-    def merge_files(
+    def merge_files(  #  type: ignore
         self,
         subset_str: Optional[str] = "kenya",
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
         filename: Optional[str] = None,
-    ) -> Tuple[Path]:  #  type: ignore
+    ) -> Tuple[Optional[Path], ...]:
 
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
@@ -148,7 +148,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
                 filename = (
                     f'data{"_" + subset_str if subset_str is not None else ""}.nc'
                 )
-            out_static = output_folder / filename
+            out_static: Optional[Path] = output_folder / filename
 
             ds_stat_new.to_netcdf(out_static)
             print(f"\n**** {out_static} Created! ****\n")
@@ -220,13 +220,13 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
     dataset = "reanalysis-era5-single-levels"
 
-    def merge_files(
+    def merge_files(  #  type: ignore
         self,
         subset_str: Optional[str] = "kenya",
         resample_time: Optional[str] = "W-MON",
         upsampling: bool = False,
         filename: Optional[str] = None,
-    ) -> Tuple[Optional[Path], ...]:
+    ) -> Tuple[Optional[Path], ...]:  #  type: ignore
 
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
@@ -243,6 +243,8 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
                     for p in dynamic_filepaths
                     if variable == re.sub(_country_str, "", p.name[8:])
                 ]
+                variable = "_".join(variable.split("_")[-2:])
+                variable = f"hourly_{variable}"
                 _ds_dyn = xr.open_mfdataset(_dyn_fpaths)
                 # ds_dyn = xr.open_mfdataset(dynamic_filepaths)
 
@@ -270,7 +272,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
             # ds_dyn.to_netcdf(out_dyn)
             # print(f"\n**** {out_dyn} Created! ****\n")
         else:
-            out_dyn = None
+            out_dyn = None  #  type: ignore
 
         # then, static
         static_filepaths = self.get_filepaths("interim", filter_type="static")

@@ -10,6 +10,7 @@ from typing import cast, Dict, List, Tuple, Optional, Union
 from .base import ModelBase
 from .utils import chunk_array
 from .data import DataLoader, train_val_mask, TrainData
+
 shap = None
 
 
@@ -57,7 +58,7 @@ class LinearRegression(ModelBase):
             global shap
             if shap is None:
                 import shap
-            self.explainer: Optional[shap.DeepExplainer] = None
+            self.explainer: Optional[shap.DeepExplainer] = None  # type: ignore
 
     def train(
         self,
@@ -159,7 +160,7 @@ class LinearRegression(ModelBase):
             x = val.x
 
         reshaped_x = self._concatenate_data(x)
-        explanations = self.explainer.shap_values(reshaped_x)
+        explanations = self.explainer.shap_values(reshaped_x)  # type: ignore
 
         if save_shap_values:
             analysis_folder = self.model_dir / "analysis"

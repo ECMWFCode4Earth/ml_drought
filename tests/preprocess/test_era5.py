@@ -134,10 +134,16 @@ class TestPlanetOSPreprocessor:
         regrid_dataset.to_netcdf(regrid_path)
 
         processor.preprocess(subset_str="kenya", regrid=regrid_path, n_processes=1)
+        if granularity == "monthly":
+            expected_out_path = (
+                tmp_path / f"interim/{basename}" "_preprocessed/data_kenya.nc"
+            )
+        else:
+            expected_out_path = (
+                tmp_path / f"interim/{basename}"
+                "_preprocessed/hourly_2m_temperature_data_kenya.nc"
+            )
 
-        expected_out_path = (
-            tmp_path / f"interim/{basename}" "_preprocessed/data_kenya.nc"
-        )
         assert (
             expected_out_path.exists()
         ), f"Expected processed file to be saved to {expected_out_path}"

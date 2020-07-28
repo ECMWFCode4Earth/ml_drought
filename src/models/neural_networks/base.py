@@ -13,7 +13,7 @@ from typing import cast, Dict, List, Optional, Tuple, Union
 from ..base import ModelBase
 from ..utils import chunk_array, _to_xarray_dataset
 from ..data import DataLoader, train_val_mask, TrainData, idx_to_input
-# import shap
+
 shap = None
 
 
@@ -67,7 +67,7 @@ class NNBase(ModelBase):
             global shap
             if shap is None:
                 import shap
-            self.explainer: Optional[shap.DeepExplainer] = None
+            self.explainer: Optional[shap.DeepExplainer] = None  # type: ignore
 
     def to(self, device: str = "cpu"):
         # move the model onto the right device
@@ -448,7 +448,7 @@ class NNBase(ModelBase):
         num_inputs: int = 10,
     ) -> Dict[str, np.ndarray]:
 
-        if self.explainer is None:
+        if self.explainer is None:  # type: ignore
             background_samples = self._get_background(sample_size=background_size)
             self.explainer: shap.DeepExplainer = shap.DeepExplainer(  # type: ignore
                 self.model, background_samples
@@ -483,7 +483,7 @@ class NNBase(ModelBase):
             else:
                 output_tensors.append(torch.zeros(num_inputs, 1))
 
-        explain_arrays = self.explainer.shap_values(output_tensors)
+        explain_arrays = self.explainer.shap_values(output_tensors)  # type: ignore
 
         return {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)}
 

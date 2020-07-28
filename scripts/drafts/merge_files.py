@@ -1,5 +1,6 @@
 import xarray as xr
 import sys
+
 sys.path.append("../..")
 
 from scripts.utils import get_data_path
@@ -17,6 +18,4 @@ if __name__ == "__main__":
     variable = str(paths[0].name).split("01_12_")[-1].replace(f"{subset_str}.nc", "")
 
     filename = f'{variable}_data{"_" + subset_str if subset_str is not None else ""}.nc'
-    processor.merge_files(
-        subset_str=subset_str, resample_time="M", filename=filename
-    )
+    processor.merge_files(subset_str=subset_str, resample_time="M", filename=filename)
