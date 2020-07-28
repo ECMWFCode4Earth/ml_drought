@@ -33,7 +33,7 @@ data/features/*
 data/models/*
 Code
 scripts/variables*.txt
-
+data*/*
 switch_data_dirs.sh
 
 # pytest coverage files
