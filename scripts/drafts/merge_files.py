@@ -12,7 +12,7 @@ if __name__ == "__main__":
     processor = ERA5LandPreprocessor(data_dir)
 
     # get variable and subset_str
-    paths = (data_dir / "interim/reanalysis-era5-land_interim").glob("*.nc")
+    paths = list((data_dir / "interim/reanalysis-era5-land_interim").glob("*.nc"))
     subset_str = str(paths[0].name).split("_")[-1].replace(".nc", "")
     variable = str(paths[0].name).split("01_12_")[-1].replace(f"{subset_str}.nc", "")
 
