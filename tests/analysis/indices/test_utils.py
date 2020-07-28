@@ -21,9 +21,9 @@ class TestIndicesUtils:
         cumsum3 = rolling_cumsum(ds, rolling_window=3)
         cumsum6 = rolling_cumsum(ds, rolling_window=6)
 
-        # assert start in 2nd month (CENTRED WINDOW)
+        # assert start in 3nd month (NON-CENTRED WINDOW)
         got = pd.to_datetime(cumsum3.isel(time=0).time.values)
-        expected = pd.to_datetime("1999-02-28")
+        expected = pd.to_datetime("1999-03-31")
         assert got == expected, (
             "Expected minimum time of Cumsum to be:"
             f"{expected} because centered window with size=3. Got: {got}"
@@ -31,7 +31,7 @@ class TestIndicesUtils:
 
         # assert start in 4th month
         got = pd.to_datetime(cumsum6.isel(time=0).time.values)
-        expected = pd.to_datetime("1999-04-30")
+        expected = pd.to_datetime("1999-06-30")
         assert got == expected, (
             "Expected minimum time of Cumsum to be:"
             f"{expected} because centered window with size=6. Got: {got}"
