@@ -68,19 +68,27 @@ def process_era5POS_2018(subset_str: str = "kenya"):
     )
 
 
-def process_era5_land(variable: Optional[str] = None, subset_str: str = "kenya"):
-    data_path = get_data_path()
+# def process_era5_land(
+# variables: Optional[Union[List, str]] = None, subset_str: str = "kenya"),
+variables=[""]
+#:
+    # data_path = get_data_path()
 
+    # Check all the provided variables exist
     if variable is None:
         variables = [d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()]
         assert (
             variables != []
         ), f"Expecting to find some variables in: {(data_path / 'raw/reanalysis-era5-land')}"
     else:
-        assert variable in [
-            d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()
-        ], f"Expect to find {variable} in {(data_path / 'raw/reanalysis-era5-land')}"
-        variables = [variable]
+        if isinstance(variables, str):
+            variables = [variables]
+            assert variables in [
+                d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()
+            ], f"Expect to find {variables} in {(data_path / 'raw/reanalysis-era5-land')}"
+        else:
+            assert all(np.isin(variables, [d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()])), (f"Expected to find {variables}")
+
 
     # regrid_path = data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
     # assert regrid_path.exists(), f"{regrid_path} not available"
@@ -227,8 +235,11 @@ def preprocess_boku_ndvi(subset_str: str = "kenya"):
 if __name__ == "__main__":
     subset_str = "india"
     # preprocess_era5(subset_str=subset_str)
-    # process_era5_land(subset_str=subset_str)
-    process_vci(subset_str=subset_str)
+    process_era5_land(
+        subset_str=subset_str,
+        variables=["total_precipitation", "2m_temperature", "evapotranspiration"]
+    )
+    # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
     # process_era5POS_2018(subset_str=subset_str)
     # process_gleam(subset_str=subset_str)
