@@ -72,7 +72,7 @@ def process_era5_land(
     data_path = get_data_path()
 
     # Check all the provided variables exist
-    if variable is None:
+    if variables is None:
         variables = [d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()]
         assert (
             variables != []
