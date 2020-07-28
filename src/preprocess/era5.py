@@ -152,6 +152,8 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 
             ds_stat_new.to_netcdf(out_static)
             print(f"\n**** {out_static} Created! ****\n")
+        else:
+            out_static = None
 
         return out_dyn, out_static  # type: ignore
 
@@ -294,5 +296,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
 
             ds_stat_new.to_netcdf(out_static)
             print(f"\n**** {out_static} Created! ****\n")
+        else:
+            out_static = None
 
         return out_dyn, out_static  # type: ignore
