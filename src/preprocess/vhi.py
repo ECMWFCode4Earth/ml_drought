@@ -188,13 +188,14 @@ class VHIPreprocessor(BasePreProcessor):
                 output_dir = self.interim.as_posix()
                 try:
                     self._preprocess(
-                        str(file), subset_str=subset_str, regrid=regrid,
-                        output_dir=output_dir
+                        str(file),
+                        subset_str=subset_str,
+                        regrid=regrid,
+                        output_dir=output_dir,
                     )
                 except OSError as e:
                     print(e)
                     print(f"{e} Error for {file}. Skipping")
-
 
         self.merge_files(
             subset_str=subset_str, resample_time=resample_time, upsampling=upsampling

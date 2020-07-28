@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union, List
 
 sys.path.append("..")
 from src.preprocess import (
@@ -27,8 +27,7 @@ def process_vci(subset_str: str = "kenya"):
     data_path = get_data_path()
     processor = VHIPreprocessor(get_data_path(), "VCI")
     regrid_path = (
-        data_path
-        / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -39,8 +38,7 @@ def process_precip_2018(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = (
-        data_path
-        / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -52,8 +50,7 @@ def process_precip_2018(subset_str: str = "kenya"):
 def process_era5POS_2018(subset_str: str = "kenya"):
     data_path = get_data_path()
     regrid_path = (
-        data_path
-        / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -68,11 +65,11 @@ def process_era5POS_2018(subset_str: str = "kenya"):
     )
 
 
-# def process_era5_land(
-# variables: Optional[Union[List, str]] = None, subset_str: str = "kenya"),
-variables=[""]
-#:
-    # data_path = get_data_path()
+def process_era5_land(
+    variables: Optional[Union[List, str]] = None,
+    subset_str: str = "kenya"
+):
+    data_path = get_data_path()
 
     # Check all the provided variables exist
     if variable is None:
@@ -87,8 +84,15 @@ variables=[""]
                 d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()
             ], f"Expect to find {variables} in {(data_path / 'raw/reanalysis-era5-land')}"
         else:
-            assert all(np.isin(variables, [d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()])), (f"Expected to find {variables}")
-
+            assert all(
+                np.isin(
+                    variables,
+                    [
+                        d.name
+                        for d in (data_path / "raw/reanalysis-era5-land").iterdir()
+                    ],
+                )
+            ), f"Expected to find {variables}"
 
     # regrid_path = data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
     # assert regrid_path.exists(), f"{regrid_path} not available"
@@ -110,8 +114,7 @@ def process_gleam(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = (
-        data_path
-        / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -138,8 +141,7 @@ def process_esa_cci_landcover(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = (
-        data_path
-        / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -151,8 +153,7 @@ def preprocess_srtm(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = (
-        data_path
-        / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -205,8 +206,7 @@ def preprocess_era5_hourly(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = (
-        data_path
-        / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -222,8 +222,7 @@ def preprocess_boku_ndvi(subset_str: str = "kenya"):
     processor = BokuNDVIPreprocessor(data_path)
 
     regrid_path = (
-        data_path
-        / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -237,7 +236,7 @@ if __name__ == "__main__":
     # preprocess_era5(subset_str=subset_str)
     process_era5_land(
         subset_str=subset_str,
-        variables=["total_precipitation", "2m_temperature", "evapotranspiration"]
+        variables=["total_precipitation", "2m_temperature", "evapotranspiration"],
     )
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
