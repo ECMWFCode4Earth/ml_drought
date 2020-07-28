@@ -5,14 +5,12 @@ from sklearn.metrics import mean_squared_error
 import pickle
 import xarray as xr
 
-# import shap
-shap = None
-
 from typing import cast, Dict, List, Tuple, Optional, Union
 
 from .base import ModelBase
 from .utils import chunk_array
 from .data import DataLoader, train_val_mask, TrainData
+shap = None
 
 
 class LinearRegression(ModelBase):

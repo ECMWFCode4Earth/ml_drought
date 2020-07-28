@@ -8,14 +8,13 @@ import xarray as xr
 import torch
 from torch.nn import functional as F
 
-# import shap
-shap = None
-
 from typing import cast, Dict, List, Optional, Tuple, Union
 
 from ..base import ModelBase
 from ..utils import chunk_array, _to_xarray_dataset
 from ..data import DataLoader, train_val_mask, TrainData, idx_to_input
+# import shap
+shap = None
 
 
 class NNBase(ModelBase):
