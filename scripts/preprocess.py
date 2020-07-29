@@ -245,7 +245,6 @@ if __name__ == "__main__":
     process_era5_land(
         subset_str=subset_str,
         variables=[
-            "evapotranspiration",
             "volumetric_soil_water_layer_1",
             "potential_evaporation",
         ],  #  total_precipitation 2m_temperature evapotranspiration
