@@ -72,7 +72,7 @@ def process_era5POS_2018(subset_str: str = "kenya"):
 def process_era5_land(
     variables: Optional[Union[List, str]] = None,
     subset_str: str = "kenya",
-    monmean: bool = True
+    monmean: bool = True,
 ):
     data_path = get_data_path()
 

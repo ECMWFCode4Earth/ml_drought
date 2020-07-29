@@ -2,7 +2,7 @@ import xarray as xr
 from pathlib import Path
 import numpy as np
 import sys
-from typing import (Tuple, List, Union, Dict)
+from typing import Tuple, List, Union, Dict
 
 sys.path.append("..")
 
@@ -14,7 +14,6 @@ from src.utils import get_ds_mask
 from src.models import load_model
 from src.models.neural_networks.base import NNBase
 from src.analysis import spatial_rmse, spatial_r2
-
 
 
 def run_administrative_region_analysis():
@@ -64,7 +63,9 @@ def run_landcover_region_analysis():
     print(analyzer.regional_mean_metrics)
 
 
-def read_all_data(data_dir: Path, experiment="one_month_forecast", static: bool = False) -> Tuple[xr.Dataset]:
+def read_all_data(
+    data_dir: Path, experiment="one_month_forecast", static: bool = False
+) -> Tuple[xr.Dataset]:
     X_train, y_train = read_train_data(data_dir, experiment=experiment)
     X_test, y_test = read_test_data(data_dir, experiment=experiment)
 
@@ -73,8 +74,10 @@ def read_all_data(data_dir: Path, experiment="one_month_forecast", static: bool 
     return (X_train, y_train, X_test, y_test)
 
 
-def read_all_available_pred_data(data_dir: Path, experiment: str = "one_month_forecast") -> List[xr.Dataset]:
-    model_dir = (data_dir / f"models/{experiment}")
+def read_all_available_pred_data(
+    data_dir: Path, experiment: str = "one_month_forecast"
+) -> List[xr.Dataset]:
+    model_dir = data_dir / f"models/{experiment}"
     models = np.array([d.name for d in model_dir.iterdir()])
 
     # drop the models that haven't written .nc files
@@ -84,16 +87,20 @@ def read_all_available_pred_data(data_dir: Path, experiment: str = "one_month_fo
     ]
     models = models[models_run_bool]
 
-    return {model: read_pred_data(model, data_dir, experiment=experiment)[-1] for model in models}
+    return {
+        model: read_pred_data(model, data_dir, experiment=experiment)[-1]
+        for model in models
+    }
 
 
-def load_nn(data_dir: Path, model_str: str, experiment: str = "one_month_forecast") -> NNBase:
+def load_nn(
+    data_dir: Path, model_str: str, experiment: str = "one_month_forecast"
+) -> NNBase:
     return load_model(data_dir / f"models/{experiment}/{model_str}/model.pt")
 
 
 def create_all_error_metrics(
-    predictions: Dict[str, xr.DataArray],
-    y_test: xr.DataArray
+    predictions: Dict[str, xr.DataArray], y_test: xr.DataArray
 ) -> Tuple[Dict[str, xr.DataArray]]:
     rmse_dict = {}
     r2_dict = {}
@@ -128,24 +135,19 @@ if __name__ == "__main__":
     data_dir = get_data_path()
     experiment = "one_month_forecast"
 
-    # ---------------------------------------- # 
-    # Read in the data # 
-    # ---------------------------------------- # 
+    # ---------------------------------------- #
+    # Read in the data #
+    # ---------------------------------------- #
     # read train/test data
     X_train, y_train, X_test, y_test = read_all_data(
-        data_dir,
-        static=False,
-        experiment=experiment,
+        data_dir, static=False, experiment=experiment
     )
     mask = get_ds_mask(X_train.VCI)
     test_da = y_test[list(y_test.data_vars)[0]]
 
     # read the predicted data
-    predictions = read_all_available_pred_data(
-        data_dir,
-        experiment=experiment,
-    )
-    # check that the shapes of all predictions are the same
+    predictions = read_all_available_pred_data(data_dir, experiment=experiment)
+    #  check that the shapes of all predictions are the same
     assert set([predictions[m].shape for m in predictions.keys()]).__len__() == 1
     preds = predictions[list(m for m in predictions.keys())[0]]
 
@@ -161,9 +163,9 @@ if __name__ == "__main__":
     # Calculate error metrics
     rmse_dict, r2_dict = create_all_error_metrics(predictions, test_da)
 
-    # ---------------------------------------- # 
-    # Make the plots # 
-    # ---------------------------------------- # 
+    # ---------------------------------------- #
+    # Make the plots #
+    # ---------------------------------------- #
     # 1. Spatial Plots of RMSE
     for m in models_str:
         fig, ax = plt.subplots()

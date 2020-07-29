@@ -180,7 +180,10 @@ class ERA5LandExporter(CDSExporter):
         output_files: List of pathlib.Paths
             paths to the downloaded data
         """
-        assert granularity in ["hourly", "monthly"], "Expect granularity to be in {hourly monthly}"
+        assert granularity in [
+            "hourly",
+            "monthly",
+        ], "Expect granularity to be in {hourly monthly}"
         if dataset is None:
             dataset = self.get_dataset(variable, granularity)
 
