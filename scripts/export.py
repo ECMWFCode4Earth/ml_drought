@@ -90,7 +90,8 @@ def export_era5_land(region_str="kenya"):
             variable=variable,
             break_up="yearly",
             region_str=region_str,
-            granularity="monthly"
+            granularity="monthly",
+            selection_request=dict(years=np.arange(2000, 2021))
         )
 
 
