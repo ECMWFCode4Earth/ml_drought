@@ -65,12 +65,20 @@ VALID_ERA5_LAND_VARS = [
 
 
 class ERA5LandExporter(CDSExporter):
-    dataset = "reanalysis-era5-land"
-    granularity = "hourly"
+    dataset = "reanalysis-era5-land-monthly-means"
+    granularity = "monthly"
 
     @staticmethod
     def print_valid_vars():
         print(VALID_ERA5_LAND_VARS)
+
+    @staticmethod
+    def get_dataset(variable: str, granularity: str = "hourly") -> str:
+        dataset = f"reanalysis-era5-land"
+        if granularity == "monthly":
+            dataset = f"{dataset}-monthly-means"
+
+        return dataset
 
     def create_selection_request(
         self,
@@ -88,8 +96,7 @@ class ERA5LandExporter(CDSExporter):
         for key, val in self.get_default_era5_times(granularity, land=True).items():
             processed_selection_request[key] = val
 
-        # by default, we investigate Kenya
-        # kenya_region = get_kenya()
+        # AOI (area of interest)
         region = region_lookup[region_str]
         processed_selection_request["area"] = self.create_area(region)
 
@@ -144,6 +151,8 @@ class ERA5LandExporter(CDSExporter):
         break_up: Optional[str] = "yearly",
         n_parallel_requests: int = 1,
         region_str: str = "kenya",
+        dataset: Optional[str] = None,
+        granularity: str = "monthly",
     ) -> List[Path]:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
@@ -171,8 +180,9 @@ class ERA5LandExporter(CDSExporter):
         output_files: List of pathlib.Paths
             paths to the downloaded data
         """
-        dataset = self.dataset
-        granularity = self.granularity
+        assert granularity in ["hourly", "monthly"], "Expect granularity to be in {hourly monthly}"
+        if dataset is None:
+            dataset = self.get_dataset(variable, granularity)
 
         if break_up is not None:
             assert break_up in ["yearly", "monthly"], (

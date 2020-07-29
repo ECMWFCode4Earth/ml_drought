@@ -3,7 +3,7 @@ import warnings
 import re
 from pprint import pprint
 import multiprocessing
-
+from datetime import datetime
 from typing import Dict, Optional, List, cast
 
 from .base import BaseExporter, Region, region_lookup
@@ -101,10 +101,10 @@ class CDSExporter(BaseExporter):
         days = ["{:02d}".format(day) for day in range(1, 31 + 1)]
         times = ["{:02d}:00".format(hour) for hour in range(24)]
 
-        if land:
-            years = [str(year) for year in range(2001, 2019 + 1)]
-        else:  # era5-land
-            years = [str(year) for year in range(1979, 2019 + 1)]
+        if land:  # era5 land
+            years = [str(year) for year in range(1981, datetime.now().year + 1)]
+        else:  # era5
+            years = [str(year) for year in range(1979, datetime.now().year + 1)]
 
         selection_dict = {"year": years, "month": months, "time": times}
         if granularity == "hourly":
