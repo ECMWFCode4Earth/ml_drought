@@ -17,6 +17,7 @@ from src.preprocess import (
     BokuNDVIPreprocessor,
     KenyaASALMask,
     ERA5LandPreprocessor,
+    ERA5LandMonthlyMeansPreprocessor,
 )
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
@@ -69,7 +70,9 @@ def process_era5POS_2018(subset_str: str = "kenya"):
 
 
 def process_era5_land(
-    variables: Optional[Union[List, str]] = None, subset_str: str = "kenya"
+    variables: Optional[Union[List, str]] = None,
+    subset_str: str = "kenya",
+    monmean: bool = True
 ):
     data_path = get_data_path()
 
@@ -100,7 +103,10 @@ def process_era5_land(
     # assert regrid_path.exists(), f"{regrid_path} not available"
     regrid_path = None
 
-    processor = ERA5LandPreprocessor(data_path)
+    if monmean:
+        processor = ERA5LandMonthlyMeansPreprocessor(data_path)
+    else:
+        processor = ERA5LandPreprocessor(data_path)
 
     for variable in variables:
         processor.preprocess(
@@ -243,6 +249,7 @@ if __name__ == "__main__":
             "volumetric_soil_water_layer_1",
             "potential_evaporation",
         ],  #  total_precipitation 2m_temperature evapotranspiration
+        monmean=False,
     )
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
