@@ -13,8 +13,9 @@ dependencies:
   - matplotlib
   - numpy
   - tqdm
-  - pytest=4.5.0
-  - pytest-flake8=3.7.7
+  - flake8==3.7.9
+  - pytest-flake8==1.0.4
+  - pytest
   - pytest-cov
   - mypy=0.720
   - black
