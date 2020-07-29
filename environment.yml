@@ -15,7 +15,7 @@ dependencies:
   - tqdm
   - flake8==3.7.9
   - pytest-flake8==1.0.4
-  - pytest
+  - pytest == 5.4.3
   - pytest-cov
   - mypy=0.720
   - black
