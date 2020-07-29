@@ -74,7 +74,6 @@ def export_era5(region_str="kenya"):
 
 def export_era5_land(region_str="kenya"):
     exporter = ERA5LandExporter(get_data_path())
-    exporter.granularity = "monthly"
 
     variables = [
         "total_precipitation",
@@ -87,7 +86,12 @@ def export_era5_land(region_str="kenya"):
         # "volumetric_soil_water_layer_4",
     ]
     for variable in variables:
-        exporter.export(variable=variable, break_up="yearly", region_str=region_str)
+        exporter.export(
+            variable=variable,
+            break_up="yearly",
+            region_str=region_str,
+            granularity="monthly"
+        )
 
 
 def export_vhi():
