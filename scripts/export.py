@@ -74,9 +74,10 @@ def export_era5(region_str="kenya"):
 
 def export_era5_land(region_str="kenya"):
     exporter = ERA5LandExporter(get_data_path())
+    exporter.granularity = "monthly"
 
     variables = [
-        # "total_precipitation",
+        "total_precipitation",
         "2m_temperature",
         "evapotranspiration",
         "potential_evaporation",
