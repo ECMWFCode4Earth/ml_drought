@@ -170,9 +170,9 @@ def export_kenya_boundaries():
 
 if __name__ == "__main__":
     print(f"Writing data to: {get_data_path()}")
-    # export_era5_land(region_str="india")
+    export_era5_land(region_str="india")
     # export_era5(region_str="kenya")
-    export_vhi()
+    # export_vhi()
     # export_chirps()
     # export_era5POS()
     # export_gleam()
