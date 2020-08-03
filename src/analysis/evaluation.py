@@ -166,7 +166,13 @@ def read_pred_data(
     model: str, data_dir: Path = Path("data"), experiment: str = "one_month_forecast"
 ) -> Union[xr.Dataset, xr.DataArray]:
     model_pred_dir = data_dir / "models" / experiment / model
-    pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
+    # Open files
+    # pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
+    ncfiles = list(model_pred_dir.glob("*.nc"))
+    ds_list = [xr.open_dataset(f) for f in ncfiles]
+    pred_ds = xr.combine_by_coords(ds_list)
+
+    # set format
     pred_ds = pred_ds.sortby("time")
     pred_da = pred_ds.preds
     pred_da = pred_da.transpose("time", "lat", "lon")

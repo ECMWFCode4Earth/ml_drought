@@ -31,6 +31,7 @@ data/analysis/*
 data/interim/*
 data/features/*
 data/models/*
+data/gcloud_models
 Code
 scripts/variables*.txt
 data*/*
@@ -43,3 +44,5 @@ switch_data_dirs.sh
 .vscode
 # vscode options
 settings.json
+
+lightning_logs

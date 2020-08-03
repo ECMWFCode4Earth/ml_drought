@@ -1,9 +1,9 @@
 from pathlib import Path
 
 from typing import Optional
-from ..utils import Region, get_kenya
+from ..utils import Region, get_kenya, region_lookup
 
-__all__ = ["BaseExporter", "Region", "get_kenya"]
+__all__ = ["BaseExporter", "Region", "get_kenya", "region_lookup"]
 
 
 class BaseExporter:

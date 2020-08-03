@@ -99,13 +99,13 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 
         return outfiles
 
-    def merge_files(
+    def merge_files(  # type: ignore
         self,
         subset_str: Optional[str] = "kenya",
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
         filename: Optional[str] = None,
-    ) -> Tuple[Path]:  #  type: ignore
+    ) -> Tuple[Optional[Path], ...]:
 
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
@@ -148,10 +148,12 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
                 filename = (
                     f'data{"_" + subset_str if subset_str is not None else ""}.nc'
                 )
-            out_static = output_folder / filename
+            out_static: Optional[Path] = output_folder / filename
 
             ds_stat_new.to_netcdf(out_static)
             print(f"\n**** {out_static} Created! ****\n")
+        else:
+            out_static = None
 
         return out_dyn, out_static  # type: ignore
 
@@ -161,7 +163,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         regrid: Optional[Path] = None,
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
-        parallel: bool = False,
+        n_processes: int = 1,
         cleanup: bool = True,
     ) -> None:
         """ Preprocess all of the era5 POS .nc files to produce
@@ -179,8 +181,8 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         upsampling: bool = False
             If true, tells the class the time-sampling will be upsampling. In this case,
             nearest instead of mean is used for the resampling
-        parallel: bool = True
-            If true, run the preprocessing in parallel
+        n_processes: int = 1
+            If > 1, run the preprocessing in parallel with n_processes
         cleanup: bool = True
             If true, delete interim files created by the class
         """
@@ -189,11 +191,16 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         # get the filepaths for all of the downloaded data
         nc_files = self.get_filepaths()
 
+        assert (
+            nc_files != []
+        ), f"No files found for {self.dataset}. Have you run the ERA5 Exporter?"
+
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
 
-        if parallel:
-            pool = multiprocessing.Pool(processes=100)
+        n_processes = max(n_processes, 1)
+        if n_processes > 1:
+            pool = multiprocessing.Pool(processes=n_processes)
             outputs = pool.map(
                 partial(self._preprocess_single, subset_str=subset_str, regrid=regrid),
                 nc_files,
@@ -213,13 +220,13 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
     dataset = "reanalysis-era5-single-levels"
 
-    def merge_files(
+    def merge_files(  # type: ignore
         self,
         subset_str: Optional[str] = "kenya",
         resample_time: Optional[str] = "W-MON",
         upsampling: bool = False,
         filename: Optional[str] = None,
-    ) -> Tuple[Path]:
+    ) -> Tuple[Optional[Path], ...]:  # type: ignore
 
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
@@ -236,6 +243,8 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
                     for p in dynamic_filepaths
                     if variable == re.sub(_country_str, "", p.name[8:])
                 ]
+                variable = "_".join(variable.split("_")[-2:])
+                variable = f"hourly_{variable}"
                 _ds_dyn = xr.open_mfdataset(_dyn_fpaths)
                 # ds_dyn = xr.open_mfdataset(dynamic_filepaths)
 
@@ -262,6 +271,8 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
 
             # ds_dyn.to_netcdf(out_dyn)
             # print(f"\n**** {out_dyn} Created! ****\n")
+        else:
+            out_dyn = None  # type: ignore
 
         # then, static
         static_filepaths = self.get_filepaths("interim", filter_type="static")
@@ -288,5 +299,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
 
             ds_stat_new.to_netcdf(out_static)
             print(f"\n**** {out_static} Created! ****\n")
+        else:
+            out_static = None  # type: ignore
 
         return out_dyn, out_static  # type: ignore

@@ -7,7 +7,7 @@ from src.analysis.indices import DroughtSeverityIndex
 class TestDroughtSeverityIndex:
     def test_initialisation(self, tmp_path):
         data_path = _create_dummy_precip_data(tmp_path)
-        dsi = DroughtSeverityIndex(data_path / "chirps_kenya.nc")
+        dsi = DroughtSeverityIndex(data_path / "data_kenya.nc")
         assert dsi.name == "drought_severity_index", (
             f"Expected name" f"to be `drought_severity_index` got: {dsi.name}"
         )
@@ -20,7 +20,7 @@ class TestDroughtSeverityIndex:
         data_path = _create_dummy_precip_data(
             tmp_path, start_date="2000-01-01", end_date="2010-01-01"
         )
-        dsi = DroughtSeverityIndex(data_path / "chirps_kenya.nc")
+        dsi = DroughtSeverityIndex(data_path / "data_kenya.nc")
         variable = "precip"
         dsi.fit(variable=variable)
 

@@ -141,12 +141,21 @@ class ERA5LandPreprocessor(BasePreProcessor):
             print("\nOutputs (errors):\n\t", outputs)
 
         # merge and resample files
+        filename = (
+            f'{variable}_data{"_" + subset_str if subset_str is not None else ""}.nc'
+        )
         self.merge_files(
             subset_str=subset_str,
             resample_time=resample_time,
             upsampling=upsampling,
-            # variable=variable,
+            filename=filename,
         )
 
         if cleanup:
             rmtree(self.interim)
+
+
+class ERA5LandMonthlyMeansPreprocessor(ERA5LandPreprocessor):
+    """Process the ERA5-Land monthly statistics data"""
+
+    dataset = "reanalysis-era5-land-monthly-means"

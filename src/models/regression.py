@@ -5,13 +5,13 @@ from sklearn.metrics import mean_squared_error
 import pickle
 import xarray as xr
 
-import shap
-
 from typing import cast, Dict, List, Tuple, Optional, Union
 
 from .base import ModelBase
 from .utils import chunk_array
 from .data import DataLoader, train_val_mask, TrainData
+
+shap = None
 
 
 class LinearRegression(ModelBase):
@@ -35,6 +35,7 @@ class LinearRegression(ModelBase):
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = True,
+        explain: bool = False,
     ) -> None:
         super().__init__(
             data_folder,
@@ -53,8 +54,11 @@ class LinearRegression(ModelBase):
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
         )
-
-        self.explainer: Optional[shap.LinearExplainer] = None
+        if explain:
+            global shap
+            if shap is None:
+                import shap
+            self.explainer: Optional[shap.DeepExplainer] = None  # type: ignore
 
     def train(
         self,
@@ -156,7 +160,7 @@ class LinearRegression(ModelBase):
             x = val.x
 
         reshaped_x = self._concatenate_data(x)
-        explanations = self.explainer.shap_values(reshaped_x)
+        explanations = self.explainer.shap_values(reshaped_x)  # type: ignore
 
         if save_shap_values:
             analysis_folder = self.model_dir / "analysis"
