@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime
 import numpy as np
 
 sys.path.append("..")
@@ -17,6 +18,8 @@ from src.exporters import (
 )
 
 from scripts.utils import get_data_path
+
+YEAR = datetime.now().year
 
 
 def export_era5(region_str="kenya"):
@@ -95,14 +98,14 @@ def export_era5_land(region_str: str = "kenya", granularity: str = "monthly"):
             variable=variable,
             break_up="yearly",
             region_str=region_str,
-            selection_request=dict(year=np.arange(2000, 2021)),
+            selection_request=dict(year=np.arange(2000, YEAR+1)),
         )
 
 
 def export_vhi():
     exporter = VHIExporter(get_data_path())
 
-    exporter.export(years=np.arange(2000, 2021))
+    exporter.export(years=np.arange(2000, YEAR+1))
 
 
 def export_chirps():
@@ -150,7 +153,7 @@ def export_s5(region_str="kenya"):
         pressure_level=pressure_level,
     )
     min_year = 2000
-    max_year = 2021
+    max_year = YEAR
     min_month = 1
     max_month = 12
     max_leadtime = None
