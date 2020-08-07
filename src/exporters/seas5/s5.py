@@ -99,7 +99,7 @@ class S5Exporter(CDSExporter):
         pool_obj: Any,
         output_paths: List,
         processed_request: Dict,
-        show_api_request: bool = False,
+        show_api_request: bool = True,
     ) -> List:
         # multiprocessing of the paths
         in_parallel = True
@@ -115,7 +115,7 @@ class S5Exporter(CDSExporter):
         self,
         output_paths: List,
         processed_request: Dict,
-        show_api_request: bool = False,
+        show_api_request: bool = True,
     ) -> List:
         output_paths.append(
             self._export(
