@@ -112,10 +112,7 @@ class S5Exporter(CDSExporter):
         return output_paths
 
     def _sequential_export(
-        self,
-        output_paths: List,
-        processed_request: Dict,
-        show_api_request: bool = True,
+        self, output_paths: List, processed_request: Dict, show_api_request: bool = True
     ) -> List:
         output_paths.append(
             self._export(

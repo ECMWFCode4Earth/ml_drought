@@ -7,7 +7,7 @@ from .seas5 import S5Preprocessor
 from .era5 import ERA5MonthlyMeanPreprocessor, ERA5HourlyPreprocessor
 from .esa_cci import ESACCIPreprocessor
 from .srtm import SRTMPreprocessor
-from .admin_boundaries import KenyaAdminPreprocessor, KenyaASALMask
+from .admin_boundaries import KenyaAdminPreprocessor, KenyaASALMask, IndiaAdminProcessor
 from .boku_ndvi import BokuNDVIPreprocessor
 
 
@@ -22,6 +22,7 @@ __all__ = [
     "ESACCIPreprocessor",
     "SRTMPreprocessor",
     "KenyaAdminPreprocessor",
+    "IndiaAdminProcessor",
     "BokuNDVIPreprocessor",
     "KenyaASALMask",
     "ERA5LandPreprocessor",

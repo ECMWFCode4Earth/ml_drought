@@ -247,7 +247,7 @@ class TestS5Exporter:
         )
 
         # THIS WOULD BE DONE BY THE .export() function
-        s5.split_export = "years"  # "months"
+        s5.split_export = "years"  #  "months"
 
         filepath = s5.make_filename(
             dataset=s5.dataset, selection_request=processed_selection_request

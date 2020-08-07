@@ -248,3 +248,54 @@ class KenyaASALMask(KenyaAdminPreprocessor):
         filename = "kenya_asal_mask.nc"
         ds.to_netcdf(self.out_dir / filename)
         print(f"** {(self.out_dir / filename).as_posix()} saved! **")
+
+
+class IndiaAdminProcessor(OCHAAdminBoundariesPreprocesser):
+    country = "india"
+
+    def __init__(self, data_folder: Path = Path("data")) -> None:
+        super().__init__(data_folder)
+        self.base_raw_dir = self.raw_folder / self.dataset / self.country
+
+    def get_admin_level(self, selection: str) -> AdminBoundaries:
+        level_1 = AdminBoundaries(
+            name="level_1",
+            lookup_colname="NAME_1",
+            var_name="state_l1",
+            shp_filepath=self.base_raw_dir / "IND_adm1.shp",
+        )
+
+        level_2 = AdminBoundaries(
+            name="level_2",
+            lookup_colname="NAME_2",
+            var_name="district_l2",
+            shp_filepath=self.base_raw_dir / "IND_adm2.shp",
+        )
+
+        level_3 = AdminBoundaries(
+            name="level_3",
+            lookup_colname="NAME_3",
+            var_name="taluk_l3",
+            shp_filepath=self.base_raw_dir / "IND_adm3.shp",
+        )
+
+        lookup = {"level_1": level_1, "level_2": level_2, "level_3": level_3}
+
+        assert (
+            selection in lookup.keys()
+        ), f"`selection` must be one of: {list(lookup.keys())}"
+
+        return lookup[selection]
+
+    def preprocess(
+        self, reference_nc_filepath: Path, selection: str = "level_1"
+    ) -> None:
+        """Preprocess INDIA Admin Boundaries shapefiles into xarray objects
+        """
+        admin_level = self.get_admin_level(selection)
+        self._preprocess_single(
+            shp_filepath=admin_level.shp_filepath,
+            lookup_colname=admin_level.lookup_colname,
+            reference_nc_filepath=reference_nc_filepath,
+            var_name=admin_level.var_name,
+        )

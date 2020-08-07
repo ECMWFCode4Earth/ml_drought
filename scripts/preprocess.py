@@ -18,6 +18,7 @@ from src.preprocess import (
     KenyaASALMask,
     ERA5LandPreprocessor,
     ERA5LandMonthlyMeansPreprocessor,
+    IndiaAdminProcessor,
 )
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
@@ -239,17 +240,27 @@ def preprocess_boku_ndvi(subset_str: str = "kenya"):
     )
 
 
+def preprocess_india_boundaries(selection: str = "level_1"):
+    data_path = get_data_path()
+
+    regrid_path = data_path / "interim/chirps_preprocessed/data_kenya.nc"
+    assert regrid_path.exists(), f"{regrid_path} not available"
+
+    processor = IndiaAdminProcessor(data_path)
+    processor.preprocess(reference_nc_filepath=regrid_path, selection=selection)
+
+
 if __name__ == "__main__":
     subset_str = "india"
     # preprocess_era5(subset_str=subset_str)
-    process_era5_land(
-        subset_str=subset_str,
-        variables=[
-            "volumetric_soil_water_layer_1",
-            "potential_evaporation",
-        ],  #  total_precipitation 2m_temperature evapotranspiration
-        monmean=False,
-    )
+    # process_era5_land(
+    #     subset_str=subset_str,
+    #     variables=[
+    #         "volumetric_soil_water_layer_1",
+    #         "potential_evaporation",
+    #     ],  #  total_precipitation 2m_temperature evapotranspiration
+    #     monmean=False,
+    # )
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
     # process_era5POS_2018(subset_str=subset_str)
@@ -259,6 +270,7 @@ if __name__ == "__main__":
     # preprocess_kenya_boundaries(selection="level_1")
     # preprocess_kenya_boundaries(selection="level_2")
     # preprocess_kenya_boundaries(selection="level_3")
+    # preprocess_india_boundaries(selection="level_2")
     # preprocess_era5_hourly(subset_str=subset_str)
     # preprocess_boku_ndvi(subset_str=subset_str)
     # preprocess_asal_mask(subset_str=subset_str)
