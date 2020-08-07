@@ -76,26 +76,29 @@ def preprocess_era5_land(
     monmean: bool = True,
 ):
     data_path = get_data_path()
-
+    if monmean:
+        dataset = "reanalysis-era5-land-monthly-means"
+    else:
+        dataset = "reanalysis-era5-land"
     # Check all the provided variables exist
     if variables is None:
-        variables = [d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()]
+        variables = [d.name for d in (data_path / f"raw/{dataset}").iterdir()]
         assert (
             variables != []
-        ), f"Expecting to find some variables in: {(data_path / 'raw/reanalysis-era5-land')}"
+        ), f"Expecting to find some variables in: {(data_path / 'raw/')}"
     else:
         if isinstance(variables, str):
             variables = [variables]
             assert variables in [
-                d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()
-            ], f"Expect to find {variables} in {(data_path / 'raw/reanalysis-era5-land')}"
+                d.name for d in (data_path / f"raw/{dataset}").iterdir()
+            ], f"Expect to find {variables} in {(data_path / f'raw/{dataset}')}"
         else:
             assert all(
                 np.isin(
                     variables,
                     [
                         d.name
-                        for d in (data_path / "raw/reanalysis-era5-land").iterdir()
+                        for d in (data_path / f"raw/{dataset}").iterdir()
                     ],
                 )
             ), f"Expected to find {variables}"
