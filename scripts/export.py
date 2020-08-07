@@ -163,12 +163,12 @@ def export_s5(region_str="kenya", n_parallel_requests=1, years=np.arange(2000, Y
     variables = [
         # "total_precipitation",
         "2m_temperature",
-        # "volumetric_soil_water_layer_1",
-        # "volumetric_soil_water_layer_2",
-        # "volumetric_soil_water_layer_3",
-        # "volumetric_soil_water_layer_4",
-        # "evapotranspiration",
-        # "potential_evaporation",
+        "volumetric_soil_water_layer_1",
+        "volumetric_soil_water_layer_2",
+        "volumetric_soil_water_layer_3",
+        "volumetric_soil_water_layer_4",
+        "evapotranspiration",
+        "potential_evaporation",
     ]
 
     for variable in variables:
