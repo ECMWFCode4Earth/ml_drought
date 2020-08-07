@@ -15,6 +15,7 @@ from src.exporters import (
     KenyaAdminExporter,
     ERA5LandExporter,
     ERA5LandExporterHourly,
+    IndiaAdminExporter,
 )
 
 from scripts.utils import get_data_path
