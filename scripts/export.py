@@ -142,7 +142,7 @@ def export_esa():
     exporter.export()
 
 
-def export_s5(region_str="kenya"):
+def export_s5(region_str="kenya", n_parallel_requests=1, years=np.arange(2000, YEAR)):
 
     granularity = "monthly"
     pressure_level = False
@@ -152,17 +152,17 @@ def export_s5(region_str="kenya"):
         granularity=granularity,
         pressure_level=pressure_level,
     )
-    min_year = 2000
-    max_year = YEAR
+
+    min_year = min(years)
+    max_year = max(years)
     min_month = 1
     max_month = 12
     max_leadtime = None
     pressure_levels = [200, 500, 925]
-    n_parallel_requests = 1
 
     variables = [
-        "total_precipitation",
-        # "2m_temperature",
+        # "total_precipitation",
+        "2m_temperature",
         # "volumetric_soil_water_layer_1",
         # "volumetric_soil_water_layer_2",
         # "volumetric_soil_water_layer_3",
@@ -200,5 +200,8 @@ if __name__ == "__main__":
     # export_era5POS()
     # export_gleam()
     # export_esa()
-    export_s5(region_str="india")
+    export_s5(
+        region_str="india",
+        n_parallel_requests=5,
+    )
     # export_kenya_boundaries()

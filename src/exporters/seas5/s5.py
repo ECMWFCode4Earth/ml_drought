@@ -61,8 +61,8 @@ class S5Exporter(CDSExporter):
         super().__init__(data_folder)
 
         global pool
-        # if pool is None:
-        #     from pathos.pools import _ThreadPool as pool
+        if pool is None:
+            from pathos.pools import _ThreadPool as pool
 
         # initialise attributes for this export
         self.pressure_level = pressure_level
