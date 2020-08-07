@@ -19,6 +19,7 @@ aws s3 cp --dryrun --recursive 2m_temperature s3://mantlelabs-vci-forecast/data/
 
 ```bash
 aws s3 sync --dryrun data/raw s3://mantlelabs-vci-forecast/data/raw/ --exclude "*" --include "*reanalysis-era5-land/*"
+aws s3 sync --dryrun data/raw s3://mantlelabs-vci-forecast/data/raw/ --exclude "*" --include "*reanalysis-era5-land-monthly*"
 ```
 
 NOTE: you want to use the whole path (will iteratively create the dirs required)
@@ -57,4 +58,18 @@ python setup.py install
 
 ```python
 import mantle_utils
+```
+
+# Getting Conda up and Runing
+```
+
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+
+# EXPORT from elsewhere
+# conda env export | grep -v "^prefix: " > environment.yml
+
+
+# CREATE new env ('ml')
+conda env create -f environment.yml
 ```

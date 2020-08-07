@@ -148,7 +148,6 @@ def export_esa():
 
 
 def export_s5(region_str="kenya", n_parallel_requests=1, years=np.arange(2000, YEAR)):
-
     granularity = "monthly"
     pressure_level = False
 
@@ -205,6 +204,7 @@ def export_india_boundaries():
 if __name__ == "__main__":
     region_str = "india"
     print(f"Writing data to: {get_data_path()}")
+    export_s5(region_str=region_str, n_parallel_requests=4)
     # export_era5_land(region_str=region_str, granularity="monthly")
     # export_era5(region_str=region_str)
     # export_vhi()
@@ -212,7 +212,6 @@ if __name__ == "__main__":
     # export_era5POS()
     # export_gleam()
     # export_esa()
-    # export_s5(region_str=region_str, n_parallel_requests=5)
     # export_kenya_boundaries()
     # export_india_boundaries()
-    export_srtm(region_str=region_str)
+    # export_srtm(region_str=region_str)
