@@ -1,6 +1,7 @@
 from pathlib import Path
 import itertools
 import numpy as np
+from datetime import datetime
 
 from typing import cast, Dict, Optional, List
 from .all_valid_s5 import datasets as dataset_reference
@@ -260,8 +261,8 @@ class S5Exporter(CDSExporter):
         ), f"The minimum year is 1993. You asked for:\
         {min_year}"
         assert (
-            max_year <= 2019
-        ), f"The maximum year is 2019. You asked for:\
+            max_year <= datetime.now().year
+        ), f"The maximum year is {datetime.now().year}. You asked for:\
         {max_year}"
 
         # build up list of years
