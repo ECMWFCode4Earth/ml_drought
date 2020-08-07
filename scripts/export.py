@@ -74,9 +74,7 @@ def export_era5(region_str="kenya"):
 
 def export_era5_land(region_str: str = "kenya", granularity: str = "monthly"):
     exporter = ERA5LandExporter(get_data_path())
-    if granularity != "monthly":
-        assert granularity == "hourly"
-        exporter.granularity = granularity
+    assert granularity in ["monthly", "hourly"]
 
     variables = [
         # "total_precipitation",
@@ -95,7 +93,7 @@ def export_era5_land(region_str: str = "kenya", granularity: str = "monthly"):
             variable=variable,
             break_up="yearly",
             region_str=region_str,
-            granularity="monthly",
+            granularity=granularity,
             selection_request=dict(year=np.arange(2003, 2005)),
         )
 
