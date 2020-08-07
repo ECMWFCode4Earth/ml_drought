@@ -192,14 +192,20 @@ def export_kenya_boundaries():
     exporter.export()
 
 
+def export_india_boundaries():
+    exporter = IndiaAdminExporter(get_data_path())
+    exporter.export()
+
+
 if __name__ == "__main__":
     print(f"Writing data to: {get_data_path()}")
     # export_era5_land(region_str="india", granularity="monthly")
-    # export_era5(region_str="kenya")
+    # export_era5(region_str="india")
     # export_vhi()
     # export_chirps()
     # export_era5POS()
     # export_gleam()
     # export_esa()
-    export_s5(region_str="india", n_parallel_requests=5)
+    # export_s5(region_str="india", n_parallel_requests=5)
     # export_kenya_boundaries()
+    export_india_boundaries()
