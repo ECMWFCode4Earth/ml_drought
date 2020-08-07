@@ -191,7 +191,6 @@ def export_s5(region_str="kenya", n_parallel_requests=1, years=np.arange(2000, Y
 
 
 def export_kenya_boundaries():
-
     exporter = KenyaAdminExporter(get_data_path())
     exporter.export()
 

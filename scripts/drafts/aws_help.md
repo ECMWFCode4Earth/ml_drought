@@ -62,13 +62,11 @@ import mantle_utils
 
 # Getting Conda up and Runing
 ```
-
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
 
 # EXPORT from elsewhere
 # conda env export | grep -v "^prefix: " > environment.yml
-
 
 # CREATE new env ('ml')
 conda env create -f environment.yml

@@ -267,14 +267,20 @@ if __name__ == "__main__":
     subset_str = "india"
 
     # preprocess_era5(subset_str=subset_str)
-    # process_era5_land(
-    #     subset_str=subset_str,
-    #     variables=[
-    #         "volumetric_soil_water_layer_1",
-    #         "potential_evaporation",
-    #     ],  #  total_precipitation 2m_temperature evapotranspiration
-    #     monmean=False,
-    # )
+    process_era5_land(
+        subset_str=subset_str,
+        variables=[
+            "volumetric_soil_water_layer_1",
+            "volumetric_soil_water_layer_2",
+            "volumetric_soil_water_layer_3",
+            "volumetric_soil_water_layer_4",
+            "potential_evaporation",
+            "total_precipitation",
+            "2m_temperature",
+            "evapotranspiration"
+        ],
+        monmean=False,
+    )
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
     # process_era5POS_2018(subset_str=subset_str)
@@ -284,4 +290,4 @@ if __name__ == "__main__":
     # preprocess_era5_hourly(subset_str=subset_str)
     # preprocess_boku_ndvi(subset_str=subset_str)
     # preprocess_asal_mask(subset_str=subset_str)
-    process_boundaries(subset_str)
+    # process_boundaries(subset_str)
