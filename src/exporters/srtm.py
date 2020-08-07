@@ -51,7 +51,7 @@ class SRTMExporter(BaseExporter):
         max_download_tiles: int = 15,
     ) -> None:
         """
-        Export SRTm topography data
+        Export SRTM topography data
 
         Arguments
         ----------
