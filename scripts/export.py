@@ -141,7 +141,7 @@ def export_esa():
 
 def export_s5(region_str="kenya"):
 
-    granularity = "hourly"
+    granularity = "monthly"
     pressure_level = False
 
     exporter = S5Exporter(
@@ -149,26 +149,37 @@ def export_s5(region_str="kenya"):
         granularity=granularity,
         pressure_level=pressure_level,
     )
-    variable = "total_precipitation"
-    min_year = 1993
-    max_year = 2014
+    min_year = 2000
+    max_year = 2021
     min_month = 1
     max_month = 12
     max_leadtime = None
     pressure_levels = [200, 500, 925]
     n_parallel_requests = 20
 
-    exporter.export(
-        variable=variable,
-        min_year=min_year,
-        max_year=max_year,
-        min_month=min_month,
-        max_month=max_month,
-        max_leadtime=max_leadtime,
-        pressure_levels=pressure_levels,
-        n_parallel_requests=n_parallel_requests,
-        region_str=region_str,
-    )
+    variables = [
+        "total_precipitation",
+        # "2m_temperature",
+        # "volumetric_soil_water_layer_1",
+        # "volumetric_soil_water_layer_2",
+        # "volumetric_soil_water_layer_3",
+        # "volumetric_soil_water_layer_4",
+        # "evapotranspiration",
+        # "potential_evaporation",
+    ]
+
+    for variable in variables:
+        exporter.export(
+            variable=variable,
+            min_year=min_year,
+            max_year=max_year,
+            min_month=min_month,
+            max_month=max_month,
+            max_leadtime=max_leadtime,
+            pressure_levels=pressure_levels,
+            n_parallel_requests=n_parallel_requests,
+            region_str=region_str,
+        )
 
 
 def export_kenya_boundaries():
@@ -179,12 +190,12 @@ def export_kenya_boundaries():
 
 if __name__ == "__main__":
     print(f"Writing data to: {get_data_path()}")
-    export_era5_land(region_str="india", granularity="monthly")
+    # export_era5_land(region_str="india", granularity="monthly")
     # export_era5(region_str="kenya")
     # export_vhi()
     # export_chirps()
     # export_era5POS()
     # export_gleam()
     # export_esa()
-    # export_s5(region_str="kenya")
+    export_s5(region_str="india")
     # export_kenya_boundaries()
