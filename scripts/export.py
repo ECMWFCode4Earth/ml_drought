@@ -76,11 +76,11 @@ def export_era5_land(region_str="kenya"):
     exporter = ERA5LandExporter(get_data_path())
 
     variables = [
-        "total_precipitation",
+        # "total_precipitation",
         # "2m_temperature",
         # "evapotranspiration",
         # "potential_evaporation",
-        # "volumetric_soil_water_layer_1",
+        "volumetric_soil_water_layer_1",
         # "volumetric_soil_water_layer_2",
         # "volumetric_soil_water_layer_3",
         # "volumetric_soil_water_layer_4",
@@ -91,7 +91,7 @@ def export_era5_land(region_str="kenya"):
             break_up="yearly",
             region_str=region_str,
             granularity="monthly",
-            selection_request=dict(year=np.arange(2000, 2021)),
+            selection_request=dict(year=np.arange(2003, 2005)),
         )
 
 
