@@ -73,7 +73,7 @@ class ERA5LandExporter(CDSExporter):
         print(VALID_ERA5_LAND_VARS)
 
     @staticmethod
-    def get_dataset(variable: str, granularity: str = "hourly") -> str:
+    def get_dataset(variable: str, granularity: str = "monthly") -> str:
         dataset = f"reanalysis-era5-land"
         if granularity == "monthly":
             dataset = f"{dataset}-monthly-means"
@@ -84,7 +84,7 @@ class ERA5LandExporter(CDSExporter):
         self,
         variable: str,
         selection_request: Optional[Dict] = None,
-        granularity: str = "hourly",
+        granularity: str = "monthly",
         region_str: str = "kenya",
     ) -> Dict:
         # setup the default selection request
@@ -152,7 +152,6 @@ class ERA5LandExporter(CDSExporter):
         n_parallel_requests: int = 1,
         region_str: str = "kenya",
         dataset: Optional[str] = None,
-        granularity: str = "monthly",
     ) -> List[Path]:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
@@ -180,12 +179,12 @@ class ERA5LandExporter(CDSExporter):
         output_files: List of pathlib.Paths
             paths to the downloaded data
         """
-        assert granularity in [
+        assert self.granularity in [
             "hourly",
             "monthly",
         ], "Expect granularity to be in {hourly monthly}"
         if dataset is None:
-            dataset = self.get_dataset(variable, granularity)
+            dataset = self.get_dataset(variable, self.granularity)
 
         if break_up is not None:
             assert break_up in ["yearly", "monthly"], (
@@ -194,7 +193,7 @@ class ERA5LandExporter(CDSExporter):
 
         # create the default template for the selection request
         processed_selection_request = self.create_selection_request(
-            variable, selection_request, granularity, region_str
+            variable, selection_request, self.granularity, region_str
         )
 
         if n_parallel_requests < 1:
@@ -261,3 +260,8 @@ class ERA5LandExporter(CDSExporter):
             return cast(List[Path], output_paths)
 
         return [self._export(dataset, processed_selection_request, show_api_request)]
+
+
+class ERA5LandExporterHourly(ERA5LandExporter):
+    dataset = "reanalysis-era5-land"
+    granularity = "hourly"
