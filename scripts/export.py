@@ -155,7 +155,7 @@ def export_s5(region_str="kenya"):
     max_month = 12
     max_leadtime = None
     pressure_levels = [200, 500, 925]
-    n_parallel_requests = 20
+    n_parallel_requests = 1
 
     variables = [
         "total_precipitation",
