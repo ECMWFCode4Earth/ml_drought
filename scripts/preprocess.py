@@ -107,12 +107,13 @@ def preprocess_era5_land(
     # assert regrid_path.exists(), f"{regrid_path} not available"
     regrid_path = None
 
-    if monmean:
-        processor = ERA5LandMonthlyMeansPreprocessor(data_path)
-    else:
-        processor = ERA5LandPreprocessor(data_path)
-
     for variable in variables:
+
+        if monmean:
+            processor = ERA5LandMonthlyMeansPreprocessor(data_path)
+        else:
+            processor = ERA5LandPreprocessor(data_path)
+
         processor.preprocess(
             subset_str=subset_str,
             regrid=None,
@@ -274,9 +275,9 @@ if __name__ == "__main__":
         subset_str=subset_str,
         variables=[
             "volumetric_soil_water_layer_1",
-            # "volumetric_soil_water_layer_2",
-            # "volumetric_soil_water_layer_3",
-            # "volumetric_soil_water_layer_4",
+            "volumetric_soil_water_layer_2",
+            "volumetric_soil_water_layer_3",
+            "volumetric_soil_water_layer_4",
             "potential_evaporation",
             "total_precipitation",
             "2m_temperature",
