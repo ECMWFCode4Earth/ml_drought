@@ -98,14 +98,14 @@ def export_era5_land(region_str: str = "kenya", granularity: str = "monthly"):
             variable=variable,
             break_up="yearly",
             region_str=region_str,
-            selection_request=dict(year=np.arange(2000, YEAR+1)),
+            selection_request=dict(year=np.arange(2000, YEAR + 1)),
         )
 
 
 def export_vhi():
     exporter = VHIExporter(get_data_path())
 
-    exporter.export(years=np.arange(2000, YEAR+1))
+    exporter.export(years=np.arange(2000, YEAR + 1))
 
 
 def export_chirps():
@@ -182,6 +182,7 @@ def export_s5(region_str="kenya", n_parallel_requests=1, years=np.arange(2000, Y
             pressure_levels=pressure_levels,
             n_parallel_requests=n_parallel_requests,
             region_str=region_str,
+            split_export="years",
         )
 
 
@@ -200,8 +201,5 @@ if __name__ == "__main__":
     # export_era5POS()
     # export_gleam()
     # export_esa()
-    export_s5(
-        region_str="india",
-        n_parallel_requests=5,
-    )
+    export_s5(region_str="india", n_parallel_requests=5)
     # export_kenya_boundaries()
