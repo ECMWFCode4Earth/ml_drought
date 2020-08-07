@@ -91,7 +91,7 @@ def export_era5_land(region_str: str = "kenya", granularity: str = "monthly"):
         # "volumetric_soil_water_layer_2",
         # "volumetric_soil_water_layer_3",
         # "volumetric_soil_water_layer_4",
-        "evapotranspiration",
+        "total_evaporation",
         # "potential_evaporation",
     ]
     for variable in variables:

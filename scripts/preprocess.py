@@ -274,14 +274,14 @@ if __name__ == "__main__":
     preprocess_era5_land(
         subset_str=subset_str,
         variables=[
-            "volumetric_soil_water_layer_1",
-            "volumetric_soil_water_layer_2",
-            "volumetric_soil_water_layer_3",
-            "volumetric_soil_water_layer_4",
-            "potential_evaporation",
-            "total_precipitation",
-            "2m_temperature",
-            # "evapotranspiration"
+            # "volumetric_soil_water_layer_1",
+            # "volumetric_soil_water_layer_2",
+            # "volumetric_soil_water_layer_3",
+            # "volumetric_soil_water_layer_4",
+            # "potential_evaporation",
+            # "total_precipitation",
+            # "2m_temperature",
+            "total_evaporation"
         ],
         monmean=True,
     )
