@@ -16,7 +16,7 @@ VALID_ERA5_LAND_VARS = [
     "evaporation_from_open_water_surfaces_excluding_oceans",
     "evaporation_from_the_top_of_canopy",
     "evaporation_from_vegetation_transpiration",
-    "evapotranspiration",
+    "total_evaporation",
     "forecast_albedo",
     "lake_bottom_temperature",
     "lake_ice_depth",
