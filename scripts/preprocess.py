@@ -250,8 +250,19 @@ def preprocess_india_boundaries(selection: str = "level_1"):
     processor.preprocess(reference_nc_filepath=regrid_path, selection=selection)
 
 
+def process_boundaries(subset_str: str):
+    if subset_str == "kenya":
+        preprocess_kenya_boundaries(selection="level_1")
+        preprocess_kenya_boundaries(selection="level_2")
+        preprocess_kenya_boundaries(selection="level_3")
+    if subset_str == "india":
+        preprocess_india_boundaries(selection="level_1")
+        preprocess_india_boundaries(selection="level_2")
+
+
 if __name__ == "__main__":
     subset_str = "india"
+
     # preprocess_era5(subset_str=subset_str)
     # process_era5_land(
     #     subset_str=subset_str,
@@ -267,10 +278,7 @@ if __name__ == "__main__":
     # process_gleam(subset_str=subset_str)
     # process_esa_cci_landcover(subset_str=subset_str)
     # preprocess_srtm(subset_str=subset_str)
-    # preprocess_kenya_boundaries(selection="level_1")
-    # preprocess_kenya_boundaries(selection="level_2")
-    # preprocess_kenya_boundaries(selection="level_3")
-    # preprocess_india_boundaries(selection="level_2")
     # preprocess_era5_hourly(subset_str=subset_str)
     # preprocess_boku_ndvi(subset_str=subset_str)
     # preprocess_asal_mask(subset_str=subset_str)
+    process_boundaries(subset_str)
