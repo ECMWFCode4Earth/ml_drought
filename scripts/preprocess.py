@@ -274,7 +274,7 @@ if __name__ == "__main__":
         subset_str=subset_str,
         variables=[
             "volumetric_soil_water_layer_1",
-            "volumetric_soil_water_layer_2",
+            # "volumetric_soil_water_layer_2",
             "volumetric_soil_water_layer_3",
             "volumetric_soil_water_layer_4",
             "potential_evaporation",
