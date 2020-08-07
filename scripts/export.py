@@ -72,18 +72,23 @@ def export_era5(region_str="kenya"):
         exporter.export(variable=variable, granularity="monthly", region_str=region_str)
 
 
-def export_era5_land(region_str="kenya"):
+def export_era5_land(region_str: str = "kenya", granularity: str = "monthly"):
     exporter = ERA5LandExporter(get_data_path())
+    if granularity != "monthly":
+        assert granularity == "hourly"
+        exporter.granularity = granularity
 
     variables = [
         # "total_precipitation",
         # "2m_temperature",
-        # "evapotranspiration",
-        # "potential_evaporation",
-        "volumetric_soil_water_layer_1",
         # "volumetric_soil_water_layer_2",
         # "volumetric_soil_water_layer_3",
         # "volumetric_soil_water_layer_4",
+
+        # "evapotranspiration",
+        # "potential_evaporation",
+        "volumetric_soil_water_layer_1",
+
     ]
     for variable in variables:
         exporter.export(
@@ -175,7 +180,7 @@ def export_kenya_boundaries():
 
 if __name__ == "__main__":
     print(f"Writing data to: {get_data_path()}")
-    export_era5_land(region_str="india")
+    export_era5_land(region_str="india", granularity="hourly")
     # export_era5(region_str="kenya")
     # export_vhi()
     # export_chirps()
