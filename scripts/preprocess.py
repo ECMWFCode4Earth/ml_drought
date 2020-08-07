@@ -242,8 +242,11 @@ def preprocess_boku_ndvi(subset_str: str = "kenya"):
 
 def preprocess_india_boundaries(selection: str = "level_1"):
     data_path = get_data_path()
+    subset_str = "india"
 
-    regrid_path = data_path / "interim/chirps_preprocessed/data_kenya.nc"
+    regrid_path = (
+        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+    )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
     processor = IndiaAdminProcessor(data_path)
