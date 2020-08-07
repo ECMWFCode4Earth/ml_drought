@@ -133,10 +133,10 @@ def export_gleam():
 
 
 def export_srtm(region_str: str = "kenya"):
-    if region_str == "kenya":
-        max_download_tiles = 15
-    elif region_str == "kenya":
+    if region_str == "india":
         max_download_tiles = 57
+    else:
+        max_download_tiles = 15
     exporter = SRTMExporter(data_folder=get_data_path())
     exporter.export(region_name=region_str, max_download_tiles=max_download_tiles)
 
