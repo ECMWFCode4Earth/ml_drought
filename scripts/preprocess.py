@@ -281,7 +281,7 @@ if __name__ == "__main__":
             "potential_evaporation",
             "total_precipitation",
             "2m_temperature",
-            "evapotranspiration"
+            # "evapotranspiration"
         ],
         monmean=True,
     )
