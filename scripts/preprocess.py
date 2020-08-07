@@ -275,8 +275,8 @@ if __name__ == "__main__":
         variables=[
             "volumetric_soil_water_layer_1",
             # "volumetric_soil_water_layer_2",
-            "volumetric_soil_water_layer_3",
-            "volumetric_soil_water_layer_4",
+            # "volumetric_soil_water_layer_3",
+            # "volumetric_soil_water_layer_4",
             "potential_evaporation",
             "total_precipitation",
             "2m_temperature",
