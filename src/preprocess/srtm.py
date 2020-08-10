@@ -2,6 +2,7 @@ from pathlib import Path
 from shutil import rmtree
 import xarray as xr
 import os
+import subprocess
 
 from typing import Optional
 
@@ -15,6 +16,16 @@ class SRTMPreprocessor(BasePreProcessor):
     def regrid(  # type: ignore
         self, ds: xr.Dataset, regrid: Path, method: str = "remapbil"
     ) -> xr.Dataset:
+        """regrid using CDO (because these SRTM files tend to be large).
+
+        Args:
+            ds (xr.Dataset): dataset to be regrid
+            regrid (Path): the reference dataset to use as the target grid
+            method (str, optional): the method of regridding. Defaults to "remapbil".
+
+        Returns:
+            xr.Dataset: the regrid datset (on the target grid)
+        """
 
         acceptable_methods = {
             "remapbil",
@@ -39,11 +50,24 @@ class SRTMPreprocessor(BasePreProcessor):
         ds.to_netcdf(regrid_input)
 
         # make the grid definition
-        os.system(f"cdo griddes {input_reference_grid} > {output_reference_grid}")
+        # TODO: change to subprocess.Popen
+        # os.system(f"cdo griddes {input_reference_grid} > {output_reference_grid}")
+        try:
+            retcode = subprocess.call(f"cdo griddes {input_reference_grid} > {output_reference_grid}", shell=True)
+            if retcode < 0:
+                print(f"ERROR {retcode}. Does CDO exist?")
+                assert False, (
+                    "CDO is not installed. "
+                    "see: https://code.mpimet.mpg.de/projects/cdo/embedded/index.html#x1-30001.1"
+                )
+        except OSError as e:
+            print(f"Execution failed: {e}")
+
 
         # use the grid definition to regrid
         regrid_input_str = regrid_input.resolve().as_posix()
         regrid_output_str = regrid_output.resolve().as_posix()
+        # TODO: change to subprocess.Popen
         os.system(
             f"cdo {method},{output_reference_grid} {regrid_input_str} {regrid_output_str}"
         )
@@ -92,7 +116,9 @@ class SRTMPreprocessor(BasePreProcessor):
         if regrid is not None:
             print(
                 "The SRTM preprocessor requires CDO to be installed! "
-                "See here for installation details: "
+                "\nSee here for installation details: "
+                "https://code.mpimet.mpg.de/projects/cdo/embedded/index.html#x1-30001.1"
+                "\nAnd here for details on using the project: "
                 "https://code.mpimet.mpg.de/projects/cdo/wiki/Tutorial"
             )
             ds = self.regrid(ds, regrid)
