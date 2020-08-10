@@ -313,7 +313,7 @@ class ERA5Exporter(CDSExporter):
         granularity: str = "hourly",
         show_api_request: bool = True,
         selection_request: Optional[Dict] = None,
-        break_up: bool = False,
+        break_up: bool = True,
         n_parallel_requests: int = 1,
         region_str: str = "kenya",
     ) -> List[Path]:
