@@ -53,24 +53,24 @@ def export_era5(region_str="kenya"):
     }
 
     era5_variables = [
-        "10m_u_component_of_wind",
-        "10m_v_component_of_wind",
-        "volumetric_soil_water_layer_1",
-        "volumetric_soil_water_layer_2",
-        "volumetric_soil_water_layer_3",
-        "volumetric_soil_water_layer_4",
-        "surface_pressure",
-        "surface_sensible_heat_flux",
-        "surface_latent_heat_flux",
-        "soil_temperature_level_1",
-        "2m_temperature",
-        "mean_eastward_turbulent_surface_stress",
-        "mean_northward_turbulent_surface_stress",
-        "surface_net_solar_radiation_clear_sky",
-        "surface_net_thermal_radiation_clear_sky",
-        "vertical_integral_of_divergence_of_moisture_flux",
-        "potential_evaporation",
-        "evaporation",
+        # "10m_u_component_of_wind",
+        # "10m_v_component_of_wind",
+        # "volumetric_soil_water_layer_1",
+        # "volumetric_soil_water_layer_2",
+        # "volumetric_soil_water_layer_3",
+        # "volumetric_soil_water_layer_4",
+        # "surface_pressure",
+        # "surface_sensible_heat_flux",
+        # "surface_latent_heat_flux",
+        # "soil_temperature_level_1",
+        # "2m_temperature",
+        # "mean_eastward_turbulent_surface_stress",
+        # "mean_northward_turbulent_surface_stress",
+        # "surface_net_solar_radiation_clear_sky",
+        # "surface_net_thermal_radiation_clear_sky",
+        # "vertical_integral_of_divergence_of_moisture_flux",
+        # "potential_evaporation",
+        # "evaporation",
         "soil_type",
     ]
 
@@ -93,8 +93,7 @@ def export_era5_land(region_str: str = "kenya", granularity: str = "monthly"):
         # "volumetric_soil_water_layer_3",
         # "volumetric_soil_water_layer_4",
         # "total_evaporation",
-        # "potential_evaporation",
-        "soil_type",
+        "potential_evaporation",
     ]
     for variable in variables:
         exporter.export(
@@ -201,8 +200,8 @@ if __name__ == "__main__":
     region_str = "india"
     print(f"Writing data to: {get_data_path()}")
     # export_s5(region_str=region_str, n_parallel_requests=4)
-    export_era5_land(region_str=region_str, granularity="monthly")
-    # export_era5(region_str=region_str)
+    # export_era5_land(region_str=region_str, granularity="monthly")
+    export_era5(region_str=region_str)
     # export_vhi()
     # export_chirps()
     # export_era5POS()
