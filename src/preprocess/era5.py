@@ -47,7 +47,11 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
             {"longitude": "lon", "latitude": "lat"}
         )
 
-        # 2. chop out EastAfrica
+        # remove expver if in ds_stat
+        if "expver" in [v for v in ds.coords]:
+            ds = ds.isel(expver=0)
+
+        # 2. chop out ROI
         if subset_str is not None:
             ds = self.chop_roi(ds, subset_str, inverse_lat=True)
 
@@ -134,9 +138,6 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         print(static_filepaths)
         if len(static_filepaths) > 0:
             ds_stat = xr.open_mfdataset(static_filepaths)
-            # remove expver if in ds_stat
-            if "expver" in [v for v in ds_stat.data_vars]:
-                ds_stat = ds_stat.isel(expver=0)
 
             da_list = []
             for var in ds_stat.data_vars:
