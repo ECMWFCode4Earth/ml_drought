@@ -218,7 +218,6 @@ def preprocess_era5(subset_str: str = "kenya"):
 
     regrid_path = data_path / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
     assert regrid_path.exists(), f"{regrid_path} not available"
-    regrid_path = None
 
     processor = ERA5MonthlyMeanPreprocessor(data_path)
     # upsampling from low -> high resolution
