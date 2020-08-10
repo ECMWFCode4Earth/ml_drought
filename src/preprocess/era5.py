@@ -126,6 +126,8 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 
             ds_dyn.to_netcdf(out_dyn)
             print(f"\n**** {out_dyn} Created! ****\n")
+        else:
+            out_dyn = None
 
         # then, static
         static_filepaths = self.get_filepaths("interim", filter_type="static")
