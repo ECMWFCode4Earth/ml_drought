@@ -39,7 +39,8 @@ class SRTMPreprocessor(BasePreProcessor):
         }
         assert method in acceptable_methods, (
             f"{method} not in {acceptable_methods}, see the interpolation section of "
-            f"https://code.mpimet.mpg.de/projects/cdo/wiki/Tutorial for more information"
+            f"https://code.mpimet.mpg.de/projects/cdo/wiki/Tutorial for more information. "
+            "See https://gist.github.com/mainvoid007/e5f1c82f50eb0459a55dfc4a0953a08e for installation."
         )
 
         regrid_input = self.interim / "temp.nc"
@@ -54,11 +55,12 @@ class SRTMPreprocessor(BasePreProcessor):
         # os.system(f"cdo griddes {input_reference_grid} > {output_reference_grid}")
         try:
             retcode = subprocess.call(f"cdo griddes {input_reference_grid} > {output_reference_grid}", shell=True)
-            if retcode < 0:
-                print(f"ERROR {retcode}. Does CDO exist?")
+            if retcode != 0:  # 0 means success
                 assert False, (
-                    "CDO is not installed. "
-                    "see: https://code.mpimet.mpg.de/projects/cdo/embedded/index.html#x1-30001.1"
+                    f"ERROR: retcode = {retcode}. "
+                    "CDO is likely not installed. "
+                    "Run: ml_drought/scripts/drafts/install_cdo2.sh "
+                    "From: https://gist.github.com/mainvoid007/e5f1c82f50eb0459a55dfc4a0953a08e"
                 )
         except OSError as e:
             print(f"Execution failed: {e}")
