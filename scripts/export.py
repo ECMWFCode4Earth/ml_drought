@@ -77,7 +77,7 @@ def export_era5(region_str="kenya"):
         exporter.export(variable=variable, granularity="monthly", region_str=region_str)
 
 
-def export_era5_land(region_str: str = "kenya", granularity: str = "monthly"):
+# def export_era5_land(region_str: str = "kenya", granularity: str = "monthly"):
     assert granularity in ["monthly", "hourly"]
     if granularity == "monthly":
         exporter = ERA5LandExporter(get_data_path())
@@ -204,7 +204,7 @@ if __name__ == "__main__":
     region_str = "india"
     print(f"Writing data to: {get_data_path()}")
     # export_s5(region_str=region_str, n_parallel_requests=4)
-    export_era5_land(region_str=region_str, granularity="monthly")
+    # export_era5_land(region_str=region_str, granularity="monthly")
     # export_era5(region_str=region_str)
     # export_vhi()
     # export_chirps()
