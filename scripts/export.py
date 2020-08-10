@@ -147,7 +147,7 @@ def export_esa():
     exporter.export()
 
 
-def export_s5(region_str="kenya", n_parallel_requests=1, years=np.arange(2000, YEAR)):
+def export_s5(region_str="kenya", n_parallel_requests=1, years=np.arange(2000, YEAR+1)):
     granularity = "monthly"
     pressure_level = False
 
@@ -165,14 +165,9 @@ def export_s5(region_str="kenya", n_parallel_requests=1, years=np.arange(2000, Y
     pressure_levels = [200, 500, 925]
 
     variables = [
-        # "total_precipitation",
+        "total_precipitation",
         "2m_temperature",
-        "volumetric_soil_water_layer_1",
-        "volumetric_soil_water_layer_2",
-        "volumetric_soil_water_layer_3",
-        "volumetric_soil_water_layer_4",
-        "evapotranspiration",
-        "potential_evaporation",
+        "evaporation",
     ]
 
     for variable in variables:
@@ -203,7 +198,7 @@ def export_india_boundaries():
 if __name__ == "__main__":
     region_str = "india"
     print(f"Writing data to: {get_data_path()}")
-    # export_s5(region_str=region_str, n_parallel_requests=4)
+    export_s5(region_str=region_str, n_parallel_requests=4)
     # export_era5_land(region_str=region_str, granularity="monthly")
     # export_era5(region_str=region_str)
     # export_vhi()
