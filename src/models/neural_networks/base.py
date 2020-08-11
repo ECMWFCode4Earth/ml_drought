@@ -462,7 +462,7 @@ class NNBase(ModelBase):
             )
         elif method == "morris":
             explanations = self._get_morris_explanations(x)
-            background_samples = None
+            background_samples = None  # type: ignore
 
         if save_explanations:
             analysis_folder = self._make_analysis_folder()
@@ -531,7 +531,7 @@ class NNBase(ModelBase):
 
         return (
             {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)},
-            None,  # background_samples,
+            background_samples,  #  None
         )
 
     def _get_morris_explanations(self, x: TrainData) -> Dict[str, np.ndarray]:

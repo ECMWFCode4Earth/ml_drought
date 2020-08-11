@@ -386,7 +386,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
 
             # save legend if exists:
             if "slt" in list(ds_stat_new.data_vars):
-                legend.to_csv(output_folder / "legend.csv")
+                soil_type_legend.to_csv(output_folder / "legend.csv")
 
             # save to netcdf
             ds_stat_new.to_netcdf(out_static)
