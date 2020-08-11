@@ -15,6 +15,8 @@ aws s3 ls s3://mantlelabs-vci-forecast/data/raw/ --region eu-central-1
 
 ## Moving files to S3
 
+aws s3 cp --dryrun reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_india.nc s3://mantlelabs-vci-forecast/data/interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_india.nc
+
 ```bash
 aws s3 cp --dryrun --recursive --region eu-central-1
 
