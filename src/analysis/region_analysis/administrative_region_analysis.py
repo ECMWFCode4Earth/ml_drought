@@ -17,6 +17,7 @@ class AdministrativeRegionAnalysis(RegionAnalysis):
         data_dir: Path = Path("data"),
         experiment: str = "one_month_forecast",
         true_data_experiment: str = "one_month_forecast",
+        models_experiment_dir: str = "one_month_forecast",
     ):
         super().__init__(
             data_dir=data_dir,
