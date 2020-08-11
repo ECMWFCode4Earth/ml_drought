@@ -154,7 +154,8 @@ def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
 
 def _read_multi_data_paths(data_paths: List[Path]) -> xr.Dataset:
     try:
-        train_ds = xr.open_mfdataset(data_paths).sortby("time").compute()
+        train_ds = xr.open_mfdataset(
+            data_paths, combine='nested').sortby("time").compute()
     except ValueError:
         train_ds = xr.concat([xr.open_dataset(d) for d in data_paths], dim="time")
     train_ds = train_ds.transpose("time", "lat", "lon")
@@ -167,7 +168,7 @@ def read_pred_data(
 ) -> Union[xr.Dataset, xr.DataArray]:
     model_pred_dir = data_dir / "models" / experiment / model
     # Open files
-    # pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
+    # pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix(), combine='nested')
     ncfiles = list(model_pred_dir.glob("*.nc"))
     ds_list = [xr.open_dataset(f) for f in ncfiles]
     pred_ds = xr.combine_by_coords(ds_list)
