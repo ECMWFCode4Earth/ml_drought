@@ -184,34 +184,17 @@ def process_seas5(
             cleanup=True,
         )
 
-    datasets = [d.name for d in (data_path / "raw").iterdir() if "seasonal" in d.name]
-    for dataset in datasets:
-        variables = [v.name for v in (data_path / "raw" / dataset).glob("*")]
 
-        for variable in variables:
-            if variable == "total_precipitation":
-                processor = S5Preprocessor(data_path)
-                processor.preprocess(
-                    subset_str="kenya",
-                    regrid=regrid_path,
-                    resample_time=None,
-                    upsampling=False,
-                    variable=variable,
-                )
-
-
-def process_esa_cci_landcover():
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
+def process_esa_cci_landcover(subset_str: str = "kenya"):
+    data_path = get_data_path()
     regrid_path = (
         data_path
         / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
+
     processor = ESACCIPreprocessor(data_path)
-    processor.preprocess(subset_str=subset_str, regrid=regrid_path)
+    processor.preprocess(subset_str=subset_str, regrid=regrid_path, cleanup=False)
 
 
 def preprocess_srtm(subset_str: str = "kenya"):
@@ -342,13 +325,13 @@ def preprocess_s5_ouce():
 if __name__ == "__main__":
     subset_str = "india"
     # preprocess_era5(subset_str=subset_str)
-    process_seas5(subset_str=subset_str)
+    # process_seas5(subset_str=subset_str)
     # preprocess_era5_land(subset_str=subset_str, monmean=True)
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
     # process_era5POS_2018(subset_str=subset_str)
     # process_gleam(subset_str=subset_str)
-    # process_esa_cci_landcover(subset_str=subset_str)
+    process_esa_cci_landcover(subset_str=subset_str)
     # preprocess_srtm(subset_str=subset_str)
     # preprocess_era5_hourly(subset_str=subset_str)
     # preprocess_boku_ndvi(subset_str=subset_str)
