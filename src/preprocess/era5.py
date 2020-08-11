@@ -126,7 +126,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
                 filename = (
                     f'data{"_" + subset_str if subset_str is not None else ""}.nc'
                 )
-            out_dyn = self.out_dir / filename
+            out_dyn: Optional[Path] = self.out_dir / filename
 
             ds_dyn.to_netcdf(out_dyn)
             print(f"\n**** {out_dyn} Created! ****\n")
