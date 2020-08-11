@@ -115,7 +115,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
         all_dyn_ds = []
         if len(dynamic_filepaths) > 0:
-            ds_dyn = xr.open_mfdataset(dynamic_filepaths, combine='nested')
+            ds_dyn = xr.open_mfdataset(dynamic_filepaths, combine="nested")
 
             if resample_time is not None:
                 ds_dyn = self.resample_time(ds_dyn, resample_time, upsampling)
@@ -137,7 +137,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         static_filepaths = self.get_filepaths("interim", filter_type="static")
         print(static_filepaths)
         if len(static_filepaths) > 0:
-            ds_stat = xr.open_mfdataset(static_filepaths, combine='nested')
+            ds_stat = xr.open_mfdataset(static_filepaths, combine="nested")
 
             da_list = []
             for var in ds_stat.data_vars:
@@ -251,7 +251,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
                 ]
                 variable = "_".join(variable.split("_")[-2:])
                 variable = f"hourly_{variable}"
-                _ds_dyn = xr.open_mfdataset(_dyn_fpaths, combine='nested')
+                _ds_dyn = xr.open_mfdataset(_dyn_fpaths, combine="nested")
                 # ds_dyn = xr.open_mfdataset(dynamic_filepaths, combine='nested')
 
                 if resample_time is not None:
@@ -284,7 +284,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
         static_filepaths = self.get_filepaths("interim", filter_type="static")
         print(static_filepaths)
         if len(static_filepaths) > 0:
-            ds_stat = xr.open_mfdataset(static_filepaths, combine='nested')
+            ds_stat = xr.open_mfdataset(static_filepaths, combine="nested")
 
             da_list = []
             for var in ds_stat.data_vars:

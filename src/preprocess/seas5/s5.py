@@ -180,7 +180,8 @@ class S5Preprocessor(BasePreProcessor):
         # open all interim processed files (one variable)
         print("Reading and merging all interim .nc files")
         ds = xr.open_mfdataset(
-            (self.interim / variable).as_posix() + "/*.nc", combine='nested')
+            (self.interim / variable).as_posix() + "/*.nc", combine="nested"
+        )
         ds = ds.sortby("initialisation_date")
 
         return ds

@@ -163,7 +163,7 @@ class ESACCIPreprocessor(BasePreProcessor):
         for file in nc_files:
             self._preprocess_single(file, subset_str, regrid)
 
-        ds = xr.open_mfdataset(self.get_filepaths("interim"), combine='nested')
+        ds = xr.open_mfdataset(self.get_filepaths("interim"), combine="nested")
 
         # TODO: convert MODAL value across time to the most recent observation
         # TODO: convert MODAL value to the percentage cover (over time ?)
