@@ -3,8 +3,10 @@ from functools import partial
 import xarray as xr
 import multiprocessing
 from shutil import rmtree
+import re
+import numpy as np
 
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from .base import BasePreProcessor
 from ..utils import get_modal_value_across_time
@@ -94,32 +96,36 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
             list(target_folder.glob("**/*.nc")), filter_type
         )
         outfiles.sort()
+
         return outfiles
 
-    def merge_files(
+    def merge_files(  # type: ignore
         self,
         subset_str: Optional[str] = "kenya",
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
         filename: Optional[str] = None,
-    ) -> None:
+    ) -> Tuple[Optional[Path], ...]:
 
         # first, dynamic
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
+        all_dyn_ds = []
         if len(dynamic_filepaths) > 0:
             ds_dyn = xr.open_mfdataset(dynamic_filepaths)
 
             if resample_time is not None:
                 ds_dyn = self.resample_time(ds_dyn, resample_time, upsampling)
 
+            all_dyn_ds.append(ds_dyn)
+
             if filename is None:
                 filename = (
                     f'data{"_" + subset_str if subset_str is not None else ""}.nc'
                 )
-            out = self.out_dir / filename
+            out_dyn = self.out_dir / filename
 
-            ds_dyn.to_netcdf(out)
-            print(f"\n**** {out} Created! ****\n")
+            ds_dyn.to_netcdf(out_dyn)
+            print(f"\n**** {out_dyn} Created! ****\n")
 
         # then, static
         static_filepaths = self.get_filepaths("interim", filter_type="static")
@@ -142,10 +148,14 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
                 filename = (
                     f'data{"_" + subset_str if subset_str is not None else ""}.nc'
                 )
-            out = output_folder / filename
+            out_static: Optional[Path] = output_folder / filename
 
-            ds_stat_new.to_netcdf(out)
-            print(f"\n**** {out} Created! ****\n")
+            ds_stat_new.to_netcdf(out_static)
+            print(f"\n**** {out_static} Created! ****\n")
+        else:
+            out_static = None
+
+        return out_dyn, out_static  # type: ignore
 
     def preprocess(
         self,
@@ -153,7 +163,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         regrid: Optional[Path] = None,
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
-        parallel: bool = False,
+        n_processes: int = 1,
         cleanup: bool = True,
     ) -> None:
         """ Preprocess all of the era5 POS .nc files to produce
@@ -171,8 +181,8 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         upsampling: bool = False
             If true, tells the class the time-sampling will be upsampling. In this case,
             nearest instead of mean is used for the resampling
-        parallel: bool = True
-            If true, run the preprocessing in parallel
+        n_processes: int = 1
+            If > 1, run the preprocessing in parallel with n_processes
         cleanup: bool = True
             If true, delete interim files created by the class
         """
@@ -181,11 +191,16 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         # get the filepaths for all of the downloaded data
         nc_files = self.get_filepaths()
 
+        assert (
+            nc_files != []
+        ), f"No files found for {self.dataset}. Have you run the ERA5 Exporter?"
+
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
 
-        if parallel:
-            pool = multiprocessing.Pool(processes=100)
+        n_processes = max(n_processes, 1)
+        if n_processes > 1:
+            pool = multiprocessing.Pool(processes=n_processes)
             outputs = pool.map(
                 partial(self._preprocess_single, subset_str=subset_str, regrid=regrid),
                 nc_files,
@@ -200,3 +215,91 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 
         if cleanup:
             rmtree(self.interim)
+
+
+class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
+    dataset = "reanalysis-era5-single-levels"
+
+    def merge_files(  # type: ignore
+        self,
+        subset_str: Optional[str] = "kenya",
+        resample_time: Optional[str] = "W-MON",
+        upsampling: bool = False,
+        filename: Optional[str] = None,
+    ) -> Tuple[Optional[Path], ...]:  # type: ignore
+
+        # first, dynamic
+        dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
+        if len(dynamic_filepaths) > 0:
+            _country_str = f"_{subset_str}.nc"  # '_[a-z]*.nc'
+            variables = [
+                re.sub(_country_str, "", p.name[8:]) for p in dynamic_filepaths
+            ]
+
+            # all_dyn_ds = []
+            for variable in np.unique(variables):
+                _dyn_fpaths = [
+                    p
+                    for p in dynamic_filepaths
+                    if variable == re.sub(_country_str, "", p.name[8:])
+                ]
+                variable = "_".join(variable.split("_")[-2:])
+                variable = f"hourly_{variable}"
+                _ds_dyn = xr.open_mfdataset(_dyn_fpaths)
+                # ds_dyn = xr.open_mfdataset(dynamic_filepaths)
+
+                if resample_time is not None:
+                    _ds_dyn = self.resample_time(_ds_dyn, resample_time, upsampling)
+
+                filename_ = f'{variable}_data{"_" + subset_str if subset_str is not None else ""}.nc'
+                out_dyn = self.out_dir / filename_
+
+                # save to netcdf
+                _ds_dyn.to_netcdf(out_dyn)
+                print(f"\n**** {out_dyn} Created! ****\n")
+
+                # all_dyn_ds.append(_ds_dyn)
+
+            # too much data and gets killed (hourly data)
+            # ds_dyn = xr.auto_combine(all_dyn_ds)
+
+            # if filename is None:
+            #     filename = (
+            #         f'data{"_" + subset_str if subset_str is not None else ""}.nc'
+            #     )
+            # out_dyn = self.out_dir / filename
+
+            # ds_dyn.to_netcdf(out_dyn)
+            # print(f"\n**** {out_dyn} Created! ****\n")
+        else:
+            out_dyn = None  # type: ignore
+
+        # then, static
+        static_filepaths = self.get_filepaths("interim", filter_type="static")
+        print(static_filepaths)
+        if len(static_filepaths) > 0:
+            ds_stat = xr.open_mfdataset(static_filepaths)
+
+            da_list = []
+            for var in ds_stat.data_vars:
+                print(var)
+                da_list.append(get_modal_value_across_time(ds_stat[var]))
+            ds_stat_new = xr.merge(da_list)
+
+            output_folder = (
+                self.preprocessed_folder / f"static/{self.dataset}_preprocessed"
+            )
+            if not output_folder.exists():
+                output_folder.mkdir(exist_ok=True, parents=True)
+            if filename is None:
+                filename = (
+                    f'data{"_" + subset_str if subset_str is not None else ""}.nc'
+                )
+            out_static = output_folder / filename
+
+            ds_stat_new.to_netcdf(out_static)
+            print(f"\n**** {out_static} Created! ****\n")
+        else:
+            out_static = None  # type: ignore
+
+        return out_dyn, out_static  # type: ignore

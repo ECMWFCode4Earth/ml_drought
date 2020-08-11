@@ -2,6 +2,7 @@ import os
 import string
 import pandas as pd
 from pathlib import Path
+import zipfile
 
 from .base import BaseExporter
 
@@ -60,14 +61,19 @@ class ESACCIExporter(BaseExporter):
             return None
         os.system(f"wget {url_path}.zip -P {self.landcover_folder.as_posix()}")
 
-    def unzip(self) -> None:
+    def unzip(self, python_only: bool = True) -> None:
+        """https://stackoverflow.com/a/3451150/9940782
+        """
         fname = self.landcover_folder / (self.target_file + ".zip")
         assert fname.exists()
         print(f"Unzipping {fname.name}")
-
-        os.system(
-            f"unzip {fname.as_posix()} -d {self.landcover_folder.resolve().as_posix()}"
-        )
+        if python_only:
+            with zipfile.ZipFile(fname, "r") as zip_ref:
+                zip_ref.extractall(fname.parents[0])
+        else:  # ECMWF machine doesn't have the bash `unzip` utility
+            os.system(
+                f"unzip {fname.as_posix()} -d {self.landcover_folder.resolve().as_posix()}"
+            )
         print(f"{fname.name} unzipped!")
 
     def export(self) -> None:

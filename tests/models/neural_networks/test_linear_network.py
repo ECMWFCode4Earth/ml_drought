@@ -23,6 +23,7 @@ class TestLinearNetwork:
         surrounding_pixels = 1
         ignore_vars = ["precip"]
         include_yearly_aggs = True
+        normalize_y = False
 
         def mocktrain(self):
             self.model = LinearModel(
@@ -33,6 +34,7 @@ class TestLinearNetwork:
                 include_latlons,
                 include_yearly_aggs,
                 include_static=True,
+                include_prev_y=True,
             )
             self.input_size = input_size
 
@@ -49,6 +51,8 @@ class TestLinearNetwork:
             include_yearly_aggs=include_yearly_aggs,
             surrounding_pixels=surrounding_pixels,
             ignore_vars=ignore_vars,
+            include_prev_y=True,
+            normalize_y=normalize_y,
         )
         model.train()
         model.save_model()
@@ -71,14 +75,28 @@ class TestLinearNetwork:
         assert model_dict["include_yearly_aggs"] == include_yearly_aggs
         assert model_dict["surrounding_pixels"] == surrounding_pixels
         assert model_dict["ignore_vars"] == ignore_vars
+        assert model_dict["include_prev_y"] is True
+        assert model_dict["normalize_y"] == normalize_y
 
     @pytest.mark.parametrize(
-        "use_pred_months,use_latlons,experiment,monthly_agg,static",
+        "use_pred_months,use_latlons,experiment,monthly_agg,static,predict_delta,check_inversion",
         [
-            (True, False, "one_month_forecast", True, False),
-            (False, True, "one_month_forecast", False, True),
-            (False, True, "nowcast", True, False),
-            (True, False, "nowcast", False, True),
+            (True, False, "one_month_forecast", True, False, True, True),
+            (False, True, "one_month_forecast", False, True, True, True),
+            (False, True, "nowcast", True, False, True, True),
+            (True, False, "nowcast", False, True, True, True),
+            (True, False, "one_month_forecast", True, False, False, True),
+            (False, True, "one_month_forecast", False, True, False, True),
+            (False, True, "nowcast", True, False, False, True),
+            (True, False, "nowcast", False, True, False, True),
+            (True, False, "one_month_forecast", True, False, True, False),
+            (False, True, "one_month_forecast", False, True, True, False),
+            (False, True, "nowcast", True, False, True, False),
+            (True, False, "nowcast", False, True, True, False),
+            (True, False, "one_month_forecast", True, False, False, False),
+            (False, True, "one_month_forecast", False, True, False, False),
+            (False, True, "nowcast", True, False, False, False),
+            (True, False, "nowcast", False, True, False, False),
         ],
     )
     def test_train(
@@ -90,6 +108,8 @@ class TestLinearNetwork:
         experiment,
         monthly_agg,
         static,
+        predict_delta,
+        check_inversion,
     ):
         # make the x, y data (5*5 latlons, 36 timesteps, 3 features)
         x, _, _ = _make_dataset(size=(5, 5), const=True)
@@ -105,7 +125,7 @@ class TestLinearNetwork:
             "temp": {"mean": 0, "std": 1},
         }
 
-        test_features = tmp_path / f"features/{experiment}/train/hello"
+        test_features = tmp_path / f"features/{experiment}/train/1980_1"
         test_features.mkdir(parents=True, exist_ok=True)
 
         # make the normalising dictionary
@@ -136,41 +156,10 @@ class TestLinearNetwork:
             include_pred_month=use_pred_months,
             include_latlons=use_latlons,
             include_monthly_aggs=monthly_agg,
-            include_static=static,
+            static="embeddings",
+            predict_delta=predict_delta,
         )
-
-        model.train()
-
-        # check the number of input features is properly initialised
-        n_input_features = [p for p in model.model.dense_layers.parameters()][0].shape[
-            -1
-        ]
-
-        # Expect to have 12 more features if use_pred_months
-        if experiment == "nowcast":
-            n_expected = 107
-        else:
-            # NOTE: data hasn't been through `src.Engineer` therefore including
-            #  current data (hence why more features than `nowcast`)
-            n_expected = 108
-
-        if monthly_agg:
-            n_expected *= 2
-        if use_pred_months:
-            n_expected += 12
-        if use_latlons:
-            n_expected += 2
-
-        n_expected += 3  # +3 for the yearly means
-
-        if static:
-            n_expected += 1  # for the static variable
-
-        assert n_input_features == n_expected, (
-            "Expected the number"
-            f"of input features to be: {n_expected}"
-            f"Got: {n_input_features}"
-        )
+        model.train(check_inversion=check_inversion)
 
         captured = capsys.readouterr()
         expected_stdout = "Epoch 1, train smooth L1: "
@@ -193,10 +182,10 @@ class TestLinearNetwork:
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        train_features = tmp_path / f"features/{experiment}/train/hello"
+        train_features = tmp_path / f"features/{experiment}/train/1980_1"
         train_features.mkdir(parents=True)
 
-        test_features = tmp_path / f"features/{experiment}/test/hello"
+        test_features = tmp_path / f"features/{experiment}/test/1980_1"
         test_features.mkdir(parents=True)
 
         # static
@@ -248,18 +237,18 @@ class TestLinearNetwork:
         model.train()
         test_arrays_dict, pred_dict = model.predict()
 
-        # the foldername "hello" is the only one which should be in the dictionaries
-        assert ("hello" in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1)
-        assert ("hello" in pred_dict.keys()) and (len(pred_dict) == 1)
+        # the foldername "1980_1" is the only one which should be in the dictionaries
+        assert ("1980_1" in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1)
+        assert ("1980_1" in pred_dict.keys()) and (len(pred_dict) == 1)
 
         # _make_dataset with const=True returns all ones
-        assert (test_arrays_dict["hello"]["y"] == 1).all()
+        assert (test_arrays_dict["1980_1"]["y"] == 1).all()
 
     def test_get_background(self, tmp_path):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        train_features = tmp_path / "features/one_month_forecast/train/hello"
+        train_features = tmp_path / "features/one_month_forecast/train/1980_1"
         train_features.mkdir(parents=True)
 
         x.to_netcdf(train_features / "x.nc")

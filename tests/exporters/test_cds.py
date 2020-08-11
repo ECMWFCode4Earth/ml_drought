@@ -249,10 +249,8 @@ class TestCDSExporter:
 
         raw_folder = tmp_path / "raw"
         expected_paths = [
-            raw_folder / "era5/precipitation/2018/04.nc",
-            raw_folder / "era5/precipitation/2018/05.nc",
-            raw_folder / "era5/precipitation/2019/04.nc",
-            raw_folder / "era5/precipitation/2019/05.nc",
+            raw_folder / "era5/precipitation/2018/04_05.nc",
+            raw_folder / "era5/precipitation/2019/04_05.nc",
         ]
 
         assert len(output_paths) == len(expected_paths), (
