@@ -1,7 +1,10 @@
 import torch
 import numpy as np
+import xarray as xr
+import pandas as pd
+from torch import Tensor
 from random import shuffle as shuffle_list
-from typing import cast, Iterable, Union, Tuple, Optional
+from typing import cast, Iterable, Union, Tuple, Optional, Dict
 
 
 def chunk_array(
@@ -87,3 +90,43 @@ def _chunk_tensor(
     if shuffle:
         shuffle_list(return_arrays)
     return [(chunk[:-1], chunk[-1]) for chunk in return_arrays]  # type: ignore
+
+
+def _datetime_to_folder_time_str(date: np.datetime64) -> str:
+    date = pd.to_datetime(date)
+    return f"{str(date.year[0])}_{str(date.month[0])}"
+
+
+def vals_dict_to_xarray_dataset(
+    vals: Dict, values: np.array, var_name: str
+) -> xr.Dataset:
+    """Convert the dictionary output by `model.predict()` to an xarray object"""
+    lats = np.unique(vals["latlons"][:, 0])
+    lons = np.unique(vals["latlons"][:, 1])
+    time = vals["time"]
+    shape = (len(lats), len(lons), 1)
+    _vals = values.reshape(shape)
+    dims = ["lat", "lon", "time"]
+    coords = {"lat": lats, "lon": lons, "time": [time]}
+    return xr.Dataset({var_name: (dims, _vals)}, coords=coords)
+
+
+def _to_xarray_dataset(
+    latlons: np.array, data: np.array, var_name: str = "data"
+) -> xr.Dataset:
+    """ create a 2D (single timestep) xr.Dataset """
+    # convert to numpy array
+    if isinstance(data, Tensor):
+        try:
+            data = data.detach().numpy()
+        except RuntimeError as E:
+            print(E)
+            data.numpy()
+    if isinstance(latlons, Tensor):
+        latlons = latlons.numpy()
+
+    points = [i for i in range(len(latlons))]
+    _vals = data.flatten()
+    dims = ["point"]
+    coords = {"point": points}
+    return xr.Dataset({var_name: (dims, _vals)}, coords=coords)

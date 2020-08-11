@@ -7,7 +7,9 @@ from pathlib import Path
 def rolling_cumsum(ds: xr.Dataset, rolling_window: int = 3) -> xr.Dataset:
 
     ds_window = (
-        ds.rolling(time=rolling_window, center=True).sum().dropna(dim="time", how="all")
+        ds.rolling(time=rolling_window, center=False)
+        .sum()
+        .dropna(dim="time", how="all")
     )
 
     return ds_window
@@ -15,12 +17,12 @@ def rolling_cumsum(ds: xr.Dataset, rolling_window: int = 3) -> xr.Dataset:
 
 def rolling_mean(ds: xr.Dataset, rolling_window: int = 3) -> xr.Dataset:
     ds_window = (
-        ds.rolling(time=rolling_window, center=True)
+        ds.rolling(time=rolling_window, center=False)
         .mean()
         .dropna(dim="time", how="all")
     )
 
-    return ds_window
+    return ds_window.sortby("lat")
 
 
 def apply_over_period(
@@ -79,7 +81,7 @@ def create_shape_aligned_climatology(
     # copy that forward in time
     new_clim = xr.Dataset(
         {variable: (["time", "lat", "lon"], new_clim_vals)},
-        coords={"lat": clim.lat, "lon": clim.lon, "time": ds.time,},
+        coords={"lat": clim.lat, "lon": clim.lon, "time": ds.time},
     )
     return new_clim
 

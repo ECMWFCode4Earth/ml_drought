@@ -17,11 +17,12 @@ class S5Preprocessor(BasePreProcessor):
         self,
         data_folder: Path = Path("data"),
         ouce_server: bool = False,
-        parallel: bool = False,
+        n_processes: int = 1,
     ) -> None:
         super().__init__(data_folder)
         self.ouce_server = ouce_server
-        self.parallel = parallel
+        self.n_processes = max(n_processes, 1)
+        self.parallel = self.n_processes > 1
 
     def get_filepaths(  # type: ignore
         self, target_folder: Path, variable: str, grib: bool = True
@@ -139,7 +140,7 @@ class S5Preprocessor(BasePreProcessor):
             # regrid each variable individually
             all_vars = []
             for var in vars:
-                if self.parallel:
+                if self.n_processes > 1:
                     # if parallel need to recreate new file each time
                     d_ = self.regrid(
                         ds[var].to_dataset(name=var),

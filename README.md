@@ -1,6 +1,9 @@
 <!-- ![](https://imgur.com/8qjbXcD) -->
 [![Build Status](https://travis-ci.com/esowc/ml_drought.svg?branch=master)](https://travis-ci.com/esowc/ml_drought)
 
+<!-- https://colab.research.google.com/github/googlecolab/colabtools/blob/master/notebooks/colab-github-demo.ipynb#scrollTo=8QAWNjizy_3O -->
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/esowc/ml_drought/blob/master/notebooks/docs/Pipeline.ipynb)
+
 <!-- OVERVIEW -->
 
 # A Machine Learning Pipeline for Climate Science
@@ -71,6 +74,13 @@ Then, use it to run a container, mounting the data folder to the container:
 docker run -it \
 --mount type=bind,source=<PATH_TO_DATA>,target=/ml_drought/data \
 ml_drought /bin/bash
+```
+
+You will also need to create a .cdsapirc file with the following information:
+```bash
+url: https://cds.climate.copernicus.eu/api/v2
+key: <INSERT KEY HERE>
+verify: 1
 ```
 
 ### Testing  <a name="testing"></a>

@@ -51,7 +51,7 @@ def _create_dummy_precip_data(tmp_path, start_date="1999-01-01", end_date="2001-
     precip, _, _ = _make_dataset(
         (30, 30), variable_name="precip", start_date=start_date, end_date=end_date
     )
-    precip.to_netcdf(data_dir / "chirps_kenya.nc")
+    precip.to_netcdf(data_dir / "data_kenya.nc")
 
     return data_dir
 
@@ -77,3 +77,51 @@ class CreateSHPFile:
         gdf = gpd.GeoDataFrame(df, geometry=[p1, p2])
         gdf["geometry"] = gdf.buffer(0.2)
         gdf.to_file(driver="ESRI Shapefile", filename=filepath)
+
+
+def _create_features_dir(
+    tmp_path, train=False, start_date="1999-01-01", end_date="2001-12-31"
+):
+    if train:
+        features_dir = tmp_path / "features" / "one_month_forecast" / "train"
+    else:
+        features_dir = tmp_path / "features" / "one_month_forecast" / "test"
+
+    if not features_dir.exists():
+        features_dir.mkdir(parents=True, exist_ok=True)
+
+    daterange = pd.date_range(start=start_date, end=end_date, freq="M")
+    dates = [f"{d.year}-{d.month}-{d.day}" for d in daterange]
+    dir_names = [f"{d.year}_{d.month}" for d in daterange]
+
+    # TARGET variable target time
+    for date, dir_name in zip(dates, dir_names):
+        (features_dir / dir_name).mkdir(exist_ok=True, parents=True)
+        vci, _, _ = _make_dataset(
+            (30, 30), variable_name="vci", start_date=date, end_date=date
+        )
+        vci.to_netcdf(features_dir / dir_name / "y.nc")
+
+    # INPUT variables (previous time)
+    for date in dates:
+        # get the previous time
+        prev_dt = pd.to_datetime(date) - pd.DateOffset(months=1)
+        prev_dt = pd.Series([0], index=[prev_dt]).resample("M").mean().index
+        dir_name = f"{prev_dt.year[0]}_{prev_dt.month[0]}"
+        prev_date = f"{prev_dt.year[0]}-{prev_dt.month[0]:02}-{prev_dt.day[0]:02}"
+
+        # make the directory
+        (features_dir / dir_name).mkdir(exist_ok=True, parents=True)
+
+        # create input data (autoregressive + other)
+        vci, _, _ = _make_dataset(
+            (30, 30), variable_name="vci", start_date=prev_date, end_date=prev_date
+        )
+        precip, _, _ = _make_dataset(
+            (30, 30), variable_name="precip", start_date=prev_date, end_date=prev_date
+        )
+        ds = xr.auto_combine([vci, precip])
+        # if dir_name != '1998_12':
+        # assert False
+
+        ds.to_netcdf(features_dir / dir_name / "x.nc")

@@ -1,16 +1,51 @@
-from src.engineer import Engineer
-from src.analysis import read_train_data, read_test_data
-from src.analysis import all_explanations_for_file
-from scripts.utils import get_data_path
-from _base_models import parsimonious, regression, linear_nn, rnn, earnn
+"""
+RERUN:
+chose 8 test years?
+test_hilo: high / train_hilo: high / train_length: 5
+_one_month_forecast_TRhigh_TEhigh_LEN5/test
+chose 5 test years
+test_hilo: med / train_hilo: high / train_length: 10
+one_month_forecast_TRhigh_TEmed_LEN10/test
+chose 2 test years
+test_hilo: low / train_hilo: high / train_length: 20
+one_month_forecast_TRhigh_TElow_LEN20/
+chose 5 test years
+test_hilo: med / train_hilo: high / train_length: 10
+one_month_forecast_TRhigh_TEmed_LEN10/
+DIDN'T RUN
+test_hilo: med / train_hilo: high / train_length: 5
+one_month_forecast_TRhigh_TEmed_LEN5/
+chose 1981 as a test year
+test_hilo: high / train_hilo: med / train_length: 20
+one_month_forecast_TRmed_TEhigh_LEN20/test
+ealstm failed
+test_hilo: low / train_hilo: med / train_length: 10
+*one_month_forecast_TRmed_TElow_LEN10/ealstm
+only chose 2 test years
+test_hilo: low / train_hilo: med / train_length: 20
+one_month_forecast_TRmed_TElow_LEN20
+chose 1981 as a test year
+test_hilo: high / train_hilo: low / train_length: 5
+one_month_forecast_TRlow_TEhigh_LEN5
+"""
 import numpy as np
 import pandas as pd
 import xarray as xr
-from typing import List, Union, Tuple, Dict
+from pathlib import Path
+import itertools
+import json
+from typing import List, Union, Tuple, Dict, Optional
 
 import sys
 
 sys.path.append("../..")
+
+from _base_models import persistence, regression, linear_nn, rnn, earnn
+
+from src.analysis import all_explanations_for_file
+from src.analysis import read_train_data, read_test_data
+from src.engineer import Engineer
+from scripts.utils import get_data_path, _rename_directory
 
 
 def sort_by_median_target_variable(
@@ -61,11 +96,17 @@ def get_experiment_years(
         "med",
     ], "hilo must be one of ['high', 'low', 'med']"
 
+    minimum_year = min(sorted_years)
+
     # 1. split into low, med, high groups
     test_dict = _calculate_hilo_dict(sorted_years)
 
     # 2. select randomly the TEST years from these groups
-    test_years = np.random.choice(test_dict[test_hilo], test_length, replace=False)
+    # DON'T ALLOW the minimum year to be in test set because limits number of test
+    # months
+    test_years = [minimum_year, minimum_year, minimum_year]
+    while minimum_year in test_years:
+        test_years = np.random.choice(test_dict[test_hilo], test_length, replace=False)
     # test_indexes = np.array(
     #     [np.where(test_dict[test_hilo] == i) for i in test_years]
     # ).flatten()
@@ -143,27 +184,44 @@ def get_experiment_years(
     return test_years, train_years
 
 
-def rename_model_experiment_file(
-    data_dir: Path, test_years: List[int], train_years: List[int], static: bool
+def rename_experiment_dir(
+    data_dir: Path,
+    train_hilo: str,
+    test_hilo: str,
+    train_length: int,
+    dir_: str = "models",
 ) -> None:
-    from_path = data_dir / "models" / "one_month_forecast"
-    str_test_years = "_".join(test_years)
-    str_train_years = "_".join(train_years)
+    from_path = data_dir / dir_ / "one_month_forecast"
+
     to_path = (
-        data_dir / "models" / f"one_month_forecast_{str_test_years}_{str_train_years}"
+        data_dir
+        / dir_
+        / f"one_month_forecast_TR{train_hilo}_TE{test_hilo}_LEN{train_length}"
     )
 
     # with_datetime ensures that unique
     _rename_directory(from_path, to_path, with_datetime=True)
 
+    # 2. select randomly the TEST years from these groups
+    test_years = np.random.choice(test_dict[test_hilo], test_length, replace=False)
+    # test_indexes = np.array(
+    #     [np.where(test_dict[test_hilo] == i) for i in test_years]
+    # ).flatten()
 
-def run_all_models_as_experiments(
-    test_years: List[int],
-    train_years: List[int],
+
+def run_experiments(
+    train_hilo: str,
+    test_hilo: str,
+    train_length: int,
     static: bool,
+    ignore_vars: Optional[List[str]] = None,
     run_regression: bool = True,
+    all_models: bool = False,
 ):
-    print(f"Experiment Static: {static}")
+    # run baseline model
+    print("\n\nBASELINE MODEL:")
+    persistence()
+    print("\n\n")
 
     # RUN EXPERIMENTS
     if run_regression:
@@ -172,60 +230,74 @@ def run_all_models_as_experiments(
     if static:
         # 'embeddings' or 'features'
         try:
-            linear_nn(ignore_vars=ignore_vars, static="embeddings")
-        except RuntimeError:
-            print(f"\n{'*'*10}\n FAILED: LinearNN \n{'*'*10}\n")
-
-        try:
-            rnn(ignore_vars=ignore_vars, static="embeddings")
-        except RuntimeError:
-            print(f"\n{'*'*10}\n FAILED: RNN \n{'*'*10}\n")
-        try:
-
             earnn(pretrained=False, ignore_vars=ignore_vars, static="embeddings")
         except RuntimeError:
             print(f"\n{'*'*10}\n FAILED: EALSTM \n{'*'*10}\n")
 
-    else:
-        try:
-            linear_nn(ignore_vars=ignore_vars, static=None)
-        except RuntimeError:
-            print(f"\n{'*'*10}\n FAILED: LinearNN \n{'*'*10}\n")
+        if all_models:  # run all other models ?
+            try:
+                linear_nn(ignore_vars=ignore_vars, static="embeddings")
+            except RuntimeError:
+                print(f"\n{'*'*10}\n FAILED: LinearNN \n{'*'*10}\n")
 
+            try:
+                rnn(ignore_vars=ignore_vars, static="embeddings")
+            except RuntimeError:
+                print(f"\n{'*'*10}\n FAILED: RNN \n{'*'*10}\n")
+
+            try:
+                earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
+            except RuntimeError:
+                print(f"\n{'*'*10}\n FAILED: EALSTM \n{'*'*10}\n")
+
+    else:  # NO STATIC data
         try:
             rnn(ignore_vars=ignore_vars, static=None)
         except RuntimeError:
             print(f"\n{'*'*10}\n FAILED: RNN \n{'*'*10}\n")
 
-        try:
-            earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
-        except RuntimeError:
-            print(f"\n{'*'*10}\n FAILED: EALSTM \n{'*'*10}\n")
+        if all_models:  # run all other models ?
+            try:
+                linear_nn(ignore_vars=ignore_vars, static=None)
+            except RuntimeError:
+                print(f"\n{'*'*10}\n FAILED: LinearNN \n{'*'*10}\n")
 
     # RENAME DIRECTORY
     data_dir = get_data_path()
-    rename_model_experiment_file(data_dir)
-    print(f"Experiment finished")
+    rename_experiment_dir(
+        data_dir, train_hilo=train_hilo, test_hilo=test_hilo, train_length=train_length
+    )
+    print(
+        f"\n**Experiment finished**\n",
+        "train_length: " + str(train_length),
+        "test_hilo: " + test_hilo,
+        "train_hilo: " + train_hilo,
+        "\ntrain_years:\n",
+        train_years,
+        "\n",
+        "test_years:\n",
+        test_years,
+    )
 
 
 class Experiment:
     """
     train_length: int
-        the length of the training period (# years)
+        the length of the training period (# years)
     test_length: int = 3
-        the length of the testing period (# years)
+        the length of the testing period (# years)
     train_hilo: str
         selecting the training years from which tercile?
         one of ['high', 'med', 'low']
     test_hilo: str
         selecting the training years from which tercile?
         one of ['high', 'med', 'low']
-
     @dataclass
     train_length: int
     test_length: int = 3
     train_hilo: str
     test_hilo: str
+    TODO: put the get_experiment_years function inside this class!
     """
 
     def __init__(
@@ -240,14 +312,24 @@ class Experiment:
         assert test_hilo in ["high", "med", "low"]
 
 
-def run_training_period_experiments():
+def run_training_period_experiments(pred_months: int = 3):
+    expected_length = pred_months
+
+    # Read the target data
+    print("** Reading the target data **")
     data_dir = get_data_path()
     target_data = xr.open_dataset(
         data_dir / "interim" / "VCI_preprocessed" / "data_kenya.nc"
     )
+    # sort by the annual median (across pixels/time)
+    print("** Sorting the target data **")
     sorted_years, _ = sort_by_median_target_variable(target_data)
+    print(f"** sorted_years: {sorted_years} **")
+    print(f"** min_year: {min(sorted_years)} max_year: {max(sorted_years)} **")
 
-    # get all experiments
+    # create all experiments
+    # train_hilo(9), test_hilo(3), train_length(1)
+    print("** Creating all experiments **")
     hilos = ["high", "med", "low"]
     train_lengths = [5, 10, 20]
     experiments = [
@@ -259,7 +341,8 @@ def run_training_period_experiments():
         )
     ]
 
-    for experiment in experiments:
+    print("** Running all experiments **")
+    for experiment in experiments[7:]:
         test_years, train_years = get_experiment_years(
             sorted_years,
             experiment.train_length,
@@ -268,30 +351,77 @@ def run_training_period_experiments():
             test_length=3,
         )
 
-        debug = False
+        debug = True
         if debug:
             print(
-                experiment.train_length,
-                experiment.test_hilo,
-                experiment.train_hilo,
-                "train_years:\n",
+                "\n" + "-" * 10 + "\n",
+                "train_length: " + str(experiment.train_length),
+                "test_hilo: " + experiment.test_hilo,
+                "train_hilo: " + experiment.train_hilo,
+                "\ntrain_years:\n",
                 train_years,
                 "\n",
                 "test_years:\n",
                 test_years,
-                "\n",
+                "\n" + "-" * 10 + "\n",
             )
 
+        # have to recreate each engineer for the experiment
+        # TODO: definite inefficiency should this be in DataLoader?
         engineer = Engineer(
             get_data_path(),
             experiment="one_month_forecast",
             process_static=True,
-            test_year=test_years,
-            train_years=train_years,
+            different_training_periods=True,
+        )
+        engineer.engineer_class.engineer(
+            test_year=test_years,  # defined by experiment
+            train_years=train_years,  # defined by experiment
+            pred_months=pred_months,  # 3 by default
+            expected_length=expected_length,  # == pred_month by default
+            target_variable="VCI",
         )
 
-    pass
+        # TODO:
+        # add extra years if selected the first year in timeseries (often not 12months)
+        # e.g. 1981_11 is the first valid month in our dataset
+
+        # Run the models
+        always_ignore_vars = ["ndvi", "p84.162", "sp", "tp", "Eb"]
+        ignore_vars = always_ignore_vars
+        run_experiments(
+            train_hilo=experiment.train_hilo,
+            test_hilo=experiment.test_hilo,
+            train_length=len(train_years),
+            ignore_vars=ignore_vars,
+            run_regression=False,
+            all_models=False,
+            static=True,
+        )
+
+        # save some key facts about the experiment to an experiment.json file
+        expt_dict = dict(
+            train_hilo=experiment.train_hilo,
+            test_hilo=experiment.test_hilo,
+            train_length=len(train_years),
+            ignore_vars=ignore_vars,
+            train_years=train_years,
+            test_years=test_years,
+        )
+        with open(data_dir / "models/one_month_forecast/experiment.json", "wb") as fp:
+            json.dump(expt_dict, fp, sort_keys=True, indent=4)
+
+        # rename the features/one_month_forecast directory
+        rename_experiment_dir(
+            data_dir,
+            train_hilo=experiment.train_hilo,
+            test_hilo=experiment.test_hilo,
+            train_length=len(train_years),
+            dir_="features",
+        )
 
 
 if __name__ == "__main__":
-    run_training_period_experiments()
+    pred_months = 3
+
+    run_training_period_experiments(pred_months=pred_months)

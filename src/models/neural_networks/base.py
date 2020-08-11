@@ -3,17 +3,18 @@ import random
 from pathlib import Path
 import pickle
 import math
+import xarray as xr
 
 import torch
 from torch.nn import functional as F
 
-import shap
-
 from typing import cast, Dict, List, Optional, Tuple, Union
 
 from ..base import ModelBase
-from ..utils import chunk_array
+from ..utils import chunk_array, _to_xarray_dataset
 from ..data import DataLoader, train_val_mask, TrainData, idx_to_input
+
+shap = None
 
 
 class NNBase(ModelBase):
@@ -31,19 +32,28 @@ class NNBase(ModelBase):
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
         device: str = "cuda:0",
+        predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
+        include_prev_y: bool = True,
+        normalize_y: bool = True,
+        explain: bool = False,
     ) -> None:
         super().__init__(
-            data_folder,
-            batch_size,
-            experiment,
-            pred_months,
-            include_pred_month,
-            include_latlons,
-            include_monthly_aggs,
-            include_yearly_aggs,
-            surrounding_pixels,
-            ignore_vars,
-            static,
+            data_folder=data_folder,
+            batch_size=batch_size,
+            experiment=experiment,
+            pred_months=pred_months,
+            include_pred_month=include_pred_month,
+            include_latlons=include_latlons,
+            include_monthly_aggs=include_monthly_aggs,
+            include_yearly_aggs=include_yearly_aggs,
+            surrounding_pixels=surrounding_pixels,
+            ignore_vars=ignore_vars,
+            static=static,
+            predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
+            include_prev_y=include_prev_y,
+            normalize_y=normalize_y,
         )
 
         # for reproducibility
@@ -53,7 +63,11 @@ class NNBase(ModelBase):
             self.device = "cpu"
         torch.manual_seed(42)
 
-        self.explainer: Optional[shap.DeepExplainer] = None
+        if explain:
+            global shap
+            if shap is None:
+                import shap
+            self.explainer: Optional[shap.DeepExplainer] = None  # type: ignore
 
     def to(self, device: str = "cpu"):
         # move the model onto the right device
@@ -75,6 +89,7 @@ class NNBase(ModelBase):
         batch_size: int = 256,
         learning_rate: float = 1e-3,
         val_split: float = 0.1,
+        check_inversion: bool = False,
     ) -> None:
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
@@ -124,6 +139,19 @@ class NNBase(ModelBase):
                     pred = self.model(
                         *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
                     )
+                    if (epoch == 0) & check_inversion:  # check only the first epoch
+                        # create xarray objects
+                        pred_xr = _to_xarray_dataset(latlons=x_batch[2], data=pred)
+                        true_xr = _to_xarray_dataset(latlons=x_batch[2], data=y_batch)
+                        # check that nans more or less the same
+                        assert (
+                            pred_xr.isnull().data.values == true_xr.isnull().data.values
+                        ).mean() > 0.92, (
+                            "The missing data should be the same for 92% of the data. "
+                            "This sometimes occurs when there has been a problem with an inversion "
+                            "somewhere in the data"
+                        )
+
                     loss = F.smooth_l1_loss(pred, y_batch)
                     loss.backward()
                     optimizer.step()
@@ -180,13 +208,43 @@ class NNBase(ModelBase):
         with torch.no_grad():
             for dict in test_arrays_loader:
                 for key, val in dict.items():
-                    preds = self.model(*self._input_to_tuple(val.x))
-                    preds_dict[key] = preds.cpu().numpy()
+
+                    input_tuple = self._input_to_tuple(val.x)
+
+                    # TODO - this code is mostly copied from
+                    # models.utils - can be cleaned up
+                    # with a default batch size of 256
+                    num_sections = max(input_tuple[0].shape[0] // 256, 1)
+                    split_x = []
+                    for idx, x_section in enumerate(input_tuple):
+                        if x_section is not None:
+                            split_x.append(torch.chunk(x_section, num_sections))
+                        else:
+                            split_x.append([None] * num_sections)  # type: ignore
+
+                    chunked_input = list(zip(*split_x))
+
+                    all_preds = []
+                    for batch in chunked_input:
+                        all_preds.append(self.model(*batch).cpu().numpy())
+                    preds_dict[key] = np.concatenate(all_preds)
+
                     test_arrays_dict[key] = {
                         "y": val.y.cpu().numpy(),
                         "latlons": val.latlons,
                         "time": val.target_time,
+                        "y_var": val.y_var,
                     }
+                    if self.predict_delta:
+                        assert val.historical_target.shape[0] == val.y.shape[0], (
+                            "Expect"
+                            f"the shape of the y ({val.y.shape})"
+                            f" and historical_target ({val.historical_target.shape})"
+                            " to be the same!"
+                        )
+                        test_arrays_dict[key][
+                            "historical_target"
+                        ] = val.historical_target
 
         return test_arrays_dict, preds_dict
 
@@ -204,6 +262,7 @@ class NNBase(ModelBase):
         output_cur: List[torch.Tensor] = []
         output_ym: List[torch.Tensor] = []
         output_static: List[torch.Tensor] = []
+        output_prev_y: List[torch.Tensor] = []
 
         samples_per_instance = max(1, sample_size // len(train_dataloader))
 
@@ -226,7 +285,13 @@ class NNBase(ModelBase):
                     output_cur.append(x[3][idx])
 
                 # yearly aggs
-                output_ym.append(x[4][idx])
+                if x[4] is None:
+                    if output_ym is None:
+                        output_ym = [torch.zeros(1)]
+                    else:
+                        output_ym.append(torch.zeros(1))
+                else:
+                    output_ym.append(x[4][idx])
 
                 # static data
                 if self.static == "embeddings":
@@ -238,14 +303,19 @@ class NNBase(ModelBase):
                 else:
                     output_static.append(torch.zeros(1))
 
+                output_prev_y.append(x[6][idx])
+
                 if len(output_tensors) >= sample_size:
                     return [
-                        torch.stack(output_tensors),  # type: ignore
-                        torch.cat(output_pm, dim=0),
-                        torch.stack(output_ll),
-                        torch.stack(output_cur),
-                        torch.stack(output_ym),
-                        torch.stack(output_static),
+                        torch.stack(output_tensors).to(self.device),  # type: ignore
+                        torch.cat(output_pm, dim=0).to(self.device),
+                        torch.stack(output_ll).to(self.device),
+                        torch.stack(output_cur).to(self.device),
+                        torch.stack(output_ym).to(self.device)
+                        if output_ym is not None
+                        else None,
+                        torch.stack(output_static).to(self.device),
+                        torch.stack(output_prev_y).to(self.device),
                     ]
 
         return [
@@ -255,6 +325,7 @@ class NNBase(ModelBase):
             torch.stack(output_cur),
             torch.stack(output_ym),
             torch.stack(output_static),
+            torch.stack(output_prev_y),
         ]
 
     def _one_hot(self, indices: torch.Tensor, num_vals: int) -> torch.Tensor:
@@ -265,6 +336,18 @@ class NNBase(ModelBase):
     def _input_to_tuple(
         self, x: Union[Tuple[torch.Tensor, ...], TrainData]
     ) -> Tuple[torch.Tensor, ...]:
+        """
+        Returns:
+        --------
+        Tuple:
+            [0] historical data
+            [1] months (one hot encoded)
+            [2] latlons
+            [3] current data
+            [4] yearly aggregations
+            [5] static data
+            [6] prev y var
+        """
         # mypy totally fails to handle what's going on here
 
         if type(x) is TrainData:  # type: ignore
@@ -274,7 +357,10 @@ class NNBase(ModelBase):
                 x.latlons,  # type: ignore
                 x.current,  # type: ignore
                 x.yearly_aggs,  # type: ignore
-                self._one_hot(x.static, self.num_locations) if self.static == "embeddings" else x.static,  # type: ignore
+                self._one_hot(x.static, self.num_locations)  # type: ignore
+                if self.static == "embeddings"
+                else x.static,  # type: ignore
+                x.prev_y_var,  # type: ignore
             )
         else:
             return (
@@ -283,7 +369,10 @@ class NNBase(ModelBase):
                 x[2],  # type: ignore
                 x[3],  # type: ignore
                 x[4],  # type: ignore
-                self._one_hot(x[5], self.num_locations) if self.static == "embeddings" else x[5],  # type: ignore
+                self._one_hot(x[5], self.num_locations)  # type: ignore
+                if self.static == "embeddings"
+                else x[5],  # type: ignore
+                x[6],  # type: ignore
             )
 
     def explain(
@@ -359,7 +448,7 @@ class NNBase(ModelBase):
         num_inputs: int = 10,
     ) -> Dict[str, np.ndarray]:
 
-        if self.explainer is None:
+        if self.explainer is None:  # type: ignore
             background_samples = self._get_background(sample_size=background_size)
             self.explainer: shap.DeepExplainer = shap.DeepExplainer(  # type: ignore
                 self.model, background_samples
@@ -389,10 +478,12 @@ class NNBase(ModelBase):
                         output_tensors.append(
                             x.static[start_idx : start_idx + num_inputs]
                         )
+                else:
+                    output_tensors.append(tensor[start_idx : start_idx + num_inputs])
             else:
                 output_tensors.append(torch.zeros(num_inputs, 1))
 
-        explain_arrays = self.explainer.shap_values(output_tensors)
+        explain_arrays = self.explainer.shap_values(output_tensors)  # type: ignore
 
         return {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)}
 
@@ -416,6 +507,7 @@ class NNBase(ModelBase):
             x.current,
             x.yearly_aggs,
             x.static,
+            x.prev_y_var,
         )
 
         num_items = len(x.__dict__)

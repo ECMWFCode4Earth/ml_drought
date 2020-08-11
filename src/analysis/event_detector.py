@@ -127,7 +127,7 @@ class EventDetector:
             values = np.ones(ds[variable].shape) * value
             thresh = xr.Dataset(
                 {variable: (["time", "lat", "lon"], values)},
-                coords={"lat": ds.lat, "lon": ds.lon, "time": ds.time,},
+                coords={"lat": ds.lat, "lon": ds.lon, "time": ds.time},
             )
             thresh = thresh.groupby(f"time.{time_period}").first()
 

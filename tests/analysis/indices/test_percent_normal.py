@@ -8,7 +8,7 @@ from src.analysis.indices import PercentNormalIndex
 class TestPercentNormalIndex:
     def test_initialisation(self, tmp_path):
         data_path = _create_dummy_precip_data(tmp_path)
-        pni = PercentNormalIndex(data_path / "chirps_kenya.nc")
+        pni = PercentNormalIndex(data_path / "data_kenya.nc")
         assert pni.name == "percent_normal_index", (
             f"Expected name" f"to be `percent_normal_index` got: {pni.name}"
         )
@@ -21,7 +21,7 @@ class TestPercentNormalIndex:
         data_path = _create_dummy_precip_data(
             tmp_path, start_date="2000-01-01", end_date="2010-01-01"
         )
-        pni = PercentNormalIndex(data_path / "chirps_kenya.nc")
+        pni = PercentNormalIndex(data_path / "data_kenya.nc")
         variable = "precip"
         pni.fit(variable=variable)
 
