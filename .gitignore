@@ -4,6 +4,7 @@ __pycache__
 
 # testing
 .pytest_cache/
+pytest.ini_
 
 # mypy
 .mypy_cache/
