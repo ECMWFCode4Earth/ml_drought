@@ -148,7 +148,10 @@ def process_gleam(subset_str: str = "kenya"):
     )
 
 
-def process_seas5(subset_str: str = "kenya"):
+def process_seas5(
+    subset_str: str = "kenya",
+    variables: List[str] = ["2m_temperature", "evaporation", "total_precipitation"],
+):
     data_path = get_data_path()
 
     regrid_path = (
@@ -158,10 +161,15 @@ def process_seas5(subset_str: str = "kenya"):
     assert regrid_path.exists(), f"{regrid_path} not available"
     regrid_path = None
 
-    processor = S5Preprocessor(data_path)
-    processor.preprocess(
-        subset_str=subset_str, regrid=regrid_path, resample_time="M", upsampling=False
-    )
+    for variable in variables:
+        processor = S5Preprocessor(data_path)
+        processor.preprocess(
+            variable=variable,
+            subset_str=subset_str,
+            regrid=regrid_path,
+            resample_time="M",
+            upsampling=False,
+        )
 
 
 def process_esa_cci_landcover(subset_str: str = "kenya"):
