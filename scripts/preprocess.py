@@ -159,7 +159,6 @@ def process_seas5(
         / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
-    regrid_path = None
 
     for variable in variables:
         processor = S5Preprocessor(data_path)
