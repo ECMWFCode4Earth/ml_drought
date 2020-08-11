@@ -8,7 +8,7 @@ from src.analysis.indices import VegetationDeficitIndex
 class TestVegetationDefictonditionIndex:
     def test_initialisation(self, tmp_path):
         data_path = _create_dummy_precip_data(tmp_path)
-        vdi = VegetationDeficitIndex(data_path / "chirps_kenya.nc")
+        vdi = VegetationDeficitIndex(data_path / "data_kenya.nc")
         assert vdi.name == "vegetation_deficit_index", (
             "Expected name" f"to be `vegetation_deficit_index` got: {vdi.name}"
         )
@@ -21,7 +21,7 @@ class TestVegetationDefictonditionIndex:
         data_path = _create_dummy_precip_data(
             tmp_path, start_date="2000-01-01", end_date="2010-01-01"
         )
-        vdi = VegetationDeficitIndex(data_path / "chirps_kenya.nc")
+        vdi = VegetationDeficitIndex(data_path / "data_kenya.nc")
         variable = "precip"
         vdi.fit(variable=variable)
 

@@ -3,17 +3,18 @@ import random
 from pathlib import Path
 import pickle
 import math
+import xarray as xr
 
 import torch
 from torch.nn import functional as F
 
-import shap
-
-from typing import Dict, List, Optional, Tuple
+from typing import cast, Dict, List, Optional, Tuple, Union
 
 from ..base import ModelBase
-from ..utils import chunk_array
+from ..utils import chunk_array, _to_xarray_dataset
 from ..data import DataLoader, train_val_mask, TrainData, idx_to_input
+
+shap = None
 
 
 class NNBase(ModelBase):
@@ -29,21 +30,30 @@ class NNBase(ModelBase):
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
-        include_static: bool = True,
+        static: Optional[str] = "features",
         device: str = "cuda:0",
+        predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
+        include_prev_y: bool = True,
+        normalize_y: bool = True,
+        explain: bool = False,
     ) -> None:
         super().__init__(
-            data_folder,
-            batch_size,
-            experiment,
-            pred_months,
-            include_pred_month,
-            include_latlons,
-            include_monthly_aggs,
-            include_yearly_aggs,
-            surrounding_pixels,
-            ignore_vars,
-            include_static,
+            data_folder=data_folder,
+            batch_size=batch_size,
+            experiment=experiment,
+            pred_months=pred_months,
+            include_pred_month=include_pred_month,
+            include_latlons=include_latlons,
+            include_monthly_aggs=include_monthly_aggs,
+            include_yearly_aggs=include_yearly_aggs,
+            surrounding_pixels=surrounding_pixels,
+            ignore_vars=ignore_vars,
+            static=static,
+            predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
+            include_prev_y=include_prev_y,
+            normalize_y=normalize_y,
         )
 
         # for reproducibility
@@ -53,72 +63,21 @@ class NNBase(ModelBase):
             self.device = "cpu"
         torch.manual_seed(42)
 
-        self.explainer: Optional[shap.DeepExplainer] = None
+        if explain:
+            global shap
+            if shap is None:
+                import shap
+            self.explainer: Optional[shap.DeepExplainer] = None  # type: ignore
 
     def to(self, device: str = "cpu"):
         # move the model onto the right device
         raise NotImplementedError
 
-    def explain(
-        self,
-        x: Optional[List[torch.Tensor]] = None,
-        var_names: Optional[List[str]] = None,
-        background_size: int = 100,
-        save_shap_values: bool = True,
-    ) -> Dict[str, np.ndarray]:
-        """
-        Expain the outputs of a trained model.
-
-        Arguments
-        ----------
-        x: The values to explain. If None, samples are randomly drawn from
-            the test data
-        var_names: The variable names of the historical inputs. If x is None, this
-            will be calculated. Only necessary if the arrays are going to be saved
-        background_size: the size of the background to use
-        save_shap_values: Whether or not to save the shap values
-
-        Returns
-        ----------
-        shap_dict: A dictionary of shap values for each of the model's input arrays
-        """
-        assert self.model is not None, "Model must be trained!"
-
-        if self.explainer is None:
-            background_samples = self._get_background(sample_size=background_size)
-            self.explainer: shap.DeepExplainer = shap.DeepExplainer(  # type: ignore
-                self.model, background_samples
-            )
-        if x is None:
-            # if no input is passed to explain, take 10 values and explain them
-            test_arrays_loader = self.get_dataloader(
-                mode="test", shuffle=False, batch_file_size=1, to_tensor=True
-            )
-            key, val = list(next(iter(test_arrays_loader)).items())[0]
-            x = self.make_shap_input(val.x, start_idx=0, num_inputs=10)
-            var_names = val.x_vars
-
-        explain_arrays = self.explainer.shap_values(x)
-
-        if save_shap_values:
-            analysis_folder = self.model_dir / "analysis"
-            if not analysis_folder.exists():
-                analysis_folder.mkdir()
-            for idx, shap_array in enumerate(explain_arrays):
-                np.save(
-                    analysis_folder / f"shap_value_{idx_to_input[idx]}.npy", shap_array
-                )
-                np.save(
-                    analysis_folder / f"input_{idx_to_input[idx]}.npy",
-                    x[idx].cpu().numpy(),
-                )
-
-            # save the variable names too
-            if var_names is not None:
-                with (analysis_folder / "input_variable_names.pkl").open("wb") as f:
-                    pickle.dump(var_names, f)
-
-        return {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)}
+    def _make_analysis_folder(self) -> Path:
+        analysis_folder = self.model_dir / "analysis"
+        if not analysis_folder.exists():
+            analysis_folder.mkdir()
+        return analysis_folder
 
     def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> torch.nn.Module:
         raise NotImplementedError
@@ -130,6 +89,7 @@ class NNBase(ModelBase):
         batch_size: int = 256,
         learning_rate: float = 1e-3,
         val_split: float = 0.1,
+        check_inversion: bool = False,
     ) -> None:
         print(f"Training {self.model_name} for experiment {self.experiment}")
 
@@ -177,13 +137,21 @@ class NNBase(ModelBase):
                 for x_batch, y_batch in chunk_array(x, y, batch_size, shuffle=True):
                     optimizer.zero_grad()
                     pred = self.model(
-                        x_batch[0],
-                        self._one_hot_months(x_batch[1]),  # type: ignore
-                        x_batch[2],
-                        x_batch[3],
-                        x_batch[4],
-                        x_batch[5],
+                        *self._input_to_tuple(cast(Tuple[torch.Tensor, ...], x_batch))
                     )
+                    if (epoch == 0) & check_inversion:  # check only the first epoch
+                        # create xarray objects
+                        pred_xr = _to_xarray_dataset(latlons=x_batch[2], data=pred)
+                        true_xr = _to_xarray_dataset(latlons=x_batch[2], data=y_batch)
+                        # check that nans more or less the same
+                        assert (
+                            pred_xr.isnull().data.values == true_xr.isnull().data.values
+                        ).mean() > 0.92, (
+                            "The missing data should be the same for 92% of the data. "
+                            "This sometimes occurs when there has been a problem with an inversion "
+                            "somewhere in the data"
+                        )
+
                     loss = F.smooth_l1_loss(pred, y_batch)
                     loss.backward()
                     optimizer.step()
@@ -199,9 +167,7 @@ class NNBase(ModelBase):
                 val_rmse = []
                 with torch.no_grad():
                     for x, y in val_dataloader:
-                        val_pred_y = self.model(
-                            x[0], self._one_hot_months(x[1]), x[2], x[3], x[4], x[5]
-                        )
+                        val_pred_y = self.model(*self._input_to_tuple(x))
                         val_loss = F.mse_loss(val_pred_y, y)
 
                         val_rmse.append(math.sqrt(val_loss.cpu().item()))
@@ -242,20 +208,43 @@ class NNBase(ModelBase):
         with torch.no_grad():
             for dict in test_arrays_loader:
                 for key, val in dict.items():
-                    preds = self.model(
-                        val.x.historical,
-                        self._one_hot_months(val.x.pred_months),
-                        val.x.latlons,
-                        val.x.current,
-                        val.x.yearly_aggs,
-                        val.x.static,
-                    )
-                    preds_dict[key] = preds.cpu().numpy()
+
+                    input_tuple = self._input_to_tuple(val.x)
+
+                    # TODO - this code is mostly copied from
+                    # models.utils - can be cleaned up
+                    # with a default batch size of 256
+                    num_sections = max(input_tuple[0].shape[0] // 256, 1)
+                    split_x = []
+                    for idx, x_section in enumerate(input_tuple):
+                        if x_section is not None:
+                            split_x.append(torch.chunk(x_section, num_sections))
+                        else:
+                            split_x.append([None] * num_sections)  # type: ignore
+
+                    chunked_input = list(zip(*split_x))
+
+                    all_preds = []
+                    for batch in chunked_input:
+                        all_preds.append(self.model(*batch).cpu().numpy())
+                    preds_dict[key] = np.concatenate(all_preds)
+
                     test_arrays_dict[key] = {
                         "y": val.y.cpu().numpy(),
                         "latlons": val.latlons,
                         "time": val.target_time,
+                        "y_var": val.y_var,
                     }
+                    if self.predict_delta:
+                        assert val.historical_target.shape[0] == val.y.shape[0], (
+                            "Expect"
+                            f"the shape of the y ({val.y.shape})"
+                            f" and historical_target ({val.historical_target.shape})"
+                            " to be the same!"
+                        )
+                        test_arrays_dict[key][
+                            "historical_target"
+                        ] = val.historical_target
 
         return test_arrays_dict, preds_dict
 
@@ -273,6 +262,7 @@ class NNBase(ModelBase):
         output_cur: List[torch.Tensor] = []
         output_ym: List[torch.Tensor] = []
         output_static: List[torch.Tensor] = []
+        output_prev_y: List[torch.Tensor] = []
 
         samples_per_instance = max(1, sample_size // len(train_dataloader))
 
@@ -282,7 +272,7 @@ class NNBase(ModelBase):
                 output_tensors.append(x[0][idx])
 
                 # one hot months
-                one_hot_months = self._one_hot_months(x[1][idx : idx + 1])
+                one_hot_months = self._one_hot(x[1][idx : idx + 1], 12)
                 output_pm.append(one_hot_months)
 
                 # latlons
@@ -295,22 +285,37 @@ class NNBase(ModelBase):
                     output_cur.append(x[3][idx])
 
                 # yearly aggs
-                output_ym.append(x[4][idx])
+                if x[4] is None:
+                    if output_ym is None:
+                        output_ym = [torch.zeros(1)]
+                    else:
+                        output_ym.append(torch.zeros(1))
+                else:
+                    output_ym.append(x[4][idx])
 
                 # static data
-                if x[5] is None:
-                    output_static.append(torch.zeros(1))
-                else:
+                if self.static == "embeddings":
+                    output_static.append(
+                        self._one_hot(x[5][idx], cast(int, self.num_locations))
+                    )
+                elif self.static == "features":
                     output_static.append(x[5][idx])
+                else:
+                    output_static.append(torch.zeros(1))
+
+                output_prev_y.append(x[6][idx])
 
                 if len(output_tensors) >= sample_size:
                     return [
-                        torch.stack(output_tensors),  # type: ignore
-                        torch.cat(output_pm, dim=0),
-                        torch.stack(output_ll),
-                        torch.stack(output_cur),
-                        torch.stack(output_ym),
-                        torch.stack(output_static),
+                        torch.stack(output_tensors).to(self.device),  # type: ignore
+                        torch.cat(output_pm, dim=0).to(self.device),
+                        torch.stack(output_ll).to(self.device),
+                        torch.stack(output_cur).to(self.device),
+                        torch.stack(output_ym).to(self.device)
+                        if output_ym is not None
+                        else None,
+                        torch.stack(output_static).to(self.device),
+                        torch.stack(output_prev_y).to(self.device),
                     ]
 
         return [
@@ -320,48 +325,174 @@ class NNBase(ModelBase):
             torch.stack(output_cur),
             torch.stack(output_ym),
             torch.stack(output_static),
+            torch.stack(output_prev_y),
         ]
 
-    def _one_hot_months(self, indices: torch.Tensor) -> torch.Tensor:
-        return torch.eye(14, device=self.device)[indices.long()][:, 1:-1]
+    def _one_hot(self, indices: torch.Tensor, num_vals: int) -> torch.Tensor:
+        if len(indices.shape) > 1:
+            indices = indices.squeeze(-1)
+        return torch.eye(num_vals + 2, device=self.device)[indices.long()][:, 1:-1]
 
-    def make_shap_input(
-        self, x: TrainData, start_idx: int = 0, num_inputs: int = 10
-    ) -> List[torch.Tensor]:
+    def _input_to_tuple(
+        self, x: Union[Tuple[torch.Tensor, ...], TrainData]
+    ) -> Tuple[torch.Tensor, ...]:
         """
-        Returns a list of tensors, as is required
-        by the shap explainer
+        Returns:
+        --------
+        Tuple:
+            [0] historical data
+            [1] months (one hot encoded)
+            [2] latlons
+            [3] current data
+            [4] yearly aggregations
+            [5] static data
+            [6] prev y var
         """
+        # mypy totally fails to handle what's going on here
+
+        if type(x) is TrainData:  # type: ignore
+            return (  # type: ignore
+                x.historical,  # type: ignore
+                self._one_hot(x.pred_months, 12),  # type: ignore
+                x.latlons,  # type: ignore
+                x.current,  # type: ignore
+                x.yearly_aggs,  # type: ignore
+                self._one_hot(x.static, self.num_locations)  # type: ignore
+                if self.static == "embeddings"
+                else x.static,  # type: ignore
+                x.prev_y_var,  # type: ignore
+            )
+        else:
+            return (
+                x[0],  # type: ignore
+                self._one_hot(x[1], 12),  # type: ignore
+                x[2],  # type: ignore
+                x[3],  # type: ignore
+                x[4],  # type: ignore
+                self._one_hot(x[5], self.num_locations)  # type: ignore
+                if self.static == "embeddings"
+                else x[5],  # type: ignore
+                x[6],  # type: ignore
+            )
+
+    def explain(
+        self,
+        x: Optional[TrainData] = None,
+        var_names: Optional[List[str]] = None,
+        save_explanations: bool = True,
+        background_size: int = 100,
+        start_idx: int = 0,
+        num_inputs: int = 10,
+        method: str = "shap",
+    ) -> TrainData:
+        """
+        Expain the outputs of a trained model.
+
+        Arguments
+        ----------
+        x: The values to explain. If None, samples are randomly drawn from
+            the test data
+        var_names: The variable names of the historical inputs. If x is None, this
+            will be calculated. Only necessary if the arrays are going to be saved
+        background_size: the size of the background to use
+        save_shap_values: Whether or not to save the shap values
+
+        Returns
+        ----------
+        shap_dict: A dictionary of shap values for each of the model's input arrays
+        """
+
+        assert self.model is not None, "Model must be trained!"
+        if x is None:
+            # if no input is passed to explain, take 10 values and explain them
+            test_arrays_loader = self.get_dataloader(
+                mode="test", shuffle=False, batch_file_size=1, to_tensor=True
+            )
+            _, val = list(next(iter(test_arrays_loader)).items())[0]
+            var_names = val.var_names
+            x = val.x
+
+        if method == "shap":
+            explanations = self._get_shap_explanations(
+                x, background_size, start_idx, num_inputs
+            )
+        elif method == "morris":
+            explanations = self._get_morris_explanations(x)
+
+        if save_explanations:
+            analysis_folder = self._make_analysis_folder()
+            for idx, expl_array in enumerate(explanations):
+                org_array = x.__getattribute__(idx_to_input[idx])
+                if org_array is not None:
+                    np.save(
+                        analysis_folder / f"{method}_value_{idx_to_input[idx]}.npy",
+                        expl_array,
+                    )
+                    np.save(
+                        analysis_folder / f"{method}_{idx_to_input[idx]}.npy",
+                        org_array.detach().cpu().numpy(),
+                    )
+
+            # save the variable names too
+            if var_names is not None:
+                with (analysis_folder / "input_variable_names.pkl").open("wb") as f:
+                    pickle.dump(var_names, f)
+
+        return TrainData(**explanations)
+
+    def _get_shap_explanations(
+        self,
+        x: TrainData,
+        background_size: int = 100,
+        start_idx: int = 0,
+        num_inputs: int = 10,
+    ) -> Dict[str, np.ndarray]:
+
+        if self.explainer is None:  # type: ignore
+            background_samples = self._get_background(sample_size=background_size)
+            self.explainer: shap.DeepExplainer = shap.DeepExplainer(  # type: ignore
+                self.model, background_samples
+            )
+
+        # make val.x a list of tensors, as is required by the shap explainer
         output_tensors = []
-        output_tensors.append(x.historical[start_idx : start_idx + num_inputs])
-        # one hot months
-        one_hot_months = self._one_hot_months(
-            x.pred_months[start_idx : start_idx + num_inputs]
-        )
-        output_tensors.append(one_hot_months)
-        output_tensors.append(x.latlons[start_idx : start_idx + num_inputs])
-        if x.current is None:
-            output_tensors.append(torch.zeros(num_inputs, 1))
-        else:
-            output_tensors.append(x.current[start_idx : start_idx + num_inputs])
-        # yearly aggs
-        output_tensors.append(x.yearly_aggs[start_idx : start_idx + num_inputs])
-        # static data
-        if x.static is None:
-            output_tensors.append(torch.zeros(num_inputs, 1))
-        else:
-            output_tensors.append(x.static[start_idx : start_idx + num_inputs])
-        return output_tensors
 
-    def get_morris_gradient(self, x: TrainData) -> TrainData:
+        for _, val in sorted(idx_to_input.items()):
+            tensor = x.__getattribute__(val)
+            if tensor is not None:
+                if val == "pred_months":
+                    output_tensors.append(
+                        self._one_hot(tensor[start_idx : start_idx + num_inputs], 12)
+                    )
+                elif val == "static":
+                    if self.static == "embeddings":
+                        assert x.static is not None
+                        output_tensors.append(
+                            self._one_hot(
+                                x.static[start_idx : start_idx + num_inputs],
+                                cast(int, self.num_locations),
+                            )
+                        )
+                    else:
+                        assert x.static is not None
+                        output_tensors.append(
+                            x.static[start_idx : start_idx + num_inputs]
+                        )
+                else:
+                    output_tensors.append(tensor[start_idx : start_idx + num_inputs])
+            else:
+                output_tensors.append(torch.zeros(num_inputs, 1))
+
+        explain_arrays = self.explainer.shap_values(output_tensors)  # type: ignore
+
+        return {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)}
+
+    def _get_morris_explanations(self, x: TrainData) -> Dict[str, np.ndarray]:
         """
         https://github.com/kratzert/ealstm_regional_modeling/blob/master/papercode/morris.py
 
         Will return a train data object with the Morris gradients of the inputs
         """
-        assert (
-            self.model is not None
-        ), "Model must be trained before the Morris gradient can be calculated!"
 
         self.model.eval()
         self.model.zero_grad()
@@ -371,11 +502,12 @@ class NNBase(ModelBase):
                 val.requires_grad = True
         outputs = self.model(
             x.historical,
-            self._one_hot_months(x.pred_months),
+            self._one_hot(x.pred_months, 12),
             x.latlons,
             x.current,
             x.yearly_aggs,
             x.static,
+            x.prev_y_var,
         )
 
         num_items = len(x.__dict__)
@@ -397,4 +529,4 @@ class NNBase(ModelBase):
             else:
                 output_dict[key] = None
 
-        return TrainData(**output_dict)
+        return output_dict

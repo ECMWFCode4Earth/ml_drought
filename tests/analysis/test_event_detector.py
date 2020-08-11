@@ -31,7 +31,7 @@ class TestEventDetector:
         if not data_dir.exists():
             data_dir.mkdir(parents=True, exist_ok=True)
 
-        out_path = data_dir / "chirps_kenya.nc"
+        out_path = data_dir / "data_kenya.nc"
         d.to_netcdf(out_path)
         return out_path
 
@@ -39,7 +39,7 @@ class TestEventDetector:
         _create_dummy_precip_data(tmp_path)
 
         data_dir = tmp_path / "data" / "interim"
-        precip_dir = data_dir / "chirps_preprocessed" / "chirps_kenya.nc"
+        precip_dir = data_dir / "chirps_preprocessed" / "data_kenya.nc"
 
         e = EventDetector(precip_dir)
 

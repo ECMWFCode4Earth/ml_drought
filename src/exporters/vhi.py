@@ -5,6 +5,7 @@ from pprint import pprint
 from functools import partial
 import re
 import pickle
+import numpy as np
 import warnings
 
 from .base import BaseExporter
@@ -159,6 +160,7 @@ class VHIExporter(BaseExporter):
         years: Optional[List] = None,
         repeats: int = 5,
         n_parallel_processes: int = 1,
+        check_exists: bool = True,
     ) -> List:
         """Export VHI data from the ftp server.
         By default write output to raw/vhi/{YEAR}/{filename}
@@ -172,6 +174,8 @@ class VHIExporter(BaseExporter):
             The number of times to retry downloads which failed
         n_parallel_processes: int = 100
             The number of processes to run. If 1, the download happens serially
+        check_exists: bool = True
+            Check whether the file has already been downloaded, if so skip it.
 
         Returns:
         -------
@@ -190,6 +194,25 @@ class VHIExporter(BaseExporter):
 
         # get the filenames to be downloaded
         vhi_files = self.get_ftp_filenames(years)
+
+        # TODO: check that vhi files don't already exist
+        if check_exists:
+            vhi_files = np.array(sorted(vhi_files))
+            years_of_files: List[str] = [
+                _parse_time_from_filename(vhi_file)[0] for vhi_file in vhi_files
+            ]
+            exists_bool = [
+                (self.output_folder / years_of_files[ix] / filename).exists()
+                for ix, filename in enumerate(vhi_files)
+            ]
+            if sum(exists_bool) > 0:
+                print(  # type: ignore
+                    f"{sum(exists_bool)} VHI Files already downloaded. Skipping:",
+                    vhi_files[exists_bool],  # type: ignore
+                )  # type: ignore
+
+            # convert back to a list and drop the already existing files
+            vhi_files = list(vhi_files[~np.array(exists_bool)])
 
         # run the download steps in parallel
         batches = self._run_export(vhi_files, n_parallel_processes)

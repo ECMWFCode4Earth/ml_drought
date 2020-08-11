@@ -8,7 +8,7 @@ from src.analysis.indices import DecileIndex
 class TestDecileIndex:
     def test_initialisation(self, tmp_path):
         data_path = _create_dummy_precip_data(tmp_path)
-        di = DecileIndex(data_path / "chirps_kenya.nc")
+        di = DecileIndex(data_path / "data_kenya.nc")
         assert di.name == "decile_index", (
             f"Expected name" f"to be `decile_index` got: {di.name}"
         )
@@ -21,7 +21,7 @@ class TestDecileIndex:
         data_path = _create_dummy_precip_data(
             tmp_path, start_date="2000-01-01", end_date="2010-01-01"
         )
-        di = DecileIndex(data_path / "chirps_kenya.nc")
+        di = DecileIndex(data_path / "data_kenya.nc")
         variable = "precip"
         di.fit(variable=variable)
 

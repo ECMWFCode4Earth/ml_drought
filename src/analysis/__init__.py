@@ -7,8 +7,10 @@ from .evaluation import (
     annual_scores,
     read_pred_data,
     read_true_data,
+    read_train_data,
+    read_test_data,
 )
-from .plot_shap import plot_shap_values, all_shap_for_file
+from .plot_explanations import plot_explanations, all_explanations_for_file
 from .indices import (
     SPI,
     ZScoreIndex,
@@ -19,11 +21,12 @@ from .indices import (
     AnomalyIndex,
     MovingAverage,
     VegetationDeficitIndex,
+    ConditionIndex,
 )
 from .region_analysis import LandcoverRegionAnalysis, AdministrativeRegionAnalysis
 
 __all__ = [
-    "plot_shap_values",
+    "plot_explanations",
     "EventDetector",
     "SPI",
     "ZScoreIndex",
@@ -32,6 +35,7 @@ __all__ = [
     "ChinaZIndex",
     "DecileIndex",
     "AnomalyIndex",
+    "ConditionIndex",
     "monthly_score",
     "annual_scores",
     "plot_predictions",
@@ -39,10 +43,12 @@ __all__ = [
     "VegetationDeficitIndex",
     "LandcoverRegionAnalysis",
     "AdministrativeRegionAnalysis",
-    "all_shap_for_file",
+    "all_explanations_for_file",
     "spatial_rmse",
     "spatial_r2",
     "plot_predictions",
     "read_pred_data",
     "read_true_data",
+    "read_train_data",
+    "read_test_data",
 ]

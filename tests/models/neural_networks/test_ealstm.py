@@ -25,6 +25,8 @@ class TestEARecurrentNetwork:
         include_pred_month = True
         include_yearly_aggs = True
         yearly_agg_size = 3
+        include_prev_y = True
+        normalize_y = False
 
         def mocktrain(self):
             self.model = EALSTM(
@@ -36,6 +38,7 @@ class TestEARecurrentNetwork:
                 include_pred_month,
                 experiment="one_month_forecast",
                 yearly_agg_size=yearly_agg_size,
+                include_prev_y=include_prev_y,
             )
             self.features_per_month = features_per_month
             self.yearly_agg_size = yearly_agg_size
@@ -50,6 +53,7 @@ class TestEARecurrentNetwork:
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
             include_yearly_aggs=include_yearly_aggs,
+            normalize_y=normalize_y,
         )
         model.train()
         model.save_model()
@@ -72,13 +76,25 @@ class TestEARecurrentNetwork:
         assert model_dict["include_latlons"] == include_latlons
         assert model_dict["include_yearly_aggs"] == include_yearly_aggs
         assert model_dict["experiment"] == "one_month_forecast"
+        assert model_dict["include_prev_y"] == include_prev_y
+        assert model_dict["normalize_y"] == normalize_y
 
-    @pytest.mark.parametrize("use_pred_months", [True, False])
-    def test_train(self, tmp_path, capsys, use_pred_months):
+    @pytest.mark.parametrize(
+        "use_pred_months,use_static_embedding,check_inversion",
+        [
+            (True, 10, False),
+            (False, None, False),
+            (True, 10, True),
+            (False, None, True),
+        ],
+    )
+    def test_train(
+        self, tmp_path, capsys, use_pred_months, use_static_embedding, check_inversion
+    ):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        test_features = tmp_path / "features/one_month_forecast/train/hello"
+        test_features = tmp_path / "features/one_month_forecast/train/1980_1"
         test_features.mkdir(parents=True)
 
         norm_dict = {"VHI": {"mean": 0, "std": 1}}
@@ -109,8 +125,10 @@ class TestEARecurrentNetwork:
             dense_features=dense_features,
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
+            static_embedding_size=use_static_embedding,
+            normalize_y=True,
         )
-        model.train()
+        model.train(check_inversion=check_inversion)
 
         captured = capsys.readouterr()
         expected_stdout = "Epoch 1, train smooth L1: 0."
@@ -118,15 +136,18 @@ class TestEARecurrentNetwork:
 
         assert type(model.model) == EALSTM, f"Model attribute not an EALSTM!"
 
-    @pytest.mark.parametrize("use_pred_months", [True, False])
-    def test_predict_and_explain(self, tmp_path, use_pred_months):
+    @pytest.mark.parametrize(
+        "use_pred_months,predict_delta",
+        [(True, True), (False, True), (True, False), (False, False)],
+    )
+    def test_predict_and_explain(self, tmp_path, use_pred_months, predict_delta):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
-        train_features = tmp_path / "features/one_month_forecast/train/hello"
+        train_features = tmp_path / "features/one_month_forecast/train/1980_1"
         train_features.mkdir(parents=True)
 
-        test_features = tmp_path / "features/one_month_forecast/test/hello"
+        test_features = tmp_path / "features/one_month_forecast/test/1980_1"
         test_features.mkdir(parents=True)
 
         norm_dict = {"VHI": {"mean": 0.0, "std": 1.0}}
@@ -160,24 +181,38 @@ class TestEARecurrentNetwork:
             dense_features=dense_features,
             rnn_dropout=rnn_dropout,
             data_folder=tmp_path,
+            predict_delta=predict_delta,
+            normalize_y=True,
         )
         model.train()
         test_arrays_dict, pred_dict = model.predict()
 
-        # the foldername "hello" is the only one which should be in the dictionaries
-        assert ("hello" in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1)
-        assert ("hello" in pred_dict.keys()) and (len(pred_dict) == 1)
+        # the foldername "1980_1" is the only one which should be in the dictionaries
+        assert ("1980_1" in test_arrays_dict.keys()) and (len(test_arrays_dict) == 1)
+        assert ("1980_1" in pred_dict.keys()) and (len(pred_dict) == 1)
 
-        # _make_dataset with const=True returns all ones
-        assert (test_arrays_dict["hello"]["y"] == 1).all()
+        if not predict_delta:
+            # _make_dataset with const=True returns all ones
+            assert (test_arrays_dict["1980_1"]["y"] == 1).all()
+        else:
+            # _make_dataset with const=True & predict_delta
+            # returns a change of 0
+            assert (test_arrays_dict["1980_1"]["y"] == 0).all()
 
         # test the Morris explanation works
         test_dl = next(
             iter(model.get_dataloader(mode="test", to_tensor=True, shuffle_data=False))
         )
+
         for key, val in test_dl.items():
-            output = model.get_morris_gradient(val.x)
-            assert type(output) is TrainData
+            output_m = model.explain(val.x, save_explanations=True, method="morris")
+            assert type(output_m) is TrainData
+            assert (model.model_dir / "analysis/morris_value_historical.npy").exists()
+
+            # TODO fix a bug in shap preventing this from passing
+            # output_s = model.explain(val.x, save_explanations=True, method="shap")
+            # assert type(output_s) is TrainData
+            # assert (model.model_dir / "analysis/shap_value_historical.npy").exists()
 
 
 class TestEALSTMCell:

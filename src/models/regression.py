@@ -3,14 +3,15 @@ from pathlib import Path
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error
 import pickle
+import xarray as xr
 
-import shap
-
-from typing import cast, Dict, List, Union, Tuple, Optional
+from typing import cast, Dict, List, Tuple, Optional, Union
 
 from .base import ModelBase
 from .utils import chunk_array
 from .data import DataLoader, train_val_mask, TrainData
+
+shap = None
 
 
 class LinearRegression(ModelBase):
@@ -29,7 +30,12 @@ class LinearRegression(ModelBase):
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
-        include_static: bool = True,
+        static: Optional[str] = "features",
+        predict_delta: bool = False,
+        spatial_mask: Union[xr.DataArray, Path] = None,
+        include_prev_y: bool = True,
+        normalize_y: bool = True,
+        explain: bool = False,
     ) -> None:
         super().__init__(
             data_folder,
@@ -42,10 +48,17 @@ class LinearRegression(ModelBase):
             include_yearly_aggs,
             surrounding_pixels,
             ignore_vars,
-            include_static,
+            static,
+            predict_delta=predict_delta,
+            spatial_mask=spatial_mask,
+            include_prev_y=include_prev_y,
+            normalize_y=normalize_y,
         )
-
-        self.explainer: Optional[shap.LinearExplainer] = None
+        if explain:
+            global shap
+            if shap is None:
+                import shap
+            self.explainer: Optional[shap.DeepExplainer] = None  # type: ignore
 
     def train(
         self,
@@ -91,6 +104,9 @@ class LinearRegression(ModelBase):
                     batch_y = cast(np.ndarray, batch_y)
                     x_in = self._concatenate_data(batch_x)
 
+                    if x_in.shape[0] == 0:
+                        pass
+
                     # fit the model
                     self.model.partial_fit(x_in, batch_y.ravel())
                     # evaluate the fit
@@ -98,7 +114,6 @@ class LinearRegression(ModelBase):
                     train_rmse.append(
                         np.sqrt(mean_squared_error(batch_y, train_pred_y))
                     )
-                    print(mean_squared_error(batch_y, train_pred_y))
             if early_stopping is not None:
                 val_rmse = []
                 for x, y in val_dataloader:
@@ -145,7 +160,7 @@ class LinearRegression(ModelBase):
             x = val.x
 
         reshaped_x = self._concatenate_data(x)
-        explanations = self.explainer.shap_values(reshaped_x)
+        explanations = self.explainer.shap_values(reshaped_x)  # type: ignore
 
         if save_shap_values:
             analysis_folder = self.model_dir / "analysis"
@@ -171,7 +186,10 @@ class LinearRegression(ModelBase):
             "ignore_vars": self.ignore_vars,
             "include_monthly_aggs": self.include_monthly_aggs,
             "include_yearly_aggs": self.include_yearly_aggs,
-            "include_static": self.include_static,
+            "static": self.static,
+            "spatial_mask": self.spatial_mask,
+            "include_prev_y": self.include_prev_y,
+            "normalize_y": self.normalize_y,
         }
 
         with (self.model_dir / "model.pkl").open("wb") as f:
@@ -199,7 +217,16 @@ class LinearRegression(ModelBase):
                     "y": val.y,
                     "latlons": val.latlons,
                     "time": val.target_time,
+                    "y_var": val.y_var,
                 }
+                if self.predict_delta:
+                    assert val.historical_target.shape[0] == val.y.shape[0], (
+                        "Expect"
+                        f"the shape of the y ({val.y.shape})"
+                        f" and historical_target ({val.historical_target.shape})"
+                        " to be the same!"
+                    )
+                    test_arrays_dict[key]["historical_target"] = val.historical_target
 
         return test_arrays_dict, preds_dict
 
@@ -223,39 +250,3 @@ class LinearRegression(ModelBase):
         total_size = sum(sizes)
         weighted_means = [mean * size / total_size for mean, size in zip(means, sizes)]
         return sum(weighted_means)
-
-    def _concatenate_data(
-        self, x: Union[Tuple[Optional[np.ndarray], ...], TrainData]
-    ) -> np.ndarray:
-
-        if type(x) is tuple:
-            x_his, x_pm, x_latlons, x_cur, x_ym, x_static = x  # type: ignore
-        elif type(x) == TrainData:
-            x_his, x_pm, x_latlons = (
-                x.historical,
-                x.pred_months,
-                x.latlons,
-            )  # type: ignore
-            x_cur, x_ym = x.current, x.yearly_aggs  # type: ignore
-            x_static = x.static  # type: ignore
-
-        assert (
-            x_his is not None
-        ), "x[0] should be historical data, and therefore should not be None"
-        x_in = x_his.reshape(x_his.shape[0], x_his.shape[1] * x_his.shape[2])
-
-        if self.include_pred_month:
-            # one hot encoding, should be num_classes + 1, but
-            # for us its + 2, since 0 is not a class either
-            pred_months_onehot = np.eye(14)[x_pm][:, 1:-1]
-            x_in = np.concatenate((x_in, pred_months_onehot), axis=-1)
-        if self.include_latlons:
-            x_in = np.concatenate((x_in, x_latlons), axis=-1)
-        if self.experiment == "nowcast":
-            x_in = np.concatenate((x_in, x_cur), axis=-1)
-        if self.include_yearly_aggs:
-            x_in = np.concatenate((x_in, x_ym), axis=-1)
-        if self.include_static:
-            x_in = np.concatenate((x_in, x_static), axis=-1)
-
-        return x_in
