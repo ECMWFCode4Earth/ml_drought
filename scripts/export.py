@@ -95,6 +95,17 @@ def export_era5_land(region_str="kenya"):
         )
 
 
+def export_era5_single_var(variable="total_precipitation"):
+    # if the working directory is alread ml_drought don't need ../data
+    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
+        data_path = Path("data")
+    else:
+        data_path = Path("../data")
+
+    exporter = ERA5Exporter(data_path)
+    exporter.export(variable=variable, granularity="monthly")
+
+
 def export_vhi():
     exporter = VHIExporter(get_data_path())
 
@@ -137,7 +148,7 @@ def export_esa():
 
 def export_s5(region_str="kenya"):
 
-    granularity = "hourly"
+    granularity = "monthly"
     pressure_level = False
 
     exporter = S5Exporter(
@@ -145,26 +156,24 @@ def export_s5(region_str="kenya"):
         granularity=granularity,
         pressure_level=pressure_level,
     )
-    variable = "total_precipitation"
     min_year = 1993
-    max_year = 2014
-    min_month = 1
-    max_month = 12
     max_leadtime = None
-    pressure_levels = [200, 500, 925]
-    n_parallel_requests = 20
-
-    exporter.export(
-        variable=variable,
-        min_year=min_year,
-        max_year=max_year,
-        min_month=min_month,
-        max_month=max_month,
-        max_leadtime=max_leadtime,
-        pressure_levels=pressure_levels,
-        n_parallel_requests=n_parallel_requests,
-        region_str=region_str,
-    )
+    pressure_levels = None  # [200, 500, 925]
+    n_parallel_requests = 1
+    for variable in variables:
+        print(f"\n\nWORKING ON: {variable}\n\n")
+        exporter.export(
+            variable=variable,
+            min_year=min_year,
+            max_year=max_year,
+            min_month=min_month,
+            max_month=max_month,
+            max_leadtime=max_leadtime,
+            pressure_levels=pressure_levels,
+            n_parallel_requests=n_parallel_requests,
+            region_str=region_str,
+            break_up=False,
+        )
 
 
 def export_kenya_boundaries():
