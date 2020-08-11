@@ -95,15 +95,15 @@ def export_era5_land(region_str="kenya"):
         )
 
 
-def export_era5_single_var(variable='total_precipitation'):
+def export_era5_single_var(variable="total_precipitation"):
     # if the working directory is alread ml_drought don't need ../data
-    if Path('.').absolute().as_posix().split('/')[-1] == 'ml_drought':
-        data_path = Path('data')
+    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
+        data_path = Path("data")
     else:
-        data_path = Path('../data')
+        data_path = Path("../data")
 
     exporter = ERA5Exporter(data_path)
-    exporter.export(variable=variable, granularity='monthly')
+    exporter.export(variable=variable, granularity="monthly")
 
 
 def export_vhi():
@@ -148,7 +148,7 @@ def export_esa():
 
 def export_s5(region_str="kenya"):
 
-    granularity = 'monthly'
+    granularity = "monthly"
     pressure_level = False
 
     exporter = S5Exporter(
