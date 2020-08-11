@@ -126,6 +126,19 @@ def process_gleam(subset_str: str = "kenya"):
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
+
+def process_gleam():
+    # if the working directory is alread ml_drought don't need ../data
+    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
+        data_path = Path("data")
+    else:
+        data_path = Path("../data")
+    regrid_path = (
+        data_path
+        / "interim/reanalysis-era5-single-levels-monthly-means_preprocessed/data_kenya.nc"
+    )
+    assert regrid_path.exists(), f"{regrid_path} not available"
+
     processor = GLEAMPreprocessor(data_path)
 
     processor.preprocess(
@@ -133,26 +146,44 @@ def process_gleam(subset_str: str = "kenya"):
     )
 
 
-def process_seas5(subset_str: str = "kenya"):
-    data_path = get_data_path()
-
-    regrid_path = data_path / "interim/chirps_preprocessed/chirps_kenya.nc"
-    assert regrid_path.exists(), f"{regrid_path} not available"
-
-    processor = S5Preprocessor(data_path)
-    processor.preprocess(
-        subset_str=subset_str, regrid=regrid_path, resample_time="M", upsampling=False
-    )
-
-
-def process_esa_cci_landcover(subset_str: str = "kenya"):
-    data_path = get_data_path()
-
+def process_seas5():
+    # if the working directory is alread ml_drought don't need ../data
+    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
+        data_path = Path("data")
+    else:
+        data_path = Path("../data")
     regrid_path = (
-        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path
+        / "interim/reanalysis-era5-single-levels-monthly-means_preprocessed/data_kenya.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
+    datasets = [d.name for d in (data_path / "raw").iterdir() if "seasonal" in d.name]
+    for dataset in datasets:
+        variables = [v.name for v in (data_path / "raw" / dataset).glob("*")]
+
+        for variable in variables:
+            if variable == "total_precipitation":
+                processor = S5Preprocessor(data_path)
+                processor.preprocess(
+                    subset_str="kenya",
+                    regrid=regrid_path,
+                    resample_time=None,
+                    upsampling=False,
+                    variable=variable,
+                )
+
+
+def process_esa_cci_landcover():
+    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
+        data_path = Path("data")
+    else:
+        data_path = Path("../data")
+    regrid_path = (
+        data_path
+        / "interim/reanalysis-era5-single-levels-monthly-means_preprocessed/data_kenya.nc"
+    )
+    assert regrid_path.exists(), f"{regrid_path} not available"
     processor = ESACCIPreprocessor(data_path)
     processor.preprocess(subset_str=subset_str, regrid=regrid_path)
 
@@ -236,6 +267,22 @@ def preprocess_boku_ndvi(subset_str: str = "kenya"):
 
     processor.preprocess(
         subset_str=subset_str, resample_time="W-MON", regrid=regrid_path
+    )
+
+
+def preprocess_s5_ouce():
+    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
+        data_path = Path("data")
+    else:
+        data_path = Path("../data")
+    variable = "total_precipitation"
+    daily_s5_dir = Path("/soge-home/data/model/seas5/1.0x1.0/daily")
+    s = S5Preprocessor(data_path, ouce_server=True)
+    s.preprocess(
+        variable=variable,
+        regrid=None,
+        resample_time=None,
+        **{"ouce_dir": daily_s5_dir, "infer": True},
     )
 
 

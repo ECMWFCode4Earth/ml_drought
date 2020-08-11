@@ -1,5 +1,4 @@
 from pathlib import Path
-import itertools
 import numpy as np
 
 from typing import cast, Dict, Optional, List
@@ -184,14 +183,10 @@ class S5Exporter(CDSExporter):
 
         output_paths = []
         if break_up:
-            # SPLIT THE API CALLS INTO MONTHS (speed up downloads)
-            for year, month in itertools.product(
-                processed_selection_request["year"],
-                processed_selection_request["month"],
-            ):
+            # SPLIT THE API CALLS INTO YEARS (speed up downloads)
+            for year in processed_selection_request["year"]:
                 updated_request = processed_selection_request.copy()
                 updated_request["year"] = [year]
-                updated_request["month"] = [month]
 
                 if n_parallel_requests > 1:  # Run in parallel
                     # multiprocessing of the paths
@@ -222,14 +217,17 @@ class S5Exporter(CDSExporter):
                 p.join()
 
         else:  # don't split by month
-            output_paths.append(
-                self._export(
-                    self.dataset,
-                    processed_selection_request,
-                    show_api_request,
-                    in_parallel=False,
+            for year in processed_selection_request["year"]:
+                updated_request = processed_selection_request.copy()
+                updated_request["year"] = [year]
+                output_paths.append(
+                    self._export(
+                        self.dataset,
+                        updated_request,
+                        show_api_request,
+                        in_parallel=False,
+                    )
                 )
-            )
 
         return output_paths
 
