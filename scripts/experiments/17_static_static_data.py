@@ -118,7 +118,7 @@ if __name__ == "__main__":
         "SMroot",
         "lc_class",  # remove for good clustering (?)
         "lc_class_group",  # remove for good clustering (?)
-        "slt", # remove for good clustering (?)
+        "slt",  #  remove for good clustering (?)
         "no_data_one_hot",
         "lichens_and_mosses_one_hot",
         "permanent_snow_and_ice_one_hot",

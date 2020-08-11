@@ -239,7 +239,9 @@ class BasePreProcessor:
         filename: Optional[str] = None,
     ) -> Union[Path, Tuple[Path]]:
 
-        ds = xr.open_mfdataset(self.get_filepaths("interim"), combine='nested', concat_dim='time')
+        ds = xr.open_mfdataset(
+            self.get_filepaths("interim"), combine="nested", concat_dim="time"
+        )
 
         if resample_time is not None:
             ds = self.resample_time(ds, resample_time, upsampling)
