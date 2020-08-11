@@ -8,7 +8,7 @@ from src.analysis.indices import ZScoreIndex
 class TestZScoreIndex:
     def test_initialisation(self, tmp_path):
         data_path = _create_dummy_precip_data(tmp_path)
-        zsi = ZScoreIndex(data_path / "chirps_kenya.nc")
+        zsi = ZScoreIndex(data_path / "data_kenya.nc")
         assert zsi.name == "z_score_index", (
             f"Expected name" f"to be `z_score_index` got: {zsi.name}"
         )
@@ -21,7 +21,7 @@ class TestZScoreIndex:
         data_path = _create_dummy_precip_data(
             tmp_path, start_date="2000-01-01", end_date="2010-01-01"
         )
-        zsi = ZScoreIndex(data_path / "chirps_kenya.nc")
+        zsi = ZScoreIndex(data_path / "data_kenya.nc")
         variable = "precip"
         zsi.fit(variable=variable)
 

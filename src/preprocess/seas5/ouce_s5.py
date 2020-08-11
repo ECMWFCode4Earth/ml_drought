@@ -39,8 +39,8 @@ class OuceS5Data:
     ```
     """
 
-    hourly_s5_dir = Path("/lustre/soge1/data/incoming/seas5/1.0x1.0/6-hourly")
-    daily_s5_dir = Path("/lustre/soge1/data/incoming/seas5/1.0x1.0/daily")
+    hourly_s5_dir = Path("/soge-home/data/model/seas5/1.0x1.0/6-hourly")
+    daily_s5_dir = Path("/soge-home/data/model/seas5/1.0x1.0/daily")
 
     @staticmethod
     def add_initialisation_date(ds: xr.Dataset, fname: Path) -> xr.Dataset:

@@ -112,9 +112,11 @@ class TestBokuNDVIPreprocessor:
         regrid_dataset.to_netcdf(regrid_path)
 
         processor = BokuNDVIPreprocessor(tmp_path)
-        processor.preprocess(subset_str="kenya", regrid=regrid_path)
+        processor.preprocess(subset_str="kenya", regrid=regrid_path, cleanup=True)
 
-        expected_out_path = tmp_path / "interim/boku_ndvi_preprocessed/data_kenya.nc"
+        expected_out_path = (
+            tmp_path / "interim/boku_ndvi_1000_preprocessed/data_kenya.nc"
+        )
         assert (
             expected_out_path.exists()
         ), f"Expected processed file to be saved to {expected_out_path}"
@@ -138,7 +140,7 @@ class TestBokuNDVIPreprocessor:
             lats.max() <= kenya.latmax
         ), "Latitudes not correctly subset"
 
-        assert out_data.VHI.values.shape[1:] == (20, 20)
+        assert out_data["boku_ndvi"].values.shape[1:] == (20, 20)
 
         assert (
             not processor.interim.exists()
@@ -168,9 +170,11 @@ class TestBokuNDVIPreprocessor:
 
         # build the Preprocessor object and subset with a different subset_str
         processor = BokuNDVIPreprocessor(tmp_path)
-        processor.preprocess(subset_str="ethiopia", regrid=regrid_path, parallel=False)
+        processor.preprocess(subset_str="ethiopia", regrid=regrid_path, n_processes=1)
 
-        expected_out_path = tmp_path / "interim/boku_ndvi_preprocessed/data_ethiopia.nc"
+        expected_out_path = (
+            tmp_path / "interim/boku_ndvi_1000_preprocessed/data_ethiopia.nc"
+        )
         assert (
             expected_out_path.exists()
         ), f"Expected processed file to be saved to {expected_out_path}"

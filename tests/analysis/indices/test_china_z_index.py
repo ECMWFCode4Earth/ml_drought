@@ -8,7 +8,7 @@ from tests.utils import _create_dummy_precip_data
 class TestChinaZIndex:
     def test_initialisation(self, tmp_path):
         data_path = _create_dummy_precip_data(tmp_path)
-        czi = ChinaZIndex(data_path / "chirps_kenya.nc")
+        czi = ChinaZIndex(data_path / "data_kenya.nc")
         assert czi.name == "china_z_index", (
             f"Expected name" f"to be `china_z_index` got: {czi.name}"
         )
@@ -21,7 +21,7 @@ class TestChinaZIndex:
         data_path = _create_dummy_precip_data(
             tmp_path, start_date="2000-01-01", end_date="2010-01-01"
         )
-        czi = ChinaZIndex(data_path / "chirps_kenya.nc")
+        czi = ChinaZIndex(data_path / "data_kenya.nc")
         variable = "precip"
         czi.fit(variable=variable)
 
@@ -38,7 +38,7 @@ class TestChinaZIndex:
         data_path = _create_dummy_precip_data(
             tmp_path, start_date="2000-01-01", end_date="2010-01-01"
         )
-        czi = ChinaZIndex(data_path / "chirps_kenya.nc")
+        czi = ChinaZIndex(data_path / "data_kenya.nc")
         variable = "precip"
         czi.fit(variable=variable, modified=True)
 

@@ -1,4 +1,5 @@
 import sys
+import numpy as np
 
 sys.path.append("..")
 from src.exporters import (
@@ -18,7 +19,7 @@ from src.exporters import (
 from scripts.utils import get_data_path
 
 
-def export_era5():
+def export_era5(region_str="kenya"):
     exporter = ERA5Exporter(get_data_path())
 
     # The ERA5 exporter downloads the data with wierd names.
@@ -69,30 +70,47 @@ def export_era5():
     ]
 
     for variable in era5_variables:
-        exporter.export(variable=variable, granularity="monthly")
+        exporter.export(variable=variable, granularity="monthly", region_str=region_str)
 
 
-def export_era5_land():
+def export_era5_land(region_str="kenya"):
     exporter = ERA5LandExporter(get_data_path())
 
     variables = [
         "total_precipitation",
-        "2m_temperature",
-        "evapotranspiration",
-        "potential_evaporation",
-        "volumetric_soil_water_layer_1",
-        "volumetric_soil_water_layer_2"
-        "volumetric_soil_water_layer_3"
-        "volumetric_soil_water_layer_4",
+        # "2m_temperature",
+        # "evapotranspiration",
+        # "potential_evaporation",
+        # "volumetric_soil_water_layer_1",
+        # "volumetric_soil_water_layer_2",
+        # "volumetric_soil_water_layer_3",
+        # "volumetric_soil_water_layer_4",
     ]
     for variable in variables:
-        exporter.export(variable=variable, break_up="yearly")
+        exporter.export(
+            variable=variable,
+            break_up="yearly",
+            region_str=region_str,
+            granularity="monthly",
+            selection_request=dict(year=np.arange(2000, 2021)),
+        )
+
+
+def export_era5_single_var(variable="total_precipitation"):
+    # if the working directory is alread ml_drought don't need ../data
+    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
+        data_path = Path("data")
+    else:
+        data_path = Path("../data")
+
+    exporter = ERA5Exporter(data_path)
+    exporter.export(variable=variable, granularity="monthly")
 
 
 def export_vhi():
     exporter = VHIExporter(get_data_path())
 
-    exporter.export()
+    exporter.export(years=np.arange(2000, 2021))
 
 
 def export_chirps():
@@ -104,7 +122,13 @@ def export_chirps():
 def export_era5POS():
     exporter = ERA5ExporterPOS(get_data_path())
 
-    exporter.export(variable="precipitation_amount_1hour_Accumulation")
+    variables = [
+        "air_temperature_at_2_metres",
+        "precipitation_amount_1hour_Accumulation",
+    ]
+
+    for variable in variables:
+        exporter.export(variable=variable)
 
 
 def export_gleam():
@@ -123,9 +147,9 @@ def export_esa():
     exporter.export()
 
 
-def export_s5():
+def export_s5(region_str="kenya"):
 
-    granularity = "hourly"
+    granularity = "monthly"
     pressure_level = False
 
     exporter = S5Exporter(
@@ -133,25 +157,24 @@ def export_s5():
         granularity=granularity,
         pressure_level=pressure_level,
     )
-    variable = "total_precipitation"
     min_year = 1993
-    max_year = 2014
-    min_month = 1
-    max_month = 12
     max_leadtime = None
-    pressure_levels = [200, 500, 925]
-    n_parallel_requests = 20
-
-    exporter.export(
-        variable=variable,
-        min_year=min_year,
-        max_year=max_year,
-        min_month=min_month,
-        max_month=max_month,
-        max_leadtime=max_leadtime,
-        pressure_levels=pressure_levels,
-        n_parallel_requests=n_parallel_requests,
-    )
+    pressure_levels = None  # [200, 500, 925]
+    n_parallel_requests = 1
+    for variable in variables:
+        print(f"\n\nWORKING ON: {variable}\n\n")
+        exporter.export(
+            variable=variable,
+            min_year=min_year,
+            max_year=max_year,
+            min_month=min_month,
+            max_month=max_month,
+            max_leadtime=max_leadtime,
+            pressure_levels=pressure_levels,
+            n_parallel_requests=n_parallel_requests,
+            region_str=region_str,
+            break_up=False,
+        )
 
 
 def export_kenya_boundaries():
@@ -166,12 +189,13 @@ def export_boku_ndvi():
 
 
 if __name__ == "__main__":
-    # export_era5_land()
-    # export_era5()
+    print(f"Writing data to: {get_data_path()}")
+    export_era5_land(region_str="india")
+    # export_era5(region_str="kenya")
     # export_vhi()
     # export_chirps()
     # export_era5POS()
     # export_gleam()
     # export_esa()
-    # export_s5()
-    export_kenya_boundaries()
+    # export_s5(region_str="kenya")
+    # export_kenya_boundaries()
