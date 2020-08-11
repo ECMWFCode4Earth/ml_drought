@@ -1,7 +1,7 @@
 from pathlib import Path
 import xarray as xr
 import numpy as np
-
+import subprocess
 from typing import List, Optional, Union, Tuple
 
 from ..utils import Region, region_lookup
@@ -84,6 +84,96 @@ class BasePreProcessor:
         outfiles = list(target_folder.glob("**/*.nc"))
         outfiles.sort()
         return outfiles
+
+    def regrid_cdo(
+        self, ds: xr.Dataset, regrid: Path, method: str = "remapbil"
+    ) -> xr.Dataset:
+        """regrid using CDO
+
+        Benefits:
+        - the esmpy environment can be finnicky to install and use
+        - works with arbitrary size inputs, esmpy can crash with big grids
+        Negatives:
+        - installing CDO can be a pain
+        - use `scripts/drafts/install_cdo2.sh` to install
+
+        Args:
+            ds (xr.Dataset): dataset to be regrid
+            regrid (Path): the reference dataset to use as the target grid
+            method (str, optional): the method of regridding. Defaults to "remapbil".
+
+        Returns:
+            xr.Dataset: the regrid datset (on the target grid)
+        """
+
+        acceptable_methods = {
+            "remapbil",
+            "remapbic",
+            "remapnn",
+            "remapdis",
+            "remapycon",
+            "remapcon",
+            "remapcon2",
+            "remaplaf",
+        }
+        assert method in acceptable_methods, (
+            f"{method} not in {acceptable_methods}, see the interpolation section of "
+            f"https://code.mpimet.mpg.de/projects/cdo/wiki/Tutorial for more information. "
+            "See https://gist.github.com/mainvoid007/e5f1c82f50eb0459a55dfc4a0953a08e for installation."
+        )
+
+        regrid_input = self.interim / "temp.nc"
+        regrid_output = self.interim / "temp_regridded.nc"
+        input_reference_grid = regrid.resolve().as_posix()
+        output_reference_grid = (self.interim / "grid_definition").resolve().as_posix()
+
+        ds.to_netcdf(regrid_input)
+
+        # make the grid definition
+        try:
+            retcode = subprocess.call(
+                f"cdo griddes {input_reference_grid} > {output_reference_grid}",
+                shell=True,
+            )
+            if retcode != 0:  #  0 means success
+                assert False, (
+                    f"ERROR: retcode = {retcode}. "
+                    "CDO is likely not installed. "
+                    "Run: ml_drought/scripts/drafts/install_cdo2.sh "
+                    "From: https://gist.github.com/mainvoid007/e5f1c82f50eb0459a55dfc4a0953a08e"
+                )
+        except OSError as e:
+            print(f"Execution failed: {e}")
+
+        # use the grid definition to regrid
+        regrid_input_str = regrid_input.resolve().as_posix()
+        regrid_output_str = regrid_output.resolve().as_posix()
+        try:
+            retcode = subprocess.call(
+                f"cdo {method},{output_reference_grid} {regrid_input_str} {regrid_output_str}",
+                shell=True,
+            )
+            if retcode != 0:  #  0 means success
+                assert False, (
+                    f"ERROR: retcode = {retcode}. "
+                    "CDO is likely not installed. "
+                    "Run: ml_drought/scripts/drafts/install_cdo2.sh "
+                    "From: https://gist.github.com/mainvoid007/e5f1c82f50eb0459a55dfc4a0953a08e"
+                )
+        except OSError as e:
+            print(f"Execution failed: {e}")
+
+        remapped_ds = xr.open_dataset(regrid_output)
+
+        reference_grid = self.load_reference_grid(regrid)
+
+        # the CDO method yields rounding errors which make merging datasets tricky
+        # (e.g. 32.4999 != 32.5). This makes sure the longitude and latitude grids
+        # exactly match the reference
+        remapped_ds["lon"] = reference_grid.lon
+        remapped_ds["lat"] = reference_grid.lat
+
+        return remapped_ds
 
     def regrid(
         self,

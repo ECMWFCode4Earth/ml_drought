@@ -72,9 +72,23 @@ class SRTMPreprocessor(BasePreProcessor):
         regrid_input_str = regrid_input.resolve().as_posix()
         regrid_output_str = regrid_output.resolve().as_posix()
         # TODO: change to subprocess.Popen
-        os.system(
-            f"cdo {method},{output_reference_grid} {regrid_input_str} {regrid_output_str}"
-        )
+        # os.system(
+        #     f"cdo {method},{output_reference_grid} {regrid_input_str} {regrid_output_str}"
+        # )
+        try:
+            retcode = subprocess.call(
+                f"cdo {method},{output_reference_grid} {regrid_input_str} {regrid_output_str}",
+                shell=True,
+            )
+            if retcode != 0:  #  0 means success
+                assert False, (
+                    f"ERROR: retcode = {retcode}. "
+                    "CDO is likely not installed. "
+                    "Run: ml_drought/scripts/drafts/install_cdo2.sh "
+                    "From: https://gist.github.com/mainvoid007/e5f1c82f50eb0459a55dfc4a0953a08e"
+                )
+        except OSError as e:
+            print(f"Execution failed: {e}")
 
         remapped_ds = xr.open_dataset(regrid_output)
 
