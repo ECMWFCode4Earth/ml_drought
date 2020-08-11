@@ -128,7 +128,7 @@ class ModelArrays:
             )
 
         # TODO: create the static Dataset too!
-        historical_ds = xr.auto_combine(ds_list)
+        historical_ds = xr.combine_by_coords(ds_list)
 
         # create the target_ds
         target_ds = xr.Dataset(
@@ -168,7 +168,7 @@ class ModelArrays:
                         },
                     )
                 )
-            current_ds = xr.auto_combine(current_ds_list)
+            current_ds = xr.combine_by_coords(current_ds_list)
         else:  # one_month_forecast
             current_ds = None
 

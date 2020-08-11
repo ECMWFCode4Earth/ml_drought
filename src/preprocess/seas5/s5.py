@@ -342,7 +342,7 @@ class S5Preprocessor(BasePreProcessor):
             )
             all_nstep_list.append(d_nstep)
 
-        return xr.auto_combine(all_nstep_list)
+        return xr.combine_by_coords(all_nstep_list)
 
     def create_variables_for_n_timesteps_predictions(
         self, ds: xr.Dataset, tstep_coord_name: str = "months_ahead"
@@ -372,7 +372,7 @@ class S5Preprocessor(BasePreProcessor):
             d = d.drop(variables)
             all_timesteps.append(d)
 
-        return xr.auto_combine(all_timesteps)
+        return xr.combine_by_coords(all_timesteps)
 
     @staticmethod
     def get_variance_and_mean_over_number(ds: xr.Dataset) -> xr.Dataset:
@@ -395,9 +395,9 @@ class S5Preprocessor(BasePreProcessor):
             mean_std = []
             mean_std.append(ds.mean(dim="number").rename({var: var + "_mean"}))
             mean_std.append(ds.std(dim="number").rename({var: var + "_std"}))
-            predict_ds_list.append(xr.auto_combine(mean_std))
+            predict_ds_list.append(xr.combine_by_coords(mean_std))
 
-        return xr.auto_combine(predict_ds_list)
+        return xr.combine_by_coords(predict_ds_list)
 
     def _process_interim_files(
         self,

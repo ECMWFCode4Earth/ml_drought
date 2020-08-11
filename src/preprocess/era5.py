@@ -267,7 +267,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
                 # all_dyn_ds.append(_ds_dyn)
 
             # too much data and gets killed (hourly data)
-            # ds_dyn = xr.auto_combine(all_dyn_ds)
+            # ds_dyn = xr.combine_by_coords(all_dyn_ds)
 
             # if filename is None:
             #     filename = (

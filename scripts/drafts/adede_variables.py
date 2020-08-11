@@ -114,7 +114,7 @@ RFE1M = rolling_mean(precip, 1).rename({"precip": "RFE1M"})
 RFE3M = rolling_mean(precip, 3).rename({"precip": "RFE3M"})
 
 # make into one dataframe
-out_ds = xr.auto_combine([VCI1M, VCI3M, RFE1M, RFE3M, SPI1M, SPI3M, RCI1M, RCI3M])
+out_ds = xr.combine_by_coords([VCI1M, VCI3M, RFE1M, RFE3M, SPI1M, SPI3M, RCI1M, RCI3M])
 # select the legitimate timesteps (before all missing data)
 from_ = out_ds.isel(time=2).time
 to_ = f"{out_ds.isel(time=-1)['time.year'].values + 1}-01-01"

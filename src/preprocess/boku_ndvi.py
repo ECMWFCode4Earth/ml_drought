@@ -266,7 +266,7 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         ds = xr.open_dataset(outpath)
         vci = self._convert_to_VCI(ds).rename({f"VCI": "boku_VCI"})
         assert vci.isnull().mean() < 1, "All NaN values!"
-        ds = xr.auto_combine([ds, vci])
+        ds = xr.combine_by_coords([ds, vci])
 
         if cleanup:
             rmtree(self.interim)
