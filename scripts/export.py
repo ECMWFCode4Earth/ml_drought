@@ -109,6 +109,17 @@ def export_era5_land(region_str: str = "kenya", granularity: str = "monthly"):
         )
 
 
+def export_era5_single_var(variable="total_precipitation"):
+    # if the working directory is alread ml_drought don't need ../data
+    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
+        data_path = Path("data")
+    else:
+        data_path = Path("../data")
+
+    exporter = ERA5Exporter(data_path)
+    exporter.export(variable=variable, granularity="monthly")
+
+
 def export_vhi():
     exporter = VHIExporter(get_data_path())
 

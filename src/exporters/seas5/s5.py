@@ -1,5 +1,4 @@
 from pathlib import Path
-import itertools
 import numpy as np
 from datetime import datetime
 
@@ -227,7 +226,6 @@ class S5Exporter(CDSExporter):
             ):
                 updated_request = processed_selection_request.copy()
                 updated_request["year"] = [year]
-                updated_request["month"] = [month]
 
                 if n_parallel_requests > 1:  # Run in parallel
                     # multiprocessing of the paths
