@@ -47,6 +47,10 @@ def spatial_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     pred_da_shape = (pred_da.lat.shape[0], pred_da.lon.shape[0])
     assert true_da_shape == pred_da_shape
 
+    # sort the dimensions so that no inversions (e.g. lat)
+    true_da = true_da.sortby(["time", "lat", "lon"])
+    pred_da = pred_da.sortby(["time", "lat", "lon"])
+
     r2_vals = 1 - (np.nansum((true_da.values - pred_da.values) ** 2, axis=0)) / (
         np.nansum((true_da.values - np.nanmean(pred_da.values)) ** 2, axis=0)
     )
@@ -148,8 +152,11 @@ def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
     return df
 
 
-def _read_multi_data_paths(train_data_paths: List[Path]) -> xr.Dataset:
-    train_ds = xr.open_mfdataset(train_data_paths).sortby("time").compute()
+def _read_multi_data_paths(data_paths: List[Path]) -> xr.Dataset:
+    try:
+        train_ds = xr.open_mfdataset(data_paths).sortby("time").compute()
+    except ValueError:
+        train_ds = xr.concat([xr.open_dataset(d) for d in data_paths], dim="time")
     train_ds = train_ds.transpose("time", "lat", "lon")
 
     return train_ds
@@ -159,7 +166,13 @@ def read_pred_data(
     model: str, data_dir: Path = Path("data"), experiment: str = "one_month_forecast"
 ) -> Union[xr.Dataset, xr.DataArray]:
     model_pred_dir = data_dir / "models" / experiment / model
-    pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
+    # Open files
+    # pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
+    ncfiles = list(model_pred_dir.glob("*.nc"))
+    ds_list = [xr.open_dataset(f) for f in ncfiles]
+    pred_ds = xr.combine_by_coords(ds_list)
+
+    # set format
     pred_ds = pred_ds.sortby("time")
     pred_da = pred_ds.preds
     pred_da = pred_da.transpose("time", "lat", "lon")
@@ -315,22 +328,17 @@ def _read_data(
     data_dir: Path = Path("data"),
     train_or_test: str = "test",
     remove_duplicates: bool = True,
+    experiment: str = "one_month_forecast",
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     # LOAD the y files
     y_data_paths = [
-        f
-        for f in (data_dir / "features" / "one_month_forecast" / train_or_test).glob(
-            "*/y.nc"
-        )
+        f for f in (data_dir / "features" / experiment / train_or_test).glob("*/y.nc")
     ]
     y_ds = _read_multi_data_paths(y_data_paths)
 
     # LOAD the X files
     X_data_paths = [
-        f
-        for f in (data_dir / "features" / "one_month_forecast" / train_or_test).glob(
-            "*/X.nc"
-        )
+        f for f in (data_dir / "features" / experiment / train_or_test).glob("*/x.nc")
     ]
     X_ds = _read_multi_data_paths(X_data_paths)
 
@@ -344,7 +352,9 @@ def _read_data(
 
 
 def read_train_data(
-    data_dir: Path = Path("data"), remove_duplicates: bool = True
+    data_dir: Path = Path("data"),
+    remove_duplicates: bool = True,
+    experiment: str = "one_month_forecast",
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     """Read the training data from the data directory and return the joined DataArray.
 
@@ -356,13 +366,18 @@ def read_train_data(
     y_train: xr.Dataset
     """
     train_X_ds, train_y_ds = _read_data(
-        data_dir, train_or_test="train", remove_duplicates=remove_duplicates
+        data_dir,
+        train_or_test="train",
+        remove_duplicates=remove_duplicates,
+        experiment=experiment,
     )
     return train_X_ds, train_y_ds
 
 
 def read_test_data(
-    data_dir: Path = Path("data"), remove_duplicates: bool = True
+    data_dir: Path = Path("data"),
+    remove_duplicates: bool = True,
+    experiment: str = "one_month_forecast",
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     """Read the test data from the data directory and return the joined DataArray.
 
@@ -374,7 +389,10 @@ def read_test_data(
     y_test: xr.Dataset
     """
     test_X_ds, test_y_ds = _read_data(
-        data_dir, train_or_test="test", remove_duplicates=remove_duplicates
+        data_dir,
+        train_or_test="test",
+        remove_duplicates=remove_duplicates,
+        experiment=experiment,
     )
 
     return test_X_ds, test_y_ds

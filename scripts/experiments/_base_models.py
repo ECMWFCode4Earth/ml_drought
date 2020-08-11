@@ -14,8 +14,7 @@ from src.analysis import all_explanations_for_file
 from scripts.utils import get_data_path
 
 
-def parsimonious(experiment="one_month_forecast",):
-    print("\n\n** Baseline **")
+def persistence(experiment="one_month_forecast",):
     predictor = Persistence(get_data_path(), experiment=experiment)
     predictor.evaluate(save_preds=True)
     print("\n\n")
@@ -30,6 +29,7 @@ def regression(
     ignore_vars=None,
     predict_delta=False,
     spatial_mask=None,
+    include_latlons=False,
 ):
     print("\n\n** Regression **")
     predictor = LinearRegression(
@@ -41,6 +41,7 @@ def regression(
         ignore_vars=ignore_vars,
         predict_delta=predict_delta,
         spatial_mask=spatial_mask,
+        include_latlons=include_latlons,
     )
     predictor.train()
     predictor.evaluate(save_preds=True)
@@ -64,6 +65,7 @@ def linear_nn(
     predict_delta=False,
     learning_rate=1e-3,
     spatial_mask=None,
+    include_latlons=False,
 ):
     print("\n\n** Linear Network **")
     predictor = LinearNetwork(
@@ -81,6 +83,12 @@ def linear_nn(
         early_stopping=early_stopping,
         learning_rate=learning_rate,
         spatial_mask=spatial_mask,
+        include_latlons=include_latlons,
+    )
+    predictor.train(
+        num_epochs=num_epochs,
+        early_stopping=early_stopping,
+        check_inversion=check_inversion,
     )
     predictor.evaluate(save_preds=True)
     predictor.save_model()
@@ -103,6 +111,10 @@ def rnn(
     predict_delta=False,
     learning_rate=1e-3,
     spatial_mask=None,
+    include_latlons=False,
+    normalize_y=True,
+    include_prev_y=True,
+    check_inversion=False,
 ):
     print("\n\n** RNN **")
     predictor = RecurrentNetwork(
@@ -120,6 +132,14 @@ def rnn(
         early_stopping=early_stopping,
         learning_rate=learning_rate,
         spatial_mask=spatial_mask,
+        include_latlons=include_latlons,
+        normalize_y=normalize_y,
+        include_prev_y=include_prev_y,
+    )
+    predictor.train(
+        num_epochs=num_epochs,
+        early_stopping=early_stopping,
+        check_inversion=check_inversion,
     )
     predictor.evaluate(save_preds=True)
     predictor.save_model()
@@ -144,6 +164,10 @@ def earnn(
     predict_delta=False,
     learning_rate=1e-3,
     spatial_mask=None,
+    include_latlons=False,
+    normalize_y=True,
+    include_prev_y=True,
+    check_inversion=False,
 ):
     print("\n\n** EALSTM **")
     data_path = get_data_path()
@@ -165,6 +189,14 @@ def earnn(
             early_stopping=early_stopping,
             learning_rate=learning_rate,
             spatial_mask=spatial_mask,
+            include_latlons=include_latlons,
+            normalize_y=normalize_y,
+            include_prev_y=include_prev_y,
+        )
+        predictor.train(
+            num_epochs=num_epochs,
+            early_stopping=early_stopping,
+            check_inversion=check_inversion,
         )
         predictor.evaluate(save_preds=True)
         predictor.save_model()
@@ -188,6 +220,7 @@ def gbdt(
     ignore_vars=None,
     # predict_delta=False,
     spatial_mask=None,
+    include_latlons=False,
 ):
     print("\n\n** GBDT **")
     data_path = get_data_path()
@@ -201,6 +234,7 @@ def gbdt(
         static=static,
         ignore_vars=ignore_vars,
         spatial_mask=spatial_mask,
+        include_latlons=include_latlons,
     )
     predictor.train(early_stopping=5)
     predictor.evaluate(save_preds=True)

@@ -98,7 +98,7 @@ class _EngineerBase:
             )
 
         # read in all the data from interim/{var}_preprocessed
-        data = self._make_dataset(static=False)
+        data = self._make_dataset(static=False)  # .sortby('lat')
 
         # ensure test_year is List[int]
         if type(test_year) is int:
@@ -157,8 +157,9 @@ class _EngineerBase:
                 for dim in dims:
                     array_equal = np.array_equal(datasets[idx][dim].values, coords[dim])
                     if (not overwrite_dims) and (not array_equal):
+                        # SORT the values first (xarray clever enough to figure out joining)
                         assert np.array_equal(
-                            datasets[idx][dim].values, coords[dim]
+                            np.sort(datasets[idx][dim].values), np.sort(coords[dim])
                         ), f"{dim} is different! Was this run using the preprocessor?"
                     elif overwrite_dims and (not array_equal):
                         assert len(datasets[idx][dim].values) == len(coords[dim])

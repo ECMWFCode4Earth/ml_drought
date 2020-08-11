@@ -1,10 +1,9 @@
 from pathlib import Path
-import itertools
 import numpy as np
 
 from typing import cast, Dict, Optional, List
 from .all_valid_s5 import datasets as dataset_reference
-from ..base import get_kenya
+from ..base import region_lookup
 from ..cds import CDSExporter
 
 pool = None
@@ -105,6 +104,7 @@ class S5Exporter(CDSExporter):
         n_parallel_requests: int = 3,
         show_api_request: bool = True,
         break_up: bool = True,
+        region_str: str = "kenya",
     ) -> List[Path]:
         """
         Arguments
@@ -168,6 +168,7 @@ class S5Exporter(CDSExporter):
             max_year=max_year,
             min_month=min_month,
             max_month=max_month,
+            region_str=region_str,
         )
 
         if self.pressure_level:  # if we are using the pressure_level dataset
@@ -182,14 +183,10 @@ class S5Exporter(CDSExporter):
 
         output_paths = []
         if break_up:
-            # SPLIT THE API CALLS INTO MONTHS (speed up downloads)
-            for year, month in itertools.product(
-                processed_selection_request["year"],
-                processed_selection_request["month"],
-            ):
+            # SPLIT THE API CALLS INTO YEARS (speed up downloads)
+            for year in processed_selection_request["year"]:
                 updated_request = processed_selection_request.copy()
                 updated_request["year"] = [year]
-                updated_request["month"] = [month]
 
                 if n_parallel_requests > 1:  # Run in parallel
                     # multiprocessing of the paths
@@ -220,14 +217,17 @@ class S5Exporter(CDSExporter):
                 p.join()
 
         else:  # don't split by month
-            output_paths.append(
-                self._export(
-                    self.dataset,
-                    processed_selection_request,
-                    show_api_request,
-                    in_parallel=False,
+            for year in processed_selection_request["year"]:
+                updated_request = processed_selection_request.copy()
+                updated_request["year"] = [year]
+                output_paths.append(
+                    self._export(
+                        self.dataset,
+                        updated_request,
+                        show_api_request,
+                        in_parallel=False,
+                    )
                 )
-            )
 
         return output_paths
 
@@ -384,6 +384,7 @@ class S5Exporter(CDSExporter):
         max_year: int = 2019,
         min_month: int = 1,
         max_month: int = 12,
+        region_str: str = "kenya",
     ) -> Dict:
         """Build up the selection_request dictionary with defaults
 
@@ -435,8 +436,9 @@ class S5Exporter(CDSExporter):
             processed_selection_request[key] = val
 
         # by default, we investigate Kenya
-        kenya_region = get_kenya()
-        processed_selection_request["area"] = self.create_area(kenya_region)
+        # kenya_region = get_kenya()
+        region = region_lookup[region_str]
+        processed_selection_request["area"] = self.create_area(region)
 
         if self.product_type is None:
             keys = [k for k in processed_selection_request.keys()]

@@ -1,4 +1,3 @@
-from pathlib import Path
 import sys
 
 sys.path.append("..")
@@ -16,14 +15,11 @@ from src.analysis import all_explanations_for_file
 from scripts.utils import get_data_path
 
 
-def parsimonious(experiment="one_month_forecast",):
-
+def persistence(experiment="one_month_forecast",):
     data_path = get_data_path()
-    predictor = Persistence(
-        data_path,
-        experiment=experiment,
-        spatial_mask=data_path / "interim/boundaries_preprocessed/kenya_asal_mask.nc",
-    )
+    spatial_mask = data_path / "interim/boundaries_preprocessed/kenya_asal_mask.nc"
+    spatial_mask = None
+    predictor = Persistence(data_path, experiment=experiment, spatial_mask=spatial_mask)
     predictor.evaluate(save_preds=True)
 
 
@@ -33,8 +29,10 @@ def regression(
     surrounding_pixels=None,
     ignore_vars=None,
 ):
-
     data_path = get_data_path()
+    spatial_mask = data_path / "interim/boundaries_preprocessed/kenya_asal_mask.nc"
+    spatial_mask = None
+
     predictor = LinearRegression(
         data_path,
         experiment=experiment,
@@ -42,13 +40,13 @@ def regression(
         surrounding_pixels=surrounding_pixels,
         ignore_vars=ignore_vars,
         static="embeddings",
-        spatial_mask=data_path / "interim/boundaries_preprocessed/kenya_asal_mask.nc",
+        spatial_mask=spatial_mask,
     )
     predictor.train()
     predictor.evaluate(save_preds=True)
 
     # mostly to test it works
-    predictor.explain(save_shap_values=True)
+    # predictor.explain(save_shap_values=True)
 
 
 def linear_nn(
@@ -57,6 +55,7 @@ def linear_nn(
     surrounding_pixels=None,
     ignore_vars=None,
     pretrained=False,
+    static=None,
 ):
     predictor = LinearNetwork(
         layer_sizes=[100],
@@ -65,12 +64,13 @@ def linear_nn(
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
         ignore_vars=ignore_vars,
+        static=static,
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
-    _ = predictor.explain(save_shap_values=True)
+    # _ = predictor.explain(save_shap_values=True)
 
 
 def rnn(
@@ -79,6 +79,7 @@ def rnn(
     surrounding_pixels=None,
     ignore_vars=None,
     pretrained=True,
+    static=None,
 ):
     predictor = RecurrentNetwork(
         hidden_size=128,
@@ -87,12 +88,13 @@ def rnn(
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
         ignore_vars=ignore_vars,
+        static=static,
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
-    _ = predictor.explain(save_shap_values=True)
+    # _ = predictor.explain(save_shap_values=True)
 
 
 def earnn(
@@ -101,8 +103,13 @@ def earnn(
     surrounding_pixels=None,
     pretrained=True,
     ignore_vars=None,
+    static="embeddings",
 ):
     data_path = get_data_path()
+
+    if static is None:
+        print("** Cannot fit EALSTM without spatial information **")
+        return
 
     if not pretrained:
         predictor = EARecurrentNetwork(
@@ -112,6 +119,7 @@ def earnn(
             include_pred_month=include_pred_month,
             surrounding_pixels=surrounding_pixels,
             ignore_vars=ignore_vars,
+            static=static,
         )
         predictor.train(num_epochs=50, early_stopping=5)
         predictor.evaluate(save_preds=True)
@@ -125,11 +133,10 @@ def earnn(
 
 
 if __name__ == "__main__":
+    # ignore_vars = ["VCI", "p84.162", "sp", "tp", "VCI1M"]
     ignore_vars = None
-    ignore_vars = ["VCI", "p84.162", "sp", "tp"]
-
-    # parsimonious(ignore_vars=ignore_vars)
+    persistence()
     # regression(ignore_vars=ignore_vars)
-    # linear_nn(ignore_vars=ignore_vars)
-    # rnn(ignore_vars=ignore_vars)
-    earnn(pretrained=False, ignore_vars=ignore_vars)
+    # linear_nn(ignore_vars=ignore_vars, static=None)
+    rnn(ignore_vars=ignore_vars, static=None)
+    earnn(ignore_vars=ignore_vars, static=None)

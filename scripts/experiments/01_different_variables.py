@@ -15,7 +15,7 @@ import sys
 
 sys.path.append("../..")
 
-from _base_models import parsimonious, regression, linear_nn, rnn, earnn
+from _base_models import persistence, regression, linear_nn, rnn, earnn
 
 from scripts.utils import _rename_directory, get_data_path
 import logging

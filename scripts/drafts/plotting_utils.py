@@ -19,6 +19,8 @@ import pandas as pd
 import xarray as xr
 import shapely
 
+from typing import List
+
 from scipy import stats
 from scipy.stats import pearsonr
 
@@ -447,7 +449,9 @@ def plot_masked_spatial_and_hist(
     return fig
 
 
-def plot_xarray_on_map(da, borders=True, coastlines=True, ax=None, **kwargs):
+def plot_xarray_on_map(
+    da, borders=True, coastlines=True, lakes=False, ax=None, cbar=None, **kwargs
+):
     """ Plot the LOCATION of an xarray object """
     # get the center points for the maps
     mid_lat = np.mean(da.lat.values)
@@ -463,14 +467,22 @@ def plot_xarray_on_map(da, borders=True, coastlines=True, ax=None, **kwargs):
 
     vmin = kwargs.pop("vmin", None)
     vmax = kwargs.pop("vmax", None)
-    da.plot(ax=ax, transform=cartopy.crs.PlateCarree(), vmin=vmin, vmax=vmax)
+    if cbar is None:
+        da.plot(ax=ax, transform=cartopy.crs.PlateCarree(), vmin=vmin, vmax=vmax)
+    else:
+        # have to make 2D!
+        da = da.squeeze(dim="time", drop=True)
+        im = da.plot.pcolormesh(ax=ax, add_colorbar=False, vmin=vmin, vmax=vmax)
+        cbar = plt.colorbar(im)
 
     ax.coastlines()
     ax.add_feature(cartopy.feature.BORDERS, linestyle=":")
-    ax.add_feature(cartopy.feature.LAKES, facecolor=None)
+    if lakes:
+        ax.add_feature(cartopy.feature.LAKES, facecolor=None)
     fig = plt.gcf()
     ax.outline_patch.set_visible(False)
-    return fig, ax
+
+    return fig, ax, cbar
 
 
 def get_river_features():

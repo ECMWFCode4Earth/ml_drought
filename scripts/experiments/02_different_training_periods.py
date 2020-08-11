@@ -85,8 +85,8 @@ import sys
 
 sys.path.append("../..")
 
-from scripts.utils import get_data_path, _rename_directory
-from src.engineer import Engineer
+from _base_models import persistence, regression, linear_nn, rnn, earnn
+from src.analysis import all_explanations_for_file
 from src.analysis import read_train_data, read_test_data
 from src.analysis import all_explanations_for_file
 from src.engineer import Engineer
@@ -265,7 +265,7 @@ def run_experiments(
 ):
     # run baseline model
     print("\n\nBASELINE MODEL:")
-    parsimonious()
+    persistence()
     print("\n\n")
 
     # RUN EXPERIMENTS
@@ -289,6 +289,11 @@ def run_experiments(
                 rnn(ignore_vars=ignore_vars, static="embeddings")
             except RuntimeError:
                 print(f"\n{'*'*10}\n FAILED: RNN \n{'*'*10}\n")
+
+            try:
+                earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
+            except RuntimeError:
+                print(f"\n{'*'*10}\n FAILED: EALSTM \n{'*'*10}\n")
 
     else:  # NO STATIC data
         try:
@@ -337,10 +342,6 @@ class Experiment:
     test_length: int = 3
     train_hilo: str
     test_hilo: str
-<<<<<<< HEAD
-
-=======
->>>>>>> 35a852bacc0c3e3a6b3d8f3c9756006f93dcf099
     TODO: put the get_experiment_years function inside this class!
     """
 
@@ -354,11 +355,6 @@ class Experiment:
 
         assert train_hilo in ["high", "med", "low"]
         assert test_hilo in ["high", "med", "low"]
-
-        try:
-            earnn(pretrained=False, ignore_vars=ignore_vars, static=None)
-        except RuntimeError:
-            print(f"\n{'*'*10}\n FAILED: EALSTM \n{'*'*10}\n")
 
 
 def run_training_period_experiments(pred_months: int = 3):

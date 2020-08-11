@@ -3,8 +3,8 @@ import sys
 sys.path.append("../..")
 
 from scripts.utils import _rename_directory, get_data_path
-from _base_models import parsimonious, regression, linear_nn, rnn, earnn
-from scripts.engineer import engineer
+from srcipts.engineer import engineer
+from _base_models import persistence, regression, linear_nn, rnn, earnn
 
 
 def run_engineer() -> None:
@@ -37,11 +37,11 @@ if __name__ == "__main__":
         # "tprate_mean_3",
     ]
 
-    parsimonious(experiment="nowcast")
-    # regression(ignore_vars=ignore_vars)
-    # gbdt(ignore_vars=ignore_vars)
-    # linear_nn(ignore_vars=ignore_vars)
-    # rnn(ignore_vars=ignore_vars)
+    persistence(experiment="nowcast")
+    # regression(ignore_vars=always_ignore_vars)
+    # gbdt(ignore_vars=always_ignore_vars)
+    # linear_nn(ignore_vars=always_ignore_vars)
+    # rnn(ignore_vars=always_ignore_vars)
     earnn(
         experiment="nowcast",
         include_pred_month=True,

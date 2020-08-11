@@ -185,9 +185,17 @@ class VHIPreprocessor(BasePreProcessor):
             self.save_errors(errors)
         else:
             for file in nc_files:
-                self._preprocess_wrapper(
-                    str(file), subset_str=subset_str, regrid=regrid
-                )
+                output_dir = self.interim.as_posix()
+                try:
+                    self._preprocess(
+                        str(file),
+                        subset_str=subset_str,
+                        regrid=regrid,
+                        output_dir=output_dir,
+                    )
+                except OSError as e:
+                    print(e)
+                    print(f"{e} Error for {file}. Skipping")
 
         self.merge_files(
             subset_str=subset_str, resample_time=resample_time, upsampling=upsampling

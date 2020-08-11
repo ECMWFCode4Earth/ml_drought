@@ -9,12 +9,18 @@ from datetime import datetime
 
 def get_data_path() -> Path:
     # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    elif Path(".").absolute().as_posix().split("/")[-3] == "ml_drought":
-        data_path = Path("../../data")
+    if "/home/tommy" in Path(".").absolute().as_posix():
+        # on AWS machine
+        data_path = Path("/cats/datastore/data")
+        if not data_path.exists():
+            data_path.mkdir(parents=True, exist_ok=True)
     else:
-        data_path = Path("../data")
+        if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
+            data_path = Path("data")
+        elif Path(".").absolute().as_posix().split("/")[-3] == "ml_drought":
+            data_path = Path("../../data")
+        else:
+            data_path = Path("../data")
     return data_path
 
 
