@@ -181,6 +181,7 @@ def process_seas5(
             regrid=regrid_path,
             resample_time="M",
             upsampling=False,
+            cleanup=True,
         )
 
     datasets = [d.name for d in (data_path / "raw").iterdir() if "seasonal" in d.name]

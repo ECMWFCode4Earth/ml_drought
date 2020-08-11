@@ -1,7 +1,6 @@
 from pathlib import Path
 from shutil import rmtree
 import xarray as xr
-import os
 import subprocess
 
 from typing import Optional
