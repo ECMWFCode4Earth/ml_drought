@@ -148,7 +148,6 @@ def export_srtm(region_str: str = "kenya"):
 
 
 def export_esa():
-
     exporter = ESACCIExporter(data_folder=get_data_path())
     exporter.export()
 
@@ -204,12 +203,12 @@ if __name__ == "__main__":
     print(f"Writing data to: {get_data_path()}")
     # export_s5(region_str=region_str, n_parallel_requests=4)
     # export_era5_land(region_str=region_str, granularity="monthly")
-    export_era5(region_str=region_str)
+    # export_era5(region_str=region_str)
     # export_vhi()
     # export_chirps()
     # export_era5POS()
     # export_gleam()
-    # export_esa()
+    export_esa()
     # export_kenya_boundaries()
     # export_india_boundaries()
     # export_srtm(region_str=region_str)
