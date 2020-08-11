@@ -9,12 +9,18 @@ ALWAYS:
 
 ```bash
 aws s3 ls s3://mantlelabs-vci-forecast/data/raw/
+
+aws s3 ls s3://mantlelabs-vci-forecast/data/raw/ --region eu-central-1
 ```
 
 ## Moving files to S3
 
 ```bash
+aws s3 cp --dryrun --recursive --region eu-central-1
+
 aws s3 cp --dryrun --recursive 2m_temperature s3://mantlelabs-vci-forecast/data/raw/reanalysis-era5-land/2m_temperature
+
+aws s3 cp --dryrun --recursive seasonal-monthly-single-levels/ s3://mantlelabs-vci-forecast/data/raw/seasonal-monthly-single-levels/ --region eu-central-1
 ```
 
 ```bash

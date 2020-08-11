@@ -71,7 +71,7 @@ def export_era5(region_str="kenya"):
         # "vertical_integral_of_divergence_of_moisture_flux",
         # "potential_evaporation",
         # "evaporation",
-        "soil_type",
+        "soil_type"
     ]
 
     for variable in era5_variables:
@@ -98,7 +98,7 @@ def export_era5_land(region_str: str = "kenya", granularity: str = "monthly"):
         # "volumetric_soil_water_layer_3",
         # "volumetric_soil_water_layer_4",
         # "total_evaporation",
-        "potential_evaporation",
+        "potential_evaporation"
     ]
     for variable in variables:
         exporter.export(
@@ -153,7 +153,9 @@ def export_esa():
     exporter.export()
 
 
-def export_s5(region_str="kenya", n_parallel_requests=1, years=np.arange(2000, YEAR+1)):
+def export_s5(
+    region_str="kenya", n_parallel_requests=1, years=np.arange(2000, YEAR + 1)
+):
     granularity = "monthly"
     pressure_level = False
 
@@ -170,11 +172,7 @@ def export_s5(region_str="kenya", n_parallel_requests=1, years=np.arange(2000, Y
     max_leadtime = None
     pressure_levels = [200, 500, 925]
 
-    variables = [
-        "total_precipitation",
-        "2m_temperature",
-        "evaporation",
-    ]
+    variables = ["total_precipitation", "2m_temperature", "evaporation"]
 
     for variable in variables:
         exporter.export(

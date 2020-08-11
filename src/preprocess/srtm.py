@@ -54,8 +54,11 @@ class SRTMPreprocessor(BasePreProcessor):
         # TODO: change to subprocess.Popen
         # os.system(f"cdo griddes {input_reference_grid} > {output_reference_grid}")
         try:
-            retcode = subprocess.call(f"cdo griddes {input_reference_grid} > {output_reference_grid}", shell=True)
-            if retcode != 0:  # 0 means success
+            retcode = subprocess.call(
+                f"cdo griddes {input_reference_grid} > {output_reference_grid}",
+                shell=True,
+            )
+            if retcode != 0:  #  0 means success
                 assert False, (
                     f"ERROR: retcode = {retcode}. "
                     "CDO is likely not installed. "
@@ -64,7 +67,6 @@ class SRTMPreprocessor(BasePreProcessor):
                 )
         except OSError as e:
             print(f"Execution failed: {e}")
-
 
         # use the grid definition to regrid
         regrid_input_str = regrid_input.resolve().as_posix()

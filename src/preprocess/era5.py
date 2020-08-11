@@ -47,7 +47,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
             {"longitude": "lon", "latitude": "lat"}
         )
 
-        # remove expver if in ds_stat
+        #  remove expver if in ds_stat
         if "expver" in [v for v in ds.coords]:
             ds = ds.isel(expver=0)
 
