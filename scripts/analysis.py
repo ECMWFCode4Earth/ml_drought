@@ -26,6 +26,41 @@ def create_region_lookup_dict(region_mask: xr.DataArray) -> Dict[int, str]:
     return region_lookup
 
 
+def get_mean_timeseries_per_region(level: int = 1) -> pd.DataFrame:
+    assert level in [1, 2]
+
+    # Calculate mean timeseries for the predictions found in `data_dir/models`
+    #  using the boundaries found in `data/analysis/boundaries_preprocessed`
+    analyzer = AdministrativeRegionAnalysis(data_dir)
+
+    # ONLY run the analyzer for the region level you are interseted in
+    # e.g. Level 1 = State; Level 2 = District
+    analyzer.region_data_paths = [p for p in analyzer.region_data_paths if f"_l{level}_" in p.name]
+    assert analyzer.region_data_paths != [], f"Has the boundaries_preprocessor been run for Level {level}?"
+
+    #
+    print(f"Starting the Analyzer for Level: {level} ...")
+    analyzer.analyze()
+    region_df = analyzer.df
+
+    return region_df
+
+
+def calculate_mean_predictions(level: int = 1, region_gdf: gpd.GeoDataFrame, gdf_name_col: str,) -> gpd.GeoDataFrame:
+    region_df = get_mean_timeseries_per_region(level)
+
+    # join the mean dataframe to the geometry columns from the gdf object
+    ts_gdf = gpd.GeoDataFrame(
+        region_df
+        .sort_values(["model", "datetime"])
+        .set_index("region_name")
+        .join(region_gdf[[gdf_name_col, "geometry"]].set_index(gdf_name_col))
+        .reset_index()
+    )
+
+    return ts_gdf
+
+
 def create_metric_gdf(
     metric_dict: Dict[str, xr.DataArray],
     region_gdf: gpd.GeoDataFrame,
@@ -33,6 +68,10 @@ def create_metric_gdf(
     region_mask: xr.DataArray
 ) -> gpd.GeoDataFrame:
     """Create a GeoDataFrame with the mean error metric inside each region.
+    METHOD: caclulating the mean of the error metric for each pixel.
+        - $ mean( err_{pixel}(pred_{pixel}) ) $
+    Alternative: calculate the mean prediction, and get the error for that mean prediction.
+        - $ err( mean(prediction_{pixel}) ) $
 
     Args:
         metric_dict (Dict[str, xr.DataArray]): Metric Dictionary created by `create_all_error_metrics`
