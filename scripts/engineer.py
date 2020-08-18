@@ -24,6 +24,6 @@ def engineer_static():
 
 
 if __name__ == "__main__":
-    # engineer(pred_months=3, process_static=True)
+    engineer(pred_months=3, process_static=True)
     # engineer(pred_months=12, experiment='nowcast')
-    engineer_static()
+    # engineer_static()
