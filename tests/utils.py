@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-
+from typing import Optional
 import pandas as pd
 
 Point = None
@@ -18,6 +18,7 @@ def _make_dataset(
     const=False,
     start_date="1999-01-01",
     end_date="2001-12-31",
+    random_nan: Optional[int] = None,
 ):
 
     lat_len, lon_len = size
@@ -33,10 +34,19 @@ def _make_dataset(
         size = (len(times), size[0], size[1])
         dims.insert(0, "time")
         coords["time"] = times
+
     var = np.random.randint(100, size=size)
     if const:
         var *= 0
         var += 1
+
+    if random_nan:
+        indices = [i for i in np.ndindex(var.shape)]
+        ix = np.random.choice(range(len(indices)), random_nan, replace=False)
+        index = indices[int(ix)]
+        # have to convert to float if have nans
+        var = var.astype("float64")
+        var[index] = np.nan
 
     ds = xr.Dataset({variable_name: (dims, var)}, coords=coords)
 
