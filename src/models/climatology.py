@@ -45,6 +45,7 @@ class Climatology(ModelBase):
 
         preds_dict: Dict[str, np.ndarray] = {}
         test_arrays_dict: Dict[str, Dict[str, np.ndarray]] = {}
+
         for dict in test_arrays_loader:
             for key, val in dict.items():
                 try:
@@ -69,6 +70,7 @@ class Climatology(ModelBase):
                     "latlons": val.latlons,
                     "time": val.target_time,
                     "y_var": val.y_var,
+                    "nan_mask": val.nan_mask,
                 }
 
         return test_arrays_dict, preds_dict

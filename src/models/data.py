@@ -67,6 +67,7 @@ class ModelArrays:
     predict_delta: bool = False
     historical_target: Optional[xr.DataArray] = None
     notnan_indices: Optional[np.ndarray] = None
+    nan_mask: Optional[np.ndarray] = None
 
     def to_tensor(self, device) -> None:
         self.x.to_tensor(device)
@@ -814,6 +815,7 @@ class _BaseIter:
             else:
                 static_nans_summed = np.zeros((y_nans.shape[0],))
 
+            # historical_nans.any(axis=1).any(axis=1)
             historical_nans_summed = historical_nans.reshape(
                 historical_nans.shape[0],
                 historical_nans.shape[1] * historical_nans.shape[2],
@@ -827,7 +829,15 @@ class _BaseIter:
                 & (static_nans_summed == 0)
                 & (prev_y_var_summed == 0)
             )[0]
+            nan_mask = (
+                historical_nans_summed
+                + y_nans_summed
+                + static_nans_summed
+                + prev_y_var_summed
+            ) > 0
             self.notnan_indices = notnan_indices
+            self.nan_mask = nan_mask
+
             if self.experiment == "nowcast":
                 current_nans = np.isnan(train_data.current)
                 current_nans_summed = current_nans.sum(axis=-1)
@@ -838,6 +848,14 @@ class _BaseIter:
                     & (static_nans_summed == 0)
                     & (prev_y_var_summed == 0)
                 )[0]
+                nan_mask = (
+                    historical_nans_summed
+                    + y_nans_summed
+                    + static_nans_summed
+                    + prev_y_var_summed
+                ) > 0
+                self.notnan_indices = notnan_indices
+                self.nan_mask = nan_mask
 
             train_data.filter(notnan_indices)
 
@@ -854,6 +872,7 @@ class _BaseIter:
             target_time=target_time,
             historical_times=x_datetimes,
             notnan_indices=notnan_indices,
+            nan_mask=nan_mask,
         )
 
         if to_tensor:
@@ -963,6 +982,8 @@ class _TrainIter(_BaseIter):
                     global_modelarrays.concatenate(arrays)
 
                 self.idx += 1
+
+            # batching code
             if global_modelarrays is not None:
                 if self.to_tensor:
                     global_modelarrays.to_tensor(self.device)
