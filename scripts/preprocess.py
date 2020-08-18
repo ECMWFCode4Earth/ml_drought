@@ -258,7 +258,8 @@ def preprocess_era5_hourly(subset_str: str = "kenya"):
 
 def preprocess_boku_ndvi(subset_str: str = "kenya"):
     data_path = get_data_path()
-    processor = BokuNDVIPreprocessor(data_path)
+    # downsample_first = whether to calculate VCI before or after time downsampling?
+    processor = BokuNDVIPreprocessor(data_path, downsample_first=False)
 
     regrid_path = (
         data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"

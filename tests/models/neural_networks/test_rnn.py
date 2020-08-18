@@ -78,21 +78,23 @@ class TestRecurrentNetwork:
         assert model_dict["normalize_y"] == normalize_y
 
     @pytest.mark.parametrize(
-        "use_pred_months,predict_delta,check_inversion",
+        "use_pred_months,predict_delta,static",
         [
-            (True, True, True),
-            (False, True, True),
-            (True, False, True),
-            (False, False, True),
-            (True, True, False),
-            (False, True, False),
-            (True, False, False),
-            (False, False, False),
+            (True, True, None),
+            (False, True, None),
+            (True, False, None),
+            (False, False, None),
+            (True, True, "features"),
+            (False, True, "features"),
+            (True, False, "features"),
+            (False, False, "features"),
+            (True, True, "embeddings"),
+            (False, True, "embeddings"),
+            (True, False, "embeddings"),
+            (False, False, "embeddings"),
         ],
     )
-    def test_train(
-        self, tmp_path, capsys, use_pred_months, predict_delta, check_inversion
-    ):
+    def test_train(self, tmp_path, capsys, use_pred_months, predict_delta, static):
         x, _, _ = _make_dataset(size=(5, 5), const=True)
         y = x.isel(time=[-1])
 
@@ -129,7 +131,9 @@ class TestRecurrentNetwork:
             data_folder=tmp_path,
             include_monthly_aggs=True,
             predict_delta=predict_delta,
+            static=static,
         )
+        check_inversion = False
         model.train(check_inversion=check_inversion)
 
         captured = capsys.readouterr()

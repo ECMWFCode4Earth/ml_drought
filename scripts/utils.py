@@ -31,3 +31,28 @@ def _rename_directory(
         to_path = Path(to_path)
     shutil.move(from_path.as_posix(), to_path.as_posix())
     print(f"MOVED {from_path} to {to_path}")
+
+
+def _base_increment_folder(data_path: Path, dir: str):
+    old_paths = [d for d in data_path.glob(f"*_{dir}*")]
+    if old_paths == []:
+        integer = 0
+    else:
+        old_max = max([int(p.name.split("_")[0]) for p in old_paths])
+        integer = old_max + 1
+
+    _rename_directory(
+        from_path=data_path / f"{dir}",
+        to_path=data_path / f"{integer}_{dir}",
+        with_datetime=False,
+    )
+
+
+def rename_features_dir(data_path: Path, dir: str):
+    """increment the features dir by 1"""
+    _base_increment_folder(data_path, dir="features")
+
+
+def rename_models_dir(data_path: Path):
+    """increment the models dir by 1"""
+    _base_increment_folder(data_path, dir="models")

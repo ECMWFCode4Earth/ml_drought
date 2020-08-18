@@ -154,7 +154,11 @@ def annual_scores_to_dataframe(monthly_scores: Dict) -> pd.DataFrame:
 
 def _read_multi_data_paths(data_paths: List[Path]) -> xr.Dataset:
     try:
-        train_ds = xr.open_mfdataset(data_paths).sortby("time").compute()
+        train_ds = (
+            xr.open_mfdataset(data_paths, combine="nested", concat_dim="time")
+            .sortby("time")
+            .compute()
+        )
     except ValueError:
         train_ds = xr.concat([xr.open_dataset(d) for d in data_paths], dim="time")
     train_ds = train_ds.transpose("time", "lat", "lon")

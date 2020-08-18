@@ -27,7 +27,7 @@ class NNBase(ModelBase):
         include_pred_month: bool = True,
         include_latlons: bool = False,
         include_monthly_aggs: bool = True,
-        include_yearly_aggs: bool = True,
+        include_yearly_aggs: bool = False,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
@@ -36,6 +36,8 @@ class NNBase(ModelBase):
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = True,
+        clear_nans: bool = True,
+        weight_observations: bool = False,
         explain: bool = False,
     ) -> None:
         super().__init__(
@@ -54,6 +56,7 @@ class NNBase(ModelBase):
             spatial_mask=spatial_mask,
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
+            clear_nans=clear_nans,
         )
 
         # for reproducibility
@@ -68,6 +71,7 @@ class NNBase(ModelBase):
             if shap is None:
                 import shap
             self.explainer: Optional[shap.DeepExplainer] = None  # type: ignore
+        self.weight_observations = weight_observations
 
     def to(self, device: str = "cpu"):
         # move the model onto the right device
@@ -81,6 +85,35 @@ class NNBase(ModelBase):
 
     def _initialize_model(self, x_ref: Tuple[torch.Tensor, ...]) -> torch.nn.Module:
         raise NotImplementedError
+
+    def _make_weights(
+        self,
+        target: torch.Tensor,
+        threshold_value: float = 15,
+        weight_value: float = 10,
+    ) -> torch.Tensor:
+        """weight the gradient updates to learn more from certain
+        observations!
+
+        Returns a vector of the same size as target.
+        The values are weight else 1
+
+        E.g. upweight the low VCI examples so the model pays
+        greater attention to these layers.
+
+        Arguments:
+        ---------
+        target: torch.Tensor
+            The y variable (the regression target)
+        """
+        # if normalize y then use -1 STD otherwise use
+        # the extreme droughts (<= threshold value)
+        # threshold_value = -1 if self.normalize_y else threshold_value
+        # weight = 10
+        weights = torch.ones_like(target)
+        weights[target <= threshold_value] = weight_value
+
+        return weights
 
     def train(
         self,
@@ -153,6 +186,15 @@ class NNBase(ModelBase):
                         )
 
                     loss = F.smooth_l1_loss(pred, y_batch)
+
+                    # upweight the losses on the extreme deficits
+                    if self.weight_observations:
+                        weights = self._make_weights(
+                            y_batch, threshold_value=15, weight_value=10
+                        )
+
+                        loss = (weights * loss).mean()
+
                     loss.backward()
                     optimizer.step()
 
@@ -248,7 +290,9 @@ class NNBase(ModelBase):
 
         return test_arrays_dict, preds_dict
 
-    def _get_background(self, sample_size: int = 150) -> List[torch.Tensor]:
+    def _get_background(
+        self, sample_size: int = 150
+    ) -> List[Union[torch.Tensor, None]]:
 
         print("Extracting a sample of the training data")
 
@@ -260,7 +304,7 @@ class NNBase(ModelBase):
         output_pm: List[torch.Tensor] = []
         output_ll: List[torch.Tensor] = []
         output_cur: List[torch.Tensor] = []
-        output_ym: List[torch.Tensor] = []
+        output_ym: Optional[List[torch.Tensor]] = None
         output_static: List[torch.Tensor] = []
         output_prev_y: List[torch.Tensor] = []
 
@@ -291,7 +335,7 @@ class NNBase(ModelBase):
                     else:
                         output_ym.append(torch.zeros(1))
                 else:
-                    output_ym.append(x[4][idx])
+                    output_ym.append(x[4][idx])  # type: ignore
 
                 # static data
                 if self.static == "embeddings":
@@ -323,7 +367,7 @@ class NNBase(ModelBase):
             torch.cat(output_pm, dim=0),
             torch.stack(output_ll),
             torch.stack(output_cur),
-            torch.stack(output_ym),
+            torch.stack(output_ym) if output_ym is not None else None,
             torch.stack(output_static),
             torch.stack(output_prev_y),
         ]
@@ -384,7 +428,7 @@ class NNBase(ModelBase):
         start_idx: int = 0,
         num_inputs: int = 10,
         method: str = "shap",
-    ) -> TrainData:
+    ) -> Tuple[TrainData, List[Union[torch.Tensor, None]]]:
         """
         Expain the outputs of a trained model.
 
@@ -413,11 +457,12 @@ class NNBase(ModelBase):
             x = val.x
 
         if method == "shap":
-            explanations = self._get_shap_explanations(
+            explanations, background_samples = self._get_shap_explanations(
                 x, background_size, start_idx, num_inputs
             )
         elif method == "morris":
             explanations = self._get_morris_explanations(x)
+            background_samples = None  # type: ignore
 
         if save_explanations:
             analysis_folder = self._make_analysis_folder()
@@ -438,7 +483,7 @@ class NNBase(ModelBase):
                 with (analysis_folder / "input_variable_names.pkl").open("wb") as f:
                     pickle.dump(var_names, f)
 
-        return TrainData(**explanations)
+        return TrainData(**explanations), background_samples
 
     def _get_shap_explanations(
         self,
@@ -446,7 +491,7 @@ class NNBase(ModelBase):
         background_size: int = 100,
         start_idx: int = 0,
         num_inputs: int = 10,
-    ) -> Dict[str, np.ndarray]:
+    ) -> Tuple[Dict[str, np.ndarray], List[Union[torch.Tensor, None]]]:
 
         if self.explainer is None:  # type: ignore
             background_samples = self._get_background(sample_size=background_size)
@@ -456,7 +501,6 @@ class NNBase(ModelBase):
 
         # make val.x a list of tensors, as is required by the shap explainer
         output_tensors = []
-
         for _, val in sorted(idx_to_input.items()):
             tensor = x.__getattribute__(val)
             if tensor is not None:
@@ -485,7 +529,10 @@ class NNBase(ModelBase):
 
         explain_arrays = self.explainer.shap_values(output_tensors)  # type: ignore
 
-        return {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)}
+        return (
+            {idx_to_input[idx]: array for idx, array in enumerate(explain_arrays)},
+            background_samples,  #  None
+        )
 
     def _get_morris_explanations(self, x: TrainData) -> Dict[str, np.ndarray]:
         """

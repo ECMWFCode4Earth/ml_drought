@@ -3,6 +3,7 @@ import sys
 sys.path.append("../..")
 from src.models import (
     Persistence,
+    Climatology,
     LinearRegression,
     LinearNetwork,
     RecurrentNetwork,
@@ -14,8 +15,18 @@ from src.analysis import all_explanations_for_file
 from scripts.utils import get_data_path
 
 
-def persistence(experiment="one_month_forecast",):
-    predictor = Persistence(get_data_path(), experiment=experiment)
+def persistence(experiment="one_month_forecast", include_yearly_aggs=False):
+    predictor = Persistence(
+        get_data_path(), experiment=experiment, include_yearly_aggs=include_yearly_aggs
+    )
+    predictor.evaluate(save_preds=True)
+
+
+def climatology(experiment="one_month_forecast", include_yearly_aggs=False):
+    predictor = Climatology(
+        get_data_path(), experiment=experiment, include_yearly_aggs=include_yearly_aggs
+    )
+
     predictor.evaluate(save_preds=True)
 
 
@@ -29,6 +40,7 @@ def regression(
     predict_delta=False,
     spatial_mask=None,
     include_latlons=False,
+    include_yearly_aggs=False,
 ):
     predictor = LinearRegression(
         get_data_path(),
@@ -40,6 +52,7 @@ def regression(
         predict_delta=predict_delta,
         spatial_mask=spatial_mask,
         include_latlons=include_latlons,
+        include_yearly_aggs=include_yearly_aggs,
     )
     predictor.train()
     predictor.evaluate(save_preds=True)
@@ -62,6 +75,8 @@ def linear_nn(
     predict_delta=False,
     spatial_mask=None,
     include_latlons=False,
+    include_yearly_aggs=True,
+    clear_nans=True,
 ):
     predictor = LinearNetwork(
         layer_sizes=layer_sizes,
@@ -74,12 +89,10 @@ def linear_nn(
         predict_delta=predict_delta,
         spatial_mask=spatial_mask,
         include_latlons=include_latlons,
+        include_yearly_aggs=include_yearly_aggs,
+        clear_nans=clear_nans,
     )
-    predictor.train(
-        num_epochs=num_epochs,
-        early_stopping=early_stopping,
-        check_inversion=check_inversion,
-    )
+    predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
@@ -102,7 +115,9 @@ def rnn(
     include_latlons=False,
     normalize_y=True,
     include_prev_y=True,
-    check_inversion=False,
+    include_yearly_aggs=True,
+    clear_nans=True,
+    weight_observations=False,
 ):
     predictor = RecurrentNetwork(
         hidden_size=hidden_size,
@@ -117,12 +132,11 @@ def rnn(
         include_latlons=include_latlons,
         normalize_y=normalize_y,
         include_prev_y=include_prev_y,
+        include_yearly_aggs=include_yearly_aggs,
+        clear_nans=clear_nans,
+        weight_observations=weight_observations,
     )
-    predictor.train(
-        num_epochs=num_epochs,
-        early_stopping=early_stopping,
-        check_inversion=check_inversion,
-    )
+    predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
@@ -147,7 +161,10 @@ def earnn(
     include_latlons=False,
     normalize_y=True,
     include_prev_y=True,
-    check_inversion=False,
+    include_yearly_aggs=True,  # new
+    clear_nans=True,
+    weight_observations=False,
+    pred_month_static=False,
 ):
     data_path = get_data_path()
 
@@ -166,12 +183,12 @@ def earnn(
             include_latlons=include_latlons,
             normalize_y=normalize_y,
             include_prev_y=include_prev_y,
+            include_yearly_aggs=include_yearly_aggs,
+            clear_nans=clear_nans,
+            weight_observations=weight_observations,
+            pred_month_static=pred_month_static,
         )
-        predictor.train(
-            num_epochs=num_epochs,
-            early_stopping=early_stopping,
-            check_inversion=check_inversion,
-        )
+        predictor.train(num_epochs=num_epochs, early_stopping=early_stopping)
         predictor.evaluate(save_preds=True)
         predictor.save_model()
     else:
@@ -194,6 +211,7 @@ def gbdt(
     # predict_delta=False,
     spatial_mask=None,
     include_latlons=False,
+    include_yearly_aggs=True,
 ):
     data_path = get_data_path()
 
@@ -207,6 +225,7 @@ def gbdt(
         ignore_vars=ignore_vars,
         spatial_mask=spatial_mask,
         include_latlons=include_latlons,
+        include_yearly_aggs=include_yearly_aggs,
     )
     predictor.train(early_stopping=5)
     predictor.evaluate(save_preds=True)

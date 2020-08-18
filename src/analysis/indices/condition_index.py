@@ -56,7 +56,7 @@ class ConditionIndex(BaseIndices):
         # NOTE: if rolling_window = 1 the calculation doesn't change values
         rolling_ds = rolling_mean(condition_index, rolling_window)
 
-        self.index = rolling_ds.to_dataset(var_name)
+        self.index = rolling_ds.to_dataset(name=var_name)
         print(f"Fitted {variable} Condition Index and stored at `obj.index`")
 
 

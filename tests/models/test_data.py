@@ -130,6 +130,15 @@ class TestBaseIter:
                 ),
             }
 
+        # build static data
+        static1 = x.mean(dim="time").rename({v: f"{v}_pixel_mean" for v in x.data_vars})
+        ones = xr.ones_like(x.mean(dim="time"))[[v for v in x.data_vars][0]]
+        static2 = x.mean(dim=["lat", "lon", "time"]).rename(
+            {v: f"{v}_global_mean" for v in x.data_vars}
+        )
+        static2 = static2 * ones
+        static_ds = xr.auto_combine([static1, static2])
+
         class MockLoader:
             def __init__(self):
                 self.batch_file_size = None
@@ -145,8 +154,8 @@ class TestBaseIter:
                 self.ignore_vars = ["precip"]
                 self.monthly_aggs = False
                 self.device = torch.device("cpu")
-
-                self.static = None
+                self.incl_yearly_aggs = False
+                self.static = static_ds
                 self.spatial_mask = None
                 self.static_normalizing_dict = None
                 self.normalize_y = normalize
@@ -154,8 +163,42 @@ class TestBaseIter:
         base_iterator = _BaseIter(MockLoader())
 
         arrays = base_iterator.ds_folder_to_np(data_dir, to_tensor=to_tensor)
-
         x_train_data, y_np, latlons = (arrays.x, arrays.y, arrays.latlons)
+
+        # ----------------------
+        # Test the static data
+        # ----------------------
+        # check first 3 features are CONSTANT (global means)
+        assert all(
+            [
+                all(arrays.x.static[:, i][1:] == arrays.x.static[:, i][:-1])
+                for i in range(4)
+            ]
+        )
+        if not predict_delta:
+            # check second 3 features vary (pixel means)
+            assert all(
+                [
+                    all(arrays.x.static[:, i][1:] != arrays.x.static[:, i][:-1])
+                    for i in range(4, 6)
+                ]
+            ), (
+                f"static data: \n[,4]\n: {arrays.x.static[:, 4][1:]}\n[,5]"
+                f"\n: {arrays.x.static[:, 5][1:]}"
+            )
+
+        n_samples = 25 if surrounding_pixels is None else 9
+        assert (
+            arrays.x.static.shape[0] == n_samples
+        ), f"Expect {n_samples} samples because ..."
+
+        assert (
+            arrays.x.static.shape[-1] == 6
+        ), "Expect 6 static features because ignore 'precip' variables in the static data"
+
+        # ----------------------
+        # Test the TrainData
+        # ----------------------
         assert isinstance(x_train_data, TrainData)
         if not to_tensor:
             assert isinstance(y_np, np.ndarray)
@@ -266,12 +309,14 @@ class TestBaseIter:
                 f"Expected to " "find the target_time data for the non target variables"
             )
 
-        # n_variables should be 3 because `ignoring` precip
-        assert x_train_data.yearly_aggs.shape[1] == 3
+        if x_train_data.yearly_aggs is not None:
+            # n_variables should be 3 because `ignoring` precip
+            assert x_train_data.yearly_aggs.shape[1] == 3
 
         if (not normalize) and (not to_tensor):
             mean_temp = x_coeff3.temp.mean(dim=["time", "lat", "lon"]).values
-            assert (mean_temp == x_train_data.yearly_aggs).any()
+            if x_train_data.yearly_aggs is not None:
+                assert (mean_temp == x_train_data.yearly_aggs).any()
 
         if predict_delta:
             assert (

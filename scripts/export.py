@@ -13,6 +13,7 @@ from src.exporters import (
     SRTMExporter,
     KenyaAdminExporter,
     ERA5LandExporter,
+    BokuNDVIExporter,
 )
 
 from scripts.utils import get_data_path
@@ -179,6 +180,11 @@ def export_s5(region_str="kenya"):
 def export_kenya_boundaries():
 
     exporter = KenyaAdminExporter(get_data_path())
+    exporter.export()
+
+
+def export_boku_ndvi():
+    exporter = BokuNDVIExporter(get_data_path())
     exporter.export()
 
 
