@@ -233,13 +233,13 @@ class BokuNDVIPreprocessor(BasePreProcessor):
             # vci1,
             vci = self._convert_to_VCI(ds).rename({f"VCI": "boku_VCI"})
             assert vci.isnull().mean() < 1, "All NaN values!"
-            ds = xr.auto_combine([ds, vci])
+            ds = xr.combine_by_coords([ds, vci])
             # vci3m
             vci = self._convert_to_VCI(
                 ds, rolling_window=3, variable="boku_VCI"
             ).rename({f"VCI": "VCI3M"})
             assert vci.isnull().mean() < 1, "All NaN values!"
-            ds = xr.auto_combine([ds, vci])
+            ds = xr.combine_by_coords([ds, vci])
 
         if resample_time is not None:
             ds = self.resample_time(ds, resample_time, upsampling)
@@ -313,7 +313,7 @@ class BokuNDVIPreprocessor(BasePreProcessor):
             ds = xr.open_dataset(outpath)
             vci = self._convert_to_VCI(ds).rename({f"VCI": "boku_VCI"})
             assert vci.isnull().mean() < 1, "All NaN values!"
-            ds = xr.auto_combine([ds, vci])
+            ds = xr.combine_by_coords([ds, vci])
 
         if cleanup:
             rmtree(self.interim)
