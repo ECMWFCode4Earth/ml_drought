@@ -24,6 +24,7 @@ data/*.zip*
 *.pkl
 scripts/*.png
 scripts/variables.txt
+data/*
 
 .ipynb_checkpoints
 
@@ -42,9 +43,13 @@ switch_data_dirs.sh
 # pytest coverage files
 .coverage*
 
+# random python stuff
+core.python*
+
 # vscode settings
 .vscode
 # vscode options
 settings.json
+core.ipython*
 
 lightning_logs

@@ -16,6 +16,7 @@ from src.exporters import (
     ERA5LandExporter,
     ERA5LandExporterHourly,
     IndiaAdminExporter,
+    BokuNDVIExporter,
 )
 
 from scripts.utils import get_data_path
@@ -206,6 +207,11 @@ def export_kenya_boundaries():
 
 def export_india_boundaries():
     exporter = IndiaAdminExporter(get_data_path())
+    exporter.export()
+
+
+def export_boku_ndvi():
+    exporter = BokuNDVIExporter(get_data_path())
     exporter.export()
 
 

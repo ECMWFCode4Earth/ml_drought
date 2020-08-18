@@ -5,7 +5,7 @@ import json
 import pandas as pd
 import xarray as xr
 import random
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
 
 from .data import TrainData, DataLoader
 from .utils import vals_dict_to_xarray_dataset
@@ -56,11 +56,12 @@ class ModelBase:
         include_yearly_aggs: bool = True,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
-        static: Optional[str] = "embedding",
+        static: Optional[str] = "embeddings",
         predict_delta: bool = False,
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = False,
+        clear_nans: bool = True,
     ) -> None:
 
         self.batch_size = batch_size
@@ -78,6 +79,7 @@ class ModelBase:
         self.predict_delta = predict_delta
         self.include_prev_y = include_prev_y
         self.normalize_y = normalize_y
+        self.clear_nans = clear_nans
         if normalize_y:
             with (data_folder / f"features/{experiment}/normalizing_dict.pkl").open(
                 "rb"
@@ -223,7 +225,9 @@ class ModelBase:
         output_dict["total"] = np.sqrt(
             mean_squared_error(np.concatenate(total_true), np.concatenate(total_preds))
         ).item()
+        r2 = r2_score(np.concatenate(total_true), np.concatenate(total_preds))
         print(f'RMSE: {output_dict["total"]}')
+        print(f"R2: {r2:.2f}")
 
         if save_results:
             with (self.model_dir / "results.json").open("w") as outfile:
@@ -352,10 +356,11 @@ class ModelBase:
             "to_tensor": to_tensor,
             "ignore_vars": self.ignore_vars,
             "monthly_aggs": self.include_monthly_aggs,
+            "incl_yearly_aggs": self.include_yearly_aggs,
             "surrounding_pixels": self.surrounding_pixels,
             "static": self.static,
             "device": self.device,
-            "clear_nans": True,
+            "clear_nans": self.clear_nans,
             "normalize": True,
             "predict_delta": self.predict_delta,
             "spatial_mask": self.spatial_mask,

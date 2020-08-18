@@ -273,7 +273,8 @@ class SPI(BaseIndices):
                 "\n"
             )
             print(
-                "I am pretty sure that this is probably something that we need to fix from the indices code"
+                "I am pretty sure that this is probably something"
+                " that we need to fix from the indices code"
             )
 
         self.index = index.unstack("point").to_dataset(name=f"SPI{scale}")

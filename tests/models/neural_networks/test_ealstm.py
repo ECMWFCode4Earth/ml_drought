@@ -11,6 +11,7 @@ from src.models import EARecurrentNetwork
 from src.models.data import TrainData
 
 from tests.utils import _make_dataset
+from ._build_static_data import get_static_embedding
 
 
 class TestEARecurrentNetwork:
@@ -80,22 +81,27 @@ class TestEARecurrentNetwork:
         assert model_dict["normalize_y"] == normalize_y
 
     @pytest.mark.parametrize(
-        "use_pred_months,use_static_embedding,check_inversion",
+        "use_pred_months,use_static_embedding,static,check_inversion",
         [
-            (True, 10, False),
-            (False, None, False),
-            (True, 10, True),
-            (False, None, True),
+            (True, 10, "features", True),
+            (False, None, "features", True),
+            (True, 10, "features", False),
+            (False, None, "features", False),
         ],
     )
     def test_train(
-        self, tmp_path, capsys, use_pred_months, use_static_embedding, check_inversion
+        self,
+        tmp_path,
+        capsys,
+        use_pred_months,
+        use_static_embedding,
+        static,
+        check_inversion,
     ):
-        x, _, _ = _make_dataset(size=(5, 5), const=True)
-        y = x.isel(time=[-1])
-
-        test_features = tmp_path / "features/one_month_forecast/train/1980_1"
-        test_features.mkdir(parents=True)
+        # make directories
+        for ts in ["2001_11", "2001_12"]:
+            test_features = tmp_path / f"features/one_month_forecast/train/{ts}"
+            test_features.mkdir(parents=True)
 
         norm_dict = {"VHI": {"mean": 0, "std": 1}}
         with (tmp_path / "features/one_month_forecast/normalizing_dict.pkl").open(
@@ -103,8 +109,18 @@ class TestEARecurrentNetwork:
         ) as f:
             pickle.dump(norm_dict, f)
 
-        x.to_netcdf(test_features / "x.nc")
-        y.to_netcdf(test_features / "y.nc")
+        # save the X, y data pairs
+        x, _, _ = _make_dataset(size=(5, 5), const=True)
+
+        for ts in ["2001_11", "2001_12"]:
+            if ts == "2001_12":
+                y = x.sel(time="2001-12")
+                x_save = x.sel(time=slice("2000-12", "2001-11"))
+            else:
+                y = x.sel(time="2001-11")
+                x_save = x.sel(time=slice("2000-11", "2001-10"))
+            x_save.to_netcdf(test_features / "x.nc")
+            y.to_netcdf(test_features / "y.nc")
 
         # static
         x_static, _, _ = _make_dataset(size=(5, 5), add_times=False)
@@ -127,6 +143,8 @@ class TestEARecurrentNetwork:
             data_folder=tmp_path,
             static_embedding_size=use_static_embedding,
             normalize_y=True,
+            include_yearly_aggs=False,
+            static=static,
         )
         model.train(check_inversion=check_inversion)
 
@@ -135,6 +153,33 @@ class TestEARecurrentNetwork:
         assert expected_stdout in captured.out
 
         assert type(model.model) == EALSTM, f"Model attribute not an EALSTM!"
+
+        # ------------------
+        # Check static embedding
+        # -------------------
+        if use_static_embedding is not None:
+            all_e, (all_static_x, all_latlons, all_pred_months) = get_static_embedding(
+                ealstm=model
+            )
+            assert (
+                all_e[0].shape[0] == 25
+            ), f"Expect 25 latlon values (pixels). Got: {all_e[0].shape}"
+            assert (
+                all_latlons[0].shape[0] == 25
+            ), f"Expect 25 latlon values (pixels). Got: {all_e[0].shape}"
+
+            # Moved the PredMonth OHE to the dynamic data
+            assert all_static_x[0].shape == (
+                25,
+                1,  #  13,
+            ), f"Expect 13 static dimensions Got: {all_static_x[0].shape}"
+            # assert (
+            #     len(set(all_pred_months[0])) == 1
+            # ), "Only expect one pred month (12=December)"
+
+            # TODO: why is it only loading one month of data?
+            # > [d.name for d in model.get_dataloader('train').data_files[0].parents[0].iterdir()]
+            # ['2001_11', '2001_12']
 
     @pytest.mark.parametrize(
         "use_pred_months,predict_delta",
@@ -205,7 +250,7 @@ class TestEARecurrentNetwork:
         )
 
         for key, val in test_dl.items():
-            output_m = model.explain(val.x, save_explanations=True, method="morris")
+            output_m, _ = model.explain(val.x, save_explanations=True, method="morris")
             assert type(output_m) is TrainData
             assert (model.model_dir / "analysis/morris_value_historical.npy").exists()
 

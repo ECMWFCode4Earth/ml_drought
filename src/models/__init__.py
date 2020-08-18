@@ -4,6 +4,7 @@ import torch
 from typing import cast, Optional, Union
 
 from .persistence import Persistence
+from .climatology import Climatology
 from .regression import LinearRegression
 from .gbdt import GBDT
 from .neural_networks.linear_network import LinearNetwork
@@ -12,6 +13,7 @@ from .neural_networks.ealstm import EARecurrentNetwork
 
 __all__ = [
     "Persistence",
+    "Climatology",
     "LinearRegression",
     "LinearNetwork",
     "RecurrentNetwork",
@@ -25,6 +27,7 @@ def load_model(
     data_path: Optional[Path] = None,
     model_type: Optional[str] = None,
     device: Optional[str] = "cpu",
+    # features_dir: Optional[str] = None,
 ) -> Union[RecurrentNetwork, LinearNetwork, LinearRegression, EARecurrentNetwork, GBDT]:
     """
     This function loads models from the output `.pkl` files generated when

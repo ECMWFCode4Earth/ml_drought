@@ -95,7 +95,9 @@ def create_shape_aligned_climatology(
     ds: xr.Dataset, clim: xr.Dataset, variable: str, time_period: str
 ):
     """match the time dimension of `clim` to the shape of `ds` so that can
-    perform simple calculations / arithmetic on the values of clim
+    perform simple calculations / arithmetic on the values of clim.
+
+    Copy the climatology array forwards through time. Copy forwards through time.
 
     Arguments:
     ---------

@@ -52,9 +52,16 @@ class Climatology(ModelBase):
                     print("Target variable not in prediction data!")
                     raise e
 
-                preds_dict[key] = monmean.sel(
+                # TODO: remove the missing data from the array
+                # the same way that the test_arrays_loader does
+                climatology_vals = monmean.sel(
                     month=val.target_time.month
-                ).values.reshape(val.y.shape)
+                ).values.flatten()
+
+                # get the not nan indices
+                climatology_vals = climatology_vals[val.notnan_indices]
+
+                preds_dict[key] = climatology_vals.reshape(val.y.shape)
 
                 test_arrays_dict[key] = {
                     "y": val.y,

@@ -28,6 +28,7 @@ from .base import BasePreProcessor
 from .dekad_utils import dekad_index
 
 from src.analysis import ConditionIndex
+from typing import Union, Tuple
 
 
 class BokuNDVIPreprocessor(BasePreProcessor):
@@ -36,9 +37,11 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         data_folder: Path = Path("data"),
         output_name: Optional[str] = None,
         resolution: str = "1000",
+        downsample_first: bool = False,
     ):
         self.resolution = str(resolution)
         self.static = False
+        self.downsample_first = downsample_first
 
         if self.resolution == "1000":
             # 1km pixel
@@ -139,11 +142,14 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         da.name = variable
         return da.to_dataset()
 
-    def _convert_to_VCI(self, ds: xr.Dataset, rolling_window: int = 1) -> xr.Dataset:
+    def _convert_to_VCI(
+        self, ds: xr.Dataset, rolling_window: int = 1, variable: Optional[str] = None
+    ) -> xr.Dataset:
         """Convert the BOKU NDVI data to VCI data
         """
         vci = ConditionIndex(ds=ds, resample_str=None)
-        variable = [v for v in ds.data_vars][0]
+        if variable is None:
+            variable = [v for v in ds.data_vars][0]
         vci.fit(variable=variable, rolling_window=rolling_window)
         var_ = [v for v in vci.index.data_vars][0]
         vci = vci.index.rename({var_: f"VCI"})
@@ -208,6 +214,45 @@ class BokuNDVIPreprocessor(BasePreProcessor):
 
         print(f"** Done for BOKU NDVI {netcdf_filepath.name} **")
 
+    def merge_files(
+        self,
+        subset_str: Optional[str] = "kenya",
+        resample_time: Optional[str] = "M",
+        upsampling: bool = False,
+        filename: Optional[str] = None,
+    ) -> Union[Path, Tuple[Path]]:
+        """Unique merge files because want to calculate the VCI BEFORE
+        we decrease the temporal resolution
+        """
+
+        ds = xr.open_mfdataset(
+            self.get_filepaths("interim"), combine="nested", concat_dim="time"
+        )
+
+        if not self.downsample_first:
+            # vci1,
+            vci = self._convert_to_VCI(ds).rename({f"VCI": "boku_VCI"})
+            assert vci.isnull().mean() < 1, "All NaN values!"
+            ds = xr.auto_combine([ds, vci])
+            # vci3m
+            vci = self._convert_to_VCI(
+                ds, rolling_window=3, variable="boku_VCI"
+            ).rename({f"VCI": "VCI3M"})
+            assert vci.isnull().mean() < 1, "All NaN values!"
+            ds = xr.auto_combine([ds, vci])
+
+        if resample_time is not None:
+            ds = self.resample_time(ds, resample_time, upsampling)
+
+        if filename is None:
+            filename = f'data{"_" + subset_str if subset_str is not None else ""}.nc'
+        out = self.out_dir / filename
+
+        ds.to_netcdf(out)
+        print(f"\n**** {out} Created! ****\n")
+
+        return out
+
     def preprocess(
         self,
         subset_str: Optional[str] = "kenya",
@@ -263,10 +308,12 @@ class BokuNDVIPreprocessor(BasePreProcessor):
         outpath = self.merge_files(subset_str, resample_time, upsampling)
 
         # 6. add in the VCI data too
-        ds = xr.open_dataset(outpath)
-        vci = self._convert_to_VCI(ds).rename({f"VCI": "boku_VCI"})
-        assert vci.isnull().mean() < 1, "All NaN values!"
-        ds = xr.combine_by_coords([ds, vci])
+        if self.downsample_first:
+            # downsample BEFORE calculating VCI
+            ds = xr.open_dataset(outpath)
+            vci = self._convert_to_VCI(ds).rename({f"VCI": "boku_VCI"})
+            assert vci.isnull().mean() < 1, "All NaN values!"
+            ds = xr.auto_combine([ds, vci])
 
         if cleanup:
             rmtree(self.interim)
