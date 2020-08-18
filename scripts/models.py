@@ -139,4 +139,4 @@ if __name__ == "__main__":
     # regression(ignore_vars=ignore_vars)
     # linear_nn(ignore_vars=ignore_vars, static=None)
     rnn(ignore_vars=ignore_vars, static=None)
-    earnn(ignore_vars=ignore_vars, static=None)
+    earnn(ignore_vars=ignore_vars, static="features")
