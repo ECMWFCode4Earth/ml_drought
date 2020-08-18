@@ -2,7 +2,7 @@ import sys
 
 sys.path.append("..")
 
-from src.engineer import Engineer
+from src.engineer import engineer
 from scripts.utils import get_data_path
 from src.models import (
     Persistence,
@@ -21,24 +21,6 @@ from scripts.models import (
     get_forecast_vars,
     get_ignore_static_vars,
 )
-
-
-def engineer(
-    experiment="one_month_forecast",
-    process_static=True,
-    pred_months=12,
-    test_years=[y for y in range(2011, 2019)],
-):
-
-    engineer = Engineer(
-        get_data_path(), experiment=experiment, process_static=process_static
-    )
-    engineer.engineer(
-        test_year=[y for y in range(2015, 2019)],
-        target_variable="VCI",
-        pred_months=pred_months,
-        expected_length=pred_months,
-    )
 
 
 def model():
