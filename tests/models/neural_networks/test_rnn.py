@@ -133,6 +133,7 @@ class TestRecurrentNetwork:
             predict_delta=predict_delta,
             static=static,
         )
+        check_inversion = False
         model.train(check_inversion=check_inversion)
 
         captured = capsys.readouterr()
