@@ -103,7 +103,7 @@ def rnn(
     include_pred_month=True,
     surrounding_pixels=None,
     ignore_vars=None,
-    pretrained=True,
+    pretrained=False,
     static=None,
 ):
     predictor = RecurrentNetwork(
@@ -126,7 +126,7 @@ def earnn(
     experiment="one_month_forecast",
     include_pred_month=True,
     surrounding_pixels=None,
-    pretrained=True,
+    pretrained=False,
     ignore_vars=None,
     static="embeddings",
 ):
@@ -163,10 +163,10 @@ if __name__ == "__main__":
     ignore_static_vars = get_ignore_static_vars()
     ignore_vars = forecast_vars + ignore_static_vars
 
-    persistence()
+    # persistence()
     # regression(ignore_vars=ignore_vars)
     # linear_nn(ignore_vars=ignore_vars, static=None)
-    rnn(ignore_vars=ignore_vars, static=None)
+    # rnn(ignore_vars=ignore_vars, static=None)
     earnn(ignore_vars=ignore_vars, static="features")
 
 
