@@ -100,7 +100,7 @@ def calculate_embeddings(static_x: np.ndarray, W: np.ndarray, b: np.array) -> np
 
 
 def get_static_embedding(
-    ealstm
+    ealstm,
 ) -> Tuple[List[np.array], Tuple[List[np.array], np.array, List[np.array]]]:
     """Use the EALSTM dataloader to read in the training data and create
     the static embedding.
@@ -749,10 +749,9 @@ if __name__ == "__main__":
 
     # -------------------
     #  2. Calculate the static embedding
-    all_e, (
-        all_static_x,
-        all_latlons,
-        all_pred_months,
+    (
+        all_e,
+        (all_static_x, all_latlons, all_pred_months,),
     ) = get_static_embedding(  #  type: ignore
         ealstm=ealstm
     )
