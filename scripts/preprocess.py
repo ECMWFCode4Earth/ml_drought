@@ -324,14 +324,14 @@ def preprocess_s5_ouce():
 
 if __name__ == "__main__":
     subset_str = "india"
-    # preprocess_era5(subset_str=subset_str)
+    preprocess_era5(subset_str=subset_str)
     # process_seas5(subset_str=subset_str)
     # preprocess_era5_land(subset_str=subset_str, monmean=True)
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
     # process_era5POS_2018(subset_str=subset_str)
     # process_gleam(subset_str=subset_str)
-    process_esa_cci_landcover(subset_str=subset_str)
+    # process_esa_cci_landcover(subset_str=subset_str)
     # preprocess_srtm(subset_str=subset_str)
     # preprocess_era5_hourly(subset_str=subset_str)
     # preprocess_boku_ndvi(subset_str=subset_str)
