@@ -10,12 +10,11 @@ ALWAYS:
 ```bash
 aws s3 ls s3://mantlelabs-vci-forecast/data/raw/
 
-aws s3 ls s3://mantlelabs-vci-forecast/data/raw/ --region eu-central-1
+aws s3 ls s3://mantlelabs-vci-forhtop
+ecast/data/raw/ --region eu-central-1
 ```
 
 ## Moving files to S3
-
-
 
 ```bash
 aws s3 cp --dryrun --recursive --region eu-central-1
@@ -43,6 +42,11 @@ NOTE: use `--dryrun` first to check what the command will do
 
 ```bash
 aws s3 rm s3://x.y.z/ --recursive --dryrun --exclude "*" --include "purple.gif" --include "worksheet.xlsx"
+
+aws s3 rm --region eu-central-1 --dryrun s3://mantlelabs-vci-forecast/data/raw/esa_cci_landcover/ESACCI-LC-L4-LCCS-Map-300m-P1Y-1992_2015-v2.0.7b.nc.zip --dryrun
+
+--exclude "*" --include "purple.gif" --include "worksheet.xlsx"
+
 ```
 
 Links:

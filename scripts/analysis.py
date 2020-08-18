@@ -3,6 +3,8 @@ from pathlib import Path
 import numpy as np
 import sys
 from typing import Tuple, List, Union, Dict
+import geopandas as gpd
+import pandas as pd
 
 sys.path.append("..")
 
@@ -16,12 +18,61 @@ from src.models.neural_networks.base import NNBase
 from src.analysis import spatial_rmse, spatial_r2
 
 
+def create_region_lookup_dict(region_mask: xr.DataArray) -> Dict[int, str]:
+    region_lookup = dict(zip(
+        [int(k.lstrip().rstrip()) for k in region_mask.attrs["keys"].split(',')],
+        [k.lstrip().rstrip() for k in region_mask.attrs["values"].split(',')]
+    ))
+    return region_lookup
+
+
+def create_metric_gdf(
+    metric_dict: Dict[str, xr.DataArray],
+    region_gdf: gpd.GeoDataFrame,
+    gdf_name_col: str,
+    region_mask: xr.DataArray
+) -> gpd.GeoDataFrame:
+    """Create a GeoDataFrame with the mean error metric inside each region.
+
+    Args:
+        metric_dict (Dict[str, xr.DataArray]): Metric Dictionary created by `create_all_error_metrics`
+        region_gdf (gpd.GeoDataFrame): The GeoDataFrame (read from a shapefile) defining shapes
+        gdf_name_col (str): The region_name column in the region_gdf (shapefile obj.)
+        region_lookup (Dict[int, str]): Created from the region_mask object
+        region_mask (xr.DataArray): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    region_lookup: Dict[int, str] = create_region_lookup_dict(region_mask)
+    dfs = []
+    for model in metric_dict.keys():
+        metric_da = metric_dict[model]
+
+        # create the mean metric for pixels inside region bounds
+        _dict = {}
+        for region_key, region_name in region_lookup.items():
+            region_data = metric_da.where(region_mask == region_key)
+            _dict[region_name] = float(
+                region_data.mean()[[v for v in region_data.data_vars][0]])
+
+        d = pd.DataFrame(_dict, index=[model]).T.reset_index().rename(
+            dict(index="region_name"), axis=1)
+        dfs.append(d.set_index("region_name"))
+
+    df = pd.concat(dfs, axis=1)
+    gdf = gpd.GeoDataFrame(
+        df.join(
+            region_gdf[[gdf_name_col, "geometry"]].set_index(gdf_name_col)
+        ).reset_index()
+    )
+
+    return gdf
+
+
 def run_administrative_region_analysis():
     # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
+    data_path = get_data_path()
 
     assert [
         f for f in (data_path / "features").glob("*/test/*/*.nc")
@@ -40,10 +91,7 @@ def run_administrative_region_analysis():
 
 def run_landcover_region_analysis():
     # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
+    data_path = get_data_path()
 
     assert [
         f for f in (data_path / "features").glob("*/test/*/*.nc")
