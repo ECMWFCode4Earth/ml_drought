@@ -141,7 +141,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
 
             da_list = []
             for var in ds_stat.data_vars:
-                print(var)
+                print(f"Getting MODAL value across time: {var}")
                 da_list.append(get_modal_value_across_time(ds_stat[var]))
             ds_stat_new = xr.merge(da_list)
 

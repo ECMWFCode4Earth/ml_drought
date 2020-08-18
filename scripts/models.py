@@ -27,6 +27,19 @@ def get_forecast_vars() -> List[str]:
     return forecast_vars
 
 
+def get_ignore_static_vars() -> List[str]:
+    return [
+        "lc_class",  # remove for good clustering (?)
+        "lc_class_group",  # remove for good clustering (?)
+        "slt",  #  remove for good clustering (?)
+        "no_data_one_hot",
+        "lichens_and_mosses_one_hot",
+        "permanent_snow_and_ice_one_hot",
+        "urban_areas_one_hot",
+        "water_bodies_one_hot",
+    ]
+
+
 def persistence(experiment="one_month_forecast",):
     data_path = get_data_path()
     spatial_mask = data_path / "interim/boundaries_preprocessed/kenya_asal_mask.nc"
@@ -147,7 +160,9 @@ def earnn(
 if __name__ == "__main__":
     # ignore_vars = ["VCI", "p84.162", "sp", "tp", "VCI1M"]
     forecast_vars = get_forecast_vars()
-    ignore_vars = forecast_vars
+    ignore_static_vars = get_ignore_static_vars()
+    ignore_vars = forecast_vars + ignore_static_vars
+
     persistence()
     # regression(ignore_vars=ignore_vars)
     # linear_nn(ignore_vars=ignore_vars, static=None)
