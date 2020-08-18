@@ -129,6 +129,7 @@ def earnn(
     pretrained=False,
     ignore_vars=None,
     static="embeddings",
+    explain: bool = False,
 ):
     data_path = get_data_path()
 
@@ -154,7 +155,9 @@ def earnn(
 
     test_file = data_path / f"features/{experiment}/test/2018_3"
     assert test_file.exists()
-    all_explanations_for_file(test_file, predictor, batch_size=100)
+
+    if explain:
+        all_explanations_for_file(test_file, predictor, batch_size=100)
 
 
 if __name__ == "__main__":
@@ -165,8 +168,8 @@ if __name__ == "__main__":
 
     # persistence()
     # regression(ignore_vars=ignore_vars)
-    # linear_nn(ignore_vars=ignore_vars, static=None)
-    # rnn(ignore_vars=ignore_vars, static=None)
-    earnn(ignore_vars=ignore_vars, static="features")
+    # linear_nn(ignore_vars=ignore_vars, static="features")
+    rnn(ignore_vars=ignore_vars, static="features")
+    # earnn(ignore_vars=ignore_vars, static="features")
 
 

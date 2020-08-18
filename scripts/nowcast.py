@@ -48,8 +48,8 @@ def model():
 
     persistence(experiment="nowcast")
     regression(experiment="nowcast", ignore_vars=ignore_vars)
-    linear_nn(experiment="nowcast", ignore_vars=ignore_vars, static=None)
-    rnn(experiment="nowcast", ignore_vars=ignore_vars, static=None)
+    linear_nn(experiment="nowcast", ignore_vars=ignore_vars, static="features")
+    rnn(experiment="nowcast", ignore_vars=ignore_vars, static="features")
     earnn(experiment="nowcast", ignore_vars=ignore_vars, static="features")
 
     pass
