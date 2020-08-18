@@ -29,6 +29,7 @@ def create_region_lookup_dict(region_mask: xr.DataArray) -> Dict[int, str]:
 
 
 def get_mean_timeseries_per_region(level: int = 1) -> pd.DataFrame:
+    data_dir = get_data_path()
     assert level in [1, 2]
 
     # Calculate mean timeseries for the predictions found in `data_dir/models`
