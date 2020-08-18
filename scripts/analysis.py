@@ -19,10 +19,12 @@ from src.analysis import spatial_rmse, spatial_r2
 
 
 def create_region_lookup_dict(region_mask: xr.DataArray) -> Dict[int, str]:
-    region_lookup = dict(zip(
-        [int(k.lstrip().rstrip()) for k in region_mask.attrs["keys"].split(',')],
-        [k.lstrip().rstrip() for k in region_mask.attrs["values"].split(',')]
-    ))
+    region_lookup = dict(
+        zip(
+            [int(k.lstrip().rstrip()) for k in region_mask.attrs["keys"].split(",")],
+            [k.lstrip().rstrip() for k in region_mask.attrs["values"].split(",")],
+        )
+    )
     return region_lookup
 
 
@@ -35,8 +37,12 @@ def get_mean_timeseries_per_region(level: int = 1) -> pd.DataFrame:
 
     # ONLY run the analyzer for the region level you are interseted in
     # e.g. Level 1 = State; Level 2 = District
-    analyzer.region_data_paths = [p for p in analyzer.region_data_paths if f"_l{level}_" in p.name]
-    assert analyzer.region_data_paths != [], f"Has the boundaries_preprocessor been run for Level {level}?"
+    analyzer.region_data_paths = [
+        p for p in analyzer.region_data_paths if f"_l{level}_" in p.name
+    ]
+    assert (
+        analyzer.region_data_paths != []
+    ), f"Has the boundaries_preprocessor been run for Level {level}?"
 
     #
     print(f"Starting the Analyzer for Level: {level} ...")
@@ -46,13 +52,14 @@ def get_mean_timeseries_per_region(level: int = 1) -> pd.DataFrame:
     return region_df
 
 
-def calculate_mean_predictions(level: int, region_gdf: gpd.GeoDataFrame, gdf_name_col: str) -> gpd.GeoDataFrame:
+def calculate_mean_predictions(
+    level: int, region_gdf: gpd.GeoDataFrame, gdf_name_col: str
+) -> gpd.GeoDataFrame:
     region_df = get_mean_timeseries_per_region(level)
 
     # join the mean dataframe to the geometry columns from the gdf object
     ts_gdf = gpd.GeoDataFrame(
-        region_df
-        .sort_values(["model", "datetime"])
+        region_df.sort_values(["model", "datetime"])
         .set_index("region_name")
         .join(region_gdf[[gdf_name_col, "geometry"]].set_index(gdf_name_col))
         .reset_index()
@@ -65,7 +72,7 @@ def create_metric_gdf(
     metric_dict: Dict[str, xr.DataArray],
     region_gdf: gpd.GeoDataFrame,
     gdf_name_col: str,
-    region_mask: xr.DataArray
+    region_mask: xr.DataArray,
 ) -> gpd.GeoDataFrame:
     """Create a GeoDataFrame with the mean error metric inside each region.
     METHOD: caclulating the mean of the error metric for each pixel.
@@ -93,10 +100,14 @@ def create_metric_gdf(
         for region_key, region_name in region_lookup.items():
             region_data = metric_da.where(region_mask == region_key)
             _dict[region_name] = float(
-                region_data.mean()[[v for v in region_data.data_vars][0]])
+                region_data.mean()[[v for v in region_data.data_vars][0]]
+            )
 
-        d = pd.DataFrame(_dict, index=[model]).T.reset_index().rename(
-            dict(index="region_name"), axis=1)
+        d = (
+            pd.DataFrame(_dict, index=[model])
+            .T.reset_index()
+            .rename(dict(index="region_name"), axis=1)
+        )
         dfs.append(d.set_index("region_name"))
 
     df = pd.concat(dfs, axis=1)
