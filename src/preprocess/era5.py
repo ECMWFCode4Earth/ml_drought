@@ -7,7 +7,7 @@ import re
 import numpy as np
 import pandas as pd
 
-from typing import Optional, List, Tuple, Union
+from typing import Optional, List, Tuple
 
 from .base import BasePreProcessor
 from ..utils import get_modal_value_across_time
