@@ -35,7 +35,7 @@ def select_bounding_box(
     : ds (xr.DataSet)
         Dataset with a subset of the whol region defined by the Region object
     """
-    print(f"selecting region: {region.name} from ds")
+    # print(f"selecting region: {region.name} from ds")
     assert isinstance(ds, xr.Dataset) or isinstance(ds, xr.DataArray), (
         f"ds. " f"Must be an xarray object! currently: {type(ds)}"
     )

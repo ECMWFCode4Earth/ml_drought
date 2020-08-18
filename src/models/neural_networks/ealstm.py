@@ -26,7 +26,7 @@ class EARecurrentNetwork(NNBase):
         include_latlons: bool = False,
         include_pred_month: bool = True,
         include_monthly_aggs: bool = True,
-        include_yearly_aggs: bool = True,
+        include_yearly_aggs: bool = False,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
@@ -36,6 +36,9 @@ class EARecurrentNetwork(NNBase):
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = True,
+        clear_nans: bool = True,
+        weight_observations: bool = False,
+        pred_month_static: bool = True,
     ) -> None:
         super().__init__(
             data_folder,
@@ -54,6 +57,8 @@ class EARecurrentNetwork(NNBase):
             spatial_mask=spatial_mask,
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
+            clear_nans=clear_nans,
+            weight_observations=weight_observations,
         )
 
         # to initialize and save the model
@@ -71,6 +76,7 @@ class EARecurrentNetwork(NNBase):
             ), "Can't have a static embedding without input static information!"
         self.static_embedding_size = static_embedding_size
 
+        self.pred_month_static = pred_month_static
         self.features_per_month: Optional[int] = None
         self.current_size: Optional[int] = None
         self.yearly_agg_size: Optional[int] = None
@@ -105,6 +111,7 @@ class EARecurrentNetwork(NNBase):
             "spatial_mask": self.spatial_mask,
             "include_prev_y": self.include_prev_y,
             "normalize_y": self.normalize_y,
+            "pred_month_static": self.pred_month_static,
         }
 
         torch.save(model_dict, self.model_dir / "model.pt")
@@ -135,6 +142,7 @@ class EARecurrentNetwork(NNBase):
             static_size=self.static_size,
             static_embedding_size=self.static_embedding_size,
             include_prev_y=self.include_prev_y,
+            pred_month_static=self.pred_month_static,
         )
         self.model.to(torch.device(self.device))
         self.model.load_state_dict(state_dict)
@@ -196,6 +204,7 @@ class EALSTM(nn.Module):
         current_size=None,
         static_size=None,
         static_embedding_size=None,
+        pred_month_static=False,
     ):
         super().__init__()
 
@@ -205,6 +214,7 @@ class EALSTM(nn.Module):
         self.include_yearly_agg = False
         self.include_static = False
         self.include_prev_y = include_prev_y
+        self.pred_month_static = pred_month_static
 
         assert (
             include_latlons
@@ -220,10 +230,19 @@ class EALSTM(nn.Module):
         if static_size is not None:
             self.include_static = True
             ea_static_size += static_size
+
+        # append pred month to DYNAMIC data
         if include_pred_month:
-            ea_static_size += 12
+            if self.pred_month_static:
+                # append to static
+                ea_static_size += 12
+            else:
+                # append to dynamic
+                features_per_month += 12
+
+        # append prev_y to DYNAMIC data
         if self.include_prev_y:
-            ea_static_size += 1
+            features_per_month += 1
 
         self.use_static_embedding = False
         if static_embedding_size:
@@ -254,22 +273,31 @@ class EALSTM(nn.Module):
         if dense_features[-1] != 1:
             dense_features.append(1)
 
-        self.dense_layers = nn.ModuleList(
-            [
+        # add linear layer with nonlinear activation functions
+        dense_layers = []
+        for i in range(1, len(dense_features)):
+            dense_layers.append(
                 nn.Linear(
-                    in_features=dense_features[i - 1], out_features=dense_features[i]
+                    # in = size of previous dense layer
+                    in_features=dense_features[i - 1],
+                    # out = size of current dense layer
+                    out_features=dense_features[i],
                 )
-                for i in range(1, len(dense_features))
-            ]
-        )
+            )
+            if i < len(dense_features) - 1:
+                # add a ReLU to all layers except the final layer
+                dense_layers.append(nn.ReLU())
+
+        self.dense_layers = nn.ModuleList(dense_layers)
 
         self.initialize_weights()
 
     def initialize_weights(self):
-
         for dense_layer in self.dense_layers:
-            nn.init.kaiming_uniform_(dense_layer.weight.data)
-            nn.init.constant_(dense_layer.bias.data, 0)
+            # initialise weights for all linear layers
+            if not isinstance(dense_layer, nn.ReLU):
+                nn.init.kaiming_uniform_(dense_layer.weight.data)
+                nn.init.constant_(dense_layer.bias.data, 0)
 
     def forward(
         self,
@@ -295,10 +323,34 @@ class EALSTM(nn.Module):
             static_x.append(yearly_aggs)
         if self.include_static:
             static_x.append(static)
+
+        # append pred_month to DYNAMIC data
         if self.include_pred_month:
-            static_x.append(pred_month)
+            if self.pred_month_static:  #  append to static
+                static_x.append(pred_month)
+            else:  #  append to dynamic data
+                x = torch.cat(
+                    (
+                        x,
+                        pred_month.view(-1, 12)
+                        .repeat(1, x.shape[1])
+                        .view(x.shape[0], x.shape[1], 12),
+                    ),
+                    axis=-1,
+                )
+
+        # append prev_y to DYNAMIC data
         if self.include_prev_y:
-            static_x.append(prev_y)
+            # TODO: Gabi can you check this ?
+            x = torch.cat(
+                (
+                    x,
+                    prev_y.view(-1, 1)
+                    .repeat(1, x.shape[1])
+                    .view(x.shape[0], x.shape[1], 1),
+                ),
+                axis=-1,
+            )
 
         static_tensor = torch.cat(static_x, dim=-1)
 

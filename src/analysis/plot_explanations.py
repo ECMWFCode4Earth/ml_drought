@@ -196,16 +196,24 @@ def all_explanations_for_file(
             background_size=background_size,
             start_idx=start_idx,
             num_inputs=num_inputs,
+            method=method,
         )
 
         if start_idx == 0:
             for input_name, expl_array in explanations.__dict__.items():
-                output_dict[input_name] = expl_array
+                if expl_array is not None:
+                    output_dict[input_name] = expl_array
         else:
             for input_name, expl_array in explanations.__dict__.items():
-                output_dict[input_name] = np.concatenate(
-                    (output_dict[input_name], expl_array), axis=0
-                )
+                try:
+                    output_dict[input_name] = np.concatenate(
+                        (output_dict[input_name], expl_array), axis=0
+                    )
+                except ValueError:
+                    print(
+                        f"Explanation Array {input_name} is: {type(expl_array)}. Skipping!"
+                    )
+
         start_idx = start_idx + batch_size
 
     print("Saving results")

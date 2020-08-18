@@ -6,11 +6,11 @@ from ..utils import _make_dataset
 def _setup(data_path, add_times=True, static=False):
     # setup
     interim_folder = data_path / "interim"
-    interim_folder.mkdir()
+    interim_folder.mkdir(exist_ok=True)
 
     if static:
         interim_folder = interim_folder / "static"
-        interim_folder.mkdir()
+        interim_folder.mkdir(exist_ok=True)
 
     expected_output, expected_vars = [], []
     for var in ["a", "b"]:
