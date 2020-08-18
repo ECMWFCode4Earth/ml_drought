@@ -594,6 +594,10 @@ def run_clustering(
 # ---------------------------------------------------------
 # Get the region bounding boxes
 # ---------------------------------------------------------
+# NOTE: these have to be recreated for each specific location-embedding
+# They are currently defining regions in Kenya with similar
+
+
 # def get_regions_for_clustering_boxes(ds: xr.Dataset) -> List[Region]:
 #     """Because we defined the latlon boxes by their numerical
 #     index we have to get the values for the latlon boxes by the
