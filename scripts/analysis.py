@@ -46,7 +46,7 @@ def get_mean_timeseries_per_region(level: int = 1) -> pd.DataFrame:
     return region_df
 
 
-def calculate_mean_predictions(level: int = 1, region_gdf: gpd.GeoDataFrame, gdf_name_col: str,) -> gpd.GeoDataFrame:
+def calculate_mean_predictions(level: int, region_gdf: gpd.GeoDataFrame, gdf_name_col: str) -> gpd.GeoDataFrame:
     region_df = get_mean_timeseries_per_region(level)
 
     # join the mean dataframe to the geometry columns from the gdf object

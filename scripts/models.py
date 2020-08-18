@@ -171,5 +171,3 @@ if __name__ == "__main__":
     # linear_nn(ignore_vars=ignore_vars, static="features")
     rnn(ignore_vars=ignore_vars, static="features")
     # earnn(ignore_vars=ignore_vars, static="features")
-
-
