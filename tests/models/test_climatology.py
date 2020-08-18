@@ -20,7 +20,8 @@ class TestClimatology:
     def test_predict(self, tmp_path):
         self._create_train_samples(tmp_path, 12)
 
-        x, _, _ = _make_dataset(size=(5, 5))
+        # TEST with a random nan value included!
+        x, _, _ = _make_dataset(size=(5, 5), random_nan=1)
         y = x.isel(time=[-1])
 
         test_features = tmp_path / "features/one_month_forecast/test/1980_1"
@@ -40,7 +41,12 @@ class TestClimatology:
         # calculate climatology
         _, y_train = read_train_data(tmp_path)
         ds = y_train
+        nan_mask = test_arrays["1980_1"]["nan_mask"]
+
+        # check that the nan mask is 1 (the random nan value we included!)
+        assert nan_mask.sum() == 1
 
         assert (
-            preds["1980_1"].reshape(5, 5) == ds["VHI"]["time.month" == 1].values
+            preds["1980_1"].flatten()
+            == ds["VHI"]["time.month" == 1].values.flatten()[~nan_mask]
         ).all(), "Expect the month mean to be the calculated from the training data"
