@@ -54,7 +54,7 @@ class VegetationDeficitIndex(BaseIndices):
         self.rolling_window: int = rolling_window
         super().__init__(file_path=file_path, resample_str=resample_str)
 
-        if "VCI" not in [v for v in self.ds.data_vars]:
+        if "vci" not in [v.lower() for v in self.ds.data_vars]:
             print(
                 "This is a VCI specific index. Are you sure you want to fit?"
                 f" Found: {[v for v in self.ds.data_vars]}"

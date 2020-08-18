@@ -82,7 +82,7 @@ class TestPlanetOSPreprocessor:
         regrid_dataset.to_netcdf(regrid_path)
 
         processor = PlanetOSPreprocessor(tmp_path)
-        processor.preprocess(subset_str="kenya", regrid=regrid_path, parallel=False)
+        processor.preprocess(subset_str="kenya", regrid=regrid_path, n_processes=1)
 
         expected_out_path = tmp_path / "interim/era5POS_preprocessed/data_kenya.nc"
         assert (
@@ -144,7 +144,7 @@ class TestPlanetOSPreprocessor:
         regrid_dataset.to_netcdf(regrid_path)
 
         processor = PlanetOSPreprocessor(tmp_path)
-        processor.preprocess(subset_str="ethiopia", regrid=regrid_path, parallel=False)
+        processor.preprocess(subset_str="ethiopia", regrid=regrid_path, n_processes=1)
 
         expected_out_path = tmp_path / "interim/era5POS_preprocessed/data_ethiopia.nc"
         assert (

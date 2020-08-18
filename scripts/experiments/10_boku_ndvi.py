@@ -126,20 +126,31 @@ def models(
 
     _rename_directory(
         from_path=data_path / "models" / "one_month_forecast",
-        to_path=data_path / "models" / experiment_name,
+        to_path=data_path
+        / "models"
+        / f"ICLR_one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
     )
 
 
 def move_features_dir(target_var, adede_only=False, experiment_name=None):
     # rename the features dir
     data_path = get_data_path()
-    if experiment_name is None:
-        experiment_name = f"one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}"
-
-    _rename_directory(
-        from_path=data_path / "features" / "one_month_forecast",
-        to_path=data_path / "features" / experiment_name,
-    )
+    try:
+        _rename_directory(
+            from_path=data_path / "features" / "one_month_forecast",
+            to_path=data_path
+            / "features"
+            / f"ICLR_one_month_forecast_BOKU_{target_var}_our_vars_{'only_P_VCI' if adede_only else 'ALL'}",
+        )
+    except Exception as E:
+        print(E)
+        date = datetime.datetime.now().strftime("%Y%M%d_%H%M")
+        _rename_directory(
+            from_path=data_path / "features" / "one_month_forecast",
+            to_path=data_path
+            / "features"
+            / f"ICLR_one_month_forecast_BOKU_{target_var}_our_vars_{date}",
+        )
 
 
 def main(monthly=True):
@@ -147,7 +158,9 @@ def main(monthly=True):
     ADEDE_ONLY = False
     TARGET_VARS = ["boku_VCI", "VCI3M"]  # "boku_VCI", "VCI3M"
 
-    for target_var in TARGET_VARS:
+    adede_only = True
+    target_vars = ["boku_VCI", "VCI3M"]  # "boku_VCI",
+    for target_var in target_vars:
         print(f"\n\n ** Target Variable: {target_var} ** \n\n")
         engineer(target_var=target_var)
         print(f"\n\n ** RUNNING MODELS FOR Target Variable: {target_var} ** \n\n")

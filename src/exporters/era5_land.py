@@ -1,11 +1,11 @@
 from pathlib import Path
-from typing import Optional, Dict, List, cast
+from typing import Optional, Dict, List, cast, Any
 import warnings
 import multiprocessing
 import itertools
 
 from .cds import CDSExporter
-from .base import get_kenya
+from .base import region_lookup
 
 VALID_ERA5_LAND_VARS = [
     "10m_u_component_of_wind",
@@ -65,18 +65,27 @@ VALID_ERA5_LAND_VARS = [
 
 
 class ERA5LandExporter(CDSExporter):
-    dataset = "reanalysis-era5-land"
-    granularity = "hourly"
+    dataset = "reanalysis-era5-land-monthly-means"
+    granularity = "monthly"
 
     @staticmethod
     def print_valid_vars():
         print(VALID_ERA5_LAND_VARS)
+
+    @staticmethod
+    def get_dataset(variable: str, granularity: str = "hourly") -> str:
+        dataset = f"reanalysis-era5-land"
+        if granularity == "monthly":
+            dataset = f"{dataset}-monthly-means"
+
+        return dataset
 
     def create_selection_request(
         self,
         variable: str,
         selection_request: Optional[Dict] = None,
         granularity: str = "hourly",
+        region_str: str = "kenya",
     ) -> Dict:
         # setup the default selection request
         assert variable in VALID_ERA5_LAND_VARS, (
@@ -87,9 +96,9 @@ class ERA5LandExporter(CDSExporter):
         for key, val in self.get_default_era5_times(granularity, land=True).items():
             processed_selection_request[key] = val
 
-        # by default, we investigate Kenya
-        kenya_region = get_kenya()
-        processed_selection_request["area"] = self.create_area(kenya_region)
+        # AOI (area of interest)
+        region = region_lookup[region_str]
+        processed_selection_request["area"] = self.create_area(region)
 
         # update with user arguments
         if selection_request is not None:
@@ -113,7 +122,7 @@ class ERA5LandExporter(CDSExporter):
         output_paths: List,
         show_api_request: bool = True,
         n_parallel_requests: int = 1,
-        pool: Optional[multiprocessing.pool.Pool] = None,
+        pool: Optional[Any] = None,  #  multiprocessing
     ) -> List:
         if n_parallel_requests > 1:  # Run in parallel
             assert pool is not None, (
@@ -141,6 +150,9 @@ class ERA5LandExporter(CDSExporter):
         selection_request: Optional[Dict] = None,
         break_up: Optional[str] = "yearly",
         n_parallel_requests: int = 1,
+        region_str: str = "kenya",
+        dataset: Optional[str] = None,
+        granularity: str = "monthly",
     ) -> List[Path]:
         """ Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
@@ -168,8 +180,12 @@ class ERA5LandExporter(CDSExporter):
         output_files: List of pathlib.Paths
             paths to the downloaded data
         """
-        dataset = self.dataset
-        granularity = self.granularity
+        assert granularity in [
+            "hourly",
+            "monthly",
+        ], "Expect granularity to be in {hourly monthly}"
+        if dataset is None:
+            dataset = self.get_dataset(variable, granularity)
 
         if break_up is not None:
             assert break_up in ["yearly", "monthly"], (
@@ -178,13 +194,13 @@ class ERA5LandExporter(CDSExporter):
 
         # create the default template for the selection request
         processed_selection_request = self.create_selection_request(
-            variable, selection_request, granularity
+            variable, selection_request, granularity, region_str
         )
 
         if n_parallel_requests < 1:
             n_parallel_requests = 1
 
-        p: Optional[multiprocessing.pool.Pool]
+        p: Optional[Any]  #  multiprocessing.Pool
         if n_parallel_requests > 1:  # Run in parallel
             p = multiprocessing.Pool(int(n_parallel_requests))
         else:

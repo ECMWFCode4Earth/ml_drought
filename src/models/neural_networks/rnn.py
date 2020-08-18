@@ -27,7 +27,7 @@ class RecurrentNetwork(NNBase):
         include_pred_month: bool = True,
         include_latlons: bool = False,
         include_monthly_aggs: bool = True,
-        include_yearly_aggs: bool = True,
+        include_yearly_aggs: bool = False,
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         static: Optional[str] = "features",
@@ -36,6 +36,8 @@ class RecurrentNetwork(NNBase):
         spatial_mask: Union[xr.DataArray, Path] = None,
         include_prev_y: bool = True,
         normalize_y: bool = True,
+        clear_nans: bool = True,
+        weight_observations: bool = False,
     ) -> None:
         super().__init__(
             data_folder,
@@ -54,6 +56,8 @@ class RecurrentNetwork(NNBase):
             spatial_mask=spatial_mask,
             include_prev_y=include_prev_y,
             normalize_y=normalize_y,
+            clear_nans=clear_nans,
+            weight_observations=weight_observations,
         )
 
         # to initialize and save the model

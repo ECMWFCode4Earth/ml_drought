@@ -44,6 +44,14 @@ def get_africa() -> Region:
     return Region(name="africa", lonmin=-31.6, lonmax=51.8, latmin=-35.8, latmax=37.2)
 
 
+def get_india() -> Region:
+    """
+    bbox = min Longitude , min Latitude , max Longitude , max Latitude
+    67.3136031628,5.6447074785,97.6502883434,35.9374500152
+    """
+    return Region(name="india", lonmin=67.3, lonmax=97.7, latmin=5.6, latmax=36)
+
+
 def minus_months(
     cur_year: int, cur_month: int, diff_months: int, to_endmonth_datetime: bool = True
 ) -> Tuple[int, int, Optional[date]]:
@@ -87,7 +95,9 @@ def create_shape_aligned_climatology(
     ds: xr.Dataset, clim: xr.Dataset, variable: str, time_period: str
 ):
     """match the time dimension of `clim` to the shape of `ds` so that can
-    perform simple calculations / arithmetic on the values of clim
+    perform simple calculations / arithmetic on the values of clim.
+
+    Copy the climatology array forwards through time. Copy forwards through time.
 
     Arguments:
     ---------
@@ -196,4 +206,5 @@ region_lookup = {
     "ethiopia": get_ethiopia(),
     "east_africa": get_east_africa(),
     "africa": get_africa(),
+    "india": get_india(),
 }
