@@ -15,6 +15,17 @@ from src.analysis import all_explanations_for_file
 from scripts.utils import get_data_path
 
 
+def get_forecast_vars() -> List[str]:
+    forecast_vars = []
+    leadtimes = [1, 2, 3]
+    variables = ["t2m", "tprate", "erate"]
+    for variable in variables:
+        for leadtime in leadtimes:
+            forecast_vars.append(f"{variable}_std_{leadtime}")
+
+    return forecast_vars
+
+
 def persistence(experiment="one_month_forecast",):
     data_path = get_data_path()
     spatial_mask = data_path / "interim/boundaries_preprocessed/kenya_asal_mask.nc"
@@ -134,9 +145,12 @@ def earnn(
 
 if __name__ == "__main__":
     # ignore_vars = ["VCI", "p84.162", "sp", "tp", "VCI1M"]
-    ignore_vars = None
+    forecast_vars = get_forecast_vars()
+    ignore_vars = forecast_vars
     persistence()
     # regression(ignore_vars=ignore_vars)
     # linear_nn(ignore_vars=ignore_vars, static=None)
     rnn(ignore_vars=ignore_vars, static=None)
     earnn(ignore_vars=ignore_vars, static="features")
+
+
