@@ -5,6 +5,7 @@ import multiprocessing
 from shutil import rmtree
 import re
 import numpy as np
+import pandas as pd
 
 from typing import Optional, List, Tuple
 
@@ -111,7 +112,9 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         dynamic_filepaths = self.get_filepaths("interim", filter_type="dynamic")
         all_dyn_ds = []
         if len(dynamic_filepaths) > 0:
-            ds_dyn = xr.open_mfdataset(dynamic_filepaths)
+            ds_dyn = xr.open_mfdataset(
+                dynamic_filepaths, combine="nested", concat_dim="time"
+            )
 
             if resample_time is not None:
                 ds_dyn = self.resample_time(ds_dyn, resample_time, upsampling)
@@ -139,6 +142,27 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
                 da_list.append(get_modal_value_across_time(ds_stat[var]))
             ds_stat_new = xr.merge(da_list)
 
+            # one hot encode the soil-type if in dataset!
+            if "slt" in list(ds_stat_new.data_vars):
+                soil_type_legend = pd.DataFrame(
+                    {
+                        "code": [1, 2, 3, 4, 5, 6, 7],
+                        "label_text": [
+                            "slt_coarse",
+                            "slt_medium",
+                            "slt_medium_fine",
+                            "slt_fine",
+                            "slt_very_fine",
+                            "slt_organic",
+                            "slt_tropical_organic",
+                        ],
+                    }
+                )
+
+                ds_stat_new = self._one_hot_encode(
+                    ds=ds_stat_new, legend=soil_type_legend, variable="slt"
+                )
+
             output_folder = (
                 self.preprocessed_folder / f"static/{self.dataset}_preprocessed"
             )
@@ -149,6 +173,10 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
                     f'data{"_" + subset_str if subset_str is not None else ""}.nc'
                 )
             out_static: Optional[Path] = output_folder / filename
+
+            # save legend if exists:
+            if "slt" in list(ds_stat_new.data_vars):
+                soil_type_legend.to_csv(output_folder / "legend.csv")
 
             ds_stat_new.to_netcdf(out_static)
             print(f"\n**** {out_static} Created! ****\n")
@@ -216,6 +244,40 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         if cleanup:
             rmtree(self.interim)
 
+    def _one_hot_encode(
+        self, ds: xr.Dataset, legend: pd.DataFrame, variable: str
+    ) -> xr.Dataset:
+        """
+        Arguments:
+        ---------
+        : ds: xr.Dataset
+            The dataset with the `variable` (str) we want to one
+            hot encode.
+        : legend: pd.DataFrame
+            Dataframe with the code / label_text columns acting as a
+            legend.
+        : variable: str
+            the variable in `ds` that we want to one hot encode.
+        """
+        assert all(
+            np.isin(["code", "label_text"], legend.columns)
+        ), "Need code / label_text columns in legend"
+        assert variable in list(
+            ds.data_vars
+        ), f"expect {variable} to be in data vars: {list(ds.data_vars)}"
+
+        # ensure categorical is type int
+        # (prevents rounding errors)
+        ds = ds.astype("int")
+
+        for idx, row in legend.iterrows():
+            value, label = row["code"], row["label_text"]
+            ds[f"{label}_one_hot"] = (
+                ds[variable].where(ds[variable] == value, 0).clip(min=0, max=1)
+            )
+        ds = ds.drop(variable)
+        return ds
+
 
 class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
     dataset = "reanalysis-era5-single-levels"
@@ -282,24 +344,54 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
 
             da_list = []
             for var in ds_stat.data_vars:
+                # get the modal value across time (collapse time)
                 print(var)
                 da_list.append(get_modal_value_across_time(ds_stat[var]))
             ds_stat_new = xr.merge(da_list)
 
+            # one hot encode the soil-type if in dataset!
+            if "slt" in list(ds_stat_new.data_vars):
+                soil_type_legend = pd.DataFrame(
+                    {
+                        "code": [1, 2, 3, 4, 5, 6, 7],
+                        "label_text": [
+                            "slt_coarse",
+                            "slt_medium",
+                            "slt_medium_fine",
+                            "slt_fine",
+                            "slt_very_fine",
+                            "slt_organic",
+                            "slt_tropical_organic",
+                        ],
+                    }
+                )
+
+                ds_stat_new = self._one_hot_encode(
+                    ds=ds_stat_new, legend=soil_type_legend, variable="slt"
+                )
+
+            # create folder
             output_folder = (
                 self.preprocessed_folder / f"static/{self.dataset}_preprocessed"
             )
             if not output_folder.exists():
                 output_folder.mkdir(exist_ok=True, parents=True)
+
+            # create the filename
             if filename is None:
                 filename = (
                     f'data{"_" + subset_str if subset_str is not None else ""}.nc'
                 )
             out_static = output_folder / filename
 
+            # save legend if exists:
+            if "slt" in list(ds_stat_new.data_vars):
+                soil_type_legend.to_csv(output_folder / "legend.csv")
+
+            # save to netcdf
             ds_stat_new.to_netcdf(out_static)
             print(f"\n**** {out_static} Created! ****\n")
         else:
             out_static = None  # type: ignore
 
-        return out_dyn, out_static  # type: ignore
+        return out_dyn, out_static
