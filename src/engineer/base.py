@@ -56,7 +56,7 @@ class _EngineerBase:
 
         output_file = self.static_output_folder / "data.nc"
         if output_file.exists():
-            warnings.warn("A static data file already exists!")
+            warnings.warn(f"A static data file already exists! {output_file.as_posix()}")
             return None
 
         # here, we overwrite the dims because topography (a static variable)
