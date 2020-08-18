@@ -37,7 +37,7 @@ class Climatology(ModelBase):
 
         # calculate climatology:
         monmean = ds.groupby("time.month").mean(dim=["time"])[target_var]
-        monmean = monmean.stack(pixel=['lat', 'lon'])
+        monmean = monmean.stack(pixel=["lat", "lon"])
 
         test_arrays_loader = self.get_dataloader(
             mode="test", shuffle_data=False, normalize=False, static=False
