@@ -121,9 +121,6 @@ def calculate_error_of_mean_predictions(
         .join(region_gdf.set_index(gdf_name_col)[["geometry"]])
     )
 
-    if monthly_averages:
-        model_scores["month"] = model_rmse["datetime"].astype(int)
-
     return model_scores
 
 
