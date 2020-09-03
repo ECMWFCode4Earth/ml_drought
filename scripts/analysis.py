@@ -85,9 +85,12 @@ def calculate_error_of_mean_predictions(
     `get_mean_timeseries_per_region()` function
 
     Args:
-        region_mean_df (pd.DataFrame): [description]
-        region_gdf (gpd.GeoDataFrame): [description]
-        gdf_name_col (str): [description]
+        region_mean_df (pd.DataFrame): The output of the `get_mean_timeseries_per_region()`
+            function, for a given administrative level.
+        region_gdf (gpd.GeoDataFrame): The GeoDataFrame (read from a shapefile)
+            defining shapes
+        gdf_name_col (str): The region_name column in the region_gdf
+            (shapefile obj.)
 
     Returns:
         gpd.GeoDataFrame: [description]
