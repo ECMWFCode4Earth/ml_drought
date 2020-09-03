@@ -299,6 +299,7 @@ def create_all_temporal_error_metrics(
     predictions: Dict[str, xr.DataArray], y_test: xr.DataArray
 ) -> Tuple[Dict[str, xr.DataArray]]:
     """Create the Monthly Mean Pixel-Errors.
+
     (i.e. we are answering the question, what is the model
     performance each month at the pixel scale ...?)
 
@@ -354,6 +355,7 @@ def create_all_temporal_error_metrics(
         # append each object to the dictionary
         rmse_dict[model] = pixel_rmse_monthly
         r2_dict[model] = pixel_r2_monthly
+        assert False
 
     return rmse_dict, r2_dict
 
