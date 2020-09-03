@@ -100,16 +100,16 @@ def calculate_error_of_mean_predictions(
 
     # calculate scores per region (on the mean outputs)
     if monthly_averages:
-        model_rmse = model_df.groupby(
-            [model_df["datetime"].dt.strftime("%m"), "region_name", "model"]
+        model_rmse = region_mean_df.groupby(
+            [region_mean_df["datetime"].dt.strftime("%m"), "region_name", "model"]
         ).apply(group_rmse)
-        model_r2 = model_df.groupby(
-            [model_df["datetime"].dt.strftime("%m"), "region_name", "model"]
+        model_r2 = region_mean_df.groupby(
+            [region_mean_df["datetime"].dt.strftime("%m"), "region_name", "model"]
         ).apply(group_r2)
 
     else:
-        model_rmse = model_df.groupby(["region_name", "model"]).apply(group_rmse)
-        model_r2 = model_df.groupby(["region_name", "model"]).apply(group_r2)
+        model_rmse = region_mean_df.groupby(["region_name", "model"]).apply(group_rmse)
+        model_r2 = region_mean_df.groupby(["region_name", "model"]).apply(group_r2)
 
     model_rmse.name = "rmse"
     model_r2.name = "r2_score"
