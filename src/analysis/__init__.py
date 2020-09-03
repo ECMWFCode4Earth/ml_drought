@@ -9,6 +9,8 @@ from .evaluation import (
     read_true_data,
     read_train_data,
     read_test_data,
+    group_rmse,
+    group_r2,
 )
 from .plot_explanations import plot_explanations, all_explanations_for_file
 from .indices import (

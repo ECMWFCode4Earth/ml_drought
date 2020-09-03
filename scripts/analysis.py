@@ -15,7 +15,7 @@ from src.analysis import read_train_data, read_test_data, read_pred_data
 from src.utils import get_ds_mask
 from src.models import load_model
 from src.models.neural_networks.base import NNBase
-from src.analysis import spatial_rmse, spatial_r2
+from src.analysis import spatial_rmse, spatial_r2, group_rmse, group_r2
 
 
 def create_region_lookup_dict(region_mask: xr.DataArray) -> Dict[int, str]:
@@ -36,7 +36,7 @@ def get_mean_timeseries_per_region(level: int = 1) -> pd.DataFrame:
     #  using the boundaries found in `data/analysis/boundaries_preprocessed`
     analyzer = AdministrativeRegionAnalysis(data_dir)
 
-    # ONLY run the analyzer for the region level you are interseted in
+    # ONLY run the analyzer for the region level you are interested in
     # e.g. Level 1 = State; Level 2 = District
     analyzer.region_data_paths = [
         p for p in analyzer.region_data_paths if f"_l{level}_" in p.name
@@ -69,6 +69,59 @@ def calculate_mean_predictions(
     return ts_gdf
 
 
+def calculate_error_of_mean_predictions(
+    region_mean_df: pd.DataFrame,
+    region_gdf: gpd.GeoDataFrame,
+    gdf_name_col: str,
+    monthly_averages: bool = False,
+) -> gpd.GeoDataFrame:
+    """Calculate the errors of the MEAN PREDICTIONS for each region.
+
+    Either collapse time completely (create a mean over all test times), or
+    collapse time from n_months -> an average for each month. Controlled with
+    the `monthly_averages` parameter.
+
+    Assume the calculation of the region_mean_df from the
+    `get_mean_timeseries_per_region()` function
+
+    Args:
+        region_mean_df (pd.DataFrame): [description]
+        region_gdf (gpd.GeoDataFrame): [description]
+        gdf_name_col (str): [description]
+
+    Returns:
+        gpd.GeoDataFrame: [description]
+    """
+    # dropnans
+    isnan = (region_mean_df["predicted_mean_value"].isnull()) | (
+        region_mean_df["true_mean_value"].isnull()
+    )
+    region_mean_df = region_mean_df.loc[(~isnan)]
+
+    # calculate scores per region (on the mean outputs)
+    if monthly:
+        model_rmse = model_df.groupby(
+            [model_df["datetime"].dt.strftime("%m"), "region_name", "model"]
+        ).apply(group_rmse)
+        model_r2 = model_df.groupby(
+            [model_df["datetime"].dt.strftime("%m"), "region_name", "model"]
+        ).apply(group_r2)
+
+    else:
+        model_rmse = model_df.groupby(["region_name", "model"]).apply(group_rmse)
+        model_r2 = model_df.groupby(["region_name", "model"]).apply(group_r2)
+
+    model_rmse.name = "rmse"
+    model_r2.name = "r2_score"
+    model_scores = pd.DataFrame(model_rmse).join(model_r2)
+    model_scores = gpd.GeoDataFrame(
+        model_scores.reset_index()
+        .set_index("region_name")
+        .join(region_gdf.set_index(gdf_name_col)[["geometry"]])
+    )
+    return model_scores
+
+
 def create_metric_gdf(
     metric_dict: Dict[str, xr.DataArray],
     region_gdf: gpd.GeoDataFrame,
@@ -96,6 +149,7 @@ def create_metric_gdf(
     for model in metric_dict.keys():
         metric_da = metric_dict[model]
 
+        # method == "mean_of_error_in_space":
         # create the mean metric for pixels inside region bounds
         _dict = {}
         for region_key, region_name in region_lookup.items():
@@ -201,6 +255,15 @@ def load_nn(
 def create_all_error_metrics(
     predictions: Dict[str, xr.DataArray], y_test: xr.DataArray
 ) -> Tuple[Dict[str, xr.DataArray]]:
+    """Pixel Based Error Metrics collapsing time.
+
+    Args:
+        predictions (Dict[str, xr.DataArray]): [description]
+        y_test (xr.DataArray): [description]
+
+    Returns:
+        Tuple[Dict[str, xr.DataArray]]: [description]
+    """
     rmse_dict = {}
     r2_dict = {}
 
@@ -218,6 +281,18 @@ def create_all_error_metrics(
         )
         model_r2.name = "r2"
         r2_dict[model] = model_r2
+
+    return rmse_dict, r2_dict
+
+
+def create_all_temporal_error_metrics(
+    predictions: Dict[str, xr.DataArray], y_test: xr.DataArray
+) -> Tuple[Dict[str, xr.DataArray]]:
+    rmse_dict = {}
+    r2_dict = {}
+
+    for model in [m for m in predictions.keys()]:
+        model_preds = predictions[model]
 
     return rmse_dict, r2_dict
 

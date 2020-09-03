@@ -400,3 +400,23 @@ def read_test_data(
     )
 
     return test_X_ds, test_y_ds
+
+
+def group_rmse(grouped_df: pd.DataFrame) -> float:
+    """RMSE Function to be applied to pandas `.groupby` operation.
+
+    Args:
+        grouped_df (pd.DataFrame): [description]
+
+    Returns:
+        (float): [description]
+    """
+    return np.sqrt(
+        mean_squared_error(
+            grouped_df["true_mean_value"], grouped_df["predicted_mean_value"]
+        )
+    )
+
+
+def group_r2(grouped_df: pd.DataFrame) -> float:
+    return r2_score(grouped_df["true_mean_value"], grouped_df["predicted_mean_value"])
