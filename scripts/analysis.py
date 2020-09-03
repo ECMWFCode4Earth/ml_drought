@@ -127,7 +127,12 @@ def calculate_error_of_mean_predictions(
     return model_scores
 
 
-def create_metric_gdf(
+def create_pixel_errors_per_month_df() -> pd.DataFrame:
+
+    return metric_df
+
+
+def create_mean_pixel_errors_gdf(
     metric_dict: Dict[str, xr.DataArray],
     region_gdf: gpd.GeoDataFrame,
     gdf_name_col: str,
@@ -293,11 +298,62 @@ def create_all_error_metrics(
 def create_all_temporal_error_metrics(
     predictions: Dict[str, xr.DataArray], y_test: xr.DataArray
 ) -> Tuple[Dict[str, xr.DataArray]]:
+    """Create the Monthly Mean Pixel-Errors.
+    (i.e. we are answering the question, what is the model
+    performance each month at the pixel scale ...?)
+
+    Args:
+        predictions (Dict[str, xr.DataArray]): [description]
+        y_test (xr.DataArray): [description]
+
+    Returns:
+        Tuple[Dict[str, xr.DataArray]]: [description]
+    """
     rmse_dict = {}
     r2_dict = {}
 
     for model in [m for m in predictions.keys()]:
         model_preds = predictions[model]
+        assert model_preds.shape == y_test.shape
+
+        # create month attribute
+        model_preds["month"] = model_preds["time.month"]
+        y_test["month"] = y_test["time.month"]
+
+        # For EACH MONTH-Pixel create a new R2/RMSE score
+        all_rmse = []
+        all_r2 = []
+        for mth in range(1, 13):
+            month_preds = model_preds.where(model_preds["month"] == mth, drop=True)
+            month_obs = y_test.where(y_test["month"] == mth, drop=True)
+
+            # add new time dims (labelled 'time'), add dimensions
+            month_rmse = (
+                spatial_rmse(month_obs, month_preds)
+                .expand_dims("month")
+                .drop("time")
+                .rename({"month": "time"})
+            )
+            month_r2 = (
+                spatial_r2(month_obs, month_preds)
+                .expand_dims("month")
+                .drop("time")
+                .rename({"month": "time"})
+            )
+            all_rmse.append(month_rmse)
+            all_r2.append(month_r2)
+
+        pixel_rmse_monthly = xr.combine_nested(all_rmse, concat_dim="time").rename(
+            "monthly_rmse"
+        )
+        pixel_r2_monthly = xr.combine_nested(all_r2, concat_dim="time").rename(
+            "monthly_r2"
+        )
+
+        # pixel_error_monthly = xr.merge([pixel_rmse_monthly, pixel_r2_monthly])
+        # append each object to the dictionary
+        rmse_dict[model] = pixel_rmse_monthly
+        r2_dict[model] = pixel_r2_monthly
 
     return rmse_dict, r2_dict
 
