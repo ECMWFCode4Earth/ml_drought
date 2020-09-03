@@ -355,7 +355,7 @@ def create_all_temporal_error_metrics(
         # append each object to the dictionary
         rmse_dict[model] = pixel_rmse_monthly
         r2_dict[model] = pixel_r2_monthly
-        assert False
+        # assert False
 
     return rmse_dict, r2_dict
 
