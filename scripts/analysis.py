@@ -108,9 +108,6 @@ def calculate_error_of_mean_predictions(
             [region_mean_df["datetime"].dt.strftime("%m"), "region_name", "model"]
         ).apply(group_r2)
 
-        # model_rmse["month"] = model_rmse["datetime"].astype(int)
-        # model_r2["month"] = model_r2["datetime"].astype(int)
-
     else:
         model_rmse = region_mean_df.groupby(["region_name", "model"]).apply(group_rmse)
         model_r2 = region_mean_df.groupby(["region_name", "model"]).apply(group_r2)
@@ -123,6 +120,9 @@ def calculate_error_of_mean_predictions(
         .set_index("region_name")
         .join(region_gdf.set_index(gdf_name_col)[["geometry"]])
     )
+
+    if monthly_averages:
+        model_scores["month"] = model_rmse["datetime"].astype(int)
 
     return model_scores
 
