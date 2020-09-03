@@ -99,7 +99,7 @@ def calculate_error_of_mean_predictions(
     region_mean_df = region_mean_df.loc[(~isnan)]
 
     # calculate scores per region (on the mean outputs)
-    if monthly:
+    if monthly_averages:
         model_rmse = model_df.groupby(
             [model_df["datetime"].dt.strftime("%m"), "region_name", "model"]
         ).apply(group_rmse)
