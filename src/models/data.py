@@ -280,7 +280,7 @@ class DataLoader:
         surrounding_pixels: Optional[int] = None,
         ignore_vars: Optional[List[str]] = None,
         monthly_aggs: bool = True,
-        incl_yearly_aggs: bool = True,
+        incl_yearly_aggs: bool = False,
         static: Optional[str] = "features",
         device: str = "cpu",
         spatial_mask: Optional[xr.DataArray] = None,
