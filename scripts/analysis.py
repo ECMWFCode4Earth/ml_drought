@@ -2,7 +2,7 @@ import xarray as xr
 from pathlib import Path
 import numpy as np
 import sys
-from typing import Tuple, List, Union, Dict
+from typing import Tuple, List, Union, Dict, Optional
 import geopandas as gpd
 import pandas as pd
 from pandas.tseries.offsets import MonthEnd
