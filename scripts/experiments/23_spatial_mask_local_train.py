@@ -68,7 +68,7 @@ if __name__ == "__main__":
         model = lstm(spatial_mask=mask)
 
         # train the model on that spatial subset
-        model.train(num_epochs=1, early_stopping=5, verbose=True)
+        model.train(num_epochs=50, early_stopping=5, verbose=True)
         model.evaluate(save_preds=True)
         model.save_model()
 
