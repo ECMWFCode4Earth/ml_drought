@@ -55,6 +55,7 @@ if __name__ == "__main__":
 
     # init list to store 'total_rmse' for each state
     total_rmse = []
+    run_names = []
 
     # --- TRAIN AND EVALUATE THE MODEL FOR EACH STATE (48 times) --- #
     for state_name, state_key in zip(state_names, keys):
@@ -77,7 +78,10 @@ if __name__ == "__main__":
             experiment="one_month_forecast"
         )
         df["region"] = [state_name for _ in range(len(df))]
+
+        # append values to lists
         total_rmse.append(total)
+        run_names.append(state_name)
 
         df.to_csv(expt_dir / f"{save_name}_rnn_area_specific.csv")
 
@@ -93,5 +97,5 @@ if __name__ == "__main__":
 
         break
 
-    total_df = pd.DataFrame(total_rmse, index=state_names)
+    total_df = pd.DataFrame(total_rmse, index=run_names)
     total_df.to_csv(expt_dir / "region_results.csv")
