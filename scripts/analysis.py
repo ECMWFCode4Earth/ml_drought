@@ -53,7 +53,7 @@ def extract_json_results_dict(
             "date_str": [k for k in results.keys() if k != "total"],
         },
     )
-    df["date"] = pd.to_datetime(d["date_str"], format="%Y_%m") + MonthEnd()
+    df["date"] = pd.to_datetime(df["date_str"], format="%Y_%m") + MonthEnd()
 
     return results["total"], df
 
