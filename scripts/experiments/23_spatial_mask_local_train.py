@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     # --- TRAIN AND EVALUATE THE MODEL FOR EACH STATE (48 times) --- #
     for state_name, state_key in zip(state_names, keys):
-        print(f"** Starting Analysis on {state_name} **")
+        print(f"** Starting Training on {state_name} **")
         save_name = "_".join(state_name.lower().split(" "))
         nanmask = region_nc.where(region_nc["state_l1"] == state_key)["state_l1"]
         mask = nanmask.isnull()
