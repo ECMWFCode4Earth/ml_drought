@@ -147,8 +147,8 @@ class Experiment:
         self.train_timesteps = [pd.to_datetime(ts) for ts in train_timesteps]
 
         # CHECK NO DATA LEAKAGE
-        str_train_ts = [f'{ts.year}-{ts.month}' for ts in self.train_timesteps]
-        str_test_ts = [f'{ts.year}-{ts.month}' for ts in self.test_timesteps]
+        str_train_ts = [f"{ts.year}-{ts.month}" for ts in self.train_timesteps]
+        str_test_ts = [f"{ts.year}-{ts.month}" for ts in self.test_timesteps]
         assert ~all(np.isin(self.test_timesteps, self.train_timesteps)), (
             f"Data Leakage:\n\nTrain timesteps: {str_train_ts}\n\n"
             f"Test Timesteps: {str_test_ts}"
