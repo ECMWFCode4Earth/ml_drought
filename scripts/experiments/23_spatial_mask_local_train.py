@@ -6,8 +6,8 @@ sys.path.append("../..")
 
 from src.models import RecurrentNetwork
 from scripts.analysis import extract_json_results_dict
-from scripts.utils import _rename_directory
-from scripts.utils import get_data_path
+from scripts.utils import _rename_directory, get_data_path
+from scripts.models import get_forecast_vars, get_ignore_static_vars
 
 
 def lstm(
@@ -16,7 +16,7 @@ def lstm(
     surrounding_pixels=None,
     ignore_vars=None,
     pretrained=False,
-    static=None,
+    static="features",
     spatial_mask=None
 ):
     data_path = get_data_path()
@@ -39,6 +39,11 @@ if __name__ == "__main__":
     expt_dir = data_dir / "models/region_expt"
     if not expt_dir.exists():
         expt_dir.mkdir(exist_ok=True, parents=True)
+
+    # ignore vars
+    forecast_vars = get_forecast_vars()
+    ignore_static_vars = get_ignore_static_vars()
+    ignore_vars = forecast_vars + ignore_static_vars
 
     # load in the region netcdf file
     region_nc = xr.open_dataset(
