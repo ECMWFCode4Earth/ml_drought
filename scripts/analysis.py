@@ -5,6 +5,8 @@ import sys
 from typing import Tuple, List, Union, Dict
 import geopandas as gpd
 import pandas as pd
+from pandas.tseries.offsets import MonthEnd
+import json
 
 sys.path.append("..")
 
@@ -16,6 +18,39 @@ from src.utils import get_ds_mask
 from src.models import load_model
 from src.models.neural_networks.base import NNBase
 from src.analysis import spatial_rmse, spatial_r2, group_rmse, group_r2
+
+
+def extract_json_results_dict(
+    model: str = "rnn", experiment: str = "one_month_forecast"
+) -> Tuple[float, pd.DataFrame]:
+    """Extract the results saved as a dictionary object (`.json`)
+
+    Args:
+        model (str, optional): string of the model {rnn ealstm linear_nn}. Defaults to "rnn".
+        experiment (str, optional): [description]. Defaults to "one_month_forecast".
+
+    Returns:
+        Tuple[float, pd.DataFrame]: [description]
+    """
+    try:
+        results = json.load(
+            open(data_dir / f"models/{experiment}/{model}/results.json", "rb")
+        )
+    except FileNotFoundError as e:
+        assert False, (
+            f"File not found. Try one of the following models for experiment {experiment}: ",
+            [d.name for d in (data_dir / f"models/{experiment}").iterdir()],
+        )
+
+    df = pd.DataFrame(
+        {
+            f"{model}_rmse": [v for (k, v) in results.items() if k != "total"],
+            "date_str": [k for k in results.keys() if k != "total"],
+        },
+    )
+    df["date"] = pd.to_datetime(d["date_str"], format="%Y_%m") + MonthEnd()
+
+    return results["total"], df
 
 
 def create_region_lookup_dict(region_mask: xr.DataArray) -> Dict[int, str]:
