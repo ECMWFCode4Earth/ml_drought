@@ -1,4 +1,6 @@
 from typing import List, Tuple
+import xarray as xr
+import numpy as np
 import sys
 
 sys.path.append("..")
@@ -14,7 +16,6 @@ from src.models import (
 from src.analysis import all_explanations_for_file
 
 from scripts.utils import get_data_path
-import xarray as xr
 
 
 def get_forecast_vars() -> List[str]:
@@ -180,13 +181,9 @@ if __name__ == "__main__":
     ignore_static_vars = get_ignore_static_vars()
 
     x_vars, y_var = get_all_vars(experiment=experiment)
-    ignore_dyn_vars = [
-        v for v in x_vars
-        if (v not in forecast_vars) or (v != y_var)
-    ]
+    ignore_dyn_vars = np.array(x_vars)[~np.isin(x_vars, forecast_vars + [y_var])]
 
-    ignore_vars = ignore_dyn_vars + ignore_static_vars
-    assert False
+    ignore_vars = list(ignore_dyn_vars) + ignore_static_vars
 
     persistence(experiment=experiment)
     # regression(experiment=experiment, ignore_vars=ignore_vars)
