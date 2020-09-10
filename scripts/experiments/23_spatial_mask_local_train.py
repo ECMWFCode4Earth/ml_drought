@@ -97,5 +97,5 @@ if __name__ == "__main__":
 
         break
 
-    total_df = pd.DataFrame(total_rmse, index=run_names)
+    total_df = pd.DataFrame(total_rmse, index=run_names).rename({0: "rmse"}, axis=1)
     total_df.to_csv(expt_dir / "region_results.csv")
