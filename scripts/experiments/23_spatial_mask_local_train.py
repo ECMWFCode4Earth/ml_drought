@@ -17,6 +17,7 @@ def lstm(
     ignore_vars=None,
     pretrained=False,
     static=None,
+    spatial_mask=None
 ):
     data_path = get_data_path()
     predictor = RecurrentNetwork(
@@ -27,6 +28,7 @@ def lstm(
         surrounding_pixels=surrounding_pixels,
         ignore_vars=ignore_vars,
         static=static,
+        spatial_mask=spatial_mask,
     )
     return predictor
 
@@ -56,10 +58,10 @@ if __name__ == "__main__":
         mask = region_nc.where(region_nc["state_l1"] == state_key)["state_l1"]
 
         # initialise model
-        model = lstm()
+        model = lstm(spatial_mask=mask)
 
         # train the model on that spatial subset
-        model.train(num_epochs=1, early_stopping=5, spatial_mask=mask, verbose=True)
+        model.train(num_epochs=1, early_stopping=5, verbose=True)
         model.evaluate(save_preds=True)
         model.save_model()
 
