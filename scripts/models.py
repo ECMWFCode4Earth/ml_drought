@@ -45,7 +45,7 @@ def get_all_vars(experiment: str = "one_month_forecast") -> Tuple[List[str], str
     data_dir = get_data_path()
     # get x vars from features dir
     x_data_path = [d for d in (data_dir / f"features/{experiment}/test").glob("*/x.nc")][0]
-    y_data_path = [d for d in (data_dir / f"features/{experiment}/test").glob("*/x.nc")][0]
+    y_data_path = [d for d in (data_dir / f"features/{experiment}/test").glob("*/y.nc")][0]
     x_ds = xr.open_dataset(x_data_path)
     y_ds = xr.open_dataset(y_data_path)
     return [v for v in x_ds.data_vars], [v for v in y_ds.data_vars][0]
