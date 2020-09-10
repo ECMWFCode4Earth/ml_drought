@@ -20,6 +20,37 @@ from src.models.neural_networks.base import NNBase
 from src.analysis import spatial_rmse, spatial_r2, group_rmse, group_r2
 
 
+def create_matching_shapes_in_predictions_dict(
+    predictions: Dict[str, xr.DataArray],
+    verbose: bool = True
+) -> Dict[str, xr.DataArray]:
+    # use the smallest size as the reference dimensions
+    if verbose:
+        print(f"OLD SHAPES: ", [{k: v.shape} for (k, v) in predictions.items()])
+
+    min_size = min([v.shape for (k, v) in predictions.items()])
+    reference_model = [
+        k for (k, v) in predictions.items() if v.shape == min_size]
+    reference_da = predictions[reference_model[0]]
+
+    if verbose:
+        print(f"Using {reference_model} as reference shape")
+
+    # update the shapes of each model prediction DataArray to reference_da
+    for model in [k for (k, v) in predictions.items() if k != reference_model]:
+        model_da = predictions[model]
+        model_da = model_da.sel(lat=reference_da.lat,
+                                lon=reference_da.lon,
+                                time=reference_da.time)
+
+        predictions[model] = model_da
+
+    if verbose:
+        print(f"NEW SHAPES: ", [{k: v.shape} for (k, v) in predictions.items()])
+
+    return predictions
+
+
 def extract_json_results_dict(
     data_dir: Optional[Path] = None,
     model: str = "rnn",
