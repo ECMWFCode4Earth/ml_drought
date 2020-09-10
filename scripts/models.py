@@ -24,6 +24,7 @@ def get_forecast_vars() -> List[str]:
     for variable in variables:
         for leadtime in leadtimes:
             forecast_vars.append(f"{variable}_std_{leadtime}")
+            forecast_vars.append(f"{variable}_mean_{leadtime}")
 
     return forecast_vars
 
