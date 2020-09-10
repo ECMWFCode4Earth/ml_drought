@@ -87,7 +87,9 @@ if __name__ == "__main__":
 
         to_path = expt_dir / f"{save_name}_{model.model_dir.name}"
         _rename_directory(
-            from_path=model.model_dir, to_path=to_path,
+            from_path=model.model_dir,
+            to_path=to_path,
+            with_datetime=True
         )
 
         print(
