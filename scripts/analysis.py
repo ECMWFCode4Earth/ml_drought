@@ -21,7 +21,9 @@ from src.analysis import spatial_rmse, spatial_r2, group_rmse, group_r2
 
 
 def extract_json_results_dict(
-    model: str = "rnn", experiment: str = "one_month_forecast"
+    data_dir: Optional[Path] = None,
+    model: str = "rnn",
+    experiment: str = "one_month_forecast"
 ) -> Tuple[float, pd.DataFrame]:
     """Extract the results saved as a dictionary object (`.json`)
 
@@ -32,6 +34,9 @@ def extract_json_results_dict(
     Returns:
         Tuple[float, pd.DataFrame]: [description]
     """
+    if data_dir is None:
+        data_dir = get_data_path()
+
     try:
         results = json.load(
             open(data_dir / f"models/{experiment}/{model}/results.json", "rb")
