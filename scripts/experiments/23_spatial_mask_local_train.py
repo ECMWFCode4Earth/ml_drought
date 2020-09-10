@@ -67,7 +67,9 @@ if __name__ == "__main__":
         model.save_model()
 
         total, df = extract_json_results_dict(
-            model="rnn", experiment="one_month_forecast"
+            data_dir=data_dir,
+            model="rnn",
+            experiment="one_month_forecast"
         )
         df["region"] = [state_name for _ in range(len(df))]
         total_rmse.append(total)
