@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 import sys
 
 sys.path.append("..")
@@ -14,6 +14,7 @@ from src.models import (
 from src.analysis import all_explanations_for_file
 
 from scripts.utils import get_data_path
+import xarray as xr
 
 
 def get_forecast_vars() -> List[str]:
@@ -38,6 +39,16 @@ def get_ignore_static_vars() -> List[str]:
         "urban_areas_one_hot",
         "water_bodies_one_hot",
     ]
+
+
+def get_all_vars(experiment: str = "one_month_forecast") -> Tuple[List[str], str]:
+    data_dir = get_data_path()
+    # get x vars from features dir
+    x_data_path = [d for d in (data_dir / f"features/{experiment}/test").glob("*/x.nc")][0]
+    y_data_path = [d for d in (data_dir / f"features/{experiment}/test").glob("*/x.nc")][0]
+    x_ds = xr.open_dataset(x_data_path)
+    y_ds = xr.open_dataset(y_data_path)
+    return [v for v in x_ds.data_vars], [v for v in y_ds.data_vars][0]
 
 
 def persistence(experiment="one_month_forecast",):
@@ -161,13 +172,23 @@ def earnn(
 
 
 if __name__ == "__main__":
+    experiment = "nowcast"
+
     # ignore_vars = ["VCI", "p84.162", "sp", "tp", "VCI1M"]
     forecast_vars = get_forecast_vars()
     ignore_static_vars = get_ignore_static_vars()
-    ignore_vars = forecast_vars + ignore_static_vars
 
-    # persistence()
-    # regression(ignore_vars=ignore_vars)
-    # linear_nn(ignore_vars=ignore_vars, static="features")
-    rnn(ignore_vars=ignore_vars, static="features")
-    # earnn(ignore_vars=ignore_vars, static="features")
+    x_vars, y_var = get_all_vars(experiment=experiment)
+    ignore_dyn_vars = [
+        v for v in x_vars
+        if (v not in forecast_vars) or (v != y_var)
+    ]
+
+    ignore_vars = ignore_dyn_vars + ignore_static_vars
+    assert False
+
+    persistence(experiment=experiment)
+    # regression(experiment=experiment, ignore_vars=ignore_vars)
+    linear_nn(experiment=experiment, ignore_vars=ignore_vars, static="features")
+    rnn(experiment=experiment, ignore_vars=ignore_vars, static="features")
+    earnn(experiment=experiment, ignore_vars=ignore_vars, static="features")
