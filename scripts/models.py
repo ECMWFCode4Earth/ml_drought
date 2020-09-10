@@ -180,10 +180,15 @@ if __name__ == "__main__":
     forecast_vars = get_forecast_vars()
     ignore_static_vars = get_ignore_static_vars()
 
-    x_vars, y_var = get_all_vars(experiment=experiment)
-    ignore_dyn_vars = np.array(x_vars)[~np.isin(x_vars, forecast_vars + [y_var])]
+    if experiment == "nowcast":
+        x_vars, y_var = get_all_vars(experiment=experiment)
+        # keep only the one month forecasts (the previous forecasts shouldn't help ...)
+        non_1mth_fcst_vars = [v for v in forecast_vars if "_1" not in v]
+        ignore_dyn_vars = np.array(x_vars)[~np.isin(x_vars, forecast_vars + [y_var])]
 
-    ignore_vars = list(ignore_dyn_vars) + ignore_static_vars
+        ignore_vars = list(ignore_dyn_vars) + ignore_static_vars + non_1mth_fcst_vars
+    elif experiment == "one_month_forecast":
+        ignore_vars = forecast_vars + ignore_static_vars
 
     persistence(experiment=experiment)
     # regression(experiment=experiment, ignore_vars=ignore_vars)
