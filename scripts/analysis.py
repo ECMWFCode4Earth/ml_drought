@@ -345,17 +345,14 @@ def create_all_temporal_error_metrics(
             all_r2.append(month_r2)
 
         pixel_rmse_monthly = xr.combine_nested(all_rmse, concat_dim="time").rename(
-            "monthly_rmse"
+            "rmse"
         )
-        pixel_r2_monthly = xr.combine_nested(all_r2, concat_dim="time").rename(
-            "monthly_r2"
-        )
+        pixel_r2_monthly = xr.combine_nested(all_r2, concat_dim="time").rename("r2")
 
         # pixel_error_monthly = xr.merge([pixel_rmse_monthly, pixel_r2_monthly])
         # append each object to the dictionary
         rmse_dict[model] = pixel_rmse_monthly
         r2_dict[model] = pixel_r2_monthly
-        # assert False
 
     return rmse_dict, r2_dict
 
