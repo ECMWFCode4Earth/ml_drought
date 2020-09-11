@@ -1,7 +1,7 @@
 import pandas as pd
 import xarray as xr
 from typing import List, Dict, Tuple
-import tmux
+import tqdm
 import sys
 
 sys.path.append("../..")
@@ -118,7 +118,7 @@ def create_region_preds_xrs(dataarrays, test_da) -> Dict[str, xr.DataArray]:
     r2_dict = {}
     true_dict = {}
 
-    for (region, region_da) in tmux.tmux(das.items()):
+    for (region, region_da) in tqdm.tqdm(das.items()):
         # get the matching shapes
         region_da, temp_da = get_matching_dims(region_da, test_da)
 
