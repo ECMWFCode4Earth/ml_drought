@@ -8,7 +8,7 @@ sys.path.append("../..")
 
 from src.analysis import spatial_rmse, spatial_r2
 from src.models import RecurrentNetwork
-from src.analysis import read_pred_data
+from src.analysis import read_pred_data, spatial_rmse, spatial_r2
 from scripts.analysis import extract_json_results_dict
 from scripts.utils import _rename_directory, get_data_path
 from scripts.models import get_forecast_vars, get_ignore_static_vars
