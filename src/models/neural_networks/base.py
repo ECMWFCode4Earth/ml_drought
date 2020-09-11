@@ -226,17 +226,25 @@ class NNBase(ModelBase):
                 epoch_val_rmse = np.mean(val_rmse)
                 if verbose:
                     print(f"Val RMSE: {epoch_val_rmse}")
+
                 if epoch_val_rmse < best_val_score:
                     batches_without_improvement = 0
                     best_val_score = epoch_val_rmse
                     best_model_dict = self.model.state_dict()
                 else:
                     batches_without_improvement += 1
+                    # early stopping criteria hit!
                     if batches_without_improvement == early_stopping:
                         if verbose:
                             print("Early stopping!")
-                        self.model.load_state_dict(best_model_dict)
-                        return None
+
+                        try:
+                            self.model.load_state_dict(best_model_dict)
+                            return None
+                        except UnboundLocalError:
+                            # there is NO DATA (all np.nan)
+                            self.model.load_state_dict(self.model.state_dict())
+                            return None
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
 
