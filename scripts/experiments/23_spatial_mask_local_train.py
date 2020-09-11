@@ -43,6 +43,10 @@ def get_matching_dims(ref_da, other_da) -> Tuple[xr.DataArray]:
     times = ref_da.time.values
 
     other_da = other_da.sel(lat=lats, lon=lons, time=times)
+
+    # also mask out missing values
+    ref_mask = ref_da.isnull()
+    other_da = other_da.where(~ref_mask)
     return ref_da, other_da
 
 
@@ -59,12 +63,20 @@ def join_region_das_into_one_xr_obj(
     return da
 
 
-def create_local_global_errors(global_da, test_da) -> Tuple[Dict[str, xr.DataArray]]:
-    das = open_region_specific_xr()
-    da = join_region_das_into_one_xr_obj(das)
+def create_local_global_errors(local_da, global_da, test_da) -> Tuple[Dict[str, xr.DataArray]]:
+    """Create xr objects with {RMSE, R2_score} for {local, global} tests.
 
-    _region_da, _test_da = get_matching_dims(da, test_da)
-    _, _global_da = get_matching_dims(da, global_da)
+    Args:
+        local_da ([type]): The predictions from the 'local' experiment
+        global_da ([type]): The predictions from the 'global' experiment
+        test_da ([type]): The observed values to calculate errors
+
+    Returns:
+        Tuple[Dict[str, xr.DataArray]]: Two dictionary objects (RMSE, R2)
+            for both experiments {}
+    """
+    _region_da, _test_da = get_matching_dims(local_da, test_da)
+    _, _global_da = get_matching_dims(local_da, global_da)
 
     r2_dict = {}
     rmse_dict = {}
