@@ -1,4 +1,3 @@
-from src.analysis import spatial_rmse, spatial_r2
 import pandas as pd
 import xarray as xr
 from typing import List, Dict, Tuple
@@ -7,6 +6,7 @@ import sys
 
 sys.path.append("../..")
 
+from src.analysis import spatial_rmse, spatial_r2
 from src.models import RecurrentNetwork
 from src.analysis import read_pred_data
 from scripts.analysis import extract_json_results_dict
