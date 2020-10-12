@@ -10,8 +10,7 @@ ALWAYS:
 ```bash
 aws s3 ls s3://mantlelabs-vci-forecast/data/raw/
 
-aws s3 ls s3://mantlelabs-vci-forhtop
-ecast/data/raw/ --region eu-central-1
+aws s3 ls s3://mantlelabs-vci-forecast/data/raw/ --region eu-central-1
 ```
 
 ## Moving files to S3
