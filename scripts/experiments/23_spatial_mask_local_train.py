@@ -2,6 +2,7 @@ import pandas as pd
 import xarray as xr
 from typing import List, Dict, Tuple
 import tqdm
+from sklearn.metrics import mean_squared_error
 import sys
 
 sys.path.append("../..")
@@ -12,6 +13,31 @@ from src.analysis import read_pred_data, spatial_rmse, spatial_r2
 from scripts.analysis import extract_json_results_dict
 from scripts.utils import _rename_directory, get_data_path
 from scripts.models import get_forecast_vars, get_ignore_static_vars
+
+
+def mean_pixel_rmse_per_time(true_da: xr.DataArray, pred_da: xr.DataArray) -> pd.DataFrame:
+    target_var: str = true_da.name
+    pred_var: str = pred_da.name
+    _df = pred_da.to_dataframe().join(true_da.to_dataframe())
+    return (
+        _df.reset_index()
+        .dropna().groupby("time")
+        .apply(lambda x: np.sqrt(mean_squared_error(x[target_var], x[pred_var])))
+        .reset_index()
+        .rename({0: "rmse"}, axis=1)
+    )
+
+
+def capitalize_string_exceptions(string: str) -> str:
+    import re
+    exceptions = ["and", "or", "the", "a", "of", "in"]
+
+    lowercase_words = re.split("_", string.lower())
+    final_words = [lowercase_words[0].capitalize()]
+
+    final_words += [word if word in exceptions else word.capitalize()
+                    for word in lowercase_words[1:]]
+    return " ".join(final_words)
 
 
 def open_the_experiment_csv_files() -> pd.DataFrame:
