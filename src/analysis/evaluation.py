@@ -420,3 +420,16 @@ def group_rmse(grouped_df: pd.DataFrame) -> float:
 
 def group_r2(grouped_df: pd.DataFrame) -> float:
     return r2_score(grouped_df["true_mean_value"], grouped_df["predicted_mean_value"])
+
+
+def mean_pixel_rmse_per_time(true_da: xr.DataArray, pred_da: xr.DataArray) -> pd.DataFrame:
+    target_var: str = true_da.name
+    pred_var: str = pred_da.name
+    _df = pred_da.to_dataframe().join(true_da.to_dataframe())
+    return (
+        _df.reset_index()
+        .dropna().groupby("time")
+        .apply(lambda x: np.sqrt(mean_squared_error(x[target_var], x[pred_var])))
+        .reset_index()
+        .rename({0: "rmse"}, axis=1)
+    )
