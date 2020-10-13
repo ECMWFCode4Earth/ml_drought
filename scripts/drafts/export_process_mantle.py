@@ -31,9 +31,16 @@ def preprocess_mantle_modis(subset_str: str = "india"):
 
 
 if __name__ == "__main__":
+    data_dir = get_data_path()
     for year in np.arange(2001, 2021):
         export_mantle_modis(year)
         preprocess_mantle_modis(
             subset_str="india"
         )
+
+        # DELETE remaining files (tif/nc)
+        tif_files = (data_dir / "raw/mantle_modis").glob("**/*.tif")
+        nc_files = (data_dir / "raw/mantle_modis").glob("**/*.nc")
+        [f.unlink() for f in tif_files]
+        [f.unlink() for f in nc_files]
         print(f"\n-- FINISHED: {year} --\n")
