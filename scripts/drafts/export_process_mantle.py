@@ -26,9 +26,14 @@ def preprocess_mantle_modis(subset_str: str = "india"):
     #  upsampling from low -> high resolution
     processor.preprocess(
         subset_str=subset_str, regrid_path=regrid_path, upsampling=False,
+        cleanup=False,
     )
 
 
 if __name__ == "__main__":
     for year in np.arange(2001, 2021):
         export_mantle_modis(year)
+        preprocess_mantle_modis(
+            subset_str="india"
+        )
+        print(f"\n-- FINISHED: {year} --\n")
