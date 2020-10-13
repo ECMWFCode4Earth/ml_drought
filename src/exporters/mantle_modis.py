@@ -132,7 +132,7 @@ class MantleModisExporter(BaseExporter):
 
         return df
 
-    def _export_list_of_files(self, subset_files: List[str]) -> None:
+    def _export_list_of_files(self, subset_files: List[str], verbose: bool = False) -> None:
         # get datetimes of the subset_files
         datetimes = pd.to_datetime([f.split("_")[2] for f in subset_files])
 
@@ -151,7 +151,7 @@ class MantleModisExporter(BaseExporter):
                 np.array(target_key.split("/")[2].split("_"))[[0, 2, 3, 4]]
             )
             target_folder = (
-                self.output_folder / self.dataset / folder_level / str(dt.year)
+                self.output_folder / folder_level / str(dt.year)
             )
             target_folder.mkdir(parents=True, exist_ok=True)
 
@@ -170,7 +170,8 @@ class MantleModisExporter(BaseExporter):
                     Filename=str(target_output),
                 )
                 output_files.append(target_output)
-                print(f"Exported {target_key} to {target_folder}")
+                if verbose:
+                    print(f"Exported {target_key} to {target_folder}")
             except botocore.exceptions.ClientError as e:  # type: ignore
                 if e.response["Error"]["Code"] == "404":
                     warnings.warn("Key does not exist! " f"{target_key}")
