@@ -17,6 +17,7 @@ from src.exporters import (
     ERA5LandExporterHourly,
     IndiaAdminExporter,
     BokuNDVIExporter,
+    MantleModisExporter,
 )
 
 from scripts.utils import get_data_path
@@ -230,7 +231,8 @@ if __name__ == "__main__":
     # export_chirps()
     # export_era5POS()
     # export_gleam()
-    export_esa()
+    # export_esa()
+    export_mantle_modis()
     # export_kenya_boundaries()
     # export_india_boundaries()
     # export_srtm(region_str=region_str)
