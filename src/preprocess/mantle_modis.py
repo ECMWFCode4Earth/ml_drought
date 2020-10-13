@@ -22,7 +22,6 @@ class MantleModisPreprocessor(BasePreProcessor):
         netcdf_filepath: Path,
         subset_str: Optional[str] = "kenya",
         regrid: Optional[xr.Dataset] = None,
-        regrid_path: Optional[Path] = None,
     ) -> None:
         """Run the Preprocessing steps for the CHIRPS data
 
@@ -49,7 +48,7 @@ class MantleModisPreprocessor(BasePreProcessor):
                 ds = self.regrid(ds, regrid)
             except ImportError:
                 # the environment doesn't have esmpy does it have cdo?
-                ds = self.regrid_cdo(ds, regrid_path)  # type: ignore
+                print("Use the ESMPY Environment (problems with gdal)")
 
         # 6. create the filepath and save to that location
         assert (
@@ -84,7 +83,7 @@ class MantleModisPreprocessor(BasePreProcessor):
     def preprocess(
         self,
         subset_str: Optional[str] = "kenya",
-        regrid_path: Optional[Path] = None,
+        regrid: Optional[Path] = None,
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
         # parallel: bool = False,
@@ -116,6 +115,7 @@ class MantleModisPreprocessor(BasePreProcessor):
         # get the filepaths for all of the downloaded data
         nc_files = self.get_filepaths()
 
+        regrid_path = regrid
         if regrid_path is not None:
             regrid = self.load_reference_grid(regrid_path)
         else:
@@ -130,7 +130,6 @@ class MantleModisPreprocessor(BasePreProcessor):
                     self._preprocess_single,
                     subset_str=subset_str,
                     regrid=regrid,
-                    regrid_path=regrid_path,
                 ),
                 nc_files,
             )
@@ -138,7 +137,7 @@ class MantleModisPreprocessor(BasePreProcessor):
         else:  #  SEQUENTIAL
             for file in nc_files:
                 self._preprocess_single(
-                    file, subset_str, regrid, regrid_path=regrid_path
+                    file, subset_str, regrid
                 )
 
         # merge all of the timesteps
