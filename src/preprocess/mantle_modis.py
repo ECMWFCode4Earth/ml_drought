@@ -126,19 +126,13 @@ class MantleModisPreprocessor(BasePreProcessor):
             pool = multiprocessing.Pool(processes=n_processes)
 
             outputs = pool.map(
-                partial(
-                    self._preprocess_single,
-                    subset_str=subset_str,
-                    regrid=regrid,
-                ),
+                partial(self._preprocess_single, subset_str=subset_str, regrid=regrid,),
                 nc_files,
             )
             print("\nOutputs (errors):\n\t", outputs)
         else:  #  SEQUENTIAL
             for file in nc_files:
-                self._preprocess_single(
-                    file, subset_str, regrid
-                )
+                self._preprocess_single(file, subset_str, regrid)
 
         # merge all of the timesteps
         self.merge_files(subset_str, resample_time, upsampling)
