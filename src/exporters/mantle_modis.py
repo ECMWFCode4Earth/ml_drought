@@ -70,20 +70,23 @@ class MantleModisExporter(BaseExporter):
         moved_tif_files = [f for f in dst_dir.glob("*.tif")]
         created_nc_files = [d for d in self.output_folder.glob("**/*.nc")]
 
-        already_converted = np.isin([tif.stem for tif in moved_tif_files], [nc.stem for nc in created_nc_files])
+        already_converted = np.isin(
+            [tif.stem for tif in moved_tif_files], [nc.stem for nc in created_nc_files]
+        )
         converted_tifs = np.array(moved_tif_files)[already_converted]
 
         # delete the already removed
         [f.unlink() for f in converted_tifs]  # type: ignore
 
-    @staticmethod
-    def tif_to_nc(tif_file: Path, nc_file: Path, variable: str) -> None:
-        """convert .tif -> .nc using GDAL"""
+    def tif_to_nc(self, tif_file: Path, nc_file: Path, variable: str) -> None:
+        """convert .tif -> .nc using XARRAY"""
         #  with XARRAY (rasterio backend)
         ds = xr.open_rasterio(tif_file.resolve())
         da = ds.isel(band=0).drop("band")
         da = da.rename({"x": "lon", "y": "lat"})
         da.name = variable
+
+        # save the netcdf file
         try:
             da.to_netcdf(nc_file)
         except RuntimeError:

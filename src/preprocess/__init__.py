@@ -9,6 +9,7 @@ from .esa_cci import ESACCIPreprocessor
 from .srtm import SRTMPreprocessor
 from .admin_boundaries import KenyaAdminPreprocessor, KenyaASALMask, IndiaAdminProcessor
 from .boku_ndvi import BokuNDVIPreprocessor
+from .mantle_modis import MantleModisPreprocessor
 
 
 __all__ = [
@@ -27,4 +28,5 @@ __all__ = [
     "KenyaASALMask",
     "ERA5LandPreprocessor",
     "ERA5LandMonthlyMeansPreprocessor",
+    "MantleModisPreprocessor",
 ]
