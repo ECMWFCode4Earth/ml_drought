@@ -9,7 +9,6 @@ from .base import BaseExporter
 import shutil
 import xarray as xr
 
-gdal = None
 boto3 = None
 botocore = None
 Config = None
@@ -44,11 +43,6 @@ class MantleModisExporter(BaseExporter):
         if botocore is None:
             import botocore
             from botocore.client import Config
-
-        #  gdal to convert tif to netcdf
-        global gdal
-        if gdal is None:
-            from osgeo import gdal
 
         self.modis_bucket = "mantlelabs-eu-modis-boku"
         self.client = boto3.client(  # type: ignore
