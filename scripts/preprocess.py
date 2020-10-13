@@ -335,7 +335,7 @@ def preprocess_mantle_modis(subset_str: str = "india"):
 
     processor = MantleModisPreprocessor(data_path)
     processor.preprocess(
-        subset_str=subset_str, regrid_path=regrid_path, upsampling=False,
+        subset_str=subset_str, regrid=regrid_path, upsampling=False,
     )
 
 
