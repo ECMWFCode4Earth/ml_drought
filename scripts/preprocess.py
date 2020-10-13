@@ -19,6 +19,7 @@ from src.preprocess import (
     ERA5LandPreprocessor,
     ERA5LandMonthlyMeansPreprocessor,
     IndiaAdminProcessor,
+    MantleModisPreprocessor,
 )
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
@@ -323,9 +324,25 @@ def preprocess_s5_ouce():
     )
 
 
+def preprocess_mantle_modis(subset_str: str = "india"):
+    data_path = get_data_path()
+
+    regrid_path = (
+        data_path
+        / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
+    )
+    assert regrid_path.exists(), f"{regrid_path} not available"
+
+    processor = MantleModisPreprocessor(data_path)
+    processor.preprocess(
+        subset_str=subset_str, regrid=regrid_path, upsampling=False,
+    )
+
+
 if __name__ == "__main__":
     subset_str = "india"
-    preprocess_era5(subset_str=subset_str)
+    preprocess_mantle_modis(subset_str=subset_str)
+    # preprocess_era5(subset_str=subset_str)
     # process_seas5(subset_str=subset_str)
     # preprocess_era5_land(subset_str=subset_str, monmean=True)
     # process_vci(subset_str=subset_str)

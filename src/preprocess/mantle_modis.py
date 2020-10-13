@@ -34,13 +34,14 @@ class MantleModisPreprocessor(BasePreProcessor):
         """
         print(f"Starting work on {netcdf_filepath.name}")
         # 1. read in the dataset
-        ds = xr.open_dataset(netcdf_filepath).rename(
-            {"longitude": "lon", "latitude": "lat"}
-        )
+        ds = xr.open_dataset(netcdf_filepath)
 
         # 2. chop out ROI
         if subset_str is not None:
-            ds = self.chop_roi(ds, subset_str)
+            try:
+                ds = self.chop_roi(ds, subset_str)
+            except AssertionError:
+                ds = self.chop_roi(ds, subset_str, inverse_lat=True)
 
         if regrid is not None:
             ds = self.regrid(ds, regrid)
@@ -51,30 +52,28 @@ class MantleModisPreprocessor(BasePreProcessor):
         ), f"filepath name should be a .nc file. Currently: {netcdf_filepath.name}"
 
         filename = self.create_filename(
-            netcdf_filepath.name,
-            subset_name=subset_str if subset_str is not None else None,
+            netcdf_filepath, subset_name=subset_str if subset_str is not None else None,
         )
         print(f"Saving to {self.interim}/{filename}")
         ds.to_netcdf(self.interim / filename)
 
-        print(f"** Done for CHIRPS {netcdf_filepath.name} **")
+        var = list(ds.data_vars)[0]
+        print(f"** Done for {var} {netcdf_filepath.name} **")
 
     @staticmethod
-    def create_filename(netcdf_filepath: str, subset_name: Optional[str] = None) -> str:
+    def create_filename(
+        netcdf_filepath: Path, subset_name: Optional[str] = None
+    ) -> str:
         """
         chirps-v2.0.2009.pentads.nc
             =>
         chirps-v2.0.2009.pentads_kenya.nc
         """
-        if netcdf_filepath[-3:] == ".nc":
-            filename_stem = netcdf_filepath[:-3]
-        else:
-            filename_stem = netcdf_filepath
-
         if subset_name is not None:
-            new_filename = f"{filename_stem}_{subset_name}.nc"
+            final_part = netcdf_filepath.name.replace("_vci", f"_{subset_name}")
         else:
-            new_filename = f"{filename_stem}.nc"
+            final_part = netcdf_filepath.name.replace("_vci", "")
+        new_filename = f"{netcdf_filepath.parents[1].name}_{final_part}"
         return new_filename
 
     def preprocess(
@@ -116,7 +115,7 @@ class MantleModisPreprocessor(BasePreProcessor):
             regrid = self.load_reference_grid(regrid)
 
         n_processes = max(n_processes, 1)
-        if n_processes > 1:
+        if n_processes > 1:  #  PARALLEL
             pool = multiprocessing.Pool(processes=n_processes)
 
             outputs = pool.map(
@@ -124,7 +123,7 @@ class MantleModisPreprocessor(BasePreProcessor):
                 nc_files,
             )
             print("\nOutputs (errors):\n\t", outputs)
-        else:
+        else:  #  SEQUENTIAL
             for file in nc_files:
                 self._preprocess_single(file, subset_str, regrid)
 
