@@ -2,7 +2,7 @@ import sys
 from datetime import datetime
 import numpy as np
 
-sys.path.append("..")
+sys.path.append("../..")
 from src.exporters import MantleModisExporter
 from src.preprocessor import MantleModisPreprocessor
 from scripts.utils import get_data_path
