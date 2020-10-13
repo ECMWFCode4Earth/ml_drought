@@ -22,6 +22,7 @@ class MantleModisPreprocessor(BasePreProcessor):
         netcdf_filepath: Path,
         subset_str: Optional[str] = "kenya",
         regrid: Optional[xr.Dataset] = None,
+        regrid_path: Optional[Path] = None,
     ) -> None:
         """Run the Preprocessing steps for the CHIRPS data
 
@@ -44,7 +45,11 @@ class MantleModisPreprocessor(BasePreProcessor):
                 ds = self.chop_roi(ds, subset_str, inverse_lat=True)
 
         if regrid is not None:
-            ds = self.regrid(ds, regrid)
+            try:
+                ds = self.regrid(ds, regrid)
+            except ImportError:
+                # the environment doesn't have esmpy does it have cdo?
+                ds = self.regrid_cdo(ds, regrid_path)  # type: ignore
 
         # 6. create the filepath and save to that location
         assert (
@@ -79,7 +84,7 @@ class MantleModisPreprocessor(BasePreProcessor):
     def preprocess(
         self,
         subset_str: Optional[str] = "kenya",
-        regrid: Optional[Path] = None,
+        regrid_path: Optional[Path] = None,
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
         # parallel: bool = False,
@@ -93,7 +98,7 @@ class MantleModisPreprocessor(BasePreProcessor):
         ----------
         subset_str: Optional[str] = 'kenya'
             Whether to subset Kenya when preprocessing
-        regrid: Optional[Path] = None
+        regrid_path: Optional[Path] = None
             If a Path is passed, the CHIRPS files will be regridded to have the same
             grid as the dataset at that Path. If None, no regridding happens
         resample_time: str = 'M'
@@ -111,21 +116,30 @@ class MantleModisPreprocessor(BasePreProcessor):
         # get the filepaths for all of the downloaded data
         nc_files = self.get_filepaths()
 
-        if regrid is not None:
-            regrid = self.load_reference_grid(regrid)
+        if regrid_path is not None:
+            regrid = self.load_reference_grid(regrid_path)
+        else:
+            regrid = None
 
         n_processes = max(n_processes, 1)
         if n_processes > 1:  #  PARALLEL
             pool = multiprocessing.Pool(processes=n_processes)
 
             outputs = pool.map(
-                partial(self._preprocess_single, subset_str=subset_str, regrid=regrid),
+                partial(
+                    self._preprocess_single,
+                    subset_str=subset_str,
+                    regrid=regrid,
+                    regrid_path=regrid_path,
+                ),
                 nc_files,
             )
             print("\nOutputs (errors):\n\t", outputs)
         else:  #  SEQUENTIAL
             for file in nc_files:
-                self._preprocess_single(file, subset_str, regrid)
+                self._preprocess_single(
+                    file, subset_str, regrid, regrid_path=regrid_path
+                )
 
         # merge all of the timesteps
         self.merge_files(subset_str, resample_time, upsampling)
