@@ -4,7 +4,7 @@ import pandas as pd
 from itertools import product
 from typing import List, Dict, Optional, Any
 import warnings
-
+from tqdm import tqdm
 from .base import BaseExporter
 
 boto3 = None
@@ -133,14 +133,56 @@ class MantleModisExporter(BaseExporter):
         return df
 
     def _export_list_of_files(self, subset_files: List[str]) -> None:
-        pass
+        # get datetimes of the subset_files
+        datetimes = pd.to_datetime([f.split("_")[2] for f in subset_files])
+
+        output_files = []
+        # Download each file, creating out folder structure
+        # data_dir / raw / mantle_modis / MCD13A2_006_globalV1_1km_OF / {year}
+        for target_key, dt in tqdm(zip(subset_files, datetimes)):
+
+            # create filename (target_name)
+            path = Path(target_key)
+            target_name = f"{dt.year}{dt.month:02d}{dt.day:02d}_{path.name}"
+
+            # create folder structure (target_folder)
+            level = target_key.split("/")[2].split("_")[-1]
+            folder_level = f"{level}_" + "_".join(
+                np.array(target_key.split("/")[2].split("_"))[[0, 2, 3, 4]]
+            )
+            target_folder = (
+                self.output_folder / self.dataset / folder_level / str(dt.year)
+            )
+            target_folder.mkdir(parents=True, exist_ok=True)
+
+            #  create the output file (target_output)
+            target_output = target_folder / target_name
+
+            # check that it doesn't already exist ...
+            if target_output.exists():
+                print(f"{target_output} already exists! Skipping")
+                continue
+
+            try:
+                self.client.download_file(
+                    Bucket=self.modis_bucket,
+                    Key=target_key,
+                    Filename=str(target_output),
+                )
+                output_files.append(target_output)
+                print(f"Exported {target_key} to {target_folder}")
+            except botocore.exceptions.ClientError as e:  # type: ignore
+                if e.response["Error"]["Code"] == "404":
+                    warnings.warn("Key does not exist! " f"{target_key}")
+                else:
+                    raise e
 
     def export(
         self,
         variable: str = "vci",
+        level: str = "OF",
         years: Optional[List[int]] = None,
         months: Optional[List[int]] = None,
-        level: str = "OF",
     ):
         assert variable in [
             "sm",
@@ -173,40 +215,4 @@ class MantleModisExporter(BaseExporter):
         subset = (variables == variable) & (levels == level)
         subset_files = np.array(all_files)[subset]
 
-        # get datetimes of the subset_files
-        datetimes = pd.to_datetime([f.split("_")[2] for f in subset_files])
-
-        output_files = []
-        # Download each file, creating out folder structure
-        # data_dir / raw / mantle_modis / MCD13A2_006_globalV1_1km_OF / {year}
-        for target_key, dt in zip(subset_files, datetimes):
-
-            # create filename (target_name)
-            path = Path(target_key)
-            target_name = f"{dt.year}{dt.month:02d}{dt.day:02d}_{path.name}"
-
-            # create folder structure (target_folder)
-            folder_level = f"{level}_" + "_".join(
-                np.array(target_key.split("/")[2].split("_"))[[0, 2, 3, 4]]
-            )
-            target_folder = (
-                self.output_folder / self.dataset / folder_level / str(dt.year)
-            )
-            target_folder.mkdir(parents=True, exist_ok=True)
-
-            #  create the output file (target_output)
-            target_output = target_folder / target_name
-
-            try:
-                self.client.download_file(
-                    Bucket=self.modis_bucket,
-                    Key=target_key,
-                    Filename=str(target_output),
-                )
-                output_files.append(target_output)
-                print(f"Exported {target_key} to {target_folder}")
-            except botocore.exceptions.ClientError as e:  # type: ignore
-                if e.response["Error"]["Code"] == "404":
-                    warnings.warn("Key does not exist! " f"{target_key}")
-                else:
-                    raise e
+        self._export_list_of_files(subset_files)

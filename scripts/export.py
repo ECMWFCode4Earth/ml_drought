@@ -215,6 +215,11 @@ def export_boku_ndvi():
     exporter.export()
 
 
+def export_mantle_modis():
+    exporter = MantleModisExporter(get_data_path())
+    exporter.export()
+
+
 if __name__ == "__main__":
     region_str = "india"
     print(f"Writing data to: {get_data_path()}")
