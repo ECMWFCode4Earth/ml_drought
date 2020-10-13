@@ -65,6 +65,17 @@ class MantleModisExporter(BaseExporter):
         outfiles.sort()
         return outfiles
 
+    def delete_tifs_already_run(self):
+        dst_dir = self.output_folder / "tifs"
+        moved_tif_files = [f for f in dst_dir.glob("*.tif")]
+        created_nc_files = [d for d in self.output_folder.glob("**/*.nc")]
+
+        already_converted = np.isin([tif.stem for tif in moved_tif_files], [nc.stem for nc in created_nc_files])
+        converted_tifs = np.array(moved_tif_files)[already_converted]
+
+        # delete the already removed
+        [f.unlink() for f in converted_tifs]  # type: ignore
+
     @staticmethod
     def tif_to_nc(tif_file: Path, nc_file: Path, variable: str) -> None:
         """convert .tif -> .nc using GDAL"""
@@ -73,11 +84,15 @@ class MantleModisExporter(BaseExporter):
         da = ds.isel(band=0).drop("band")
         da = da.rename({"x": "lon", "y": "lat"})
         da.name = variable
-        da.to_netcdf(nc_file)
+        try:
+            da.to_netcdf(nc_file)
+        except RuntimeError:
+            print("RUN OUT OF MEMORY - deleting the tifs that are already created")
+            self.delete_tifs_already_run()
 
     def preprocess_tif_to_nc(
         self, tif_files: List[Path], variable: str, remove_tif: bool = False
-    ):
+    ) -> None:
         """Create the temporary folder for storing the tif / netcdf files
         (requires copying and deleting).
 
@@ -290,6 +305,8 @@ class MantleModisExporter(BaseExporter):
 
         # convert tif to netcdf
         out_tif_files = self.get_tif_filepaths()
+
+        print("\n** Exported TIFs. Now Processing to NETCDF **\n")
         self.preprocess_tif_to_nc(
             out_tif_files, remove_tif=remove_tif, variable=f"modis_{variable}"
         )
