@@ -5,7 +5,9 @@ import xarray as xr
 
 
 # class Normalizer:
-def calculate_normalization_dict(ds: xr.Dataset, static: bool = False, global_mean: bool = False) -> DefaultDict[str, Dict[str, float]]:
+def calculate_normalization_dict(
+    ds: xr.Dataset, static: bool = False, global_mean: bool = False
+) -> DefaultDict[str, Dict[str, float]]:
     """[summary]
 
     Args:
@@ -23,15 +25,12 @@ def calculate_normalization_dict(ds: xr.Dataset, static: bool = False, global_me
 
     for var in ds.data_vars:
         if var.endswith("one_hot"):
-            # Should not normalize one_hot encoded variables
+            #  Should not normalize one_hot encoded variables
             mean = None
             std = None
         else:
-            mean = float(
-                ds[var].mean(dim=reducing_dims, skipna=True).values
-            )
-            std = float(ds[var].std(
-                dim=reducing_dims, skipna=True).values)
+            mean = float(ds[var].mean(dim=reducing_dims, skipna=True).values)
+            std = float(ds[var].std(dim=reducing_dims, skipna=True).values)
 
         # ensure that std DOES NOT EQUAL Zero
         if std <= 0:
@@ -43,7 +42,9 @@ def calculate_normalization_dict(ds: xr.Dataset, static: bool = False, global_me
     return normalization_values
 
 
-def normalize_xr(ds: xr.Dataset, static: bool = False) -> Tuple[xr.Dataset, DefaultDict[str, Dict[str, float]]]:
+def normalize_xr(
+    ds: xr.Dataset, static: bool = False
+) -> Tuple[xr.Dataset, DefaultDict[str, Dict[str, float]]]:
     """Normalize the xarray object
 
     Args:
@@ -58,20 +59,23 @@ def normalize_xr(ds: xr.Dataset, static: bool = False) -> Tuple[xr.Dataset, Defa
 
     list_of_normed: List[xr.DataArray] = []
     for variable in ds.data_vars:
-        list_of_normed.append((ds[variable] - norm_dict[variable]
-                               ["mean"]) / norm_dict[variable]["std"])
+        list_of_normed.append(
+            (ds[variable] - norm_dict[variable]["mean"]) / norm_dict[variable]["std"]
+        )
 
     ds_norm = xr.merge(list_of_normed)
 
     return ds_norm, norm_dict
 
 
-def unnormalize_xr(ds: xr.Dataset, normalization_dict: DefaultDict[str, Dict[str, float]]) -> xr.Dataset:
+def unnormalize_xr(
+    ds: xr.Dataset, normalization_dict: DefaultDict[str, Dict[str, float]]
+) -> xr.Dataset:
     list_of_unnormed: List[xr.DataArray] = []
     for variable in ds.data_vars:
         list_of_unnormed.append(
-            (ds[variable] * normalization_dict[variable]["std"]) +
-            normalization_dict[variable]["mean"]
+            (ds[variable] * normalization_dict[variable]["std"])
+            + normalization_dict[variable]["mean"]
         )
 
     ds_unnorm = xr.merge(list_of_unnormed)

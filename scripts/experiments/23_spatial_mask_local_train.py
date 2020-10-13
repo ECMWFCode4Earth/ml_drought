@@ -15,13 +15,16 @@ from scripts.utils import _rename_directory, get_data_path
 from scripts.models import get_forecast_vars, get_ignore_static_vars
 
 
-def mean_pixel_rmse_per_time(true_da: xr.DataArray, pred_da: xr.DataArray) -> pd.DataFrame:
+def mean_pixel_rmse_per_time(
+    true_da: xr.DataArray, pred_da: xr.DataArray
+) -> pd.DataFrame:
     target_var: str = true_da.name
     pred_var: str = pred_da.name
     _df = pred_da.to_dataframe().join(true_da.to_dataframe())
     return (
         _df.reset_index()
-        .dropna().groupby("time")
+        .dropna()
+        .groupby("time")
         .apply(lambda x: np.sqrt(mean_squared_error(x[target_var], x[pred_var])))
         .reset_index()
         .rename({0: "rmse"}, axis=1)
@@ -30,13 +33,16 @@ def mean_pixel_rmse_per_time(true_da: xr.DataArray, pred_da: xr.DataArray) -> pd
 
 def capitalize_string_exceptions(string: str) -> str:
     import re
+
     exceptions = ["and", "or", "the", "a", "of", "in"]
 
     lowercase_words = re.split("_", string.lower())
     final_words = [lowercase_words[0].capitalize()]
 
-    final_words += [word if word in exceptions else word.capitalize()
-                    for word in lowercase_words[1:]]
+    final_words += [
+        word if word in exceptions else word.capitalize()
+        for word in lowercase_words[1:]
+    ]
     return " ".join(final_words)
 
 
@@ -89,7 +95,9 @@ def join_region_das_into_one_xr_obj(
     return da
 
 
-def create_local_global_errors(local_da, global_da, test_da) -> Tuple[Dict[str, xr.DataArray]]:
+def create_local_global_errors(
+    local_da, global_da, test_da
+) -> Tuple[Dict[str, xr.DataArray]]:
     """Create xr objects with {RMSE, R2_score} for {local, global} tests.
 
     Args:

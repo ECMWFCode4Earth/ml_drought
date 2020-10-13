@@ -11,6 +11,8 @@ ALWAYS:
 aws s3 ls s3://mantlelabs-vci-forecast/data/raw/
 
 aws s3 ls s3://mantlelabs-vci-forecast/data/raw/ --region eu-central-1
+
+aws s3 ls s3://mantlelabs-eu-modis-boku/modis_boku-preprocess/v1.0/MCD13A2_20190820_006_globalV1_1km_O4/NDVI/
 ```
 
 ## Moving files to S3
