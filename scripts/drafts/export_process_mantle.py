@@ -4,7 +4,7 @@ import numpy as np
 
 sys.path.append("../..")
 from src.exporters import MantleModisExporter
-from src.preprocessor import MantleModisPreprocessor
+from src.preprocess import MantleModisPreprocessor
 from scripts.utils import get_data_path
 
 
