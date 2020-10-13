@@ -6,7 +6,10 @@ from typing import List, Dict, Optional, Any
 import warnings
 from tqdm import tqdm
 from .base import BaseExporter
+import shutil
+import xarray as xr
 
+gdal = None
 boto3 = None
 botocore = None
 Config = None
@@ -25,12 +28,14 @@ DEFAULT_ARGS = {
 
 
 class MantleModisExporter(BaseExporter):
+    # NOTE: all data is ~120GB (2001-2020)
 
     dataset = "mantle_modis"
 
     def __init__(self, data_folder: Path = Path("data")) -> None:
         super().__init__(data_folder)
 
+        # boto for accessing AWS S3 buckets
         global boto3
         if boto3 is None:
             import boto3
@@ -40,10 +45,72 @@ class MantleModisExporter(BaseExporter):
             import botocore
             from botocore.client import Config
 
+        #  gdal to convert tif to netcdf
+        global gdal
+        if gdal is None:
+            from osgeo import gdal
+
         self.modis_bucket = "mantlelabs-eu-modis-boku"
         self.client = boto3.client(  # type: ignore
             "s3", **DEFAULT_ARGS
         )
+
+    ##########################################
+    #  Helper Functions for working with .tif #
+    ##########################################
+
+    def get_tif_filepaths(self) -> List[Path]:
+        target_folder = self.output_folder
+        outfiles = list(target_folder.glob("**/*.tif"))
+        outfiles.sort()
+        return outfiles
+
+    @staticmethod
+    def tif_to_nc(tif_file: Path, nc_file: Path, variable: str) -> None:
+        """convert .tif -> .nc using GDAL"""
+        #  with XARRAY (rasterio backend)
+        ds = xr.open_rasterio(tif_file.resolve())
+        da = ds.isel(band=0).drop("band")
+        da = da.rename({"x": "lon", "y": "lat"})
+        da.name = variable
+        da.to_netcdf(nc_file)
+
+    def preprocess_tif_to_nc(
+        self, tif_files: List[Path], variable: str, remove_tif: bool = False
+    ):
+        """Create the temporary folder for storing the tif / netcdf files
+        (requires copying and deleting).
+
+        NOTE: this function removes the raw tif data from the raw folder.
+        """
+        # 1. move tif files to /tif directory
+        dst_dir = self.output_folder / "tifs"
+        if not dst_dir.exists():
+            dst_dir.mkdir(exist_ok=True, parents=True)
+
+        dst_tif_files = [dst_dir / f.name for f in tif_files]
+
+        for src, dst in zip(tif_files, dst_tif_files):
+            shutil.move(src, dst)
+
+        # 2. convert from tif to netcdf (complete in RAW directory)
+        moved_tif_files = [f for f in dst_dir.glob("*.tif")]
+        nc_files = [f.parents[0] / (f.stem + ".nc") for f in tif_files]
+        moved_tif_files.sort()
+        nc_files.sort()
+
+        print("\n")
+        for tif_file, nc_file in zip(moved_tif_files, nc_files):
+            self.tif_to_nc(tif_file, nc_file, variable=variable)
+            print(f"-- Converted {tif_file.name} to netcdf --")
+
+        # 3. remove the tif files
+        if remove_tif:
+            [f.unlink() for f in moved_tif_files]  # type: ignore
+
+    ##########################################
+    #  Helper Functions for working with S3   #
+    ##########################################
 
     def _get_filepaths(self, year: int, month: int) -> List[str]:
         # because of API limits - combine lists by splitting up
@@ -132,7 +199,13 @@ class MantleModisExporter(BaseExporter):
 
         return df
 
-    def _export_list_of_files(self, subset_files: List[str], verbose: bool = False) -> None:
+    ##########################################
+    # Export Functions                       #
+    ##########################################
+
+    def _export_list_of_files(
+        self, subset_files: List[str], verbose: bool = False
+    ) -> None:
         # get datetimes of the subset_files
         datetimes = pd.to_datetime([f.split("_")[2] for f in subset_files])
 
@@ -140,19 +213,15 @@ class MantleModisExporter(BaseExporter):
         # Download each file, creating out folder structure
         # data_dir / raw / mantle_modis / MCD13A2_006_globalV1_1km_OF / {year}
         for target_key, dt in tqdm(zip(subset_files, datetimes)):
-
             # create filename (target_name)
             path = Path(target_key)
             target_name = f"{dt.year}{dt.month:02d}{dt.day:02d}_{path.name}"
 
             # create folder structure (target_folder)
             level = target_key.split("/")[2].split("_")[-1]
-            folder_level = f"{level}_" + "_".join(
-                np.array(target_key.split("/")[2].split("_"))[[0, 2, 3, 4]]
-            )
-            target_folder = (
-                self.output_folder / folder_level / str(dt.year)
-            )
+            variable = target_key.split("/")[-2].lower()
+            folder_level = f"{variable}_{level}"
+            target_folder = self.output_folder / folder_level / str(dt.year)
             target_folder.mkdir(parents=True, exist_ok=True)
 
             #  create the output file (target_output)
@@ -184,6 +253,7 @@ class MantleModisExporter(BaseExporter):
         level: str = "OF",
         years: Optional[List[int]] = None,
         months: Optional[List[int]] = None,
+        remove_tif: bool = False,
     ):
         assert variable in [
             "sm",
@@ -217,3 +287,9 @@ class MantleModisExporter(BaseExporter):
         subset_files = np.array(all_files)[subset]
 
         self._export_list_of_files(subset_files)
+
+        # convert tif to netcdf
+        out_tif_files = self.get_tif_filepaths()
+        self.preprocess_tif_to_nc(
+            out_tif_files, remove_tif=remove_tif, variable=f"modis_{variable}"
+        )

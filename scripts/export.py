@@ -218,7 +218,7 @@ def export_boku_ndvi():
 
 def export_mantle_modis():
     exporter = MantleModisExporter(get_data_path())
-    exporter.export()
+    exporter.export(years=[2001], remove_tif=True)
 
 
 if __name__ == "__main__":
