@@ -1,6 +1,7 @@
 """
 - subset ROI
-- merge into one time (~500MB)
+- add timestamps to data (from filename)
+- merge into one .nc file
 """
 from pathlib import Path
 from functools import partial
@@ -24,13 +25,13 @@ class MantleModisPreprocessor(BasePreProcessor):
         subset_str: Optional[str] = "kenya",
         regrid: Optional[xr.Dataset] = None,
     ) -> None:
-        """Run the Preprocessing steps for the CHIRPS data
+        """Run the Preprocessing steps for the Mantle Modis data
 
         Process:
         -------
         * assign time stamp
-        * assign lat lon
         * create new dataset with these dimensions
+        * Chop ROI
         * Save the output file to new folder
         """
         print(f"Starting work on {netcdf_filepath.name}")
@@ -77,11 +78,6 @@ class MantleModisPreprocessor(BasePreProcessor):
     def create_filename(
         netcdf_filepath: Path, subset_name: Optional[str] = None
     ) -> str:
-        """
-        chirps-v2.0.2009.pentads.nc
-            =>
-        chirps-v2.0.2009.pentads_kenya.nc
-        """
         if subset_name is not None:
             final_part = netcdf_filepath.name.replace("_vci", f"_{subset_name}")
         else:
@@ -95,19 +91,19 @@ class MantleModisPreprocessor(BasePreProcessor):
         regrid: Optional[Path] = None,
         resample_time: Optional[str] = "M",
         upsampling: bool = False,
-        # parallel: bool = False,
         n_processes: int = 1,
         cleanup: bool = True,
+        with_merge: bool = True,
     ) -> None:
-        """ Preprocess all of the CHIRPS .nc files to produce
-        one subset file.
+        """ Preprocess all of the modis .nc files to produce
+        one subset .nc file (with all timesteps).
 
         Arguments
         ----------
         subset_str: Optional[str] = 'kenya'
             Whether to subset Kenya when preprocessing
         regrid_path: Optional[Path] = None
-            If a Path is passed, the CHIRPS files will be regridded to have the same
+            If a Path is passed, the files will be regridded to have the same
             grid as the dataset at that Path. If None, no regridding happens
         resample_time: str = 'M'
             If not None, defines the time length to which the data will be resampled
@@ -143,8 +139,9 @@ class MantleModisPreprocessor(BasePreProcessor):
             for file in nc_files:
                 self._preprocess_single(file, subset_str, regrid)
 
-        # merge all of the timesteps
-        self.merge_files(subset_str, resample_time, upsampling)
+        if with_merge:
+            # merge all of the timesteps
+            self.merge_files(subset_str, resample_time, upsampling)
 
         if cleanup:
             rmtree(self.interim)

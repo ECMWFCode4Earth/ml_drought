@@ -26,8 +26,19 @@ def preprocess_mantle_modis(subset_str: str = "india"):
     #  upsampling from low -> high resolution
     processor.preprocess(
         subset_str=subset_str, regrid=regrid_path, upsampling=False,
-        cleanup=False,
+        cleanup=False, with_merge=False
     )
+
+
+def merge_all_mantle_modis(subset_str: str = "india"):
+    # get attributes for processor
+    data_path = get_data_path()
+    resample_time = "M"
+    upsampling = False
+
+    # merge the created files
+    processor = MantleModisPreprocessor(data_path)
+    processor.merge_files(subset_str, resample_time, upsampling)
 
 
 if __name__ == "__main__":
@@ -44,5 +55,5 @@ if __name__ == "__main__":
         [f.unlink() for f in tif_files]
         [f.unlink() for f in nc_files]
         print(f"\n-- FINISHED: {year} --\n")
-        break
-        assert False, "TODO: need to fix so that no longer just runs for 2001 (test)"
+
+    merge_all_mantle_modis(subset_str="india")
