@@ -27,7 +27,6 @@ class CHIRPSPreprocessor(BasePreProcessor):
 
         Process:
         -------
-        * assign time stamp
         * assign lat lon
         * create new dataset with these dimensions
         * Save the output file to new folder
