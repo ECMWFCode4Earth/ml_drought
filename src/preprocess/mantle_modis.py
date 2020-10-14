@@ -8,6 +8,7 @@ import xarray as xr
 import multiprocessing
 from shutil import rmtree
 from typing import Optional
+import pandas as pd
 
 from .base import BasePreProcessor
 
@@ -49,6 +50,11 @@ class MantleModisPreprocessor(BasePreProcessor):
             except ImportError:
                 # the environment doesn't have esmpy does it have cdo?
                 print("Use the ESMPY Environment (problems with gdal)")
+
+        # assign time stamp! (in the filename)
+        time = pd.to_datetime(netcdf_filepath.split("_")[2])
+        ds = ds.assign_coords(time=time)
+        ds = ds.expand_dims("time")
 
         # 6. create the filepath and save to that location
         assert (
