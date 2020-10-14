@@ -37,7 +37,12 @@ class MantleModisPreprocessor(BasePreProcessor):
         # 1. read in the dataset
         ds = xr.open_dataset(netcdf_filepath)
 
-        # 2. chop out ROI
+        # 2. assign time stamp! (in the filename)
+        time = pd.to_datetime(netcdf_filepath.name.split("_")[0])
+        ds = ds.assign_coords(time=time)
+        ds = ds.expand_dims("time")
+
+        # 3.. chop out ROI
         if subset_str is not None:
             try:
                 ds = self.chop_roi(ds, subset_str)
@@ -50,11 +55,6 @@ class MantleModisPreprocessor(BasePreProcessor):
             except ImportError:
                 # the environment doesn't have esmpy does it have cdo?
                 print("Use the ESMPY Environment (problems with gdal)")
-
-        # assign time stamp! (in the filename)
-        time = pd.to_datetime(netcdf_filepath.split("_")[2])
-        ds = ds.assign_coords(time=time)
-        ds = ds.expand_dims("time")
 
         # 6. create the filepath and save to that location
         assert (
