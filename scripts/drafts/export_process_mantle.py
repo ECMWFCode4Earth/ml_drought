@@ -44,3 +44,5 @@ if __name__ == "__main__":
         [f.unlink() for f in tif_files]
         [f.unlink() for f in nc_files]
         print(f"\n-- FINISHED: {year} --\n")
+        break
+        assert False, "TODO: need to fix so that no longer just runs for 2001 (test)"
