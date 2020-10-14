@@ -41,8 +41,11 @@ class MantleModisPreprocessor(BasePreProcessor):
         time = pd.to_datetime(netcdf_filepath.name.split("_")[0])
         ds = ds.assign_coords(time=time)
         ds = ds.expand_dims("time")
+        # dimension order
+        # ensure that the dimensions are in the standard order
+        ds = ds.transpose("time", "lat", "lon")
 
-        # 3.. chop out ROI
+        # 3. chop out ROI
         if subset_str is not None:
             try:
                 ds = self.chop_roi(ds, subset_str)
