@@ -73,7 +73,7 @@ def export_era5(region_str="kenya"):
         exporter.export(variable=variable, granularity="monthly", region_str=region_str)
 
 
-def export_era5_land(region_str="kenya"):
+def export_era5_land(region_str="kenya", granularity="monthly"):
     exporter = ERA5LandExporter(get_data_path())
 
     variables = [
@@ -91,7 +91,7 @@ def export_era5_land(region_str="kenya"):
             variable=variable,
             break_up="yearly",
             region_str=region_str,
-            granularity="monthly",
+            granularity=granularity,
             selection_request=dict(year=np.arange(2000, 2021)),
         )
 
@@ -191,7 +191,7 @@ def export_boku_ndvi():
 if __name__ == "__main__":
     print(f"Writing data to: {get_data_path()}")
     region_str = "great_britain"
-    export_era5_land(region_str=region_str)
+    export_era5_land(region_str=region_str, granularity="hourly")
     # export_era5(region_str="kenya")
     # export_vhi()
     # export_chirps()
