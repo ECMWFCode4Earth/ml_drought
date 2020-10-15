@@ -73,6 +73,7 @@ def process_era5_land(
     variables: Optional[Union[List, str]] = None,
     subset_str: str = "kenya",
     monmean: bool = True,
+    resample_time: str = "M",
 ):
     data_path = get_data_path()
 
@@ -112,7 +113,7 @@ def process_era5_land(
         processor.preprocess(
             subset_str=subset_str,
             regrid=None,
-            resample_time="M",
+            resample_time=resample_time,
             upsampling=False,
             variable=variable,
         )
@@ -288,15 +289,12 @@ def preprocess_s5_ouce():
 
 
 if __name__ == "__main__":
-    subset_str = "india"
+    subset_str = "great_britain"
     # preprocess_era5(subset_str=subset_str)
     process_era5_land(
         subset_str=subset_str,
-        variables=[
-            "volumetric_soil_water_layer_1",
-            "potential_evaporation",
-        ],  #  total_precipitation 2m_temperature evapotranspiration
         monmean=False,
+        resample_time=None,
     )
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)

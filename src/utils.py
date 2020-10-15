@@ -52,6 +52,21 @@ def get_india() -> Region:
     return Region(name="india", lonmin=67.3, lonmax=97.7, latmin=5.6, latmax=36)
 
 
+def get_gb() -> Region:
+    """
+    lon_min	        lat_min       lon_max        lat_max
+    ----------------------------------------------------------
+    -7.57216793459, 49.959999905, 1.68153079591, 58.6350001085
+    """
+    return Region(
+        name="great_britain",
+        lonmin=-7.57216793459,
+        lonmax=49.959999905,
+        latmin=1.68153079591,
+        latmax=58.6350001085,
+    )
+
+
 def minus_months(
     cur_year: int, cur_month: int, diff_months: int, to_endmonth_datetime: bool = True
 ) -> Tuple[int, int, Optional[date]]:
@@ -207,4 +222,5 @@ region_lookup = {
     "east_africa": get_east_africa(),
     "africa": get_africa(),
     "india": get_india(),
+    "great_britain": get_gb(),
 }
