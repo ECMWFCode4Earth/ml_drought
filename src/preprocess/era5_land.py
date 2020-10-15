@@ -85,36 +85,45 @@ class ERA5LandPreprocessor(BasePreProcessor):
         years: Optional[List[int]] = None,
         cleanup: bool = False,
         with_merge: bool = True,
-        resample_before_merge: bool = True,
+        resample_before_merge: bool = False,
     ) -> None:
         """Preprocess all of the ERA5-Land .nc files to produce
         one subset file.
-        Arguments
-        ----------
-        :param: subset_str: Optional[str] = 'kenya'
-            Whether to subset Kenya when preprocessing
-        :param: regrid: Optional[Path] = None
-            If a Path is passed, the CHIRPS files will be regridded to have the same
-            grid as the dataset at that Path. If None, no regridding happens
-        :param: resample_time: str = 'M'
-            If not None, defines the time length to which the data will be resampled
-        :param: upsampling: bool = False
-            If true, tells the class the time-sampling will be upsampling. In this case,
-            nearest instead of mean is used for the resampling
-        :param: variable: Optional[str] = None
-            the variable that you want to preprocess. If None then will
-            process ALL variables that have been downloaded to the
-            `data/raw/reanalysis-era5-land` by the ERA5LandExporter
-        :param: parallel_processes: int = 1
-            If > 1, run the preprocessing in parallel
-        :param: years: Optional[List[int]] = None
-            preprocess a subset of the years from the raw data
-        :param: cleanup: bool = True
-            If true, delete interim files created by the class
 
-        Note:
-        ----
-        - the raw data is downloaded at annual resolution by default
+        Args:
+            subset_str (Optional[str], optional):
+                Whether to subset ROI when preprocessing. Defaults to "kenya".
+            regrid (Optional[Path], optional):
+                If a Path is passed, the ERA5 Land files will be regridded to have the same
+                grid as the dataset at that Path. If None, no regridding happens.
+                Defaults to None.
+            resample_time (Optional[str], optional):
+                If not None, defines the time length to which the data will be resampled.
+                Defaults to "M".
+            upsampling (bool, optional):
+                If true, tells the class the time-sampling will be upsampling. In this case,
+                nearest instead of mean is used for the resampling
+                Defaults to False.
+            parallel_processes (int, optional):
+                If > 1, run the preprocessing in parallel. Defaults to 1.
+            variable (Optional[str], optional):
+                the variable that you want to preprocess. If None then will
+                process ALL variables that have been downloaded to the
+                `data/raw/reanalysis-era5-land` by the ERA5LandExporter.
+                Defaults to None.
+            years (Optional[List[int]], optional):
+                preprocess a subset of the years from the raw data. Defaults to None.
+            cleanup (bool, optional):
+                If true, delete interim files created by the class. Defaults to False.
+            with_merge (bool, optional):
+                Whether to merge all of the data after preprocessed single files.
+                False should be used when the dataset is large and we want to preprocess
+                the interim files on the fly - create files in data_dir/{dataset}_interim/
+                Defaults to True.
+            resample_before_merge (bool, optional):
+                Whether to resample the data before the merge.
+                Useful for the hourly products which are memory intensive.
+                Defaults to False.
         """
         print(f"Reading data from {self.raw_folder}. Writing to {self.interim}")
         nc_files = self.get_filepaths()
