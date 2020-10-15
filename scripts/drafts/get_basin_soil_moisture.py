@@ -9,7 +9,8 @@ sys.path.append("..")
 
 from scripts.preprocess import process_era5_land
 from scripts.export import export_era5_land
-from scripts.utils import get_data_path
+from scripts.utils import get_data_path, _rename_directory
+from src.preprocess import ERA5LandPreprocessor
 
 
 def load_reference_nc(reference_nc_filepath: Path) -> xr.DataArray:
@@ -48,10 +49,17 @@ def extract_time_series_of_soil_moisture() -> xr.Dataset:
     pass
 
 
-def export_preprocess_one_year(year: int, variable: str, cleanup: bool = False) -> None:
+def export_preprocess_one_year(
+    year: int,
+    variable: str,
+    cleanup: bool = False,
+    subset_str: str = "great_britain",
+) -> None:
     # Download ERA5-Land
     export_era5_land(
-        region_str=subset_str, year=[year], variables=[variable],
+        region_str=subset_str,
+        years=[year],
+        variables=[variable],
     )
     #  Preprocess ERA5-Land (?)
     process_era5_land(
@@ -65,6 +73,7 @@ def export_preprocess_one_year(year: int, variable: str, cleanup: bool = False) 
     )
 
     # -- Check that files correctly exported/processed -- #
+    data_dir = get_data_path()
     # has the raw file been downloaded?
     assert (
         data_dir / f"raw/reanalysis-era5-land/{variable}/{str(year)}/01_12.nc"
@@ -85,21 +94,53 @@ def export_preprocess_one_year(year: int, variable: str, cleanup: bool = False) 
     print(f"\n-- Downloaded and preprocessed {variable} {year} --\n")
 
 
+def merge_files(variable: str, subset_str: str = "great_britain") -> None:
+    data_dir = get_data_path()
+    processor = ERA5LandPreprocessor(data_dir)
+    filename = (
+        f'{variable}_data{"_" + subset_str if subset_str is not None else ""}.nc'
+    )
+
+    processor.merge_files(
+        subset_str=subset_str,
+        resample_time="D",
+        upsampling=False,
+        filename=filename,
+    )
+
+    # move all of the interim files
+    from_paths = [f for f in (data_dir / "interim/reanalysis-era5-land_interim").glob("*.nc")]
+    to_paths = [data_dir / f"interim/reanalysis-era5-land_OLD/{path.name}" for path in from_paths]
+    to_paths[0].parents[0].mkdir(exist_ok=True, parents=True)
+
+    for fp, tp in zip(from_paths, to_paths):
+        _rename_directory(
+            from_path=fp,
+            to_path=tp,
+        )
+
+
 if __name__ == "__main__":
     subset_str = "great_britain"
-    data_dir = get_data_path()
-    years = np.arange(2004, 2016)
     variables = [
         "volumetric_soil_water_layer_1",
         "volumetric_soil_water_layer_2",
         "volumetric_soil_water_layer_3",
         "volumetric_soil_water_layer_4",
     ]
+    years = np.arange(2004, 2016)
 
     # Due to memory constraints process hourly data into daily
-    # after every Variable/Year combination
-    for year, variable in product(years, variables):
-        export_preprocess_one_year(year=year, variable=variable, cleanup=True)
+    # after every Variable/Year then merge all of the variable files
+    for variable in variables:
+        for year in years:
+            export_preprocess_one_year(year=year, variable=variable, cleanup=True)
+
+        # merge all of these daily files into one NETCDF file
+        merge_files(variable, subset_str=subset_str)
+
+        # Do we need to unlink the interim files ???
 
     # Extract time series for each basin (defined in shapefile)
-    extract_time_series_of_soil_moisture()
+    # TODO: need to get this working
+    # extract_time_series_of_soil_moisture()
