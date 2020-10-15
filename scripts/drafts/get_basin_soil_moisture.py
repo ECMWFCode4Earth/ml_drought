@@ -65,6 +65,8 @@ def export_preprocess_one_year(
         monmean=False,
         resample_time="D",
         years=[year],
+        cleanup=False,
+        with_merge=False,
     )
 
     assert (

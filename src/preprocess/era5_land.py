@@ -78,7 +78,8 @@ class ERA5LandPreprocessor(BasePreProcessor):
         parallel_processes: int = 1,
         variable: Optional[str] = None,
         years: Optional[List[int]] = None,
-        cleanup: bool = True,
+        cleanup: bool = False,
+        with_merge: bool = True,
     ) -> None:
         """Preprocess all of the ERA5-Land .nc files to produce
         one subset file.
@@ -146,12 +147,13 @@ class ERA5LandPreprocessor(BasePreProcessor):
         )
 
         # TODO: update the mergefile option
-        self.merge_files(
-            subset_str=subset_str,
-            resample_time=resample_time,
-            upsampling=upsampling,
-            filename=filename,
-        )
+        if with_merge:
+            self.merge_files(
+                subset_str=subset_str,
+                resample_time=resample_time,
+                upsampling=upsampling,
+                filename=filename,
+            )
 
         if cleanup:
             rmtree(self.interim)

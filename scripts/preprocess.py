@@ -75,6 +75,8 @@ def process_era5_land(
     monmean: bool = True,
     resample_time: Optional[str] = "M",
     years: Optional[List[int]] = None,
+    cleanup: bool = False,
+    with_merge: bool = True,
 ):
     data_path = get_data_path()
 
@@ -118,6 +120,8 @@ def process_era5_land(
             upsampling=False,
             variable=variable,
             years=years,
+            cleanup=cleanup,
+            with_merge=with_merge,
         )
 
 
@@ -300,6 +304,9 @@ if __name__ == "__main__":
         subset_str=subset_str,
         monmean=False,
         resample_time="D",
+        year=[2000],
+        with_merge=False,
+        cleanup=False,
     )
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
