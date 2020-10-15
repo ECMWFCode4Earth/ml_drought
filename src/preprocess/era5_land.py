@@ -67,7 +67,7 @@ class ERA5LandPreprocessor(BasePreProcessor):
         )
 
         if resample_early is not None:
-            ds.resample(time=resample_early).mean()
+            ds = ds.resample(time=resample_early).mean()
 
         print(f"Saving to {self.interim}/{filename}")
         ds.to_netcdf(self.interim / filename)
