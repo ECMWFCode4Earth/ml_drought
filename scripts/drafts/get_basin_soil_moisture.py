@@ -55,13 +55,14 @@ def export_preprocess_one_year(
     cleanup: bool = False,
     subset_str: str = "great_britain",
 ) -> None:
-    # Download ERA5-Land
+    # Download ERA5-Land = HOURLY
     export_era5_land(
         region_str=subset_str,
         years=[year],
         variables=[variable],
+        granularity="hourly",
     )
-    #  Preprocess ERA5-Land (?)
+    #  Preprocess ERA5-Land -> DAILY
     process_era5_land(
         subset_str=subset_str,
         monmean=False,
