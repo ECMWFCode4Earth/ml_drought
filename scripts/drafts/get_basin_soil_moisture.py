@@ -5,7 +5,7 @@ import xarray as xr
 from typing import Optional, Union, List
 from itertools import product
 
-sys.path.append("..")
+sys.path.append("../..")
 
 from scripts.preprocess import process_era5_land
 from scripts.export import export_era5_land
