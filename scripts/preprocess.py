@@ -77,6 +77,7 @@ def process_era5_land(
     years: Optional[List[int]] = None,
     cleanup: bool = False,
     with_merge: bool = True,
+    resample_before_merge: bool = False,
 ):
     data_path = get_data_path()
 
@@ -122,6 +123,7 @@ def process_era5_land(
             years=years,
             cleanup=cleanup,
             with_merge=with_merge,
+            resample_before_merge=resample_before_merge,
         )
 
 

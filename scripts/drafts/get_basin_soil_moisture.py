@@ -71,7 +71,9 @@ def export_preprocess_one_year(year: int, variable: str, cleanup: bool = False) 
     ).exists()
     # has the preprocessed file been created?
     fname = f"{year}_01_12_{variable}_great_britain.nc"
-    assert (data_dir / f"interim/reanalysis-era5-land_interim/{variable}/{fname}").exists()
+    assert (
+        data_dir / f"interim/reanalysis-era5-land_interim/{variable}/{fname}"
+    ).exists()
 
     # -- Remove the raw file -- #
     raw_nc_file = data_dir / f"raw/reanalysis-era5-land/{variable}/{str(year)}/01_12.nc"
