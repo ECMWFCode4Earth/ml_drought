@@ -193,6 +193,9 @@ class BasePreProcessor:
             The reference dataset, onto which `ds` will be regridded
         method: str, {'bilinear', 'conservative', 'nearest_s2d', 'nearest_d2s', 'patch'}
             The method applied for the regridding
+
+        TODO: Add option to run with dask {lazy, parallel} computation
+        https://xesmf.readthedocs.io/en/latest/notebooks/Dask.html
         """
 
         assert ("lat" in reference_ds.dims) & (
