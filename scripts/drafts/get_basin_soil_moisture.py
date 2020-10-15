@@ -76,6 +76,7 @@ def export_preprocess_one_year(year: int, variable: str, cleanup: bool = False) 
     if cleanup:
         # delete the raw hourly file
         raw_nc_file.unlink()
+        print(f"Removed File: {raw_nc_file}")
 
     print(f"\n-- Downloaded and preprocessed {variable} {year} --\n")
 
