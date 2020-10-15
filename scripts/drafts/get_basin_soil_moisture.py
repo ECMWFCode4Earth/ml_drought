@@ -23,7 +23,7 @@ def load_reference_nc(reference_nc_filepath: Path) -> xr.DataArray:
 def extract_time_series_of_soil_moisture() -> xr.Dataset:
     data_dir = get_data_path()
     # load in shapefile
-    # convert shapefile to xarray
+    #  convert shapefile to xarray
     shp_filepath = Path(
         "/soge-home/projects/crop_yield/CAMELS/CAMELS_GB_DATASET"
         "/Catchment_Boundaries/CAMELS_GB_catchment_boundaries.shp"
@@ -48,16 +48,10 @@ def extract_time_series_of_soil_moisture() -> xr.Dataset:
     pass
 
 
-def export_preprocess_one_year(
-    year: int,
-    variable: str,
-    cleanup: bool = False
-) -> None:
+def export_preprocess_one_year(year: int, variable: str, cleanup: bool = False) -> None:
     # Download ERA5-Land
     export_era5_land(
-        region_str=subset_str,
-        year=[year],
-        variables=[variable],
+        region_str=subset_str, year=[year], variables=[variable],
     )
     #  Preprocess ERA5-Land (?)
     process_era5_land(
@@ -69,15 +63,18 @@ def export_preprocess_one_year(
         with_merge=False,
     )
 
+    # -- Check that files correctly exported/processed -- #
+    # has the raw file been downloaded?
     assert (
         data_dir / f"raw/reanalysis-era5-land/{variable}/{str(year)}/01_12.nc"
     ).exists()
+    # has the preprocessed file been created?
+    assert (data_dir / f"interim/reanalysis-era5-land_interim/{variable}/.nc").exists()
 
-    assert (data_dir / f"interim/reanalysis-era5-land_interim/{}")
-    raw_nc_file = data_dir / \
-        f"raw/reanalysis-era5-land/{variable}/{str(year)}/01_12.nc"
+    # -- Remove the raw file -- #
+    raw_nc_file = data_dir / f"raw/reanalysis-era5-land/{variable}/{str(year)}/01_12.nc"
     if cleanup:
-        # unlink the raw hourly file
+        # delete the raw hourly file
         raw_nc_file.unlink()
 
     print(f"\n-- Downloaded and preprocessed {variable} {year} --\n")
