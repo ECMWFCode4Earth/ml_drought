@@ -304,7 +304,7 @@ if __name__ == "__main__":
         subset_str=subset_str,
         monmean=False,
         resample_time="D",
-        year=[2000],
+        years=[2000],
         with_merge=False,
         cleanup=False,
     )
