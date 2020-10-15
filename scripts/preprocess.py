@@ -143,7 +143,10 @@ def process_gleam(resample_time: Optional[str] = "M"):
     processor = GLEAMPreprocessor(data_path)
 
     processor.preprocess(
-        subset_str=subset_str, regrid=regrid_path, resample_time=resample_time, upsampling=False
+        subset_str=subset_str,
+        regrid=regrid_path,
+        resample_time=resample_time,
+        upsampling=False,
     )
 
 
@@ -292,9 +295,7 @@ if __name__ == "__main__":
     subset_str = "great_britain"
     # preprocess_era5(subset_str=subset_str)
     process_era5_land(
-        subset_str=subset_str,
-        monmean=False,
-        resample_time=None,
+        subset_str=subset_str, monmean=False, resample_time=None,
     )
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
