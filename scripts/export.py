@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+from typing import List
 
 sys.path.append("..")
 from src.exporters import (
@@ -73,10 +74,11 @@ def export_era5(region_str="kenya"):
         exporter.export(variable=variable, granularity="monthly", region_str=region_str)
 
 
-def export_era5_land(region_str="kenya", granularity="monthly"):
-    exporter = ERA5LandExporter(get_data_path())
-
-    variables = [
+def export_era5_land(
+    region_str="kenya",
+    granularity="monthly",
+    years: List[int] = np.arange(2000, 2021),
+    variables=[
         # "total_precipitation",
         # "2m_temperature",
         # "evapotranspiration",
@@ -86,13 +88,16 @@ def export_era5_land(region_str="kenya", granularity="monthly"):
         "volumetric_soil_water_layer_3",
         "volumetric_soil_water_layer_4",
     ]
+):
+    exporter = ERA5LandExporter(get_data_path())
+
     for variable in variables:
         exporter.export(
             variable=variable,
             break_up="yearly",
             region_str=region_str,
             granularity=granularity,
-            selection_request=dict(year=np.arange(2000, 2021)),
+            selection_request=dict(year=years),
         )
 
 

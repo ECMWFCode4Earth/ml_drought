@@ -144,6 +144,8 @@ class ERA5LandPreprocessor(BasePreProcessor):
         filename = (
             f'{variable}_data{"_" + subset_str if subset_str is not None else ""}.nc'
         )
+
+        # TODO: update the mergefile option
         self.merge_files(
             subset_str=subset_str,
             resample_time=resample_time,

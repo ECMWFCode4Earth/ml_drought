@@ -74,6 +74,7 @@ def process_era5_land(
     subset_str: str = "kenya",
     monmean: bool = True,
     resample_time: Optional[str] = "M",
+    years: Optional[List[int]] = None,
 ):
     data_path = get_data_path()
 
@@ -116,6 +117,7 @@ def process_era5_land(
             resample_time=resample_time,
             upsampling=False,
             variable=variable,
+            years=years,
         )
 
 
@@ -295,7 +297,9 @@ if __name__ == "__main__":
     subset_str = "great_britain"
     # preprocess_era5(subset_str=subset_str)
     process_era5_land(
-        subset_str=subset_str, monmean=False, resample_time=None,
+        subset_str=subset_str,
+        monmean=False,
+        resample_time="D",
     )
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
