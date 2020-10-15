@@ -44,9 +44,10 @@ class ERA5LandPreprocessor(BasePreProcessor):
         * regrid to same spatial grid as a reference dataset (`regrid`)
         * Save the output file to new folder / filename
 
-        Todo:
-        # read the variable name from the fpath
-        # variable = netcdf_filepath.parents[1].name
+        TODO:
+        * read the variable name from the fpath
+        * variable = netcdf_filepath.parents[1].name
+        * TESTS for the resample_early
         """
         print(f"Processing {netcdf_filepath.name}")
 
@@ -124,6 +125,12 @@ class ERA5LandPreprocessor(BasePreProcessor):
                 Whether to resample the data before the merge.
                 Useful for the hourly products which are memory intensive.
                 Defaults to False.
+
+        TODO:
+        * TESTS for the resample_before merge argument
+        * TESTS for the _preprocess_single / resample_early argument
+        * TESTS for the with_merge argument
+        * TESTS for the years list
         """
         print(f"Reading data from {self.raw_folder}. Writing to {self.interim}")
         nc_files = self.get_filepaths()
