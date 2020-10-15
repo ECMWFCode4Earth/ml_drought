@@ -73,7 +73,7 @@ def process_era5_land(
     variables: Optional[Union[List, str]] = None,
     subset_str: str = "kenya",
     monmean: bool = True,
-    resample_time: str = "M",
+    resample_time: Optional[str] = "M",
 ):
     data_path = get_data_path()
 
@@ -112,7 +112,7 @@ def process_era5_land(
     for variable in variables:
         processor.preprocess(
             subset_str=subset_str,
-            regrid=None,
+            regrid=regrid_path,
             resample_time=resample_time,
             upsampling=False,
             variable=variable,
@@ -128,7 +128,7 @@ def process_gleam(subset_str: str = "kenya"):
     assert regrid_path.exists(), f"{regrid_path} not available"
 
 
-def process_gleam():
+def process_gleam(resample_time: Optional[str] = "M"):
     # if the working directory is alread ml_drought don't need ../data
     if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
         data_path = Path("data")
@@ -143,7 +143,7 @@ def process_gleam():
     processor = GLEAMPreprocessor(data_path)
 
     processor.preprocess(
-        subset_str=subset_str, regrid=regrid_path, resample_time="M", upsampling=False
+        subset_str=subset_str, regrid=regrid_path, resample_time=resample_time, upsampling=False
     )
 
 

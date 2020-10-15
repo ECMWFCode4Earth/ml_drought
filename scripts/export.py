@@ -73,7 +73,7 @@ def export_era5(region_str="kenya"):
         exporter.export(variable=variable, granularity="monthly", region_str=region_str)
 
 
-# def export_era5_land(region_str="kenya"):
+def export_era5_land(region_str="kenya"):
     exporter = ERA5LandExporter(get_data_path())
 
     variables = [
