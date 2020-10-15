@@ -307,6 +307,7 @@ if __name__ == "__main__":
         years=[2000],
         with_merge=False,
         cleanup=False,
+        resample_before_merge=True,
     )
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)

@@ -32,6 +32,7 @@ class ERA5LandPreprocessor(BasePreProcessor):
         netcdf_filepath: Path,
         subset_str: Optional[str] = "kenya",
         regrid: Optional[xr.Dataset] = None,
+        resample_early: Optional[str] = None,
     ) -> None:
         """ Preprocess a single netcdf file (run in parallel if
         `parallel_processes` arg > 1)
@@ -64,6 +65,10 @@ class ERA5LandPreprocessor(BasePreProcessor):
         filename = self.create_filename(
             netcdf_filepath, subset_name=subset_str if subset_str is not None else None
         )
+
+        if resample_early is not None:
+            ds.resample(time=resample_early).mean()
+
         print(f"Saving to {self.interim}/{filename}")
         ds.to_netcdf(self.interim / filename)
 
@@ -80,6 +85,7 @@ class ERA5LandPreprocessor(BasePreProcessor):
         years: Optional[List[int]] = None,
         cleanup: bool = False,
         with_merge: bool = True,
+        resample_before_merge: bool = True,
     ) -> None:
         """Preprocess all of the ERA5-Land .nc files to produce
         one subset file.
@@ -117,6 +123,11 @@ class ERA5LandPreprocessor(BasePreProcessor):
                 f for f in nc_files if int(f.parents[0].name) in years  # type: ignore
             ]
 
+        if resample_before_merge:
+            resample_early = resample_time
+        else:
+            resample_early = None
+
         # run for one variable or all variables?
         if variable is not None:
             variables = [d.name for d in (self.raw_folder / self.dataset).iterdir()]
@@ -136,7 +147,12 @@ class ERA5LandPreprocessor(BasePreProcessor):
         else:
             pool = multiprocessing.Pool(processes=parallel_processes)
             outputs = pool.map(
-                partial(self._preprocess_single, subset_str=subset_str, regrid=regrid),
+                partial(
+                    self._preprocess_single,
+                    subset_str=subset_str,
+                    regrid=regrid,
+                    resample_early=resample_early,
+                ),
                 nc_files,
             )
             print("\nOutputs (errors):\n\t", outputs)
@@ -146,7 +162,6 @@ class ERA5LandPreprocessor(BasePreProcessor):
             f'{variable}_data{"_" + subset_str if subset_str is not None else ""}.nc'
         )
 
-        #  TODO: update the mergefile option
         if with_merge:
             self.merge_files(
                 subset_str=subset_str,
