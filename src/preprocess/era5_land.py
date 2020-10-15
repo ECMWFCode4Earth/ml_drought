@@ -133,7 +133,7 @@ class ERA5LandPreprocessor(BasePreProcessor):
             ]
 
         if resample_before_merge:
-            resample_early = resample_time
+            resample_early: Optional[str] = resample_time
         else:
             resample_early = None
 
@@ -152,7 +152,12 @@ class ERA5LandPreprocessor(BasePreProcessor):
         # parallel processing ?
         if parallel_processes <= 1:  # sequential
             for file in nc_files:
-                self._preprocess_single(file, subset_str, regrid)
+                self._preprocess_single(
+                    netcdf_filepath=file,
+                    subset_str=subset_str,
+                    regrid=regrid,
+                    resample_early=resample_early,
+                )
         else:
             pool = multiprocessing.Pool(processes=parallel_processes)
             outputs = pool.map(
