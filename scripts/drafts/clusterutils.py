@@ -10,7 +10,7 @@ see <https://opensource.org/licenses/Apache-2.0>
 """
 
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, DefaultDict
 
 import numpy as np
 import pandas as pd
@@ -22,12 +22,12 @@ def get_silhouette_scores(features: np.ndarray) -> Tuple[dict]:
     """Calculate the mean and min silhouette score of a range of possible cluster numbers
 
     For this paper we only consider possible numbers of clusters from 3 to 14.
-    
+
     Parameters
     ----------
     features : np.ndarray
         Array containing the input features.
-    
+
     Returns
     -------
     mean_scores : dict
@@ -52,7 +52,7 @@ def get_silhouette_scores(features: np.ndarray) -> Tuple[dict]:
 def get_clusters(lstm_features: Dict, raw_features: pd.DataFrame, ks: List,
                  basins: List[str]) -> Dict:
     """[summary]
-    
+
     Parameters
     ----------
     lstm_features : Dict
@@ -63,7 +63,7 @@ def get_clusters(lstm_features: Dict, raw_features: pd.DataFrame, ks: List,
         List of cluster numbers to run KMeans for
     basins : List[str]
         List of 8-digit USGS basin ids.
-    
+
     Returns
     -------
     Dict
@@ -88,35 +88,45 @@ def get_clusters(lstm_features: Dict, raw_features: pd.DataFrame, ks: List,
     return clusters
 
 
-def get_label_2_color(lstm_clusters: Dict, raw_clusters: Dict) -> defaultdict:
+def get_label_2_color(cluster_df: pd.DataFrame) -> DefaultDict[str, Dict[int, str]]:
     """Helper function to match colors between cluster results.
 
-    This function tries to match the colors of different cluster results, by comparing the number of 
+    This function tries to match the colors of different cluster results, by comparing the number of
     shared basins between to clusters. This is not a bullet-proof algorithm but works for our plots.
 
     Basically what is does is to take the results of one clusterer and then compare a second one by
-    finding the cluster label of the second clusterer that has the most basins in common. Then 
+    finding the cluster label of the second clusterer that has the most basins in common. Then
     assigning both labels the same color.
-    
-    Parameters
-    ----------
-    lstm_feats : Dict
-        Cluster labels for the LSTM embeddings
-    raw_feats : Dict
-        Cluster labels for the raw catchment attributes
-    
-    Returns
-    -------
-    defaultdict
+
+    Args:
+        cluster_df (pd.DataFrame):
+            DataFrame with columns: ["lstm", "raw", "station_id"]
+
+    Returns:
+        DefaultDict[str, Dict[int, str]]:
         Dictionary that contains a mapping from label number to color for both cluster results.
     """
-    color_list = ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#e6ab02', '#66a61e']
+    assert all(np.isin(("lstm", "raw", "station_id"), cluster_df.columns))
+    color_list = ['#1b9e77', '#d95f02', '#7570b3',
+                  '#e7298a', '#e6ab02', '#66a61e']
+
+    # Get which basins are in each group
+    basin_in_cluster = defaultdict(dict)
+
+    lstm_groups = cluster_gdf.groupby(
+        "lstm")['station_id'].apply(list).to_frame()
+    raw_groups = cluster_gdf.groupby(
+        "raw")['station_id'].apply(list).to_frame()
+
+    # which cluster does the basin belong to (LSTM cluster)
+    for group, basins in raw_groups.iterrows():
+        basin_in_cluster["lstm"][group] = basins.values[0]
+    # which cluster does the basin belong to (raw cluster)
+    for group, basins in raw_groups.iterrows():
+        basin_in_cluster["raw"][group] = basins.values[0]
+
+    # assign the same color to the clusters with max overlap
     label_2_color = defaultdict(dict)
-    basin_in_cluster = {'lstm': defaultdict(list), 'raw': defaultdict(list)}
-    for basin, label in lstm_clusters.items():
-        basin_in_cluster["lstm"][label].append(basin)
-    for basin, label in raw_clusters.items():
-        basin_in_cluster["raw"][label].append(basin)
 
     for label, basins in basin_in_cluster["lstm"].items():
         label_2_color["lstm"][label] = color_list[label]
@@ -134,10 +144,56 @@ def get_label_2_color(lstm_clusters: Dict, raw_clusters: Dict) -> defaultdict:
     return label_2_color
 
 
+# def get_label_2_color(lstm_clusters: Dict, raw_clusters: Dict) -> defaultdict:
+#     """Helper function to match colors between cluster results.
+
+#     This function tries to match the colors of different cluster results, by comparing the number of
+#     shared basins between to clusters. This is not a bullet-proof algorithm but works for our plots.
+
+#     Basically what is does is to take the results of one clusterer and then compare a second one by
+#     finding the cluster label of the second clusterer that has the most basins in common. Then
+#     assigning both labels the same color.
+
+#     Parameters
+#     ----------
+#     lstm_feats : Dict
+#         Cluster labels for the LSTM embeddings
+#     raw_feats : Dict
+#         Cluster labels for the raw catchment attributes
+
+#     Returns
+#     -------
+#     defaultdict
+#         Dictionary that contains a mapping from label number to color for both cluster results.
+#     """
+#     color_list = ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#e6ab02', '#66a61e']
+#     label_2_color = defaultdict(dict)
+#     basin_in_cluster = {'lstm': defaultdict(list), 'raw': defaultdict(list)}
+#     for basin, label in lstm_clusters.items():
+#         basin_in_cluster["lstm"][label].append(basin)
+#     for basin, label in raw_clusters.items():
+#         basin_in_cluster["raw"][label].append(basin)
+
+#     for label, basins in basin_in_cluster["lstm"].items():
+#         label_2_color["lstm"][label] = color_list[label]
+
+#         max_count = -1
+#         color_label = None
+#         for label2, basins2 in basin_in_cluster["raw"].items():
+#             intersect = set(basins).intersection(basins2)
+#             if len(intersect) > max_count:
+#                 max_count = len(intersect)
+#                 color_label = label2
+
+#         label_2_color["raw"][color_label] = color_list[label]
+
+#     return label_2_color
+
+
 def get_variance_reduction(lstm_clusters: Dict, raw_clusters: Dict,
                            df: pd.DataFrame) -> defaultdict:
     """Calculate per feature fraction variance reduction.
-    
+
     Parameters
     ----------
     lstm_clusters : Dict
@@ -145,13 +201,13 @@ def get_variance_reduction(lstm_clusters: Dict, raw_clusters: Dict,
     raw_clusters : Dict
         Cluster labels for the raw catchment attributes
     df : pd.DataFrame
-        Dataframe containing the attributes of interest. For each column in this DataFrame the 
+        Dataframe containing the attributes of interest. For each column in this DataFrame the
         fractional variance reduction is calculated.
-    
+
     Returns
     -------
     defaultdict
-        Dictionary containing the per-cluster fractional variance reduction for the LSTM clusters 
+        Dictionary containing the per-cluster fractional variance reduction for the LSTM clusters
         and the clusters from the raw catchment attributes.
     """
     results = defaultdict(dict)
