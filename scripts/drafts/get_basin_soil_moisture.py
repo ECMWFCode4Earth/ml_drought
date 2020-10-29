@@ -134,7 +134,7 @@ if __name__ == "__main__":
         # "volumetric_soil_water_layer_4",
     ]
     # years = np.arange(2004, 2016)
-    years = np.arange(1998, 2021)
+    years = np.arange(1993, 2021)
 
     # Due to memory constraints process hourly data into daily
     # after every Variable/Year then merge all of the variable files
@@ -143,7 +143,7 @@ if __name__ == "__main__":
             export_preprocess_one_year(year=year, variable=variable, cleanup=True)
 
         # merge all of these daily files into one NETCDF file
-        merge_files(variable, subset_str=subset_str)
+        # merge_files(variable, subset_str=subset_str)
 
         # Do we need to unlink the interim files ???
 
