@@ -213,19 +213,11 @@ def _nse_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> float:
 
     # check for nans
     missing_data = np.append(
-            (np.argwhere(np.isnan(true_vals))).flatten(),
-            (np.argwhere(np.isnan(pred_vals))).flatten(),
-        )
-    true_vals = np.delete(
-        true_vals,
-        missing_data,
-        axis=0,
+        (np.argwhere(np.isnan(true_vals))).flatten(),
+        (np.argwhere(np.isnan(pred_vals))).flatten(),
     )
-    pred_vals = np.delete(
-        pred_vals,
-        missing_data,
-        axis=0,
-    )
+    true_vals = np.delete(true_vals, missing_data, axis=0,)
+    pred_vals = np.delete(pred_vals, missing_data, axis=0,)
     if true_vals.shape != pred_vals.shape:
         raise RuntimeError("true_vals and pred_vals must be of the same length.")
 
@@ -299,7 +291,7 @@ def _bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
 def spatial_bias(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
     # values = (100 * ((pred_da.mean(dim='time') / true_da.mean(dim='time')) - 1)).values
-    bias = 100 * ((pred_da.mean(dim='time') / true_da.mean(dim='time')) - 1)
+    bias = 100 * ((pred_da.mean(dim="time") / true_da.mean(dim="time")) - 1)
     # bias = xr.Dataset(
     #     {"bias": (["station_id"], values)},
     #     coords={"station_id": pred_da["station_id"].values}
@@ -308,13 +300,15 @@ def spatial_bias(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
 
 
 def temporal_bias(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
-    assert False, "TODO: get the nanmean working with n dimensions (axis = all except 0)"
+    assert (
+        False
+    ), "TODO: get the nanmean working with n dimensions (axis = all except 0)"
     true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
     spatial_coords = [c for c in true_da.coords if c != "time"]
     values = np.nanmean(100 * ((pred_da / true_da) - 1), axis=0)
     bias = xr.Dataset(
         {"bias": (["station_id"], values)},
-        coords={"station_id": pred_da["station_id"].values}
+        coords={"station_id": pred_da["station_id"].values},
     )["bias"]
     return (100 * ((pred_da / true_da) - 1)).mean(dim=spatial_coords)
 

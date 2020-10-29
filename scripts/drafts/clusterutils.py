@@ -38,19 +38,20 @@ def get_silhouette_scores(features: np.ndarray) -> Tuple[dict]:
     mean_scores, min_scores = {}, {}
     min_scores = {}
     for n_clusters in range(3, 15, 1):
-        clusterer = KMeans(n_clusters=n_clusters, random_state=0, init='k-means++')
+        clusterer = KMeans(n_clusters=n_clusters, random_state=0, init="k-means++")
         cluster_labels = clusterer.fit_predict(features)
-        silhouette_scores = silhouette_samples(X=features,
-                                               labels=cluster_labels,
-                                               metric="euclidean")
+        silhouette_scores = silhouette_samples(
+            X=features, labels=cluster_labels, metric="euclidean"
+        )
         mean_scores[n_clusters] = np.mean(silhouette_scores)
         min_scores[n_clusters] = np.min(silhouette_scores)
 
     return mean_scores, min_scores
 
 
-def get_clusters(lstm_features: Dict, raw_features: pd.DataFrame, ks: List,
-                 basins: List[str]) -> Dict:
+def get_clusters(
+    lstm_features: Dict, raw_features: pd.DataFrame, ks: List, basins: List[str]
+) -> Dict:
     """[summary]
 
     Parameters
@@ -72,15 +73,16 @@ def get_clusters(lstm_features: Dict, raw_features: pd.DataFrame, ks: List,
     """
     clusters = {k: defaultdict(dict) for k in ks}
     for k in ks:
-        for name in ['lstm', 'raw']:
+        for name in ["lstm", "raw"]:
             if name == "lstm":
                 features = np.array(list(lstm_features.values()))[:, 0, :]
             else:
                 features = raw_features.values
-            clusterer = KMeans(n_clusters=k, random_state=0, init='k-means++',
-                               n_init=200).fit(features)
+            clusterer = KMeans(
+                n_clusters=k, random_state=0, init="k-means++", n_init=200
+            ).fit(features)
             for basin in basins:
-                if name == 'lstm':
+                if name == "lstm":
                     emb = lstm_features[basin]
                 else:
                     emb = raw_features.loc[raw_features.index == basin].values
@@ -107,25 +109,22 @@ def get_label_2_color(cluster_df: pd.DataFrame) -> DefaultDict[str, Dict[int, st
         Dictionary that contains a mapping from label number to color for both cluster results.
     """
     assert all(np.isin(("lstm", "raw", "station_id"), cluster_df.columns))
-    color_list = ['#1b9e77', '#d95f02', '#7570b3',
-                  '#e7298a', '#e6ab02', '#66a61e']
+    color_list = ["#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#e6ab02", "#66a61e"]
 
-    # Get which basins are in each group
+    #  Get which basins are in each group
     basin_in_cluster = defaultdict(dict)
 
-    lstm_groups = cluster_gdf.groupby(
-        "lstm")['station_id'].apply(list).to_frame()
-    raw_groups = cluster_gdf.groupby(
-        "raw")['station_id'].apply(list).to_frame()
+    lstm_groups = cluster_df.groupby("lstm")["station_id"].apply(list).to_frame()
+    raw_groups = cluster_df.groupby("raw")["station_id"].apply(list).to_frame()
 
-    # which cluster does the basin belong to (LSTM cluster)
-    for group, basins in raw_groups.iterrows():
+    #  which cluster does the basin belong to (LSTM cluster)
+    for group, basins in lstm_groups.iterrows():
         basin_in_cluster["lstm"][group] = basins.values[0]
-    # which cluster does the basin belong to (raw cluster)
+    #  which cluster does the basin belong to (raw cluster)
     for group, basins in raw_groups.iterrows():
         basin_in_cluster["raw"][group] = basins.values[0]
 
-    # assign the same color to the clusters with max overlap
+    #  assign the same color to the clusters with max overlap
     label_2_color = defaultdict(dict)
 
     for label, basins in basin_in_cluster["lstm"].items():
@@ -190,8 +189,9 @@ def get_label_2_color(cluster_df: pd.DataFrame) -> DefaultDict[str, Dict[int, st
 #     return label_2_color
 
 
-def get_variance_reduction(lstm_clusters: Dict, raw_clusters: Dict,
-                           df: pd.DataFrame) -> defaultdict:
+def get_variance_reduction(
+    lstm_clusters: Dict, raw_clusters: Dict, df: pd.DataFrame
+) -> defaultdict:
     """Calculate per feature fraction variance reduction.
 
     Parameters
@@ -211,6 +211,8 @@ def get_variance_reduction(lstm_clusters: Dict, raw_clusters: Dict,
         and the clusters from the raw catchment attributes.
     """
     results = defaultdict(dict)
+
+    # explained variance by LSTM clusters
     for n_class in list(set(lstm_clusters.values())):
 
         class_basins = []
@@ -221,6 +223,7 @@ def get_variance_reduction(lstm_clusters: Dict, raw_clusters: Dict,
         df_q_sub = df.drop(drop_basins, axis=0)
         results["lstm"][n_class] = df_q_sub.var() / df.var()
 
+    # explained variance by RAW clusters
     for n_class in list(set(raw_clusters.values())):
         class_basins = []
         for basin, label in raw_clusters.items():

@@ -316,7 +316,7 @@ class CamelsH5(Dataset):
             return x, y, target_std
 
     def _preload_data(
-        self
+        self,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         with h5py.File(self.h5_file, "r") as f:
             x = f["input_data"][:]

@@ -746,9 +746,12 @@ class _DynamicIter:
 
         # 3. clear the nans
         if clear_nans:
-            notnan_indices, train_data, y_np, id_to_loc_map = self.clear_train_data_nans(
-                x, train_data, y_np
-            )
+            (
+                notnan_indices,
+                train_data,
+                y_np,
+                id_to_loc_map,
+            ) = self.clear_train_data_nans(x, train_data, y_np)
         else:
             id_to_loc_map = self.build_loc_to_idx_mapping(x, notnan_indices=None)
 
