@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import xarray as xr
 from tqdm import tqdm
+from pathlib import Path
 
 from scripts.drafts.gauge_name_lookup import gauge_name_lookup
 from src.analysis.evaluation import spatial_rmse, spatial_r2, spatial_nse, spatial_bias, spatial_kge
@@ -137,4 +138,73 @@ class FuseErrors:
         if not "Name" in df.columns:
             df["Name"] = pd.DataFrame(gauge_name_lookup, index=["gauge_name"]).T
 
+        return df
+
+
+class FUSEPublishedScores:
+    def __init__(self, fuse_dir: Path):
+        assert fuse_dir.exists(), f"Expected {fuse_dir} to exist"
+
+    @staticmethod
+    def fix_name(string: str):
+        string = string.replace("_060", "_TOPMODEL")
+        string = string.replace("_230", "_VIC")
+        string = string.replace("_342", "_PRMS")
+        string = string.replace("_426", "_SACRAMENTO")
+        return string
+
+    def read_nse_scores(self) -> pd.DataFrame:
+        df = pd.read_csv(
+            fuse_dir / "Summary_Scores/NSE_decomposed_scores.txt", skiprows=4)
+
+        # fix the column names
+        df.columns = [
+            fix_name(c) for c in df.columns]
+
+        # rename Gauge_ID
+        df = df.rename(
+            {"Gauge_ID": "station_id"}, axis=1)
+
+        return df
+
+
+    def read_best_scores(self) -> pd.DataFrame:
+        """[summary]
+
+        Args:
+            fuse_dir (Path): [description]
+
+        Note:
+        - the Published performance scores are calculated for the period 1993-2008
+        - the `Best_Scores.txt` contains the best overall scores from all simuations,
+            and so the best score for bias will not relate to the same simulation
+            as the best score for NSE.
+        """
+
+        df = pd.read_csv(
+            self.fuse_dir / "Summary_Scores/Best_Scores.txt",
+            skiprows=4
+        )
+
+        # fix the column names
+        df.columns = [
+            fix_name(c) for c in df.columns]
+
+        # rename Gauge_ID
+        df = df.rename(
+            {"Gauge_ID": "station_id"}, axis=1)
+
+        return df
+
+    @staticmethod
+    def get_metric_from_df(df: pd.DataFrame, metric: str) -> pd.DataFrame:
+        acceptable_metrics = np.unique(
+            ["_".join(c.split("_")[:-1]) for c in df.columns])
+        assert metric in acceptable_metrics, f"Require one of these metrics: {acceptable_metrics}"
+        df = df.loc[:, [("id" in c) or (
+            metric in c) for c in df.columns]].set_index("station_id")
+        df = df.join(pd.DataFrame(gauge_name_lookup, index=["Name"]).T)
+
+        df.columns = [["NSE" for _ in range(len(df.columns))], [
+            c.replace("NSE_", "") for c in df.columns]]
         return df
