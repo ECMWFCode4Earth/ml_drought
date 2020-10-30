@@ -278,7 +278,7 @@ def _rmse_func(
 
 
 def _mse_func(true_vals: np.ndarray, pred_vals: np.ndarray):
-    return float(((sim - obs)**2).mean())
+    return float(((pred_vals - true_vals)**2).mean())
 
 
 def _r2_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
