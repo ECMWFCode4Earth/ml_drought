@@ -124,6 +124,49 @@ def spatial_nse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     return da
 
 
+def spatial_kge(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    """Calculate the KGE collapsing the time dimension returning
+    a DataArray of the rmse values (spatially)
+    """
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    true_coords = _get_coords(true_da)
+    true_coords.sort()
+    pred_coords = _get_coords(pred_da)
+    pred_coords.sort()
+
+    assert tuple(true_da.dims) == tuple(pred_da.dims), (
+        f"Expect"
+        "the dimensions to be the same. Currently: "
+        f"True: {tuple(true_da.dims)} Preds: {tuple(pred_da.dims)}. "
+        'Have you tried da.transpose("time", "lat", "lon")'
+    )
+
+    # sort the lat/lons correctly just to be sure
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        pred_da = _sort_lat_lons(pred_da)
+        true_da = _sort_lat_lons(true_da)
+    else:
+        pred_da = pred_da.sortby(["time"] + pred_coords)
+        true_da = true_da.sortby(["time"] + true_coords)
+
+    stacked_pred = pred_da.stack(space=pred_coords)
+    stacked_true = true_da.stack(space=true_coords)
+    vals = []
+    for space in stacked_pred.space.values:
+        true_vals = stacked_true.sel(space=space).values
+        pred_vals = stacked_pred.sel(space=space).values
+        vals.append(_kge_func(true_vals, pred_vals))
+
+    da = xr.ones_like(stacked_pred).isel(time=0).drop("time")
+    da = da * np.array(vals)
+    da = da.unstack()
+
+    # reapply the mask
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        da = da.where(~get_ds_mask(pred_da))
+    return da
+
+
 def temporal_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     """return a R2 object collapsing spatial dimensions -> Time Series"""
     true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
