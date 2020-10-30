@@ -6,6 +6,7 @@ import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
+from scipy.stats import pearsonr
 
 from sklearn.metrics import r2_score, mean_squared_error
 from typing import Dict, List, Optional, Union, Tuple
@@ -269,7 +270,6 @@ def _nse_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> float:
 
 #     return nse_val
 
-
 def _rmse_func(
     true_vals: np.ndarray, pred_vals: np.ndarray, n_instances: int
 ) -> np.ndarray:
@@ -281,6 +281,39 @@ def _r2_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
     return 1 - (np.nansum((true_vals - pred_vals) ** 2, axis=0)) / (
         np.nansum((true_vals - np.nanmean(pred_vals)) ** 2, axis=0)
     )
+
+
+def _kge_func(true_vals: np.ndarray, pred_vals: np.ndarray, weights: List[float] = [1., 1., 1.]) -> np.ndarray:
+    """
+    Parameters
+    ----------
+    obs : np.ndarray
+        Observed time series.
+    sim : np.ndarray
+        Simulated time series.
+    weights : List[float]
+        Weighting factors of the 3 KGE parts, by default each part has a weight of 1.
+
+    .. math::
+        \text{KGE} = 1 - \sqrt{[ s_r (r - 1)]^2 + [s_\alpha ( \alpha - 1)]^2 +
+            [s_\beta(\beta_{\text{KGE}} - 1)]^2},
+
+    where :math:`r` is the correlation coefficient, :math:`\alpha` the :math:`\alpha`-NSE decomposition,
+    :math:`\beta_{\text{KGE}}` the fraction of the means and :math:`s_r, s_\alpha, s_\beta` the corresponding weights
+    (here the three float values in the `weights` parameter).
+
+    """
+    if len(weights) != 3:
+        raise ValueError("Weights of the KGE must be a list of three values")
+
+    r, _ = pearsonr(true_vals, pred_vals)
+
+    alpha = sim.std() / obs.std()
+    beta = sim.mean() / obs.mean()
+
+    value = (weights[0] * (r - 1)**2 + weights[1] * (alpha - 1)**2 + weights[2] * (beta - 1)**2)
+
+    return 1 - np.sqrt(float(value))
 
 
 def _bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
