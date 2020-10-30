@@ -72,7 +72,7 @@ class FuseErrors:
         except KeyError:
             pass
 
-        fuse_errors = fuse_errors.rename({"NSE": "nse", "BIAS": "bias", "MSE": "mse"}, axis=1, level=0)
+        self.fuse_errors = fuse_errors.rename({"NSE": "nse", "BIAS": "bias", "MSE": "mse"}, axis=1, level=0)
 
 
     def _separate_into_das(self) -> None:
