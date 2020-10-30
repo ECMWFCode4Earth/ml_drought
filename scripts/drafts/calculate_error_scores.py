@@ -111,7 +111,3 @@ class FuseErrors:
 
         return metric_df
 
-
-
-
-def calculate_fuse_errors(fuse_data: xr.Dataset) -> pd.Dataframe:
