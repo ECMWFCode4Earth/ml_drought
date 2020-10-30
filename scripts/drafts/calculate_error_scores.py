@@ -70,7 +70,15 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
         error_func(preds, "log_nse").set_index("station_id"),
         error_func(preds, "log_kge").set_index("station_id"),
     ]
-    error_df = errors[0].join(errors[1].join(errors[2]).join(errors[3])).reset_index()
+    error_df = (
+        errors[0]
+        .join(errors[1])
+        .join(errors[2])
+        .join(errors[3])
+        .join(errors[4])
+        .join(errors[5])
+        .reset_index()
+    )
 
     return error_df
 
@@ -141,6 +149,8 @@ class FuseErrors:
             "rmse": spatial_rmse,
             "bias": spatial_bias,
             "kge": spatial_kge,
+            "log_nse": spatial_nse,
+            "log_kge": spatial_kge,
         }
         function = metric_lookup[metric]
 
@@ -148,7 +158,10 @@ class FuseErrors:
         for model, model_name in tqdm(
             zip(self.model_preds, self.model_names), desc=metric
         ):
-            out_list.append(function(self.obs, model).rename(model_name))
+            if "log" in metric:
+                out_list.append(function(self.obs, model, log=True).rename(model_name))
+            else:
+                out_list.append(function(self.obs, model).rename(model_name))
 
         # merge all of the station error metrics into one xr.Dataset
         metric_xr = xr.merge([out_list[0], out_list[1], out_list[2], out_list[3],])
