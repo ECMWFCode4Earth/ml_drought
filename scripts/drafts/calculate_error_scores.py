@@ -140,6 +140,16 @@ class FuseErrors:
 
         return df
 
+    def get_model_df(self, model: str) -> pd.DataFrame:
+        acceptable_models = [n for n in np.unique(fuse_errors.droplevel(axis=1, level=0).columns) if n != "Name"]
+        assert model in acceptable_models, f"Require one of: {acceptable_models}"
+        df = (self.fuse_errors.loc[:, self.fuse_errors.columns.get_level_values(1) == model].droplevel(level=1, axis=1))
+
+        if not "Name" in df.columns:
+            df["Name"] = pd.DataFrame(gauge_name_lookup, index=["gauge_name"]).T
+
+        return df
+
 
 class FUSEPublishedScores:
     def __init__(self, fuse_dir: Path):
@@ -209,3 +219,6 @@ class FUSEPublishedScores:
         df.columns = [["NSE" for _ in range(len(df.columns))], [
             c.replace("NSE_", "") for c in df.columns]]
         return df
+
+    # @staticmethod
+    # def get_model_from_df(df: pd.DataFrame, metric: str)
