@@ -48,11 +48,14 @@ def get_pvals(metrics: dict, model1: str, model2: str) -> Tuple[List, float]:
     metric_model1 = get_mean_basin_performance(metrics, model1)
     metric_model2 = get_mean_basin_performance(metrics, model2)
     _, p_val_single = wilcoxon(
-        list(metric_model1.values()), list(metric_model2.values()))
+        list(metric_model1.values()), list(metric_model2.values())
+    )
 
     # p-value between ensemble means
-    _, p_val_ensemble = wilcoxon(list(metrics[model1]["ensemble"].values()),
-                                 list(metrics[model2]["ensemble"].values()))
+    _, p_val_ensemble = wilcoxon(
+        list(metrics[model1]["ensemble"].values()),
+        list(metrics[model2]["ensemble"].values()),
+    )
     return p_val_single, p_val_ensemble
 
 
@@ -71,7 +74,9 @@ def get_cohens_d(values1: List, values2: List) -> float:
     float
         Cohen's d
     """
-    s = np.sqrt(((len(values1) - 1) * np.var(values1) + (len(values2) - 1) * np.var(values2)) /
-                (len(values1) + len(values2) - 2))
+    s = np.sqrt(
+        ((len(values1) - 1) * np.var(values1) + (len(values2) - 1) * np.var(values2))
+        / (len(values1) + len(values2) - 2)
+    )
     d = (np.abs(np.mean(values1) - np.mean(values2))) / s
     return d

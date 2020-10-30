@@ -155,7 +155,7 @@ def spatial_kge(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     for space in stacked_pred.space.values:
         true_vals = stacked_true.sel(space=space).values
         pred_vals = stacked_pred.sel(space=space).values
-        # deal with nans inside _kge_func
+        #  deal with nans inside _kge_func
         vals.append(_kge_func(true_vals, pred_vals))
 
     da = xr.ones_like(stacked_pred).isel(time=0).drop("time")
@@ -314,6 +314,7 @@ def _nse_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> float:
 
 #     return nse_val
 
+
 def _rmse_func(
     true_vals: np.ndarray, pred_vals: np.ndarray, n_instances: int
 ) -> np.ndarray:
@@ -322,7 +323,7 @@ def _rmse_func(
 
 
 def _mse_func(true_vals: np.ndarray, pred_vals: np.ndarray):
-    return float(((pred_vals - true_vals)**2).mean())
+    return float(((pred_vals - true_vals) ** 2).mean())
 
 
 def _r2_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
@@ -331,7 +332,9 @@ def _r2_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
     )
 
 
-def _kge_func(true_vals: np.ndarray, pred_vals: np.ndarray, weights: List[float] = [1., 1., 1.]) -> np.ndarray:
+def _kge_func(
+    true_vals: np.ndarray, pred_vals: np.ndarray, weights: List[float] = [1.0, 1.0, 1.0]
+) -> np.ndarray:
     """
     Parameters
     ----------
@@ -369,7 +372,11 @@ def _kge_func(true_vals: np.ndarray, pred_vals: np.ndarray, weights: List[float]
     alpha = pred_vals.std() / true_vals.std()
     beta = pred_vals.mean() / true_vals.mean()
 
-    value = (weights[0] * (r - 1)**2 + weights[1] * (alpha - 1)**2 + weights[2] * (beta - 1)**2)
+    value = (
+        weights[0] * (r - 1) ** 2
+        + weights[1] * (alpha - 1) ** 2
+        + weights[2] * (beta - 1) ** 2
+    )
 
     return 1 - np.sqrt(float(value))
 

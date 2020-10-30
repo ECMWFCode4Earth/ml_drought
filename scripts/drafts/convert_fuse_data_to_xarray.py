@@ -37,5 +37,3 @@ if __name__ == "__main__":
 
     raw_fuse_path = data_dir / "RUNOFF/FUSE"
     ds = fuse_to_nc(raw_fuse_path)
-
-
