@@ -155,11 +155,11 @@ class FUSEPublishedScores:
 
     def read_nse_scores(self) -> pd.DataFrame:
         df = pd.read_csv(
-            fuse_dir / "Summary_Scores/NSE_decomposed_scores.txt", skiprows=4)
+            self.fuse_dir / "Summary_Scores/NSE_decomposed_scores.txt", skiprows=4)
 
         # fix the column names
         df.columns = [
-            fix_name(c) for c in df.columns]
+            self.fix_name(c) for c in df.columns]
 
         # rename Gauge_ID
         df = df.rename(
@@ -188,7 +188,7 @@ class FUSEPublishedScores:
 
         # fix the column names
         df.columns = [
-            fix_name(c) for c in df.columns]
+            self.fix_name(c) for c in df.columns]
 
         # rename Gauge_ID
         df = df.rename(
