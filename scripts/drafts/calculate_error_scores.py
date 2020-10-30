@@ -317,7 +317,7 @@ class DeltaError:
             delta.name = model
             all_deltas.append(delta)
 
-        delta_df = pd.concat(all_deltas, axis=1).head()
+        delta_df = pd.concat(all_deltas, axis=1)
 
         return delta_df
 
