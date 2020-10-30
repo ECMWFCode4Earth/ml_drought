@@ -127,7 +127,7 @@ class FuseErrors:
 
         return metric_df
 
-    def get_metric_df(metric: str) -> pd.DataFrame:
+    def get_metric_df(self, metric: str) -> pd.DataFrame:
         # select only that metric
         df = (
             self.fuse_errors
