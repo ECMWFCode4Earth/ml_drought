@@ -277,6 +277,10 @@ def _rmse_func(
     return np.sqrt(np.nansum((true_vals - pred_vals) ** 2, axis=0) / n_instances)
 
 
+def _mse_func(true_vals: np.ndarray, pred_vals: np.ndarray):
+    return float(((sim - obs)**2).mean())
+
+
 def _r2_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
     return 1 - (np.nansum((true_vals - pred_vals) ** 2, axis=0)) / (
         np.nansum((true_vals - np.nanmean(pred_vals)) ** 2, axis=0)
