@@ -305,7 +305,7 @@ class DeltaError:
         # merge into single dataframe
         errors_dict = {}
         for metric in metrics:
-            errors_dict["metric"] = pd.concat(output_dict[metric], axis=1)
+            errors_dict[metric] = pd.concat(output_dict[metric], axis=1)
 
         return errors_dict
 
