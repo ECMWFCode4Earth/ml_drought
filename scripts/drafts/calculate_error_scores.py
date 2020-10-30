@@ -32,6 +32,8 @@ def error_func(preds_xr: xr.Dataset, error_str: str) -> pd.DataFrame:
         "mse": _mse_func,
         "kge": _kge_func,
         "bias": _bias_func,
+        "log_nse": _nse_func,
+        "log_kge": _kge_func,
     }
     error_func = lookup[error_str]
 
@@ -48,7 +50,10 @@ def error_func(preds_xr: xr.Dataset, error_str: str) -> pd.DataFrame:
                 d["obs"].values, d["sim"].values, n_instances=d.size
             )
         else:
-            _error_calc = error_func(d["obs"].values, d["sim"].values)
+            if "log" in error_str:
+                error_func(np.log(d["obs"].values) + 1e-6, np.log(d["sim"].values) + 1e-6)
+            else:
+                _error_calc = error_func(d["obs"].values, d["sim"].values)
         errors.append(_error_calc)
 
     error = pd.DataFrame({"station_id": station_ids, error_str: errors})
@@ -62,6 +67,8 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
         error_func(preds, "kge").set_index("station_id"),
         error_func(preds, "mse").set_index("station_id"),
         error_func(preds, "bias").set_index("station_id"),
+        error_func(preds, "log_nse").set_index("station_id"),
+        error_func(preds, "log_kge").set_index("station_id"),
     ]
     error_df = errors[0].join(errors[1].join(errors[2]).join(errors[3])).reset_index()
 
