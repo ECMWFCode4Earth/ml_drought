@@ -50,7 +50,7 @@ def calculate_ml_errors(preds: xr.Dataset) -> pd.DataFrame:
     return error_df
 
 class FuseErrors:
-    def __init__(fuse_data: xr.Dataset):
+    def __init__(self, fuse_data: xr.Dataset):
         assert all(np.isin(
             ["obs", "SimQ_TOPMODEL", "SimQ_PRMS", "SimQ_ARNOVIC",
                 "SimQ_SACRAMENTO"], [v for v in fuse_data.data_vars]
