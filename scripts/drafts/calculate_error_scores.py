@@ -62,10 +62,10 @@ class FuseErrors:
         self.fuse_data = fuse_data
         self._separate_into_das()
 
-        nse_df = self._calculate_metric("nse")
-        kge_df = self._calculate_metric("kge")
-        bias_df = self._calculate_metric("bias")
-        rmse_df = self._calculate_metric("rmse")
+        nse_df = self._calculate_metric("nse").drop("Name", axis=1, level=1)
+        kge_df = self._calculate_metric("kge").drop("Name", axis=1, level=1)
+        bias_df = self._calculate_metric("bias").drop("Name", axis=1, level=1)
+        rmse_df = self._calculate_metric("rmse").drop("Name", axis=1, level=1)
 
         # convert into one clean dataframe
         fuse_errors = pd.concat([nse_df, rmse_df, kge_df, bias_df], axis=1)
@@ -83,8 +83,7 @@ class FuseErrors:
         fuse_errors = fuse_errors.rename(
             {"NSE": "nse", "BIAS": "bias", "MSE": "mse"}, axis=1, level=0)
         # Remove the multiple "Name" columns ...
-        station_names = fuse_errors.iloc[:, fuse_errors.columns.get_level_values(
-            0) == 'Name'].iloc[:, 0].rename("Name")
+        station_names = pd.DataFrame(gauge_name_lookup, index=["gauge_name"]).T
         fuse_errors["Name"] = station_names
         return fuse_errors
 
