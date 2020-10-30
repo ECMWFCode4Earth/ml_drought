@@ -327,7 +327,7 @@ class DeltaError:
         ealstm_delta: Dict[str, pd.DataFrame] = defaultdict()
 
         for metric in [k for k in errors_dict.keys()]:
-            lstm_delta[metric] = calculate_error_diff(error_df=errors_dict[metric], ref_model="LSTM")
-            ealstm_delta[metric] = calculate_error_diff(error_df=errors_dict[metric], ref_model="EALSTM")
+            lstm_delta[metric] = self.calculate_error_diff(error_df=errors_dict[metric], ref_model="LSTM")
+            ealstm_delta[metric] = self.calculate_error_diff(error_df=errors_dict[metric], ref_model="EALSTM")
 
         return lstm_delta, ealstm_delta
