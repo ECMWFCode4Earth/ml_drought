@@ -113,6 +113,7 @@ class FuseErrors:
         for model, model_name in tqdm(zip(self.model_preds, self.model_names), desc=metric):
             out_list.append(function(self.obs, model).rename(model_name))
 
+        # merge all of the station error metrics into one xr.Dataset
         metric_xr = xr.merge([
             out_list[0],
             out_list[1],
@@ -126,3 +127,14 @@ class FuseErrors:
 
         return metric_df
 
+    def get_metric_df(metric: str) -> pd.DataFrame:
+        # select only that metric
+        df = (
+            self.fuse_errors
+            .loc[:, self.fuse_errors.columns.get_level_values(0) == metric.lower()]
+            .droplevel(level=0, axis=1)
+        )
+        if not "Name" in df.columns:
+            df["Name"] = pd.DataFrame(gauge_name_lookup, index=["gauge_name"]).T
+
+        return df
