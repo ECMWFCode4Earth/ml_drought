@@ -144,6 +144,7 @@ class FuseErrors:
 class FUSEPublishedScores:
     def __init__(self, fuse_dir: Path):
         assert fuse_dir.exists(), f"Expected {fuse_dir} to exist"
+        self.fuse_dir = fuse_dir
 
     @staticmethod
     def fix_name(string: str):
