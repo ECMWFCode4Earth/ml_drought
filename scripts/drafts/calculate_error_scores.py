@@ -67,7 +67,7 @@ class FuseErrors:
         rmse_df = self._calculate_metric("rmse")
 
         # convert into one clean dataframe
-        fuse_errors = pd.concat([nse_df, rmse_df, r2_df, bias_df], axis=1)
+        fuse_errors = pd.concat([nse_df, rmse_df, kge_df, bias_df], axis=1)
         try:
             fuse_errors = fuse_errors.drop(
                 'time', axis=1, level=1).swaplevel(axis=1).sort_index(axis=1)
@@ -98,7 +98,7 @@ class FuseErrors:
         function = metric_lookup[metric]
 
         out_list = []
-        for model, model_name in tqdm(zip(self.model_preds, self.model_names)):
+        for model, model_name in tqdm(zip(self.model_preds, self.model_names), desc=metric):
             out_list.append(function(self.obs, model).rename(model_name))
 
         metric_xr = xr.merge([
