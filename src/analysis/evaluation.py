@@ -308,8 +308,8 @@ def _kge_func(true_vals: np.ndarray, pred_vals: np.ndarray, weights: List[float]
 
     r, _ = pearsonr(true_vals, pred_vals)
 
-    alpha = sim.std() / obs.std()
-    beta = sim.mean() / obs.mean()
+    alpha = pred_vals.std() / true_vals.std()
+    beta = pred_vals.mean() / true_vals.mean()
 
     value = (weights[0] * (r - 1)**2 + weights[1] * (alpha - 1)**2 + weights[2] * (beta - 1)**2)
 
