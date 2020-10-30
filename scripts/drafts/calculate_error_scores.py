@@ -293,7 +293,7 @@ class DeltaError:
         for ix, model in tqdm(
             enumerate([v for v in all_preds.data_vars if v != "obs"])
         ):
-            _errors = calculate_ml_errors(
+            _errors = calculate_errors(
                 all_preds[["obs", model]].rename({model: "sim"})
             ).set_index("station_id")
 
