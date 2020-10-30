@@ -24,6 +24,10 @@ from src.analysis.evaluation import (
     _mse_func,
 )
 from collections import defaultdict
+import sys
+
+sys.path.append("/home/tommy/neuralhydrology")
+from neuralhydrology.evaluation.metrics import calculate_all_metrics
 
 
 def error_func(preds_xr: xr.Dataset, error_str: str) -> pd.DataFrame:
@@ -276,10 +280,91 @@ class FUSEPublishedScores:
 
 class DeltaError:
     def __init__(self, ealstm_preds, lstm_preds, fuse_data):
-        self._join_into_one_ds(ealstm_preds, lstm_preds, fuse_data)
+        self.all_preds = self._join_into_one_ds(
+            ealstm_preds, lstm_preds, fuse_data
+        )
 
-    def _join_into_one_ds(self, ealstm_preds, lstm_preds, fuse_data) -> None:
-        self.all_preds = xr.combine_by_coords(
+    @staticmethod
+    def calc_kratzert_error_functions(all_preds: xr.Dataset) -> Dict[str, pd.DataFrame]:
+        # FOR USING THE KRATZERT FUNCTIONS (takes a long time)
+        model_results = defaultdict(dict)
+        for model in [v for v in all_preds.data_vars if v != "obs"]:
+            for sid in tqdm(all_preds.station_id.values, desc=model):
+                sim = all_preds[model].sel(station_id=sid).drop("station_id")
+                obs = all_preds["obs"].sel(station_id=sid).drop("station_id")
+                try:
+                    model_results[model][sid] = calculate_all_metrics(
+                        obs, sim, datetime_coord="time")
+                except ValueError:
+                    model_results[model][sid] = np.nan
+
+        results = {}
+        for model in [k for k in model_results.keys()]:
+            model_df = pd.DataFrame(model_results[model]).T
+            results[model] = model_df
+
+        return results
+
+    def kratzert_errors(self, all_preds: xr.Dataset) -> Dict[str, pd.DataFrame]:
+        assert all(np.isin(["LSTM", "EALSTM"], [v for v in all_preds.data_vars]))
+        results = self.calc_kratzert_error_functions(all_preds)
+
+        lstm_delta_dict = calculate_all_kratzert_deltas(results, ref_model="LSTM")
+        lstm_delta = get_formatted_dataframe(lstm_delta_dict, format="metric")
+
+        ealstm_delta_dict = calculate_all_kratzert_deltas(results, ref_model="EALSTM")
+        ealstm_delta = get_formatted_dataframe(ealstm_delta_dict, format="metric")
+        return lstm_delta, ealstm_delta
+
+    @staticmethod
+    def calculate_all_kratzert_deltas(kratzert_results: Dict[str, pd.DataFrame], ref_model: str = "LSTM") -> DefaultDict[str, Dict[str, pd.Series]]:
+        assert ref_model in [k for k in kratzert_results.keys()]
+        assert model in [k for k in kratzert_results.keys()]
+        ref_data = kratzert_results[ref_model]
+
+        delta_dict = defaultdict(dict)
+        # for each model calculate the difference for those metrics
+        for model in [k for k in kratzert_results.keys() if k != ref_model]:
+            model_data = kratzert_results[model]
+
+            # for each metric calculate either difference of absolute diffrerence (bias)
+            for metric in ref_data.columns:
+                ref = ref_data.loc[:, metric]
+                m_data = model_data.loc[:, metric]
+                if any(np.isin([metric], ["FHV", "FMS", "FLV"])):
+                    result = ref.abs() - m_data.abs()
+                else:
+                    result = ref - m_data
+                delta_dict[model][metric] = result
+
+        return delta_dict
+
+    def get_formatted_dataframe(delta_dict: DefaultDict[str, Dict[str, pd.Series]], format_: str = "metric") -> Dict[str, pd.DataFrame]:
+        deltas = {}
+        if format_ == "":
+            for model in delta_dict.keys():
+                deltas[model] = pd.DataFrame(delta_dict[model])
+        elif format_ == "metric":
+            metric_deltas = self.swap_nested_keys(delta_dict)
+            for metric in metric_deltas.keys():
+                deltas[metric] = pd.DataFrame(metric_deltas[metric])
+        else:
+            raise NotImplementedError
+
+        return deltas
+
+    @staticmethod
+    def swap_nested_keys(original_dict) -> DefaultDict:
+        # https://stackoverflow.com/q/49333339/9940782
+        # move inner keys to outer keys and outer keys to inner
+        new_dict = defaultdict(dict)
+        for key1, value1 in original_dict.items():
+            for key2, value2 in value1.items():
+                new_dict[key2].update({key1: value2})
+        return new_dict
+
+    def _join_into_one_ds(self, ealstm_preds, lstm_preds, fuse_data) -> xr.Dataset:
+        all_preds = xr.combine_by_coords(
             [
                 ealstm_preds.rename({"sim": "EALSTM"}).drop("obs"),
                 lstm_preds.rename({"sim": "LSTM"}),
@@ -298,6 +383,7 @@ class DeltaError:
                 ),
             ]
         )
+        return all_preds
 
     @staticmethod
     def calculate_all_errors(all_preds: xr.DataArray) -> Dict[str, pd.DataFrame]:
