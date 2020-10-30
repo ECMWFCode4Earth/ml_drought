@@ -321,8 +321,7 @@ class DeltaError:
 
         return delta_df
 
-    @staticmethod
-    def calculate_all_delta_dfs(errors_dict: Dict[str, pd.DataFrame]) -> Tuple[Dict[str, pd.DataFrame]]:
+    def calculate_all_delta_dfs(self, errors_dict: Dict[str, pd.DataFrame]) -> Tuple[Dict[str, pd.DataFrame]]:
         lstm_delta: Dict[str, pd.DataFrame] = defaultdict()
         ealstm_delta: Dict[str, pd.DataFrame] = defaultdict()
 
