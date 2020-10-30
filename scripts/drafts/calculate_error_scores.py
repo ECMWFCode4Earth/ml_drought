@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import xarray as xr
 
+from scripts.drafts.gauge_name_lookup import gauge_name_lookup
 from src.analysis.evaluation import spatial_rmse, spatial_r2, spatial_nse, spatial_bias, spatial_kge
 from src.analysis.evaluation import temporal_rmse, temporal_r2, temporal_nse
 from src.analysis.evaluation import _nse_func, _rmse_func, _r2_func, _bias_func, _kge_func, _mse_func
@@ -106,7 +107,8 @@ class FuseErrors:
             out_list[3],
         ])
         metric_df = metric_xr.to_dataframe()
-        metric_df = static['gauge_name'].to_dataframe().join(metric_df).rename(columns=dict(gauge_name="Name"))
+        metric_df = pd.DataFrame(gauge_name_lookup, index=["gauge_name"]).T.join(
+            metric_df).rename(columns=dict(gauge_name="Name"))
         metric_df.columns = [[metric for _ in range(len(metric_df.columns))], metric_df.columns]
 
         return metric_df
