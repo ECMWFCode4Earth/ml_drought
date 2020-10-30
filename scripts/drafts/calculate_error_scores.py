@@ -85,6 +85,8 @@ class FuseErrors:
         # Remove the multiple "Name" columns ...
         station_names = pd.DataFrame(gauge_name_lookup, index=["gauge_name"]).T
         fuse_errors["Name"] = station_names
+        # sort the ordering of the multi-index
+        fuse_errors = fuse_errors.swaplevel(axis=1).sort_index(axis=1)
         return fuse_errors
 
     def _separate_into_das(self) -> None:
