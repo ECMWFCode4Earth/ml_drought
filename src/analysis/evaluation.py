@@ -155,6 +155,7 @@ def spatial_kge(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     for space in stacked_pred.space.values:
         true_vals = stacked_true.sel(space=space).values
         pred_vals = stacked_pred.sel(space=space).values
+        # deal with nans inside _kge_func
         vals.append(_kge_func(true_vals, pred_vals))
 
     da = xr.ones_like(stacked_pred).isel(time=0).drop("time")
@@ -350,6 +351,16 @@ def _kge_func(true_vals: np.ndarray, pred_vals: np.ndarray, weights: List[float]
     (here the three float values in the `weights` parameter).
 
     """
+    # check for nans
+    missing_data = np.append(
+        (np.argwhere(np.isnan(true_vals))).flatten(),
+        (np.argwhere(np.isnan(pred_vals))).flatten(),
+    )
+    true_vals = np.delete(true_vals, missing_data, axis=0,)
+    pred_vals = np.delete(pred_vals, missing_data, axis=0,)
+    if true_vals.shape != pred_vals.shape:
+        raise RuntimeError("true_vals and pred_vals must be of the same length.")
+
     if len(weights) != 3:
         raise ValueError("Weights of the KGE must be a list of three values")
 
