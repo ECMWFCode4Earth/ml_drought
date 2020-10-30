@@ -141,7 +141,7 @@ class FuseErrors:
         return df
 
     def get_model_df(self, model: str) -> pd.DataFrame:
-        acceptable_models = [n for n in np.unique(fuse_errors.droplevel(axis=1, level=0).columns) if n != "Name"]
+        acceptable_models = [n for n in np.unique(self.fuse_errors.droplevel(axis=1, level=0).columns) if n != "Name"]
         assert model in acceptable_models, f"Require one of: {acceptable_models}"
         df = (self.fuse_errors.loc[:, self.fuse_errors.columns.get_level_values(1) == model].droplevel(level=1, axis=1))
 
