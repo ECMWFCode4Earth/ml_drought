@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import xarray as xr
+from tqdm import tqdm
 
 from scripts.drafts.gauge_name_lookup import gauge_name_lookup
 from src.analysis.evaluation import spatial_rmse, spatial_r2, spatial_nse, spatial_bias, spatial_kge
@@ -97,7 +98,7 @@ class FuseErrors:
         function = metric_lookup[metric]
 
         out_list = []
-        for model, model_name in zip(self.model_preds, self.model_names):
+        for model, model_name in tqdm(zip(self.model_preds, self.model_names)):
             out_list.append(function(self.obs, model).rename(model_name))
 
         metric_xr = xr.merge([
