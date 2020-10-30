@@ -86,15 +86,6 @@ class FuseErrors:
         station_names = fuse_errors.iloc[:, fuse_errors.columns.get_level_values(
             0) == 'Name'].iloc[:, 0].rename("Name")
         fuse_errors["Name"] = station_names
-        # move Name to column 0
-        fuse_errors = (
-            fuse_errors
-            .reset_index()
-            .rename({"index": "station_id"}, axis=1)
-            .set_index(["station_id", "Name"])
-            .reset_index()
-            .set_index("station_id")
-        )
         return fuse_errors
 
     def _separate_into_das(self) -> None:
