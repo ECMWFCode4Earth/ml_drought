@@ -51,6 +51,7 @@ def calculate_ml_errors(preds: xr.Dataset) -> pd.DataFrame:
 
     return error_df
 
+
 class FuseErrors:
     def __init__(self, fuse_data: xr.Dataset):
         assert all(np.isin(
@@ -68,14 +69,33 @@ class FuseErrors:
 
         # convert into one clean dataframe
         fuse_errors = pd.concat([nse_df, rmse_df, kge_df, bias_df], axis=1)
+        fuse_errors = self.tidy_dataframe(fuse_errors)
+        self.fuse_errors = fuse_errors
+
+    @staticmethod
+    def tidy_dataframe(fuse_errors: pd.DataFrame) -> pd.DataFrame:
         try:
             fuse_errors = fuse_errors.drop(
                 'time', axis=1, level=1).swaplevel(axis=1).sort_index(axis=1)
         except KeyError:
             pass
 
-        self.fuse_errors = fuse_errors.rename({"NSE": "nse", "BIAS": "bias", "MSE": "mse"}, axis=1, level=0)
-
+        fuse_errors = fuse_errors.rename(
+            {"NSE": "nse", "BIAS": "bias", "MSE": "mse"}, axis=1, level=0)
+        # Remove the multiple "Name" columns ...
+        station_names = fuse_errors.iloc[:, fuse_errors.columns.get_level_values(
+            0) == 'Name'].iloc[:, 0].rename("Name")
+        fuse_errors["Name"] = station_names
+        # move Name to column 0
+        fuse_errors = (
+            fuse_errors
+            .reset_index()
+            .rename({"index": "station_id"}, axis=1)
+            .set_index(["station_id", "Name"])
+            .reset_index()
+            .set_index("station_id")
+        )
+        return fuse_errors
 
     def _separate_into_das(self) -> None:
         # separate into DataArrays
