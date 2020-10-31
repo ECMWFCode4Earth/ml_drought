@@ -55,7 +55,9 @@ def error_func(preds_xr: xr.Dataset, error_str: str) -> pd.DataFrame:
             )
         else:
             if "log" in error_str:
-                error_func(np.log(d["obs"].values) + 1e-6, np.log(d["sim"].values) + 1e-6)
+                error_func(
+                    np.log(d["obs"].values) + 1e-6, np.log(d["sim"].values) + 1e-6
+                )
             else:
                 _error_calc = error_func(d["obs"].values, d["sim"].values)
         errors.append(_error_calc)
@@ -280,13 +282,11 @@ class FUSEPublishedScores:
 
 class DeltaError:
     def __init__(self, ealstm_preds, lstm_preds, fuse_data):
-        self.all_preds = self._join_into_one_ds(
-            ealstm_preds, lstm_preds, fuse_data
-        )
+        self.all_preds = self._join_into_one_ds(ealstm_preds, lstm_preds, fuse_data)
 
     @staticmethod
     def calc_kratzert_error_functions(all_preds: xr.Dataset) -> Dict[str, pd.DataFrame]:
-        # FOR USING THE KRATZERT FUNCTIONS (takes a long time)
+        #  FOR USING THE KRATZERT FUNCTIONS (takes a long time)
         model_results = defaultdict(dict)
         for model in [v for v in all_preds.data_vars if v != "obs"]:
             for sid in tqdm(all_preds.station_id.values, desc=model):
@@ -294,7 +294,8 @@ class DeltaError:
                 obs = all_preds["obs"].sel(station_id=sid).drop("station_id")
                 try:
                     model_results[model][sid] = calculate_all_metrics(
-                        obs, sim, datetime_coord="time")
+                        obs, sim, datetime_coord="time"
+                    )
                 except ValueError:
                     model_results[model][sid] = np.nan
 
@@ -312,12 +313,16 @@ class DeltaError:
         lstm_delta_dict = self.calculate_all_kratzert_deltas(results, ref_model="LSTM")
         lstm_delta = self.get_formatted_dataframe(lstm_delta_dict, format="metric")
 
-        ealstm_delta_dict = self.calculate_all_kratzert_deltas(results, ref_model="EALSTM")
+        ealstm_delta_dict = self.calculate_all_kratzert_deltas(
+            results, ref_model="EALSTM"
+        )
         ealstm_delta = self.get_formatted_dataframe(ealstm_delta_dict, format="metric")
         return lstm_delta, ealstm_delta
 
     @staticmethod
-    def calculate_all_kratzert_deltas(kratzert_results: Dict[str, pd.DataFrame], ref_model: str = "LSTM") -> DefaultDict[str, Dict[str, pd.Series]]:
+    def calculate_all_kratzert_deltas(
+        kratzert_results: Dict[str, pd.DataFrame], ref_model: str = "LSTM"
+    ) -> DefaultDict[str, Dict[str, pd.Series]]:
         assert ref_model in [k for k in kratzert_results.keys()]
         assert model in [k for k in kratzert_results.keys()]
         ref_data = kratzert_results[ref_model]
@@ -327,7 +332,7 @@ class DeltaError:
         for model in [k for k in kratzert_results.keys() if k != ref_model]:
             model_data = kratzert_results[model]
 
-            # for each metric calculate either difference of absolute diffrerence (bias)
+            #  for each metric calculate either difference of absolute diffrerence (bias)
             for metric in ref_data.columns:
                 ref = ref_data.loc[:, metric]
                 m_data = model_data.loc[:, metric]
@@ -339,7 +344,9 @@ class DeltaError:
 
         return delta_dict
 
-    def get_formatted_dataframe(delta_dict: DefaultDict[str, Dict[str, pd.Series]], format_: str = "metric") -> Dict[str, pd.DataFrame]:
+    def get_formatted_dataframe(
+        delta_dict: DefaultDict[str, Dict[str, pd.Series]], format_: str = "metric"
+    ) -> Dict[str, pd.DataFrame]:
         deltas = {}
         if format_ == "":
             for model in delta_dict.keys():
@@ -355,8 +362,8 @@ class DeltaError:
 
     @staticmethod
     def swap_nested_keys(original_dict) -> DefaultDict:
-        # https://stackoverflow.com/q/49333339/9940782
-        # move inner keys to outer keys and outer keys to inner
+        #  https://stackoverflow.com/q/49333339/9940782
+        #  move inner keys to outer keys and outer keys to inner
         new_dict = defaultdict(dict)
         for key1, value1 in original_dict.items():
             for key2, value2 in value1.items():
@@ -416,7 +423,9 @@ class DeltaError:
         return errors_dict
 
     @staticmethod
-    def calculate_error_diff(error_df: pd.DataFrame, ref_model: str = "LSTM") -> pd.DataFrame:
+    def calculate_error_diff(
+        error_df: pd.DataFrame, ref_model: str = "LSTM"
+    ) -> pd.DataFrame:
         all_deltas = []
         for model in [c for c in error_df.columns if c != ref_model]:
             delta = error_df[ref_model] - error_df[model]
@@ -427,24 +436,39 @@ class DeltaError:
 
         return delta_df
 
-    def calculate_all_delta_dfs(self, errors_dict: Dict[str, pd.DataFrame]) -> Tuple[Dict[str, pd.DataFrame]]:
+    def calculate_all_delta_dfs(
+        self, errors_dict: Dict[str, pd.DataFrame]
+    ) -> Tuple[Dict[str, pd.DataFrame]]:
         lstm_delta: Dict[str, pd.DataFrame] = defaultdict()
         ealstm_delta: Dict[str, pd.DataFrame] = defaultdict()
 
         for metric in [k for k in errors_dict.keys()]:
             if "bias" in metric:
-                lstm_delta[metric] = self.calculate_error_diff(errors_dict["bias"].abs(), ref_model="LSTM")
-                ealstm_delta[metric] = self.calculate_error_diff(errors_dict["bias"].abs(), ref_model="EALSTM")
+                lstm_delta[metric] = self.calculate_error_diff(
+                    errors_dict["bias"].abs(), ref_model="LSTM"
+                )
+                ealstm_delta[metric] = self.calculate_error_diff(
+                    errors_dict["bias"].abs(), ref_model="EALSTM"
+                )
             else:
-                lstm_delta[metric] = self.calculate_error_diff(error_df=errors_dict[metric], ref_model="LSTM")
-                ealstm_delta[metric] = self.calculate_error_diff(error_df=errors_dict[metric], ref_model="EALSTM")
+                lstm_delta[metric] = self.calculate_error_diff(
+                    error_df=errors_dict[metric], ref_model="LSTM"
+                )
+                ealstm_delta[metric] = self.calculate_error_diff(
+                    error_df=errors_dict[metric], ref_model="EALSTM"
+                )
 
         return lstm_delta, ealstm_delta
 
-    def calculate_seasonal_deltas() -> DefaultDict[str, Dict[str, Dict[str, pd.DataFrame]]]:
+    def calculate_seasonal_deltas() -> DefaultDict[
+        str, Dict[str, Dict[str, pd.DataFrame]]
+    ]:
         seasonal_deltas = defaultdict(dict)
         for season in ["DJF", "MAM", "JJA", "SON"]:
             _preds = all_preds.sel(time=all_preds["time.season"] == season)
             seasonal_errors = processor.calculate_all_errors(_preds)
-            seasonal_deltas[season]["LSTM"], seasonal_deltas[season]["EALSTM"] = processor.calculate_all_delta_dfs(seasonal_errors)
+            (
+                seasonal_deltas[season]["LSTM"],
+                seasonal_deltas[season]["EALSTM"],
+            ) = processor.calculate_all_delta_dfs(seasonal_errors)
             seasonal_deltas[season]["raw"] = seasonal_errors

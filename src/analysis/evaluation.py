@@ -81,7 +81,9 @@ def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     return da
 
 
-def spatial_nse(true_da: xr.DataArray, pred_da: xr.DataArray, log: bool = False) -> xr.DataArray:
+def spatial_nse(
+    true_da: xr.DataArray, pred_da: xr.DataArray, log: bool = False
+) -> xr.DataArray:
     """Calculate the RMSE collapsing the time dimension returning
     a DataArray of the rmse values (spatially)
     """
@@ -128,7 +130,9 @@ def spatial_nse(true_da: xr.DataArray, pred_da: xr.DataArray, log: bool = False)
     return da
 
 
-def spatial_kge(true_da: xr.DataArray, pred_da: xr.DataArray, log: bool = False) -> xr.DataArray:
+def spatial_kge(
+    true_da: xr.DataArray, pred_da: xr.DataArray, log: bool = False
+) -> xr.DataArray:
     """Calculate the KGE collapsing the time dimension returning
     a DataArray of the rmse values (spatially)
     """
