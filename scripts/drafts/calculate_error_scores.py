@@ -441,7 +441,7 @@ class DeltaError:
 
         return lstm_delta, ealstm_delta
 
-    def calculate_seasonal_deltas() -> DefaultDict[str, Dict[str, Dict[str, pd.DataFrame]]]
+    def calculate_seasonal_deltas() -> DefaultDict[str, Dict[str, Dict[str, pd.DataFrame]]]:
         seasonal_deltas = defaultdict(dict)
         for season in ["DJF", "MAM", "JJA", "SON"]:
             _preds = all_preds.sel(time=all_preds["time.season"] == season)
