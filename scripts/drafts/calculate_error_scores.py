@@ -309,11 +309,11 @@ class DeltaError:
         assert all(np.isin(["LSTM", "EALSTM"], [v for v in all_preds.data_vars]))
         results = self.calc_kratzert_error_functions(all_preds)
 
-        lstm_delta_dict = calculate_all_kratzert_deltas(results, ref_model="LSTM")
-        lstm_delta = get_formatted_dataframe(lstm_delta_dict, format="metric")
+        lstm_delta_dict = self.calculate_all_kratzert_deltas(results, ref_model="LSTM")
+        lstm_delta = self.get_formatted_dataframe(lstm_delta_dict, format="metric")
 
-        ealstm_delta_dict = calculate_all_kratzert_deltas(results, ref_model="EALSTM")
-        ealstm_delta = get_formatted_dataframe(ealstm_delta_dict, format="metric")
+        ealstm_delta_dict = self.calculate_all_kratzert_deltas(results, ref_model="EALSTM")
+        ealstm_delta = self.get_formatted_dataframe(ealstm_delta_dict, format="metric")
         return lstm_delta, ealstm_delta
 
     @staticmethod
@@ -440,3 +440,11 @@ class DeltaError:
                 ealstm_delta[metric] = self.calculate_error_diff(error_df=errors_dict[metric], ref_model="EALSTM")
 
         return lstm_delta, ealstm_delta
+
+    def calculate_seasonal_deltas() -> DefaultDict[str, Dict[str, Dict[str, pd.DataFrame]]]
+        seasonal_deltas = defaultdict(dict)
+        for season in ["DJF", "MAM", "JJA", "SON"]:
+            _preds = all_preds.sel(time=all_preds["time.season"] == season)
+            seasonal_errors = processor.calculate_all_errors(_preds)
+            seasonal_deltas[season]["LSTM"], seasonal_deltas[season]["EALSTM"] = processor.calculate_all_delta_dfs(seasonal_errors)
+            seasonal_deltas[season]["raw"] = seasonal_errors
