@@ -461,6 +461,7 @@ class DeltaError:
 
         return lstm_delta, ealstm_delta
 
+    @staticmethod
     def calculate_seasonal_deltas(
         all_preds: xr.Dataset,
     ) -> DefaultDict[str, Dict[str, Dict[str, pd.DataFrame]]]:
