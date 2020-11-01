@@ -58,7 +58,7 @@ def error_func(preds_xr: xr.Dataset, error_str: str) -> pd.DataFrame:
         else:
             _error_calc = error_func(d["obs"].values, d["sim"].values)
         # except ValueError:
-            # _error_calc = np.nan
+        # _error_calc = np.nan
         errors.append(_error_calc)
 
     error = pd.DataFrame({"station_id": station_ids, error_str: errors})
@@ -392,7 +392,9 @@ class DeltaError:
         return all_preds
 
     @staticmethod
-    def calculate_all_errors(all_preds: xr.DataArray) -> Dict[str, pd.DataFrame]:
+    def calculate_all_errors(
+        all_preds: xr.DataArray, desc: str = None
+    ) -> Dict[str, pd.DataFrame]:
         station_names = pd.DataFrame(gauge_name_lookup, index=["gauge_name"]).T
         metrics = ["nse", "kge", "mse", "bias"]
 
@@ -403,7 +405,7 @@ class DeltaError:
         output_dict = defaultdict(list)
         station_names = pd.DataFrame(gauge_name_lookup, index=["gauge_name"]).T
         for ix, model in tqdm(
-            enumerate([v for v in all_preds.data_vars if v != "obs"])
+            enumerate([v for v in all_preds.data_vars if v != "obs"]), desc=desc
         ):
             _errors = calculate_errors(
                 all_preds[["obs", model]].rename({model: "sim"})
@@ -459,13 +461,13 @@ class DeltaError:
 
         return lstm_delta, ealstm_delta
 
-    def calculate_seasonal_deltas(all_preds: xr.Dataset) -> DefaultDict[
-        str, Dict[str, Dict[str, pd.DataFrame]]
-    ]:
+    def calculate_seasonal_deltas(
+        all_preds: xr.Dataset,
+    ) -> DefaultDict[str, Dict[str, Dict[str, pd.DataFrame]]]:
         seasonal_deltas = defaultdict(dict)
         for season in ["DJF", "MAM", "JJA", "SON"]:
             _preds = all_preds.sel(time=all_preds["time.season"] == season)
-            seasonal_errors = self.calculate_all_errors(_preds)
+            seasonal_errors = self.calculate_all_errors(_preds, desc=season)
             (
                 seasonal_deltas[season]["LSTM"],
                 seasonal_deltas[season]["EALSTM"],
