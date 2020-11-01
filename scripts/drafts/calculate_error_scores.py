@@ -459,15 +459,17 @@ class DeltaError:
 
         return lstm_delta, ealstm_delta
 
-    def calculate_seasonal_deltas() -> DefaultDict[
+    def calculate_seasonal_deltas(all_preds: xr.Dataset) -> DefaultDict[
         str, Dict[str, Dict[str, pd.DataFrame]]
     ]:
         seasonal_deltas = defaultdict(dict)
         for season in ["DJF", "MAM", "JJA", "SON"]:
             _preds = all_preds.sel(time=all_preds["time.season"] == season)
-            seasonal_errors = processor.calculate_all_errors(_preds)
+            seasonal_errors = self.calculate_all_errors(_preds)
             (
                 seasonal_deltas[season]["LSTM"],
                 seasonal_deltas[season]["EALSTM"],
-            ) = processor.calculate_all_delta_dfs(seasonal_errors)
+            ) = self.calculate_all_delta_dfs(seasonal_errors)
             seasonal_deltas[season]["raw"] = seasonal_errors
+
+        return seasonal_deltas
