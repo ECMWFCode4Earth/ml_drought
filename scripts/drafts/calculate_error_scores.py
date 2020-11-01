@@ -49,17 +49,12 @@ def error_func(preds_xr: xr.Dataset, error_str: str) -> pd.DataFrame:
     errors = []
     for station_id in station_ids:
         d = df.loc[df["station_id"] == station_id]
-        if error_str == "rmse":
+        if "log" in error_str:
             _error_calc = error_func(
-                d["obs"].values, d["sim"].values, n_instances=d.size
+                np.log(d["obs"].values) + 1e-6, np.log(d["sim"].values) + 1e-6
             )
         else:
-            if "log" in error_str:
-                error_func(
-                    np.log(d["obs"].values) + 1e-6, np.log(d["sim"].values) + 1e-6
-                )
-            else:
-                _error_calc = error_func(d["obs"].values, d["sim"].values)
+            _error_calc = error_func(d["obs"].values, d["sim"].values)
         errors.append(_error_calc)
 
     error = pd.DataFrame({"station_id": station_ids, error_str: errors})
