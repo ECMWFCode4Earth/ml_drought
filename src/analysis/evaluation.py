@@ -131,7 +131,7 @@ def spatial_nse(
 
 
 def spatial_kge(
-    true_da: xr.DataArray, pred_da: xr.DataArray, log: bool = False
+    true_da: xr.DataArray, pred_da: xr.DataArray, inv: bool = False
 ) -> xr.DataArray:
     """Calculate the KGE collapsing the time dimension returning
     a DataArray of the rmse values (spatially)
@@ -164,9 +164,9 @@ def spatial_kge(
         true_vals = stacked_true.sel(space=space).values
         pred_vals = stacked_pred.sel(space=space).values
         #  deal with nans inside _kge_func
-        if log:
-            true_vals = np.log(true_vals + 1e-6)
-            pred_vals = np.log(pred_vals + 1e-6)
+        if inv:
+            true_vals = 1 / (true_vals + 1e-6)
+            pred_vals = 1/ (pred_vals + 1e-6)
 
         vals.append(_kge_func(true_vals, pred_vals))
 
