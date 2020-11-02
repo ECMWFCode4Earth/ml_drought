@@ -37,7 +37,7 @@ def error_func(preds_xr: xr.Dataset, error_str: str) -> pd.DataFrame:
         "kge": _kge_func,
         "bias": _bias_func,
         "log_nse": _nse_func,
-        "log_kge": _kge_func,
+        "inv_kge": _kge_func,
     }
     error_func = lookup[error_str]
 
@@ -73,7 +73,7 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
         error_func(preds, "mse").set_index("station_id"),
         error_func(preds, "bias").set_index("station_id"),
         error_func(preds, "log_nse").set_index("station_id"),
-        error_func(preds, "log_kge").set_index("station_id"),
+        error_func(preds, "inv_kge").set_index("station_id"),
     ]
     error_df = (
         errors[0]
@@ -155,7 +155,7 @@ class FuseErrors:
             "bias": spatial_bias,
             "kge": spatial_kge,
             "log_nse": spatial_nse,
-            "log_kge": spatial_kge,
+            "inv_kge": spatial_kge,
         }
         function = metric_lookup[metric]
 
@@ -165,6 +165,8 @@ class FuseErrors:
         ):
             if "log" in metric:
                 out_list.append(function(self.obs, model, log=True).rename(model_name))
+            elif "inv" in metric:
+                out_list.append(function(self.obs, model, inv=True).rename(model_name))
             else:
                 out_list.append(function(self.obs, model).rename(model_name))
 
