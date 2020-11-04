@@ -40,8 +40,3 @@ if __name__ == "__main__":
     # shp_xr = converter.shapefile_to_xarray(
     #     da, shp_path, var_name="station_id", lookup_colname="ID_STRING"
     # )
-
-
-
-
-

@@ -166,7 +166,7 @@ def spatial_kge(
         #  deal with nans inside _kge_func
         if inv:
             true_vals = 1 / (true_vals + 1e-6)
-            pred_vals = 1/ (pred_vals + 1e-6)
+            pred_vals = 1 / (pred_vals + 1e-6)
 
         vals.append(_kge_func(true_vals, pred_vals))
 

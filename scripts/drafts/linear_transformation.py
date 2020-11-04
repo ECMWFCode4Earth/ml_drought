@@ -14,16 +14,17 @@ from typing import DefaultDict
 # load in config
 run_dir = data_dir / "runs/ensemble_EALSTM/ealstm_ensemble6_nse_1998_2008_2910_030601"
 
-# Config file
-config_path = (run_dir / "config.yml")
+#  Config file
+config_path = run_dir / "config.yml"
 config = Config(config_path)
 
 
-
-def get_states_from_forward(model: BaseModel, loader: DataLoader) -> Tuple[np.ndarray, np.ndarray]:
+def get_states_from_forward(
+    model: BaseModel, loader: DataLoader
+) -> Tuple[np.ndarray, np.ndarray]:
     all_hidden_states = []
     all_cell_states = []
-    # For all the basin data in Loader
+    #  For all the basin data in Loader
     for basin_data in loader:
         with torch.no_grad():
             predict = model.forward(basin_data)
@@ -34,6 +35,7 @@ def get_states_from_forward(model: BaseModel, loader: DataLoader) -> Tuple[np.nd
     basin_cell_states = np.vstack(all_cell_states)
 
     return basin_hidden_states, basin_cell_states
+
 
 ## CONVERT to
 Tester = RegressionTester(cfg=config, run_dir=run_dir, period="test", init_model=True)
@@ -68,7 +70,13 @@ from typing import Any
 
 
 class CellStateDataset(Dataset):
-    def __init__(self, input_data: xr.Dataset, target_data: xr.DataArray, config, mean: bool = True):
+    def __init__(
+        self,
+        input_data: xr.Dataset,
+        target_data: xr.DataArray,
+        config,
+        mean: bool = True,
+    ):
         assert all(np.isin(["time", "dimension", "station_id"], input_data.dims))
         assert "cell_state" in input_data
         assert all(np.isin(input_data.station_id.values, target_data.station_id.values))
@@ -76,7 +84,9 @@ class CellStateDataset(Dataset):
         self.input_data = input_data
 
         # test times
-        test_times = pd.date_range(config.test_start_date, config.test_end_date, freq="D")
+        test_times = pd.date_range(
+            config.test_start_date, config.test_end_date, freq="D"
+        )
         bool_times = np.isin(self.input_data.time.values, test_times)
 
         # get input/target data
@@ -114,13 +124,11 @@ class CellStateDataset(Dataset):
             X = torch.from_numpy(X).float().to("cuda:0")
             Y = torch.from_numpy(Y).float().to("cuda:0")
 
-
             # create unique samples [(64,), (1,)]
             samples = [(x, y.reshape(-1)) for (x, y) in zip(X, Y)]
             self.samples.extend(samples)
             self.basin_samples.extend([basin for _ in range(len(samples))])
             self.time_samples.extend(times)
-
 
     def __getitem__(self, item: int) -> Tuple[Tuple[str, Any], Tuple[torch.Tensor]]:
         basin = str(self.basin_samples[item])
@@ -130,7 +138,9 @@ class CellStateDataset(Dataset):
         return (basin, time), (x, y)
 
 
-dataset = CellStateDataset(input_data=input_data, target_data=dynamic["discharge_spec"], config=config)
+dataset = CellStateDataset(
+    input_data=input_data, target_data=dynamic["discharge_spec"], config=config
+)
 loader = DataLoader(dataset, batch_size=256, shuffle=True)
 """
 

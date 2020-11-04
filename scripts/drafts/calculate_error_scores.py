@@ -58,7 +58,7 @@ def error_func(preds_xr: xr.Dataset, error_str: str) -> pd.DataFrame:
             else:
                 _error_calc = error_func(d["obs"].values, d["sim"].values)
         except RuntimeError:
-                _error_calc = np.nan
+            _error_calc = np.nan
         errors.append(_error_calc)
 
     error = pd.DataFrame({"station_id": station_ids, error_str: errors})
@@ -465,8 +465,7 @@ class DeltaError:
 
     @staticmethod
     def calculate_seasonal_deltas(
-        self,
-        all_preds: xr.Dataset,
+        self, all_preds: xr.Dataset,
     ) -> DefaultDict[str, Dict[str, Dict[str, pd.DataFrame]]]:
         seasonal_deltas = defaultdict(dict)
         for season in ["DJF", "MAM", "JJA", "SON"]:
