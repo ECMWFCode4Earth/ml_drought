@@ -128,10 +128,10 @@ def merge_files(variable: str, subset_str: str = "great_britain") -> None:
 if __name__ == "__main__":
     subset_str = "great_britain"
     variables = [
-        "volumetric_soil_water_layer_1",
-        # "volumetric_soil_water_layer_2",
-        # "volumetric_soil_water_layer_3",
-        # "volumetric_soil_water_layer_4",
+        # "volumetric_soil_water_layer_1",
+        "volumetric_soil_water_layer_2",
+        "volumetric_soil_water_layer_3",
+        "volumetric_soil_water_layer_4",
     ]
     # years = np.arange(2004, 2016)
     years = np.arange(1993, 2021)
