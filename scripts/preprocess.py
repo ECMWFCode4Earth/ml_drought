@@ -73,6 +73,11 @@ def process_era5_land(
     variables: Optional[Union[List, str]] = None,
     subset_str: str = "kenya",
     monmean: bool = True,
+    resample_time: Optional[str] = "M",
+    years: Optional[List[int]] = None,
+    cleanup: bool = False,
+    with_merge: bool = True,
+    resample_before_merge: bool = False,
 ):
     data_path = get_data_path()
 
@@ -111,10 +116,14 @@ def process_era5_land(
     for variable in variables:
         processor.preprocess(
             subset_str=subset_str,
-            regrid=None,
-            resample_time="M",
+            regrid=regrid_path,
+            resample_time=resample_time,
             upsampling=False,
             variable=variable,
+            years=years,
+            cleanup=cleanup,
+            with_merge=with_merge,
+            resample_before_merge=resample_before_merge,
         )
 
 
@@ -127,7 +136,7 @@ def process_gleam(subset_str: str = "kenya"):
     assert regrid_path.exists(), f"{regrid_path} not available"
 
 
-def process_gleam():
+def process_gleam(resample_time: Optional[str] = "M"):
     # if the working directory is alread ml_drought don't need ../data
     if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
         data_path = Path("data")
@@ -142,7 +151,10 @@ def process_gleam():
     processor = GLEAMPreprocessor(data_path)
 
     processor.preprocess(
-        subset_str=subset_str, regrid=regrid_path, resample_time="M", upsampling=False
+        subset_str=subset_str,
+        regrid=regrid_path,
+        resample_time=resample_time,
+        upsampling=False,
     )
 
 
@@ -288,15 +300,16 @@ def preprocess_s5_ouce():
 
 
 if __name__ == "__main__":
-    subset_str = "india"
+    subset_str = "great_britain"
     # preprocess_era5(subset_str=subset_str)
     process_era5_land(
         subset_str=subset_str,
-        variables=[
-            "volumetric_soil_water_layer_1",
-            "potential_evaporation",
-        ],  #  total_precipitation 2m_temperature evapotranspiration
         monmean=False,
+        resample_time="D",
+        years=[2000],
+        with_merge=False,
+        cleanup=False,
+        resample_before_merge=True,
     )
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)

@@ -68,6 +68,12 @@ class ERA5LandExporter(CDSExporter):
     dataset = "reanalysis-era5-land-monthly-means"
     granularity = "monthly"
 
+    def __post_init__(self):
+        assert self.granularity in [
+            "hourly",
+            "monthly",
+        ], "Only support two granularities: [ hourly monthly ]"
+
     @staticmethod
     def print_valid_vars():
         print(VALID_ERA5_LAND_VARS)
