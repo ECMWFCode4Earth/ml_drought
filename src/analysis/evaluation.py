@@ -436,3 +436,17 @@ def mean_pixel_rmse_per_time(
         .reset_index()
         .rename({0: "rmse"}, axis=1)
     )
+
+
+def temporal_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    try:
+        true_var = [v for v in true_da.data_vars][0]
+    except AttributeError:
+        true_var = true_da.name
+
+    assert pred_da.name == "preds"
+
+    df = pred_da.to_dataframe().join(true_da.to_dataframe()).dropna()
+    r2 = df.reset_index().groupby(["time"]).apply(
+        lambda x: r2_score(x[true_var], x["preds"]))
+    return r2.to_xarray()
