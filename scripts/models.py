@@ -70,6 +70,7 @@ def regression(
     include_pred_month=True,
     surrounding_pixels=None,
     ignore_vars=None,
+    include_yearly_aggs: bool = True,
 ):
     data_path = get_data_path()
     spatial_mask = data_path / "interim/boundaries_preprocessed/kenya_asal_mask.nc"
@@ -83,6 +84,7 @@ def regression(
         ignore_vars=ignore_vars,
         static="embeddings",
         spatial_mask=spatial_mask,
+        include_yearly_aggs=include_yearly_aggs,
     )
     predictor.train()
     predictor.evaluate(save_preds=True)
@@ -98,6 +100,8 @@ def linear_nn(
     ignore_vars=None,
     pretrained=False,
     static=None,
+    include_yearly_aggs: bool = True,
+    early_stopping: int = 5,
 ):
     predictor = LinearNetwork(
         layer_sizes=[100],
@@ -107,8 +111,9 @@ def linear_nn(
         surrounding_pixels=surrounding_pixels,
         ignore_vars=ignore_vars,
         static=static,
+        include_yearly_aggs=include_yearly_aggs,
     )
-    predictor.train(num_epochs=50, early_stopping=5)
+    predictor.train(num_epochs=50, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
@@ -122,6 +127,8 @@ def rnn(
     ignore_vars=None,
     pretrained=False,
     static=None,
+    include_yearly_aggs: bool = True,
+    early_stopping: int = 5,
 ):
     predictor = RecurrentNetwork(
         hidden_size=128,
@@ -131,8 +138,9 @@ def rnn(
         surrounding_pixels=surrounding_pixels,
         ignore_vars=ignore_vars,
         static=static,
+        include_yearly_aggs=include_yearly_aggs,
     )
-    predictor.train(num_epochs=50, early_stopping=5)
+    predictor.train(num_epochs=50, early_stopping=early_stopping)
     predictor.evaluate(save_preds=True)
     predictor.save_model()
 
@@ -147,6 +155,8 @@ def earnn(
     ignore_vars=None,
     static="embeddings",
     explain: bool = False,
+    include_yearly_aggs: bool = True,
+    early_stopping: int = 5,
 ):
     data_path = get_data_path()
 
@@ -163,8 +173,9 @@ def earnn(
             surrounding_pixels=surrounding_pixels,
             ignore_vars=ignore_vars,
             static=static,
+            include_yearly_aggs=include_yearly_aggs,
         )
-        predictor.train(num_epochs=50, early_stopping=5)
+        predictor.train(num_epochs=50, early_stopping=early_stopping)
         predictor.evaluate(save_preds=True)
         predictor.save_model()
     else:
@@ -179,6 +190,7 @@ def earnn(
 
 if __name__ == "__main__":
     experiment = "one_month_forecast"
+    early_stopping = 10
 
     # ignore_vars = ["VCI", "p84.162", "sp", "tp", "VCI1M"]
     forecast_vars = get_forecast_vars()
@@ -196,6 +208,6 @@ if __name__ == "__main__":
 
     persistence(experiment=experiment)
     # regression(experiment=experiment, ignore_vars=ignore_vars)
-    # linear_nn(experiment=experiment, ignore_vars=ignore_vars, static="features")
-    rnn(experiment=experiment, ignore_vars=ignore_vars, static="features")
-    # earnn(experiment=experiment, ignore_vars=ignore_vars, static="features")
+    # linear_nn(experiment=experiment, ignore_vars=ignore_vars, static="features", early_stopping=early_stopping)
+    rnn(experiment=experiment, ignore_vars=ignore_vars, static="features", early_stopping=early_stopping)
+    # earnn(experiment=experiment, ignore_vars=ignore_vars, static="features", early_stopping=early_stopping)
