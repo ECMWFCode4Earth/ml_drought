@@ -9,7 +9,7 @@ The equation for the scaling is as show below.
 𝑽𝑰=𝑽𝑰𝒔𝒍𝒐𝒑𝒆∙𝑫𝑵+ 𝑽𝑰𝒊𝒏𝒕𝒆𝒓𝒄𝒆𝒑𝒕 where DN is the digital number on the image.
 
 The actual formula would look like below:
-NDVI = 0.0048 * DN- 0.200
+NDVI = 0.0048 * DN - 0.200
 """
 
 from pathlib import Path

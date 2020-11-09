@@ -8,9 +8,9 @@ from src.preprocess import MantleModisPreprocessor
 from scripts.utils import get_data_path
 
 
-def export_mantle_modis(year: int):
+def export_mantle_modis(year: int, level: str = "OF"):
     exporter = MantleModisExporter(get_data_path())
-    exporter.export(years=[year], remove_tif=True)
+    exporter.export(years=[year], remove_tif=True, level=level)
 
 
 def preprocess_mantle_modis(subset_str: str = "india"):
@@ -44,7 +44,7 @@ def merge_all_mantle_modis(subset_str: str = "india"):
 if __name__ == "__main__":
     data_dir = get_data_path()
     for year in np.arange(2001, 2021):
-        export_mantle_modis(year)
+        export_mantle_modis(year, level="OF")
         preprocess_mantle_modis(
             subset_str="india"
         )
