@@ -348,14 +348,16 @@ def create_all_error_metrics(
 
     for model in [m for m in predictions.keys()]:
         model_preds = predictions[model]
+        # ensure that latitude dimensions are matching
+        y_test_ = y_test.sel(lat=predictions[model]["lat"])
         model_rmse = spatial_rmse(
-            y_test.transpose("time", "lat", "lon"),
+            y_test_.transpose("time", "lat", "lon"),
             model_preds.transpose("time", "lat", "lon"),
         )
         model_rmse.name = "rmse"
         rmse_dict[model] = model_rmse
         model_r2 = spatial_r2(
-            y_test.transpose("time", "lat", "lon"),
+            y_test_.transpose("time", "lat", "lon"),
             model_preds.transpose("time", "lat", "lon"),
         )
         model_r2.name = "r2"
