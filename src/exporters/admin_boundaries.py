@@ -112,6 +112,8 @@ class EthiopiaAdminExporter(OCHAExporter):
 class IndiaAdminExporter(OCHAExporter):
     """Download admin region shapefiles from:
     http://biogeo.ucdavis.edu/data/diva/adm/IND_adm.zip
+    OR
+    https://archive.lib.msu.edu/maps/public/GISData/IND_adm.zip
 
     -> Level 1 = States & Union Territories
         28 states and 8 union territories (incl. capital territory)
