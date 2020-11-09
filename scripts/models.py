@@ -178,7 +178,7 @@ def earnn(
 
 
 if __name__ == "__main__":
-    experiment = "nowcast"
+    experiment = "one_month_forecast"
 
     # ignore_vars = ["VCI", "p84.162", "sp", "tp", "VCI1M"]
     forecast_vars = get_forecast_vars()
@@ -192,10 +192,10 @@ if __name__ == "__main__":
 
         ignore_vars = list(ignore_dyn_vars) + ignore_static_vars + non_1mth_fcst_vars
     elif experiment == "one_month_forecast":
-        ignore_vars = forecast_vars + ignore_static_vars
+        ignore_vars = forecast_vars + ignore_static_vars + ["VCI"]
 
     persistence(experiment=experiment)
     # regression(experiment=experiment, ignore_vars=ignore_vars)
-    linear_nn(experiment=experiment, ignore_vars=ignore_vars, static="features")
+    # linear_nn(experiment=experiment, ignore_vars=ignore_vars, static="features")
     rnn(experiment=experiment, ignore_vars=ignore_vars, static="features")
-    earnn(experiment=experiment, ignore_vars=ignore_vars, static="features")
+    # earnn(experiment=experiment, ignore_vars=ignore_vars, static="features")
