@@ -7,6 +7,7 @@ import geopandas as gpd
 import pandas as pd
 from pandas.tseries.offsets import MonthEnd
 import json
+from collections import defaultdict
 
 sys.path.append("..")
 
@@ -17,7 +18,7 @@ from src.analysis import read_train_data, read_test_data, read_pred_data
 from src.utils import get_ds_mask
 from src.models import load_model
 from src.models.neural_networks.base import NNBase
-from src.analysis import spatial_rmse, spatial_r2, group_rmse, group_r2
+from src.analysis import spatial_rmse, spatial_r2, group_rmse, group_r2, temporal_r2
 
 
 def create_matching_shapes_in_predictions_dict(
@@ -332,7 +333,7 @@ def load_nn(
 
 
 def create_all_error_metrics(
-    predictions: Dict[str, xr.DataArray], y_test: xr.DataArray
+    predictions: Dict[str, xr.DataArray], y_test: xr.DataArray,
 ) -> Tuple[Dict[str, xr.DataArray]]:
     """Pixel Based Error Metrics collapsing time.
 
@@ -433,6 +434,25 @@ def plot_predictions():
     return
 
 
+def create_timeseries_of_error_metrics(predictions, test_da) -> Dict[str, xr.DataArray]:
+    temporal_rmse = None
+
+    error_lookup = {
+        "r2": temporal_r2,
+        "rmse": temporal_rmse,
+    }
+    errors = defaultdict(dict)
+    for error_metric in ["r2", "rmse"]:
+        for model in predictions.keys():
+            model_preds = predictions[model]
+            error_func = error_lookup[error_metric]
+            errors[error_metric][model] = error_func(test_da, model_preds)
+
+        break
+        assert False, "TODO: need to create temporal RMSE function"
+
+    return errors["r2"], errors["rmse"]
+
 if __name__ == "__main__":
     # run_administrative_region_analysis()
     # run_landcover_region_analysis()
@@ -478,3 +498,4 @@ if __name__ == "__main__":
     # 1. Spatial Plots of R2
     # 1. Scatter Plots of Observed vs. Predicted
     # 1. Confusion matrix of the Vegetation Deficit Index scores
+
