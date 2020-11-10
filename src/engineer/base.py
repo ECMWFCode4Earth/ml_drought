@@ -94,11 +94,11 @@ class _EngineerBase:
 
         # TODO: this can be cleaned
         if global_means_bool & pixel_means_bool:
-            static_mean_ds = xr.auto_combine([global_means, pixel_means])
+            static_mean_ds = xr.combine_by_coords([global_means, pixel_means])
         elif global_means_bool & ~pixel_means_bool:
-            static_mean_ds = xr.auto_combine([global_means])
+            static_mean_ds = xr.combine_by_coords([global_means])
         elif ~global_means_bool & pixel_means_bool:
-            static_mean_ds = xr.auto_combine([pixel_means])
+            static_mean_ds = xr.combine_by_coords([pixel_means])
         else:
             # return an empty dataset
             static_mean_ds = xr.Dataset()
@@ -121,8 +121,9 @@ class _EngineerBase:
 
         output_file = self.static_output_folder / "data.nc"
         if output_file.exists():
-            warnings.warn("A static data file already exists!")
-            return None
+            warnings.warn(
+                f"A static data file already exists! {output_file.as_posix()}. Overwriting ..."
+            )
 
         # here, we overwrite the dims because topography (a static variable)
         # uses CDO for regridding, which yields very slightly different
@@ -143,7 +144,7 @@ class _EngineerBase:
         if static_ds is None:
             static_ds = static_mean_ds
         else:
-            static_ds = xr.auto_combine([static_ds, static_mean_ds])
+            static_ds = xr.combine_by_coords([static_ds, static_mean_ds])
 
         normalization_values: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 

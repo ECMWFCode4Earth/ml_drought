@@ -109,8 +109,44 @@ class EthiopiaAdminExporter(OCHAExporter):
                 )
 
 
+class IndiaAdminExporter(OCHAExporter):
+    """Download admin region shapefiles from:
+    http://biogeo.ucdavis.edu/data/diva/adm/IND_adm.zip
+    OR
+    https://archive.lib.msu.edu/maps/public/GISData/IND_adm.zip
+
+    -> Level 1 = States & Union Territories
+        28 states and 8 union territories (incl. capital territory)
+    -> Level 2 = Districts
+        594 districts
+    -> Level 3 = Taluks
+        2299 taluks
+    """
+
+    country = "india"
+    urls: Dict = {
+        "india-admin-boundaries": "http://biogeo.ucdavis.edu/data/diva/adm/IND_adm.zip"
+    }
+
+    def export(self) -> None:
+        """Export functionality for the Ethiopia Admin Boundaries as .shp files
+        """
+        for new_fname, url in zip(self.urls.keys(), self.urls.values()):
+            fname = url.split("/")[-1]
+            # check if the file already exists
+            if (self.admin_bounds_folder / fname).exists():
+                print("Data already downloaded!")
+
+            else:
+                self.wget_file(url_path=url)
+                self.unzip(fname=(self.admin_bounds_folder / fname))
+                self.rename_dirs(
+                    fname=(self.admin_bounds_folder / fname), new_fname=new_fname
+                )
+
+
 class EastAfricaAdminExporter(OCHAExporter):
-    country = "ethiopia"
+    country = "east_africa"
 
     urls: Dict = {
         "east-africa-boundaries": "https://data.humdata.org"

@@ -171,7 +171,7 @@ def read_pred_data(
 ) -> Union[xr.Dataset, xr.DataArray]:
     model_pred_dir = data_dir / "models" / experiment / model
     # Open files
-    # pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix())
+    # pred_ds = xr.open_mfdataset((model_pred_dir / "*.nc").as_posix(), combine='nested')
     ncfiles = list(model_pred_dir.glob("*.nc"))
     ds_list = [xr.open_dataset(f) for f in ncfiles]
     pred_ds = xr.combine_by_coords(ds_list)
@@ -400,3 +400,53 @@ def read_test_data(
     )
 
     return test_X_ds, test_y_ds
+
+
+def group_rmse(grouped_df: pd.DataFrame) -> float:
+    """RMSE Function to be applied to pandas `.groupby` operation.
+
+    Args:
+        grouped_df (pd.DataFrame): [description]
+
+    Returns:
+        (float): [description]
+    """
+    return np.sqrt(
+        mean_squared_error(
+            grouped_df["true_mean_value"], grouped_df["predicted_mean_value"]
+        )
+    )
+
+
+def group_r2(grouped_df: pd.DataFrame) -> float:
+    return r2_score(grouped_df["true_mean_value"], grouped_df["predicted_mean_value"])
+
+
+def mean_pixel_rmse_per_time(
+    true_da: xr.DataArray, pred_da: xr.DataArray
+) -> pd.DataFrame:
+    target_var: str = true_da.name
+    pred_var: str = pred_da.name
+    _df = pred_da.to_dataframe().join(true_da.to_dataframe())
+    return (
+        _df.reset_index()
+        .dropna()
+        .groupby("time")
+        .apply(lambda x: np.sqrt(mean_squared_error(x[target_var], x[pred_var])))
+        .reset_index()
+        .rename({0: "rmse"}, axis=1)
+    )
+
+
+def temporal_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    try:
+        true_var = [v for v in true_da.data_vars][0]
+    except AttributeError:
+        true_var = true_da.name
+
+    assert pred_da.name == "preds"
+
+    df = pred_da.to_dataframe().join(true_da.to_dataframe()).dropna()
+    r2 = df.reset_index().groupby(["time"]).apply(
+        lambda x: r2_score(x[true_var], x["preds"]))
+    return r2.to_xarray()

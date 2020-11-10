@@ -206,7 +206,7 @@ def convert_clusters_to_ds(
         )
         out.append(cluster_ds)
 
-    static_cluster_ds = xr.auto_combine(out)
+    static_cluster_ds = xr.combine_by_coords(out)
     static_cluster_ds = (
         static_cluster_ds.to_dataframe().set_index(["time", "lat", "lon"]).to_xarray()
     )
@@ -586,7 +586,7 @@ def run_clustering(
         all_estimators.append(estimators)
 
     #  combine into one xr.Dataset
-    cluster_ds = xr.auto_combine(all_cluster_ds)
+    cluster_ds = xr.combine_by_coords(all_cluster_ds)
 
     return cluster_ds, all_estimators
 
@@ -594,6 +594,10 @@ def run_clustering(
 # ---------------------------------------------------------
 # Get the region bounding boxes
 # ---------------------------------------------------------
+# NOTE: these have to be recreated for each specific location-embedding
+# They are currently defining regions in Kenya with similar
+
+
 # def get_regions_for_clustering_boxes(ds: xr.Dataset) -> List[Region]:
 #     """Because we defined the latlon boxes by their numerical
 #     index we have to get the values for the latlon boxes by the

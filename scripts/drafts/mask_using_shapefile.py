@@ -81,7 +81,8 @@ def add_shape_coord_from_data_array(
     xr_da, shp_path, coord_name, longitude="lon", latitude="lat"
 ):
     """ Create a new coord for the xr_da indicating whether or not it
-         is inside the shapefile
+         is inside the shapefile.
+        Create a new dimension, add dimension, add new dimension
 
         Creates a new coord - "coord_name" which will have integer values
          used to subset xr_da for plotting / analysis/

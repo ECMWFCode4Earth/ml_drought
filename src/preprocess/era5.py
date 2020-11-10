@@ -48,7 +48,11 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
             {"longitude": "lon", "latitude": "lat"}
         )
 
-        # 2. chop out EastAfrica
+        #  remove expver if in ds_stat
+        if "expver" in [v for v in ds.coords]:
+            ds = ds.isel(expver=0)
+
+        # 2. chop out ROI
         if subset_str is not None:
             ds = self.chop_roi(ds, subset_str, inverse_lat=True)
 
@@ -125,20 +129,22 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
                 filename = (
                     f'data{"_" + subset_str if subset_str is not None else ""}.nc'
                 )
-            out_dyn = self.out_dir / filename
+            out_dyn: Optional[Path] = self.out_dir / filename
 
             ds_dyn.to_netcdf(out_dyn)
             print(f"\n**** {out_dyn} Created! ****\n")
+        else:
+            out_dyn = None
 
         # then, static
         static_filepaths = self.get_filepaths("interim", filter_type="static")
         print(static_filepaths)
         if len(static_filepaths) > 0:
-            ds_stat = xr.open_mfdataset(static_filepaths)
+            ds_stat = xr.open_mfdataset(static_filepaths, combine="nested")
 
             da_list = []
             for var in ds_stat.data_vars:
-                print(var)
+                print(f"Getting MODAL value across time: {var}")
                 da_list.append(get_modal_value_across_time(ds_stat[var]))
             ds_stat_new = xr.merge(da_list)
 
@@ -307,8 +313,8 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
                 ]
                 variable = "_".join(variable.split("_")[-2:])
                 variable = f"hourly_{variable}"
-                _ds_dyn = xr.open_mfdataset(_dyn_fpaths)
-                # ds_dyn = xr.open_mfdataset(dynamic_filepaths)
+                _ds_dyn = xr.open_mfdataset(_dyn_fpaths, combine="nested")
+                # ds_dyn = xr.open_mfdataset(dynamic_filepaths, combine='nested')
 
                 if resample_time is not None:
                     _ds_dyn = self.resample_time(_ds_dyn, resample_time, upsampling)
@@ -323,7 +329,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
                 # all_dyn_ds.append(_ds_dyn)
 
             # too much data and gets killed (hourly data)
-            # ds_dyn = xr.auto_combine(all_dyn_ds)
+            # ds_dyn = xr.combine_by_coords(all_dyn_ds)
 
             # if filename is None:
             #     filename = (
@@ -340,7 +346,7 @@ class ERA5HourlyPreprocessor(ERA5MonthlyMeanPreprocessor):
         static_filepaths = self.get_filepaths("interim", filter_type="static")
         print(static_filepaths)
         if len(static_filepaths) > 0:
-            ds_stat = xr.open_mfdataset(static_filepaths)
+            ds_stat = xr.open_mfdataset(static_filepaths, combine="nested")
 
             da_list = []
             for var in ds_stat.data_vars:

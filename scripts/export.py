@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime
 import numpy as np
 
 sys.path.append("..")
@@ -13,10 +14,15 @@ from src.exporters import (
     SRTMExporter,
     KenyaAdminExporter,
     ERA5LandExporter,
+    ERA5LandExporterHourly,
+    IndiaAdminExporter,
     BokuNDVIExporter,
+    MantleModisExporter,
 )
 
 from scripts.utils import get_data_path
+
+YEAR = datetime.now().year
 
 
 def export_era5(region_str="kenya"):
@@ -49,50 +55,59 @@ def export_era5(region_str="kenya"):
     }
 
     era5_variables = [
-        "10m_u_component_of_wind",
-        "10m_v_component_of_wind",
-        "volumetric_soil_water_layer_1",
-        "volumetric_soil_water_layer_2",
-        "volumetric_soil_water_layer_3",
-        "volumetric_soil_water_layer_4",
-        "surface_pressure",
-        "surface_sensible_heat_flux",
-        "surface_latent_heat_flux",
-        "soil_temperature_level_1",
-        "2m_temperature",
-        "mean_eastward_turbulent_surface_stress",
-        "mean_northward_turbulent_surface_stress",
-        "surface_net_solar_radiation_clear_sky",
-        "surface_net_thermal_radiation_clear_sky",
-        "vertical_integral_of_divergence_of_moisture_flux",
-        "potential_evaporation",
-        "evaporation",
-    ]
-
-    for variable in era5_variables:
-        exporter.export(variable=variable, granularity="monthly", region_str=region_str)
-
-
-def export_era5_land(region_str="kenya"):
-    exporter = ERA5LandExporter(get_data_path())
-
-    variables = [
-        "total_precipitation",
-        # "2m_temperature",
-        # "evapotranspiration",
-        # "potential_evaporation",
+        # "10m_u_component_of_wind",
+        # "10m_v_component_of_wind",
         # "volumetric_soil_water_layer_1",
         # "volumetric_soil_water_layer_2",
         # "volumetric_soil_water_layer_3",
         # "volumetric_soil_water_layer_4",
+        # "surface_pressure",
+        # "surface_sensible_heat_flux",
+        # "surface_latent_heat_flux",
+        # "soil_temperature_level_1",
+        # "2m_temperature",
+        # "mean_eastward_turbulent_surface_stress",
+        # "mean_northward_turbulent_surface_stress",
+        # "surface_net_solar_radiation_clear_sky",
+        # "surface_net_thermal_radiation_clear_sky",
+        # "vertical_integral_of_divergence_of_moisture_flux",
+        # "potential_evaporation",
+        # "evaporation",
+        "soil_type"
+    ]
+
+    for variable in era5_variables:
+        exporter.export(
+            variable=variable,
+            granularity="monthly",
+            region_str=region_str,
+            break_up=True,
+        )
+
+
+def export_era5_land(region_str: str = "kenya", granularity: str = "monthly"):
+    assert granularity in ["monthly", "hourly"]
+    if granularity == "monthly":
+        exporter = ERA5LandExporter(get_data_path())
+    elif granularity == "hourly":
+        exporter = ERA5LandExporterHourly(get_data_path())
+
+    variables = [
+        # "total_precipitation",
+        # "2m_temperature",
+        # "volumetric_soil_water_layer_1",
+        # "volumetric_soil_water_layer_2",
+        # "volumetric_soil_water_layer_3",
+        # "volumetric_soil_water_layer_4",
+        # "total_evaporation",
+        "potential_evaporation"
     ]
     for variable in variables:
         exporter.export(
             variable=variable,
             break_up="yearly",
             region_str=region_str,
-            granularity="monthly",
-            selection_request=dict(year=np.arange(2000, 2021)),
+            selection_request=dict(year=np.arange(2000, YEAR + 1)),
         )
 
 
@@ -110,7 +125,7 @@ def export_era5_single_var(variable="total_precipitation"):
 def export_vhi():
     exporter = VHIExporter(get_data_path())
 
-    exporter.export(years=np.arange(2000, 2021))
+    exporter.export(years=np.arange(2000, YEAR + 1))
 
 
 def export_chirps():
@@ -136,19 +151,23 @@ def export_gleam():
     exporter.export(["E", "SMroot", "SMsurf"], "monthly")
 
 
-def export_srtm():
+def export_srtm(region_str: str = "kenya"):
+    if region_str == "india":
+        max_download_tiles = 57
+    else:
+        max_download_tiles = 15
     exporter = SRTMExporter(data_folder=get_data_path())
-    exporter.export()
+    exporter.export(region_name=region_str, max_download_tiles=max_download_tiles)
 
 
 def export_esa():
-
     exporter = ESACCIExporter(data_folder=get_data_path())
     exporter.export()
 
 
-def export_s5(region_str="kenya"):
-
+def export_s5(
+    region_str="kenya", n_parallel_requests=1, years=np.arange(2000, YEAR + 1)
+):
     granularity = "monthly"
     pressure_level = False
 
@@ -157,12 +176,17 @@ def export_s5(region_str="kenya"):
         granularity=granularity,
         pressure_level=pressure_level,
     )
-    min_year = 1993
+
+    min_year = min(years)
+    max_year = max(years)
+    min_month = 1
+    max_month = 12
     max_leadtime = None
-    pressure_levels = None  # [200, 500, 925]
-    n_parallel_requests = 1
+    pressure_levels = [200, 500, 925]
+
+    variables = ["total_precipitation", "2m_temperature", "evaporation"]
+
     for variable in variables:
-        print(f"\n\nWORKING ON: {variable}\n\n")
         exporter.export(
             variable=variable,
             min_year=min_year,
@@ -173,13 +197,17 @@ def export_s5(region_str="kenya"):
             pressure_levels=pressure_levels,
             n_parallel_requests=n_parallel_requests,
             region_str=region_str,
-            break_up=False,
+            split_export="years",
         )
 
 
 def export_kenya_boundaries():
-
     exporter = KenyaAdminExporter(get_data_path())
+    exporter.export()
+
+
+def export_india_boundaries():
+    exporter = IndiaAdminExporter(get_data_path())
     exporter.export()
 
 
@@ -188,14 +216,23 @@ def export_boku_ndvi():
     exporter.export()
 
 
+def export_mantle_modis():
+    exporter = MantleModisExporter(get_data_path())
+    exporter.export(years=[2001], remove_tif=True)
+
+
 if __name__ == "__main__":
+    region_str = "india"
     print(f"Writing data to: {get_data_path()}")
-    export_era5_land(region_str="india")
-    # export_era5(region_str="kenya")
+    # export_s5(region_str=region_str, n_parallel_requests=4)
+    # export_era5_land(region_str=region_str, granularity="monthly")
+    # export_era5(region_str=region_str)
     # export_vhi()
     # export_chirps()
     # export_era5POS()
     # export_gleam()
     # export_esa()
-    # export_s5(region_str="kenya")
+    # export_mantle_modis()
     # export_kenya_boundaries()
+    export_india_boundaries()
+    # export_srtm(region_str=region_str)

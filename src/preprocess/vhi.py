@@ -338,6 +338,7 @@ class VHIPreprocessor(BasePreProcessor):
             np.array(timestamp).size == 1
         ), "The function only currently works with SINGLE TIMESTEPS."
 
+        # add dimension, add time dimension, add new dimension
         da = xr.DataArray(
             [ds[variable].values],
             dims=["time", "lat", "lon"],

@@ -9,6 +9,9 @@ from .evaluation import (
     read_true_data,
     read_train_data,
     read_test_data,
+    group_rmse,
+    group_r2,
+    temporal_r2,
 )
 from .plot_explanations import plot_explanations, all_explanations_for_file
 from .indices import (
@@ -45,6 +48,7 @@ __all__ = [
     "AdministrativeRegionAnalysis",
     "all_explanations_for_file",
     "spatial_rmse",
+    "temporal_r2",
     "spatial_r2",
     "plot_predictions",
     "read_pred_data",

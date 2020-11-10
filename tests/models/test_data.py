@@ -137,7 +137,7 @@ class TestBaseIter:
             {v: f"{v}_global_mean" for v in x.data_vars}
         )
         static2 = static2 * ones
-        static_ds = xr.auto_combine([static1, static2])
+        static_ds = xr.combine_by_coords([static1, static2])
 
         class MockLoader:
             def __init__(self):

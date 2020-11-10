@@ -1,6 +1,7 @@
 import shutil
 from pathlib import Path
 import time
+import pickle
 
 
 def get_data_path() -> Path:
@@ -56,3 +57,17 @@ def rename_features_dir(data_path: Path, dir: str):
 def rename_models_dir(data_path: Path):
     """increment the models dir by 1"""
     _base_increment_folder(data_path, dir="models")
+
+
+def load_pickle(filepath):
+    """ load a pickled object from the filepath """
+    with open(filepath, "rb") as f:
+        return pickle.load(f)
+
+
+def pickle_file(obj, filepath: Path):
+    assert not filepath.exists(), "Expect the file to save not to exist!"
+    assert filepath.parents[0].exists(), "Expect the parent directory to exist!"
+
+    with open(filepath, "wb") as f:
+        pickle.dump(obj, f)

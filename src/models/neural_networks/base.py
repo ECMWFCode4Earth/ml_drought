@@ -123,8 +123,10 @@ class NNBase(ModelBase):
         learning_rate: float = 1e-3,
         val_split: float = 0.1,
         check_inversion: bool = False,
+        verbose: bool = True,
     ) -> None:
-        print(f"Training {self.model_name} for experiment {self.experiment}")
+        if verbose:
+            print(f"Training {self.model_name} for experiment {self.experiment}")
 
         if early_stopping is not None:
             len_mask = len(
@@ -214,24 +216,35 @@ class NNBase(ModelBase):
 
                         val_rmse.append(math.sqrt(val_loss.cpu().item()))
 
-            print(
-                f"Epoch {epoch + 1}, train smooth L1: {np.mean(train_l1)}, "
-                f"RMSE: {np.mean(train_rmse)}"
-            )
+            if verbose:
+                print(
+                    f"Epoch {epoch + 1}, train smooth L1: {np.mean(train_l1)}, "
+                    f"RMSE: {np.mean(train_rmse)}"
+                )
 
             if early_stopping is not None:
                 epoch_val_rmse = np.mean(val_rmse)
-                print(f"Val RMSE: {epoch_val_rmse}")
+                if verbose:
+                    print(f"Val RMSE: {epoch_val_rmse}")
+
                 if epoch_val_rmse < best_val_score:
                     batches_without_improvement = 0
                     best_val_score = epoch_val_rmse
                     best_model_dict = self.model.state_dict()
                 else:
                     batches_without_improvement += 1
+                    # early stopping criteria hit!
                     if batches_without_improvement == early_stopping:
-                        print("Early stopping!")
-                        self.model.load_state_dict(best_model_dict)
-                        return None
+                        if verbose:
+                            print("Early stopping!")
+
+                        try:
+                            self.model.load_state_dict(best_model_dict)
+                            return None
+                        except UnboundLocalError:
+                            # there is NO DATA (all np.nan)
+                            self.model.load_state_dict(self.model.state_dict())
+                            return None
 
     def predict(self) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, np.ndarray]]:
 

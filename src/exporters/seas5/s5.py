@@ -1,7 +1,9 @@
 from pathlib import Path
 import numpy as np
+from datetime import datetime
+import itertools
 
-from typing import cast, Dict, Optional, List
+from typing import cast, Dict, Optional, List, Any
 from .all_valid_s5 import datasets as dataset_reference
 from ..base import region_lookup
 from ..cds import CDSExporter
@@ -92,6 +94,33 @@ class S5Exporter(CDSExporter):
                 {self.product_type} is not a valid variable for the {self.dataset} dataset.\
                 Try one of: {self.dataset_reference['product_type']}"
 
+    def _parallel_export(
+        self,
+        pool_obj: Any,
+        output_paths: List,
+        processed_request: Dict,
+        show_api_request: bool = True,
+    ) -> List:
+        # multiprocessing of the paths
+        in_parallel = True
+        output_paths.append(
+            pool_obj.apply_async(
+                self._export,
+                args=(self.dataset, processed_request, show_api_request, in_parallel),
+            )
+        )
+        return output_paths
+
+    def _sequential_export(
+        self, output_paths: List, processed_request: Dict, show_api_request: bool = True
+    ) -> List:
+        output_paths.append(
+            self._export(
+                self.dataset, processed_request, show_api_request, in_parallel=False
+            )
+        )
+        return output_paths
+
     def export(
         self,
         variable: str,
@@ -103,7 +132,7 @@ class S5Exporter(CDSExporter):
         pressure_levels: Optional[List[int]] = None,
         n_parallel_requests: int = 3,
         show_api_request: bool = True,
-        break_up: bool = True,
+        split_export: str = "years",
         region_str: str = "kenya",
     ) -> List[Path]:
         """
@@ -139,8 +168,8 @@ class S5Exporter(CDSExporter):
         show_api_request: bool
             do you want to print the api request to view it?
 
-        break_up: bool - default: True
-            whether to break up requests into parallel
+        split_export: str - default: "years"
+            How to split the downloads (can't download all data at once)
 
         Note:
         ----
@@ -148,6 +177,14 @@ class S5Exporter(CDSExporter):
         - these are required to initialise the object [granularity, pressure_level]
         - Only time will be chunked (by months) to send separate calls to the cdsapi
         """
+        assert split_export in [
+            "years",
+            "months",
+        ], "Expect either 'months' or 'years' for split_export"
+
+        # set the split export argument as an ATTRIBUTE (use later in make_filename)
+        self.split_export = split_export
+
         # n_parallel_requests can only be a MINIMUM of 1
         if n_parallel_requests < 1:
             n_parallel_requests = 1
@@ -181,53 +218,57 @@ class S5Exporter(CDSExporter):
             # p = multiprocessing.Pool(int(n_parallel_requests))
             p = pool(int(n_parallel_requests))  # type: ignore
 
-        output_paths = []
-        if break_up:
-            # SPLIT THE API CALLS INTO YEARS (speed up downloads)
+        output_paths: List = []
+        if self.split_export == "months":
+            # SPLIT THE API CALLS INTO MONTHS ()
+            for year, month in itertools.product(
+                processed_selection_request["year"],
+                processed_selection_request["month"],
+            ):
+                updated_request = processed_selection_request.copy()
+                updated_request["year"] = [year]
+
+                if n_parallel_requests > 1:  # Run in parallel
+                    # multiprocessing of the paths
+                    output_paths = self._parallel_export(
+                        pool_obj=p,
+                        output_paths=output_paths,
+                        processed_request=updated_request,
+                        show_api_request=show_api_request,
+                    )
+
+                else:  # run sequentially
+                    output_paths = self._sequential_export(
+                        output_paths=output_paths,
+                        processed_request=updated_request,
+                        show_api_request=show_api_request,
+                    )
+
+        elif self.split_export == "years":  # don't split by month, split by year
             for year in processed_selection_request["year"]:
                 updated_request = processed_selection_request.copy()
                 updated_request["year"] = [year]
 
                 if n_parallel_requests > 1:  # Run in parallel
                     # multiprocessing of the paths
-                    in_parallel = True
-                    output_paths.append(
-                        p.apply_async(
-                            self._export,
-                            args=(
-                                self.dataset,
-                                updated_request,
-                                show_api_request,
-                                in_parallel,
-                            ),
-                        )
+                    output_paths = self._parallel_export(
+                        pool_obj=p,
+                        output_paths=output_paths,
+                        processed_request=updated_request,
+                        show_api_request=show_api_request,
                     )
 
                 else:  # run sequentially
-                    in_parallel = False
-                    output_paths.append(
-                        self._export(
-                            self.dataset, updated_request, show_api_request, in_parallel
-                        )
+                    output_paths = self._sequential_export(
+                        output_paths=output_paths,
+                        processed_request=updated_request,
+                        show_api_request=show_api_request,
                     )
 
-            # close the multiprocessing pool
-            if n_parallel_requests > 1:
-                p.close()
-                p.join()
-
-        else:  # don't split by month
-            for year in processed_selection_request["year"]:
-                updated_request = processed_selection_request.copy()
-                updated_request["year"] = [year]
-                output_paths.append(
-                    self._export(
-                        self.dataset,
-                        updated_request,
-                        show_api_request,
-                        in_parallel=False,
-                    )
-                )
+        # close the multiprocessing pool
+        if n_parallel_requests > 1:
+            p.close()
+            p.join()
 
         return output_paths
 
@@ -258,8 +299,8 @@ class S5Exporter(CDSExporter):
         ), f"The minimum year is 1993. You asked for:\
         {min_year}"
         assert (
-            max_year <= 2019
-        ), f"The maximum year is 2019. You asked for:\
+            max_year <= datetime.now().year
+        ), f"The maximum year is {datetime.now().year}. You asked for:\
         {max_year}"
 
         # build up list of years
@@ -467,7 +508,7 @@ class S5Exporter(CDSExporter):
     def make_filename(self, dataset: str, selection_request: Dict) -> Path:
         """Called from the super class (CDSExporter)
         data/raw/seasonal-monthly-single-levels
-         /total_precipitation/2017/M01-Vmonthly_mean-P.grib
+         /total_precipitation/2017/Y2017_M01.grib
         """
         # base data folder
         dataset_folder = self.raw_folder / dataset
@@ -486,16 +527,27 @@ class S5Exporter(CDSExporter):
         if not years_folder.exists():
             years_folder.mkdir()
 
-        # file per month
-        months = self._filename_from_selection_request(
-            selection_request["month"], "month"
-        )
-        if self.pressure_level:
-            plevels = selection_request["pressure_level"]
-            plevels = "_".join(plevels)
-            fname = f"Y{years}_M{months}-P{plevels}.grib"
-        else:
-            fname = f"Y{years}_M{months}.grib"
+        if self.split_export == "months":
+            # file per month
+            months = self._filename_from_selection_request(
+                selection_request["month"], "month"
+            )
+            if self.pressure_level:
+                plevels = selection_request["pressure_level"]
+                plevels = "_".join(plevels)
+                fname = f"Y{years}_M{months}-P{plevels}.grib"
+            else:
+                fname = f"Y{years}_M{months}.grib"
+
+        elif self.split_export == "years":
+            # file per year
+            if self.pressure_level:
+                plevels = selection_request["pressure_level"]
+                plevels = "_".join(plevels)
+                fname = f"Y{years}_M01_12-P{plevels}.grib"
+            else:
+                fname = f"Y{years}_M01_12.grib"
+
         output_filename = years_folder / fname
 
         return output_filename

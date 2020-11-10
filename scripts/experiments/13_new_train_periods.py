@@ -2,7 +2,9 @@ from pathlib import Path
 from typing import List, Tuple, Dict
 import sys
 import itertools
-
+import xarray as xr
+import pandas as pd
+import numpy as np
 
 sys.path.append("../..")
 
@@ -145,9 +147,11 @@ class Experiment:
         self.train_timesteps = [pd.to_datetime(ts) for ts in train_timesteps]
 
         # CHECK NO DATA LEAKAGE
+        str_train_ts = [f"{ts.year}-{ts.month}" for ts in self.train_timesteps]
+        str_test_ts = [f"{ts.year}-{ts.month}" for ts in self.test_timesteps]
         assert ~all(np.isin(self.test_timesteps, self.train_timesteps)), (
-            f"Data Leakage:\n\nTrain timesteps: {[f'{ts.year}-{ts.month}' for ts in train_timesteps]}\n\n"
-            "Test Timesteps: {[f'{ts.year}-{ts.month}' for ts in train_timesteps]}"
+            f"Data Leakage:\n\nTrain timesteps: {str_train_ts}\n\n"
+            f"Test Timesteps: {str_test_ts}"
         )
 
     @staticmethod
@@ -211,7 +215,7 @@ class Experiment:
                 # and we want high training timesteps, select from other groups
                 if len(train_dict[self.train_hilo]) == 0:
                     print(
-                        "not enough {self.train_hilo} timesteps left! Selecting from other groups"
+                        f"not enough {self.train_hilo} timesteps left! Selecting from other groups"
                     )
                     train_timesteps = np.append(
                         train_timesteps, np.random.choice(leftover_timesteps, 1)

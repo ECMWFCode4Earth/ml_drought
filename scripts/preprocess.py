@@ -18,6 +18,8 @@ from src.preprocess import (
     KenyaASALMask,
     ERA5LandPreprocessor,
     ERA5LandMonthlyMeansPreprocessor,
+    IndiaAdminProcessor,
+    MantleModisPreprocessor,
 )
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
@@ -29,7 +31,8 @@ def process_vci(subset_str: str = "kenya"):
     data_path = get_data_path()
     processor = VHIPreprocessor(get_data_path(), "VCI")
     regrid_path = (
-        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path
+        / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -42,7 +45,8 @@ def process_precip_2018(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = (
-        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path
+        / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -54,7 +58,8 @@ def process_precip_2018(subset_str: str = "kenya"):
 def process_era5POS_2018(subset_str: str = "kenya"):
     data_path = get_data_path()
     regrid_path = (
-        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path
+        / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -69,46 +74,56 @@ def process_era5POS_2018(subset_str: str = "kenya"):
     )
 
 
-def process_era5_land(
-    variables: Optional[Union[List, str]] = None,
+def preprocess_era5_land(
+    variables: Optional[Union[List, str]] = [
+        "volumetric_soil_water_layer_1",
+        "volumetric_soil_water_layer_2",
+        "volumetric_soil_water_layer_3",
+        "volumetric_soil_water_layer_4",
+        "potential_evaporation",
+        "total_precipitation",
+        "2m_temperature",
+        "total_evaporation",
+    ],
     subset_str: str = "kenya",
     monmean: bool = True,
 ):
     data_path = get_data_path()
-
+    if monmean:
+        dataset = "reanalysis-era5-land-monthly-means"
+    else:
+        dataset = "reanalysis-era5-land"
     # Check all the provided variables exist
     if variables is None:
-        variables = [d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()]
+        variables = [d.name for d in (data_path / f"raw/{dataset}").iterdir()]
         assert (
             variables != []
-        ), f"Expecting to find some variables in: {(data_path / 'raw/reanalysis-era5-land')}"
+        ), f"Expecting to find some variables in: {(data_path / 'raw/')}"
     else:
         if isinstance(variables, str):
             variables = [variables]
             assert variables in [
-                d.name for d in (data_path / "raw/reanalysis-era5-land").iterdir()
-            ], f"Expect to find {variables} in {(data_path / 'raw/reanalysis-era5-land')}"
+                d.name for d in (data_path / f"raw/{dataset}").iterdir()
+            ], f"Expect to find {variables} in {(data_path / f'raw/{dataset}')}"
         else:
             assert all(
                 np.isin(
                     variables,
-                    [
-                        d.name
-                        for d in (data_path / "raw/reanalysis-era5-land").iterdir()
-                    ],
+                    [d.name for d in (data_path / f"raw/{dataset}").iterdir()],
                 )
             ), f"Expected to find {variables}"
 
-    # regrid_path = data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+    # regrid_path = data_path / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
     # assert regrid_path.exists(), f"{regrid_path} not available"
     regrid_path = None
 
-    if monmean:
-        processor = ERA5LandMonthlyMeansPreprocessor(data_path)
-    else:
-        processor = ERA5LandPreprocessor(data_path)
-
     for variable in variables:
+
+        if monmean:
+            processor = ERA5LandMonthlyMeansPreprocessor(data_path)
+        else:
+            processor = ERA5LandPreprocessor(data_path)
+
         processor.preprocess(
             subset_str=subset_str,
             regrid=None,
@@ -122,7 +137,8 @@ def process_gleam(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = (
-        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path
+        / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -146,53 +162,48 @@ def process_gleam():
     )
 
 
-def process_seas5():
-    # if the working directory is alread ml_drought don't need ../data
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
+def process_seas5(
+    subset_str: str = "kenya",
+    variables: List[str] = ["2m_temperature", "evaporation", "total_precipitation"],
+):
+    data_path = get_data_path()
+
     regrid_path = (
         data_path
-        / "interim/reanalysis-era5-single-levels-monthly-means_preprocessed/data_kenya.nc"
+        / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
-    datasets = [d.name for d in (data_path / "raw").iterdir() if "seasonal" in d.name]
-    for dataset in datasets:
-        variables = [v.name for v in (data_path / "raw" / dataset).glob("*")]
-
-        for variable in variables:
-            if variable == "total_precipitation":
-                processor = S5Preprocessor(data_path)
-                processor.preprocess(
-                    subset_str="kenya",
-                    regrid=regrid_path,
-                    resample_time=None,
-                    upsampling=False,
-                    variable=variable,
-                )
+    for variable in variables:
+        processor = S5Preprocessor(data_path)
+        processor.preprocess(
+            variable=variable,
+            subset_str=subset_str,
+            regrid=regrid_path,
+            resample_time="M",
+            upsampling=False,
+            cleanup=True,
+        )
 
 
-def process_esa_cci_landcover():
-    if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-        data_path = Path("data")
-    else:
-        data_path = Path("../data")
+def process_esa_cci_landcover(subset_str: str = "kenya"):
+    data_path = get_data_path()
     regrid_path = (
         data_path
-        / "interim/reanalysis-era5-single-levels-monthly-means_preprocessed/data_kenya.nc"
+        / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
+
     processor = ESACCIPreprocessor(data_path)
-    processor.preprocess(subset_str=subset_str, regrid=regrid_path)
+    processor.preprocess(subset_str=subset_str, regrid=regrid_path, cleanup=False)
 
 
 def preprocess_srtm(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = (
-        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path
+        / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -233,19 +244,23 @@ def preprocess_asal_mask():
 def preprocess_era5(subset_str: str = "kenya"):
     data_path = get_data_path()
 
-    # regrid_path = data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
-    # assert regrid_path.exists(), f"{regrid_path} not available"
-    regrid_path = None
+    regrid_path = (
+        data_path
+        / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
+    )
+    assert regrid_path.exists(), f"{regrid_path} not available"
 
     processor = ERA5MonthlyMeanPreprocessor(data_path)
-    processor.preprocess(subset_str=subset_str, regrid=regrid_path)
+    #  upsampling from low -> high resolution
+    processor.preprocess(subset_str=subset_str, regrid=regrid_path, upsampling=True)
 
 
 def preprocess_era5_hourly(subset_str: str = "kenya"):
     data_path = get_data_path()
 
     regrid_path = (
-        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path
+        / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
@@ -262,13 +277,35 @@ def preprocess_boku_ndvi(subset_str: str = "kenya"):
     processor = BokuNDVIPreprocessor(data_path, downsample_first=False)
 
     regrid_path = (
-        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        data_path
+        / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
     )
     assert regrid_path.exists(), f"{regrid_path} not available"
 
     processor.preprocess(
         subset_str=subset_str, resample_time="W-MON", regrid=regrid_path
     )
+
+
+def preprocess_india_boundaries(selection: str = "level_1"):
+    data_path = get_data_path()
+    subset_str = "india"
+
+    regrid_path = data_path / f"interim/VCI_preprocessed/data_{subset_str}.nc"
+    assert regrid_path.exists(), f"{regrid_path} not available"
+
+    processor = IndiaAdminProcessor(data_path)
+    processor.preprocess(reference_nc_filepath=regrid_path, selection=selection)
+
+
+def process_boundaries(subset_str: str):
+    if subset_str == "kenya":
+        preprocess_kenya_boundaries(selection="level_1")
+        preprocess_kenya_boundaries(selection="level_2")
+        preprocess_kenya_boundaries(selection="level_3")
+    if subset_str == "india":
+        preprocess_india_boundaries(selection="level_1")
+        preprocess_india_boundaries(selection="level_2")
 
 
 def preprocess_s5_ouce():
@@ -287,26 +324,34 @@ def preprocess_s5_ouce():
     )
 
 
+def preprocess_mantle_modis(subset_str: str = "india"):
+    data_path = get_data_path()
+
+    regrid_path = (
+        data_path
+        / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
+    )
+    assert regrid_path.exists(), f"{regrid_path} not available"
+
+    processor = MantleModisPreprocessor(data_path)
+    processor.preprocess(
+        subset_str=subset_str, regrid=regrid_path, upsampling=False,
+    )
+
+
 if __name__ == "__main__":
     subset_str = "india"
+    preprocess_mantle_modis(subset_str=subset_str)
     # preprocess_era5(subset_str=subset_str)
-    process_era5_land(
-        subset_str=subset_str,
-        variables=[
-            "volumetric_soil_water_layer_1",
-            "potential_evaporation",
-        ],  #  total_precipitation 2m_temperature evapotranspiration
-        monmean=False,
-    )
+    # process_seas5(subset_str=subset_str)
+    # preprocess_era5_land(subset_str=subset_str, monmean=True)
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
     # process_era5POS_2018(subset_str=subset_str)
     # process_gleam(subset_str=subset_str)
     # process_esa_cci_landcover(subset_str=subset_str)
     # preprocess_srtm(subset_str=subset_str)
-    # preprocess_kenya_boundaries(selection="level_1")
-    # preprocess_kenya_boundaries(selection="level_2")
-    # preprocess_kenya_boundaries(selection="level_3")
     # preprocess_era5_hourly(subset_str=subset_str)
     # preprocess_boku_ndvi(subset_str=subset_str)
     # preprocess_asal_mask(subset_str=subset_str)
+    # process_boundaries(subset_str)

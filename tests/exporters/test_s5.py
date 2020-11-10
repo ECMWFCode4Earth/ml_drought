@@ -246,6 +246,9 @@ class TestS5Exporter:
             max_month=max_month,
         )
 
+        # THIS WOULD BE DONE BY THE .export() function
+        s5.split_export = "years"  #  "months"
+
         filepath = s5.make_filename(
             dataset=s5.dataset, selection_request=processed_selection_request
         )

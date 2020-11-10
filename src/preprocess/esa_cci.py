@@ -71,7 +71,7 @@ class ESACCIPreprocessor(BasePreProcessor):
         print(f"Starting work on {netcdf_filepath.name}")
         ds = xr.open_dataset(netcdf_filepath)
 
-        # 2. chop out EastAfrica
+        # 2. chop out ROI
         if subset_str is not None:
             try:
                 ds = self.chop_roi(ds, subset_str)
@@ -155,6 +155,8 @@ class ESACCIPreprocessor(BasePreProcessor):
         if years is not None:
             nc_files = [f for f in nc_files if int(str(f).split("-")[-2]) in years]
 
+        # TODO: get percentage cover within one pixel (over space) to collapse space
+        # Mean filter: https://homepages.inf.ed.ac.uk/rbf/HIPR2/mean.html
         if regrid is not None:
             regrid = self.load_reference_grid(regrid)
 
@@ -165,6 +167,8 @@ class ESACCIPreprocessor(BasePreProcessor):
             self.get_filepaths("interim"), combine="nested", concat_dim="time"
         )
 
+        # TODO: convert MODAL value across time to the most recent observation
+        # TODO: convert MODAL value to the percentage cover (over time ?)
         ds = get_modal_value_across_time(ds.lc_class).to_dataset()
 
         if one_hot_encode:
