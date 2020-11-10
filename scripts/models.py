@@ -70,7 +70,7 @@ def regression(
     include_pred_month=True,
     surrounding_pixels=None,
     ignore_vars=None,
-    include_yearly_aggs: bool = True,
+    include_yearly_aggs: bool = False,
 ):
     data_path = get_data_path()
     spatial_mask = data_path / "interim/boundaries_preprocessed/kenya_asal_mask.nc"
@@ -100,7 +100,7 @@ def linear_nn(
     ignore_vars=None,
     pretrained=False,
     static=None,
-    include_yearly_aggs: bool = True,
+    include_yearly_aggs: bool = False,
     early_stopping: int = 5,
 ):
     predictor = LinearNetwork(
@@ -127,7 +127,7 @@ def rnn(
     ignore_vars=None,
     pretrained=False,
     static=None,
-    include_yearly_aggs: bool = True,
+    include_yearly_aggs: bool = False,
     early_stopping: int = 5,
 ):
     predictor = RecurrentNetwork(
@@ -155,7 +155,7 @@ def earnn(
     ignore_vars=None,
     static="embeddings",
     explain: bool = False,
-    include_yearly_aggs: bool = True,
+    include_yearly_aggs: bool = False,
     early_stopping: int = 5,
 ):
     data_path = get_data_path()
