@@ -288,7 +288,8 @@ def check_data_not_duplicated(ds: xr.Dataset, var_name: str = "cell_state"):
     id0 = ds.isel(station_id=0).isel(time=slice(0, 100))[var_name]
     id1 = ds.isel(station_id=1).isel(time=slice(0, 100))[var_name]
 
-    print(f"{np.isclose(id0.values, id1.values).mean() * 100} %")
+    if verbose:
+    print(f"Duplicated values: {np.isclose(id0.values, id1.values).mean() * 100} %")
     assert np.isclose(id0.values, id1.values).mean() < 1
 
 
@@ -320,7 +321,6 @@ def load_normalised_cs_data(
     #  5. normalise cell state data
     norm_cs_data = normalize_xarray_cstate(cs_data)
     norm_cs_data = norm_cs_data.to_dataset()
-    print("Model Overlap: ")
     check_data_not_duplicated(norm_cs_data, "cell_state")
 
     return norm_cs_data
