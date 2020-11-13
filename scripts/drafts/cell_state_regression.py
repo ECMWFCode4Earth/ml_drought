@@ -147,7 +147,6 @@ def convert_time_to_long_format(time_vals, times) -> Tuple[np.ndarray, np.ndarra
 def convert_dict_to_one_big_array(
     all_basin_data: DefaultDict[str, Dict[str, np.ndarray]]
 ) -> Tuple[List[str], np.ndarray]:
-    print("-- Converting Dict to np.ndarray --")
     # CONVERT to one big array
     all_cs_data = []
     basins = [k for k in all_basin_data.keys()]
@@ -247,17 +246,17 @@ def normalize_cell_states(cell_state: np.ndarray, desc: str = "Normalize"):
 def normalize_xarray_cstate(c_state: xr.Dataset) -> xr.Dataset:
     #  Normalize all station values in cs_data:
     all_normed = []
-    for station in cs_data.station_id.values:
+    for station in c_state.station_id.values:
         norm_state = normalize_cell_states(
-            cs_data.sel(station_id=station)["cell_state"].values
+            c_state.sel(station_id=station)["cell_state"].values
         )
         all_normed.append(norm_state)
 
     all_normed_stack = np.stack(all_normed).transpose(1, 2, 0)
-    norm_cs_data = xr.ones_like(cs_data["cell_state"])
-    norm_cs_data = norm_cs_data * all_normed_stack
+    norm_c_state = xr.ones_like(c_state["cell_state"])
+    norm_c_state = norm_c_state * all_normed_stack
 
-    return norm_cs_data
+    return norm_c_state
 
 
 # NORMALIZE SM
