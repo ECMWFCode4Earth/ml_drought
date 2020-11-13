@@ -319,7 +319,7 @@ def load_normalised_cs_data(
 
     #  5. normalise cell state data
     norm_cs_data = normalize_xarray_cstate(cs_data)
-
+    norm_cs_data = norm_cs_data.to_dataset()
     print("Model Overlap: ")
     check_data_not_duplicated(norm_cs_data, "cell_state")
 
