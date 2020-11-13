@@ -319,30 +319,30 @@ if __name__ == "__main__":
     assert data_dir.exists()
 
     run_dir = data_dir / "runs/ensemble_EALSTM/ealstm_ensemble6_nse_1998_2008_2910_030601"
-    config = load_config_file(run_dir)
-    model = load_ealstm(config)
+    # config = load_config_file(run_dir)
+    # model = load_ealstm(config)
 
-    #  3. create Cell State embeddings for each basin we want to test
-    #  4. convert cell state embeddings to xarray format
+    # #  3. create Cell State embeddings for each basin we want to test
+    # #  4. convert cell state embeddings to xarray format
 
-    TEST_BASINS = [str(id_) for id_ in catchment_ids]
-    FINAL_VALUE = True
-    TEST_TIMES = pd.date_range(config.test_start_date, config.test_end_date, freq="D")
+    # TEST_BASINS = [str(id_) for id_ in catchment_ids]
+    # FINAL_VALUE = True
+    # TEST_TIMES = pd.date_range(config.test_start_date, config.test_end_date, freq="D")
 
-    #  1. run the forward passes for each basin
-    all_basin_data = run_all_basin_forward_passes(
-        test_basins=TEST_BASINS, config=config, final_value=FINAL_VALUE, model=model,
-    )
+    # #  1. run the forward passes for each basin
+    # all_basin_data = run_all_basin_forward_passes(
+    #     test_basins=TEST_BASINS, config=config, final_value=FINAL_VALUE, model=model,
+    # )
 
-    # 3. create xarray object
-    cs_data = convert_dict_to_xarray(
-        all_basin_data, times=TEST_TIMES, wide_format=False, final_value=FINAL_VALUE,
-    )
+    # # 3. create xarray object
+    # cs_data = convert_dict_to_xarray(
+    #     all_basin_data, times=TEST_TIMES, wide_format=False, final_value=FINAL_VALUE,
+    # )
 
-    #  5. normalise cell state data
-    norm_cs_data = normalize_xarray_cstate(cs_data)
+    # #  5. normalise cell state data
+    # norm_cs_data = normalize_xarray_cstate(cs_data)
 
-    print("Model Overlap: ")
-    check_data_not_duplicated(norm_cs_data, "cell_state")
+    # print("Model Overlap: ")
+    # check_data_not_duplicated(norm_cs_data, "cell_state")
 
-    sm = read_gb_sm_data()
+    sm = read_gb_sm_data(data_dir)

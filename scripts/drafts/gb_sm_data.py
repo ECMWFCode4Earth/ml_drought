@@ -1,9 +1,10 @@
 import xarray as xr
 from tqdm import tqdm
 import pandas as pd
+from pathlib import Path
 
 
-def read_gb_sm_data() -> xr.Dataset:
+def read_gb_sm_data(data_dir: Path) -> xr.Dataset:
     if not (data_dir / "RUNOFF/gb_sm_catchments_1993_2020.nc").exists():
         all_sm_ds = []
         for ix, path in enumerate(
