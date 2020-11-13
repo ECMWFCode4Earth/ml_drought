@@ -317,6 +317,8 @@ if __name__ == "__main__":
     #  1. Load in the model config file
     data_dir = Path("/cats/datastore/data/")
     assert data_dir.exists()
+
+    run_dir = data_dir / "runs/ensemble_EALSTM/ealstm_ensemble6_nse_1998_2008_2910_030601"
     config = load_config_file(run_dir)
     model = load_ealstm(config)
 
