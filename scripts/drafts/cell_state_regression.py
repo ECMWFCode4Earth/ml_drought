@@ -282,14 +282,14 @@ def normalize_xr_by_basin(ds):
 
 
 #  6. return cell state data
-def check_data_not_duplicated(ds: xr.Dataset, var_name: str = "cell_state"):
+def check_data_not_duplicated(ds: xr.Dataset, var_name: str = "cell_state", verbose: bool = False):
     assert all(np.isin(["time", "station_id"], [v for v in ds.dims]))
     #  CHECK THAT DATA IS NOT DUPLICATED
     id0 = ds.isel(station_id=0).isel(time=slice(0, 100))[var_name]
     id1 = ds.isel(station_id=1).isel(time=slice(0, 100))[var_name]
 
     if verbose:
-    print(f"Duplicated values: {np.isclose(id0.values, id1.values).mean() * 100} %")
+        print(f"Duplicated values: {np.isclose(id0.values, id1.values).mean() * 100} %")
     assert np.isclose(id0.values, id1.values).mean() < 1
 
 
