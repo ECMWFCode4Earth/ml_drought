@@ -293,6 +293,41 @@ def check_data_not_duplicated(ds: xr.Dataset, var_name: str = "cell_state"):
     assert np.isclose(id0.values, id1.values).mean() < 1
 
 
+
+# load cs_data
+def load_normalised_cs_data(
+    config: Config,
+    model: BaseModel,
+    test_basins: List[str],
+    test_times: List[pd.Timestamp],
+    final_value: bool = True,
+) -> xr.Dataset:
+    #  1. run the forward passes for each basin
+    all_basin_data = run_all_basin_forward_passes(
+        test_basins=test_basins,
+        config=config,
+        final_value=final_value,
+        model=model,
+    )
+
+    # 3. create xarray object
+    cs_data = convert_dict_to_xarray(
+        all_basin_data,
+        times=test_times,
+        wide_format=False,
+        final_value=final_value,
+    )
+
+    #  5. normalise cell state data
+    norm_cs_data = normalize_xarray_cstate(cs_data)
+
+    print("Model Overlap: ")
+    check_data_not_duplicated(norm_cs_data, "cell_state")
+
+    return norm_cs_data
+
+
+
 if __name__ == "__main__":
     # TEST stations (13 stations in the test sample)
     catchment_ids = [
@@ -319,30 +354,21 @@ if __name__ == "__main__":
     assert data_dir.exists()
 
     run_dir = data_dir / "runs/ensemble_EALSTM/ealstm_ensemble6_nse_1998_2008_2910_030601"
-    # config = load_config_file(run_dir)
-    # model = load_ealstm(config)
+    config = load_config_file(run_dir)
+    model = load_ealstm(config)
 
-    # #  3. create Cell State embeddings for each basin we want to test
-    # #  4. convert cell state embeddings to xarray format
+    # get normalised cs_data
+    TEST_BASINS = [str(id_) for id_ in catchment_ids]
+    FINAL_VALUE = True
+    TEST_TIMES = pd.date_range(config.test_start_date, config.test_end_date, freq="D")
 
-    # TEST_BASINS = [str(id_) for id_ in catchment_ids]
-    # FINAL_VALUE = True
-    # TEST_TIMES = pd.date_range(config.test_start_date, config.test_end_date, freq="D")
+    norm_cs_data = load_normalised_cs_data(
+        config=config,
+        model=model,
+        test_basins=TEST_BASINS,
+        test_times=TEST_TIMES,
+        final_value=FINAL_VALUE,
+    )
 
-    # #  1. run the forward passes for each basin
-    # all_basin_data = run_all_basin_forward_passes(
-    #     test_basins=TEST_BASINS, config=config, final_value=FINAL_VALUE, model=model,
-    # )
-
-    # # 3. create xarray object
-    # cs_data = convert_dict_to_xarray(
-    #     all_basin_data, times=TEST_TIMES, wide_format=False, final_value=FINAL_VALUE,
-    # )
-
-    # #  5. normalise cell state data
-    # norm_cs_data = normalize_xarray_cstate(cs_data)
-
-    # print("Model Overlap: ")
-    # check_data_not_duplicated(norm_cs_data, "cell_state")
-
+    # get the target SM data
     sm = read_gb_sm_data(data_dir)
