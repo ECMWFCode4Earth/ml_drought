@@ -371,3 +371,4 @@ if __name__ == "__main__":
 
     # get the target SM data
     sm = read_gb_sm_data(data_dir)
+    norm_sm = normalize_xr_by_basin(sm)
