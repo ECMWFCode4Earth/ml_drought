@@ -1,4 +1,5 @@
 from pathlib import Path
+from collections import defaultdict
 import pandas as pd
 import sys
 import torch
@@ -322,6 +323,39 @@ def run_all_soil_level_predictions(
 
 
 # run evaluation
+def create_error_datasets(all_preds: xr.Dataset) -> Tuple[xr.Dataset]:
+    all_r2s = []
+    all_rmses = []
+    for ix, preds in enumerate(all_preds):
+        variable = f"swvl{ix + 1}"
+        all_r2s.append(spatial_r2(preds["y"], preds["y_hat"]).rename(variable))
+        all_rmses.append(spatial_rmse(
+            preds["y"], preds["y_hat"]).rename(variable))
+    r2s = xr.merge(all_r2s).drop("time")
+    rmses = xr.merge(all_rmses).drop("time")
+
+    return r2s, rmses
+
+
+# interpretation
+def get_model_weights(model: torch.nn.Linear) -> Tuple[np.ndarray]:
+    parameters = list(model.parameters())
+    w = parameters[0].cpu().detach().numpy()
+    b = parameters[1].cpu().detach().numpy()
+    return w, b
+
+
+def get_all_models_weights(models:  List[torch.nn.Linear]) -> Tuple[np.ndarray]:
+    model_outputs = defaultdict(dict)
+    for sw_ix in range(len(models)):
+        w, b = get_model_weights(models[sw_ix])
+        model_outputs[f"swvl{sw_ix+1}"]["w"] = w
+        model_outputs[f"swvl{sw_ix+1}"]["b"] = b
+
+    ws = np.stack([model_outputs[swl]["w"]
+                   for swl in model_outputs.keys()]).reshape(4, 64)
+    bs = np.stack([model_outputs[swl]["b"] for swl in model_outputs.keys()])
+    return ws, bs
 
 
 if __name__ == "__main__":
@@ -427,3 +461,11 @@ if __name__ == "__main__":
     all_preds = run_all_soil_level_predictions(
         models=models, test_loaders=test_loaders, target_data=norm_sm
     )
+
+    # run evaluation on hold out set
+    print("-- Creating Error Metrics: R2/RMSE --")
+    r2s, rmses = create_error_datasets(all_preds)
+
+    # extract weights and biases
+    print("-- Extracting weights and biases --")
+    ws, bs = get_all_models_weights(models)
