@@ -182,14 +182,15 @@ def convert_dict_to_xarray(
             },
             coords={
                 "target_time": times.values,
-                "time_delta": time_deltas,
-                "dimension": np.arange(basin_cs.shape[-1]),
+                "time_delta": time_deltas,  #  TODO: get time_deltas from `create_time_arrays`
+                "dimension": np.arange(all_cs_data.shape[-1]),
                 "station_id": basins,
             },
         )
     else:
         #  LONG FORMAT
         if not final_value:
+            # collapse time into one long coordinate (4018*365 long)
             times, time_vals = create_time_arrays(times)
             actual_time, target_time = convert_time_to_long_format(time_vals, times)
             long_data = all_cs_data.reshape(
