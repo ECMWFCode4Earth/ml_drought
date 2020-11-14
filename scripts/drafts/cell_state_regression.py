@@ -9,7 +9,7 @@ import numpy as np
 
 from torch import nn
 from torch.utils.data.sampler import SubsetRandomSampler, Sampler
-from torch.utils.data import random_split, Subset, Dataset
+from torch.utils.data import random_split, Subset, Dataset, DataLoader
 
 from neuralhydrology.modelzoo.basemodel import BaseModel
 from neuralhydrology.utils.config import Config
