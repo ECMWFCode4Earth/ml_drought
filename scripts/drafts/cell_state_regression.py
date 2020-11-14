@@ -2,6 +2,7 @@ from pathlib import Path
 import pandas as pd
 import sys
 import torch
+from tqdm import tqdm
 import xarray as xr
 from typing import Any, Optional, List, Union, Tuple, Dict, DefaultDict
 from numpy import AxisError
@@ -17,11 +18,15 @@ from neuralhydrology.evaluation import RegressionTester
 
 sys.path.insert(2, "/home/tommy/ml_drought")
 from scripts.drafts.gb_sm_data import read_gb_sm_data
-from scripts.drafts.cell_state_extract import (load_normalised_cs_data,
-                                               normalize_xr_by_basin,
-                                               load_ealstm,
-                                               load_config_file,
-                                               load_lstm,)
+from scripts.drafts.cell_state_extract import (
+    load_normalised_cs_data,
+    normalize_xr_by_basin,
+    load_ealstm,
+    load_config_file,
+    load_lstm,
+)
+from src.analysis.evaluation import spatial_r2, spatial_rmse
+
 
 # CellStateDataset
 class CellStateDataset(Dataset):
@@ -33,18 +38,17 @@ class CellStateDataset(Dataset):
         mean: bool = True,
         set_device: bool = True,
     ):
-        assert all(
-            np.isin(["time", "dimension", "station_id"], input_data.dims))
+        assert all(np.isin(["time", "dimension", "station_id"], input_data.dims))
         assert "cell_state" in input_data
-        assert all(np.isin(input_data.station_id.values,
-                           target_data.station_id.values))
+        assert all(np.isin(input_data.station_id.values, target_data.station_id.values))
 
         self.input_data = input_data
         self.set_device = set_device
 
-        # All times that we have data for
+        #  All times that we have data for
         test_times = pd.date_range(
-            config.test_start_date, config.test_end_date, freq="D")
+            config.test_start_date, config.test_end_date, freq="D"
+        )
         bool_input_times = np.isin(input_data.time.values, test_times)
         bool_target_times = np.isin(target_data.time.values, test_times)
         self.all_times = list(
@@ -77,16 +81,17 @@ class CellStateDataset(Dataset):
 
         for basin in self.basins:
             # read the basin data
-            X = self.input_data["cell_state"].sel(
-                station_id=basin).values.astype("float64")
+            X = (
+                self.input_data["cell_state"]
+                .sel(station_id=basin)
+                .values.astype("float64")
+            )
             Y = self.target_data.sel(station_id=basin).values.astype("float64")
 
             # drop nans
-            finite_indices = np.logical_and(
-                np.isfinite(Y), np.isfinite(X).all(axis=1))
+            finite_indices = np.logical_and(np.isfinite(Y), np.isfinite(X).all(axis=1))
             X, Y = X[finite_indices], Y[finite_indices]
-            times = self.input_data["time"].values[finite_indices].astype(
-                float)
+            times = self.input_data["time"].values[finite_indices].astype(float)
 
             # convert to Tensors
             X = torch.from_numpy(X).float()
@@ -101,7 +106,7 @@ class CellStateDataset(Dataset):
             self.basin_samples.extend([basin for _ in range(len(samples))])
             self.time_samples.extend(times)
 
-        # SORT BY TIME (important for train-test split)
+        #  SORT BY TIME (important for train-test split)
         sort_idx = np.argsort(self.time_samples)
         self.time_samples = np.array(self.time_samples)[sort_idx]
         self.samples = np.array(self.samples)[sort_idx]
@@ -116,16 +121,18 @@ class CellStateDataset(Dataset):
 
 
 # train-test split
-def get_train_test_dataset(dataset: Dataset, test_proportion: float = 0.2) -> Tuple[Subset]:
+def get_train_test_dataset(
+    dataset: Dataset, test_proportion: float = 0.2
+) -> Tuple[Subset, Subset]:
     # SubsetRandomSampler = https://stackoverflow.com/a/50544887
     # Subset = https://stackoverflow.com/a/59414029
-    # random_split = https://stackoverflow.com/a/51768651
+    #  random_split = https://stackoverflow.com/a/51768651
     all_data_size = len(dataset)
     train_size = int((1 - test_proportion) * all_data_size)
     test_size = all_data_size - train_size
     test_index = all_data_size - int(np.floor(test_size))
 
-    # test data is from final_sequence : end
+    #  test data is from final_sequence : end
     test_dataset = Subset(dataset, range(test_index, all_data_size))
     # train data is from start : test_index
     train_dataset = Subset(dataset, range(0, test_index))
@@ -138,7 +145,7 @@ def train_validation_split(
     dataset: Dataset,
     validation_split: float = 0.1,
     shuffle_dataset: bool = True,
-    random_seed: int = 42
+    random_seed: int = 42,
 ) -> Tuple[SubsetRandomSampler]:
     # Creating data indices for training and validation splits:
     dataset_size = len(dataset)
@@ -165,12 +172,13 @@ def create_model(dataset):
 
 # train model on each soil level
 def train_model(
-    model, train_dataset,
+    model,
+    train_dataset,
     learning_rate: float = 1e-2,
     n_epochs: int = 5,
     weight_decay: float = 0,
     val_split: bool = False,
-    desc: str = "Training"
+    desc: str = "Training",
 ) -> Tuple[Any, List[float], List[float]]:
 
     if not val_split:
@@ -179,17 +187,21 @@ def train_model(
     loss_fn = torch.nn.MSELoss(reduction="sum")
 
     # optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=learning_rate, weight_decay=weight_decay
+    )
 
     #  TRAIN
     train_losses = []
     val_losses = []
     for epoch in tqdm(range(n_epochs), desc=desc):
-        # new train-validation split each epoch
+        #  new train-validation split each epoch
         if val_split:
-            # create a unique test, val set (random) for each ...
+            #  create a unique test, val set (random) for each ...
             train_sampler, val_sampler = train_validation_split(train_dataset)
-            train_loader = DataLoader(train_dataset, batch_size=256, sampler=train_sampler)
+            train_loader = DataLoader(
+                train_dataset, batch_size=256, sampler=train_sampler
+            )
             val_loader = DataLoader(train_dataset, batch_size=256, sampler=val_sampler)
         else:
             train_loader = DataLoader(train_dataset, batch_size=256)
@@ -218,6 +230,7 @@ def train_model(
 
     return model, train_losses, val_losses
 
+
 # test models on each soil level
 def to_xarray(predictions: Dict[str, List]) -> xr.Dataset:
     return pd.DataFrame(predictions).set_index(["time", "station_id"]).to_xarray()
@@ -240,9 +253,10 @@ def calculate_predictions(model, loader):
 
     return to_xarray(predictions)
 
+
 # Dataset
 
-# ALL Training Process
+#  ALL Training Process
 def train_model_loop(
     config: Config,
     input_data: xr.Dataset,
@@ -252,16 +266,14 @@ def train_model_loop(
     return_loaders: bool = True,
     desc: str = "",
 ) -> Tuple[List[float], BaseModel, Optional[Tuple[DataLoader]]]:
-    # 1. create dataset (input, target)
+    #  1. create dataset (input, target)
     dataset = CellStateDataset(
-        input_data=input_data,
-        target_data=target_data,
-        config=config,
+        input_data=input_data, target_data=target_data, config=config,
     )
 
-    # 2. create train-test split
+    #  2. create train-test split
     if train_test:
-        # build the train, test, validation
+        #  build the train, test, validation
         train_dataset, test_dataset = get_train_test_dataset(dataset)
         test_loader = DataLoader(test_dataset, batch_size=256, shuffle=False)
     else:
@@ -269,7 +281,7 @@ def train_model_loop(
         test_dataset = dataset
         test_loader = DataLoader(dataset, batch_size=256, shuffle=False)
 
-    # 3. initialise the model
+    #  3. initialise the model
     model = create_model(dataset)
 
     # 4. Run training loop (iterate over batches)
@@ -280,7 +292,7 @@ def train_model_loop(
         n_epochs=20,
         weight_decay=0,
         val_split=train_val,
-        desc=desc
+        desc=desc,
     )
 
     # 5. Save outputs (model, losses: List, dataloaders)
@@ -290,6 +302,26 @@ def train_model_loop(
         return train_losses, model, None
 
 
+# Test on hold-out prediction set
+def run_all_soil_level_predictions(
+    models: List[torch.nn.Linear],
+    test_loaders: List[DataLoader],
+    target_data: xr.Dataset,
+) -> List[xr.Dataset]:
+    all_preds = []
+    for ix, model in enumerate(models):
+        soil_level = list(target_data.data_vars)[ix]
+        # target data = SOIL MOISTURE
+        test_loader = test_loaders[ix]
+
+        #  run forward pass and convert to xarray object
+        preds = calculate_predictions(model, test_loader)
+
+        all_preds.append(preds)
+    return all_preds
+
+
+# run evaluation
 
 
 if __name__ == "__main__":
@@ -317,7 +349,9 @@ if __name__ == "__main__":
     ]
 
     if EALSTM:
-        run_dir = data_dir / "runs/ensemble_EALSTM/ealstm_ensemble6_nse_1998_2008_2910_030601"
+        run_dir = (
+            data_dir / "runs/ensemble_EALSTM/ealstm_ensemble6_nse_1998_2008_2910_030601"
+        )
         config = load_config_file(run_dir)
         model = load_ealstm(config)
     else:
@@ -327,9 +361,7 @@ if __name__ == "__main__":
 
     TEST_BASINS = [str(id_) for id_ in catchment_ids]
     FINAL_VALUE = True
-    TEST_TIMES = pd.date_range(
-        config.test_start_date, config.test_end_date, freq="D"
-    )
+    TEST_TIMES = pd.date_range(config.test_start_date, config.test_end_date, freq="D")
 
     # get the normalised input data
     norm_cs_data = load_normalised_cs_data(
@@ -350,7 +382,6 @@ if __name__ == "__main__":
         #  repeated "actual time" values
         input_data = norm_cs_data.groupby("time").mean()
 
-
     # train model on each soil level
     train_test = True
     train_val = False
@@ -358,19 +389,23 @@ if __name__ == "__main__":
     models = []
     test_loaders = []
 
+    print("-- Training Models for Soil Levels --")
     for soil_level in list(norm_sm.data_vars):
         # target data = SOIL MOISTURE
         target_data = norm_sm[soil_level]
         target_data["station_id"] = [int(sid) for sid in target_data["station_id"]]
 
-        # input data
+        #  input data
         input_data = norm_cs_data
         input_data["station_id"] = [int(sid) for sid in input_data["station_id"]]
 
         train_losses, model, test_loader = train_model_loop(
             config=config,
-            input_data=input_data, target_data=target_data,
-            train_test=train_test, train_val=train_val, desc=soil_level,
+            input_data=input_data,
+            target_data=target_data,
+            train_test=train_test,
+            train_val=train_val,
+            desc=soil_level,
             return_loaders=True,
         )
         # store outputs of training process
@@ -387,5 +422,8 @@ if __name__ == "__main__":
     #     axs[1].set_title("Validation Losses")
     #     sns.despine()
 
-
     # test models on each soil level
+    print("-- Running Tests on hold-out test set --")
+    all_preds = run_all_soil_level_predictions(
+        models=models, test_loaders=test_loaders, target_data=norm_sm
+    )

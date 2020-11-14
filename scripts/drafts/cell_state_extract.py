@@ -283,7 +283,9 @@ def normalize_xr_by_basin(ds):
 
 
 #  6. return cell state data
-def check_data_not_duplicated(ds: xr.Dataset, var_name: str = "cell_state", verbose: bool = False):
+def check_data_not_duplicated(
+    ds: xr.Dataset, var_name: str = "cell_state", verbose: bool = False
+):
     assert all(np.isin(["time", "station_id"], [v for v in ds.dims]))
     #  CHECK THAT DATA IS NOT DUPLICATED
     id0 = ds.isel(station_id=0).isel(time=slice(0, 100))[var_name]
@@ -292,7 +294,6 @@ def check_data_not_duplicated(ds: xr.Dataset, var_name: str = "cell_state", verb
     if verbose:
         print(f"Duplicated values: {np.isclose(id0.values, id1.values).mean() * 100} %")
     assert np.isclose(id0.values, id1.values).mean() < 1
-
 
 
 # load cs_data
@@ -305,18 +306,12 @@ def load_normalised_cs_data(
 ) -> xr.Dataset:
     #  1. run the forward passes for each basin
     all_basin_data = run_all_basin_forward_passes(
-        test_basins=test_basins,
-        config=config,
-        final_value=final_value,
-        model=model,
+        test_basins=test_basins, config=config, final_value=final_value, model=model,
     )
 
     # 3. create xarray object
     cs_data = convert_dict_to_xarray(
-        all_basin_data,
-        times=test_times,
-        wide_format=False,
-        final_value=final_value,
+        all_basin_data, times=test_times, wide_format=False, final_value=final_value,
     )
 
     #  5. normalise cell state data
@@ -325,7 +320,6 @@ def load_normalised_cs_data(
     check_data_not_duplicated(norm_cs_data, "cell_state")
 
     return norm_cs_data
-
 
 
 if __name__ == "__main__":
@@ -353,7 +347,9 @@ if __name__ == "__main__":
     data_dir = Path("/cats/datastore/data/")
     assert data_dir.exists()
 
-    run_dir = data_dir / "runs/ensemble_EALSTM/ealstm_ensemble6_nse_1998_2008_2910_030601"
+    run_dir = (
+        data_dir / "runs/ensemble_EALSTM/ealstm_ensemble6_nse_1998_2008_2910_030601"
+    )
     config = load_config_file(run_dir)
     model = load_ealstm(config)
 
