@@ -423,12 +423,15 @@ def train_model_loop(
 
 
 def run_regression_each_soil_level(
-    config, input_data: xr.Dataset,
+    config,
+    input_data: xr.Dataset,
     target_data: xr.Dataset,
     train_val: bool = False,
     train_test: bool = True,
 ) -> Tuple[List[float], List[nn.Linear], List[DataLoader]]:
-    assert target_data.station_id.dtype == input_data.station_id.dtype, "Need matching datatypes for input and target data - `input_data['station_id'] = [int(sid) for sid in input_data['station_id']]`"
+    assert (
+        target_data.station_id.dtype == input_data.station_id.dtype
+    ), "Need matching datatypes for input and target data - `input_data['station_id'] = [int(sid) for sid in input_data['station_id']]`"
     losses_list = []
     models = []
     test_loaders = []
@@ -582,8 +585,11 @@ if __name__ == "__main__":
 
     print("-- Training Models for Soil Levels --")
     losses_list, models, test_loaders = run_regression_each_soil_level(
-        config, target_data=norm_sm, input_data=norm_cs_data,
-        train_test=train_test, train_val=train_val,
+        config,
+        target_data=norm_sm,
+        input_data=norm_cs_data,
+        train_test=train_test,
+        train_val=train_val,
     )
     # for soil_level in list(norm_sm.data_vars):
     #     # target data = SOIL MOISTURE
@@ -639,7 +645,27 @@ if __name__ == "__main__":
         with_static=False,
     )
 
+    print("-- Training Models for Soil Levels [RAW DATA] --")
     raw_losses_list, raw_models, raw_test_loaders = run_regression_each_soil_level(
-        config, target_data=norm_sm, input_data=raw_input_data,
-        train_test=train_test, train_val=train_val,
+        config,
+        target_data=norm_sm,
+        input_data=raw_input_data,
+        train_test=train_test,
+        train_val=train_val,
     )
+
+    print("-- Running Tests on hold-out test set [RAW DATA] --")
+    raw_preds = run_all_soil_level_predictions(
+        models=raw_models, test_loaders=raw_test_loaders, target_data=norm_sm
+    )
+
+    print("-- Creating Error Metrics: R2/RMSE --")
+    raw_r2s, raw_rmses = create_error_datasets(raw_preds)
+
+    raw_data = (
+        raw_r2s.to_dataframe()
+        .reset_index()
+        .melt(id_vars="station_id")
+        .sort_values("variable")
+    )
+    print(f"MEAN R2: {raw_data.drop('station_id', axis=1).mean().values[0]:.2f}")
