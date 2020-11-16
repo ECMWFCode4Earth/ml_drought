@@ -560,12 +560,12 @@ if __name__ == "__main__":
         test_times=TEST_TIMES,
         final_value=FINAL_VALUE,
     )
-    norm_cs_data["station_id"] = [int(sid) for sid in input_data["station_id"]]
+    norm_cs_data["station_id"] = [int(sid) for sid in norm_cs_data["station_id"]]
 
     # get the target SM data
     sm = read_gb_sm_data(data_dir)
     norm_sm = normalize_xr_by_basin(sm)
-    norm_sm["station_id"] = [int(sid) for sid in target_data["station_id"]]
+    norm_sm["station_id"] = [int(sid) for sid in norm_sm["station_id"]]
 
     # create input/target data
     if not FINAL_VALUE:
