@@ -422,6 +422,42 @@ def train_model_loop(
         return train_losses, model, None
 
 
+def run_regression_each_soil_level(
+    config, input_data: xr.Dataset,
+    target_data: xr.Dataset,
+    train_val: bool = False,
+    train_test: bool = True,
+) -> Tuple[List[float], List[nn.Linear], List[DataLoader]]:
+    assert target_data.station_id.dtype == input_data.station_id.dtype, "Need matching datatypes for input and target data - `input_data['station_id'] = [int(sid) for sid in input_data['station_id']]`"
+    losses_list = []
+    models = []
+    test_loaders = []
+
+    for soil_level in list(target_data.data_vars):
+        # target data = SOIL MOISTURE
+        target = target_data[soil_level]
+
+        #  input data
+        input_data = norm_cs_data
+        input_data["station_id"] = [int(sid) for sid in input_data["station_id"]]
+
+        train_losses, model, test_loader = train_model_loop(
+            config=config,
+            input_data=input_data,
+            target_data=target,
+            train_test=train_test,
+            train_val=train_val,
+            desc=soil_level,
+            return_loaders=True,
+        )
+        # store outputs of training process
+        losses_list.append(train_losses)
+        models.append(model)
+        test_loaders.append(test_loader)
+
+    return losses_list, models, test_loaders
+
+
 # Test on hold-out prediction set
 def run_all_soil_level_predictions(
     models: List[torch.nn.Linear],
@@ -524,10 +560,12 @@ if __name__ == "__main__":
         test_times=TEST_TIMES,
         final_value=FINAL_VALUE,
     )
+    norm_cs_data["station_id"] = [int(sid) for sid in input_data["station_id"]]
 
     # get the target SM data
     sm = read_gb_sm_data(data_dir)
     norm_sm = normalize_xr_by_basin(sm)
+    norm_sm["station_id"] = [int(sid) for sid in target_data["station_id"]]
 
     # create input/target data
     if not FINAL_VALUE:
@@ -543,37 +581,32 @@ if __name__ == "__main__":
     test_loaders = []
 
     print("-- Training Models for Soil Levels --")
-    for soil_level in list(norm_sm.data_vars):
-        # target data = SOIL MOISTURE
-        target_data = norm_sm[soil_level]
-        target_data["station_id"] = [int(sid) for sid in target_data["station_id"]]
+    losses_list, models, test_loaders = run_regression_each_soil_level(
+        config, target_data=norm_sm, input_data=norm_cs_data,
+        train_test=train_test, train_val=train_val,
+    )
+    # for soil_level in list(norm_sm.data_vars):
+    #     # target data = SOIL MOISTURE
+    #     target_data = norm_sm[soil_level]
+    #     target_data["station_id"] = [int(sid) for sid in target_data["station_id"]]
 
-        #  input data
-        input_data = norm_cs_data
-        input_data["station_id"] = [int(sid) for sid in input_data["station_id"]]
+    #     #  input data
+    #     input_data = norm_cs_data
+    #     input_data["station_id"] = [int(sid) for sid in input_data["station_id"]]
 
-        train_losses, model, test_loader = train_model_loop(
-            config=config,
-            input_data=input_data,
-            target_data=target_data,
-            train_test=train_test,
-            train_val=train_val,
-            desc=soil_level,
-            return_loaders=True,
-        )
-        # store outputs of training process
-        losses_list.append(train_losses)
-        models.append(model)
-        test_loaders.append(test_loader)
-
-    # f, axs = plt.subplots(1, 2)
-    # for train_losses in losses_list:
-    #     axs[0].plot(train_losses, label=f"{soil_level}")
-    #     axs[0].legend()
-    #     axs[1].plot(val_losses, label=f"{soil_level}")
-    #     axs[0].set_title("Train Losses")
-    #     axs[1].set_title("Validation Losses")
-    #     sns.despine()
+    #     train_losses, model, test_loader = train_model_loop(
+    #         config=config,
+    #         input_data=input_data,
+    #         target_data=target_data,
+    #         train_test=train_test,
+    #         train_val=train_val,
+    #         desc=soil_level,
+    #         return_loaders=True,
+    #     )
+    #     # store outputs of training process
+    #     losses_list.append(train_losses)
+    #     models.append(model)
+    #     test_loaders.append(test_loader)
 
     # test models on each soil level
     print("-- Running Tests on hold-out test set --")
@@ -604,4 +637,9 @@ if __name__ == "__main__":
         basins=TEST_BASINS,
         return_as_array=False,
         with_static=False,
+    )
+
+    raw_losses_list, raw_models, raw_test_loaders = run_regression_each_soil_level(
+        config, target_data=norm_sm, input_data=raw_input_data,
+        train_test=train_test, train_val=train_val,
     )
