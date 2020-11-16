@@ -440,10 +440,6 @@ def run_regression_each_soil_level(
         # target data = SOIL MOISTURE
         target = target_data[soil_level]
 
-        #  input data
-        input_data = norm_cs_data
-        input_data["station_id"] = [int(sid) for sid in input_data["station_id"]]
-
         train_losses, model, test_loader = train_model_loop(
             config=config,
             input_data=input_data,
