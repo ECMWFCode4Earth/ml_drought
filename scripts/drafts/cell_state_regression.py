@@ -176,6 +176,10 @@ def create_raw_input_data(
     """
     if with_static:
         assert return_as_array, "With static and return_as_array must be run together"
+        assert False, (
+            "TODO need to extract the variables in static data as "
+            "Dataset not DataArray - i.e. Name the dimensions appropriately..."
+        )
     #  1. recreate time period
     test_times = pd.date_range(config.test_start_date, config.test_end_date, freq="D")
     #  365 input times
@@ -621,9 +625,12 @@ if __name__ == "__main__":
             with_static=False,
         )
         # HACK: convert to the correct format for the regression code ...
-        raw_input_data = raw_input_data.to_array().rename(
-            {"variable": "dimension"}).rename("cell_state").to_dataset()
-
+        raw_input_data = (
+            raw_input_data.to_array()
+            .rename({"variable": "dimension"})
+            .rename("cell_state")
+            .to_dataset()
+        )
 
         print("-- Training Models for Soil Levels [RAW DATA] --")
         raw_losses_list, raw_models, raw_test_loaders = run_regression_each_soil_level(
