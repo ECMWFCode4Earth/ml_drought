@@ -189,7 +189,7 @@ def create_raw_input_data(
     if return_as_array:
         for basin in tqdm(basins, desc="Building Raw xr"):
             basin = str(basin)
-            ds = RegressionTester(config, run_dir)._get_dataset(basin)
+            ds = RegressionTester(config, config.run_dir)._get_dataset(basin)
             x_d = ds.x_d[basin]["1D"].numpy()
             if with_static:
                 n_times = x_d.shape[0]
@@ -216,9 +216,9 @@ def create_raw_input_data(
             all_basin_ds.append(station_ds)
 
     else:
-        for basin in tqdm(basins, desc="Building XR"):
+        for basin in tqdm(basins, desc="Building Raw xr"):
             basin = str(basin)
-            ds = RegressionTester(config, run_dir)._get_dataset(str(basin))
+            ds = RegressionTester(config, config.run_dir)._get_dataset(str(basin))
             x_d_tensor = ds.x_d[basin]["1D"]
             station_ds = xr.merge(
                 [
@@ -591,28 +591,6 @@ if __name__ == "__main__":
         train_test=train_test,
         train_val=train_val,
     )
-    # for soil_level in list(norm_sm.data_vars):
-    #     # target data = SOIL MOISTURE
-    #     target_data = norm_sm[soil_level]
-    #     target_data["station_id"] = [int(sid) for sid in target_data["station_id"]]
-
-    #     #  input data
-    #     input_data = norm_cs_data
-    #     input_data["station_id"] = [int(sid) for sid in input_data["station_id"]]
-
-    #     train_losses, model, test_loader = train_model_loop(
-    #         config=config,
-    #         input_data=input_data,
-    #         target_data=target_data,
-    #         train_test=train_test,
-    #         train_val=train_val,
-    #         desc=soil_level,
-    #         return_loaders=True,
-    #     )
-    #     # store outputs of training process
-    #     losses_list.append(train_losses)
-    #     models.append(model)
-    #     test_loaders.append(test_loader)
 
     # test models on each soil level
     print("-- Running Tests on hold-out test set --")
