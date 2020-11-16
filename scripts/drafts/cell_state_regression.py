@@ -1,3 +1,5 @@
+"""Run Cell State Regression
+"""
 from pathlib import Path
 from collections import defaultdict
 import pandas as pd
@@ -13,6 +15,7 @@ from torch import nn
 from torch.utils.data.sampler import SubsetRandomSampler, Sampler
 from torch.utils.data import random_split, Subset, Dataset, DataLoader
 
+sys.path.insert(2, "/home/tommy/neuralhydrology")
 from neuralhydrology.modelzoo.basemodel import BaseModel
 from neuralhydrology.utils.config import Config
 from neuralhydrology.evaluation import RegressionTester
@@ -89,7 +92,14 @@ class CellStateDataset(Dataset):
             )
             Y = self.target_data.sel(station_id=basin).values.astype("float64")
 
-            # drop nans
+            # Ensure time is the 1st (0 index) axis
+            X_time_axis = int(
+                np.argwhere(~[ax == len(self.all_times) for ax in X.shape])
+            )
+            if X_time_axis != 1:
+                X = X.transpose(1, 0)
+
+            # drop nans over time (1st axis)
             finite_indices = np.logical_and(np.isfinite(Y), np.isfinite(X).all(axis=1))
             X, Y = X[finite_indices], Y[finite_indices]
             times = self.input_data["time"].values[finite_indices].astype(float)
@@ -119,6 +129,117 @@ class CellStateDataset(Dataset):
         x, y = self.samples[item]
 
         return (basin, time), (x, y)
+
+
+def get_matching_timesteps_input_target(
+    config: Config, input_data: xr.Dataset, target_data: xr.Dataset
+) -> Tuple[xr.Dataset, xr.Dataset]:
+    #  All times that we have data for
+    test_times = pd.date_range(config.test_start_date, config.test_end_date, freq="D")
+    bool_input_times = np.isin(input_data.time.values, test_times)
+    bool_target_times = np.isin(target_data.time.values, test_times)
+    all_times = list(
+        set(target_data.time.values[bool_target_times]).intersection(
+            set(input_data.time.values[bool_input_times])
+        )
+    )
+    all_times = sorted(all_times)
+
+    # get input/target data
+    input_data = input_data.sel(time=all_times)
+    target_data = target_data.sel(time=all_times)
+
+    return input_data, target_data
+
+
+def create_raw_input_data(
+    config: Config,
+    target_data: xr.Dataset,
+    basins: List[int],
+    return_as_array: bool = True,
+    with_static: bool = False,
+) -> xr.Dataset:
+    """Create input data from raw input features to the LSTMs
+
+    Args:
+        config (Config): [description]
+        target_data (xr.Dataset): [description]
+        basins (List[int]): [description]
+        return_as_array (bool, optional):
+            Return as DataArray with variables unnamed stored in `dimension` coord.
+            Defaults to True.
+        with_static (bool, optional): [description].
+            Defaults to False.
+
+    Returns:
+        xr.Dataset: Raw Data (normalised and preprocessed by modelling pipeline)
+    """
+    if with_static:
+        assert return_as_array, "With static and return_as_array must be run together"
+    #  1. recreate time period
+    test_times = pd.date_range(config.test_start_date, config.test_end_date, freq="D")
+    #  365 input times
+    min_time = test_times.min() - pd.Timedelta(config.seq_length, unit="D")
+    max_time = test_times.max() - pd.Timedelta(1, unit="D")
+    test_times = pd.date_range(min_time, max_time, freq="D")
+
+    # 2. recreate ds
+    all_basin_ds = []
+
+    if return_as_array:
+        for basin in tqdm(basins, desc="Building Raw xr"):
+            basin = str(basin)
+            ds = RegressionTester(config, run_dir)._get_dataset(basin)
+            x_d = ds.x_d[basin]["1D"].numpy()
+            if with_static:
+                n_times = x_d.shape[0]
+                # copy static for each timestep (numpy array)
+                static = ds.attributes[basin]
+                static = np.tile(static.reshape(-1, 1), n_times)
+                # create ONE Dynamic array to copy through time
+                x_d = np.append(x_d, static.T, axis=-1)
+
+            n_dims = x_d.shape[-1]
+            station_ds = xr.Dataset(
+                {
+                    "cell_state": (
+                        ["time", "dimension", "station_id"],
+                        x_d.reshape(-1, n_dims, 1),
+                    )
+                },
+                coords={
+                    "time": test_times,
+                    "dimension": np.arange(n_dims),
+                    "station_id": [basin],
+                },
+            )
+            all_basin_ds.append(station_ds)
+
+    else:
+        for basin in tqdm(basins, desc="Building XR"):
+            basin = str(basin)
+            ds = RegressionTester(config, run_dir)._get_dataset(str(basin))
+            x_d_tensor = ds.x_d[basin]["1D"]
+            station_ds = xr.merge(
+                [
+                    xr.Dataset(
+                        {
+                            config.dynamic_inputs[ix]: (
+                                ["time", "station_id"],
+                                x_d_tensor.numpy()[:, ix].reshape(-1, 1),
+                            )
+                        },
+                        coords={"time": test_times, "station_id": [basin]},
+                    )
+                    for ix in range(x_d_tensor.shape[-1])
+                ]
+            )
+            all_basin_ds.append(station_ds)
+
+    input_ds = xr.combine_by_coords(all_basin_ds)
+    input_ds["station_id"] = [int(sid) for sid in input_ds["station_id"]]
+
+    return input_ds
 
 
 # train-test split
@@ -255,8 +376,6 @@ def calculate_predictions(model, loader):
     return to_xarray(predictions)
 
 
-# Dataset
-
 #  ALL Training Process
 def train_model_loop(
     config: Config,
@@ -329,8 +448,7 @@ def create_error_datasets(all_preds: xr.Dataset) -> Tuple[xr.Dataset]:
     for ix, preds in enumerate(all_preds):
         variable = f"swvl{ix + 1}"
         all_r2s.append(spatial_r2(preds["y"], preds["y_hat"]).rename(variable))
-        all_rmses.append(spatial_rmse(
-            preds["y"], preds["y_hat"]).rename(variable))
+        all_rmses.append(spatial_rmse(preds["y"], preds["y_hat"]).rename(variable))
     r2s = xr.merge(all_r2s).drop("time")
     rmses = xr.merge(all_rmses).drop("time")
 
@@ -345,15 +463,16 @@ def get_model_weights(model: torch.nn.Linear) -> Tuple[np.ndarray]:
     return w, b
 
 
-def get_all_models_weights(models:  List[torch.nn.Linear]) -> Tuple[np.ndarray]:
+def get_all_models_weights(models: List[torch.nn.Linear]) -> Tuple[np.ndarray]:
     model_outputs = defaultdict(dict)
     for sw_ix in range(len(models)):
         w, b = get_model_weights(models[sw_ix])
         model_outputs[f"swvl{sw_ix+1}"]["w"] = w
         model_outputs[f"swvl{sw_ix+1}"]["b"] = b
 
-    ws = np.stack([model_outputs[swl]["w"]
-                   for swl in model_outputs.keys()]).reshape(4, 64)
+    ws = np.stack([model_outputs[swl]["w"] for swl in model_outputs.keys()]).reshape(
+        4, 64
+    )
     bs = np.stack([model_outputs[swl]["b"] for swl in model_outputs.keys()])
     return ws, bs
 
@@ -466,6 +585,23 @@ if __name__ == "__main__":
     print("-- Creating Error Metrics: R2/RMSE --")
     r2s, rmses = create_error_datasets(all_preds)
 
+    data = (
+        r2s.to_dataframe()
+        .reset_index()
+        .melt(id_vars="station_id")
+        .sort_values("variable")
+    )
+    print(f"MEAN R2: {data.drop('station_id', axis=1).mean().values[0]:.2f}")
+
     # extract weights and biases
     print("-- Extracting weights and biases --")
     ws, bs = get_all_models_weights(models)
+
+    #  COMPARE TO RAW data ?
+    raw_input_data = create_raw_input_data(
+        config=config,
+        target_data=norm_sm,
+        basins=TEST_BASINS,
+        return_as_array=False,
+        with_static=False,
+    )
