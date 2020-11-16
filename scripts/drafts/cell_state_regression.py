@@ -618,6 +618,10 @@ if __name__ == "__main__":
         return_as_array=False,
         with_static=False,
     )
+    # HACK: convert to the correct format for the regression code ...
+    raw_input_data = raw_input_data.to_array().rename(
+        {"variable": "dimension"}).rename("cell_state").to_dataset()
+
 
     print("-- Training Models for Soil Levels [RAW DATA] --")
     raw_losses_list, raw_models, raw_test_loaders = run_regression_each_soil_level(
