@@ -94,7 +94,7 @@ class CellStateDataset(Dataset):
 
             # Ensure time is the 1st (0 index) axis
             X_time_axis = int(
-                np.argwhere(~[ax == len(self.all_times) for ax in X.shape])
+                np.argwhere(~np.array([ax == len(self.all_times) for ax in X.shape]))
             )
             if X_time_axis != 1:
                 X = X.transpose(1, 0)
