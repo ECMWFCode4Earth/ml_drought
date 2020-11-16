@@ -513,6 +513,7 @@ def get_all_models_weights(models: List[torch.nn.Linear]) -> Tuple[np.ndarray]:
 
 
 if __name__ == "__main__":
+    RUN_RAW_ANALYSIS: bool = False
     EALSTM: bool = False
     data_dir = Path("/cats/datastore/data/")
     assert data_dir.exists()
@@ -610,40 +611,41 @@ if __name__ == "__main__":
     print("-- Extracting weights and biases --")
     ws, bs = get_all_models_weights(models)
 
-    #  COMPARE TO RAW data ?
-    raw_input_data = create_raw_input_data(
-        config=config,
-        target_data=norm_sm,
-        basins=TEST_BASINS,
-        return_as_array=False,
-        with_static=False,
-    )
-    # HACK: convert to the correct format for the regression code ...
-    raw_input_data = raw_input_data.to_array().rename(
-        {"variable": "dimension"}).rename("cell_state").to_dataset()
+    if RUN_RAW_ANALYSIS:
+        #  COMPARE TO RAW data ?
+        raw_input_data = create_raw_input_data(
+            config=config,
+            target_data=norm_sm,
+            basins=TEST_BASINS,
+            return_as_array=False,
+            with_static=False,
+        )
+        # HACK: convert to the correct format for the regression code ...
+        raw_input_data = raw_input_data.to_array().rename(
+            {"variable": "dimension"}).rename("cell_state").to_dataset()
 
 
-    print("-- Training Models for Soil Levels [RAW DATA] --")
-    raw_losses_list, raw_models, raw_test_loaders = run_regression_each_soil_level(
-        config,
-        target_data=norm_sm,
-        input_data=raw_input_data,
-        train_test=train_test,
-        train_val=train_val,
-    )
+        print("-- Training Models for Soil Levels [RAW DATA] --")
+        raw_losses_list, raw_models, raw_test_loaders = run_regression_each_soil_level(
+            config,
+            target_data=norm_sm,
+            input_data=raw_input_data,
+            train_test=train_test,
+            train_val=train_val,
+        )
 
-    print("-- Running Tests on hold-out test set [RAW DATA] --")
-    raw_preds = run_all_soil_level_predictions(
-        models=raw_models, test_loaders=raw_test_loaders, target_data=norm_sm
-    )
+        print("-- Running Tests on hold-out test set [RAW DATA] --")
+        raw_preds = run_all_soil_level_predictions(
+            models=raw_models, test_loaders=raw_test_loaders, target_data=norm_sm
+        )
 
-    print("-- Creating Error Metrics: R2/RMSE --")
-    raw_r2s, raw_rmses = create_error_datasets(raw_preds)
+        print("-- Creating Error Metrics: R2/RMSE --")
+        raw_r2s, raw_rmses = create_error_datasets(raw_preds)
 
-    raw_data = (
-        raw_r2s.to_dataframe()
-        .reset_index()
-        .melt(id_vars="station_id")
-        .sort_values("variable")
-    )
-    print(f"MEAN R2: {raw_data.drop('station_id', axis=1).mean().values[0]:.2f}")
+        raw_data = (
+            raw_r2s.to_dataframe()
+            .reset_index()
+            .melt(id_vars="station_id")
+            .sort_values("variable")
+        )
+        print(f"MEAN R2: {raw_data.drop('station_id', axis=1).mean().values[0]:.2f}")
