@@ -2,6 +2,9 @@ import xarray as xr
 from tqdm import tqdm
 import pandas as pd
 from pathlib import Path
+
+import sys
+sys.path.insert(2, "/home/tommy/ml_drought")
 from src.utils import Region, get_gb
 
 
