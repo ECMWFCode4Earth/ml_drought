@@ -5,7 +5,9 @@ from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
 
 
-def get_natural_cubic_spline_model(x, y, minval=None, maxval=None, n_knots=None, knots=None):
+def get_natural_cubic_spline_model(
+    x, y, minval=None, maxval=None, n_knots=None, knots=None
+):
     """
     Get a natural cubic spline model for the data.
 
@@ -43,10 +45,9 @@ def get_natural_cubic_spline_model(x, y, minval=None, maxval=None, n_knots=None,
     else:
         spline = NaturalCubicSpline(max=maxval, min=minval, n_knots=n_knots)
 
-    p = Pipeline([
-        ('nat_cubic', spline),
-        ('regression', LinearRegression(fit_intercept=True))
-    ])
+    p = Pipeline(
+        [("nat_cubic", spline), ("regression", LinearRegression(fit_intercept=True))]
+    )
 
     p.fit(x, y)
 
@@ -113,27 +114,32 @@ class NaturalCubicSpline(AbstractSpline):
 
     def _make_names(self, X):
         first_name = "{}_spline_linear".format(X.name)
-        rest_names = ["{}_spline_{}".format(X.name, idx)
-                      for idx in range(self.n_knots - 2)]
+        rest_names = [
+            "{}_spline_{}".format(X.name, idx) for idx in range(self.n_knots - 2)
+        ]
         return [first_name] + rest_names
 
     def _transform_array(self, X, **transform_params):
         X = X.squeeze()
         try:
             X_spl = np.zeros((X.shape[0], self.n_knots - 1))
-        except IndexError: # For arrays with only one element
+        except IndexError:  # For arrays with only one element
             X_spl = np.zeros((1, self.n_knots - 1))
         X_spl[:, 0] = X.squeeze()
 
         def d(knot_idx, x):
-            def ppart(t): return np.maximum(0, t)
+            def ppart(t):
+                return np.maximum(0, t)
 
-            def cube(t): return t*t*t
-            numerator = (cube(ppart(x - self.knots[knot_idx]))
-                         - cube(ppart(x - self.knots[self.n_knots - 1])))
+            def cube(t):
+                return t * t * t
+
+            numerator = cube(ppart(x - self.knots[knot_idx])) - cube(
+                ppart(x - self.knots[self.n_knots - 1])
+            )
             denominator = self.knots[self.n_knots - 1] - self.knots[knot_idx]
             return numerator / denominator
 
         for i in range(0, self.n_knots - 2):
-            X_spl[:, i+1] = (d(i, X) - d(self.n_knots - 2, X)).squeeze()
+            X_spl[:, i + 1] = (d(i, X) - d(self.n_knots - 2, X)).squeeze()
         return X_spl
