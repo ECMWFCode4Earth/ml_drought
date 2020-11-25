@@ -516,7 +516,7 @@ def get_all_models_weights(models: List[torch.nn.Linear]) -> Tuple[np.ndarray]:
     return ws, bs
 
 
-def calculate_raw_correlations(norm_sm: xr.Dataset, cs_data: xr.Dataset) -> np.ndarray:
+def calculate_raw_correlations(norm_sm: xr.Dataset, cs_data: xr.Dataset, config: Config) -> np.ndarray:
     """Calculate the correlation coefficient for each feature of cs_data
     using: `np.corrcoef`.
 
