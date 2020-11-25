@@ -134,7 +134,9 @@ def upsample_xarray(
     )
 
     # regrid xarray to finer grid and fill cells without interpolation
-    xr_regrid = xr_basin.interp(lat=new_lat, lon=new_lon, method="zero")
+    method = "zero"  # TODO: FAILS!
+    method = "nearest"
+    xr_regrid = xr_basin.interp(lat=new_lat, lon=new_lon, method=method)
 
     return xr_regrid
 
@@ -149,4 +151,5 @@ if __name__ == "__main__":
     gb_region = get_gb()
 
     # increase spatial resolution
-    upsample_xarray(sm, gb_region, grid_factor=15)
+    sm_hr = upsample_xarray(sm, gb_region, grid_factor=15)
+    print(sm_hr)
