@@ -2,7 +2,11 @@ import xarray as xr
 from tqdm import tqdm
 import pandas as pd
 from pathlib import Path
+from src.utils import Region, get_gb
 
+
+def read_raw_gb_sm_data(data_dir: Path) -> xr.Dataset:
+    return xr.open_datset(data_dir / "RUNOFF/gb_soil_moisture_1993_2020.nc")
 
 def read_gb_sm_data(data_dir: Path) -> xr.Dataset:
     if not (data_dir / "RUNOFF/gb_sm_catchments_1993_2020.nc").exists():
@@ -69,12 +73,9 @@ def old_read_obs_sm() -> xr.Dataset:
 
 def upsample_xarray(
     ds: xr.Dataset,
-    y_max: float,
-    y_min: float,
-    x_max: float,
-    x_min: float,
-    _lat_buffer: float,
-    _lon_buffer: float,
+    gb_region: Region,
+    _lat_buffer: float = 0.1,
+    _lon_buffer: float = 0.1,
     grid_factor: float = 30,
 ) -> xr.Dataset:
     """[summary]
@@ -82,49 +83,63 @@ def upsample_xarray(
     I don't use any interpolation method here(see method="zero"), which means that the new cells
     get the exact same value as the original cell they are in.
 
+    gb_region:
+    lon_min	        lat_min       lon_max        lat_max
+    ----------------------------------------------------------
+    -7.57216793459, 49.959999905, 1.68153079591, 58.6350001085
+
     Args:
         ds (xr.Dataset): ds is the grid data set(e.g. here ECMWF ERA5) with coordinate names "latitude" and "longitude"
-        y_max, y_min, x_max, x_min are the min/max extends in lat/lon direction
-        y_max (float): [description]
-        y_min (float): [description]
-        x_max (float): [description]
-        x_min (float): [description]
-        self._lat_buffer and self._lon_buffer are, as the name suggests, buffer that are used to crop the basin with some buffer
+        gb_region (Region): extract y_max, y_min, x_max, x_min = the min/max extends in lat/lon direction, from Region
+        _lat_buffer and _lon_buffer are, as the name suggests, buffer that are used to crop the basin with some buffer
             at all sides. Be careful with the signs, they might need to be adapted depending on where you are
             (northern, southern hemisphere, and west/east of Greenwhich).
-        _lat_buffer (float): [description]
-        _lon_buffer (float): [description]
-        self.grid_factor is dividing factor for a single grid cell in the original data set.
+        _lat_buffer (float): [description] Defaults to 0.1.
+        _lon_buffer (float): [description] Defaults to 0.1.
+        grid_factor is dividing factor for a single grid cell in the original data set.
             E.g. to devide a single ERA5 cell(~30km x 30km) into roughly 1km x 1km grid cells, use a grid factor of 30.
         grid_factor (float, optional): [description]. Defaults to 30.
 
     Returns:
         xr.Dataset: [description]
     """
+    y_max = gb_region.latmax
+    y_min = gb_region.latmin
+    x_max = gb_region.lonmax
+    x_min = gb_region.lonmin
+
     # crop corresponding part from the xarray
     xr_basin = ds.sel(
-        latitude=slice(y_max + self._lat_buffer, y_min - self._lat_buffer),
-        longitude=slice(x_min - self._lon_buffer, x_max + self._lon_buffer),
+        lat=slice(y_max + 0.1, y_min - 0.1),
+        lon=slice(x_min - 0.1, x_max + 0.1),
     )
+    data_var = list(xr_basin.data_vars)[0]
+    assert all([s != 0 for s in xr_basin[data_var].shape]), "Expect none of the dims to be equal to zero"
 
     # create finer grid of lat/long coordinates used for regridding
     new_lon = np.arange(
-        xr_basin.longitude[0],
-        xr_basin.longitude[-1],
-        (xr_basin.longitude[1] - xr_basin.longitude[0]) / self.grid_factor,
+        xr_basin.lon[0],
+        xr_basin.lon[-1],
+        (xr_basin.lon[1] - xr_basin.lon[0]) / grid_factor,
     )
     new_lat = np.arange(
-        xr_basin.latitude[0],
-        xr_basin.latitude[-1],
-        (xr_basin.latitude[1] - xr_basin.latitude[0]) / self.grid_factor,
+        xr_basin.lat[0],
+        xr_basin.lat[-1],
+        (xr_basin.lat[1] - xr_basin.lat[0]) / grid_factor,
     )
 
     # regrid xarray to finer grid and fill cells without interpolation
-    xr_regrid = xr_basin.interp(latitude=new_lat, longitude=new_lon, method="zero")
+    xr_regrid = xr_basin.interp(lat=new_lat, lon=new_lon, method="zero")
 
     return xr_regrid
 
 
 if __name__ == "__main__":
-    #   read in soil moisture data as xarray Dataset
-    sm = read_gb_sm_data()
+    # sm = read_gb_sm_data()
+
+    # read in soil moisture data as xarray Dataset
+    sm = read_raw_gb_sm_data()
+    gb_region = get_gb()
+
+    # increase spatial resolution
+    upsample_xarray(sm, gb_region, grid_factor=15)
