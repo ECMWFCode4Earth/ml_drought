@@ -153,3 +153,5 @@ if __name__ == "__main__":
     # increase spatial resolution
     sm_hr = upsample_xarray(sm, gb_region, grid_factor=3)
     print(sm_hr)
+
+    sm_hr.to_dataset(data_dir / "RUNOFF/gb_soil_moisture_1993_2020_HR.nc")
