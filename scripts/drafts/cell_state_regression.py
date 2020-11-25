@@ -516,7 +516,9 @@ def get_all_models_weights(models: List[torch.nn.Linear]) -> Tuple[np.ndarray]:
     return ws, bs
 
 
-def calculate_raw_correlations(norm_sm: xr.Dataset, cs_data: xr.Dataset, config: Config) -> np.ndarray:
+def calculate_raw_correlations(
+    norm_sm: xr.Dataset, cs_data: xr.Dataset, config: Config
+) -> np.ndarray:
     """Calculate the correlation coefficient for each feature of cs_data
     using: `np.corrcoef`.
 
@@ -528,7 +530,7 @@ def calculate_raw_correlations(norm_sm: xr.Dataset, cs_data: xr.Dataset, config:
         np.ndarray: (4, 64) correlation coefficient for each feature (64),
          for each soil water level (4).
     """
-    # Create the datasets
+    #  Create the datasets
     datasets = []
     for soil_level in list(norm_sm.data_vars):
         # target data = SOIL MOISTURE
@@ -548,9 +550,13 @@ def calculate_raw_correlations(norm_sm: xr.Dataset, cs_data: xr.Dataset, config:
     all_correlations = np.zeros((4, 64))
 
     for swl in tqdm(np.arange(len(datasets)), desc="Calculating Correlation"):
-        # get the DATA for that SWL
-        all_cs_data = np.array([x.detach().cpu().numpy() for (_, (x, _)) in DataLoader(datasets[swl])])
-        all_sm_data = np.array([y.detach().cpu().numpy() for (_, (_, y)) in DataLoader(datasets[swl])])
+        #  get the DATA for that SWL
+        all_cs_data = np.array(
+            [x.detach().cpu().numpy() for (_, (x, _)) in DataLoader(datasets[swl])]
+        )
+        all_sm_data = np.array(
+            [y.detach().cpu().numpy() for (_, (_, y)) in DataLoader(datasets[swl])]
+        )
         Y = all_sm_data.reshape(-1, 1)
 
         correlations = []
@@ -558,12 +564,11 @@ def calculate_raw_correlations(norm_sm: xr.Dataset, cs_data: xr.Dataset, config:
             X = all_cs_data[:, :, cs]
             correlations.append(np.corrcoef(X, Y, rowvar=False)[0, 1])
 
-        # save correlations to matrix (4, 64)
+        #  save correlations to matrix (4, 64)
         correlations = np.array(correlations)
         all_correlations[swl, :] += correlations
 
     return all_correlations
-
 
 
 if __name__ == "__main__":
@@ -665,7 +670,7 @@ if __name__ == "__main__":
     print("-- Extracting weights and biases --")
     ws, bs = get_all_models_weights(models)
 
-    # calculate raw correlations (cell state and values)
+    #  calculate raw correlations (cell state and values)
     print("-- Running RAW Correlations --")
     all_corrs = calculate_raw_correlations(norm_sm, norm_cs_data, config=config)
 
