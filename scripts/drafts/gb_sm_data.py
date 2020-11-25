@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 sys.path.insert(2, "/home/tommy/ml_drought")
 from src.utils import Region, get_gb
+from scripts.utils import get_data_path
 
 
 def read_raw_gb_sm_data(data_dir: Path) -> xr.Dataset:
@@ -138,10 +139,11 @@ def upsample_xarray(
 
 
 if __name__ == "__main__":
-    # sm = read_gb_sm_data()
+    data_dir = get_data_path()
+    # sm = read_gb_sm_data(data_dir)
 
     # read in soil moisture data as xarray Dataset
-    sm = read_raw_gb_sm_data()
+    sm = read_raw_gb_sm_data(data_dir)
     gb_region = get_gb()
 
     # increase spatial resolution
