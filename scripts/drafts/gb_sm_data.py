@@ -151,5 +151,5 @@ if __name__ == "__main__":
     gb_region = get_gb()
 
     # increase spatial resolution
-    sm_hr = upsample_xarray(sm, gb_region, grid_factor=1)
+    sm_hr = upsample_xarray(sm, gb_region, grid_factor=2)
     print(sm_hr)
