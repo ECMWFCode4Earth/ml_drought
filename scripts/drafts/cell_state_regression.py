@@ -667,7 +667,7 @@ if __name__ == "__main__":
 
     # calculate raw correlations (cell state and values)
     print("-- Running RAW Correlations --")
-    all_corrs = calculate_raw_correlations(norm_sm, norm_cs_data)
+    all_corrs = calculate_raw_correlations(norm_sm, norm_cs_data, config=config)
 
     if RUN_RAW_ANALYSIS:
         #  COMPARE TO RAW data ?
