@@ -139,7 +139,7 @@ def upsample_xarray(
 
 
 if __name__ == "__main__":
-    data_dir = get_data_path()
+    data_dir = "/cats/datstore/data"
     # sm = read_gb_sm_data(data_dir)
 
     # read in soil moisture data as xarray Dataset
