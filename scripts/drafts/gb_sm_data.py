@@ -10,7 +10,7 @@ from scripts.utils import get_data_path
 
 
 def read_raw_gb_sm_data(data_dir: Path) -> xr.Dataset:
-    return xr.open_datset(data_dir / "RUNOFF/gb_soil_moisture_1993_2020.nc")
+    return xr.open_dataset(data_dir / "RUNOFF/gb_soil_moisture_1993_2020.nc")
 
 def read_gb_sm_data(data_dir: Path) -> xr.Dataset:
     if not (data_dir / "RUNOFF/gb_sm_catchments_1993_2020.nc").exists():
