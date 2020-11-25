@@ -81,7 +81,7 @@ def upsample_xarray(
     gb_region: Region,
     _lat_buffer: float = 0.1,
     _lon_buffer: float = 0.1,
-    grid_factor: float = 30,
+    grid_factor: float = 2,
 ) -> xr.Dataset:
     """[summary]
 
@@ -103,7 +103,7 @@ def upsample_xarray(
         _lon_buffer (float): [description] Defaults to 0.1.
         grid_factor is dividing factor for a single grid cell in the original data set.
             E.g. to devide a single ERA5 cell(~30km x 30km) into roughly 1km x 1km grid cells, use a grid factor of 30.
-        grid_factor (float, optional): [description]. Defaults to 30.
+        grid_factor (float, optional): Increase in resolution factor. Defaults to 2.
 
     Returns:
         xr.Dataset: [description]
@@ -151,5 +151,5 @@ if __name__ == "__main__":
     gb_region = get_gb()
 
     # increase spatial resolution
-    sm_hr = upsample_xarray(sm, gb_region, grid_factor=2)
+    sm_hr = upsample_xarray(sm, gb_region, grid_factor=3)
     print(sm_hr)
