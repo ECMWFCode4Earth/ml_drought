@@ -5,9 +5,11 @@ from pathlib import Path
 import numpy as np
 
 import sys
+
 sys.path.insert(2, "/home/tommy/ml_drought")
 from src.utils import Region, get_gb
 from scripts.utils import get_data_path
+from scripts.drafts.all_stations_id_list import ALL_STATIONS_ID_LIST
 
 
 def read_raw_gb_sm_data(data_dir: Path) -> xr.Dataset:
@@ -17,10 +19,7 @@ def read_raw_gb_sm_data(data_dir: Path) -> xr.Dataset:
 def _read_csv_to_xr(sm_data_dir: Path = Path("/cats/datastore/data/RUNOFF/sm_data")):
     all_sm_ds = []
     for ix, path in enumerate(
-        tqdm(
-            list(sm_data_dir.glob("*Level*.csv")),
-            desc="Reading SM Level",
-        )
+        tqdm(list(sm_data_dir.glob("*Level*.csv")), desc="Reading SM Level",)
     ):
         # read in data
         df = (
@@ -29,6 +28,12 @@ def _read_csv_to_xr(sm_data_dir: Path = Path("/cats/datastore/data/RUNOFF/sm_dat
             .rename({"Date": "time"}, axis=1)
             .astype({"time": "datetime64[ns]"})
         )
+
+        if "671" in df.columns:
+            # REMAP integers to station_ids
+            assert len(df.columns) == len(ALL_STATIONS_ID_LIST)
+            df.columns = ALL_STATIONS_ID_LIST
+
         # create index from station, time, rename column to soil level volume
         df = (
             df.melt(id_vars="time")
@@ -51,16 +56,26 @@ def _read_csv_to_xr(sm_data_dir: Path = Path("/cats/datastore/data/RUNOFF/sm_dat
     return ds
 
 
-def read_gb_sm_data(data_dir: Path, reload_nc: bool = True, sm_data_folder: str = "sm_data") -> xr.Dataset:
-    if (not (data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc").exists()) and reload_nc:
+def read_gb_sm_data(
+    data_dir: Path, reload_nc: bool = True, sm_data_folder: str = "sm_data"
+) -> xr.Dataset:
+    if (
+        not (
+            data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc"
+        ).exists()
+    ) and reload_nc:
         all_sm_ds = []
         sm_data_dir = data_dir / "RUNOFF" / sm_data_folder
         assert sm_data_dir.exists()
         ds = _read_csv_to_xr(sm_data_dir)
-        ds.to_netcdf(data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc")
+        ds.to_netcdf(
+            data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc"
+        )
 
     else:
-        ds = xr.open_dataset(data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc")
+        ds = xr.open_dataset(
+            data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc"
+        )
 
     return ds
 
@@ -124,11 +139,12 @@ def upsample_xarray(
 
     # crop corresponding part from the xarray
     xr_basin = ds.sel(
-        lat=slice(y_max + 0.1, y_min - 0.1),
-        lon=slice(x_min - 0.1, x_max + 0.1),
+        lat=slice(y_max + 0.1, y_min - 0.1), lon=slice(x_min - 0.1, x_max + 0.1),
     )
     data_var = list(xr_basin.data_vars)[0]
-    assert all([s != 0 for s in xr_basin[data_var].shape]), "Expect none of the dims to be equal to zero"
+    assert all(
+        [s != 0 for s in xr_basin[data_var].shape]
+    ), "Expect none of the dims to be equal to zero"
 
     # create finer grid of lat/long coordinates used for regridding
     new_lon = np.arange(
@@ -143,7 +159,7 @@ def upsample_xarray(
     )
 
     # regrid xarray to finer grid and fill cells without interpolation
-    method = "zero"  # TODO: FAILS!
+    method = "zero"  #  TODO: FAILS!
     method = "nearest"
     xr_regrid = xr_basin.interp(lat=new_lat, lon=new_lon, method=method)
 
@@ -163,7 +179,7 @@ if __name__ == "__main__":
         sm = read_raw_gb_sm_data(data_dir)
         gb_region = get_gb()
 
-        # increase spatial resolution
+        #  increase spatial resolution
         sm_hr = upsample_xarray(sm, gb_region, grid_factor=3)
         print(sm_hr)
 
