@@ -72,9 +72,13 @@ def read_gb_sm_data(
         sm_data_dir = data_dir / "RUNOFF" / sm_data_folder
         assert sm_data_dir.exists()
         ds = _read_csv_to_xr(sm_data_dir)
-        ds.to_netcdf(
-            out_data_path
-        )
+        try:
+            ds.to_netcdf(
+                out_data_path
+            )
+        except PermissionError:
+            print("Run out of memory OR open by another process")
+            pass
 
     return ds
 
