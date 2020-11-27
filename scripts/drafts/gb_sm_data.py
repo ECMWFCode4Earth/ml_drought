@@ -52,15 +52,15 @@ def _read_csv_to_xr(sm_data_dir: Path = Path("/cats/datastore/data/RUNOFF/sm_dat
 
 
 def read_gb_sm_data(data_dir: Path, reload_nc: bool = True, sm_data_folder: str = "sm_data") -> xr.Dataset:
-    if not (data_dir / "RUNOFF/gb_sm_catchments_1993_2020.nc").exists() and reload_nc:
+    if not (data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc").exists() and reload_nc:
         all_sm_ds = []
         sm_data_dir = data_dir / "RUNOFF" / sm_data_folder
         assert sm_data_dir.exists()
         ds = _read_csv_to_xr(sm_data_dir)
-        ds.to_netcdf(data_dir / "RUNOFF/gb_sm_catchments_1993_2020.nc")
+        ds.to_netcdf(data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc")
 
     else:
-        ds = xr.open_dataset(data_dir / "RUNOFF/gb_sm_catchments_1993_2020.nc")
+        ds = xr.open_dataset(data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc")
 
     return ds
 
