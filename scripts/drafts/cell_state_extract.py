@@ -44,6 +44,9 @@ def load_config_file(run_dir: Path) -> Config:
 
 def _load_model_weights(model, config: Config):
     model_path = config.run_dir / "model_epoch030.pt"
+    if not model_path.exists():
+        model_path = config.run_dir / "model_epoch010.pt"
+
     model.load_state_dict(torch.load(model_path, map_location="cpu"))
     return model
 
