@@ -16,38 +16,47 @@ def read_raw_gb_sm_data(data_dir: Path) -> xr.Dataset:
     return xr.open_dataset(data_dir / "RUNOFF/gb_soil_moisture_1993_2020.nc")
 
 
+def _melt_data_to_long_format(df: pd.DataFrame) -> pd.DataFrame:
+    df = (
+        df.melt(id_vars="time")
+        .astype({"value": "float64", "variable": "int64"})
+        .rename(
+            {
+                "value": f'swvl{path.name.split("Level_")[-1].replace(".csv", "")}',
+                "variable": "station_id",
+            },
+            axis=1,
+        )
+        .set_index(["time", "station_id"])
+    )
+    return df
+
+
+def _read_one_csv_file(path: Path) -> pd.DataFrame:
+    # read in data
+    df = (
+        pd.read_table(path, sep=";", decimal=",")
+        .drop("Unnamed: 0", axis=1)
+        .rename({"Date": "time"}, axis=1)
+        .astype({"time": "datetime64[ns]"})
+    )
+
+    if "671" in [str(c) for c in df.columns]:
+        # REMAP integers to station_ids
+        assert len(df.columns) == len(ALL_STATIONS_ID_LIST) + 1
+        df.columns = ["time"] + [str(idx) for idx in ALL_STATIONS_ID_LIST]
+
+    # create index from station, time, rename column to soil level volume
+    df = _melt_data_to_long_format(df)
+    return df
+
+
 def _read_csv_to_xr(sm_data_dir: Path = Path("/cats/datastore/data/RUNOFF/sm_data")):
     all_sm_ds = []
     for ix, path in enumerate(
         tqdm(list(sm_data_dir.glob("*Level*.csv")), desc="Reading SM Level",)
     ):
-        # read in data
-        df = (
-            pd.read_table(path, sep=";", decimal=",")
-            .drop("Unnamed: 0", axis=1)
-            .rename({"Date": "time"}, axis=1)
-            .astype({"time": "datetime64[ns]"})
-        )
-
-        if "671" in [str(c) for c in df.columns]:
-            # REMAP integers to station_ids
-            assert len(df.columns) == len(ALL_STATIONS_ID_LIST) + 1
-            df.columns = ["time"] + [str(idx) for idx in ALL_STATIONS_ID_LIST]
-
-        # create index from station, time, rename column to soil level volume
-        df = (
-            df.melt(id_vars="time")
-            .astype({"value": "float64", "variable": "int64"})
-            .rename(
-                {
-                    "value": f'swvl{path.name.split("Level_")[-1].replace(".csv", "")}',
-                    "variable": "station_id",
-                },
-                axis=1,
-            )
-            .set_index(["time", "station_id"])
-        )
-
+        df = _read_one_csv_file(path)
         # convert to xarray
         ds = df.to_xarray()
         all_sm_ds.append(ds)
@@ -178,7 +187,7 @@ if __name__ == "__main__":
     data_dir = Path("/cats/datastore/data")
     assert data_dir.exists()
 
-    sm_data_folder = "GB_SM_catchments"
+    sm_data_folder = "GB_SM_catchments"  # "sm_data"
     sm = read_gb_sm_data(data_dir, reload_nc=False, sm_data_folder=sm_data_folder)
     print(sm)
 
