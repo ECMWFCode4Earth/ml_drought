@@ -29,7 +29,7 @@ def _read_csv_to_xr(sm_data_dir: Path = Path("/cats/datastore/data/RUNOFF/sm_dat
             .astype({"time": "datetime64[ns]"})
         )
 
-        if "671" in df.columns:
+        if "671" in [str(c) for c in df.columns]:
             # REMAP integers to station_ids
             assert len(df.columns) == len(ALL_STATIONS_ID_LIST) + 1
             df.columns = ["time"] + [str(idx) for idx in ALL_STATIONS_ID_LIST]
@@ -59,22 +59,21 @@ def _read_csv_to_xr(sm_data_dir: Path = Path("/cats/datastore/data/RUNOFF/sm_dat
 def read_gb_sm_data(
     data_dir: Path, reload_nc: bool = True, sm_data_folder: str = "sm_data"
 ) -> xr.Dataset:
-    if (
-        not (
-            data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc"
-        ).exists()
-    ) and reload_nc:
+    out_data_path = (data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc")
+
+    # if file exists AND we want to reload it
+    if reload_nc and out_data_path.exists():
+        ds = xr.open_dataset(
+            out_data_path
+        )
+
+    else:
         all_sm_ds = []
         sm_data_dir = data_dir / "RUNOFF" / sm_data_folder
         assert sm_data_dir.exists()
         ds = _read_csv_to_xr(sm_data_dir)
         ds.to_netcdf(
-            data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc"
-        )
-
-    else:
-        ds = xr.open_dataset(
-            data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc"
+            out_data_path
         )
 
     return ds
@@ -171,7 +170,8 @@ if __name__ == "__main__":
     data_dir = Path("/cats/datastore/data")
     assert data_dir.exists()
 
-    sm = read_gb_sm_data(data_dir, reload_nc=False, sm_data_folder="GB_SM_catchments")
+    sm_data_folder = "GB_SM_catchments"
+    sm = read_gb_sm_data(data_dir, reload_nc=False, sm_data_folder=sm_data_folder)
     print(sm)
 
     if UPSAMPLE:
