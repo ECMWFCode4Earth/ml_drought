@@ -57,7 +57,10 @@ def _read_csv_to_xr(sm_data_dir: Path = Path("/cats/datastore/data/RUNOFF/sm_dat
 
 
 def read_gb_sm_data(
-    data_dir: Path, reload_nc: bool = True, sm_data_folder: str = "sm_data"
+    data_dir: Path,
+    reload_nc: bool = True,
+    sm_data_folder: str = "sm_data",
+    save_output: bool = True,
 ) -> xr.Dataset:
     out_data_path = (data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc")
 
@@ -72,13 +75,14 @@ def read_gb_sm_data(
         sm_data_dir = data_dir / "RUNOFF" / sm_data_folder
         assert sm_data_dir.exists()
         ds = _read_csv_to_xr(sm_data_dir)
-        try:
-            ds.to_netcdf(
-                out_data_path
-            )
-        except PermissionError:
-            print("Run out of memory OR open by another process")
-            pass
+        if save_output:
+            try:
+                ds.to_netcdf(
+                    out_data_path
+                )
+            except PermissionError:
+                print("Run out of memory OR open by another process")
+                pass
 
     return ds
 
