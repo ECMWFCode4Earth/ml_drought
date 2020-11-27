@@ -153,7 +153,7 @@ def upsample_xarray(
 if __name__ == "__main__":
     data_dir = Path("/cats/datastore/data")
     assert data_dir.exists()
-    sm = read_gb_sm_data(data_dir, reload_nc=False, sm_data_folder: str="GB_SM_catchments")
+    sm = read_gb_sm_data(data_dir, reload_nc=False, sm_data_folder="GB_SM_catchments")
 
     # read in soil moisture data as xarray Dataset
     sm = read_raw_gb_sm_data(data_dir)
