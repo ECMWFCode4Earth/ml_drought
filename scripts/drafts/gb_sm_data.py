@@ -151,16 +151,20 @@ def upsample_xarray(
 
 
 if __name__ == "__main__":
+    UPSAMPLE = False
     data_dir = Path("/cats/datastore/data")
     assert data_dir.exists()
+
     sm = read_gb_sm_data(data_dir, reload_nc=False, sm_data_folder="GB_SM_catchments")
+    print(sm)
 
-    # read in soil moisture data as xarray Dataset
-    sm = read_raw_gb_sm_data(data_dir)
-    gb_region = get_gb()
+    if UPSAMPLE:
+        # read in soil moisture data as xarray Dataset
+        sm = read_raw_gb_sm_data(data_dir)
+        gb_region = get_gb()
 
-    # increase spatial resolution
-    sm_hr = upsample_xarray(sm, gb_region, grid_factor=3)
-    print(sm_hr)
+        # increase spatial resolution
+        sm_hr = upsample_xarray(sm, gb_region, grid_factor=3)
+        print(sm_hr)
 
-    sm_hr.to_netcdf(data_dir / "RUNOFF/gb_soil_moisture_1993_2020_HR.nc")
+        sm_hr.to_netcdf(data_dir / "RUNOFF/gb_soil_moisture_1993_2020_HR.nc")
