@@ -13,41 +13,50 @@ from scripts.utils import get_data_path
 def read_raw_gb_sm_data(data_dir: Path) -> xr.Dataset:
     return xr.open_dataset(data_dir / "RUNOFF/gb_soil_moisture_1993_2020.nc")
 
-def read_gb_sm_data(data_dir: Path) -> xr.Dataset:
-    if not (data_dir / "RUNOFF/gb_sm_catchments_1993_2020.nc").exists():
+
+def _read_csv_to_xr(sm_data_dir: Path = Path("/cats/datastore/data/RUNOFF/sm_data")):
+    all_sm_ds = []
+    for ix, path in enumerate(
+        tqdm(
+            list(sm_data_dir.glob("*Level*.csv")),
+            desc="Reading SM Level",
+        )
+    ):
+        # read in data
+        df = (
+            pd.read_table(path, sep=";", decimal=",")
+            .drop("Unnamed: 0", axis=1)
+            .rename({"Date": "time"}, axis=1)
+            .astype({"time": "datetime64[ns]"})
+        )
+        # create index from station, time, rename column to soil level volume
+        df = (
+            df.melt(id_vars="time")
+            .astype({"value": "float64", "variable": "int64"})
+            .rename(
+                {
+                    "value": f'swvl{path.name.split("Level_")[-1].replace(".csv", "")}',
+                    "variable": "station_id",
+                },
+                axis=1,
+            )
+            .set_index(["time", "station_id"])
+        )
+
+        # convert to xarray
+        ds = df.to_xarray()
+        all_sm_ds.append(ds)
+
+    ds = xr.combine_by_coords(all_sm_ds)
+    return ds
+
+
+def read_gb_sm_data(data_dir: Path, reload_nc: bool = True, sm_data_folder: str = "sm_data") -> xr.Dataset:
+    if not (data_dir / "RUNOFF/gb_sm_catchments_1993_2020.nc").exists() and reload_nc:
         all_sm_ds = []
-        for ix, path in enumerate(
-            tqdm(
-                list((data_dir / "RUNOFF/sm_data").glob("*Level*.csv")),
-                desc="Reading SM Level",
-            )
-        ):
-            # read in data
-            df = (
-                pd.read_table(d, sep=";", decimal=",")
-                .drop("Unnamed: 0", axis=1)
-                .rename({"Date": "time"}, axis=1)
-                .astype({"time": "datetime64[ns]"})
-            )
-            # create index from station, time, rename column to soil level volume
-            df = (
-                df.melt(id_vars="time")
-                .astype({"value": "float64", "variable": "int64"})
-                .rename(
-                    {
-                        "value": f'swvl{path.name.split("Level_")[-1].replace(".csv", "")}',
-                        "variable": "station_id",
-                    },
-                    axis=1,
-                )
-                .set_index(["time", "station_id"])
-            )
-
-            # convert to xarray
-            ds = df.to_xarray()
-            all_sm_ds.append(ds)
-
-        ds = xr.combine_by_coords(all_sm_ds)
+        sm_data_dir = data_dir / "RUNOFF" / sm_data_folder
+        assert sm_data_dir.exists()
+        ds = _read_csv_to_xr(sm_data_dir)
         ds.to_netcdf(data_dir / "RUNOFF/gb_sm_catchments_1993_2020.nc")
 
     else:
@@ -144,7 +153,7 @@ def upsample_xarray(
 if __name__ == "__main__":
     data_dir = Path("/cats/datastore/data")
     assert data_dir.exists()
-    # sm = read_gb_sm_data(data_dir)
+    sm = read_gb_sm_data(data_dir, reload_nc=False, sm_data_folder: str="GB_SM_catchments")
 
     # read in soil moisture data as xarray Dataset
     sm = read_raw_gb_sm_data(data_dir)
