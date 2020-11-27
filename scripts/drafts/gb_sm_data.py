@@ -31,8 +31,8 @@ def _read_csv_to_xr(sm_data_dir: Path = Path("/cats/datastore/data/RUNOFF/sm_dat
 
         if "671" in df.columns:
             # REMAP integers to station_ids
-            assert len(df.columns) == len(ALL_STATIONS_ID_LIST)
-            df.columns = ALL_STATIONS_ID_LIST
+            assert len(df.columns) == len(ALL_STATIONS_ID_LIST) + 1
+            df.columns = ["time"] + [str(idx) for idx in ALL_STATIONS_ID_LIST]
 
         # create index from station, time, rename column to soil level volume
         df = (
