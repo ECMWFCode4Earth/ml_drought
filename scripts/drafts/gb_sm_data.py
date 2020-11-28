@@ -41,6 +41,8 @@ def _read_one_csv_file(path: Path) -> pd.DataFrame:
         .astype({"time": "datetime64[ns]"})
     )
 
+    # TODO: REMOVE / CHECK THIS HACK ...
+    # why are the columns integers and not the station ids. Are we mapping correctly?
     if "671" in [str(c) for c in df.columns]:
         # REMAP integers to station_ids
         assert len(df.columns) == len(ALL_STATIONS_ID_LIST) + 1
