@@ -59,6 +59,7 @@ def create_fine_tuning_config(
     output_config_dir: Path,
     run_dir: Path,
     basin_txt_path: Path,
+    include_lstm: bool = True,
 ) -> Path:
     #  load the parent config file
     config = Config(parent_config_path)
@@ -71,21 +72,29 @@ def create_fine_tuning_config(
     # -----------------
     experiment_name = f"FINE_{finetune_basin}_{config.experiment_name}"
 
+    if include_lstm:
+        finetune_modules = ["head", "lstm"]
+    else:
+        finetune_modules = ["head"]
+
+    epochs = 20 if "lstm" in finetune_modules else 10
+    learning_rate = {0: 1e-3, 10: 5e-4, 15: 1e-4} if "lstm" in finetune_modules else {0: 5e-4, 10: 1e-4}
+
     # update config args
     config.force_update(
         dict(
             is_finetuning=True,
-            finetune_modules=["head"],
+            finetune_modules=finetune_modules,
             train_start_date="01/10/1970",
             run_dir=run_dir,
-            epochs=10,
+            epochs=epochs,
             base_run_dir=trained_model_dir,
             validate_every=3,
             train_basin_file=basin_txt_path,
             validation_basin_file=basin_txt_path,
             test_basin_file=basin_txt_path,
             experiment_name=experiment_name,
-            learning_rate={0: 5e-4, 10: 1e-4},
+            learning_rate=learning_rate,
         )
     )
 
@@ -103,6 +112,7 @@ def create_fine_tuning_config(
 
 def setup_configs_for_experiment(
     data_dir: Path, base_config_dir: Path, finetune_basin: int,
+    include_lstm: bool = False,
 ) -> Path:
     #  load in config files
     config_paths = list(base_config_dir.glob("*"))
@@ -120,6 +130,7 @@ def setup_configs_for_experiment(
             run_dir=run_dir,
             output_config_dir=output_config_dir,
             basin_txt_path=basin_txt_path,
+            include_lstm=include_lstm,
         )
 
     return run_dir, output_config_dir
@@ -234,6 +245,7 @@ if __name__ == "__main__":
     base_dir = Path("/home/tommy/")
     data_dir = Path("/cats/datastore/data")
     base_config_dir = base_dir / "neuralhydrology/configs/ensemble_lstm"
+    INCLUDE_LSTM = True
 
     assert data_dir.exists()
     assert base_dir.exists()
@@ -251,6 +263,7 @@ if __name__ == "__main__":
             data_dir=data_dir,
             base_config_dir=base_config_dir,
             finetune_basin=finetune_basin,
+            include_lstm=INCLUDE_LSTM,
         )
         print(f"Finished Setting up Experiment. Configs are stored in {output_config_dir}")
 
