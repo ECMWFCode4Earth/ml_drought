@@ -123,7 +123,7 @@ def run_finetune_training(base_dir: Path, output_config_dir: Path):
             --directory configs/ensemble_lstm_finetune /
             --runs-per-gpu 2 --gpu-ids 0
     """
-    print(f"\n\n ** Finetune Training: {output_config_dir.as_posix()} ** \n\n")
+    print(f"\n\n ** FINETUNE TRAIN: {output_config_dir.as_posix()} ** \n\n")
     p = subprocess.run(
         [
             "ipython",
@@ -149,7 +149,7 @@ def run_finetune_evaluate(base_dir: Path, run_dir: Path):
             --runs-per-gpu 2 --gpu-ids 0
     """
     print(
-        f"\n\n ** Finetune Evaluation (ensemble members): {run_dir.as_posix()} ** \n\n"
+        f"\n\n ** FINETUNE EVALUATE (ensemble members): {run_dir.as_posix()} ** \n\n"
     )
     p = subprocess.run(
         [
@@ -176,14 +176,13 @@ def run_finetune_merge(base_dir: Path, run_dir: Path):
         --save-file cats/datastore/data/runs/ensemble_finetune/FINE/ensemble_results.p /
         --metrics NSE MSE KGE FHV FMS FLV`
     """
-    print(f"\n\n ** Finetune Merge Ensemble Members: {run_dir.as_posix()} ** \n\n")
+    print(f"\n\n ** FINETUNE MERGE Ensemble Members: {run_dir.as_posix()} ** \n\n")
 
     all_run_dirs = [p.as_posix() for p in list(run_dir.glob("*"))]
     metrics = "NSE MSE KGE FHV FMS FLV".split(" ")
     p = subprocess.run(
         [
             "ipython",
-            "--pdb",
             "neuralhydrology/utils/nh_results_ensemble.py",
             "--",
             "--run-dirs",
@@ -202,11 +201,11 @@ def run_finetune_get_results(base_dir: Path, run_dir: Path):
     """Finetune Write results Out to .csv/.nc
         `cd /home/tommy/tommy_multiple_forcing; ipython --pdb analysis/read_nh_results.py -- --run_dir /cats/datastore/data/runs/ensemble_finetune/FINE/ --ensemble True --ensemble_filename /cats/datastore/data/runs/ensemble_finetune/FINE/ensemble_results.p; cd -`
     """
+    print(f"\n\n ** FINETUNE RESULTS: {run_dir.as_posix()} ** \n\n")
     output_file = run_dir / "ensemble_results.p"
     p = subprocess.run(
         [
             "ipython",
-            "--pdb",
             # "analysis/read_nh_results.py",
             "scripts/drafts/multiple_forcing/read_nh_results.py",
             "--",
