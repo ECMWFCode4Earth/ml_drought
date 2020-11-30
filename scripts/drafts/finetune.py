@@ -78,13 +78,14 @@ def create_fine_tuning_config(
             finetune_modules=["head"],
             train_start_date="01/10/1970",
             run_dir=run_dir,
-            epochs=20,
+            epochs=10,
             base_run_dir=trained_model_dir,
             validate_every=3,
             train_basin_file=basin_txt_path,
             validation_basin_file=basin_txt_path,
             test_basin_file=basin_txt_path,
             experiment_name=experiment_name,
+            learning_rate={0: 5e-4, 10: 1e-4},
         )
     )
 
@@ -245,7 +246,7 @@ if __name__ == "__main__":
                         '5003']])
 
     # finetune_basin = 54052  #  41004 41019
-    for finetune_basin in conceptual_better[1:9]:
+    for finetune_basin in conceptual_better[:9]:
         run_dir, output_config_dir = setup_configs_for_experiment(
             data_dir=data_dir,
             base_config_dir=base_config_dir,
