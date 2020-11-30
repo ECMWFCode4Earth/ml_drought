@@ -22,6 +22,12 @@ def _get_trained_model_dir(config) -> Path:
 
 def _create_run_dir_for_expt(finetune_basin: int, data_dir: Path) -> Path:
     run_dir = Path(data_dir / f"runs/ensemble_finetune/ALL_FINE/FINE_{finetune_basin}")
+    if run_dir.exists():
+        i = 1
+        while run_dir.exists():
+            run_dir = run_dir.parents[0] / f"{run_dir.name}_{i}"
+            i += 1
+
     run_dir.mkdir(exist_ok=True, parents=True)
     return run_dir
 
@@ -245,11 +251,6 @@ if __name__ == "__main__":
             base_config_dir=base_config_dir,
             finetune_basin=finetune_basin,
         )
-        if run_dir.exists():
-            i = 1
-            while run_dir.exists():
-                run_dir = run_dir.parents[0] / f"{run_dir.name}_{i}"
-                i += 1
         print(f"Finished Setting up Experiment. Configs are stored in {output_config_dir}")
 
         # run the analysis functions / scripts
