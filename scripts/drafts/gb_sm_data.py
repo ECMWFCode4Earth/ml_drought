@@ -16,7 +16,7 @@ def read_raw_gb_sm_data(data_dir: Path) -> xr.Dataset:
     return xr.open_dataset(data_dir / "RUNOFF/gb_soil_moisture_1993_2020.nc")
 
 
-def _melt_data_to_long_format(df: pd.DataFrame) -> pd.DataFrame:
+def _melt_data_to_long_format(df: pd.DataFrame, path: Path) -> pd.DataFrame:
     df = (
         df.melt(id_vars="time")
         .astype({"value": "float64", "variable": "int64"})
@@ -41,15 +41,15 @@ def _read_one_csv_file(path: Path) -> pd.DataFrame:
         .astype({"time": "datetime64[ns]"})
     )
 
-    # TODO: REMOVE / CHECK THIS HACK ...
-    # why are the columns integers and not the station ids. Are we mapping correctly?
+    #  TODO: REMOVE / CHECK THIS HACK ...
+    #  why are the columns integers and not the station ids. Are we mapping correctly?
     if "671" in [str(c) for c in df.columns]:
-        # REMAP integers to station_ids
+        #  REMAP integers to station_ids
         assert len(df.columns) == len(ALL_STATIONS_ID_LIST) + 1
         df.columns = ["time"] + [str(idx) for idx in ALL_STATIONS_ID_LIST]
 
     # create index from station, time, rename column to soil level volume
-    df = _melt_data_to_long_format(df)
+    df = _melt_data_to_long_format(df, path)
     return df
 
 
@@ -73,13 +73,11 @@ def read_gb_sm_data(
     sm_data_folder: str = "sm_data",
     save_output: bool = True,
 ) -> xr.Dataset:
-    out_data_path = (data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc")
+    out_data_path = data_dir / f"RUNOFF/{sm_data_folder}/gb_sm_catchments_1993_2020.nc"
 
-    # if file exists AND we want to reload it
+    #  if file exists AND we want to reload it
     if reload_nc and out_data_path.exists():
-        ds = xr.open_dataset(
-            out_data_path
-        )
+        ds = xr.open_dataset(out_data_path)
 
     else:
         all_sm_ds = []
@@ -88,9 +86,7 @@ def read_gb_sm_data(
         ds = _read_csv_to_xr(sm_data_dir)
         if save_output:
             try:
-                ds.to_netcdf(
-                    out_data_path
-                )
+                ds.to_netcdf(out_data_path)
             except PermissionError:
                 print("Run out of memory OR open by another process")
                 pass
@@ -189,7 +185,7 @@ if __name__ == "__main__":
     data_dir = Path("/cats/datastore/data")
     assert data_dir.exists()
 
-    sm_data_folder = "GB_SM_catchments"  # "sm_data"
+    sm_data_folder = "GB_SM_catchments"  #  "sm_data"
     sm = read_gb_sm_data(data_dir, reload_nc=False, sm_data_folder=sm_data_folder)
     print(sm)
 
