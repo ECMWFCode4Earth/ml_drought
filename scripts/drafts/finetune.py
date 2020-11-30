@@ -239,7 +239,7 @@ if __name__ == "__main__":
                         '5003']])
 
     # finetune_basin = 54052  #  41004 41019
-    for finetune_basin in conceptual_better[1:8]:
+    for finetune_basin in conceptual_better[1:9]:
         run_dir, output_config_dir = setup_configs_for_experiment(
             data_dir=data_dir,
             base_config_dir=base_config_dir,
