@@ -36,12 +36,13 @@ def _create_config_directory(parent_config_path: Path, finetune_basin: int) -> P
 def create_basin_txt_file(finetune_basin: int, base_dir: Path) -> Path:
     basin_txt_file = f"FINE_{finetune_basin}.txt"
     basin_txt_path = base_dir / "neuralhydrology/data" / basin_txt_file
-    assert (
-        basin_txt_path.exists()
-    ), f"Expect the data path: {basin_txt_path.as_posix()} to exist"
 
     with open(basin_txt_path, "w+") as f:
         f.write(str(finetune_basin))
+
+    assert (
+        basin_txt_path.exists()
+    ), f"Expect the data path: {basin_txt_path.as_posix()} to exist"
 
     return basin_txt_path
 
