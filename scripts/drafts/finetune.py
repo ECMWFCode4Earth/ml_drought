@@ -239,12 +239,17 @@ if __name__ == "__main__":
                         '5003']])
 
     # finetune_basin = 54052  #  41004 41019
-    for finetune_basin in conceptual_better[:8]:
+    for finetune_basin in conceptual_better[1:8]:
         run_dir, output_config_dir = setup_configs_for_experiment(
             data_dir=data_dir,
             base_config_dir=base_config_dir,
             finetune_basin=finetune_basin,
         )
+        if run_dir.exists():
+            i = 1
+            while run_dir.exists():
+                run_dir = run_dir.parents[0] / f"{run_dir.name}_{i}"
+                i += 1
         print(f"Finished Setting up Experiment. Configs are stored in {output_config_dir}")
 
         # run the analysis functions / scripts
