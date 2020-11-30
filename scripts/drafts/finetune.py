@@ -227,28 +227,35 @@ if __name__ == "__main__":
     base_dir = Path("/home/tommy/")
     data_dir = Path("/cats/datastore/data")
     base_config_dir = base_dir / "neuralhydrology/configs/ensemble_lstm"
-    finetune_basin = 54052  #  41004 41019
 
     assert data_dir.exists()
     assert base_dir.exists()
     assert base_config_dir.exists()
 
-    run_dir, output_config_dir = setup_configs_for_experiment(
-        data_dir=data_dir,
-        base_config_dir=base_config_dir,
-        finetune_basin=finetune_basin,
-    )
-    print(f"Finished Setting up Experiment. Configs are stored in {output_config_dir}")
+    conceptual_better = np.array([int(sid) for sid in ['54052', '41004', '41019', '34008', '28050', '34004', '33054', '40018',
+                        '42016', '54015', '84016', '28015', '40004', '39105', '43021', '41003',
+                        '27035', '21016', '27025', '21023', '39012', '28012', '32006', '54063',
+                        '68020', '68005', '42010', '80004', '92001', '41001', '33039', '67033',
+                        '5003']])
 
-    # run the analysis functions / scripts
-    # train -> evaluate -> merge -> get results
-    run_finetune_training(base_dir, output_config_dir)
-    run_finetune_evaluate(base_dir, run_dir)
-    run_finetune_merge(base_dir, run_dir)
-    run_finetune_get_results(base_dir, run_dir)
+    # finetune_basin = 54052  #  41004 41019
+    for finetune_basin in conceptual_better[:8]:
+        run_dir, output_config_dir = setup_configs_for_experiment(
+            data_dir=data_dir,
+            base_config_dir=base_config_dir,
+            finetune_basin=finetune_basin,
+        )
+        print(f"Finished Setting up Experiment. Configs are stored in {output_config_dir}")
 
-    # get the results
-    list(run_dir.glob("*ENS.csv"))[0]
-    list(run_dir.glob("metric_df.csv"))[0]
-    list(run_dir.glob("results.nc"))[0]
+        # run the analysis functions / scripts
+        # train -> evaluate -> merge -> get results
+        run_finetune_training(base_dir, output_config_dir)
+        run_finetune_evaluate(base_dir, run_dir)
+        run_finetune_merge(base_dir, run_dir)
+        run_finetune_get_results(base_dir, run_dir)
+
+        # get the results
+        list(run_dir.glob("*ENS.csv"))[0]
+        list(run_dir.glob("metric_df.csv"))[0]
+        list(run_dir.glob("results.nc"))[0]
 
