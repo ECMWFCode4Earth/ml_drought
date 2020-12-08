@@ -52,14 +52,14 @@ def error_func(preds_xr: xr.Dataset, error_str: str, epsilon: float = 1e-10) -> 
 
     # Remove nans and inf values (using the HydroError Package)
     # TODO: ENSURE THIS IS BEFORE INV/LOG
-    sim, obs = he.treat_values(df.sim, df.obs,
-                               replace_nan=None,
-                               replace_inf=None,
-                               remove_neg=True,
-                               remove_zero=False
-    )
-    df["obs"] = obs
-    df["sim"] = sim
+    # sim, obs = he.treat_values(df.sim, df.obs,
+    #                            replace_nan=None,
+    #                            replace_inf=None,
+    #                            remove_neg=True,
+    #                            remove_zero=False
+    # )
+    # df["obs"] = obs
+    # df["sim"] = sim
 
     df = df.dropna(how="any")
     df = df.reset_index().set_index("time")
