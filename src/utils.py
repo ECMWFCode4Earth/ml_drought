@@ -141,6 +141,8 @@ def create_shape_aligned_climatology(
     """match the time dimension of `clim` to the shape of `ds` so that can
     perform simple calculations / arithmetic on the values of clim
 
+    Copy forward in time; copy forward through time
+
     Arguments:
     ---------
     ds : xr.Dataset
@@ -161,7 +163,9 @@ def create_shape_aligned_climatology(
         coord names in ds
 
     """
-    for coord in ["lat", "lon"]:
+
+    spatial_dims = [c for c in ds.coords if c != "time"]
+    for coord in spatial_dims:
         assert coord in [c for c in ds.coords]
 
     ds[time_period] = ds[f"time.{time_period}"]
@@ -186,9 +190,14 @@ def create_shape_aligned_climatology(
          ds.shape: {ds[variable].shape}"
 
     # copy that forward in time
+    coords = {
+        coord: clim[coord]
+        for coord in spatial_dims
+    }
+    coords["time"] = ds.time
     new_clim = xr.Dataset(
-        {variable: (["time", "lat", "lon"], new_clim_vals)},
-        coords={"lat": clim.lat, "lon": clim.lon, "time": ds.time},
+        {variable: (["time", *spatial_dims], new_clim_vals)},
+        coords=coords,
     )
 
     return new_clim
