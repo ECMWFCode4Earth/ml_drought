@@ -407,6 +407,10 @@ def _bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
     return 100 * ((pred_vals.mean() / true_vals.mean()) - 1)
 
 
+def _abs_pct_bias(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
+    return 100 * np.abs((true_vals - pred_vals).sum() / true_vals.sum())
+
+
 def spatial_bias(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
     # values = (100 * ((pred_da.mean(dim='time') / true_da.mean(dim='time')) - 1)).values

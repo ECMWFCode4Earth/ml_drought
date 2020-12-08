@@ -78,7 +78,11 @@ def create_fine_tuning_config(
         finetune_modules = ["head"]
 
     epochs = 20 if "lstm" in finetune_modules else 10
-    learning_rate = {0: 1e-3, 10: 5e-4, 15: 1e-4} if "lstm" in finetune_modules else {0: 5e-4, 10: 1e-4}
+    learning_rate = (
+        {0: 1e-3, 10: 5e-4, 15: 1e-4}
+        if "lstm" in finetune_modules
+        else {0: 5e-4, 10: 1e-4}
+    )
 
     # update config args
     config.force_update(
@@ -111,7 +115,9 @@ def create_fine_tuning_config(
 
 
 def setup_configs_for_experiment(
-    data_dir: Path, base_config_dir: Path, finetune_basin: int,
+    data_dir: Path,
+    base_config_dir: Path,
+    finetune_basin: int,
     include_lstm: bool = False,
 ) -> Path:
     #  load in config files
@@ -167,9 +173,7 @@ def run_finetune_evaluate(base_dir: Path, run_dir: Path):
             --directory /cats/datastore/data/runs/ensemble_finetune/FINE /
             --runs-per-gpu 2 --gpu-ids 0
     """
-    print(
-        f"\n\n ** FINETUNE EVALUATE (ensemble members): {run_dir.as_posix()} ** \n\n"
-    )
+    print(f"\n\n ** FINETUNE EVALUATE (ensemble members): {run_dir.as_posix()} ** \n\n")
     p = subprocess.run(
         [
             "ipython",
@@ -251,11 +255,46 @@ if __name__ == "__main__":
     assert base_dir.exists()
     assert base_config_dir.exists()
 
-    conceptual_better = np.array([int(sid) for sid in ['54052', '41004', '41019', '34008', '28050', '34004', '33054', '40018',
-                        '42016', '54015', '84016', '28015', '40004', '39105', '43021', '41003',
-                        '27035', '21016', '27025', '21023', '39012', '28012', '32006', '54063',
-                        '68020', '68005', '42010', '80004', '92001', '41001', '33039', '67033',
-                        '5003']])
+    conceptual_better = np.array(
+        [
+            int(sid)
+            for sid in [
+                "54052",
+                "41004",
+                "41019",
+                "34008",
+                "28050",
+                "34004",
+                "33054",
+                "40018",
+                "42016",
+                "54015",
+                "84016",
+                "28015",
+                "40004",
+                "39105",
+                "43021",
+                "41003",
+                "27035",
+                "21016",
+                "27025",
+                "21023",
+                "39012",
+                "28012",
+                "32006",
+                "54063",
+                "68020",
+                "68005",
+                "42010",
+                "80004",
+                "92001",
+                "41001",
+                "33039",
+                "67033",
+                "5003",
+            ]
+        ]
+    )
 
     # finetune_basin = 54052  #  41004 41019
     for finetune_basin in conceptual_better[:9]:
@@ -265,17 +304,18 @@ if __name__ == "__main__":
             finetune_basin=finetune_basin,
             include_lstm=INCLUDE_LSTM,
         )
-        print(f"Finished Setting up Experiment. Configs are stored in {output_config_dir}")
+        print(
+            f"Finished Setting up Experiment. Configs are stored in {output_config_dir}"
+        )
 
-        # run the analysis functions / scripts
+        #  run the analysis functions / scripts
         # train -> evaluate -> merge -> get results
         run_finetune_training(base_dir, output_config_dir)
         run_finetune_evaluate(base_dir, run_dir)
         run_finetune_merge(base_dir, run_dir)
         run_finetune_get_results(base_dir, run_dir)
 
-        # get the results
+        #  get the results
         list(run_dir.glob("*ENS.csv"))[0]
         list(run_dir.glob("metric_df.csv"))[0]
         list(run_dir.glob("results.nc"))[0]
-
