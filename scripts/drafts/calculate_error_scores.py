@@ -14,6 +14,8 @@ from src.analysis.evaluation import (
     spatial_nse,
     spatial_bias,
     spatial_kge,
+    spatial_abs_pct_bias,
+    spatial_mape,
 )
 from src.analysis.evaluation import temporal_rmse, temporal_r2, temporal_nse
 from src.analysis.evaluation import (
@@ -23,7 +25,8 @@ from src.analysis.evaluation import (
     _bias_func,
     _kge_func,
     _mse_func,
-    _abs_pct_bias,
+    _abs_pct_bias_func,
+    _mape_func,
 )
 from collections import defaultdict
 import sys
@@ -40,18 +43,21 @@ def error_func(preds_xr: xr.Dataset, error_str: str, epsilon: float = 1e-10) -> 
         "bias": _bias_func,
         "log_nse": _nse_func,
         "inv_kge": _kge_func,
+        "abs_pct_bias": _abs_pct_bias_func,
+        "mape": _mape_func,
     }
     error_func = lookup[error_str]
 
     df = preds_xr.to_dataframe()
 
     # Remove nans and inf values (using the HydroError Package)
+    # TODO: ENSURE THIS IS BEFORE INV/LOG
     sim, obs = he.treat_values(df.sim, df.obs,
                                replace_nan=None,
                                replace_inf=None,
                                remove_neg=True,
                                remove_zero=False
-                               )
+    )
     df["obs"] = obs
     df["sim"] = sim
 
@@ -91,6 +97,8 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
         error_func(preds, "bias").set_index("station_id"),
         error_func(preds, "log_nse").set_index("station_id"),
         error_func(preds, "inv_kge").set_index("station_id"),
+        error_func(preds, "abs_pct_bias").set_index("station_id"),
+        error_func(preds, "mape").set_index("station_id"),
     ]
     error_df = (
         errors[0]
@@ -99,6 +107,8 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
         .join(errors[3])
         .join(errors[4])
         .join(errors[5])
+        .join(errors[6])
+        .join(errors[7])
         .reset_index()
     )
 
@@ -127,11 +137,13 @@ class FuseErrors:
         kge_df = self._calculate_metric("kge").drop("Name", axis=1, level=1)
         bias_df = self._calculate_metric("bias").drop("Name", axis=1, level=1)
         rmse_df = self._calculate_metric("rmse").drop("Name", axis=1, level=1)
-        nse_df = self._calculate_metric("log_nse").drop("Name", axis=1, level=1)
-        kge_df = self._calculate_metric("inv_kge").drop("Name", axis=1, level=1)
+        lognse_df = self._calculate_metric("log_nse").drop("Name", axis=1, level=1)
+        invkge_df = self._calculate_metric("inv_kge").drop("Name", axis=1, level=1)
+        mape_df = self._calculate_metric("mape").drop("Name", axis=1, level=1)
+        abs_pct_bias_df = self._calculate_metric("abs_pct_bias").drop("Name", axis=1, level=1)
 
         #  convert into one clean dataframe
-        fuse_errors = pd.concat([nse_df, rmse_df, kge_df, bias_df], axis=1)
+        fuse_errors = pd.concat([nse_df, kge_df, bias_df, lognse_df, invkge_df, mape_df, abs_pct_bias_df], axis=1)
         fuse_errors = self.tidy_dataframe(fuse_errors)
         self.fuse_errors = fuse_errors
 
@@ -175,6 +187,8 @@ class FuseErrors:
             "kge": spatial_kge,
             "log_nse": spatial_nse,
             "inv_kge": spatial_kge,
+            "abs_pct_bias": spatial_abs_pct_bias,
+            "mape": spatial_mape,
         }
         function = metric_lookup[metric]
 
@@ -418,10 +432,9 @@ class DeltaError:
 
     @staticmethod
     def calculate_all_errors(
-        all_preds: xr.DataArray, desc: str = None
+        all_preds: xr.DataArray, desc: str = None, metrics: List[str] = ["nse", "kge", "mse", "bias"]
     ) -> Dict[str, pd.DataFrame]:
         station_names = pd.DataFrame(gauge_name_lookup, index=["gauge_name"]).T
-        metrics = ["nse", "kge", "mse", "bias"]
 
         output_dict = defaultdict(list)
         station_names = pd.DataFrame(gauge_name_lookup, index=["gauge_name"]).T
@@ -436,7 +449,7 @@ class DeltaError:
                 all_preds[["obs", model]].rename({model: "sim"})
             ).set_index("station_id")
 
-            for metric in ["nse", "kge", "mse", "bias"]:
+            for metric in metrics:
                 output_dict[metric].append(
                     _errors.rename({metric: model}, axis=1)[model]
                 )
