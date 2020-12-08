@@ -139,15 +139,15 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
     return error_df
 
 
-def calculate_fuse_errors(fuse_data: xr.Dataset):
-    assert all(np.isin(["obs", "SimQ_TOPMODEL"], list(fuse_data.data_vars)))
+def calculate_all_data_errors(sim_obs_data: xr.Dataset):
+    assert all(np.isin(["obs"], list(sim_obs_data.data_vars)))
     output_dict = defaultdict(dict)
-    fuse_model_var = [v for v in fuse_data.data_vars if "obs" not in v]
-    for fm in tqdm(fuse_model_var, desc="FUSE Errors"):
-        preds = fuse_data[["obs", fm]].rename({fm: "sim"})
+    model_var = [v for v in sim_obs_data.data_vars if "obs" not in v]
+    for model in tqdm(model_var, desc="Errors"):
+        preds = sim_obs_data[["obs", model]].rename({model: "sim"})
         error_df = calculate_errors(preds).set_index("station_id")
         error_df["rmse"] = error_df["mse"]
-        output_dict[fm.replace("SimQ_", "")] = error_df
+        output_dict[model.replace("SimQ_", "")] = error_df
 
     return output_dict
 
