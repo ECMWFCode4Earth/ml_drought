@@ -5,6 +5,7 @@ from tqdm import tqdm
 from pathlib import Path
 from collections import defaultdict
 from typing import Dict, DefaultDict, Tuple, List
+from HydroErr import HydroErr as he
 
 from scripts.drafts.gauge_name_lookup import gauge_name_lookup
 from src.analysis.evaluation import (
@@ -22,6 +23,7 @@ from src.analysis.evaluation import (
     _bias_func,
     _kge_func,
     _mse_func,
+    _abs_pct_bias,
 )
 from collections import defaultdict
 import sys
@@ -30,7 +32,7 @@ sys.path.append("/home/tommy/neuralhydrology")
 from neuralhydrology.evaluation.metrics import calculate_all_metrics
 
 
-def error_func(preds_xr: xr.Dataset, error_str: str) -> pd.DataFrame:
+def error_func(preds_xr: xr.Dataset, error_str: str, epsilon: float = 1e-10) -> pd.DataFrame:
     lookup = {
         "nse": _nse_func,
         "mse": _mse_func,
@@ -42,6 +44,17 @@ def error_func(preds_xr: xr.Dataset, error_str: str) -> pd.DataFrame:
     error_func = lookup[error_str]
 
     df = preds_xr.to_dataframe()
+
+    # Remove nans and inf values (using the HydroError Package)
+    sim, obs = he.treat_values(df.sim, df.obs,
+                               replace_nan=None,
+                               replace_inf=None,
+                               remove_neg=True,
+                               remove_zero=False
+                               )
+    df["obs"] = obs
+    df["sim"] = sim
+
     df = df.dropna(how="any")
     df = df.reset_index().set_index("time")
 
@@ -53,7 +66,11 @@ def error_func(preds_xr: xr.Dataset, error_str: str) -> pd.DataFrame:
         try:
             if "log" in error_str:
                 _error_calc = error_func(
-                    np.log(d["obs"].values) + 1e-6, np.log(d["sim"].values) + 1e-6
+                    np.log(d["obs"].values) + epsilon, np.log(d["sim"].values) + epsilon
+                )
+            elif "inv" in error_str:
+                _error_calc = error_func(
+                    (1 / d["obs"].values + epsilon), (1 / d["sim"].values + epsilon)
                 )
             else:
                 _error_calc = error_func(d["obs"].values, d["sim"].values)
@@ -110,6 +127,8 @@ class FuseErrors:
         kge_df = self._calculate_metric("kge").drop("Name", axis=1, level=1)
         bias_df = self._calculate_metric("bias").drop("Name", axis=1, level=1)
         rmse_df = self._calculate_metric("rmse").drop("Name", axis=1, level=1)
+        nse_df = self._calculate_metric("log_nse").drop("Name", axis=1, level=1)
+        kge_df = self._calculate_metric("inv_kge").drop("Name", axis=1, level=1)
 
         #  convert into one clean dataframe
         fuse_errors = pd.concat([nse_df, rmse_df, kge_df, bias_df], axis=1)
@@ -164,11 +183,15 @@ class FuseErrors:
             zip(self.model_preds, self.model_names), desc=metric
         ):
             if "log" in metric:
-                out_list.append(function(self.obs, model, log=True).rename(model_name))
+                obs_copy = np.log(self.obs + epsilon)
+                model = np.log(model + epsilon)
             elif "inv" in metric:
-                out_list.append(function(self.obs, model, inv=True).rename(model_name))
+                obs_copy = (1 / self.obs + epsilon)
+                model = (1 / model + epsilon)
             else:
-                out_list.append(function(self.obs, model).rename(model_name))
+                obs_copy = self.obs.copy()
+
+            out_list.append(function(obs_copy, model).rename(model_name))
 
         # merge all of the station error metrics into one xr.Dataset
         metric_xr = xr.merge([out_list[0], out_list[1], out_list[2], out_list[3],])
