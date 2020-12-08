@@ -47,7 +47,7 @@ def assign_wateryear(dt):
 def xr_mam30_ape(preds: xr.Dataset) -> xr.Dataset:
     assert "time" in preds.coords
     # calculate the 30d moving average (30dMA)
-    move_avg_30 = lstm_preds.rolling(time=30).mean()
+    move_avg_30 = preds.rolling(time=30).mean()
     # calculate the mean annual minumum (MAM) = mean(minimum 30dMA for each water year)
     move_avg_30 = move_avg_30.assign_coords(wy=("time", [assign_wateryear(dt) for dt in move_avg_30.time.values]))
     mam_30 = move_avg_30.groupby("wy").min(dim="time").isel(wy=slice(1, -1)).mean(dim='wy')
