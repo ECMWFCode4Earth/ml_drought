@@ -35,6 +35,27 @@ sys.path.append("/home/tommy/neuralhydrology")
 from neuralhydrology.evaluation.metrics import calculate_all_metrics
 
 
+def assign_wateryear(dt):
+    """https://stackoverflow.com/a/52615358/9940782"""
+    dt = pd.Timestamp(dt)
+    if dt.month >= 10:
+        return(pd.datetime(dt.year+1, 1, 1).year)
+    else:
+        return(pd.datetime(dt.year, 1, 1).year)
+
+
+def xr_mam30_ape(preds: xr.Dataset) -> xr.Dataset:
+    assert "time" in preds.coords
+    # calculate the 30d moving average (30dMA)
+    move_avg_30 = lstm_preds.rolling(time=30).mean()
+    # calculate the mean annual minumum (MAM) = mean(minimum 30dMA for each water year)
+    move_avg_30 = move_avg_30.assign_coords(wy=("time", [assign_wateryear(dt) for dt in move_avg_30.time.values]))
+    mam_30 = move_avg_30.groupby("wy").min(dim="time").isel(wy=slice(1, -1)).mean(dim='wy')
+
+    # calculate the absolute percentage error for MAM 30day
+    return np.abs(((mam_30["obs"] - mam_30["sim"]) / mam_30["obs"])) * 100
+
+
 def error_func(preds_xr: xr.Dataset, error_str: str, epsilon: float = 1e-10) -> pd.DataFrame:
     lookup = {
         "nse": _nse_func,
@@ -90,6 +111,8 @@ def error_func(preds_xr: xr.Dataset, error_str: str, epsilon: float = 1e-10) -> 
 
 
 def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
+
+    error_mam30 = xr_mam30_ape(preds).to_dataframe("mam30_ape")
     errors = [
         error_func(preds, "nse").set_index("station_id"),
         error_func(preds, "kge").set_index("station_id"),
@@ -109,6 +132,7 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
         .join(errors[5])
         .join(errors[6])
         .join(errors[7])
+        .join(error_mam30)
         .reset_index()
     )
 
