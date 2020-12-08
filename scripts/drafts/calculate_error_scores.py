@@ -155,7 +155,10 @@ def calculate_fuse_errors(fuse_data: xr.Dataset):
 def get_metric_dataframes_from_output_dict(output_dict: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
     models = list(output_dict.keys())
     metrics = [c for c in output_dict[models[0]].columns if "station_id" != c]
-    index = output_dict[models[0]]["station_id"]
+    if "station_id" in output_dict[models[0]].columns:
+        index = output_dict[models[0]]["station_id"]
+    else:
+        index = output_dict[models[0]].index
 
     metric_dict = {}
     for metric in metrics:
