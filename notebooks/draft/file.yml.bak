@@ -1,0 +1,3 @@
+train_basin_file: data/camels_gb_basin_list.txt
+validation_basin_file: data/camels_gb_basin_list.txt
+test_basin_file: data/camels_gb_basin_list.txt
