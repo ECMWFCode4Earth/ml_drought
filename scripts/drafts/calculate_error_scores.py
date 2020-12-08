@@ -116,11 +116,14 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
 
 
 def calculate_fuse_errors(fuse_data: xr.Dataset):
+    assert all(np.isin(["obs", "SimQ_TOPMODEL"], list(fuse_data.data_vars)))
     output_dict = defaultdict(dict)
     fuse_model_var = [v for v in fuse_data.data_vars if "obs" not in v]
-    for fm in fuse_model_var:
+    for fm in tqdm(fuse_model_var, desc="FUSE Errors"):
         preds = fuse_data[["obs", fm]].rename({fm: "sim"})
-        output_dict[fm.replace("SimQ_", "")] = calculate_errors(preds)
+        error_df = calculate_errors(preds).set_index("station_id")
+        error_df["rmse"] = error_df["mse"]
+        output_dict[fm.replace("SimQ_", "")] = error_df
 
     return output_dict
 
@@ -251,10 +254,15 @@ class FuseErrors:
         return metric_df
 
     def get_metric_df(self, metric: str) -> pd.DataFrame:
-        #  select only that metric
+        #  select only that metric (error catching - level 0 or level 1)
         df = self.fuse_errors.loc[
             :, self.fuse_errors.columns.get_level_values(0) == metric.lower()
         ].droplevel(level=0, axis=1)
+        if shape[-1] == 0:
+            df = self.fuse_errors.loc[
+                :, self.fuse_errors.columns.get_level_values(1) == metric.lower()
+            ].droplevel(level=1, axis=1)
+
         if not "Name" in df.columns:
             df["Name"] = pd.DataFrame(gauge_name_lookup, index=["gauge_name"]).T
 
