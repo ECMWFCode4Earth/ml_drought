@@ -130,6 +130,104 @@ def spatial_nse(
     return da
 
 
+def spatial_mape(
+    true_da: xr.DataArray, pred_da: xr.DataArray, log: bool = False
+) -> xr.DataArray:
+    """Calculate the RMSE collapsing the time dimension returning
+    a DataArray of the rmse values (spatially)
+    """
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    true_coords = _get_coords(true_da)
+    true_coords.sort()
+    pred_coords = _get_coords(pred_da)
+    pred_coords.sort()
+
+    assert tuple(true_da.dims) == tuple(pred_da.dims), (
+        f"Expect"
+        "the dimensions to be the same. Currently: "
+        f"True: {tuple(true_da.dims)} Preds: {tuple(pred_da.dims)}. "
+        'Have you tried da.transpose("time", "lat", "lon")'
+    )
+
+    # sort the lat/lons correctly just to be sure
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        pred_da = _sort_lat_lons(pred_da)
+        true_da = _sort_lat_lons(true_da)
+    else:
+        pred_da = pred_da.sortby(["time"] + pred_coords)
+        true_da = true_da.sortby(["time"] + true_coords)
+
+    stacked_pred = pred_da.stack(space=pred_coords)
+    stacked_true = true_da.stack(space=true_coords)
+    vals = []
+    for space in stacked_pred.space.values:
+        true_vals = stacked_true.sel(space=space).values
+        pred_vals = stacked_pred.sel(space=space).values
+
+        if log:
+            true_vals = np.log(true_vals + 1e-6)
+            pred_vals = np.log(pred_vals + 1e-6)
+        vals.append(_mape_func(true_vals, pred_vals))
+
+    da = xr.ones_like(stacked_pred).isel(time=0).drop("time")
+    da = da * np.array(vals)
+    da = da.unstack()
+
+    # reapply the mask
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        da = da.where(~get_ds_mask(pred_da))
+    return da
+
+
+def spatial_abs_pct_bias(
+    true_da: xr.DataArray, pred_da: xr.DataArray, log: bool = False
+) -> xr.DataArray:
+    """Calculate the RMSE collapsing the time dimension returning
+    a DataArray of the rmse values (spatially)
+    """
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    true_coords = _get_coords(true_da)
+    true_coords.sort()
+    pred_coords = _get_coords(pred_da)
+    pred_coords.sort()
+
+    assert tuple(true_da.dims) == tuple(pred_da.dims), (
+        f"Expect"
+        "the dimensions to be the same. Currently: "
+        f"True: {tuple(true_da.dims)} Preds: {tuple(pred_da.dims)}. "
+        'Have you tried da.transpose("time", "lat", "lon")'
+    )
+
+    # sort the lat/lons correctly just to be sure
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        pred_da = _sort_lat_lons(pred_da)
+        true_da = _sort_lat_lons(true_da)
+    else:
+        pred_da = pred_da.sortby(["time"] + pred_coords)
+        true_da = true_da.sortby(["time"] + true_coords)
+
+    stacked_pred = pred_da.stack(space=pred_coords)
+    stacked_true = true_da.stack(space=true_coords)
+    vals = []
+    for space in stacked_pred.space.values:
+        true_vals = stacked_true.sel(space=space).values
+        pred_vals = stacked_pred.sel(space=space).values
+
+        if log:
+            true_vals = np.log(true_vals + 1e-6)
+            pred_vals = np.log(pred_vals + 1e-6)
+        vals.append(_abs_pct_bias_func(true_vals, pred_vals))
+
+    da = xr.ones_like(stacked_pred).isel(time=0).drop("time")
+    da = da * np.array(vals)
+    da = da.unstack()
+
+    # reapply the mask
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        da = da.where(~get_ds_mask(pred_da))
+    return da
+
+
 def spatial_kge(
     true_da: xr.DataArray, pred_da: xr.DataArray, inv: bool = False
 ) -> xr.DataArray:
@@ -402,12 +500,38 @@ def _bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
     return 100 * ((pred_vals.mean() / true_vals.mean()) - 1)
 
 
-def _abs_pct_bias(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
-    return 100 * np.abs((true_vals - pred_vals).sum() / true_vals.sum())
+def _abs_pct_bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
+    """Absolute Percentage Bias [0, inf], focus on water balance
+
+    math::
+        \text { absPBIAS }=\left|\frac{\sum\left(Q_{s}-Q_{0}\right)}{\sum Q_{o}}\right| \cdot 100
+
+    Args:
+        true_vals (np.ndarray): [description]
+        pred_vals (np.ndarray): [description]
+
+    Returns:
+        np.ndarray: [description]
+    """
+    return np.abs(
+        np.sum(pred_vals - true_vals) / np.sum(true_vals)
+    ) * 100
 
 
-def _mape(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
-    pass
+def _mape_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
+    """Mean Absolute Percentage Error [0, inf], focus on full range
+
+    math::
+        \operatorname{MAPE}=\left(\frac{1}{n} \sum_{i=1}^{n}\left|\frac{Q_{0}-Q_{\mathrm{s}}}{Q_{\mathrm{o}}}\right|\right) \cdot 100
+
+    Args:
+        true_vals (np.ndarray): [description]
+        pred_vals (np.ndarray): [description]
+
+    Returns:
+        np.ndarray: [description]
+    """
+    return (1 / pred_vals.size) * np.sum(np.abs((true_vals - pred_vals) / true_vals)) * 100
 
 
 def spatial_bias(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
