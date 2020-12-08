@@ -179,7 +179,7 @@ class FuseErrors:
         self.model_preds = [topmodel, arnovic, prms, sacramento]
         self.model_names = ["TOPMODEL", "VIC", "PRMS", "Sacramento"]
 
-    def _calculate_metric(self, metric: str) -> None:
+    def _calculate_metric(self, metric: str, epsilon: float = 1e-10) -> None:
         metric_lookup = {
             "nse": spatial_nse,
             "rmse": spatial_rmse,
