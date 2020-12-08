@@ -115,6 +115,34 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
     return error_df
 
 
+def calculate_fuse_errors(fuse_data: xr.Dataset):
+    output_dict = defaultdict(dict)
+    fuse_model_var = [v for v in fuse_data.data_vars if "obs" not in v]
+    for fm in fuse_model_var:
+        preds = fuse_data[["obs", fm]].rename({fm: "sim"})
+        output_dict[fm.replace("SimQ_", "")] = calculate_errors(preds)
+
+    return output_dict
+
+
+def get_metric_dataframes_from_output_dict(output_dict: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
+    models = list(output_dict.keys())
+    metrics = [c for c in output_dict[models[0]].columns if "station_id" != c]
+    index = output_dict[models[0]]["station_id"]
+
+    metric_dict = {}
+    for metric in metrics:
+        df_dict = {}
+        for model in models:
+            df_dict[model] = output_dict[model][metric].values
+        d = pd.DataFrame(df_dict, index=index)
+
+        metric_dict[metric] = d
+
+    return metric_dict
+
+
+
 class FuseErrors:
     def __init__(self, fuse_data: xr.Dataset):
         assert all(
