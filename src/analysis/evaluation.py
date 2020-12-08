@@ -163,11 +163,6 @@ def spatial_kge(
     for space in stacked_pred.space.values:
         true_vals = stacked_true.sel(space=space).values
         pred_vals = stacked_pred.sel(space=space).values
-        #  deal with nans inside _kge_func
-        if inv:
-            true_vals = 1 / (true_vals + 1e-6)
-            pred_vals = 1 / (pred_vals + 1e-6)
-
         vals.append(_kge_func(true_vals, pred_vals))
 
     da = xr.ones_like(stacked_pred).isel(time=0).drop("time")
@@ -409,6 +404,10 @@ def _bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
 
 def _abs_pct_bias(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
     return 100 * np.abs((true_vals - pred_vals).sum() / true_vals.sum())
+
+
+def _mape(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
+    pass
 
 
 def spatial_bias(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
