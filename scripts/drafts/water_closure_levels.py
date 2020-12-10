@@ -56,7 +56,7 @@ def create_closure_masks(
     return threshold, (mean_closure, mean_precip)
 
 if __name__ == "__main__":
-    data_dir = get_data_path()
+    data_dir = Path("/cats/datastore/data")
 
     ds = xr.open_dataset(data_dir / "RUNOFF/ALL_dynamic_ds.nc")
     ds['station_id'] = ds['station_id'].astype(int)
