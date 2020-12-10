@@ -285,7 +285,7 @@ class FuseErrors:
         df = self.fuse_errors.loc[
             :, self.fuse_errors.columns.get_level_values(0) == metric.lower()
         ].droplevel(level=0, axis=1)
-        if shape[-1] == 0:
+        if df.shape[-1] == 0:
             df = self.fuse_errors.loc[
                 :, self.fuse_errors.columns.get_level_values(1) == metric.lower()
             ].droplevel(level=1, axis=1)
