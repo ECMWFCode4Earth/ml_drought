@@ -4,7 +4,7 @@ import xarray as xr
 from tqdm import tqdm
 from pathlib import Path
 from collections import defaultdict
-from typing import Dict, DefaultDict, Tuple, List
+from typing import Dict, DefaultDict, Tuple, List, Optional
 from HydroErr import HydroErr as he
 
 from scripts.drafts.gauge_name_lookup import gauge_name_lookup
@@ -32,7 +32,7 @@ from collections import defaultdict
 import sys
 
 sys.path.append("/home/tommy/neuralhydrology")
-from neuralhydrology.evaluation.metrics import calculate_all_metrics
+from neuralhydrology.evaluation.metrics import calculate_all_metrics, calculate_metrics
 
 
 def assign_wateryear(dt):
@@ -386,7 +386,12 @@ class DeltaError:
         self.all_preds = self._join_into_one_ds(ealstm_preds, lstm_preds, fuse_data)
 
     @staticmethod
-    def calc_kratzert_error_functions(all_preds: xr.Dataset) -> Dict[str, pd.DataFrame]:
+    def calc_kratzert_error_functions(all_preds: xr.Dataset, metrics: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
+        all_metrics = ["nse", "mse", "rmse", "kge", "nse", "nse", "r", "fhv", "fms", "flv", "timing"]
+        assert metrics in all_metrics, f"Metrics should be one of {all_metrics}"
+        if metrics is None:
+            metrics = all_metrics
+
         #  FOR USING THE KRATZERT FUNCTIONS (takes a long time)
         model_results = defaultdict(dict)
         for model in [v for v in all_preds.data_vars if v != "obs"]:
@@ -394,8 +399,9 @@ class DeltaError:
                 sim = all_preds[model].sel(station_id=sid).drop("station_id")
                 obs = all_preds["obs"].sel(station_id=sid).drop("station_id")
                 try:
-                    model_results[model][sid] = calculate_all_metrics(
-                        obs, sim, datetime_coord="time"
+                    model_results[model][sid] = calculate_metrics(
+                        obs, sim, datetime_coord="time",
+                        metrics=metrics
                     )
                 except ValueError:
                     model_results[model][sid] = np.nan
