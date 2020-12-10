@@ -388,7 +388,7 @@ class DeltaError:
     @staticmethod
     def calc_kratzert_error_functions(all_preds: xr.Dataset, metrics: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
         all_metrics = ["nse", "mse", "rmse", "kge", "nse", "nse", "r", "fhv", "fms", "flv", "timing"]
-        assert metrics in all_metrics, f"Metrics should be one of {all_metrics}"
+        assert all(np.isin(metrics, all_metrics)), f"Metrics should be one of {all_metrics}"
         if metrics is None:
             metrics = all_metrics
 
