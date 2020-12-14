@@ -83,8 +83,8 @@ if __name__ == "__main__":
     # get matching stations
     all_stations_lstm = np.isin(lstm_preds.station_id, fuse_data.station_id)
     all_stations_ealstm = np.isin(ealstm_preds.station_id, fuse_data.station_id)
-    lstm_preds = lstm_preds.sel(station_id=all_stations_lstm, time=fuse_data.time)
-    ealstm_preds = ealstm_preds.sel(station_id=all_stations_ealstm, time=fuse_data.time)
+    lstm_preds = lstm_preds.sel(station_id=all_stations_lstm, time=np.isin(lstm_preds.time, fuse_data.time))
+    ealstm_preds = ealstm_preds.sel(station_id=all_stations_ealstm, time=np.isin(ealstm_preds.time, fuse_data.time))
 
     # calculate all error metrics
     processor = DeltaError(ealstm_preds, lstm_preds, fuse_data, incl_benchmarks=True)
