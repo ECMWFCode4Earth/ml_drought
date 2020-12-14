@@ -55,6 +55,13 @@ def create_closure_masks(
 
     return threshold, (mean_closure, mean_precip)
 
+
+def get_condition_sids(thresholds: xr.Dataset, threshold_level: float):
+    assert threshold_level in thresholds.threshold.values, f"Threshold level must be in: {thresholds.threshold.values}"
+    condition_sids = thresholds.where(thresholds.sel(threshold=threshold_level)["mask"], drop=True).station_id.values
+    return condition_sids
+
+
 if __name__ == "__main__":
     data_dir = Path("/cats/datastore/data")
 
