@@ -60,9 +60,13 @@ def read_fuse_data(raw_fuse_path: Path, obs: xr.Dataset) -> xr.Dataset:
 
 
 if __name__ == "__main__":
+    import sys
+    sys.path.append("/home/tommy/ml_drought")
+    from scripts.drafts.calculate_error_scores import DeltaError
+
     data_dir = Path("/cats/datastore/data")
 
-    ealstm_ensemble_dir = data_dir / "runs/ensemble_EALSTM"
+    # ealstm_ensemble_dir = data_dir / "runs/ensemble_EALSTM"
     # ealstm_preds = read_ensemble_results(ealstm_ensemble_dir)
 
     pet_ealstm_ensemble_dir = data_dir / "runs/ensemble_pet_ealstm"
@@ -75,3 +79,14 @@ if __name__ == "__main__":
     # fuse data
     raw_fuse_path = data_dir / "RUNOFF/FUSE"
     fuse_data = read_fuse_data(raw_fuse_path, lstm_preds["obs"])
+
+    # get matching
+    all_stations_lstm = np.isin(lstm_preds.station_id, fuse_data.station_id)
+    all_stations_ealstm = np.isin(ealstm_preds.station_id, fuse_data.station_id)
+    lstm_preds = lstm_preds.sel(station_id=all_stations_lstm, time=fuse_data.time)
+    ealstm_preds = ealstm_preds.sel(station_id=all_stations_ealstm, time=fuse_data.time)
+
+    # calculate all error metrics
+    processor = DeltaError(ealstm_preds, lstm_preds, fuse_data, incl_benchmarks=True)
+    all_preds = processor.all_preds
+    print(all_preds)
