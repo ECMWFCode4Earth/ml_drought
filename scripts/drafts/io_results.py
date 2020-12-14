@@ -28,7 +28,7 @@ def fuse_to_nc(raw_fuse_path: Path) -> xr.Dataset:
         d for d in (raw_fuse_path / "Timeseries_SimQ_Best/").glob("*_Best_Qsim.txt")
     ]
 
-    if not (raw_fuse_path.parents[0] / "RUNOFF/ALL_fuse_ds.nc").exists():
+    if not (raw_fuse_path.parents[0] / "ALL_fuse_ds.nc").exists():
         all_dfs = []
         for txt in tqdm(all_paths):
             df = pd.read_csv(txt, skiprows=3, header=0)
@@ -44,11 +44,11 @@ def fuse_to_nc(raw_fuse_path: Path) -> xr.Dataset:
             all_dfs.append(df)
 
         fuse_ds = pd.concat(all_dfs).to_xarray()
-        fuse_ds.to_netcdf(raw_fuse_path.parents[0] / "RUNOFF/ALL_fuse_ds.nc")
+        fuse_ds.to_netcdf(raw_fuse_path.parents[0] / "ALL_fuse_ds.nc")
 
     else:
         fuse_ds = xr.open_dataset(
-            raw_fuse_path.parents[0] / "RUNOFF/ALL_fuse_ds.nc")
+            raw_fuse_path.parents[0] / "ALL_fuse_ds.nc")
     return fuse_ds
 
 
