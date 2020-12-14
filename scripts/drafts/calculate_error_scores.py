@@ -402,7 +402,7 @@ class DeltaError:
         ealstm_preds,
         lstm_preds,
         fuse_data,
-        benchmark_calculation_ds: Optional[xr.Dataset],
+        benchmark_calculation_ds: Optional[xr.Dataset] = None,
         incl_benchmarks: bool = True,
     ):
         if incl_benchmarks:
