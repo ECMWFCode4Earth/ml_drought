@@ -33,7 +33,8 @@ import sys
 
 sys.path.append("/home/tommy/neuralhydrology")
 from neuralhydrology.evaluation.metrics import calculate_all_metrics, calculate_metrics
-
+sys.path.append("/home/tommy/ml_drought")
+from src.utils import create_shape_aligned_climatology
 
 def assign_wateryear(dt):
     """https://stackoverflow.com/a/52615358/9940782"""
@@ -382,8 +383,29 @@ class FUSEPublishedScores:
 
 
 class DeltaError:
-    def __init__(self, ealstm_preds, lstm_preds, fuse_data):
+    def __init__(self, ealstm_preds, lstm_preds, fuse_data, incl_benchmarks: bool = True):
         self.all_preds = self._join_into_one_ds(ealstm_preds, lstm_preds, fuse_data)
+        if incl_benchmarks:
+            self.all_preds = self.calculate_benchmarks()
+
+    def calculate_benchmarks(self):
+        all_preds = self.all_preds
+        # 1) Persistence
+        all_preds["persistence"] = ds["discharge_spec"].shift(time=1).sel(station_id=all_preds.station_id, time=all_preds.time)
+
+        # 2) DayofYear Climatology
+        climatology_unit = "month"
+
+        climatology_doy = ds["discharge_spec"].groupby("time.dayofyear").mean()
+        climatology_doy = create_shape_aligned_climatology(ds, climatology_doy.to_dataset(), variable="discharge_spec", time_period="dayofyear")
+
+        climatology_mon = ds["discharge_spec"].groupby("time.month").mean()
+        climatology_mon = create_shape_aligned_climatology(ds, climatology_mon.to_dataset(), variable="discharge_spec", time_period="month")
+
+        all_preds["climatology_doy"] = climatology_doy.sel(station_id=all_preds.station_id, time=all_preds.time)["discharge_spec"]
+        all_preds["climatology_mon"] = climatology_mon.sel(station_id=all_preds.station_id, time=all_preds.time)["discharge_spec"]
+
+        return all_preds
 
     @staticmethod
     def calc_kratzert_error_functions(all_preds: xr.Dataset, metrics: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
