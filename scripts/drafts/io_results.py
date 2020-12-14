@@ -62,11 +62,11 @@ def read_fuse_data(raw_fuse_path: Path, obs: xr.Dataset) -> xr.Dataset:
 if __name__ == "__main__":
     data_dir = Path("/cats/datastore/data")
 
-    # ealstm_ensemble_dir = data_dir / "runs/ensemble_EALSTM"
+    ealstm_ensemble_dir = data_dir / "runs/ensemble_EALSTM"
     # ealstm_preds = read_ensemble_results(ealstm_ensemble_dir)
 
     pet_ealstm_ensemble_dir = data_dir / "runs/ensemble_pet_ealstm"
-    ealstm_preds = read_ensemble_results(pet_ealstm_ensemble_dir)
+    ealstm_preds = read_ensemble_results(ealstm_ensemble_dir)
 
     # lstm_ensemble_dir = data_dir / "runs/ensemble"
     lstm_ensemble_dir = data_dir / "runs/ensemble_pet"
