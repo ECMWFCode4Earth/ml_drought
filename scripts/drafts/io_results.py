@@ -68,7 +68,6 @@ if __name__ == "__main__":
 
     # ealstm_ensemble_dir = data_dir / "runs/ensemble_EALSTM"
     # ealstm_preds = read_ensemble_results(ealstm_ensemble_dir)
-
     pet_ealstm_ensemble_dir = data_dir / "runs/ensemble_pet_ealstm"
     ealstm_preds = read_ensemble_results(pet_ealstm_ensemble_dir)
 
@@ -80,7 +79,7 @@ if __name__ == "__main__":
     raw_fuse_path = data_dir / "RUNOFF/FUSE"
     fuse_data = read_fuse_data(raw_fuse_path, lstm_preds["obs"])
 
-    # get matching
+    # get matching stations
     all_stations_lstm = np.isin(lstm_preds.station_id, fuse_data.station_id)
     all_stations_ealstm = np.isin(ealstm_preds.station_id, fuse_data.station_id)
     lstm_preds = lstm_preds.sel(station_id=all_stations_lstm, time=fuse_data.time)
