@@ -33,31 +33,39 @@ import sys
 
 sys.path.append("/home/tommy/neuralhydrology")
 from neuralhydrology.evaluation.metrics import calculate_all_metrics, calculate_metrics
+
 sys.path.append("/home/tommy/ml_drought")
 from src.utils import create_shape_aligned_climatology
+
 
 def assign_wateryear(dt):
     """https://stackoverflow.com/a/52615358/9940782"""
     dt = pd.Timestamp(dt)
     if dt.month >= 10:
-        return(pd.datetime(dt.year+1, 1, 1).year)
+        return pd.datetime(dt.year + 1, 1, 1).year
     else:
-        return(pd.datetime(dt.year, 1, 1).year)
+        return pd.datetime(dt.year, 1, 1).year
 
 
 def xr_mam30_ape(preds: xr.Dataset) -> xr.Dataset:
     assert "time" in preds.coords
     # calculate the 30d moving average (30dMA)
     move_avg_30 = preds.rolling(time=30).mean()
-    # calculate the mean annual minumum (MAM) = mean(minimum 30dMA for each water year)
-    move_avg_30 = move_avg_30.assign_coords(wy=("time", [assign_wateryear(dt) for dt in move_avg_30.time.values]))
-    mam_30 = move_avg_30.groupby("wy").min(dim="time").isel(wy=slice(1, -1)).mean(dim='wy')
+    #  calculate the mean annual minumum (MAM) = mean(minimum 30dMA for each water year)
+    move_avg_30 = move_avg_30.assign_coords(
+        wy=("time", [assign_wateryear(dt) for dt in move_avg_30.time.values])
+    )
+    mam_30 = (
+        move_avg_30.groupby("wy").min(dim="time").isel(wy=slice(1, -1)).mean(dim="wy")
+    )
 
     # calculate the absolute percentage error for MAM 30day
     return np.abs(((mam_30["obs"] - mam_30["sim"]) / mam_30["obs"])) * 100
 
 
-def error_func(preds_xr: xr.Dataset, error_str: str, epsilon: float = 1e-10) -> pd.DataFrame:
+def error_func(
+    preds_xr: xr.Dataset, error_str: str, epsilon: float = 1e-10
+) -> pd.DataFrame:
     lookup = {
         "nse": _nse_func,
         "mse": _mse_func,
@@ -72,7 +80,7 @@ def error_func(preds_xr: xr.Dataset, error_str: str, epsilon: float = 1e-10) -> 
 
     df = preds_xr.to_dataframe()
 
-    # Remove nans and inf values (using the HydroError Package)
+    #  Remove nans and inf values (using the HydroError Package)
     # TODO: ENSURE THIS IS BEFORE INV/LOG
     # sim, obs = he.treat_values(df.sim, df.obs,
     #                            replace_nan=None,
@@ -153,7 +161,9 @@ def calculate_all_data_errors(sim_obs_data: xr.Dataset):
     return output_dict
 
 
-def get_metric_dataframes_from_output_dict(output_dict: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
+def get_metric_dataframes_from_output_dict(
+    output_dict: Dict[str, pd.DataFrame]
+) -> Dict[str, pd.DataFrame]:
     models = list(output_dict.keys())
     metrics = [c for c in output_dict[models[0]].columns if "station_id" != c]
     if "station_id" in output_dict[models[0]].columns:
@@ -171,7 +181,6 @@ def get_metric_dataframes_from_output_dict(output_dict: Dict[str, pd.DataFrame])
         metric_dict[metric] = d
 
     return metric_dict
-
 
 
 class FuseErrors:
@@ -199,10 +208,15 @@ class FuseErrors:
         lognse_df = self._calculate_metric("log_nse").drop("Name", axis=1, level=1)
         invkge_df = self._calculate_metric("inv_kge").drop("Name", axis=1, level=1)
         mape_df = self._calculate_metric("mape").drop("Name", axis=1, level=1)
-        abs_pct_bias_df = self._calculate_metric("abs_pct_bias").drop("Name", axis=1, level=1)
+        abs_pct_bias_df = self._calculate_metric("abs_pct_bias").drop(
+            "Name", axis=1, level=1
+        )
 
         #  convert into one clean dataframe
-        fuse_errors = pd.concat([nse_df, kge_df, bias_df, lognse_df, invkge_df, mape_df, abs_pct_bias_df], axis=1)
+        fuse_errors = pd.concat(
+            [nse_df, kge_df, bias_df, lognse_df, invkge_df, mape_df, abs_pct_bias_df],
+            axis=1,
+        )
         fuse_errors = self.tidy_dataframe(fuse_errors)
         self.fuse_errors = fuse_errors
 
@@ -259,8 +273,8 @@ class FuseErrors:
                 obs_copy = np.log(self.obs + epsilon)
                 model = np.log(model + epsilon)
             elif "inv" in metric:
-                obs_copy = (1 / self.obs + epsilon)
-                model = (1 / model + epsilon)
+                obs_copy = 1 / self.obs + epsilon
+                model = 1 / model + epsilon
             else:
                 obs_copy = self.obs.copy()
 
@@ -383,9 +397,18 @@ class FUSEPublishedScores:
 
 
 class DeltaError:
-    def __init__(self, ealstm_preds, lstm_preds, fuse_data, benchmark_calculation_ds: Optional[xr.Dataset], incl_benchmarks: bool = True, ):
+    def __init__(
+        self,
+        ealstm_preds,
+        lstm_preds,
+        fuse_data,
+        benchmark_calculation_ds: Optional[xr.Dataset],
+        incl_benchmarks: bool = True,
+    ):
         if incl_benchmarks:
-            assert benchmark_calculation_ds is not None, "Must provide if incl_benchmarks"
+            assert (
+                benchmark_calculation_ds is not None
+            ), "Must provide if incl_benchmarks"
             assert "discharge_spec" in list(benchmark_calculation_ds.data_vars)
         self.all_preds = self._join_into_one_ds(ealstm_preds, lstm_preds, fuse_data)
         if incl_benchmarks:
@@ -394,26 +417,64 @@ class DeltaError:
     def calculate_benchmarks(self, benchmark_calculation_ds: xr.Dataset):
         all_preds = self.all_preds
         # 1) Persistence
-        all_preds["persistence"] = benchmark_calculation_ds["discharge_spec"].shift(time=1).sel(station_id=all_preds.station_id, time=all_preds.time)
+        all_preds["persistence"] = (
+            benchmark_calculation_ds["discharge_spec"]
+            .shift(time=1)
+            .sel(station_id=all_preds.station_id, time=all_preds.time)
+        )
 
-        # 2) DayofYear Climatology
+        #  2) DayofYear Climatology
         climatology_unit = "month"
 
-        climatology_doy = ds["discharge_spec"].groupby("time.dayofyear").mean()
-        climatology_doy = create_shape_aligned_climatology(benchmark_calculation_ds, climatology_doy.to_dataset(), variable="discharge_spec", time_period="dayofyear")
+        climatology_doy = (
+            benchmark_calculation_ds["discharge_spec"].groupby("time.dayofyear").mean()
+        )
+        climatology_doy = create_shape_aligned_climatology(
+            benchmark_calculation_ds,
+            climatology_doy.to_dataset(),
+            variable="discharge_spec",
+            time_period="dayofyear",
+        )
 
-        climatology_mon = ds["discharge_spec"].groupby("time.month").mean()
-        climatology_mon = create_shape_aligned_climatology(benchmark_calculation_ds, climatology_mon.to_dataset(), variable="discharge_spec", time_period="month")
+        climatology_mon = (
+            benchmark_calculation_ds["discharge_spec"].groupby("time.month").mean()
+        )
+        climatology_mon = create_shape_aligned_climatology(
+            benchmark_calculation_ds,
+            climatology_mon.to_dataset(),
+            variable="discharge_spec",
+            time_period="month",
+        )
 
-        all_preds["climatology_doy"] = climatology_doy.sel(station_id=all_preds.station_id, time=all_preds.time)["discharge_spec"]
-        all_preds["climatology_mon"] = climatology_mon.sel(station_id=all_preds.station_id, time=all_preds.time)["discharge_spec"]
+        all_preds["climatology_doy"] = climatology_doy.sel(
+            station_id=all_preds.station_id, time=all_preds.time
+        )["discharge_spec"]
+        all_preds["climatology_mon"] = climatology_mon.sel(
+            station_id=all_preds.station_id, time=all_preds.time
+        )["discharge_spec"]
 
         return all_preds
 
     @staticmethod
-    def calc_kratzert_error_functions(all_preds: xr.Dataset, metrics: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
-        all_metrics = ["nse", "mse", "rmse", "kge", "nse", "nse", "r", "fhv", "fms", "flv", "timing"]
-        assert all(np.isin(metrics, all_metrics)), f"Metrics should be one of {all_metrics}"
+    def calc_kratzert_error_functions(
+        all_preds: xr.Dataset, metrics: Optional[List[str]] = None
+    ) -> Dict[str, pd.DataFrame]:
+        all_metrics = [
+            "nse",
+            "mse",
+            "rmse",
+            "kge",
+            "nse",
+            "nse",
+            "r",
+            "fhv",
+            "fms",
+            "flv",
+            "timing",
+        ]
+        assert all(
+            np.isin(metrics, all_metrics)
+        ), f"Metrics should be one of {all_metrics}"
         if metrics is None:
             metrics = all_metrics
 
@@ -425,8 +486,7 @@ class DeltaError:
                 obs = all_preds["obs"].sel(station_id=sid).drop("station_id")
                 try:
                     model_results[model][sid] = calculate_metrics(
-                        obs, sim, datetime_coord="time",
-                        metrics=metrics
+                        obs, sim, datetime_coord="time", metrics=metrics
                     )
                 except ValueError:
                     model_results[model][sid] = np.nan
@@ -526,7 +586,9 @@ class DeltaError:
 
     @staticmethod
     def calculate_all_errors(
-        all_preds: xr.DataArray, desc: str = None, metrics: List[str] = ["nse", "kge", "mse", "bias"]
+        all_preds: xr.DataArray,
+        desc: str = None,
+        metrics: List[str] = ["nse", "kge", "mse", "bias"],
     ) -> Dict[str, pd.DataFrame]:
         station_names = pd.DataFrame(gauge_name_lookup, index=["gauge_name"]).T
 

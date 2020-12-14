@@ -6,7 +6,9 @@ import numpy as np
 
 
 def read_ensemble_results(ensemble_dir: Path) -> xr.Dataset:
-    assert (ensemble_dir / "data_ENS.csv").exists(), "Has `scripts/multiple_forcing/read_nh_results.py` been run?"
+    assert (
+        ensemble_dir / "data_ENS.csv"
+    ).exists(), "Has `scripts/multiple_forcing/read_nh_results.py` been run?"
     df = pd.read_csv(ensemble_dir / "data_ENS.csv").drop("Unnamed: 0", axis=1)
     df["time"] = pd.to_datetime(df["time"])
     preds = df.set_index(["station_id", "time"]).to_xarray()
@@ -34,8 +36,7 @@ def fuse_to_nc(raw_fuse_path: Path) -> xr.Dataset:
         for txt in tqdm(all_paths):
             df = pd.read_csv(txt, skiprows=3, header=0)
             df.columns = [c.rstrip().lstrip() for c in df.columns]
-            df = df.rename(
-                columns={"YYYY": "year", "MM": "month", "DD": "day"})
+            df = df.rename(columns={"YYYY": "year", "MM": "month", "DD": "day"})
             df["time"] = pd.to_datetime(df[["year", "month", "day"]])
             station_id = int(str(txt).split("/")[-1].split("_")[0])
             df["station_id"] = [station_id for _ in range(len(df))]
@@ -48,20 +49,22 @@ def fuse_to_nc(raw_fuse_path: Path) -> xr.Dataset:
         fuse_ds.to_netcdf(raw_fuse_path.parents[0] / "ALL_fuse_ds.nc")
 
     else:
-        fuse_ds = xr.open_dataset(
-            raw_fuse_path.parents[0] / "ALL_fuse_ds.nc")
+        fuse_ds = xr.open_dataset(raw_fuse_path.parents[0] / "ALL_fuse_ds.nc")
     return fuse_ds
 
 
 def read_fuse_data(raw_fuse_path: Path, obs: xr.Dataset) -> xr.Dataset:
     fuse_ds = fuse_to_nc(raw_fuse_path)
     # join with observations for stations that exist
-    fuse_data = fuse_ds.sel(station_id=np.isin(fuse_ds.station_id, obs.station_id)).merge(obs)
+    fuse_data = fuse_ds.sel(
+        station_id=np.isin(fuse_ds.station_id, obs.station_id)
+    ).merge(obs)
     return fuse_data
 
 
 if __name__ == "__main__":
     import sys
+
     sys.path.append("/home/tommy/ml_drought")
     from scripts.drafts.calculate_error_scores import DeltaError
 
@@ -76,20 +79,30 @@ if __name__ == "__main__":
     lstm_ensemble_dir = data_dir / "runs/ensemble_pet"
     lstm_preds = read_ensemble_results(lstm_ensemble_dir)
 
-    # fuse data
+    #  fuse data
     raw_fuse_path = data_dir / "RUNOFF/FUSE"
     fuse_data = read_fuse_data(raw_fuse_path, lstm_preds["obs"])
 
     # get matching stations
     all_stations_lstm = np.isin(lstm_preds.station_id, fuse_data.station_id)
     all_stations_ealstm = np.isin(ealstm_preds.station_id, fuse_data.station_id)
-    lstm_preds = lstm_preds.sel(station_id=all_stations_lstm, time=np.isin(lstm_preds.time, fuse_data.time))
-    ealstm_preds = ealstm_preds.sel(station_id=all_stations_ealstm, time=np.isin(ealstm_preds.time, fuse_data.time))
+    lstm_preds = lstm_preds.sel(
+        station_id=all_stations_lstm, time=np.isin(lstm_preds.time, fuse_data.time)
+    )
+    ealstm_preds = ealstm_preds.sel(
+        station_id=all_stations_ealstm, time=np.isin(ealstm_preds.time, fuse_data.time)
+    )
 
     # calculate all error metrics (including benchmarks)
     ds = xr.open_dataset(data_dir / "RUNOFF/ALL_dynamic_ds.nc")
-    ds['station_id'] = ds['station_id'].astype(int)
-    processor = DeltaError(ealstm_preds, lstm_preds, fuse_data, benchmark_calculation_ds=ds[["discharge_spec"]], incl_benchmarks=True)
+    ds["station_id"] = ds["station_id"].astype(int)
+    processor = DeltaError(
+        ealstm_preds,
+        lstm_preds,
+        fuse_data,
+        benchmark_calculation_ds=ds[["discharge_spec"]],
+        incl_benchmarks=True,
+    )
     all_preds = processor.all_preds
     print(all_preds)
 

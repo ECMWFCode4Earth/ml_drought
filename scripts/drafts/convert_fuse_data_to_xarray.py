@@ -14,8 +14,7 @@ def fuse_to_nc(raw_fuse_path: Path) -> xr.Dataset:
         for txt in tqdm(all_paths):
             df = pd.read_csv(txt, skiprows=3, header=0)
             df.columns = [c.rstrip().lstrip() for c in df.columns]
-            df = df.rename(
-                columns={"YYYY": "year", "MM": "month", "DD": "day"})
+            df = df.rename(columns={"YYYY": "year", "MM": "month", "DD": "day"})
             df["time"] = pd.to_datetime(df[["year", "month", "day"]])
             station_id = int(str(txt).split("/")[-1].split("_")[0])
             df["station_id"] = [station_id for _ in range(len(df))]
@@ -28,8 +27,7 @@ def fuse_to_nc(raw_fuse_path: Path) -> xr.Dataset:
         fuse_ds.to_netcdf(raw_fuse_path.parents[0] / "ALL_fuse_ds.nc")
 
     else:
-        fuse_ds = xr.open_dataset(
-            raw_fuse_path.parents[0] / "ALL_fuse_ds.nc")
+        fuse_ds = xr.open_dataset(raw_fuse_path.parents[0] / "ALL_fuse_ds.nc")
     return fuse_ds
 
 

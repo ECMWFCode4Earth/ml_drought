@@ -162,19 +162,31 @@ class GR4JDownload:
                 desc="Metadata CSVs",
             )
 
+
 def read_gr4j_sims(data_dir: Path) -> Tuple[xr.Dataset, pd.DataFrame]:
     csvs = list((data_dir / "GR4J_data/single").glob("HD_FlowSingle*.csv"))
-    metadata = pd.read_csv(list((data_dir / "GR4J_data/single").glob("ALL*.csv"))[0], index_col=0)
+    metadata = pd.read_csv(
+        list((data_dir / "GR4J_data/single").glob("ALL*.csv"))[0], index_col=0
+    )
 
     # Read csvs into pandas dataframe
-    gr4j_df = pd.concat([
-        pd.read_csv(csv, index_col=0).rename(
-            {"catchID": "station_id", "Date": "time", "Flow_Top_Calib": "sim",
-                "Max_500": "ensemble_upper", "Min_500": "ensemble_lower"},
-            axis=1
-        ).astype({"time": "datetime64[ns]", "station_id": "int64"})
-        for csv in csvs
-    ])
+    gr4j_df = pd.concat(
+        [
+            pd.read_csv(csv, index_col=0)
+            .rename(
+                {
+                    "catchID": "station_id",
+                    "Date": "time",
+                    "Flow_Top_Calib": "sim",
+                    "Max_500": "ensemble_upper",
+                    "Min_500": "ensemble_lower",
+                },
+                axis=1,
+            )
+            .astype({"time": "datetime64[ns]", "station_id": "int64"})
+            for csv in csvs
+        ]
+    )
 
     return gr4j_df.set_index(["station_id", "time"]).to_xarray(), metadata
 

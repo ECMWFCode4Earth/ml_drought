@@ -513,9 +513,7 @@ def _abs_pct_bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarr
     Returns:
         np.ndarray: [description]
     """
-    return np.abs(
-        np.sum(pred_vals - true_vals) / np.sum(true_vals)
-    ) * 100
+    return np.abs(np.sum(pred_vals - true_vals) / np.sum(true_vals)) * 100
 
 
 def _mape_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
@@ -531,7 +529,9 @@ def _mape_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
     Returns:
         np.ndarray: [description]
     """
-    return (1 / pred_vals.size) * np.sum(np.abs((true_vals - pred_vals) / true_vals)) * 100
+    return (
+        (1 / pred_vals.size) * np.sum(np.abs((true_vals - pred_vals) / true_vals)) * 100
+    )
 
 
 def spatial_bias(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:

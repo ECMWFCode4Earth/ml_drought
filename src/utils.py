@@ -190,14 +190,10 @@ def create_shape_aligned_climatology(
          ds.shape: {ds[variable].shape}"
 
     # copy that forward in time
-    coords = {
-        coord: clim[coord]
-        for coord in spatial_dims
-    }
+    coords = {coord: clim[coord] for coord in spatial_dims}
     coords["time"] = ds.time
     new_clim = xr.Dataset(
-        {variable: (["time", *spatial_dims], new_clim_vals)},
-        coords=coords,
+        {variable: (["time", *spatial_dims], new_clim_vals)}, coords=coords,
     )
 
     return new_clim
