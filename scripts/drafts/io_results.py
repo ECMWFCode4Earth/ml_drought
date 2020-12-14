@@ -2,6 +2,7 @@ import xarray as xr
 import pandas as pd
 from pathlib import Path
 from tqdm import tqdm
+import numpy as np
 
 
 def read_ensemble_results(ensemble_dir: Path) -> xr.Dataset:
