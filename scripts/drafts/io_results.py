@@ -86,7 +86,14 @@ if __name__ == "__main__":
     lstm_preds = lstm_preds.sel(station_id=all_stations_lstm, time=np.isin(lstm_preds.time, fuse_data.time))
     ealstm_preds = ealstm_preds.sel(station_id=all_stations_ealstm, time=np.isin(ealstm_preds.time, fuse_data.time))
 
-    # calculate all error metrics
-    processor = DeltaError(ealstm_preds, lstm_preds, fuse_data, incl_benchmarks=True)
+    # calculate all error metrics (including benchmarks)
+    ds = xr.open_dataset(data_dir / "RUNOFF/ALL_dynamic_ds.nc")
+    ds['station_id'] = ds['station_id'].astype(int)
+    processor = DeltaError(ealstm_preds, lstm_preds, fuse_data, benchmark_calculation_ds=ds[["discharge_spec"]], incl_benchmarks=True)
+    all_preds = processor.all_preds
+    print(all_preds)
+
+    # calculate all error metrics (excluding benchmarks)
+    processor = DeltaError(ealstm_preds, lstm_preds, fuse_data, incl_benchmarks=False)
     all_preds = processor.all_preds
     print(all_preds)
