@@ -46,17 +46,21 @@ def create_skill_score(
 
 def create_all_skill_scores(
     all_metrics: pd.DataFrame,
-    benchmark: str = "climatology_doy",
+    benchmarks: str = ["persistence", "climatology_doy", "climatology_mon"],
     metrics: List[str] = ["kge", "inv_kge", "nse", "log_nse"],
     models: List[str] = ["TOPMODEL", "ARNOVIC", "PRMS", "SACRAMENTO", "EALSTM", "LSTM"],
-) -> DefaultDict[str, pd.DataFrame]:
+) -> DefaultDict[str, Dict[str, pd.DataFrame]]:
     skill_score_dict = defaultdict(dict)
     assert all(
         np.isin(metrics, [l for l in all_metrics.keys()])
-    ), f"Expect {metrics} to be in {all_metrics.keys()}"
+    ), f"Expect metrics {metrics} to be in {all_metrics.keys()}"
+    assert all(
+        np.isin(benchmarks, [l for l in all_metrics[metrics[0]].columns])
+    ), f"Expect benchmarks {benchmarks} to be in {all_metrics[metrics[0]].columns}"
 
+    for benchmark in benchmarks:
     for metric in metrics:
-        skill_score_dict[metric] = create_skill_score(
+        skill_score_dict[benchmark][metric] = create_skill_score(
             all_metrics, metric=metric, benchmark=benchmark, models=models
         )
     return skill_score_dict
