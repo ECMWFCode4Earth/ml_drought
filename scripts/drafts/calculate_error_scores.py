@@ -172,8 +172,8 @@ def get_metric_dataframes_from_output_dict(
         index = output_dict[models[0]].index
 
     all_stations = []
-    for model in all_errors.keys():
-        all_stations.append(all_errors[model].index)
+    for model in output_dict.keys():
+        all_stations.append(output_dict[model].index)
 
     all_stations = list(set(all_stations[0]).intersection(*all_stations[:1]))
 
