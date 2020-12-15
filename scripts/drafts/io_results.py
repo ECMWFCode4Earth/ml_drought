@@ -58,7 +58,7 @@ def read_fuse_data(raw_fuse_path: Path, obs: xr.Dataset) -> xr.Dataset:
     # join with observations for stations that exist
     fuse_data = fuse_ds.sel(
         station_id=np.isin(fuse_ds.station_id, obs.station_id)
-    ).merge(obs)
+    ).merge(obs.sel(station_id=np.isin(obs.station_id, fuse_ds.station_id)))
     return fuse_data
 
 
