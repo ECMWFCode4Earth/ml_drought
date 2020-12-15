@@ -4,7 +4,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import xarray as xr
+import sys
 
+sys.path.append("/home/tommy/ml_drought")
 from scripts.drafts.ml_sids import ml_sids
 
 # --------------------------------- #
@@ -195,9 +197,6 @@ def plot_budyko_curve(
 
 if __name__ == "__main__":
     from pathlib import Path
-    import sys
-
-    sys.path.append("/home/tommy/ml_drought")
     from scripts.drafts.calculate_error_scores import (
         DeltaError,
         calculate_all_data_errors,
