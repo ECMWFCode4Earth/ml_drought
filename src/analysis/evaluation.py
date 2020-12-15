@@ -438,7 +438,10 @@ def _r2_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
 
 
 def _kge_func(
-    true_vals: np.ndarray, pred_vals: np.ndarray, weights: List[float] = [1.0, 1.0, 1.0], decomposed_results=False
+    true_vals: np.ndarray,
+    pred_vals: np.ndarray,
+    weights: List[float] = [1.0, 1.0, 1.0],
+    decomposed_results=False,
 ) -> np.ndarray:
     """
     Parameters

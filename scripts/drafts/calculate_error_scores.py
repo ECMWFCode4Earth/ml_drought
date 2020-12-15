@@ -119,7 +119,9 @@ def error_func(
     return error
 
 
-def kge_decomposition(preds: xr.Dataset, inverse: bool = False, epsilon: float = 1e-10) -> pd.DataFrame:
+def kge_decomposition(
+    preds: xr.Dataset, inverse: bool = False, epsilon: float = 1e-10
+) -> pd.DataFrame:
     df = preds.to_dataframe()
     df = df.dropna(how="any")
     df = df.reset_index().set_index("time")
@@ -145,7 +147,7 @@ def kge_decomposition(preds: xr.Dataset, inverse: bool = False, epsilon: float =
             "station_id": station_ids,
             f"correlation{'_inv' if inverse else ''}": correlations,
             f"bias_ratio{'_inv' if inverse else ''}": bias_ratios,
-            f"variability_ratio{'_inv' if inverse else ''}": variability_ratios
+            f"variability_ratio{'_inv' if inverse else ''}": variability_ratios,
         }
     )
     return error
@@ -191,9 +193,10 @@ def calculate_all_data_errors(sim_obs_data: xr.Dataset, decompose_kge: bool = Fa
         if decompose_kge:
             decompose_df = kge_decomposition(preds).set_index("station_id")
             error_df = error_df.join(decompose_df)
-            inv_decompose_df = kge_decomposition(preds, inverse=True).set_index("station_id")
+            inv_decompose_df = kge_decomposition(preds, inverse=True).set_index(
+                "station_id"
+            )
             error_df = error_df.join(inv_decompose_df)
-
 
         output_dict[model.replace("SimQ_", "")] = error_df
 
@@ -633,7 +636,7 @@ class DeltaError:
     def calculate_all_errors(
         all_preds: xr.DataArray,
         desc: str = None,
-        metrics: List[str] = ["nse", "kge", "mse", "bias"],
+        metrics: List[str] = ["nse", "kge", "log_nse", "abs_pct_bias", "inv_kge", "mam30_ape"],
     ) -> Dict[str, pd.DataFrame]:
         station_names = pd.DataFrame(gauge_name_lookup, index=["gauge_name"]).T
 
@@ -722,8 +725,6 @@ if __name__ == "__main__":
     data_dir = Path("/cats/datastore/data")
     all_preds = xr.open_dataset(data_dir / "RUNOFF/all_preds.nc")
 
-    # 
+    #
     all_errors = calculate_all_data_errors(all_preds, decompose_kge=True)
     all_metrics = get_metric_dataframes_from_output_dict(all_errors)
-    assert False
-
