@@ -171,11 +171,17 @@ def get_metric_dataframes_from_output_dict(
     else:
         index = output_dict[models[0]].index
 
+    all_stations = []
+    for model in all_errors.keys():
+        all_stations.append(all_errors[model].index)
+
+    all_stations = list(set(all_stations[0]).intersection(*all_stations[:1]))
+
     metric_dict = {}
     for metric in metrics:
         df_dict = {}
         for model in models:
-            df_dict[model] = output_dict[model][metric].values
+            df_dict[model] = output_dict[model].loc[all_stations, metric].values
         d = pd.DataFrame(df_dict, index=index)
 
         metric_dict[metric] = d
