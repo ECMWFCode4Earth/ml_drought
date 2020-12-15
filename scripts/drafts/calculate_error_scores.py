@@ -119,7 +119,7 @@ def error_func(
     return error
 
 
-def kge_decomposition(preds: xr.Dataset, inverse: bool = False) -> pd.DataFrame:
+def kge_decomposition(preds: xr.Dataset, inverse: bool = False, epsilon: float = 1e-10) -> pd.DataFrame:
     df = preds.to_dataframe()
     df = df.dropna(how="any")
     df = df.reset_index().set_index("time")
