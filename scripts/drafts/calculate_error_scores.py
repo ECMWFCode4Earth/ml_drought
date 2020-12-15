@@ -102,11 +102,11 @@ def error_func(
         try:
             if "log" in error_str:
                 _error_calc = error_func(
-                    np.log(d["obs"].values) + epsilon, np.log(d["sim"].values) + epsilon
+                    np.log(d["obs"].values + epsilon), np.log(d["sim"].values + epsilon)
                 )
             elif "inv" in error_str:
                 _error_calc = error_func(
-                    (1 / d["obs"].values + epsilon), (1 / d["sim"].values + epsilon)
+                    (1 / (d["obs"].values + epsilon)), (1 / (d["sim"].values + epsilon))
                 )
             else:
                 _error_calc = error_func(d["obs"].values, d["sim"].values)
