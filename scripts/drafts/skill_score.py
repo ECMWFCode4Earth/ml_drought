@@ -77,7 +77,7 @@ if __name__ == "__main__":
     all_metrics = get_metric_dataframes_from_output_dict(all_errors)
 
     #  calculate skill scores
-    skill_score_dict = create_all_skill_scores(all_metrics, benchmark="climatology_doy")
+    skill_score_dict = create_all_skill_scores(all_metrics)
 
     kge_ss = create_skill_score(all_metrics, metric="kge", benchmark="climatology_doy")
     inv_kge_ss = create_skill_score(
