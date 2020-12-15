@@ -132,9 +132,10 @@ def kge_decomposition(preds: xr.Dataset) -> pd.DataFrame:
         d = df.loc[df["station_id"] == station_id]
         true_vals = d["obs"].values
         pred_vals = d["sim"].values
-        correlations.append(_kge_func(true_vals, pred_vals, weights=[1, 0, 0]))
-        bias_ratios.append(_kge_func(true_vals, pred_vals, weights=[0, 1, 0]))
-        variability_ratios.append(_kge_func(true_vals, pred_vals, weights=[0, 0, 1]))
+        r, beta, gamma = _kge_func(true_vals, pred_vals, decomposed_results=True)
+        correlations.append(r)
+        bias_ratios.append(beta)
+        variability_ratios.append(gamma)
 
     error = pd.DataFrame({"station_id": station_ids, "correlation": correlations, "bias_ratio": bias_ratios, "variability_ratio": variability_ratios})
     return error

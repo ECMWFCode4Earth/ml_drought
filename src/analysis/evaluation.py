@@ -438,7 +438,7 @@ def _r2_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
 
 
 def _kge_func(
-    true_vals: np.ndarray, pred_vals: np.ndarray, weights: List[float] = [1.0, 1.0, 1.0]
+    true_vals: np.ndarray, pred_vals: np.ndarray, weights: List[float] = [1.0, 1.0, 1.0], decomposed_results=False
 ) -> np.ndarray:
     """
     Parameters
@@ -451,11 +451,11 @@ def _kge_func(
         Weighting factors of the 3 KGE parts, by default each part has a weight of 1.
 
     .. math::
-        \text{KGE} = 1 - \sqrt{[ s_r (r - 1)]^2 + [s_\alpha ( \alpha - 1)]^2 +
+        \text{KGE} = 1 - \sqrt{[ s_r (r - 1)]^2 + [s_\gamma ( \gamma - 1)]^2 +
             [s_\beta(\beta_{\text{KGE}} - 1)]^2},
 
-    where :math:`r` is the correlation coefficient, :math:`\alpha` the :math:`\alpha`-NSE decomposition,
-    :math:`\beta_{\text{KGE}}` the fraction of the means and :math:`s_r, s_\alpha, s_\beta` the corresponding weights
+    where :math:`r` is the correlation coefficient, :math:`\gamma` the :math:`\gamma`-NSE decomposition,
+    :math:`\beta_{\text{KGE}}` the fraction of the means and :math:`s_r, s_\gamma, s_\beta` the corresponding weights
     (here the three float values in the `weights` parameter).
 
     """
@@ -483,16 +483,18 @@ def _kge_func(
 
     r, _ = pearsonr(true_vals, pred_vals)
 
-    alpha = pred_vals.std() / true_vals.std()
+    gamma = pred_vals.std() / true_vals.std()
     beta = pred_vals.mean() / true_vals.mean()
 
     value = (
         weights[0] * (r - 1) ** 2
-        + weights[1] * (alpha - 1) ** 2
+        + weights[1] * (gamma - 1) ** 2
         + weights[2] * (beta - 1) ** 2
     )
-
-    return 1 - np.sqrt(float(value))
+    if decomposed_results:
+        return r, beta, gamma
+    else:
+        return 1 - np.sqrt(float(value))
 
 
 def _bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
