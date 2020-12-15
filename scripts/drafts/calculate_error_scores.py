@@ -179,7 +179,7 @@ def calculate_all_data_errors(sim_obs_data: xr.Dataset, decompose_kge: bool = Fa
         error_df["rmse"] = np.sqrt(error_df["mse"])
         if decompose_kge:
             decompose_df = kge_decomposition(preds)
-            pd.concat([error_df, decompose_df], axis=1)
+            error_df = pd.concat([error_df, decompose_df], axis=1)
 
         output_dict[model.replace("SimQ_", "")] = error_df
 
@@ -711,5 +711,5 @@ if __name__ == "__main__":
     # 
     all_errors = calculate_all_data_errors(all_preds, decompose_kge=True)
     all_metrics = get_metric_dataframes_from_output_dict(all_errors)
-
+    assert False
 
