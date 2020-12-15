@@ -130,9 +130,12 @@ def kge_decomposition(preds: xr.Dataset, inverse: bool = False, epsilon: float =
     variability_ratios = []
     for station_id in station_ids:
         d = df.loc[df["station_id"] == station_id]
+        # extract the discharge values
         true_vals = (1 / (d["obs"].values + epsilon)) if inverse else d["obs"].values
         pred_vals = (1 / (d["sim"].values + epsilon)) if inverse else d["sim"].values
+        # calculate the decomposed kge components
         r, beta, gamma = _kge_func(true_vals, pred_vals, decomposed_results=True)
+
         correlations.append(r)
         bias_ratios.append(beta)
         variability_ratios.append(gamma)
