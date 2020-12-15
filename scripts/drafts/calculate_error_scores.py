@@ -119,7 +119,7 @@ def error_func(
     return error
 
 
-def kge_decomposition(preds: xr.Dataset) -> pd.DataFrame:
+def kge_decomposition(preds: xr.Dataset, inverse: bool = False) -> pd.DataFrame:
     df = preds.to_dataframe()
     df = df.dropna(how="any")
     df = df.reset_index().set_index("time")
@@ -130,14 +130,21 @@ def kge_decomposition(preds: xr.Dataset) -> pd.DataFrame:
     variability_ratios = []
     for station_id in station_ids:
         d = df.loc[df["station_id"] == station_id]
-        true_vals = d["obs"].values
-        pred_vals = d["sim"].values
+        true_vals = (1 / (d["obs"].values + epsilon)) if inverse else d["obs"].values
+        pred_vals = (1 / (d["sim"].values + epsilon)) if inverse else d["sim"].values
         r, beta, gamma = _kge_func(true_vals, pred_vals, decomposed_results=True)
         correlations.append(r)
         bias_ratios.append(beta)
         variability_ratios.append(gamma)
 
-    error = pd.DataFrame({"station_id": station_ids, "correlation": correlations, "bias_ratio": bias_ratios, "variability_ratio": variability_ratios})
+    error = pd.DataFrame(
+        {
+            "station_id": station_ids,
+            f"correlation{'_inv' if inverse else ''}": correlations,
+            f"bias_ratio{'_inv' if inverse else ''}": bias_ratios,
+            f"variability_ratio{'_inv' if inverse else ''}": variability_ratios
+        }
+    )
     return error
 
 
@@ -181,6 +188,9 @@ def calculate_all_data_errors(sim_obs_data: xr.Dataset, decompose_kge: bool = Fa
         if decompose_kge:
             decompose_df = kge_decomposition(preds).set_index("station_id")
             error_df = error_df.join(decompose_df)
+            inv_decompose_df = kge_decomposition(preds, inverse=True).set_index("station_id")
+            error_df = error_df.join(inv_decompose_df)
+
 
         output_dict[model.replace("SimQ_", "")] = error_df
 
