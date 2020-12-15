@@ -52,7 +52,7 @@ def create_all_skill_scores(
 ) -> DefaultDict[str, pd.DataFrame]:
     skill_score_dict = defaultdict(dict)
     assert all(
-        np.isin(metrics, all_metrics.keys())
+        np.isin(metrics, [l for l in all_metrics.keys()])
     ), f"Expect {metrics} to be in {all_metrics.keys()}"
 
     for metric in metrics:
