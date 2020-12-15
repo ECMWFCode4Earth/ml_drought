@@ -49,7 +49,7 @@ def create_all_skill_scores(
     benchmark: str = "climatology_doy",
     metrics: List[str] = ["kge", "inv_kge", "nse", "log_nse"],
     models: List[str] = ["TOPMODEL", "ARNOVIC", "PRMS", "SACRAMENTO", "EALSTM", "LSTM"],
-) -> DefaultDict[Dict[str, pd.DataFrame]]:
+) -> DefaultDict[str, pd.DataFrame]:
     skill_score_dict = defaultdict(dict)
     assert all(
         np.isin(metrics, all_metrics.keys())
