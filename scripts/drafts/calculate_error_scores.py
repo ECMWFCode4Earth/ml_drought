@@ -119,6 +119,27 @@ def error_func(
     return error
 
 
+def kge_decomposition(preds: xr.Dataset) -> pd.DataFrame:
+    df = preds.to_dataframe()
+    df = df.dropna(how="any")
+    df = df.reset_index().set_index("time")
+
+    station_ids = df["station_id"].unique()
+    correlations = []
+    bias_ratios = []
+    variability_ratios = []
+    for station_id in station_ids:
+        d = df.loc[df["station_id"] == station_id]
+        true_vals = d["obs"].values
+        pred_vals = d["sim"].values
+        correlations.append(_kge_func(true_vals, pred_vals, weights=[1, 0, 0]))
+        bias_ratios.append(_kge_func(true_vals, pred_vals, weights=[0, 1, 0]))
+        variability_ratios.append(_kge_func(true_vals, pred_vals, weights=[0, 0, 1]))
+
+    error = pd.DataFrame({"station_id": station_ids, "correlation": correlations, "bias_ratio": bias_ratios, "variability_ratio": variability_ratios})
+    return error
+
+
 def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
 
     error_mam30 = xr_mam30_ape(preds).to_dataframe("mam30_ape")
@@ -148,14 +169,18 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
     return error_df
 
 
-def calculate_all_data_errors(sim_obs_data: xr.Dataset):
+def calculate_all_data_errors(sim_obs_data: xr.Dataset, decompose_kge: bool = False):
     assert all(np.isin(["obs"], list(sim_obs_data.data_vars)))
     output_dict = defaultdict(dict)
     model_var = [v for v in sim_obs_data.data_vars if "obs" not in v]
     for model in tqdm(model_var, desc="Errors"):
         preds = sim_obs_data[["obs", model]].rename({model: "sim"})
         error_df = calculate_errors(preds).set_index("station_id")
-        error_df["rmse"] = error_df["mse"]
+        error_df["rmse"] = np.sqrt(error_df["mse"])
+        if decompose_kge:
+            decompose_df = kge_decomposition(preds)
+            pd.concat([error_df, decompose_df], axis=1)
+
         output_dict[model.replace("SimQ_", "")] = error_df
 
     return output_dict
@@ -676,3 +701,15 @@ class DeltaError:
             seasonal_deltas[season]["raw"] = seasonal_errors
 
         return seasonal_deltas
+
+
+if __name__ == "__main__":
+    # LOAD IN DATA
+    data_dir = Path("/cats/datastore/data")
+    all_preds = xr.open_dataset(data_dir / "RUNOFF/all_preds.nc")
+
+    # 
+    all_errors = calculate_all_data_errors(all_preds, decompose_kge=True)
+    all_metrics = get_metric_dataframes_from_output_dict(all_errors)
+
+
