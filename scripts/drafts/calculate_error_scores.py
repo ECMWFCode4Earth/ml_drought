@@ -178,8 +178,8 @@ def calculate_all_data_errors(sim_obs_data: xr.Dataset, decompose_kge: bool = Fa
         error_df = calculate_errors(preds).set_index("station_id")
         error_df["rmse"] = np.sqrt(error_df["mse"])
         if decompose_kge:
-            decompose_df = kge_decomposition(preds)
-            error_df = pd.concat([error_df, decompose_df], axis=1)
+            decompose_df = kge_decomposition(preds).set_index("station_id")
+            error_df = error_df.join(decompose_df)
 
         output_dict[model.replace("SimQ_", "")] = error_df
 
