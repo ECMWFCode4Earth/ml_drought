@@ -98,7 +98,7 @@ def error_func(
     df = df.reset_index().set_index("time")
 
     station_ids = df["station_id"].unique()
-    errors = []
+    metrics = []
     for station_id in station_ids:
         d = df.loc[df["station_id"] == station_id]
 
@@ -115,7 +115,7 @@ def error_func(
                 _error_calc = error_func(d["obs"].values, d["sim"].values)
         except RuntimeError:
             _error_calc = np.nan
-        errors.append(_error_calc)
+        metrics.append(_error_calc)
 
     error = pd.DataFrame({"station_id": station_ids, error_str: errors})
 
@@ -730,13 +730,17 @@ class DeltaError:
 
 
 if __name__ == "__main__":
+    save = True
     # LOAD IN DATA
     data_dir = Path("/cats/datastore/data")
     all_preds = xr.open_dataset(data_dir / "RUNOFF/all_preds.nc")
 
-    #
     all_errors = calculate_all_data_errors(all_preds, decompose_kge=True)
     all_metrics = get_metric_dataframes_from_output_dict(all_errors)
 
     assert "pbias" in all_metrics.keys()
-    assert False
+
+    if save:
+        import pickle
+        pickle.dump(all_errors, (data_dir / "RUNOFF/all_errors.pkl").open("wb"))
+        pickle.dump(all_metrics, (data_dir / "RUNOFF/all_metrics.pkl").open("wb"))
