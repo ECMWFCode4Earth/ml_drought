@@ -68,14 +68,14 @@ def create_all_skill_scores(
 
 
 if __name__ == "__main__":
+    import pickle
     import xarray as xr
 
     data_dir = Path("/cats/datastore/data/")
 
     #  calculate all metrics
     all_preds = xr.open_dataset(data_dir / "RUNOFF/all_preds.nc")
-    all_errors = calculate_all_data_errors(all_preds)
-    all_metrics = get_metric_dataframes_from_output_dict(all_errors)
+    all_metrics = pickle.load((data_dir / "RUNOFF/all_metrics.pkl").open("rb"))
 
     #  calculate skill scores
     skill_score_dict = create_all_skill_scores(all_metrics)
