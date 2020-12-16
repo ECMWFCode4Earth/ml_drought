@@ -164,6 +164,7 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
         error_func(preds, "kge").set_index("station_id"),
         error_func(preds, "mse").set_index("station_id"),
         error_func(preds, "bias").set_index("station_id"),
+        error_func(preds, "pbias").set_index("station_id"),
         error_func(preds, "log_nse").set_index("station_id"),
         error_func(preds, "inv_kge").set_index("station_id"),
         error_func(preds, "abs_pct_bias").set_index("station_id"),
@@ -178,6 +179,7 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
         .join(errors[5])
         .join(errors[6])
         .join(errors[7])
+        .join(errors[8])
         .join(error_mam30)
         .reset_index()
     )
@@ -187,12 +189,14 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
 
 def calculate_all_data_errors(sim_obs_data: xr.Dataset, decompose_kge: bool = False):
     assert all(np.isin(["obs"], list(sim_obs_data.data_vars)))
+    model_var_list: List[str] = [v for v in sim_obs_data.data_vars if "obs" not in v]
+
     output_dict = defaultdict(dict)
-    model_var = [v for v in sim_obs_data.data_vars if "obs" not in v]
-    for model in tqdm(model_var, desc="Errors"):
+    for model in tqdm(model_var_list, desc="Errors"):
         preds = sim_obs_data[["obs", model]].rename({model: "sim"})
         error_df = calculate_errors(preds).set_index("station_id")
         error_df["rmse"] = np.sqrt(error_df["mse"])
+
         if decompose_kge:
             decompose_df = kge_decomposition(preds).set_index("station_id")
             error_df = error_df.join(decompose_df)
