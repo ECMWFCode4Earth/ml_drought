@@ -3,6 +3,7 @@ from pathlib import Path
 from collections import defaultdict
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 import sys
 
 sys.path.append("/home/tommy/ml_drought")
@@ -46,7 +47,7 @@ def create_skill_score(
 
 def create_all_skill_scores(
     all_metrics: pd.DataFrame,
-    benchmarks: List[str] = ["persistence", "climatology_doy", "climatology_mon"],
+    benchmarks: List[str] = ["persistence", "climatology_doy", "climatology_mon", "TOPMODEL", "ARNOVIC", "PRMS", "SACRAMENTO"],
     metrics: List[str] = ["kge", "inv_kge", "nse", "log_nse"],
     models: List[str] = ["TOPMODEL", "ARNOVIC", "PRMS", "SACRAMENTO", "EALSTM", "LSTM"],
 ) -> DefaultDict[str, Dict[str, pd.DataFrame]]:
@@ -58,7 +59,7 @@ def create_all_skill_scores(
         np.isin(benchmarks, [l for l in all_metrics[metrics[0]].columns])
     ), f"Expect benchmarks {benchmarks} to be in {all_metrics[metrics[0]].columns}"
 
-    for benchmark in benchmarks:
+    for benchmark in tqdm(benchmarks, desc="SS vs. Benchmark"):
         for metric in metrics:
             skill_score_dict[benchmark][metric] = create_skill_score(
                 all_metrics, metric=metric, benchmark=benchmark, models=models
