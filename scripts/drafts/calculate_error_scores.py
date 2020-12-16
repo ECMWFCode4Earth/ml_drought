@@ -76,6 +76,7 @@ def error_func(
         "pbias": _pbias_func,
         "log_nse": _nse_func,
         "inv_kge": _kge_func,
+        "sqrt_kge": _kge_func,
         "abs_pct_bias": _abs_pct_bias_func,
         "mape": _mape_func,
     }
@@ -111,6 +112,11 @@ def error_func(
                 _error_calc = error_func(
                     (1 / (d["obs"].values + epsilon)), (1 / (d["sim"].values + epsilon))
                 )
+            elif "sqrt" in error_str:
+                _error_calc = error_func(
+                    np.sqrt(d["obs"].values), np.sqrt(d["sim"].values)
+                )
+
             else:
                 _error_calc = error_func(d["obs"].values, d["sim"].values)
         except RuntimeError:
@@ -123,7 +129,7 @@ def error_func(
 
 
 def kge_decomposition(
-    preds: xr.Dataset, inverse: bool = False, epsilon: float = 1e-10
+    preds: xr.Dataset, transformation: Optional[str] = None, epsilon: float = 1e-10
 ) -> pd.DataFrame:
     df = preds.to_dataframe()
     df = df.dropna(how="any")
@@ -136,8 +142,27 @@ def kge_decomposition(
     for station_id in station_ids:
         d = df.loc[df["station_id"] == station_id]
         # extract the discharge values
-        true_vals = (1 / (d["obs"].values + epsilon)) if inverse else d["obs"].values
-        pred_vals = (1 / (d["sim"].values + epsilon)) if inverse else d["sim"].values
+        if transformation == "inverse":
+            true_vals = (1 / (d["obs"].values + epsilon))
+            pred_vals = (1 / (d["sim"].values + epsilon))
+            correlation_str = "inv_correlation"
+            bias_ratio_str = "inv_bias_ratio"
+            variability_ratio_str = "inv_variability_ratio"
+
+        elif transformation == "sqrt":
+            true_vals = np.sqrt(d["obs"].values)
+            pred_vals = np.sqrt(d["sim"].values)
+            correlation_str = "sqrt_correlation"
+            bias_ratio_str = "sqrt_bias_ratio"
+            variability_ratio_str = "sqrt_variability_ratio"
+
+        elif transformation is None:
+            true_vals = d["obs"].values
+            pred_vals = d["sim"].values
+            correlation_str = "correlation"
+            bias_ratio_str = "bias_ratio"
+            variability_ratio_str = "variability_ratio"
+
         # calculate the decomposed kge components
         r, beta, gamma = _kge_func(true_vals, pred_vals, decomposed_results=True)
 
@@ -148,9 +173,9 @@ def kge_decomposition(
     error = pd.DataFrame(
         {
             "station_id": station_ids,
-            f"correlation{'_inv' if inverse else ''}": correlations,
-            f"bias_ratio{'_inv' if inverse else ''}": bias_ratios,
-            f"variability_ratio{'_inv' if inverse else ''}": variability_ratios,
+            correlation_str: correlations,
+            bias_ratio_str: bias_ratios,
+            variability_ratio_str: variability_ratios,
         }
     )
     return error
@@ -167,6 +192,7 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
         error_func(preds, "pbias").set_index("station_id"),
         error_func(preds, "log_nse").set_index("station_id"),
         error_func(preds, "inv_kge").set_index("station_id"),
+        error_func(preds, "sqrt_kge").set_index("station_id"),
         error_func(preds, "abs_pct_bias").set_index("station_id"),
         error_func(preds, "mape").set_index("station_id"),
     ]
@@ -200,10 +226,14 @@ def calculate_all_data_errors(sim_obs_data: xr.Dataset, decompose_kge: bool = Fa
         if decompose_kge:
             decompose_df = kge_decomposition(preds).set_index("station_id")
             error_df = error_df.join(decompose_df)
-            inv_decompose_df = kge_decomposition(preds, inverse=True).set_index(
+            inv_decompose_df = kge_decomposition(preds, transformation="inverse").set_index(
                 "station_id"
             )
             error_df = error_df.join(inv_decompose_df)
+            sqrt_decompose_df = kge_decomposition(preds, transformation="sqrt").set_index(
+                "station_id"
+            )
+            error_df = error_df.join(sqrt_decompose_df)
 
         output_dict[model.replace("SimQ_", "")] = error_df
 
@@ -739,6 +769,7 @@ if __name__ == "__main__":
     all_metrics = get_metric_dataframes_from_output_dict(all_errors)
 
     assert "pbias" in all_metrics.keys()
+    assert "sqrt_kge" in all_metrics.keys()
 
     if save:
         import pickle
