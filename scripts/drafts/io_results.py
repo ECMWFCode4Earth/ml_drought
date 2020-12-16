@@ -63,6 +63,7 @@ def read_fuse_data(raw_fuse_path: Path, obs: xr.Dataset) -> xr.Dataset:
 
 
 if __name__ == "__main__":
+    save = True
     import sys
 
     sys.path.append("/home/tommy/ml_drought")
@@ -106,7 +107,5 @@ if __name__ == "__main__":
     all_preds = processor.all_preds
     print(all_preds)
 
-    # calculate all error metrics (excluding benchmarks)
-    processor = DeltaError(ealstm_preds, lstm_preds, fuse_data, incl_benchmarks=False)
-    all_preds = processor.all_preds
-    print(all_preds)
+    if save:
+        all_preds.to_netcdf(data_dir / "RUNOFF/all_preds.nc")
