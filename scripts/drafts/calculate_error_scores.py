@@ -29,6 +29,8 @@ from src.analysis.evaluation import (
     _mse_func,
     _abs_pct_bias_func,
     _mape_func,
+    _relative_bias_func,
+    _variability_ratio_func,
 )
 from collections import defaultdict
 import sys
@@ -73,6 +75,8 @@ def error_func(
         "mse": _mse_func,
         "kge": _kge_func,
         "bias": _bias_func,
+        "bias_error": _relative_bias_func,
+        "std_error": _variability_ratio_func,
         "pbias": _pbias_func,
         "log_nse": _nse_func,
         "inv_kge": _kge_func,
@@ -195,6 +199,8 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
         error_func(preds, "sqrt_kge").set_index("station_id"),
         error_func(preds, "abs_pct_bias").set_index("station_id"),
         error_func(preds, "mape").set_index("station_id"),
+        error_func(preds, "bias_error").set_index("station_id"),
+        error_func(preds, "std_error").set_index("station_id"),
     ]
     error_df = (
         errors[0]
@@ -206,6 +212,8 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
         .join(errors[6])
         .join(errors[7])
         .join(errors[8])
+        .join(errors[9])
+        .join(errors[10])
         .join(error_mam30)
         .reset_index()
     )
@@ -769,13 +777,7 @@ if __name__ == "__main__":
     all_errors = calculate_all_data_errors(all_preds, decompose_kge=True)
     all_metrics = get_metric_dataframes_from_output_dict(all_errors)
 
-    assert "pbias" in all_metrics.keys()
-    assert "sqrt_kge" in all_metrics.keys()
-    assert "sqrt_bias_ratio" in all_metrics.keys()
-    assert "inv_variability_ratio" in all_metrics.keys()
-    assert "variability_ratio" in all_metrics.keys()
-    assert "correlation" in all_metrics.keys()
-    assert "bias_ratio" in all_metrics.keys()
+    assert all(np.isin(["pbias", "sqrt_kge", "sqrt_bias_ratio", "inv_variability_ratio", "variability_ratio", "correlation", "bias_ratio", "bias_error", "std_error"], all_metrics.keys()))
 
     if save:
         import pickle

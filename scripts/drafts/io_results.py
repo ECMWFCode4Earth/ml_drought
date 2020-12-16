@@ -62,6 +62,10 @@ def read_fuse_data(raw_fuse_path: Path, obs: xr.Dataset) -> xr.Dataset:
     return fuse_data
 
 
+def get_matching_stations():
+    pass
+
+
 if __name__ == "__main__":
     save = True
     import sys
