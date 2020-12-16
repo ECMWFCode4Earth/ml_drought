@@ -765,6 +765,7 @@ if __name__ == "__main__":
     data_dir = Path("/cats/datastore/data")
     all_preds = xr.open_dataset(data_dir / "RUNOFF/all_preds.nc")
 
+    # Calculate all errors
     all_errors = calculate_all_data_errors(all_preds, decompose_kge=True)
     all_metrics = get_metric_dataframes_from_output_dict(all_errors)
 
@@ -772,8 +773,15 @@ if __name__ == "__main__":
     assert "sqrt_kge" in all_metrics.keys()
     assert "sqrt_bias_ratio" in all_metrics.keys()
     assert "inv_variability_ratio" in all_metrics.keys()
+    assert "variability_ratio" in all_metrics.keys()
+    assert "correlation" in all_metrics.keys()
+    assert "bias_ratio" in all_metrics.keys()
 
     if save:
         import pickle
         pickle.dump(all_errors, (data_dir / "RUNOFF/all_errors.pkl").open("wb"))
         pickle.dump(all_metrics, (data_dir / "RUNOFF/all_metrics.pkl").open("wb"))
+
+    # calculate delta errors
+
+    # calculate seasonal delta errors
