@@ -123,7 +123,7 @@ def error_func(
             _error_calc = np.nan
         metrics.append(_error_calc)
 
-    error = pd.DataFrame({"station_id": station_ids, error_str: errors})
+    error = pd.DataFrame({"station_id": station_ids, error_str: metrics})
 
     return error
 
