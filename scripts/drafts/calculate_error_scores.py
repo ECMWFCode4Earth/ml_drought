@@ -214,6 +214,7 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
         .join(errors[8])
         .join(errors[9])
         .join(errors[10])
+        .join(errors[11])
         .join(error_mam30)
         .reset_index()
     )
@@ -777,7 +778,12 @@ if __name__ == "__main__":
     all_errors = calculate_all_data_errors(all_preds, decompose_kge=True)
     all_metrics = get_metric_dataframes_from_output_dict(all_errors)
 
-    assert all(np.isin(["pbias", "sqrt_kge", "sqrt_bias_ratio", "inv_variability_ratio", "variability_ratio", "correlation", "bias_ratio", "bias_error", "std_error"], all_metrics.keys()))
+    metrics = ["pbias", "sqrt_kge", "sqrt_bias_ratio", "inv_variability_ratio", "variability_ratio", "correlation", "bias_ratio", "bias_error", "std_error"]
+    calculated_metrics = [k for k in all_metrics.keys()]
+    if not all(np.isin(metrics, calculated_metrics)):
+        notin = np.array(metrics)[~np.isin(metrics, calculated_metrics)]
+        assert False, print(f"{notin} not found in {calculated_metrics}")
+
 
     if save:
         import pickle
