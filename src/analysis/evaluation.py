@@ -133,7 +133,7 @@ def spatial_nse(
 def spatial_mape(
     true_da: xr.DataArray, pred_da: xr.DataArray, log: bool = False
 ) -> xr.DataArray:
-    """Calculate the RMSE collapsing the time dimension returning
+    """Calculate the MAPE collapsing the time dimension returning
     a DataArray of the rmse values (spatially)
     """
     true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
@@ -505,6 +505,12 @@ def _bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
     return 100 * ((pred_vals.mean() / true_vals.mean()) - 1)
 
 
+def _pbias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
+    """Bias calculation"""
+    return 100 * ( (np.sum(true_vals - pred_vals)) / (np.sum(true_vals)) )
+
+
+
 def _abs_pct_bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
     """Absolute Percentage Bias [0, inf], focus on water balance
 
@@ -541,12 +547,13 @@ def _mape_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
 
 def spatial_bias(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
-    # values = (100 * ((pred_da.mean(dim='time') / true_da.mean(dim='time')) - 1)).values
     bias = 100 * ((pred_da.mean(dim="time") / true_da.mean(dim="time")) - 1)
-    # bias = xr.Dataset(
-    #     {"bias": (["station_id"], values)},
-    #     coords={"station_id": pred_da["station_id"].values}
-    # )["bias"]
+    return bias
+
+
+def spatial_pbias(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    bias = 100 * ((true_da - pred_da).sum(dim="time") / true_da.sum(dim="time"))
     return bias
 
 

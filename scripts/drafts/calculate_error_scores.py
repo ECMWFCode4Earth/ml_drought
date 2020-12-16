@@ -13,6 +13,7 @@ from src.analysis.evaluation import (
     spatial_r2,
     spatial_nse,
     spatial_bias,
+    spatial_pbias,
     spatial_kge,
     spatial_abs_pct_bias,
     spatial_mape,
@@ -23,6 +24,7 @@ from src.analysis.evaluation import (
     _rmse_func,
     _r2_func,
     _bias_func,
+    _pbias_func,
     _kge_func,
     _mse_func,
     _abs_pct_bias_func,
@@ -71,6 +73,7 @@ def error_func(
         "mse": _mse_func,
         "kge": _kge_func,
         "bias": _bias_func,
+        "pbias": _pbias_func,
         "log_nse": _nse_func,
         "inv_kge": _kge_func,
         "abs_pct_bias": _abs_pct_bias_func,
@@ -252,6 +255,7 @@ class FuseErrors:
         nse_df = self._calculate_metric("nse").drop("Name", axis=1, level=1)
         kge_df = self._calculate_metric("kge").drop("Name", axis=1, level=1)
         bias_df = self._calculate_metric("bias").drop("Name", axis=1, level=1)
+        pbias_df = self._calculate_metric("pbias").drop("Name", axis=1, level=1)
         rmse_df = self._calculate_metric("rmse").drop("Name", axis=1, level=1)
         lognse_df = self._calculate_metric("log_nse").drop("Name", axis=1, level=1)
         invkge_df = self._calculate_metric("inv_kge").drop("Name", axis=1, level=1)
@@ -262,7 +266,7 @@ class FuseErrors:
 
         #  convert into one clean dataframe
         fuse_errors = pd.concat(
-            [nse_df, kge_df, bias_df, lognse_df, invkge_df, mape_df, abs_pct_bias_df],
+            [nse_df, kge_df, bias_df, pbias_df, lognse_df, invkge_df, mape_df, abs_pct_bias_df],
             axis=1,
         )
         fuse_errors = self.tidy_dataframe(fuse_errors)
@@ -305,6 +309,7 @@ class FuseErrors:
             "nse": spatial_nse,
             "rmse": spatial_rmse,
             "bias": spatial_bias,
+            "pbias": spatial_pbias,
             "kge": spatial_kge,
             "log_nse": spatial_nse,
             "inv_kge": spatial_kge,
@@ -728,3 +733,6 @@ if __name__ == "__main__":
     #
     all_errors = calculate_all_data_errors(all_preds, decompose_kge=True)
     all_metrics = get_metric_dataframes_from_output_dict(all_errors)
+
+    assert "pbias" in all_metrics.keys()
+    assert False
