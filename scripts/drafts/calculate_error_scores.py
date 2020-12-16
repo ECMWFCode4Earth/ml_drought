@@ -770,6 +770,8 @@ if __name__ == "__main__":
 
     assert "pbias" in all_metrics.keys()
     assert "sqrt_kge" in all_metrics.keys()
+    assert "sqrt_bias_ratio" in all_metrics.keys()
+    assert "inv_variability_ratio" in all_metrics.keys()
 
     if save:
         import pickle
