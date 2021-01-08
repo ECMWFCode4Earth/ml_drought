@@ -442,7 +442,7 @@ def _kge_func(
     pred_vals: np.ndarray,
     weights: List[float] = [1.0, 1.0, 1.0],
     decomposed_results=False,
-) -> np.ndarray:
+) -> Optional[np.ndarray, Tuple[np.ndarray, ...]]:
     """
     Parameters
     ----------
