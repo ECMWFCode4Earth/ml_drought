@@ -169,8 +169,6 @@ def kge_decomposition(
 
         # calculate the decomposed kge components
         r, beta, gamma = _kge_func(true_vals, pred_vals, decomposed_results=True)
-        beta = beta - 1
-        gamma = gamma - 1
 
         correlations.append(r)
         bias_ratios.append(beta)
