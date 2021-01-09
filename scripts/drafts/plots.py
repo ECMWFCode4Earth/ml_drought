@@ -87,7 +87,7 @@ def plot_cdf(
             ax.axvline(summary_stat, ls="--", color=kwargs_dict[model]["color"])
 
         if optimum is not None:
-            ax.axvline(optimum, color="k", alpha=0.8, linewidth=1)
+            ax.axvline(optimum, ls="-.", color="k", alpha=0.8, linewidth=1)
 
     ax.set_xlim(clip)
     ax.set_xlabel(metric)
