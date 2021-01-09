@@ -47,7 +47,15 @@ def create_skill_score(
 
 def create_all_skill_scores(
     all_metrics: pd.DataFrame,
-    benchmarks: List[str] = ["persistence", "climatology_doy", "climatology_mon", "TOPMODEL", "ARNOVIC", "PRMS", "SACRAMENTO"],
+    benchmarks: List[str] = [
+        "persistence",
+        "climatology_doy",
+        "climatology_mon",
+        "TOPMODEL",
+        "ARNOVIC",
+        "PRMS",
+        "SACRAMENTO",
+    ],
     metrics: List[str] = ["kge", "inv_kge", "nse", "log_nse"],
     models: List[str] = ["TOPMODEL", "ARNOVIC", "PRMS", "SACRAMENTO", "EALSTM", "LSTM"],
 ) -> DefaultDict[str, Dict[str, pd.DataFrame]]:

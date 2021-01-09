@@ -147,8 +147,8 @@ def kge_decomposition(
         d = df.loc[df["station_id"] == station_id]
         # extract the discharge values
         if transformation == "inverse":
-            true_vals = (1 / (d["obs"].values + epsilon))
-            pred_vals = (1 / (d["sim"].values + epsilon))
+            true_vals = 1 / (d["obs"].values + epsilon)
+            pred_vals = 1 / (d["sim"].values + epsilon)
             correlation_str = "inv_correlation"
             bias_ratio_str = "inv_bias_ratio"
             variability_ratio_str = "inv_variability_ratio"
@@ -194,7 +194,7 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
         error_func(preds, "mse").set_index("station_id"),
         error_func(preds, "bias").set_index("station_id"),
         error_func(preds, "pbias").set_index("station_id"),
-        # transformations of key error metrics
+        #  transformations of key error metrics
         error_func(preds, "log_nse").set_index("station_id"),
         error_func(preds, "inv_kge").set_index("station_id"),
         error_func(preds, "sqrt_kge").set_index("station_id"),
@@ -224,7 +224,9 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
     return error_df
 
 
-def calculate_all_data_errors(sim_obs_data: xr.Dataset, decompose_kge: bool = False) -> DefaultDict[str, Dict[str, pd.DataFrame]]:
+def calculate_all_data_errors(
+    sim_obs_data: xr.Dataset, decompose_kge: bool = False
+) -> DefaultDict[str, Dict[str, pd.DataFrame]]:
     assert all(np.isin(["obs"], list(sim_obs_data.data_vars)))
     model_var_list: List[str] = [v for v in sim_obs_data.data_vars if "obs" not in v]
 
@@ -237,13 +239,13 @@ def calculate_all_data_errors(sim_obs_data: xr.Dataset, decompose_kge: bool = Fa
         if decompose_kge:
             decompose_df = kge_decomposition(preds).set_index("station_id")
             error_df = error_df.join(decompose_df)
-            inv_decompose_df = kge_decomposition(preds, transformation="inverse").set_index(
-                "station_id"
-            )
+            inv_decompose_df = kge_decomposition(
+                preds, transformation="inverse"
+            ).set_index("station_id")
             error_df = error_df.join(inv_decompose_df)
-            sqrt_decompose_df = kge_decomposition(preds, transformation="sqrt").set_index(
-                "station_id"
-            )
+            sqrt_decompose_df = kge_decomposition(
+                preds, transformation="sqrt"
+            ).set_index("station_id")
             error_df = error_df.join(sqrt_decompose_df)
 
         output_dict[model.replace("SimQ_", "")] = error_df
@@ -311,7 +313,16 @@ class FuseErrors:
 
         #  convert into one clean dataframe
         fuse_errors = pd.concat(
-            [nse_df, kge_df, bias_df, pbias_df, lognse_df, invkge_df, mape_df, abs_pct_bias_df],
+            [
+                nse_df,
+                kge_df,
+                bias_df,
+                pbias_df,
+                lognse_df,
+                invkge_df,
+                mape_df,
+                abs_pct_bias_df,
+            ],
             axis=1,
         )
         fuse_errors = self.tidy_dataframe(fuse_errors)
@@ -686,7 +697,14 @@ class DeltaError:
     def calculate_all_errors(
         all_preds: xr.DataArray,
         desc: str = None,
-        metrics: List[str] = ["nse", "kge", "log_nse", "abs_pct_bias", "inv_kge", "mam30_ape"],
+        metrics: List[str] = [
+            "nse",
+            "kge",
+            "log_nse",
+            "abs_pct_bias",
+            "inv_kge",
+            "mam30_ape",
+        ],
     ) -> Dict[str, pd.DataFrame]:
         station_names = pd.DataFrame(gauge_name_lookup, index=["gauge_name"]).T
 
@@ -831,7 +849,17 @@ if __name__ == "__main__":
     all_errors = calculate_all_data_errors(all_preds, decompose_kge=True)
     all_metrics = get_metric_dataframes_from_output_dict(all_errors)
 
-    metrics = ["pbias", "sqrt_kge", "sqrt_bias_ratio", "inv_variability_ratio", "variability_ratio", "correlation", "bias_ratio", "bias_error", "std_error"]
+    metrics = [
+        "pbias",
+        "sqrt_kge",
+        "sqrt_bias_ratio",
+        "inv_variability_ratio",
+        "variability_ratio",
+        "correlation",
+        "bias_ratio",
+        "bias_error",
+        "std_error",
+    ]
     calculated_metrics = [k for k in all_metrics.keys()]
     if not all(np.isin(metrics, calculated_metrics)):
         notin = np.array(metrics)[~np.isin(metrics, calculated_metrics)]
@@ -839,16 +867,20 @@ if __name__ == "__main__":
 
     if save:
         import pickle
+
         pickle.dump(all_errors, (data_dir / "RUNOFF/all_errors.pkl").open("wb"))
         pickle.dump(all_metrics, (data_dir / "RUNOFF/all_metrics.pkl").open("wb"))
 
-    # calculate delta errors
+    #  calculate delta errors
     print("Calculating all Delta Metrics (reference - comparison)")
     lstm_delta, ealstm_delta = calculate_all_delta_dfs(all_metrics)
 
-    # calculate seasonal delta errors
+    #  calculate seasonal delta errors
     print("Calculating Seasonal Errros")
     seasonal_errors = calculate_seasonal_errors(all_preds)
     if save:
         import pickle
-        pickle.dump(seasonal_errors, (data_dir / "RUNOFF/seasonal_errors.pkl").open("wb"))
+
+        pickle.dump(
+            seasonal_errors, (data_dir / "RUNOFF/seasonal_errors.pkl").open("wb")
+        )
