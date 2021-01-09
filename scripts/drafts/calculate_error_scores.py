@@ -791,7 +791,7 @@ def calculate_all_delta_dfs(
     ealstm_delta: Dict[str, pd.DataFrame] = defaultdict()
 
     for metric in [k for k in errors_dict.keys()]:
-        if "bias" in metric:
+        if metric == "bias":
             lstm_delta[metric] = calculate_error_diff(
                 errors_dict["bias"].abs(), ref_model="LSTM"
             )
