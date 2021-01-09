@@ -768,6 +768,45 @@ class DeltaError:
         return seasonal_deltas
 
 
+def calculate_error_diff(
+    error_df: pd.DataFrame, ref_model: str = "LSTM"
+) -> pd.DataFrame:
+    all_deltas = []
+    for model in [c for c in error_df.columns if c != ref_model]:
+        delta = error_df[ref_model] - error_df[model]
+        delta.name = model
+        all_deltas.append(delta)
+
+    delta_df = pd.concat(all_deltas, axis=1)
+
+    return delta_df
+
+
+def calculate_all_delta_dfs(
+    errors_dict: Dict[str, pd.DataFrame]
+) -> Tuple[Dict[str, pd.DataFrame]]:
+    lstm_delta: Dict[str, pd.DataFrame] = defaultdict()
+    ealstm_delta: Dict[str, pd.DataFrame] = defaultdict()
+
+    for metric in [k for k in errors_dict.keys()]:
+        if "bias" in metric:
+            lstm_delta[metric] = calculate_error_diff(
+                errors_dict["bias"].abs(), ref_model="LSTM"
+            )
+            ealstm_delta[metric] = calculate_error_diff(
+                errors_dict["bias"].abs(), ref_model="EALSTM"
+            )
+        else:
+            lstm_delta[metric] = calculate_error_diff(
+                error_df=errors_dict[metric], ref_model="LSTM"
+            )
+            ealstm_delta[metric] = calculate_error_diff(
+                error_df=errors_dict[metric], ref_model="EALSTM"
+            )
+
+    return lstm_delta, ealstm_delta
+
+
 if __name__ == "__main__":
     save = True
     # LOAD IN DATA
@@ -784,12 +823,12 @@ if __name__ == "__main__":
         notin = np.array(metrics)[~np.isin(metrics, calculated_metrics)]
         assert False, print(f"{notin} not found in {calculated_metrics}")
 
-
     if save:
         import pickle
         pickle.dump(all_errors, (data_dir / "RUNOFF/all_errors.pkl").open("wb"))
         pickle.dump(all_metrics, (data_dir / "RUNOFF/all_metrics.pkl").open("wb"))
 
     # calculate delta errors
+    calculate_all_delta_dfs(all_errors)
 
     # calculate seasonal delta errors
