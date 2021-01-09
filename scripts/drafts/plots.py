@@ -21,6 +21,8 @@ def plot_cdf(
     title=None,
     models: Optional[List[str]] = None,
     median: bool = True,
+    legend: bool = True,
+    summary_line: bool = True,
 ):
     colors = sns.color_palette()
     kwargs_dict = {
@@ -80,8 +82,8 @@ def plot_cdf(
             label=f"{model}: {summary_stat:.2f}",
             **kwargs_dict[model],
         )
-
-        ax.axvline(summary_stat, ls="--", color=kwargs_dict[model]["color"])
+        if summary_line:
+            ax.axvline(summary_stat, ls="--", color=kwargs_dict[model]["color"])
 
     ax.set_xlim(clip)
     ax.set_xlabel(metric)
@@ -93,7 +95,8 @@ def plot_cdf(
     )
     ax.set_title(title)
     sns.despine()
-    plt.legend()
+    if legend:
+        ax.legend()
 
     return ax
 
