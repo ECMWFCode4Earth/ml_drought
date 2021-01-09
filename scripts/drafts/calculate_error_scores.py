@@ -785,7 +785,6 @@ def calculate_error_diff(
 def calculate_all_delta_dfs(
     errors_dict: Dict[str, pd.DataFrame]
 ) -> Tuple[Dict[str, pd.DataFrame]]:
-    assert all(np.isin(["LSTM", "EALSTM"], [k for k in errors_dict.keys()]))
 
     lstm_delta: Dict[str, pd.DataFrame] = defaultdict()
     ealstm_delta: Dict[str, pd.DataFrame] = defaultdict()
