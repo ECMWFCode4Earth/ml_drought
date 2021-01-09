@@ -828,7 +828,7 @@ def calculate_all_delta_dfs(
     return lstm_delta, ealstm_delta
 
 
-def calculate_seasonal_errors(all_preds: xr.Dataset):
+def calculate_seasonal_errors(all_preds: xr.Dataset) -> Dict[str, DefaultDict[str, Dict[str, pd.DataFrame]]]:
     seasonal_errors = {}
     for season in ["DJF", "MAM", "JJA", "SON"]:
         _preds = all_preds.sel(time=all_preds["time.season"] == season)

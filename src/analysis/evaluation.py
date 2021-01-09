@@ -507,7 +507,7 @@ def _bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
 
 def _pbias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
     """Gupta et al 1998 & Harrigan et al """
-    return 100 * ( (np.sum(true_vals - pred_vals)) / (np.sum(true_vals)) )
+    return 100 * ((np.sum(true_vals - pred_vals)) / (np.sum(true_vals)))
 
 
 def _relative_bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
