@@ -194,11 +194,13 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
         error_func(preds, "mse").set_index("station_id"),
         error_func(preds, "bias").set_index("station_id"),
         error_func(preds, "pbias").set_index("station_id"),
+        # transformations of key error metrics
         error_func(preds, "log_nse").set_index("station_id"),
         error_func(preds, "inv_kge").set_index("station_id"),
         error_func(preds, "sqrt_kge").set_index("station_id"),
         error_func(preds, "abs_pct_bias").set_index("station_id"),
         error_func(preds, "mape").set_index("station_id"),
+        # from lane et al 2018
         error_func(preds, "bias_error").set_index("station_id"),
         error_func(preds, "std_error").set_index("station_id"),
     ]
@@ -222,7 +224,7 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
     return error_df
 
 
-def calculate_all_data_errors(sim_obs_data: xr.Dataset, decompose_kge: bool = False):
+def calculate_all_data_errors(sim_obs_data: xr.Dataset, decompose_kge: bool = False) -> DefaultDict[str, Dict[str, pd.DataFrame]]:
     assert all(np.isin(["obs"], list(sim_obs_data.data_vars)))
     model_var_list: List[str] = [v for v in sim_obs_data.data_vars if "obs" not in v]
 
@@ -808,6 +810,17 @@ def calculate_all_delta_dfs(
     return lstm_delta, ealstm_delta
 
 
+def calculate_seasonal_errors(all_preds: xr.Dataset):
+    seasonal_errors = {}
+    for season in ["DJF", "MAM", "JJA", "SON"]:
+        _preds = all_preds.sel(time=all_preds["time.season"] == season)
+        seasonal_errors[season] = calculate_all_data_errors(_preds, decompose_kge=True)
+
+        assert seasonal_errors[season] != {}
+
+    return seasonal_errors
+
+
 if __name__ == "__main__":
     save = True
     # LOAD IN DATA
@@ -830,6 +843,12 @@ if __name__ == "__main__":
         pickle.dump(all_metrics, (data_dir / "RUNOFF/all_metrics.pkl").open("wb"))
 
     # calculate delta errors
-    calculate_all_delta_dfs(all_errors)
+    print("Calculating all Delta Metrics (reference - comparison)")
+    lstm_delta, ealstm_delta = calculate_all_delta_dfs(all_metrics)
 
     # calculate seasonal delta errors
+    print("Calculating Seasonal Errros")
+    seasonal_errors = calculate_seasonal_errors(all_preds)
+    if save:
+        import pickle
+        pickle.dump(seasonal_errors, (data_dir / "RUNOFF/seasonal_errors.pkl").open("wb"))
