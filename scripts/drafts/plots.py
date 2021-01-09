@@ -80,7 +80,7 @@ def plot_cdf(
             cumulative=True,
             legend=False,
             ax=ax,
-            label=f"{model}: {summary_stat:.2f}",
+            label=f"{model}: {summary_stat:.2f}" if summary_line else f"{model}",
             **kwargs_dict[model],
         )
         if summary_line:
