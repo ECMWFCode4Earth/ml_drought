@@ -23,6 +23,7 @@ def plot_cdf(
     median: bool = True,
     legend: bool = True,
     summary_line: bool = True,
+    optimum: Optional[float] = None,
 ):
     colors = sns.color_palette()
     kwargs_dict = {
@@ -84,6 +85,9 @@ def plot_cdf(
         )
         if summary_line:
             ax.axvline(summary_stat, ls="--", color=kwargs_dict[model]["color"])
+
+        if optimum is not None:
+            ax.axvline(optimum, color="k", alpha=0.8)
 
     ax.set_xlim(clip)
     ax.set_xlabel(metric)
