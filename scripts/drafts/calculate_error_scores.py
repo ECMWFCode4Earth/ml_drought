@@ -83,7 +83,11 @@ def error_func(
         "sqrt_kge": _kge_func,
         "abs_pct_bias": _abs_pct_bias_func,
         "mape": _mape_func,
+        "fmv": partial(calculate_metrics, **dict(metrics=["fmv"])),
+        "flv": partial(calculate_metrics, **dict(metrics=["flv"])),
+        "fhv": partial(calculate_metrics, **dict(metrics=["fhv"])),
     }
+
     error_func = lookup[error_str]
 
     df = preds_xr.to_dataframe()
@@ -122,7 +126,13 @@ def error_func(
                 )
 
             else:
-                _error_calc = error_func(d["obs"].values, d["sim"].values)
+                if error_str in [ "fmv", "flv", "fhv"]:
+                    # Kratzert error metrics return a dictionary
+                    # therefore, have to extract from values ...
+                    _error_dict = error_func(d["obs"].to_xarray(), d["sim"].to_xarray())
+                    _error_calc = [v for v in _error_dict.values()][0]
+                else:
+                    _error_calc = error_func(d["obs"].values, d["sim"].values)
         except RuntimeError:
             _error_calc = np.nan
         metrics.append(_error_calc)
@@ -185,7 +195,7 @@ def kge_decomposition(
     return error
 
 
-def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
+def calculate_errors(preds: xr.Dataset, yilmaz_errors: bool = False) -> pd.DataFrame:
 
     error_mam30 = xr_mam30_ape(preds).to_dataframe("mam30_ape")
     errors = [
@@ -204,28 +214,62 @@ def calculate_errors(preds: xr.Dataset) -> pd.DataFrame:
         error_func(preds, "bias_error").set_index("station_id"),
         error_func(preds, "std_error").set_index("station_id"),
     ]
-    error_df = (
-        errors[0]
-        .join(errors[1])
-        .join(errors[2])
-        .join(errors[3])
-        .join(errors[4])
-        .join(errors[5])
-        .join(errors[6])
-        .join(errors[7])
-        .join(errors[8])
-        .join(errors[9])
-        .join(errors[10])
-        .join(errors[11])
-        .join(error_mam30)
-        .reset_index()
-    )
+
+    if yilmaz_errors:
+        # from Yilmaz 2008 
+        yilmaz = [
+            error_func(preds, "fmv").set_index("station_id"),
+            error_func(preds, "flv").set_index("station_id"),
+            error_func(preds, "fhv").set_index("station_id"),
+        ]
+        errors = errors + yilmaz
+
+    # TODO: how to refactor this to change with the size of errors ...
+    if yilmaz_errors:
+        error_df = (
+            errors[0]
+            .join(errors[1])
+            .join(errors[2])
+            .join(errors[3])
+            .join(errors[4])
+            .join(errors[5])
+            .join(errors[6])
+            .join(errors[7])
+            .join(errors[8])
+            .join(errors[9])
+            .join(errors[10])
+            .join(errors[11])
+            .join(errors[12])
+            .join(errors[13])
+            .join(errors[14])
+            .join(error_mam30)
+            .reset_index()
+        )
+    else:
+        error_df = (
+            errors[0]
+            .join(errors[1])
+            .join(errors[2])
+            .join(errors[3])
+            .join(errors[4])
+            .join(errors[5])
+            .join(errors[6])
+            .join(errors[7])
+            .join(errors[8])
+            .join(errors[9])
+            .join(errors[10])
+            .join(errors[11])
+            .join(error_mam30)
+            .reset_index()
+        )
+
 
     return error_df
 
 
 def calculate_all_data_errors(
-    sim_obs_data: xr.Dataset, decompose_kge: bool = False
+    sim_obs_data: xr.Dataset, decompose_kge: bool = False,
+    yilmaz_errors: bool = False,
 ) -> DefaultDict[str, Dict[str, pd.DataFrame]]:
     assert all(np.isin(["obs"], list(sim_obs_data.data_vars)))
     model_var_list: List[str] = [v for v in sim_obs_data.data_vars if "obs" not in v]
@@ -233,7 +277,7 @@ def calculate_all_data_errors(
     output_dict = defaultdict(dict)
     for model in tqdm(model_var_list, desc="Errors"):
         preds = sim_obs_data[["obs", model]].rename({model: "sim"})
-        error_df = calculate_errors(preds).set_index("station_id")
+        error_df = calculate_errors(preds, yilmaz_errors=yilmaz_errors).set_index("station_id")
         error_df["rmse"] = np.sqrt(error_df["mse"])
 
         if decompose_kge:
@@ -846,7 +890,7 @@ if __name__ == "__main__":
     all_preds = xr.open_dataset(data_dir / "RUNOFF/all_preds.nc")
 
     # Calculate all errors
-    all_errors = calculate_all_data_errors(all_preds, decompose_kge=True)
+    all_errors = calculate_all_data_errors(all_preds, decompose_kge=True, yilmaz_errors=True)
     all_metrics = get_metric_dataframes_from_output_dict(all_errors)
 
     metrics = [
@@ -859,6 +903,9 @@ if __name__ == "__main__":
         "bias_ratio",
         "bias_error",
         "std_error",
+        "fmv",
+        "flv",
+        "fhv",
     ]
     calculated_metrics = [k for k in all_metrics.keys()]
     if not all(np.isin(metrics, calculated_metrics)):
