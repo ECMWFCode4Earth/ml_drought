@@ -4,6 +4,7 @@ import xarray as xr
 from tqdm import tqdm
 from pathlib import Path
 from collections import defaultdict
+from functools import partial
 from typing import Dict, DefaultDict, Tuple, List, Optional
 from HydroErr import HydroErr as he
 
