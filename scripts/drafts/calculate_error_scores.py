@@ -84,7 +84,7 @@ def error_func(
         "sqrt_kge": _kge_func,
         "abs_pct_bias": _abs_pct_bias_func,
         "mape": _mape_func,
-        "fmv": partial(calculate_metrics, **dict(metrics=["fmv"])),
+        "fms": partial(calculate_metrics, **dict(metrics=["fms"])),
         "flv": partial(calculate_metrics, **dict(metrics=["flv"])),
         "fhv": partial(calculate_metrics, **dict(metrics=["fhv"])),
     }
@@ -127,7 +127,7 @@ def error_func(
                 )
 
             else:
-                if error_str in [ "fmv", "flv", "fhv"]:
+                if error_str in [ "fms", "flv", "fhv"]:
                     # Kratzert error metrics return a dictionary
                     # therefore, have to extract from values ...
                     _error_dict = error_func(d["obs"].to_xarray(), d["sim"].to_xarray())
@@ -219,7 +219,7 @@ def calculate_errors(preds: xr.Dataset, yilmaz_errors: bool = False) -> pd.DataF
     if yilmaz_errors:
         # from Yilmaz 2008 
         yilmaz = [
-            error_func(preds, "fmv").set_index("station_id"),
+            error_func(preds, "fms").set_index("station_id"),
             error_func(preds, "flv").set_index("station_id"),
             error_func(preds, "fhv").set_index("station_id"),
         ]
@@ -904,7 +904,7 @@ if __name__ == "__main__":
         "bias_ratio",
         "bias_error",
         "std_error",
-        "fmv",
+        "fms",
         "flv",
         "fhv",
     ]
