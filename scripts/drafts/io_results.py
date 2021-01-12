@@ -71,7 +71,7 @@ if __name__ == "__main__":
     import sys
 
     sys.path.append("/home/tommy/ml_drought")
-    from scripts.drafts.calculate_error_scores import DeltaError
+    from scripts.drafts.delta_error import DeltaError
 
     data_dir = Path("/cats/datastore/data")
 
