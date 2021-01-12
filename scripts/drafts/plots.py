@@ -12,6 +12,46 @@ from scripts.drafts.ml_sids import ml_sids
 #  --------------------------------- #
 #  CDF Plot #
 #  --------------------------------- #
+kwargs_dict = {
+    "TOPMODEL": {"linewidth": 1, "alpha": 0.8, "color": colors[2], "clip": clip},
+    "PRMS": {"linewidth": 1, "alpha": 0.8, "color": colors[3], "clip": clip},
+    "ARNOVIC": {"linewidth": 1, "alpha": 0.8, "color": colors[4], "clip": clip},
+    "VIC": {"linewidth": 1, "alpha": 0.8, "color": colors[4], "clip": clip},
+    "SACRAMENTO": {"linewidth": 1, "alpha": 0.8, "color": colors[5], "clip": clip},
+    "gr4j": {"linewidth": 1, "alpha": 0.8, "color": colors[9], "clip": clip},
+    "climatology": {
+        "linewidth": 1,
+        "alpha": 0.8,
+        "color": colors[6],
+        "clip": clip,
+        "ls": "-.",
+    },
+    "climatology_doy": {
+        "linewidth": 1,
+        "alpha": 0.8,
+        "color": colors[6],
+        "clip": clip,
+        "ls": "-.",
+    },
+    "climatology_mon": {
+        "linewidth": 1,
+        "alpha": 0.8,
+        "color": colors[8],
+        "clip": clip,
+        "ls": "-.",
+    },
+    "persistence": {
+        "linewidth": 1,
+        "alpha": 0.8,
+        "color": colors[7],
+        "clip": clip,
+        "ls": "-.",
+    },
+    "EALSTM": {"linewidth": 3, "alpha": 1, "color": colors[1], "clip": clip},
+    "LSTM": {"linewidth": 3, "alpha": 1, "color": colors[0], "clip": clip},
+}
+
+
 def plot_cdf(
     error_data,
     metric: str = "",
@@ -26,44 +66,6 @@ def plot_cdf(
     optimum: Optional[float] = None,
 ):
     colors = sns.color_palette()
-    kwargs_dict = {
-        "TOPMODEL": {"linewidth": 1, "alpha": 0.8, "color": colors[2], "clip": clip},
-        "PRMS": {"linewidth": 1, "alpha": 0.8, "color": colors[3], "clip": clip},
-        "ARNOVIC": {"linewidth": 1, "alpha": 0.8, "color": colors[4], "clip": clip},
-        "VIC": {"linewidth": 1, "alpha": 0.8, "color": colors[4], "clip": clip},
-        "SACRAMENTO": {"linewidth": 1, "alpha": 0.8, "color": colors[5], "clip": clip},
-        "gr4j": {"linewidth": 1, "alpha": 0.8, "color": colors[9], "clip": clip},
-        "climatology": {
-            "linewidth": 1,
-            "alpha": 0.8,
-            "color": colors[6],
-            "clip": clip,
-            "ls": "-.",
-        },
-        "climatology_doy": {
-            "linewidth": 1,
-            "alpha": 0.8,
-            "color": colors[6],
-            "clip": clip,
-            "ls": "-.",
-        },
-        "climatology_mon": {
-            "linewidth": 1,
-            "alpha": 0.8,
-            "color": colors[8],
-            "clip": clip,
-            "ls": "-.",
-        },
-        "persistence": {
-            "linewidth": 1,
-            "alpha": 0.8,
-            "color": colors[7],
-            "clip": clip,
-            "ls": "-.",
-        },
-        "EALSTM": {"linewidth": 3, "alpha": 1, "color": colors[1], "clip": clip},
-        "LSTM": {"linewidth": 3, "alpha": 1, "color": colors[0], "clip": clip},
-    }
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 3))
 
@@ -218,10 +220,10 @@ def plot_budyko_curve(
 if __name__ == "__main__":
     from pathlib import Path
     from scripts.drafts.calculate_error_scores import (
-        DeltaError,
         calculate_all_data_errors,
         get_metric_dataframes_from_output_dict,
     )
+    from scripts.drafts.delta_error import DeltaError
 
     # LOAD IN DATA
     data_dir = Path("/cats/datastore/data")

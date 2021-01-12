@@ -12,7 +12,7 @@ from scripts.drafts.calculate_error_scores import (
     calculate_all_data_errors,
     get_metric_dataframes_from_output_dict,
 )
-from scripts.drafts.calculate_error_scores import DeltaError
+from scripts.drafts.delta_error import DeltaError
 
 
 perf_lookup: Dict[str, float] = dict(
