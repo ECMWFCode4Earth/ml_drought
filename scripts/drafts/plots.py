@@ -62,7 +62,7 @@ def plot_cdf(
     summary_line: bool = True,
     optimum: Optional[float] = None,
 ):
-    # kwargs_dict = kwargs_dict_config
+    kwargs_dict = kwargs_dict_config
     # kwargs_dict["clip"] = clip
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 3))
