@@ -12,13 +12,14 @@ from scripts.drafts.ml_sids import ml_sids
 #  --------------------------------- #
 #  CDF Plot #
 #  --------------------------------- #
+colors = sns.color_palette()
 kwargs_dict = {
-    "TOPMODEL": {"linewidth": 1, "alpha": 0.8, "color": colors[2], "clip": clip},
-    "PRMS": {"linewidth": 1, "alpha": 0.8, "color": colors[3], "clip": clip},
-    "ARNOVIC": {"linewidth": 1, "alpha": 0.8, "color": colors[4], "clip": clip},
-    "VIC": {"linewidth": 1, "alpha": 0.8, "color": colors[4], "clip": clip},
-    "SACRAMENTO": {"linewidth": 1, "alpha": 0.8, "color": colors[5], "clip": clip},
-    "gr4j": {"linewidth": 1, "alpha": 0.8, "color": colors[9], "clip": clip},
+    "TOPMODEL": {"linewidth": 1, "alpha": 0.8, "color": colors[2]},
+    "PRMS": {"linewidth": 1, "alpha": 0.8, "color": colors[3]},
+    "ARNOVIC": {"linewidth": 1, "alpha": 0.8, "color": colors[4]},
+    "VIC": {"linewidth": 1, "alpha": 0.8, "color": colors[4]},
+    "SACRAMENTO": {"linewidth": 1, "alpha": 0.8, "color": colors[5]},
+    "gr4j": {"linewidth": 1, "alpha": 0.8, "color": colors[9]},
     "climatology": {
         "linewidth": 1,
         "alpha": 0.8,
@@ -47,8 +48,8 @@ kwargs_dict = {
         "clip": clip,
         "ls": "-.",
     },
-    "EALSTM": {"linewidth": 3, "alpha": 1, "color": colors[1], "clip": clip},
-    "LSTM": {"linewidth": 3, "alpha": 1, "color": colors[0], "clip": clip},
+    "EALSTM": {"linewidth": 3, "alpha": 1, "color": colors[1]},
+    "LSTM": {"linewidth": 3, "alpha": 1, "color": colors[0]},
 }
 
 
@@ -65,7 +66,7 @@ def plot_cdf(
     summary_line: bool = True,
     optimum: Optional[float] = None,
 ):
-    colors = sns.color_palette()
+    kwargs_dict["clip"] = clip
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 3))
 
