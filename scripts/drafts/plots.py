@@ -62,8 +62,8 @@ def plot_cdf(
     summary_line: bool = True,
     optimum: Optional[float] = None,
 ):
-    kwargs_dict = kwargs_dict_config
-    kwargs_dict["clip"] = clip
+    # kwargs_dict = kwargs_dict_config
+    # kwargs_dict["clip"] = clip
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 3))
 
@@ -81,6 +81,7 @@ def plot_cdf(
             legend=False,
             ax=ax,
             label=f"{model}: {summary_stat:.2f}" if summary_line else f"{model}",
+            clip=clip,
             **kwargs_dict[model],
         )
         if summary_line:
