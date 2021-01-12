@@ -44,4 +44,5 @@ if __name__ == "__main__":
     data_dir = Path("/cats/datastore/data/")
     all_metrics = pickle.load((data_dir / "RUNOFF/all_metrics.pkl").open("rb"))
 
-    print(run_test(all_metrics, metric="nse", ref_model="LSTM"))
+    print(run_test(all_metrics, test="ks", metric="nse", ref_model="LSTM"))
+    print(run_test(all_metrics, test="wilcoxon", metric="nse", ref_model="LSTM"))
