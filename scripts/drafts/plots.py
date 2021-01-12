@@ -13,7 +13,7 @@ from scripts.drafts.ml_sids import ml_sids
 #  CDF Plot #
 #  --------------------------------- #
 colors = sns.color_palette()
-kwargs_dict = {
+kwargs_dict_config = {
     "TOPMODEL": {"linewidth": 1, "alpha": 0.8, "color": colors[2]},
     "PRMS": {"linewidth": 1, "alpha": 0.8, "color": colors[3]},
     "ARNOVIC": {"linewidth": 1, "alpha": 0.8, "color": colors[4]},
@@ -66,6 +66,7 @@ def plot_cdf(
     summary_line: bool = True,
     optimum: Optional[float] = None,
 ):
+    kwargs_dict = kwargs_dict_config
     kwargs_dict["clip"] = clip
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 3))
