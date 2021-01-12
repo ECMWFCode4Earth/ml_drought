@@ -127,7 +127,7 @@ def error_func(
                 )
 
             else:
-                if error_str in [ "fms", "flv", "fhv"]:
+                if error_str in ["fms", "flv", "fhv"]:
                     # Kratzert error metrics return a dictionary
                     # therefore, have to extract from values ...
                     _error_dict = error_func(d["obs"].to_xarray(), d["sim"].to_xarray())
@@ -217,7 +217,7 @@ def calculate_errors(preds: xr.Dataset, yilmaz_errors: bool = False) -> pd.DataF
     ]
 
     if yilmaz_errors:
-        # from Yilmaz 2008 
+        #  from Yilmaz 2008
         yilmaz = [
             error_func(preds, "fms").set_index("station_id"),
             error_func(preds, "flv").set_index("station_id"),
@@ -264,13 +264,11 @@ def calculate_errors(preds: xr.Dataset, yilmaz_errors: bool = False) -> pd.DataF
             .reset_index()
         )
 
-
     return error_df
 
 
 def calculate_all_data_errors(
-    sim_obs_data: xr.Dataset, decompose_kge: bool = False,
-    yilmaz_errors: bool = False,
+    sim_obs_data: xr.Dataset, decompose_kge: bool = False, yilmaz_errors: bool = False,
 ) -> DefaultDict[str, Dict[str, pd.DataFrame]]:
     assert all(np.isin(["obs"], list(sim_obs_data.data_vars)))
     model_var_list: List[str] = [v for v in sim_obs_data.data_vars if "obs" not in v]
@@ -278,7 +276,9 @@ def calculate_all_data_errors(
     output_dict = defaultdict(dict)
     for model in tqdm(model_var_list, desc="Errors"):
         preds = sim_obs_data[["obs", model]].rename({model: "sim"})
-        error_df = calculate_errors(preds, yilmaz_errors=yilmaz_errors).set_index("station_id")
+        error_df = calculate_errors(preds, yilmaz_errors=yilmaz_errors).set_index(
+            "station_id"
+        )
         error_df["rmse"] = np.sqrt(error_df["mse"])
 
         if decompose_kge:
@@ -793,18 +793,18 @@ class DeltaError:
         return delta_df
 
     def calculate_all_delta_dfs(
-        self, errors_dict: Dict[str, pd.DataFrame]
+        self, errors_dict: Dict[str, pd.DataFrame], absolute_metrics: List[str] = [],
     ) -> Tuple[Dict[str, pd.DataFrame]]:
         lstm_delta: Dict[str, pd.DataFrame] = defaultdict()
         ealstm_delta: Dict[str, pd.DataFrame] = defaultdict()
 
         for metric in [k for k in errors_dict.keys()]:
-            if "bias" in metric:
+            if metric in absolute_metrics:
                 lstm_delta[metric] = self.calculate_error_diff(
-                    errors_dict["bias"].abs(), ref_model="LSTM"
+                    errors_dict[metric].abs(), ref_model="LSTM"
                 )
                 ealstm_delta[metric] = self.calculate_error_diff(
-                    errors_dict["bias"].abs(), ref_model="EALSTM"
+                    errors_dict[metric].abs(), ref_model="EALSTM"
                 )
             else:
                 lstm_delta[metric] = self.calculate_error_diff(
@@ -873,7 +873,9 @@ def calculate_all_delta_dfs(
     return lstm_delta, ealstm_delta
 
 
-def calculate_seasonal_errors(all_preds: xr.Dataset) -> Dict[str, DefaultDict[str, Dict[str, pd.DataFrame]]]:
+def calculate_seasonal_errors(
+    all_preds: xr.Dataset,
+) -> Dict[str, DefaultDict[str, Dict[str, pd.DataFrame]]]:
     seasonal_errors = {}
     for season in ["DJF", "MAM", "JJA", "SON"]:
         _preds = all_preds.sel(time=all_preds["time.season"] == season)
@@ -891,8 +893,14 @@ if __name__ == "__main__":
     all_preds = xr.open_dataset(data_dir / "RUNOFF/all_preds.nc")
 
     # Calculate all errors
-    all_errors = calculate_all_data_errors(all_preds, decompose_kge=True, yilmaz_errors=True)
+    all_errors = calculate_all_data_errors(
+        all_preds, decompose_kge=True, yilmaz_errors=True
+    )
     all_metrics = get_metric_dataframes_from_output_dict(all_errors)
+
+    # convert bias error into percent error
+    all_metrics["bias_error_pct"] = all_metrics["bias_error"] * 100
+    all_metrics["std_error_pct"] = all_metrics["std_error"] * 100
 
     metrics = [
         "pbias",
@@ -903,7 +911,9 @@ if __name__ == "__main__":
         "correlation",
         "bias_ratio",
         "bias_error",
+        "bias_error_pct",
         "std_error",
+        "std_error_pct",
         "fms",
         "flv",
         "fhv",
@@ -921,7 +931,18 @@ if __name__ == "__main__":
 
     #  calculate delta errors
     print("Calculating all Delta Metrics (reference - comparison)")
-    lstm_delta, ealstm_delta = calculate_all_delta_dfs(all_metrics)
+    lstm_delta, ealstm_delta = calculate_all_delta_dfs(
+        all_metrics,
+        absolute_metrics=[
+            "fms",
+            "flv",
+            "fhv",
+            "bias_error",
+            "bias_error_pct",
+            "std_error",
+            "std_error_pct",
+        ],
+    )
 
     #  calculate seasonal delta errors
     print("Calculating Seasonal Errros")
