@@ -664,10 +664,12 @@ if __name__ == "__main__":
     print("Calculating Seasonal Errros")
     seasonal_errors = calculate_seasonal_errors(all_preds)
 
-    # calculate seasonal metrics
+    #  calculate seasonal metrics
     seasonal_metrics = defaultdict(dict)
     for season in ["DJF", "MAM", "JJA", "SON"]:
-        seasonal_metrics[season] = get_metric_dataframes_from_output_dict(seasonal_errors[season])
+        seasonal_metrics[season] = get_metric_dataframes_from_output_dict(
+            seasonal_errors[season]
+        )
 
     if save:
         import pickle
@@ -678,4 +680,3 @@ if __name__ == "__main__":
         pickle.dump(
             seasonal_metrics, (data_dir / "RUNOFF/seasonal_metrics.pkl").open("wb")
         )
-
