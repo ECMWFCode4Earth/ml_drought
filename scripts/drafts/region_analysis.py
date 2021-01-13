@@ -42,6 +42,7 @@ def get_region_station_within(
 
 
 if __name__ == "__main__":
+    data_dir = Path("/cats/datastore/data")
     # load static data
     all_static = xr.open_dataset(data_dir / f"RUNOFF/interim/static/data.nc")
     all_static["station_id"] = all_static["station_id"].astype(int)

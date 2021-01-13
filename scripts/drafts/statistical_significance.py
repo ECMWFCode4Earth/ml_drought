@@ -47,3 +47,5 @@ if __name__ == "__main__":
 
     print(run_test(all_metrics, test="ks", metric="nse", ref_model="LSTM"))
     print(run_test(all_metrics, test="wilcoxon", metric="nse", ref_model="LSTM"))
+
+    print(seasonal_metrics["JJA"], test="ks", metric="nse")
