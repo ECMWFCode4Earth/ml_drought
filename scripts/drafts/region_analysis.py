@@ -73,5 +73,5 @@ if __name__ == "__main__":
     ]
 
     #  join the region as a column to the points GeoDataFrame
-    regions_list = get_region_station_within(points, hydro_regions)
+    regions_list: pd.Series = get_region_station_within(points, hydro_regions)
     all_points = gpd.GeoDataFrame(points).join(names).join(regions_list)
