@@ -119,11 +119,12 @@ class DeltaError:
             "flv",
             "timing",
         ]
+        if metrics is None:
+            metrics = all_metrics
+
         assert all(
             np.isin(metrics, all_metrics)
         ), f"Metrics should be one of {all_metrics}"
-        if metrics is None:
-            metrics = all_metrics
 
         #  FOR USING THE KRATZERT FUNCTIONS (takes a long time)
         model_results = defaultdict(dict)
