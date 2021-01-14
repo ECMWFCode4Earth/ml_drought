@@ -107,17 +107,18 @@ if __name__ == "__main__":
         )
 
     #  assign hydro-regions as columns to error metrics
-    region_metrics = assign_region_to_dataframe(all_metrics)
-    region_errors = assign_region_to_dataframe(all_errors)
+    if False:
+        region_metrics = assign_region_to_dataframe(all_metrics)
+        region_errors = assign_region_to_dataframe(all_errors)
 
-    region_season_errors = defaultdict(dict)
-    for season in ["DJF", "MAM", "JJA", "SON"]:
-        region_season_errors[season] = assign_region_to_dataframe(
-            seasonal_errors[season]
-        )
+        region_season_errors = defaultdict(dict)
+        for season in ["DJF", "MAM", "JJA", "SON"]:
+            region_season_errors[season] = assign_region_to_dataframe(
+                seasonal_errors[season]
+            )
 
-    region_season_metrics = defaultdict(dict)
-    for season in ["DJF", "MAM", "JJA", "SON"]:
-        region_season_metrics[season] = assign_region_to_dataframe(
-            seasonal_metrics[season]
-        )
+        region_season_metrics = defaultdict(dict)
+        for season in ["DJF", "MAM", "JJA", "SON"]:
+            region_season_metrics[season] = assign_region_to_dataframe(
+                seasonal_metrics[season]
+            )
