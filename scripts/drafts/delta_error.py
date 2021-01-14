@@ -116,7 +116,7 @@ class DeltaError:
             "fhv",
             "fms",
             "flv",
-            "timing",
+            "peak-timing",
         ]
         if metrics is None:
             metrics = all_metrics
