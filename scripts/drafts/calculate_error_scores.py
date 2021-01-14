@@ -293,29 +293,29 @@ def calculate_all_data_errors(
 def get_metric_dataframes_from_output_dict(
     output_dict: Dict[str, pd.DataFrame]
 ) -> Dict[str, pd.DataFrame]:
+
     models = list(output_dict.keys())
     metrics = [c for c in output_dict[models[0]].columns if "station_id" != c]
-    if "station_id" in output_dict[models[0]].columns:
-        index = output_dict[models[0]]["station_id"]
-    else:
-        index = output_dict[models[0]].index
 
-    all_stations = []
+    # create one dataframe with ALL METRICS
+    all_metric_names = output_dict[models[0]].columns
+    all_dataframes = []
     for model in output_dict.keys():
-        all_stations.append(output_dict[model].index)
+        d = output_dict[model]
+        all_dataframes.append(d.add_prefix(f"{model}_"))
 
-    all_stations = list(set(all_stations[0]).intersection(*all_stations[:1]))
+    all_df = pd.concat(all_dataframes, axis=1)
+    # reverse sorted SHOULD prevent a name picking multiple columns
+    all_metric_names = sorted(all_metric_names, key=len, reverse=True)
 
     metric_dict = {}
-    for metric in metrics:
-        df_dict = {}
-        for model in models:
-            df_dict[model] = output_dict[model].loc[all_stations, metric].values
-        d = pd.DataFrame(df_dict, index=index)
-
-        metric_dict[metric] = d
+    for metric_name in all_metric_names:
+        new_df = all_df.loc[:, [c for c in all_df.columns if metric_name in c]]
+        new_df.columns = [c.replace(f"_{metric_name}", "") for c in new_df.columns]
+        metric_dict[metric_name] = new_df
 
     return metric_dict
+
 
 
 class FuseErrors:
@@ -646,6 +646,11 @@ if __name__ == "__main__":
         all_preds, decompose_kge=True, yilmaz_errors=True
     )
     all_metrics = get_metric_dataframes_from_output_dict(all_errors)
+
+    # TEST THAT INVERSE FUNCITON WORKING
+    test_model = [k for k in all_errors.keys()][0]
+    test_metric = [k for k in all_metrics.keys()][0]
+    assert all(all_errors[test_model][test_metric].dropna() == all_metrics[test_metric][test_model].dropna())
 
     # convert bias error into percent error
     all_metrics["bias_error_pct"] = all_metrics["bias_error"] * 100
