@@ -66,6 +66,7 @@ def _get_latlon_points(static: Optional[xr.Dataset] = None):
 
 
 if __name__ == "__main__":
+    save: bool = True
     data_dir = Path("/cats/datastore/data")
     # load static data
     all_static = xr.open_dataset(data_dir / f"RUNOFF/interim/static/data.nc")
@@ -99,6 +100,14 @@ if __name__ == "__main__":
     #  join the region as a column to the points GeoDataFrame
     regions_list: pd.Series = get_region_station_within(points, hydro_regions)
     all_points = gpd.GeoDataFrame(points).join(names).join(regions_list)
+
+    if save:
+        import pickle
+
+        pickle.dump(regions_list, (data_dir / "RUNOFF/regions_list.pkl").open("wb"))
+        pickle.dump(
+            regions_lall_pointsist, (data_dir / "RUNOFF/regions_list.pkl").open("wb")
+        )
 
     #  assign hydro-regions as columns to error metrics
     region_metrics = assign_region_to_dataframe(all_metrics)

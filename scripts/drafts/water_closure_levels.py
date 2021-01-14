@@ -82,6 +82,7 @@ def get_condition_sids(thresholds: xr.Dataset, threshold_level: float):
 def barplot_closure_levels(thresholds: pd.DataFrame):
     pass
 
+
 if __name__ == "__main__":
     data_dir = Path("/cats/datastore/data")
 

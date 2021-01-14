@@ -594,11 +594,52 @@ def calculate_seasonal_errors(
     return seasonal_errors
 
 
+def make_mega_dataframe(
+    all_metrics: Dict[str, pd.DataFrame],
+    static: Optional[xr.Dataset] = None,
+    ds: Optional[xr.Dataset] = None,
+):
+    ## LONG FORMAT
+    # for exploration in tableau
+    all_dataframes = []
+    for metric in all_metrics.keys():
+        all_dataframes.append(all_metrics[metric].add_prefix(f"{metric}_"))
+    df = pd.concat(all_dataframes, axis=1)
+
+    if static is None:
+        data_dir = Path("/cats/datastore/data")
+        static = xr.open_dataset(data_dir / "RUNOFF/interim/static/data.nc")
+    static = static.to_dataframe()
+    if ds is None:
+        data_dir = Path("/cats/datastore/data")
+        ds = xr.open_dataset(data_dir / "RUNOFF/ALL_dynamic_ds.nc")
+        ds["station_id"] = ds["station_id"].astype(int)
+
+    df = df.join(static)
+
+    # calculated fields (budyko analysis, delta metrics)
+    from scripts.drafts.plots import calculate_curve_params
+
+    wetness_ix, runoff_coeff = calculate_curve_params(ds.mean(dim="time"))
+    df = df.join(wetness_ix.to_dataframe("wetness_index")).join(
+        runoff_coeff.to_dataframe("runoff_coefficient")
+    )
+
+    return df
+
+
 if __name__ == "__main__":
     save = True
     # LOAD IN DATA
     data_dir = Path("/cats/datastore/data")
     all_preds = xr.open_dataset(data_dir / "RUNOFF/all_preds.nc")
+
+    # TEST THAT NSE IS WORKIG CORRECTLY (nse of a mean prediction == 0)
+    mean_bmark = xr.ones_like(all_preds["obs"]) * all_preds["obs"].mean(dim="time")
+    test_xr = mean_bmark.to_dataset(name="sim").merge(all_preds["obs"])
+    nse_test = error_func(test_xr, "nse")
+
+    assert np.isclose(nse_test.set_index("station_id"), 0).mean()
 
     # Calculate all errors
     all_errors = calculate_all_data_errors(

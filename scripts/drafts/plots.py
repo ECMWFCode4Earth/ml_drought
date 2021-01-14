@@ -94,6 +94,7 @@ def plot_cdf(
 # Budyko Curve #
 #  --------------------------------- #
 
+
 def curve(x):
     return 1 - (1 / x)
 
