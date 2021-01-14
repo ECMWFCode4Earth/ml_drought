@@ -7,6 +7,7 @@ import matplotlib.cm as cm
 import matplotlib.colors as plt_colors
 import xarray as xr
 import sys
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 sys.path.append("/home/tommy/ml_drought")
 from scripts.drafts.ml_sids import ml_sids
@@ -167,6 +168,7 @@ def plot_budyko_curve(
 
     if ax == None:
         _, ax = plt.subplots(figsize=(6 * scale, 4 * scale))
+    fig = plt.gcf()
 
     # set colors
     if color_var is not None:
@@ -178,8 +180,9 @@ def plot_budyko_curve(
     # 2. create the scatter plot
     sc = ax.scatter(x, y, c=color_var, vmin=vmin, vmax=vmax, **scatter_kwargs)
     if (color_var is not None) and colorbar:
-        cbar = ax.colorbar(sc)
-        cbar.ax.set_ylabel(color_label)
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        fig.colorbar(sc, cax=cax, orientation="vertical", label=color_label)
 
     #  3. create the reference lines
     #  horizontal line

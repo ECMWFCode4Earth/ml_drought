@@ -6,8 +6,8 @@ from pathlib import Path
 from collections import defaultdict
 from functools import partial
 from typing import Dict, DefaultDict, Tuple, List, Optional
-
 import geopandas as gpd
+
 
 region_abbrs = {
     "Western Scotland": "WS",
@@ -39,6 +39,20 @@ def get_region_station_within(
     regions_list.index = points.index
 
     return regions_list
+
+
+def assign_region_to_dataframe(
+    results_dict: Dict[str, pd.DataFrame]
+) -> Dict[str, pd.DataFrame]:
+    for key in results_dict.keys():
+        df = results_dict[key]
+        try:
+            df = df.join(regions_list)
+            df["region_abbr"] = df["region"].map(region_abbrs)
+        except ValueError:
+            "Already applied the 'region' column"
+        results_dict[key] = df
+    return results_dict
 
 
 if __name__ == "__main__":
@@ -75,3 +89,19 @@ if __name__ == "__main__":
     #  join the region as a column to the points GeoDataFrame
     regions_list: pd.Series = get_region_station_within(points, hydro_regions)
     all_points = gpd.GeoDataFrame(points).join(names).join(regions_list)
+
+    #  assign hydro-regions as columns to error metrics
+    region_metrics = assign_region_to_dataframe(all_metrics)
+    region_errors = assign_region_to_dataframe(all_errors)
+
+    region_season_errors = defaultdict(dict)
+    for season in ["DJF", "MAM", "JJA", "SON"]:
+        region_season_errors[season] = assign_region_to_dataframe(
+            seasonal_errors[season]
+        )
+
+    region_season_metrics = defaultdict(dict)
+    for season in ["DJF", "MAM", "JJA", "SON"]:
+        region_season_metrics[season] = assign_region_to_dataframe(
+            seasonal_metrics[season]
+        )
