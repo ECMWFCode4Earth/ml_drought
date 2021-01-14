@@ -79,13 +79,20 @@ def get_condition_sids(thresholds: xr.Dataset, threshold_level: float):
     return condition_sids
 
 
+def barplot_closure_levels(thresholds: pd.DataFrame):
+
+
 if __name__ == "__main__":
     data_dir = Path("/cats/datastore/data")
 
     ds = xr.open_dataset(data_dir / "RUNOFF/ALL_dynamic_ds.nc")
     ds["station_id"] = ds["station_id"].astype(int)
+    all_preds = xr.open_dataset(data_dir / "RUNOFF/ALL_dynamic_ds.nc")
 
     # calculate thresholds
     thresholds, (mean_closure, mean_precip) = create_closure_masks(
         ds, method="sum", closure_thresholds=[0.05, 0.1, 0.15, 0.2, 0.25, 1.0]
     )
+    thresholds = thresholds.sel(station_id=all_preds.station_id.values)
+
+    # define table of closure metrics
