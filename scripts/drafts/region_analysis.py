@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
     # get station names (strs)
     names = static["gauge_name"].to_dataframe()
-    pts = gpd.GeoDataFrame(points.loc).join(names)
+    pts = gpd.GeoDataFrame(points).join(names)
 
     all_points = gpd.GeoDataFrame(points).join(names)
     all_points = gpd.GeoDataFrame(points).join(names).join(regions_list)
