@@ -84,9 +84,6 @@ if __name__ == "__main__":
     names = static["gauge_name"].to_dataframe()
     pts = gpd.GeoDataFrame(points).join(names)
 
-    all_points = gpd.GeoDataFrame(points).join(names)
-    all_points = gpd.GeoDataFrame(points).join(names).join(regions_list)
-
     # read hydroregions
     hydro_regions = gpd.read_file(
         data_dir
@@ -106,7 +103,7 @@ if __name__ == "__main__":
 
         pickle.dump(regions_list, (data_dir / "RUNOFF/regions_list.pkl").open("wb"))
         pickle.dump(
-            regions_lall_pointsist, (data_dir / "RUNOFF/regions_list.pkl").open("wb")
+            all_points, (data_dir / "RUNOFF/all_points.pkl").open("wb")
         )
 
     #  assign hydro-regions as columns to error metrics
