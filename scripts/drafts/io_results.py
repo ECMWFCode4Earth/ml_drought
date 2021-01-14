@@ -26,10 +26,14 @@ def read_ensemble_member_results(ensemble_dir: Path, ensemble_int: int) -> xr.Da
     return preds
 
 
-def fuse_to_nc(raw_fuse_path: Path) -> xr.Dataset:
+def fuse_to_nc(raw_fuse_path: Path, double_check: bool = True) -> xr.Dataset:
     all_paths = [
         d for d in (raw_fuse_path / "Timeseries_SimQ_Best/").glob("*_Best_Qsim.txt")
     ]
+
+    if double_check:
+        import re
+        p = re.compile("\/[\d]*_")
 
     if not (raw_fuse_path.parents[0] / "ALL_fuse_ds.nc").exists():
         all_dfs = []
@@ -38,7 +42,14 @@ def fuse_to_nc(raw_fuse_path: Path) -> xr.Dataset:
             df.columns = [c.rstrip().lstrip() for c in df.columns]
             df = df.rename(columns={"YYYY": "year", "MM": "month", "DD": "day"})
             df["time"] = pd.to_datetime(df[["year", "month", "day"]])
+
+            # double check the string matching
             station_id = int(str(txt).split("/")[-1].split("_")[0])
+            if double_check:
+                result = p.search(str(txt))
+                check_sid = int(result.group(0).replace("/", "").replace("_", ""))
+                assert check_sid == station_id
+
             df["station_id"] = [station_id for _ in range(len(df))]
             df = df.drop(["year", "month", "day", "HH"], axis=1).set_index(
                 ["station_id", "time"]
