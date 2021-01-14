@@ -31,10 +31,11 @@ def run_test(
     # build the dataframe of metrics (FUSE + LSTM + EALSTM)
     metric_df = all_metrics[metric]
 
-    other_model = "EALSTM" if ref_model == "LSTM" else "LSTM"
-    models = ["TOPMODEL", "PRMS", "SACRAMENTO", "ARNOVIC", other_model]
-    #  run the test
-    df = _result_df(func, metric_df, models=models, ref_model=ref_model)
+    models = ["TOPMODEL", "PRMS", "SACRAMENTO", "ARNOVIC", "LSTM", "EALSTM"]
+    ms = [m for m in models if m != ref_model]    #  run the test
+    df = _result_df(func, metric_df, models=ms, ref_model=ref_model)
+    # quick significance column
+    df.loc["p0.01"] = (df.loc["pvalue"] < 1 * 1e-2).astype(bool)
     return df
 
 
