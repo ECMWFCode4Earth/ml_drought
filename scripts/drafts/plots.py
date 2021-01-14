@@ -202,6 +202,7 @@ def plot_budyko_curve(
 
 
 if __name__ == "__main__":
+    import pickle
     from pathlib import Path
     from scripts.drafts.calculate_error_scores import (
         calculate_all_data_errors,
@@ -216,8 +217,8 @@ if __name__ == "__main__":
 
     # predictions
     all_preds = xr.open_dataset(data_dir / "RUNOFF/all_preds.nc")
-    all_errors = calculate_all_data_errors(all_preds)
-    all_metrics = get_metric_dataframes_from_output_dict(all_errors)
+    all_errors = pickle.load((data_dir / "RUNOFF/all_errors.pkl").open("rb"))
+    all_metrics = pickle.load((data_dir / "RUNOFF/all_metrics.pkl").open("rb"))
 
     #  SET PLT OPTIONS
     label_size = 14  #  10
