@@ -113,7 +113,6 @@ class DeltaError:
             "kge",
             "nse",
             "nse",
-            "r",
             "fhv",
             "fms",
             "flv",
