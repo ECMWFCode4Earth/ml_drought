@@ -230,11 +230,12 @@ if __name__ == "__main__":
     )
 
     # 1. Plot NSE CDF
-    f, ax = plt.subplots(figsize=(12, 8))
-    plot_cdf(
-        all_metrics["nse"], metric="NSE", title="", ax=ax, clip=(0, 1), median=True
-    )
-    f.savefig(data_dir / "RUNOFF/cdf_all.png")
+    if False:
+        f, ax = plt.subplots(figsize=(12, 8))
+        plot_cdf(
+            all_metrics["nse"], metric="NSE", title="", ax=ax, clip=(0, 1), median=True
+        )
+        f.savefig(data_dir / "RUNOFF/cdf_all.png")
 
     #  2. Plot the Budyko Curve
     _ds = ds.sel(station_id=all_metrics["nse"]["LSTM"].index).mean(dim="time")
