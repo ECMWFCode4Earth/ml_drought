@@ -111,12 +111,13 @@ class DeltaError:
             "mse",
             "rmse",
             "kge",
-            "nse",
-            "nse",
+            "alpha-nse",
+            "beta-nse",
             "fhv",
             "fms",
             "flv",
             "peak-timing",
+            "pearson-r",
         ]
         if metrics is None:
             metrics = all_metrics
