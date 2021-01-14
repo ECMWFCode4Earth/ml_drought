@@ -11,6 +11,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 sys.path.append("/home/tommy/ml_drought")
 from scripts.drafts.ml_sids import ml_sids
+from scripts.drafts.water_closure_levels import assign_wateryear
 
 #  --------------------------------- #
 #  CDF Plot #
@@ -92,16 +93,6 @@ def plot_cdf(
 #  --------------------------------- #
 # Budyko Curve #
 #  --------------------------------- #
-
-
-def assign_wateryear(dt):
-    """https://stackoverflow.com/a/52615358/9940782"""
-    dt = pd.Timestamp(dt)
-    if dt.month >= 10:
-        return pd.datetime(dt.year + 1, 1, 1).year
-    else:
-        return pd.datetime(dt.year, 1, 1).year
-
 
 def curve(x):
     return 1 - (1 / x)

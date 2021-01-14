@@ -41,15 +41,7 @@ from neuralhydrology.evaluation.metrics import calculate_all_metrics, calculate_
 
 sys.path.append("/home/tommy/ml_drought")
 from src.utils import create_shape_aligned_climatology
-
-
-def assign_wateryear(dt):
-    """https://stackoverflow.com/a/52615358/9940782"""
-    dt = pd.Timestamp(dt)
-    if dt.month >= 10:
-        return pd.datetime(dt.year + 1, 1, 1).year
-    else:
-        return pd.datetime(dt.year, 1, 1).year
+from scripts.drafts.water_closure_levels import assign_wateryear
 
 
 def xr_mam30_ape(preds: xr.Dataset) -> xr.Dataset:
