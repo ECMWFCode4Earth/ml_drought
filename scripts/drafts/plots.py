@@ -3,6 +3,8 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors as plt_colors
 import xarray as xr
 import sys
 
@@ -158,6 +160,9 @@ def plot_budyko_curve(
 ):
     #  1. calculate wetness index (x) and runoff coefficient (y)
     assert all(np.isin(["precipitation", "pet", "discharge_spec"], ds.data_vars))
+    if "time" in ds.coords:
+        print("Calculating the mean of the time dimension")
+        ds = ds.mean(dim="time")
     x, y = calculate_curve_params(ds=ds)
 
     if ax == None:
@@ -173,7 +178,7 @@ def plot_budyko_curve(
     # 2. create the scatter plot
     sc = ax.scatter(x, y, c=color_var, vmin=vmin, vmax=vmax, **scatter_kwargs)
     if (color_var is not None) and colorbar:
-        cbar = plt.colorbar(sc)
+        cbar = ax.colorbar(sc)
         cbar.ax.set_ylabel(color_label)
 
     #  3. create the reference lines
