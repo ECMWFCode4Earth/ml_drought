@@ -55,6 +55,16 @@ def assign_region_to_dataframe(
     return results_dict
 
 
+def _get_latlon_points(static: Optional[xr.Dataset] = None):
+    if static is None:
+        data_dir = Path("/cats/datastore/data")
+        all_static = xr.open_dataset(data_dir / f"RUNOFF/interim/static/data.nc")
+        all_static["station_id"] = all_static["station_id"].astype(int)
+        static = all_static
+
+    return static[["gauge_lat", "gauge_lon"]].to_dataframe()
+
+
 if __name__ == "__main__":
     data_dir = Path("/cats/datastore/data")
     # load static data
