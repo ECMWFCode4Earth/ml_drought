@@ -324,3 +324,22 @@ class DeltaError:
             seasonal_deltas[season]["raw"] = seasonal_errors
 
         return seasonal_deltas
+
+
+if __name__ == "__main__":
+    from scripts.drafts.io_results import read_ensemble_results, read_fuse_data
+
+    data_dir = Path("/cats/datastore/data")
+
+    pet_ealstm_ensemble_dir = data_dir / "runs/ensemble_pet_ealstm"
+    ealstm_preds = read_ensemble_results(pet_ealstm_ensemble_dir)
+
+    # lstm_ensemble_dir = data_dir / "runs/ensemble"
+    lstm_ensemble_dir = data_dir / "runs/ensemble_pet"
+    lstm_preds = read_ensemble_results(lstm_ensemble_dir)
+
+    #  fuse data
+    raw_fuse_path = data_dir / "RUNOFF/FUSE"
+    fuse_data = read_fuse_data(raw_fuse_path, lstm_preds["obs"])
+
+    processor = DeltaError(ealstm_preds, lstm_preds, fuse_data, incl_benchmarks=False)
