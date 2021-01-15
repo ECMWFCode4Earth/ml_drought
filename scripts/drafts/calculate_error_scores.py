@@ -630,6 +630,19 @@ def make_mega_dataframe(
     return df
 
 
+def convert_season_to_xr(seasonal_metrics: DefaultDict[str, Dict[str, pd.DataFrame]]) -> xr.Dataset:
+    season_list = []
+
+    for season in ["DJF", "MAM", "JJA", "SON"]:
+        d = xr.Dataset(seasonal_metrics[season])
+        d = d.rename({"dim_1": "model"}).assign_coords(season=season).expand_dims(dim="season")
+        season_list.append(d)
+
+    season_xr = xr.merge(season_list)
+
+    return season_xr
+
+
 if __name__ == "__main__":
     save = True
     # LOAD IN DATA
@@ -678,6 +691,9 @@ if __name__ == "__main__":
     if not all(np.isin(metrics, calculated_metrics)):
         notin = np.array(metrics)[~np.isin(metrics, calculated_metrics)]
         assert False, print(f"{notin} not found in {calculated_metrics}")
+
+    ## CONVERT TO XARRAY
+    metrics_xr = xr.Dataset(all_metrics).rename({"dim_1": "model"})
 
     if save:
         import pickle
