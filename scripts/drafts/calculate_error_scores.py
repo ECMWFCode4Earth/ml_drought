@@ -311,6 +311,8 @@ def get_metric_dataframes_from_output_dict(
     metric_dict = {}
     for metric_name in all_metric_names:
         new_df = all_df.loc[:, [c for c in all_df.columns if metric_name in c]]
+        # drop these columns (the processing has been done)
+        all_df = all_df.drop(new_df.columns, axis=1)
         new_df.columns = [c.replace(f"_{metric_name}", "") for c in new_df.columns]
         metric_dict[metric_name] = new_df
 
