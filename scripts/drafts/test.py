@@ -14,7 +14,6 @@ if __name__ == "__main__":
     ##
     import xarray as xr
     import sys
-    sys.path.append()
     sys.path.append("/home/tommy/ml_drought")
     from scripts.drafts.calculate_error_scores import calculate_seasonal_errors, get_metric_dataframes_from_output_dict
     from collections import defaultdict
