@@ -19,7 +19,7 @@ if __name__ == "__main__":
     from collections import defaultdict
 
     save = True
-    all_preds = xr.open_dataset()
+    all_preds = xr.open_dataset(data_dir / "RUNOFF/all_preds.nc")
     seasonal_errors = calculate_seasonal_errors(all_preds)
     #  calculate seasonal metrics
     seasonal_metrics = defaultdict(dict)
