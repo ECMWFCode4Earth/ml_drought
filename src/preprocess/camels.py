@@ -21,7 +21,9 @@ class CAMELSGBPreprocessor(BasePreProcessor):
         open_shapefile: bool = True,
         static_to_db: bool = False,
     ):
-        super(CAMELSGBPreprocessor, self).__init__(data_folder=data_folder, req_xesmf=False)
+        super(CAMELSGBPreprocessor, self).__init__(
+            data_folder=data_folder, req_xesmf=False
+        )
         # initialise paths
         base_camels_dir = self.data_folder / "raw/CAMELS_GB_DATASET"
         self.attributes_dir = base_camels_dir / "Catchment_Attributes"

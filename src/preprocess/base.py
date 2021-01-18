@@ -33,8 +33,10 @@ class BasePreProcessor:
     analysis: bool = False
 
     def __init__(
-        self, data_folder: Path = Path("data"), output_name: Optional[str] = None,
-        req_xesmf: bool = True
+        self,
+        data_folder: Path = Path("data"),
+        output_name: Optional[str] = None,
+        req_xesmf: bool = True,
     ) -> None:
 
         if req_xesmf:

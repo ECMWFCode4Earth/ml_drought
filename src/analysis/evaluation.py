@@ -6,6 +6,7 @@ import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
+from scipy.stats import pearsonr
 
 from sklearn.metrics import r2_score, mean_squared_error
 from typing import Dict, List, Optional, Union, Tuple
@@ -80,7 +81,9 @@ def spatial_rmse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     return da
 
 
-def spatial_nse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+def spatial_nse(
+    true_da: xr.DataArray, pred_da: xr.DataArray, log: bool = False
+) -> xr.DataArray:
     """Calculate the RMSE collapsing the time dimension returning
     a DataArray of the rmse values (spatially)
     """
@@ -111,7 +114,154 @@ def spatial_nse(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     for space in stacked_pred.space.values:
         true_vals = stacked_true.sel(space=space).values
         pred_vals = stacked_pred.sel(space=space).values
+
+        if log:
+            true_vals = np.log(true_vals + 1e-6)
+            pred_vals = np.log(pred_vals + 1e-6)
         vals.append(_nse_func(true_vals, pred_vals))
+
+    da = xr.ones_like(stacked_pred).isel(time=0).drop("time")
+    da = da * np.array(vals)
+    da = da.unstack()
+
+    # reapply the mask
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        da = da.where(~get_ds_mask(pred_da))
+    return da
+
+
+def spatial_mape(
+    true_da: xr.DataArray, pred_da: xr.DataArray, log: bool = False
+) -> xr.DataArray:
+    """Calculate the MAPE collapsing the time dimension returning
+    a DataArray of the rmse values (spatially)
+    """
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    true_coords = _get_coords(true_da)
+    true_coords.sort()
+    pred_coords = _get_coords(pred_da)
+    pred_coords.sort()
+
+    assert tuple(true_da.dims) == tuple(pred_da.dims), (
+        f"Expect"
+        "the dimensions to be the same. Currently: "
+        f"True: {tuple(true_da.dims)} Preds: {tuple(pred_da.dims)}. "
+        'Have you tried da.transpose("time", "lat", "lon")'
+    )
+
+    # sort the lat/lons correctly just to be sure
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        pred_da = _sort_lat_lons(pred_da)
+        true_da = _sort_lat_lons(true_da)
+    else:
+        pred_da = pred_da.sortby(["time"] + pred_coords)
+        true_da = true_da.sortby(["time"] + true_coords)
+
+    stacked_pred = pred_da.stack(space=pred_coords)
+    stacked_true = true_da.stack(space=true_coords)
+    vals = []
+    for space in stacked_pred.space.values:
+        true_vals = stacked_true.sel(space=space).values
+        pred_vals = stacked_pred.sel(space=space).values
+
+        if log:
+            true_vals = np.log(true_vals + 1e-6)
+            pred_vals = np.log(pred_vals + 1e-6)
+        vals.append(_mape_func(true_vals, pred_vals))
+
+    da = xr.ones_like(stacked_pred).isel(time=0).drop("time")
+    da = da * np.array(vals)
+    da = da.unstack()
+
+    # reapply the mask
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        da = da.where(~get_ds_mask(pred_da))
+    return da
+
+
+def spatial_abs_pct_bias(
+    true_da: xr.DataArray, pred_da: xr.DataArray, log: bool = False
+) -> xr.DataArray:
+    """Calculate the RMSE collapsing the time dimension returning
+    a DataArray of the rmse values (spatially)
+    """
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    true_coords = _get_coords(true_da)
+    true_coords.sort()
+    pred_coords = _get_coords(pred_da)
+    pred_coords.sort()
+
+    assert tuple(true_da.dims) == tuple(pred_da.dims), (
+        f"Expect"
+        "the dimensions to be the same. Currently: "
+        f"True: {tuple(true_da.dims)} Preds: {tuple(pred_da.dims)}. "
+        'Have you tried da.transpose("time", "lat", "lon")'
+    )
+
+    # sort the lat/lons correctly just to be sure
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        pred_da = _sort_lat_lons(pred_da)
+        true_da = _sort_lat_lons(true_da)
+    else:
+        pred_da = pred_da.sortby(["time"] + pred_coords)
+        true_da = true_da.sortby(["time"] + true_coords)
+
+    stacked_pred = pred_da.stack(space=pred_coords)
+    stacked_true = true_da.stack(space=true_coords)
+    vals = []
+    for space in stacked_pred.space.values:
+        true_vals = stacked_true.sel(space=space).values
+        pred_vals = stacked_pred.sel(space=space).values
+
+        if log:
+            true_vals = np.log(true_vals + 1e-6)
+            pred_vals = np.log(pred_vals + 1e-6)
+        vals.append(_abs_pct_bias_func(true_vals, pred_vals))
+
+    da = xr.ones_like(stacked_pred).isel(time=0).drop("time")
+    da = da * np.array(vals)
+    da = da.unstack()
+
+    # reapply the mask
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        da = da.where(~get_ds_mask(pred_da))
+    return da
+
+
+def spatial_kge(
+    true_da: xr.DataArray, pred_da: xr.DataArray, inv: bool = False
+) -> xr.DataArray:
+    """Calculate the KGE collapsing the time dimension returning
+    a DataArray of the rmse values (spatially)
+    """
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    true_coords = _get_coords(true_da)
+    true_coords.sort()
+    pred_coords = _get_coords(pred_da)
+    pred_coords.sort()
+
+    assert tuple(true_da.dims) == tuple(pred_da.dims), (
+        f"Expect"
+        "the dimensions to be the same. Currently: "
+        f"True: {tuple(true_da.dims)} Preds: {tuple(pred_da.dims)}. "
+        'Have you tried da.transpose("time", "lat", "lon")'
+    )
+
+    # sort the lat/lons correctly just to be sure
+    if all(np.isin(["lat", "lon"], list(pred_da.coords))):
+        pred_da = _sort_lat_lons(pred_da)
+        true_da = _sort_lat_lons(true_da)
+    else:
+        pred_da = pred_da.sortby(["time"] + pred_coords)
+        true_da = true_da.sortby(["time"] + true_coords)
+
+    stacked_pred = pred_da.stack(space=pred_coords)
+    stacked_true = true_da.stack(space=true_coords)
+    vals = []
+    for space in stacked_pred.space.values:
+        true_vals = stacked_true.sel(space=space).values
+        pred_vals = stacked_pred.sel(space=space).values
+        vals.append(_kge_func(true_vals, pred_vals))
 
     da = xr.ones_like(stacked_pred).isel(time=0).drop("time")
     da = da * np.array(vals)
@@ -213,19 +363,11 @@ def _nse_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> float:
 
     # check for nans
     missing_data = np.append(
-            (np.argwhere(np.isnan(true_vals))).flatten(),
-            (np.argwhere(np.isnan(pred_vals))).flatten(),
-        )
-    true_vals = np.delete(
-        true_vals,
-        missing_data,
-        axis=0,
+        (np.argwhere(np.isnan(true_vals))).flatten(),
+        (np.argwhere(np.isnan(pred_vals))).flatten(),
     )
-    pred_vals = np.delete(
-        pred_vals,
-        missing_data,
-        axis=0,
-    )
+    true_vals = np.delete(true_vals, missing_data, axis=0,)
+    pred_vals = np.delete(pred_vals, missing_data, axis=0,)
     if true_vals.shape != pred_vals.shape:
         raise RuntimeError("true_vals and pred_vals must be of the same length.")
 
@@ -285,10 +427,77 @@ def _rmse_func(
     return np.sqrt(np.nansum((true_vals - pred_vals) ** 2, axis=0) / n_instances)
 
 
+def _mse_func(true_vals: np.ndarray, pred_vals: np.ndarray):
+    return float(((pred_vals - true_vals) ** 2).mean())
+
+
 def _r2_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
     return 1 - (np.nansum((true_vals - pred_vals) ** 2, axis=0)) / (
         np.nansum((true_vals - np.nanmean(pred_vals)) ** 2, axis=0)
     )
+
+
+def _kge_func(
+    true_vals: np.ndarray,
+    pred_vals: np.ndarray,
+    weights: List[float] = [1.0, 1.0, 1.0],
+    decomposed_results=False,
+) -> Union[np.ndarray, Tuple[np.ndarray, ...]]:
+    """
+    Parameters
+    ----------
+    obs : np.ndarray
+        Observed time series.
+    sim : np.ndarray
+        Simulated time series.
+    weights : List[float]
+        Weighting factors of the 3 KGE parts, by default each part has a weight of 1.
+
+    .. math::
+        \text{KGE} = 1 - \sqrt{[ s_r (r - 1)]^2 + [s_\gamma ( \gamma - 1)]^2 +
+            [s_\beta(\beta_{\text{KGE}} - 1)]^2},
+
+    where :math:`r` is the correlation coefficient, :math:`\gamma` the :math:`\gamma`-NSE decomposition,
+    :math:`\beta_{\text{KGE}}` the fraction of the means and :math:`s_r, s_\gamma, s_\beta` the corresponding weights
+    (here the three float values in the `weights` parameter).
+
+    """
+    # check for nans
+    missing_data = np.append(
+        (np.argwhere(np.isnan(true_vals))).flatten(),
+        (np.argwhere(np.isnan(pred_vals))).flatten(),
+    )
+    true_vals = np.delete(true_vals, missing_data, axis=0,)
+    pred_vals = np.delete(pred_vals, missing_data, axis=0,)
+
+    # check for non-finite data (np.inf)
+    missing_data = np.append(
+        (np.argwhere(~np.isfinite(true_vals))).flatten(),
+        (np.argwhere(~np.isfinite(pred_vals))).flatten(),
+    )
+    true_vals = np.delete(true_vals, missing_data, axis=0,)
+    pred_vals = np.delete(pred_vals, missing_data, axis=0,)
+
+    if true_vals.shape != pred_vals.shape:
+        raise RuntimeError("true_vals and pred_vals must be of the same length.")
+
+    if len(weights) != 3:
+        raise ValueError("Weights of the KGE must be a list of three values")
+
+    r, _ = pearsonr(true_vals, pred_vals)
+
+    gamma = pred_vals.std() / true_vals.std()
+    beta = pred_vals.mean() / true_vals.mean()
+
+    value = (
+        weights[0] * (r - 1) ** 2
+        + weights[1] * (gamma - 1) ** 2
+        + weights[2] * (beta - 1) ** 2
+    )
+    if decomposed_results:
+        return r, beta, gamma
+    else:
+        return 1 - np.sqrt(float(value))
 
 
 def _bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
@@ -296,25 +505,77 @@ def _bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
     return 100 * ((pred_vals.mean() / true_vals.mean()) - 1)
 
 
+def _pbias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
+    """Gupta et al 1998 & Harrigan et al """
+    return 100 * ((np.sum(true_vals - pred_vals)) / (np.sum(true_vals)))
+
+
+def _relative_bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
+    """Lane et al 2018"""
+    return (pred_vals.mean() - true_vals.mean()) / (true_vals.mean())
+
+
+def _variability_ratio_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
+    """Lane et al 2018"""
+    return (pred_vals.std() - true_vals.std()) / (true_vals.std())
+
+
+def _abs_pct_bias_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
+    """Absolute Percentage Bias [0, inf], focus on water balance
+
+    math::
+        \text { absPBIAS }=\left|\frac{\sum\left(Q_{s}-Q_{0}\right)}{\sum Q_{o}}\right| \cdot 100
+
+    Args:
+        true_vals (np.ndarray): [description]
+        pred_vals (np.ndarray): [description]
+
+    Returns:
+        np.ndarray: [description]
+    """
+    return np.abs(np.sum(pred_vals - true_vals) / np.sum(true_vals)) * 100
+
+
+def _mape_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> np.ndarray:
+    """Mean Absolute Percentage Error [0, inf], focus on full range
+
+    math::
+        \operatorname{MAPE}=\left(\frac{1}{n} \sum_{i=1}^{n}\left|\frac{Q_{0}-Q_{\mathrm{s}}}{Q_{\mathrm{o}}}\right|\right) \cdot 100
+
+    Args:
+        true_vals (np.ndarray): [description]
+        pred_vals (np.ndarray): [description]
+
+    Returns:
+        np.ndarray: [description]
+    """
+    return (
+        (1 / pred_vals.size) * np.sum(np.abs((true_vals - pred_vals) / true_vals)) * 100
+    )
+
+
 def spatial_bias(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
-    # values = (100 * ((pred_da.mean(dim='time') / true_da.mean(dim='time')) - 1)).values
-    bias = 100 * ((pred_da.mean(dim='time') / true_da.mean(dim='time')) - 1)
-    # bias = xr.Dataset(
-    #     {"bias": (["station_id"], values)},
-    #     coords={"station_id": pred_da["station_id"].values}
-    # )["bias"]
+    bias = 100 * ((pred_da.mean(dim="time") / true_da.mean(dim="time")) - 1)
+    return bias
+
+
+def spatial_pbias(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
+    true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
+    bias = 100 * ((true_da - pred_da).sum(dim="time") / true_da.sum(dim="time"))
     return bias
 
 
 def temporal_bias(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
-    assert False, "TODO: get the nanmean working with n dimensions (axis = all except 0)"
+    assert (
+        False
+    ), "TODO: get the nanmean working with n dimensions (axis = all except 0)"
     true_da, pred_da = _prepare_true_pred_da(true_da, pred_da)
     spatial_coords = [c for c in true_da.coords if c != "time"]
     values = np.nanmean(100 * ((pred_da / true_da) - 1), axis=0)
     bias = xr.Dataset(
         {"bias": (["station_id"], values)},
-        coords={"station_id": pred_da["station_id"].values}
+        coords={"station_id": pred_da["station_id"].values},
     )["bias"]
     return (100 * ((pred_da / true_da) - 1)).mean(dim=spatial_coords)
 

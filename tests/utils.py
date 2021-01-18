@@ -234,8 +234,8 @@ def _calculate_normalization_dict(train_ds: xr.Dataset, static: bool):
 
     for var in train_ds.data_vars:
         if var.endswith("one_hot"):
-            mean = 0.
-            std = 1.
+            mean = 0.0
+            std = 1.0
 
         mean = float(train_ds[var].mean(dim=dims, skipna=True).values)
         std = float(train_ds[var].std(dim=dims, skipna=True).values)

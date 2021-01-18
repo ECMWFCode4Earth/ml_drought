@@ -36,8 +36,9 @@ data/gcloud*
 
 Code
 scripts/variables*.txt
-
+scripts/drafts/cookies.py
 switch_data_dirs.sh
+pyrightconfig.json
 
 # pytest coverage files
 .coverage*

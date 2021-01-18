@@ -76,11 +76,11 @@ class GroupbyRegion:
 
         """
         # LOAD in region lookup DataArray
-        assert "analysis" in region_data_path.parts, (
-            "Only preprocessed"
-            "region files (as netcdf) should be used"
-            "`data/analysis`"
-        )
+        # assert "analysis" in region_data_path.parts, (
+        #     "Only preprocessed"
+        #     "region files (as netcdf) should be used"
+        #     "`data/analysis`"
+        # )
         region_group_name: str = region_data_path.name
         region_ds: xr.Dataset = xr.open_dataset(region_data_path)
         region_da: xr.DataArray = region_ds[[v for v in region_ds.data_vars][0]]
