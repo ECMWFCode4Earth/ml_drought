@@ -65,6 +65,21 @@ def _get_latlon_points(static: Optional[xr.Dataset] = None):
     return static[["gauge_lat", "gauge_lon"]].to_dataframe()
 
 
+def assign_region_coordinate(ds: xr.Dataset, regions_data: Optional[pd.DataFrame] = None):
+    # get regions data
+    if regions_data is None:
+        regions_data = pickle.load((data_dir / "RUNOFF/regions_data.pkl").open("rb"))
+    # convert to xarray
+    region_xr = regions_data.to_xarray()
+    # assign coordinate to ds
+    ds = (
+        ds
+        .assign_coords(region=regions_data.to_xarray()["region"])
+        .assign_coords(region=regions_data.to_xarray()["region_abbr"])
+    )
+    return ds
+
+
 if __name__ == "__main__":
     save: bool = True
     data_dir = Path("/cats/datastore/data")
