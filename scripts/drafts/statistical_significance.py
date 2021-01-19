@@ -36,6 +36,7 @@ def run_test(
     df = _result_df(func, metric_df, models=ms, ref_model=ref_model)
     # quick significance column
     df.loc["p0.01"] = (df.loc["pvalue"] < 1 * 1e-2).astype(bool)
+    df.loc["p0.001"] = (df.loc["pvalue"] < 1 * 1e-3).astype(bool)
     return df
 
 
