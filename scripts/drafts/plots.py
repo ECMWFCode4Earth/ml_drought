@@ -202,12 +202,14 @@ def plot_budyko_curve(
 def _plot_geospatial(
     metric_data: gpd.GeoDataFrame,
     column: str,
-    ax: Any,
     legend: bool = True,
+    ax: Optional[Any] = None,
     cax: Optional[Any] = None,
     kwargs: Dict = {},
     uk: Optional[gpd.GeoDataFrame] = None,
 ):
+    if ax is None:
+        _, ax = plt.subplots(figsize=(5, 8))
     # plot the chloropleth
     metric_data.to_crs(epsg=4326).plot(column, ax=ax, cax=cax, legend=legend, **kwargs)
 
