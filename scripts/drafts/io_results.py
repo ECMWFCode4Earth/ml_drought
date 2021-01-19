@@ -3,6 +3,7 @@ import pandas as pd
 from pathlib import Path
 from tqdm import tqdm
 import numpy as np
+from src.utils import create_shape_aligned_climatology
 
 
 def read_ensemble_results(ensemble_dir: Path) -> xr.Dataset:
@@ -75,6 +76,43 @@ def read_fuse_data(raw_fuse_path: Path, obs: xr.Dataset) -> xr.Dataset:
 
 def get_matching_stations():
     pass
+
+
+def calculate_benchmarks(benchmark_calculation_ds: xr.Dataset):
+    benchmark_preds = xr.Dataset()
+    # 1) Persistence
+    benchmark_preds["persistence"] = (
+        benchmark_calculation_ds["discharge_spec"]
+        .shift(time=1)
+    )
+
+    #  2) DayofYear Climatology
+    climatology_unit = "month"
+
+    climatology_doy = (
+        benchmark_calculation_ds["discharge_spec"].groupby("time.dayofyear").mean()
+    )
+    climatology_doy = create_shape_aligned_climatology(
+        benchmark_calculation_ds,
+        climatology_doy.to_dataset(),
+        variable="discharge_spec",
+        time_period="dayofyear",
+    )
+
+    climatology_mon = (
+        benchmark_calculation_ds["discharge_spec"].groupby("time.month").mean()
+    )
+    climatology_mon = create_shape_aligned_climatology(
+        benchmark_calculation_ds,
+        climatology_mon.to_dataset(),
+        variable="discharge_spec",
+        time_period="month",
+    )
+
+    benchmark_preds["climatology_doy"] = climatology_doy["discharge_spec"]
+    benchmark_preds["climatology_mon"] = climatology_mon["discharge_spec"]
+
+    return benchmark_preds
 
 
 if __name__ == "__main__":
