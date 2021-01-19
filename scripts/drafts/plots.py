@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple, Any
 import seaborn as sns
 import pandas as pd
 import numpy as np
@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as plt_colors
 import xarray as xr
+import geopandas as gpd
+
+
 import sys
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -193,6 +196,33 @@ def plot_budyko_curve(
     ax.set_ylabel("Runoff Coefficient (Q/P)")
     sns.despine()
 
+    return ax
+
+
+def _plot_geospatial(
+    metric_data: gpd.GeoDataFrame,
+    column: str,
+    ax: Any,
+    legend: bool = True,
+    cax: Optional[Any] = None,
+    kwargs: Dict = {},
+    uk: Optional[gpd.GeoDataFrame] = None,
+):
+    # plot the chloropleth
+    metric_data.to_crs(epsg=4326).plot(column, ax=ax, cax=cax, legend=legend, **kwargs)
+
+    # plot the surrounding lines
+    if uk is None:
+        data_dir = Path("/cats/datastore/data")
+        world = gpd.read_file(
+            data_dir / "RUNOFF/natural_earth_hires/ne_10m_admin_0_countries.shp"
+        )
+        uk = world.query("ADM0_A3 == 'GBR'")
+    uk.plot(facecolor="none", edgecolor="k", ax=ax, linewidth=0.3)
+
+    ax.set_xlim([-8.2, 2.1])
+    ax.set_ylim([50, 59.5])
+    ax.axis("off")
     return ax
 
 
