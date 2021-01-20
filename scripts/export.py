@@ -199,3 +199,4 @@ if __name__ == "__main__":
     # export_esa()
     # export_s5(region_str="kenya")
     # export_kenya_boundaries()
+    export_boku_ndvi()
