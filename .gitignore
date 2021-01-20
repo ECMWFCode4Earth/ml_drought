@@ -52,3 +52,5 @@ settings.json
 core.ipython*
 
 lightning_logs
+pyrightconfig.json
+scripts/drafts/cookies.py

@@ -190,7 +190,7 @@ def export_boku_ndvi():
 
 if __name__ == "__main__":
     print(f"Writing data to: {get_data_path()}")
-    export_era5_land(region_str="india")
+    export_era5_land(region_str="kenya")
     # export_era5(region_str="kenya")
     # export_vhi()
     # export_chirps()

@@ -256,15 +256,18 @@ def preprocess_era5_hourly(subset_str: str = "kenya"):
     # processor.merge_files(subset_str='W-MON')
 
 
-def preprocess_boku_ndvi(subset_str: str = "kenya"):
+def preprocess_boku_ndvi(subset_str: str = "kenya", regrid: bool = True):
     data_path = get_data_path()
     # downsample_first = whether to calculate VCI before or after time downsampling?
     processor = BokuNDVIPreprocessor(data_path, downsample_first=False)
 
-    regrid_path = (
-        data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
-    )
-    assert regrid_path.exists(), f"{regrid_path} not available"
+    if regrid:
+        regrid_path = (
+            data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        )
+        assert regrid_path.exists(), f"{regrid_path} not available"
+    else:
+        regrid_path = None
 
     processor.preprocess(
         subset_str=subset_str, resample_time="W-MON", regrid=regrid_path
@@ -290,14 +293,14 @@ def preprocess_s5_ouce():
 if __name__ == "__main__":
     subset_str = "india"
     # preprocess_era5(subset_str=subset_str)
-    process_era5_land(
-        subset_str=subset_str,
-        variables=[
-            "volumetric_soil_water_layer_1",
-            "potential_evaporation",
-        ],  #  total_precipitation 2m_temperature evapotranspiration
-        monmean=False,
-    )
+    # process_era5_land(
+    #     subset_str=subset_str,
+    #     variables=[
+    #         "volumetric_soil_water_layer_1",
+    #         "potential_evaporation",
+    #     ],  #  total_precipitation 2m_temperature evapotranspiration
+    #     monmean=False,
+    # )
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
     # process_era5POS_2018(subset_str=subset_str)
@@ -308,5 +311,5 @@ if __name__ == "__main__":
     # preprocess_kenya_boundaries(selection="level_2")
     # preprocess_kenya_boundaries(selection="level_3")
     # preprocess_era5_hourly(subset_str=subset_str)
-    # preprocess_boku_ndvi(subset_str=subset_str)
+    preprocess_boku_ndvi(subset_str=subset_str)
     # preprocess_asal_mask(subset_str=subset_str)

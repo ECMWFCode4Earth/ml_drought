@@ -167,10 +167,13 @@ class BokuNDVIExporter(BaseExporter):
 
         print("\n")
         for tmp_file, nc_file in zip(TMP_nc_files, nc_files):
-            ds = xr.open_dataset(tmp_file).rename(dict(Band1=rename_str))
-            da = ds[rename_str]
-            da.to_netcdf(nc_file)
-            print(f"-- Renamed Band1 in {nc_file.name} to {rename_str} --")
+            if not nc_file.exists():
+                ds = xr.open_dataset(tmp_file).rename(dict(Band1=rename_str))
+                da = ds[rename_str]
+                da.to_netcdf(nc_file)
+                print(f"-- Renamed Band1 in {nc_file.name} to {rename_str} --")
+            else:
+                print(f"-- {nc_file.name} already exists! --")
 
         # 5. remove temporary netcdf files
         [f.unlink() for f in TMP_nc_files]  # type: ignore
