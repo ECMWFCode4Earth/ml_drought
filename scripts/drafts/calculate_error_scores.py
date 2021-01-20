@@ -311,13 +311,12 @@ def get_metric_dataframes_from_output_dict(
     metric_dict = {}
     for metric_name in all_metric_names:
         new_df = all_df.loc[:, [c for c in all_df.columns if metric_name in c]]
-        # drop these columns (the processing has been done)
+        #  drop these columns (the processing has been done)
         all_df = all_df.drop(new_df.columns, axis=1)
         new_df.columns = [c.replace(f"_{metric_name}", "") for c in new_df.columns]
         metric_dict[metric_name] = new_df
 
     return metric_dict
-
 
 
 class FuseErrors:
@@ -630,12 +629,18 @@ def make_mega_dataframe(
     return df
 
 
-def convert_season_to_xr(seasonal_metrics: DefaultDict[str, Dict[str, pd.DataFrame]]) -> xr.Dataset:
+def convert_season_to_xr(
+    seasonal_metrics: DefaultDict[str, Dict[str, pd.DataFrame]]
+) -> xr.Dataset:
     season_list = []
 
     for season in ["DJF", "MAM", "JJA", "SON"]:
         d = xr.Dataset(seasonal_metrics[season])
-        d = d.rename({"dim_1": "model"}).assign_coords(season=season).expand_dims(dim="season")
+        d = (
+            d.rename({"dim_1": "model"})
+            .assign_coords(season=season)
+            .expand_dims(dim="season")
+        )
         season_list.append(d)
 
     season_xr = xr.merge(season_list)
@@ -662,10 +667,13 @@ if __name__ == "__main__":
     )
     all_metrics = get_metric_dataframes_from_output_dict(all_errors)
 
-    # TEST THAT INVERSE FUNCITON WORKING
+    #  TEST THAT INVERSE FUNCITON WORKING
     test_model = [k for k in all_errors.keys()][0]
     test_metric = [k for k in all_metrics.keys()][0]
-    assert all(all_errors[test_model][test_metric].dropna() == all_metrics[test_metric][test_model].dropna())
+    assert all(
+        all_errors[test_model][test_metric].dropna()
+        == all_metrics[test_metric][test_model].dropna()
+    )
 
     # convert bias error into percent error
     all_metrics["bias_error_pct"] = all_metrics["bias_error"] * 100
