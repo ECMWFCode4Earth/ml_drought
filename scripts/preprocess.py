@@ -262,8 +262,11 @@ def preprocess_boku_ndvi(subset_str: str = "kenya", regrid: bool = True):
     processor = BokuNDVIPreprocessor(data_path, downsample_first=False)
 
     if regrid:
+        # regrid_path = (
+        #     data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+        # )
         regrid_path = (
-            data_path / f"interim/reanalysis-era5-land_preprocessed/data_{subset_str}.nc"
+            data_path / f"interim/reanalysis-era5-single-levels-monthly-means_preprocessed/data_{subset_str}.nc"
         )
         assert regrid_path.exists(), f"{regrid_path} not available"
     else:
@@ -291,7 +294,7 @@ def preprocess_s5_ouce():
 
 
 if __name__ == "__main__":
-    subset_str = "india"
+    subset_str = "kenya"
     # preprocess_era5(subset_str=subset_str)
     # process_era5_land(
     #     subset_str=subset_str,
