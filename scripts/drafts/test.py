@@ -6,16 +6,23 @@ if __name__ == "__main__":
     all_errors = pickle.load((data_dir / "RUNOFF/all_errors.pkl").open("rb"))
     all_metrics = pickle.load((data_dir / "RUNOFF/all_metrics.pkl").open("rb"))
 
-    # TEST THAT INVERSE FUNCITON WORKING
+    #  TEST THAT INVERSE FUNCITON WORKING
     test_model = [k for k in all_errors.keys()][0]
     test_metric = [k for k in all_metrics.keys()][0]
-    assert all(all_errors[test_model][test_metric].dropna() == all_metrics[test_metric][test_model].dropna())
+    assert all(
+        all_errors[test_model][test_metric].dropna()
+        == all_metrics[test_metric][test_model].dropna()
+    )
 
     ##
     import xarray as xr
     import sys
+
     sys.path.append("/home/tommy/ml_drought")
-    from scripts.drafts.calculate_error_scores import calculate_seasonal_errors, get_metric_dataframes_from_output_dict
+    from scripts.drafts.calculate_error_scores import (
+        calculate_seasonal_errors,
+        get_metric_dataframes_from_output_dict,
+    )
     from collections import defaultdict
 
     save = True

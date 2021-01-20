@@ -34,6 +34,7 @@ def fuse_to_nc(raw_fuse_path: Path, double_check: bool = True) -> xr.Dataset:
 
     if double_check:
         import re
+
         p = re.compile("\/[\d]*_")
 
     if not (raw_fuse_path.parents[0] / "ALL_fuse_ds.nc").exists():
@@ -81,9 +82,8 @@ def get_matching_stations():
 def calculate_benchmarks(benchmark_calculation_ds: xr.Dataset):
     benchmark_preds = xr.Dataset()
     # 1) Persistence
-    benchmark_preds["persistence"] = (
-        benchmark_calculation_ds["discharge_spec"]
-        .shift(time=1)
+    benchmark_preds["persistence"] = benchmark_calculation_ds["discharge_spec"].shift(
+        time=1
     )
 
     #  2) DayofYear Climatology

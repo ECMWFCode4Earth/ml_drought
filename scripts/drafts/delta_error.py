@@ -329,7 +329,9 @@ class DeltaError:
 
 if __name__ == "__main__":
     from scripts.drafts.io_results import read_ensemble_results, read_fuse_data
-    from scripts.drafts.calculate_error_scores import get_metric_dataframes_from_output_dict
+    from scripts.drafts.calculate_error_scores import (
+        get_metric_dataframes_from_output_dict,
+    )
 
     save = True
     data_dir = Path("/cats/datastore/data")
@@ -346,10 +348,17 @@ if __name__ == "__main__":
     fuse_data = read_fuse_data(raw_fuse_path, lstm_preds["obs"])
 
     processor = DeltaError(ealstm_preds, lstm_preds, fuse_data, incl_benchmarks=False)
-    kratzert_models = processor.calc_kratzert_error_functions(processor.all_preds, metrics=None)
+    kratzert_models = processor.calc_kratzert_error_functions(
+        processor.all_preds, metrics=None
+    )
     kratzert_metrics = get_metric_dataframes_from_output_dict(kratzert_models)
 
     if save:
         import pickle
-        pickle.dump(kratzert_models, (data_dir / "RUNOFF/kratzert_models.pkl").open("wb"))
-        pickle.dump(kratzert_metrics, (data_dir / "RUNOFF/kratzert_metrics.pkl").open("wb"))
+
+        pickle.dump(
+            kratzert_models, (data_dir / "RUNOFF/kratzert_models.pkl").open("wb")
+        )
+        pickle.dump(
+            kratzert_metrics, (data_dir / "RUNOFF/kratzert_metrics.pkl").open("wb")
+        )
