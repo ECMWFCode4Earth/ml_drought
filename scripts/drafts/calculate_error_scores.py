@@ -6,7 +6,6 @@ from pathlib import Path
 from collections import defaultdict
 from functools import partial
 from typing import Dict, DefaultDict, Tuple, List, Optional
-from HydroErr import HydroErr as he
 
 from scripts.drafts.gauge_name_lookup import gauge_name_lookup
 from src.analysis.evaluation import (
