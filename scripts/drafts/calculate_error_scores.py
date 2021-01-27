@@ -84,7 +84,7 @@ def error_func(
 
     df = preds_xr.to_dataframe()
 
-    #  Remove nans and inf values (using the HydroError Package)
+    # Remove nans and inf values (using the HydroError Package)
     # TODO: ENSURE THIS IS BEFORE INV/LOG
     # sim, obs = he.treat_values(df.sim, df.obs,
     #                            replace_nan=None,
