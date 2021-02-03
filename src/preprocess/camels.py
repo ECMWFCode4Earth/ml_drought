@@ -3,7 +3,7 @@ from .base import BasePreProcessor
 import numpy as np
 import xarray as xr
 import pandas as pd
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Any
 import pickle
 import tqdm
 import sqlite3
@@ -163,7 +163,7 @@ class CAMELSGBPreprocessor(BasePreProcessor):
 
         return static_ds
 
-    def load_boundaries_data(self) -> gpd.GeoDataFrame:
+    def load_boundaries_data(self) -> Any:
         """Read the boundaries data to a GeoDataFrame
 
         Returns:
