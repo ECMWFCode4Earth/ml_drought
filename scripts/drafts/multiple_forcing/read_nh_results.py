@@ -13,10 +13,11 @@
 2) Evaluate
     `ipython --pdb neuralhydrology/nh_run_scheduler.py evaluate -- --directory /cats/datastore/data/runs/ensemble_EALSTM --runs-per-gpu 2 --gpu-ids 0`
 3) Merge Results
-    `ipython --pdb neuralhydrology/utils/nh_results_ensemble.py -- --run-dirs /cats/datastore/data/runs/ensemble_EALSTM/*  --save-file /cats/datastore/data/runs/ensemble_EALSTM/ensemble_results.p --metrics NSE MSE KGE FHV FMS FLV`
+    `ipython --pdb neuralhydrology/utils/nh_results_ensemble.py -- --run-dirs /cats/datastore/data/runs/ensemble_LANE/*  --save-file /cats/datastore/data/runs/ensemble_LANE/ensemble_results.p --metrics NSE MSE KGE FHV FMS FLV`
 4) Extract Results
-    `cd /home/tommy/tommy_multiple_forcing; ipython --pdb analysis/read_nh_results.py -- --run_dir /path/to/run_dir --ensemble True --ensemble_filename /cats/datastore/data/runs/ensemble/ensemble_results.p`
-    ipython --pdb neuralhydrology/utils/nh_results_ensemble.py -- --run-dirs /cats/datastore/data/runs/ensemble_pet_ealstm/*  --save-file /cats/datastore/data/runs/ensemble_pet_ealstm/ensemble_results.p --metrics NSE MSE KGE FHV FMS FLV
+    `cd /home/tommy/ml_drought; ipython --pdb scripts/drafts/multiple_forcing/read_nh_results.py -- --run_dir /path/to/run_dir --ensemble True --ensemble_filename /cats/datastore/data/runs/ensemble_LANE/ensemble_results.p`
+•) Read each individual member
+    
 
 5) Finetune
     `ipython --pdb neuralhydrology/nh_run_scheduler.py finetune -- --directory configs/ensemble_lstm_finetune/ --runs-per-gpu 2 --gpu-ids 0`

@@ -156,7 +156,7 @@ class ERA5MonthlyMeanPreprocessor(BasePreProcessor):
         parallel: bool = False,
         cleanup: bool = True,
     ) -> None:
-        """ Preprocess all of the era5 POS .nc files to produce
+        """Preprocess all of the era5 POS .nc files to produce
         one subset file.
 
         Arguments

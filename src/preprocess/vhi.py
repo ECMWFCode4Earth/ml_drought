@@ -109,7 +109,7 @@ class VHIPreprocessor(BasePreProcessor):
         subset_str: Optional[str] = "kenya",
         regrid: Optional[Dataset] = None,
     ) -> Union[Path, Tuple[Exception, str]]:
-        """ function to be run in parallel & safely catch errors
+        """function to be run in parallel & safely catch errors
 
         https://stackoverflow.com/a/24683990/9940782
         """
@@ -137,7 +137,7 @@ class VHIPreprocessor(BasePreProcessor):
         upsampling: bool = False,
         cleanup: bool = True,
     ) -> None:
-        """ Preprocess all of the NOAA VHI .nc files to produce
+        """Preprocess all of the NOAA VHI .nc files to produce
         one subset file with consistent lat/lon and timestamps.
 
         Run in parallel if n_parallel_processes > 1
@@ -217,7 +217,7 @@ class VHIPreprocessor(BasePreProcessor):
     def create_filename(
         t: Timestamp, netcdf_filepath: str, subset_name: Optional[str] = None
     ) -> str:
-        """ create a sensible output filename (HARDCODED for this problem)
+        """create a sensible output filename (HARDCODED for this problem)
         Arguments:
         ---------
         t : pandas._libs.tslibs.timestamps.Timestamp, datetime.datetime
@@ -346,8 +346,8 @@ class VHIPreprocessor(BasePreProcessor):
         timestamp: Timestamp,
         var_selection: Optional[List[str]] = None,
     ) -> Dataset:
-        """ Create a new dataset from ALL the variables in `ds` with the dims.
-            If no vars are selected, all are used"""
+        """Create a new dataset from ALL the variables in `ds` with the dims.
+        If no vars are selected, all are used"""
         # initialise the list
         da_list = []
 

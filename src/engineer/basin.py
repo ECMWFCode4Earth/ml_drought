@@ -173,8 +173,7 @@ class CAMELSCSV(Dataset):
         return df
 
     def _get_dynamic_data(self) -> Tuple[np.ndarray, np.ndarray]:
-        """Return the dynamic X variables and the target variable (y)
-        """
+        """Return the dynamic X variables and the target variable (y)"""
         basin_df = self._load_basin_dynamic_data()
 
         # get the features of interest

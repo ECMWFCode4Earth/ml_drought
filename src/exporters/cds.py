@@ -315,7 +315,7 @@ class ERA5Exporter(CDSExporter):
         break_up: bool = False,
         n_parallel_requests: int = 1,
     ) -> List[Path]:
-        """ Export functionality to prepare the API request and to send it to
+        """Export functionality to prepare the API request and to send it to
         the cdsapi.client() object.
 
         Arguments:

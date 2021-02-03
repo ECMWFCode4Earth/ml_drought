@@ -204,7 +204,7 @@ class _EngineerBase:
         expected_length: Optional[int],
     ) -> None:
         """split `train_ds` into x, y and save the outputs to
-        self.output_folder (data/features) """
+        self.output_folder (data/features)"""
 
         min_date = self._get_datetime(train_ds.time.values.min())
         max_date = self._get_datetime(train_ds.time.values.max())

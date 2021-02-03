@@ -34,9 +34,7 @@ class ERA5ExporterPOS(BaseExporter):
         self.era5_bucket = "era5-pds"
         self.client = boto3.client(  # type: ignore
             "s3",
-            config=Config(  # type: ignore
-                signature_version=botocore.UNSIGNED
-            ),
+            config=Config(signature_version=botocore.UNSIGNED),  # type: ignore
         )
 
     def get_variables(self, year: int, month: int) -> List[str]:

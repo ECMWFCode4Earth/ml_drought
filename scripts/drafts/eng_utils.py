@@ -238,8 +238,8 @@ def get_dpm(time, calendar="standard"):
 
 
 def season_mean(ds, calendar="standard"):
-    """ Calculate a weighted season mean
-    http://xarray.pydata.org/en/stable/examples/monthly-means.html """
+    """Calculate a weighted season mean
+    http://xarray.pydata.org/en/stable/examples/monthly-means.html"""
     # Make a DataArray of season/year groups
     year_season = xr.DataArray(
         ds.time.to_index().to_period(freq="Q-NOV").to_timestamp(how="E"),
@@ -266,7 +266,7 @@ def season_mean(ds, calendar="standard"):
 
 
 def compute_anomaly(da, time_group="time.month"):
-    """ Return a dataarray where values are an anomaly from the MEAN for that
+    """Return a dataarray where values are an anomaly from the MEAN for that
          location at a given timestep. Defaults to finding monthly anomalies.
 
     Arguments:
@@ -299,7 +299,7 @@ def calculate_spatial_mean(ds):
 
 
 def create_new_binned_dimensions(ds, group_var, intervals):
-    """ Get the values in `ds` for `group_var` WITHIN the `interval` ranges.
+    """Get the values in `ds` for `group_var` WITHIN the `interval` ranges.
          Return a new xr.Dataset with a new set of variables called `{group_var}_bins`.
 
     Arguments:
@@ -371,7 +371,7 @@ def bin_dataset(ds, group_var, n_bins):
 
 
 def merge_shapefiles(wsheds_shp, pp_to_polyid_map):
-    """ Merge Shapefiles into ONE
+    """Merge Shapefiles into ONE
     Example:
     -------
     you have two basin polygons for two different pour points
@@ -404,7 +404,7 @@ def merge_shapefiles(wsheds_shp, pp_to_polyid_map):
 
 
 def select_bounding_box_xarray(ds, region):
-    """ using the Region namedtuple defined in engineering.regions.py select
+    """using the Region namedtuple defined in engineering.regions.py select
     the subset of the dataset that you have defined that region for.
 
     Arguments:
@@ -453,7 +453,7 @@ def select_bounding_box_xarray(ds, region):
 
 
 def get_unmasked_data(dataArray, dataMask):
-    """ get the data INSIDE the dataMask
+    """get the data INSIDE the dataMask
     Keep values if True, remove values if False
      (doing the opposite of a 'mask' - perhaps should rename)
     """
@@ -497,8 +497,7 @@ def get_ds_mask(ds):
 
 
 def apply_same_mask(ds, reference_ds):
-    """ Apply the same mask from reference_ds to ds
-    """
+    """Apply the same mask from reference_ds to ds"""
     dataMask = get_ds_mask(reference_ds)
     return get_unmasked_data(dataArray, dataMask)
 
@@ -509,7 +508,7 @@ def apply_same_mask(ds, reference_ds):
 
 
 def replace_with_dict(ar, dic):
-    """ Replace the values in an np.ndarray with a dictionary
+    """Replace the values in an np.ndarray with a dictionary
 
     https://stackoverflow.com/a/47171600/9940782
 
@@ -553,7 +552,7 @@ def replace_with_dict2(ar, dic):
 
 # TODO: rename this function
 def get_lookup_val(xr_obj, variable, new_variable, lookup_dict):
-    """ Assign a new Variable to xr_obj with values from lookup_dict.
+    """Assign a new Variable to xr_obj with values from lookup_dict.
     Arguments:
     ---------
     : xr_obj (xr.Dataset, xr.DataArray)

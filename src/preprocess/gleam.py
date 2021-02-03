@@ -7,8 +7,7 @@ from .base import BasePreProcessor
 
 
 class GLEAMPreprocessor(BasePreProcessor):
-    """Preprocess the GLEAM data
-    """
+    """Preprocess the GLEAM data"""
 
     dataset = "gleam"
 
@@ -86,7 +85,7 @@ class GLEAMPreprocessor(BasePreProcessor):
         upsampling: bool = False,
         cleanup: bool = True,
     ) -> None:
-        """ Preprocess all of the GLEAM .nc files to produce
+        """Preprocess all of the GLEAM .nc files to produce
         one subset file.
 
         Arguments

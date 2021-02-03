@@ -309,6 +309,6 @@ class EventDetector:
         return runs
 
     def calculate_longest_run(self, resample_str: Optional[str] = None) -> xr.Dataset:
-        """ Calculate the longest run in the dataset
-        TODO: fix this argument to work with other resample_str """
+        """Calculate the longest run in the dataset
+        TODO: fix this argument to work with other resample_str"""
         return longest_run(self.exceedences, dim="time").load()  # type: ignore

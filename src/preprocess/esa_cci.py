@@ -53,7 +53,7 @@ class ESACCIPreprocessor(BasePreProcessor):
         subset_str: Optional[str] = "kenya",
         regrid: Optional[xr.Dataset] = None,
     ) -> None:
-        """ Preprocess a single netcdf file (run in parallel if
+        """Preprocess a single netcdf file (run in parallel if
         `parallel_processes` arg > 1)
 
         Process:

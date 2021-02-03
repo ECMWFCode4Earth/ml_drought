@@ -86,7 +86,7 @@ class CHIRPSPreprocessor(BasePreProcessor):
         parallel: bool = False,
         cleanup: bool = True,
     ) -> None:
-        """ Preprocess all of the CHIRPS .nc files to produce
+        """Preprocess all of the CHIRPS .nc files to produce
         one subset file.
 
         Arguments

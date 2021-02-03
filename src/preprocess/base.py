@@ -98,7 +98,7 @@ class BasePreProcessor:
         reuse_weights: bool = False,
         clean: bool = True,
     ) -> xr.Dataset:
-        """ Use xEMSF package to regrid ds to the same grid as reference_ds
+        """Use xEMSF package to regrid ds to the same grid as reference_ds
 
         Arguments:
         ----------
@@ -210,7 +210,7 @@ class BasePreProcessor:
     def chop_roi(
         ds: xr.Dataset, subset_str: Optional[str] = "kenya", inverse_lat: bool = False
     ) -> xr.Dataset:
-        """ lookup the region information from the dictionary in
+        """lookup the region information from the dictionary in
         `src.utils.region_lookup` and subset the `ds` object based on that
         region.
         """

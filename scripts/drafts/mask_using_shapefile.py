@@ -6,7 +6,7 @@ import geopandas as gpd
 
 
 def transform_from_latlon(lat, lon):
-    """ input 1D array of lat / lon and output an Affine transformation
+    """input 1D array of lat / lon and output an Affine transformation
 
     Arguments:
     ---------
@@ -80,32 +80,32 @@ def rasterize(shapes, coords, latitude="lat", longitude="lon", fill=np.nan, **kw
 def add_shape_coord_from_data_array(
     xr_da, shp_path, coord_name, longitude="lon", latitude="lat"
 ):
-    """ Create a new coord for the xr_da indicating whether or not it
-         is inside the shapefile
+    """Create a new coord for the xr_da indicating whether or not it
+     is inside the shapefile
 
-        Creates a new coord - "coord_name" which will have integer values
-         used to subset xr_da for plotting / analysis/
+    Creates a new coord - "coord_name" which will have integer values
+     used to subset xr_da for plotting / analysis/
 
-        Arguments:
-        ---------
-        : xr_da (xr.DataArray)
-            the xarray object that you want to mask
-        : shp_path (str, Path)
-            the path to the shapefile that you want to use to mask the xr_da
-        : coord_name (str)
-            the coord to create in your xarray object (supports multiple
-             geometries in the shapefile)
-        : latitude (str)
-            the coordinate name for the latitude in the xr_da
-        : longitude (str)
-            the coordinate name for the longitude in the xr_da
-        Usage:
-        -----
-        # create a new coordinate in the xarray object
-        precip_da = add_shape_coord_from_data_array(precip_da, "shape.shp", "shape")
+    Arguments:
+    ---------
+    : xr_da (xr.DataArray)
+        the xarray object that you want to mask
+    : shp_path (str, Path)
+        the path to the shapefile that you want to use to mask the xr_da
+    : coord_name (str)
+        the coord to create in your xarray object (supports multiple
+         geometries in the shapefile)
+    : latitude (str)
+        the coordinate name for the latitude in the xr_da
+    : longitude (str)
+        the coordinate name for the longitude in the xr_da
+    Usage:
+    -----
+    # create a new coordinate in the xarray object
+    precip_da = add_shape_coord_from_data_array(precip_da, "shape.shp", "shape")
 
-        # use a boolean index to mask out values not inside precip_da.awash
-        shape_da = precip_da.where(precip_da.shape==0, other=np.nan)
+    # use a boolean index to mask out values not inside precip_da.awash
+    shape_da = precip_da.where(precip_da.shape==0, other=np.nan)
     """
     # 1. read in shapefile
     shp_gpd = gpd.read_file(shp_path)

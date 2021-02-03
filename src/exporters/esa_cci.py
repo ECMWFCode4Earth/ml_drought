@@ -21,7 +21,9 @@ class ESACCIExporter(BaseExporter):
 
     target_url: str = "ftp://geo10.elie.ucl.ac.be/v207"
     target_file: str = "ESACCI-LC-L4-LCCS-Map-300m-P1Y-1992_2015-v2.0.7b.nc"
-    legend_url: str = "http://maps.elie.ucl.ac.be/CCI/viewer/download/ESACCI-LC-Legend.csv"
+    legend_url: str = (
+        "http://maps.elie.ucl.ac.be/CCI/viewer/download/ESACCI-LC-Legend.csv"
+    )
 
     def __init__(self, data_folder: Path = Path("data")) -> None:
         super().__init__(data_folder)
@@ -62,8 +64,7 @@ class ESACCIExporter(BaseExporter):
         os.system(f"wget {url_path}.zip -P {self.landcover_folder.as_posix()}")
 
     def unzip(self, python_only: bool = True) -> None:
-        """https://stackoverflow.com/a/3451150/9940782
-        """
+        """https://stackoverflow.com/a/3451150/9940782"""
         fname = self.landcover_folder / (self.target_file + ".zip")
         assert fname.exists()
         print(f"Unzipping {fname.name}")
@@ -77,8 +78,7 @@ class ESACCIExporter(BaseExporter):
         print(f"{fname.name} unzipped!")
 
     def export(self) -> None:
-        """Export functionality for the ESA CCI LandCover product
-        """
+        """Export functionality for the ESA CCI LandCover product"""
         # check if the file already exists
         if (self.landcover_folder / self.target_file).exists() and (
             self.landcover_folder / "legend.csv"

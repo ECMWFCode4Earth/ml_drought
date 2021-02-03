@@ -15,7 +15,7 @@ Polygon = None
 def select_bounding_box(
     ds: xr.Dataset, region: Region, inverse_lat: bool = False, inverse_lon: bool = False
 ) -> xr.Dataset:
-    """ using the Region namedtuple defined in engineering.regions.py select
+    """using the Region namedtuple defined in engineering.regions.py select
     the subset of the dataset that you have defined that region for.
 
     Arguments:
@@ -102,8 +102,7 @@ class SHPtoXarray:
     def transform_from_latlon(
         lat: xr.DataArray, lon: xr.DataArray
     ) -> Affine:  # type: ignore
-        """ input 1D array of lat / lon and output an Affine transformation
-        """
+        """input 1D array of lat / lon and output an Affine transformation"""
         lat = np.asarray(lat)
         lon = np.asarray(lon)
         trans = Affine.translation(lon[0], lat[0])  # type: ignore
@@ -146,7 +145,7 @@ class SHPtoXarray:
         var_name: str = "region",
         lookup_colname: Optional[str] = None,
     ) -> xr.Dataset:
-        """ Create a new coord for the da indicating whether or not it
+        """Create a new coord for the da indicating whether or not it
          is inside the shapefile
 
         Creates a new coord - "var_name" which will have integer values

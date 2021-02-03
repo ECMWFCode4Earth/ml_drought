@@ -144,9 +144,9 @@ def setup_configs_for_experiment(
 
 def run_finetune_training(base_dir: Path, output_config_dir: Path):
     """Run the finetuning training in parallel using the run_scheduler script
-        ipython --pdb neuralhydrology/nh_run_scheduler.py finetune -- /
-            --directory configs/ensemble_lstm_finetune /
-            --runs-per-gpu 2 --gpu-ids 0
+    ipython --pdb neuralhydrology/nh_run_scheduler.py finetune -- /
+        --directory configs/ensemble_lstm_finetune /
+        --runs-per-gpu 2 --gpu-ids 0
     """
     print(f"\n\n ** FINETUNE TRAIN: {output_config_dir.as_posix()} ** \n\n")
     p = subprocess.run(
@@ -169,9 +169,9 @@ def run_finetune_training(base_dir: Path, output_config_dir: Path):
 
 def run_finetune_evaluate(base_dir: Path, run_dir: Path):
     """Finetune evaluate results for ensemble members
-        ipython --pdb neuralhydrology/nh_run_scheduler.py evaluate -- /
-            --directory /cats/datastore/data/runs/ensemble_finetune/FINE /
-            --runs-per-gpu 2 --gpu-ids 0
+    ipython --pdb neuralhydrology/nh_run_scheduler.py evaluate -- /
+        --directory /cats/datastore/data/runs/ensemble_finetune/FINE /
+        --runs-per-gpu 2 --gpu-ids 0
     """
     print(f"\n\n ** FINETUNE EVALUATE (ensemble members): {run_dir.as_posix()} ** \n\n")
     p = subprocess.run(
@@ -194,10 +194,10 @@ def run_finetune_evaluate(base_dir: Path, run_dir: Path):
 
 def run_finetune_merge(base_dir: Path, run_dir: Path):
     """FINETUNE merge results of ensemble members
-        ipython --pdb neuralhydrology/utils/nh_results_ensemble.py -- /
-        --run-dirs /cats/datastore/data/runs/ensemble_finetune/FINE/* /
-        --save-file cats/datastore/data/runs/ensemble_finetune/FINE/ensemble_results.p /
-        --metrics NSE MSE KGE FHV FMS FLV`
+    ipython --pdb neuralhydrology/utils/nh_results_ensemble.py -- /
+    --run-dirs /cats/datastore/data/runs/ensemble_finetune/FINE/* /
+    --save-file cats/datastore/data/runs/ensemble_finetune/FINE/ensemble_results.p /
+    --metrics NSE MSE KGE FHV FMS FLV`
     """
     print(f"\n\n ** FINETUNE MERGE Ensemble Members: {run_dir.as_posix()} ** \n\n")
 
@@ -222,7 +222,7 @@ def run_finetune_merge(base_dir: Path, run_dir: Path):
 
 def run_finetune_get_results(base_dir: Path, run_dir: Path):
     """Finetune Write results Out to .csv/.nc
-        `cd /home/tommy/tommy_multiple_forcing; ipython --pdb analysis/read_nh_results.py -- --run_dir /cats/datastore/data/runs/ensemble_finetune/FINE/ --ensemble True --ensemble_filename /cats/datastore/data/runs/ensemble_finetune/FINE/ensemble_results.p; cd -`
+    `cd /home/tommy/tommy_multiple_forcing; ipython --pdb analysis/read_nh_results.py -- --run_dir /cats/datastore/data/runs/ensemble_finetune/FINE/ --ensemble True --ensemble_filename /cats/datastore/data/runs/ensemble_finetune/FINE/ensemble_results.p; cd -`
     """
     print(f"\n\n ** FINETUNE RESULTS: {run_dir.as_posix()} ** \n\n")
     output_file = run_dir / "ensemble_results.p"

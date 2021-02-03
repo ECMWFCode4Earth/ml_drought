@@ -383,8 +383,7 @@ class EALSTM(nn.Module):
 
 
 class EALSTMCell(nn.Module):
-    """See below. Implemented using modules so it can be explained with shap
-    """
+    """See below. Implemented using modules so it can be explained with shap"""
 
     def __init__(
         self,
@@ -558,19 +557,13 @@ class OrgEALSTMCell(nn.Module):
 
         # create tensors of learnable parameters
         self.weight_ih = nn.Parameter(  # type: ignore
-            torch.FloatTensor(  # type: ignore
-                input_size_dyn, 3 * hidden_size
-            )
+            torch.FloatTensor(input_size_dyn, 3 * hidden_size)  # type: ignore
         )  # type: ignore
         self.weight_hh = nn.Parameter(  # type: ignore
-            torch.FloatTensor(  # type: ignore
-                hidden_size, 3 * hidden_size
-            )
+            torch.FloatTensor(hidden_size, 3 * hidden_size)  # type: ignore
         )  # type: ignore
         self.weight_sh = nn.Parameter(  # type: ignore
-            torch.FloatTensor(  # type: ignore
-                input_size_stat, hidden_size
-            )
+            torch.FloatTensor(input_size_stat, hidden_size)  # type: ignore
         )  # type: ignore
         self.bias = nn.Parameter(torch.FloatTensor(3 * hidden_size))  # type: ignore
         self.bias_s = nn.Parameter(torch.FloatTensor(hidden_size))  # type: ignore

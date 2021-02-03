@@ -18,8 +18,7 @@ AdminBoundaries = namedtuple(
 
 
 class GroupbyRegion:
-    """Convert an xr.DataArray object to a GeoDataFrame
-    """
+    """Convert an xr.DataArray object to a GeoDataFrame"""
 
     def __init__(self, data_dir: Path = Path("data"), country: str = "kenya") -> None:
         print("GroupbyRegion requires geopandas to be installed")

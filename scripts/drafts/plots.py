@@ -28,10 +28,30 @@ kwargs_dict_config = {
     "VIC": {"linewidth": 1, "alpha": 0.8, "color": colors[4]},
     "SACRAMENTO": {"linewidth": 1, "alpha": 0.8, "color": colors[5]},
     "gr4j": {"linewidth": 1, "alpha": 0.8, "color": colors[9]},
-    "climatology": {"linewidth": 1, "alpha": 0.8, "color": colors[6], "ls": "-.",},
-    "climatology_doy": {"linewidth": 1, "alpha": 0.8, "color": colors[6], "ls": "-.",},
-    "climatology_mon": {"linewidth": 1, "alpha": 0.8, "color": colors[8], "ls": "-.",},
-    "persistence": {"linewidth": 1, "alpha": 0.8, "color": colors[7], "ls": "-.",},
+    "climatology": {
+        "linewidth": 1,
+        "alpha": 0.8,
+        "color": colors[6],
+        "ls": "-.",
+    },
+    "climatology_doy": {
+        "linewidth": 1,
+        "alpha": 0.8,
+        "color": colors[6],
+        "ls": "-.",
+    },
+    "climatology_mon": {
+        "linewidth": 1,
+        "alpha": 0.8,
+        "color": colors[8],
+        "ls": "-.",
+    },
+    "persistence": {
+        "linewidth": 1,
+        "alpha": 0.8,
+        "color": colors[7],
+        "ls": "-.",
+    },
     "EALSTM": {"linewidth": 3, "alpha": 1, "color": colors[1]},
     "LSTM": {"linewidth": 3, "alpha": 1, "color": colors[0]},
 }
@@ -127,7 +147,11 @@ def _add_annotations(ax):
         rotation=0,
         ha="center",
         va="center",
-        bbox=dict(boxstyle="round", ec=(1.0, 0.5, 0.5), fc=(1.0, 0.8, 0.8),),
+        bbox=dict(
+            boxstyle="round",
+            ec=(1.0, 0.5, 0.5),
+            fc=(1.0, 0.8, 0.8),
+        ),
     )
 
     ax.text(
@@ -138,7 +162,11 @@ def _add_annotations(ax):
         rotation=0,
         ha="center",
         va="center",
-        bbox=dict(boxstyle="round", ec=(1.0, 0.5, 0.5), fc=(1.0, 0.8, 0.8),),
+        bbox=dict(
+            boxstyle="round",
+            ec=(1.0, 0.5, 0.5),
+            fc=(1.0, 0.8, 0.8),
+        ),
     )
     return ax
 
@@ -251,7 +279,11 @@ if __name__ == "__main__":
     #  SET PLT OPTIONS
     label_size = 14  #  10
     plt.rcParams.update(
-        {"axes.labelsize": label_size, "legend.fontsize": label_size, "font.size": 14,}
+        {
+            "axes.labelsize": label_size,
+            "legend.fontsize": label_size,
+            "font.size": 14,
+        }
     )
 
     # 1. Plot NSE CDF

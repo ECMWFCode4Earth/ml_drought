@@ -350,7 +350,7 @@ class DynamicEngineer(_EngineerBase):
         global_means: bool = True,
         spatial_means: bool = True,
     ) -> xr.Dataset:
-        """ Create our own aggregations from the dynamic data
+        """Create our own aggregations from the dynamic data
 
         NOTE: unnecessary for CAMELS because this data can
         just be taken from pre-computed means

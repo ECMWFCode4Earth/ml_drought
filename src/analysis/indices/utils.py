@@ -87,7 +87,7 @@ def create_shape_aligned_climatology(
 
 
 def fit_all_indices(data_path: Path, variable: str = "precip") -> xr.Dataset:
-    """ fit all indices and return one `xr.Dataset`
+    """fit all indices and return one `xr.Dataset`
 
     Arguments:
     ---------

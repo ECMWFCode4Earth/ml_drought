@@ -16,7 +16,7 @@ AdminBoundaries = namedtuple(
 
 
 class OCHAAdminBoundariesPreprocesser(BasePreProcessor):
-    """ Preprocesses the OCHA Admin Boundaries data
+    """Preprocesses the OCHA Admin Boundaries data
 
     https://data.humdata.org/
     """
@@ -49,7 +49,7 @@ class OCHAAdminBoundariesPreprocesser(BasePreProcessor):
         lookup_colname: str,
         save: bool = True,
     ) -> Optional[xr.Dataset]:
-        """ Preprocess .shp admin boundary files into an `.nc`
+        """Preprocess .shp admin boundary files into an `.nc`
         file with the same shape as reference_nc_filepath.
 
         Will create categorical .nc file which will specify
@@ -184,8 +184,7 @@ class KenyaAdminPreprocessor(OCHAAdminBoundariesPreprocesser):
         return lookup[selection]
 
     def preprocess(self, reference_nc_filepath: Path, selection: str) -> None:
-        """Preprocess Kenya Admin Boundaries shapefiles into xarray objects
-        """
+        """Preprocess Kenya Admin Boundaries shapefiles into xarray objects"""
         admin_level = self.get_admin_level(selection)
         self._preprocess_single(
             shp_filepath=admin_level.shp_filepath,

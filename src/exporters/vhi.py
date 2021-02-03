@@ -51,7 +51,7 @@ class VHIExporter(BaseExporter):
 
     @staticmethod
     def chunks(l: List, n: int) -> Generator:
-        """ return a generator object which chunks list into sublists of size n
+        """return a generator object which chunks list into sublists of size n
         https://chrisalbon.com/python/data_wrangling/break_list_into_chunks_of_equal_size/
         """
         # For item i in a range that is a length of l,

@@ -309,7 +309,7 @@ def plot_seasonality(ds, ax=None, ylabel=None, double_year=False, variance=False
 
 
 def plot_normalised_seasonality(ds, double_year=False, variance=False):
-    """ Normalise the seasonality by each months contribution to the annual mean total.
+    """Normalise the seasonality by each months contribution to the annual mean total.
 
     Arguments:
     ---------
@@ -397,7 +397,7 @@ def plot_seasonal_spatial_means(seasonal_da, ax=None, **kwargs):
 def plot_masked_spatial_and_hist(
     dataMask, DataArrays, colors, titles, scale=1.5, **kwargs
 ):
-    """ SPATIAL and HISTOGRAM plots to show the conditional distributions given
+    """SPATIAL and HISTOGRAM plots to show the conditional distributions given
          a particular mask.
 
     Arguments:
@@ -486,7 +486,7 @@ def plot_xarray_on_map(
 
 
 def get_river_features():
-    """ Get the 10m river features from NaturalEarth and turn into shapely.geom
+    """Get the 10m river features from NaturalEarth and turn into shapely.geom
     Note: https://github.com/SciTools/cartopy/issues/945
 
     """
@@ -508,7 +508,7 @@ def get_river_features():
 
 
 def plot_sub_geolocation(region, ax, lakes=False, borders=False, rivers=False):
-    """ to be plot using axins methods
+    """to be plot using axins methods
 
     https://matplotlib.org/gallery/axes_grid1/inset_locator_demo.html
     """
@@ -531,7 +531,7 @@ def plot_sub_geolocation(region, ax, lakes=False, borders=False, rivers=False):
 
 
 def plot_geog_location(region, lakes=False, borders=False, rivers=False, scale=1):
-    """ use cartopy to plot the region (defined as a namedtuple object)
+    """use cartopy to plot the region (defined as a namedtuple object)
 
     Arguments:
     ---------
@@ -597,7 +597,7 @@ def add_point_location_to_map(point, ax, color=(0, 0, 0, 1), **kwargs):
 
 
 def add_points_to_map(ax, geodf, point_colors="#0037ff"):
-    """ Add the point data stored in `geodf.geometry` as points to ax
+    """Add the point data stored in `geodf.geometry` as points to ax
     Arguments:
     ---------
     : geodf (geopandas.GeoDataFrame)
@@ -623,7 +623,7 @@ def add_points_to_map(ax, geodf, point_colors="#0037ff"):
 def plot_stations_on_region_map(
     region, station_location_df, point_colors="#0037ff", scale=1
 ):
-    """ Plot the station locations in `station_location_df` on a map of the region
+    """Plot the station locations in `station_location_df` on a map of the region
 
     Arguments:
     ---------
@@ -645,7 +645,7 @@ def plot_stations_on_region_map(
 
 
 def add_sub_region_box(ax, subregion, color):
-    """ Plot a box for the subregion on the cartopy axes.
+    """Plot a box for the subregion on the cartopy axes.
     TODO: implement a check where the subregion HAS TO BE inside the axes limits
 
     Arguments:

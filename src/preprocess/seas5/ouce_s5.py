@@ -88,11 +88,11 @@ class OuceS5Data:
     def get_ouce_filepaths(
         self, variable: str, parent_dir: Optional[Path] = None
     ) -> List[Path]:
-        """ For working on OUCE linux machine need to specify alternative
-         path. We still want to write out the preprocessed data to
-         the `self.data_dir / 'interim' / 'S5preprocessed'` but
-         we need to read the data from a folder which we only have read
-         permissions from.
+        """For working on OUCE linux machine need to specify alternative
+        path. We still want to write out the preprocessed data to
+        the `self.data_dir / 'interim' / 'S5preprocessed'` but
+        we need to read the data from a folder which we only have read
+        permissions from.
         """
         target_folder = self.hourly_s5_dir if parent_dir is None else parent_dir
         valid_variables = [f.name for f in target_folder.glob("*")]

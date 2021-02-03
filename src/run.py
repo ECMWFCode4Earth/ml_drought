@@ -142,8 +142,7 @@ class Run:
                 print(f"Exception {e} raised for {dataset}")
 
     def engineer(self, engineer_args: Dict) -> None:
-        """Run the engineer on the data
-        """
+        """Run the engineer on the data"""
         engineer_args["init_args"]["data_folder"] = self.data
         engineer = Engineer(**engineer_args["init_args"])
         engineer.engineer(**engineer_args["run_args"])

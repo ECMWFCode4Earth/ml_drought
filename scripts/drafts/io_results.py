@@ -4,6 +4,33 @@ from pathlib import Path
 from tqdm import tqdm
 import numpy as np
 from src.utils import create_shape_aligned_climatology
+from typing import List, Dict, Optional
+
+
+def join_into_one_ds(
+    lstm_preds: xr.Dataset,
+    fuse_data: xr.Dataset,
+    ealstm_preds: Optional[xr.Dataset] = None,
+) -> xr.Dataset:
+    all_preds = xr.combine_by_coords(
+        [
+            lstm_preds.rename({"sim": "LSTM"}),
+            (
+                fuse_data.rename(
+                    dict(
+                        zip(
+                            [v for v in fuse_data.data_vars],
+                            [str(v).replace("SimQ_", "") for v in fuse_data.data_vars],
+                        )
+                    )
+                ).drop("obs")
+            ),
+        ]
+    )
+    if ealstm_preds is not None:
+        all_preds = all_preds.merge(ealstm_preds.rename({"sim": "EALSTM"}).drop("obs"))
+
+    return all_preds
 
 
 def read_ensemble_results(ensemble_dir: Path) -> xr.Dataset:
@@ -17,14 +44,60 @@ def read_ensemble_results(ensemble_dir: Path) -> xr.Dataset:
     return preds
 
 
-def read_ensemble_member_results(ensemble_dir: Path, ensemble_int: int) -> xr.Dataset:
-    assert False, "TODO"
-    ensemble_dir.glob(f"*{ensemble_int}*")
-    preds = None
+def read_ensemble_member_results(ensemble_dir: Path) -> xr.Dataset:
+    """"""
+    # assert False, "TODO"
+    # data_dir = Path("/cats/datastore/data")
+    # paths = [d for d in (data_dir / "runs/ensemble_LANE").glob("**/*.p")]
+    import re
+    import pickle
 
-    preds["station_id"] = [int(sid) for sid in preds["station_id"]]
-    preds = preds.rename({"discharge_spec_obs": "obs", "discharge_spec_sim": "sim"})
-    return preds
+    paths = [d for d in (ensemble_dir).glob("**/*_results.p")]
+    ps = [pickle.load(p.open("rb")) for p in paths]
+
+    output_dict = {}
+    for i, res_dict in tqdm(enumerate(ps), desc="Loading Ensemble Members"):
+        stations = [k for k in res_dict.keys()]
+        freq = "1D"
+        all_xr_objects: List[xr.Dataset] = []
+
+        # get the ensemble number
+        m = re.search("ensemble\d+", paths[i].__str__())
+        try:
+            name = m.group(0)
+        except AttributeError as e:
+            print("found ensemble mean")
+            name = "mean"
+
+        for station_id in stations:
+            #  extract the raw results
+            try:
+                xr_obj = (
+                    res_dict[station_id][freq]["xr"].isel(time_step=0).drop("time_step")
+                )
+            except ValueError:
+                # ensemble mode does not have "time_step" dimension
+                xr_obj = res_dict[station_id][freq]["xr"].rename({"datetime": "date"})
+            xr_obj = xr_obj.expand_dims({"station_id": [station_id]}).rename(
+                {"date": "time"}
+            )
+            all_xr_objects.append(xr_obj)
+
+        preds = xr.concat(all_xr_objects, dim="station_id")
+        preds["station_id"] = [int(sid) for sid in preds["station_id"]]
+        preds = preds.rename({"discharge_spec_obs": "obs", "discharge_spec_sim": "sim"})
+
+        output_dict[name] = preds
+
+    # return as one dataset
+    all_ds = []
+    for key in output_dict.keys():
+        all_ds.append(
+            output_dict[key].assign_coords({"member": key}).expand_dims("member")
+        )
+    ds = xr.concat(all_ds, dim="member")
+
+    return ds
 
 
 def fuse_to_nc(raw_fuse_path: Path, double_check: bool = True) -> xr.Dataset:

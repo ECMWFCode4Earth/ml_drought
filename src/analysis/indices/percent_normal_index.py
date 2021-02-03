@@ -66,20 +66,20 @@ class PercentNormalIndex(BaseIndices):
     ) -> xr.DataArray:
         """calculate Percent of Normal Index (PNI)
 
-            Arguments:
-            ---------
-            ds : xr.Dataset
-                the dataset with the raw values that you are comparing to climatology
+        Arguments:
+        ---------
+        ds : xr.Dataset
+            the dataset with the raw values that you are comparing to climatology
 
-            variable: str
-                name of the variable that you are comparing to the climatology
+        variable: str
+            name of the variable that you are comparing to the climatology
 
-            time_period: str
-                the period string used to calculate the climatology
-                 time_period = {'dayofyear', 'season', 'month'}
+        time_period: str
+            the period string used to calculate the climatology
+             time_period = {'dayofyear', 'season', 'month'}
 
-            rolling_window: int Default = 3
-                the size of the cumsum window (in timesteps)
+        rolling_window: int Default = 3
+            the size of the cumsum window (in timesteps)
 
         """
         # calculate the rolling window (cumsum over time)

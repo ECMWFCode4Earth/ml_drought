@@ -70,8 +70,7 @@ class KenyaAdminExporter(OCHAExporter):
     }
 
     def export(self) -> None:
-        """Export functionality for the Kenya Admin Boundaries as .shp files
-        """
+        """Export functionality for the Kenya Admin Boundaries as .shp files"""
 
         for new_fname, url in zip(self.urls.keys(), self.urls.values()):
             fname = url.split("/")[-1]
@@ -93,8 +92,7 @@ class EthiopiaAdminExporter(OCHAExporter):
     }
 
     def export(self) -> None:
-        """Export functionality for the Ethiopia Admin Boundaries as .shp files
-        """
+        """Export functionality for the Ethiopia Admin Boundaries as .shp files"""
         for new_fname, url in zip(self.urls.keys(), self.urls.values()):
             fname = url.split("/")[-1]
             # check if the file already exists
@@ -119,8 +117,7 @@ class EastAfricaAdminExporter(OCHAExporter):
     }
 
     def export(self) -> None:
-        """Export functionality for the Ethiopia Admin Boundaries as .shp files
-        """
+        """Export functionality for the Ethiopia Admin Boundaries as .shp files"""
         assert False, (
             "Currently no way of extracting .rar files without"
             "having sudo control - `sudo apt-get install unrar`"

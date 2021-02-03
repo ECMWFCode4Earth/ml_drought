@@ -8,8 +8,7 @@ from ..utils import _make_dataset, CreateSHPFile
 
 class TestSelectBoundingBox:
     def test_select_bounding_box_inversed(self):
-        """Test that inversion works correctly
-        """
+        """Test that inversion works correctly"""
         size = (100, 100)
         ds, (lonmin, lonmax), (latmin, latmax) = _make_dataset(size)
 

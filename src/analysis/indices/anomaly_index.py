@@ -6,7 +6,7 @@ from .utils import rolling_cumsum, apply_over_period
 
 
 class AnomalyIndex(BaseIndices):
-    """ The Rainfall Anomaly Index
+    """The Rainfall Anomaly Index
 
     Calculation:
     -----------

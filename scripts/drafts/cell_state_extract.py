@@ -97,7 +97,10 @@ def get_states_from_forward(
 
 
 def run_all_basin_forward_passes(
-    test_basins: List[str], config: Config, model: BaseModel, final_value: bool = True,
+    test_basins: List[str],
+    config: Config,
+    model: BaseModel,
+    final_value: bool = True,
 ) -> DefaultDict[str, Dict[str, np.ndarray]]:
     #  1. run the forward passes for each basin
     Tester = RegressionTester(
@@ -309,12 +312,18 @@ def load_normalised_cs_data(
 ) -> xr.Dataset:
     #  1. run the forward passes for each basin
     all_basin_data = run_all_basin_forward_passes(
-        test_basins=test_basins, config=config, final_value=final_value, model=model,
+        test_basins=test_basins,
+        config=config,
+        final_value=final_value,
+        model=model,
     )
 
     # 3. create xarray object
     cs_data = convert_dict_to_xarray(
-        all_basin_data, times=test_times, wide_format=False, final_value=final_value,
+        all_basin_data,
+        times=test_times,
+        wide_format=False,
+        final_value=final_value,
     )
 
     #  5. normalise cell state data

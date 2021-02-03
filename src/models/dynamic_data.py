@@ -458,7 +458,7 @@ class _DynamicIter:
     def build_loc_to_idx_mapping(
         self, x: xr.Dataset, notnan_indices: Optional[np.array] = None
     ) -> Dict:
-        """ build a mapping from SPATIAL ID to the value
+        """build a mapping from SPATIAL ID to the value
         (pixel, station_id, admin_unit) removing the nan indices
 
         Why? In order to track the spatial units so that we can
@@ -588,9 +588,10 @@ class _DynamicIter:
         if self.normalize_y:
             y_var = list(y.data_vars)[0]
             y_np = (
-                (y_np - self.normalizing_dict[y_var]["mean"])
-                / self.normalizing_dict[y_var]["std"]  # type: ignore
-            )
+                y_np - self.normalizing_dict[y_var]["mean"]
+            ) / self.normalizing_dict[y_var][
+                "std"
+            ]  # type: ignore
 
         return x_np, y_np
 
@@ -917,7 +918,7 @@ class _TestDynamicIter(_DynamicIter):
     # max_idx = len(self.target_times)
     def make_timestamp(self, target_time: datetime) -> str:
         """TODO:
-            - hardcoded for the DAILY data (deal with other resolution data e.g. months)
+        - hardcoded for the DAILY data (deal with other resolution data e.g. months)
         """
         dt = pd.to_datetime(target_time)
         timestamp = f"{dt.year}-{dt.month}-{dt.day}"

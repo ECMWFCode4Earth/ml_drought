@@ -392,7 +392,9 @@ def train_model_loop(
 ) -> Tuple[List[float], BaseModel, Optional[Tuple[DataLoader]]]:
     #  1. create dataset (input, target)
     dataset = CellStateDataset(
-        input_data=input_data, target_data=target_data, config=config,
+        input_data=input_data,
+        target_data=target_data,
+        config=config,
     )
 
     #  2. create train-test split
@@ -542,7 +544,9 @@ def calculate_raw_correlations(
         input_data["station_id"] = [int(sid) for sid in input_data["station_id"]]
 
         sm_dataset = CellStateDataset(
-            input_data=input_data, target_data=target_data, config=config,
+            input_data=input_data,
+            target_data=target_data,
+            config=config,
         )
         datasets.append(sm_dataset)
 
