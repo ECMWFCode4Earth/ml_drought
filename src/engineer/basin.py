@@ -2,7 +2,6 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 import pandas as pd
-import geopandas as gpd
 from typing import Dict, List, Tuple, Union, Optional
 import pickle
 import tqdm
@@ -11,6 +10,8 @@ import torch
 import h5py
 import sys
 from .runoff_utils import reshape_data
+
+gpd = None
 
 
 class CAMELSCSV(Dataset):
@@ -53,6 +54,10 @@ class CAMELSCSV(Dataset):
         with_static: bool = False,
         concat_static: bool = False,
     ):
+        global gpd
+        if gpd is None:
+            import geopandas as gpd
+
         self.data_dir = data_dir
         self.normalization_dict = normalization_dict
 

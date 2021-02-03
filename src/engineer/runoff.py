@@ -2,7 +2,6 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 import pandas as pd
-import geopandas as gpd
 from typing import Dict, List, Tuple, Union, Optional
 import pickle
 import tqdm
@@ -17,7 +16,7 @@ from .runoff_utils import (
     CalculateNormalizationParams,
 )
 from .basin import CAMELSCSV
-
+gpd = None
 # calculate normalization dict
 # calculate normalization array
 
@@ -71,6 +70,10 @@ class RunoffEngineer:
         with_static: bool = True,
         concat_static: bool = False,
     ):
+        global gpd
+        if gpd is None:
+            import geopandas as gpd
+
         self.data_dir = data_dir
         self.out_file = self.data_dir / "features/features.h5"
 

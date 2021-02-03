@@ -3,11 +3,11 @@ from .base import BasePreProcessor
 import numpy as np
 import xarray as xr
 import pandas as pd
-import geopandas as gpd
 from typing import Dict, List, Tuple, Union
 import pickle
 import tqdm
 import sqlite3
+gpd = None
 
 
 class CAMELSGBPreprocessor(BasePreProcessor):
@@ -21,6 +21,11 @@ class CAMELSGBPreprocessor(BasePreProcessor):
         open_shapefile: bool = True,
         static_to_db: bool = False,
     ):
+        global gpd
+        if gpd is None:
+            import geopandas as gpd
+
+
         super(CAMELSGBPreprocessor, self).__init__(
             data_folder=data_folder, req_xesmf=False
         )
