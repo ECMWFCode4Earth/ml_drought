@@ -46,7 +46,6 @@ def read_ensemble_results(ensemble_dir: Path) -> xr.Dataset:
 
 def read_ensemble_member_results(ensemble_dir: Path) -> xr.Dataset:
     """"""
-    # assert False, "TODO"
     # data_dir = Path("/cats/datastore/data")
     # paths = [d for d in (data_dir / "runs/ensemble_LANE").glob("**/*.p")]
     import re
@@ -196,14 +195,16 @@ if __name__ == "__main__":
     from scripts.drafts.delta_error import DeltaError
 
     data_dir = Path("/cats/datastore/data")
+    lstm_ensemble_dir = data_dir / "runs/ensemble_pet"
+    ealstm_ensemble_dir = data_dir / "runs/ensemble_pet_ealstm"
 
     # ealstm_ensemble_dir = data_dir / "runs/ensemble_EALSTM"
     # ealstm_preds = read_ensemble_results(ealstm_ensemble_dir)
-    pet_ealstm_ensemble_dir = data_dir / "runs/ensemble_pet_ealstm"
-    ealstm_preds = read_ensemble_results(pet_ealstm_ensemble_dir)
+    # pet_ealstm_ensemble_dir = data_dir / "runs/ensemble_pet_ealstm"
+    ealstm_preds = read_ensemble_results(ealstm_ensemble_dir)
 
     # lstm_ensemble_dir = data_dir / "runs/ensemble"
-    lstm_ensemble_dir = data_dir / "runs/ensemble_pet"
+    # lstm_ensemble_dir = data_dir / "runs/ensemble_pet"
     lstm_preds = read_ensemble_results(lstm_ensemble_dir)
 
     #  fuse data
@@ -220,7 +221,15 @@ if __name__ == "__main__":
         station_id=all_stations_ealstm, time=np.isin(ealstm_preds.time, fuse_data.time)
     )
 
-    # calculate all error metrics (including benchmarks)
+    # read the ensemble members into one dataset
+    lstm_ensemble = read_ensemble_member_results(lstm_ensemble_dir)
+    ealstm_ensemble = read_ensemble_member_results(ealstm_ensemble_dir)
+
+    if save:
+        lstm_ensemble.to_netcdf(data_dir / f"RUNOFF/lstm_ensemble_{lstm_ensemble_dir.name}.nc")
+        ealstm_ensemble.to_netcdf(data_dir / f"RUNOFF/ealstm_ensemble_{ealstm_ensemble_dir.name}.nc")
+
+    ## join all into one prediction dataframe
     ds = xr.open_dataset(data_dir / "RUNOFF/ALL_dynamic_ds.nc")
     ds["station_id"] = ds["station_id"].astype(int)
     processor = DeltaError(
@@ -234,4 +243,4 @@ if __name__ == "__main__":
     print(all_preds)
 
     if save:
-        all_preds.to_netcdf(data_dir / "RUNOFF/all_preds.nc")
+        all_preds.to_netcdf(data_dir / f"RUNOFF/all_preds_{lstm_ensemble_dir.name}.nc")
