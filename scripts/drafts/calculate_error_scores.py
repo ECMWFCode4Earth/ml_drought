@@ -290,6 +290,21 @@ def calculate_all_data_errors(
 
     return output_dict
 
+def invert_errors_dict(all_errors: DefaultDict) -> DefaultDict:
+    model = [k for k in all_errors.keys()][0]
+    metrics = all_errors[model].columns
+    all_metrics_list = defaultdict(list)
+    for model in all_errors.keys():
+        for metric in metrics:
+            all_metrics_list[metric].append(all_errors[model][metric].rename(model))
+
+    all_metrics = defaultdict()
+    for metric in all_metrics_list.keys():
+        df = pd.concat(all_metrics_list[metric], axis=1)
+        all_metrics[metric] = df
+
+    return all_metrics
+
 
 def get_metric_dataframes_from_output_dict(
     output_dict: Dict[str, pd.DataFrame]
