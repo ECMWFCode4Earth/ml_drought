@@ -12,6 +12,9 @@ from .base import BaseExporter
 import shutil
 import xarray as xr
 from src.utils import Region, region_lookup
+from rasterio.windows import bounds, from_bounds
+from shapely.geometry import box
+
 
 rasterio = None
 boto3 = None
@@ -89,25 +92,6 @@ class MantleModisExporter(BaseExporter):
         col_stop, row_stop = ~aff * (xmax, ymin)
         return ((int(row_start), int(row_stop)), (int(col_start), int(col_stop)))
 
-    @staticmethod
-    def write_georeferenced_tif(
-        array: np.ndarray, fpath: Path, profile: Dict[str, Any]
-    ):
-        #  write out a rasterio file (need the rasterio.Env context)
-        with rasterio.Env():  # type: ignore
-            profile.update(
-                dtype=rasterio.uint8,  # type: ignore
-                count=1,
-                compress='lzw',
-                tiled=True,
-            )
-            # get the transform explicitly
-            transform = profile["transform"]
-            profile.pop("transform", None)
-
-            with rasterio.open(fpath, "w", transform=transform, **profile) as dst:  # type: ignore
-                dst.write(array.astype(rasterio.uint8), 1)  # type: ignore
-
     def chop_roi(
         self, tif_file: Path, subset_str: str, remove_original: bool = True,
     ) -> Path:
@@ -116,12 +100,14 @@ class MantleModisExporter(BaseExporter):
         region.
 
         Based on the answer here: https://gis.stackexchange.com/a/244684/123489
+        https://automating-gis-processes.github.io/CSC18/lessons/L6/clipping-raster.html
+        https://gis.stackexchange.com/a/349212/123489
         """
-        if not remove_original:
-            assert False, (
-                "This will not work because the later function searches for"
-                " filenames ending with `.tif` and so you will duplicate work"
-            )
+        # Save to same file with region_str
+        new_tif_file_path = tif_file.parents[0] / tif_file.name.replace(
+            ".tif", f"_{subset_str}.tif"
+        )
+
         region = region_lookup[subset_str]
         ymin, ymax, xmin, xmax = (
             region.latmin,
@@ -129,31 +115,34 @@ class MantleModisExporter(BaseExporter):
             region.lonmin,
             region.lonmax,
         )
+        bbox = box(minx=xmin, maxx=xmax, miny=ymin, maxy=ymax)
 
         #  Windowed operation not require reading into memory
-        with rasterio.open(tif_file) as src:  # type: ignore
-            aff = src.transform
-            profile = src.profile.copy()
-            window = self.window_from_extent(xmin, xmax, ymin, ymax, aff)
+        with rasterio.open(tif_file, "r") as src:  # type: ignore
+            with rasterio.open(fpath, "w", **profile) as dst:  # type: ignore
+                aff = src.transform
+                profile = src.profile.copy()
 
-            # Read croped array
-            arr = src.read(1, window=window)
+                # Create the window that you want to use to chop
+                window = self.window_from_extent(xmin, xmax, ymin, ymax, aff)
 
-            # update the profile
-            profile.update(
-                height=window[0][1] - window[0][0],
-                width=window[1][1] - window[1][0],
-                transform=aff,
-            )
+                # Read croped array
+                array_of_data = src.read(1, window=window)
 
-        # Save to same file with region_str
-        new_tif_file_path = tif_file.parents[0] / tif_file.name.replace(
-            ".tif", f"_{subset_str}.tif"
-        )
+                # update the metadata (for writing)
+                profile.update(
+                    height=window[0][1] - window[0][0],
+                    width=window[1][1] - window[1][0],
+                    transform=aff,
+                )
 
-        self.write_georeferenced_tif(
-            array=arr, fpath=new_tif_file_path, profile=profile
-        )
+                src_bounds = bounds(window, transform=src.profile["transform"])
+                dst_window = from_bounds(
+                    *src_bounds, transform=dst.profile["transform"]
+                )
+
+                #  WRITE THE OUTPUT
+                dst.write(array_of_data, window=dst_window, indexes=1)
 
         # DELETE the original file
         if remove_original:
@@ -161,56 +150,56 @@ class MantleModisExporter(BaseExporter):
 
         return new_tif_file_path
 
-    def tif_to_nc(self, tif_file: Path, nc_file: Path, variable: str) -> None:
-        """convert .tif -> .nc using XARRAY"""
-        #  with XARRAY (rasterio backend)
-        ds = xr.open_rasterio(tif_file.resolve())
-        da = ds.isel(band=0).drop("band")
-        da = da.rename({"x": "lon", "y": "lat"})
-        da.name = variable
+        def tif_to_nc(self, tif_file: Path, nc_file: Path, variable: str) -> None:
+            """convert .tif -> .nc using XARRAY"""
+            #  with XARRAY (rasterio backend)
+            ds = xr.open_rasterio(tif_file.resolve())
+            da = ds.isel(band=0).drop("band")
+            da = da.rename({"x": "lon", "y": "lat"})
+            da.name = variable
 
-        # save the netcdf file
-        try:
-            da.to_netcdf(nc_file)
-        except RuntimeError:
-            print("RUN OUT OF MEMORY - deleting the tifs that are already created")
-            self.delete_tifs_already_run()
+            # save the netcdf file
+            try:
+                da.to_netcdf(nc_file)
+            except RuntimeError:
+                print("RUN OUT OF MEMORY - deleting the tifs that are already created")
+                self.delete_tifs_already_run()
 
-    def preprocess_tif_to_nc(
-        self, tif_files: List[Path], variable: str, remove_tif: bool = False
-    ) -> None:
-        """Create the temporary folder for storing the tif / netcdf files
-        (requires copying and deleting).
+        def preprocess_tif_to_nc(
+            self, tif_files: List[Path], variable: str, remove_tif: bool = False
+        ) -> None:
+            """Create the temporary folder for storing the tif / netcdf files
+            (requires copying and deleting).
 
-        NOTE: this function removes the raw tif data from the raw folder.
-        """
-        # 1. move tif files to /tif directory
-        dst_dir = self.output_folder / "tifs"
-        if not dst_dir.exists():
-            dst_dir.mkdir(exist_ok=True, parents=True)
+            NOTE: this function removes the raw tif data from the raw folder.
+            """
+            # 1. move tif files to /tif directory
+            dst_dir = self.output_folder / "tifs"
+            if not dst_dir.exists():
+                dst_dir.mkdir(exist_ok=True, parents=True)
 
-        dst_tif_files = [dst_dir / f.name for f in tif_files]
+            dst_tif_files = [dst_dir / f.name for f in tif_files]
 
-        for src, dst in zip(tif_files, dst_tif_files):
-            shutil.move(src, dst)  #  type: ignore
+            for src, dst in zip(tif_files, dst_tif_files):
+                shutil.move(src, dst)  #  type: ignore
 
-        # 2. convert from tif to netcdf (complete in RAW directory)
-        moved_tif_files = [f for f in dst_dir.glob("*.tif")]
-        nc_files = [f.parents[0] / (f.stem + ".nc") for f in tif_files]
-        moved_tif_files.sort()
-        nc_files.sort()
+            # 2. convert from tif to netcdf (complete in RAW directory)
+            moved_tif_files = [f for f in dst_dir.glob("*.tif")]
+            nc_files = [f.parents[0] / (f.stem + ".nc") for f in tif_files]
+            moved_tif_files.sort()
+            nc_files.sort()
 
-        print("\n")
-        for tif_file, nc_file in zip(moved_tif_files, nc_files):
-            if not nc_file.exists():
-                self.tif_to_nc(tif_file, nc_file, variable=variable)
-                print(f"-- Converted {tif_file.name} to netcdf {nc_file}--")
-            else:
-                print(f"-- {tif_file.name} already converted to {nc_file.name} --")
+            print("\n")
+            for tif_file, nc_file in zip(moved_tif_files, nc_files):
+                if not nc_file.exists():
+                    self.tif_to_nc(tif_file, nc_file, variable=variable)
+                    print(f"-- Converted {tif_file.name} to netcdf {nc_file}--")
+                else:
+                    print(f"-- {tif_file.name} already converted to {nc_file.name} --")
 
-        # 3. remove the tif files
-        if remove_tif:
-            [f.unlink() for f in moved_tif_files]  # type: ignore
+            # 3. remove the tif files
+            if remove_tif:
+                [f.unlink() for f in moved_tif_files]  # type: ignore
 
     ##########################################
     #  Helper Functions for working with S3   #
