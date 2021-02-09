@@ -152,56 +152,56 @@ class MantleModisExporter(BaseExporter):
 
         return new_tif_file_path
 
-        def tif_to_nc(self, tif_file: Path, nc_file: Path, variable: str) -> None:
-            """convert .tif -> .nc using XARRAY"""
-            #  with XARRAY (rasterio backend)
-            ds = xr.open_rasterio(tif_file.resolve())
-            da = ds.isel(band=0).drop("band")
-            da = da.rename({"x": "lon", "y": "lat"})
-            da.name = variable
+    def tif_to_nc(self, tif_file: Path, nc_file: Path, variable: str) -> None:
+        """convert .tif -> .nc using XARRAY"""
+        #  with XARRAY (rasterio backend)
+        ds = xr.open_rasterio(tif_file.resolve())
+        da = ds.isel(band=0).drop("band")
+        da = da.rename({"x": "lon", "y": "lat"})
+        da.name = variable
 
-            # save the netcdf file
-            try:
-                da.to_netcdf(nc_file)
-            except RuntimeError:
-                print("RUN OUT OF MEMORY - deleting the tifs that are already created")
-                self.delete_tifs_already_run()
+        # save the netcdf file
+        try:
+            da.to_netcdf(nc_file)
+        except RuntimeError:
+            print("RUN OUT OF MEMORY - deleting the tifs that are already created")
+            self.delete_tifs_already_run()
 
-        def preprocess_tif_to_nc(
-            self, tif_files: List[Path], variable: str, remove_tif: bool = False
-        ) -> None:
-            """Create the temporary folder for storing the tif / netcdf files
-            (requires copying and deleting).
+    def preprocess_tif_to_nc(
+        self, tif_files: List[Path], variable: str, remove_tif: bool = False
+    ) -> None:
+        """Create the temporary folder for storing the tif / netcdf files
+        (requires copying and deleting).
 
-            NOTE: this function removes the raw tif data from the raw folder.
-            """
-            # 1. move tif files to /tif directory
-            dst_dir = self.output_folder / "tifs"
-            if not dst_dir.exists():
-                dst_dir.mkdir(exist_ok=True, parents=True)
+        NOTE: this function removes the raw tif data from the raw folder.
+        """
+        # 1. move tif files to /tif directory
+        dst_dir = self.output_folder / "tifs"
+        if not dst_dir.exists():
+            dst_dir.mkdir(exist_ok=True, parents=True)
 
-            dst_tif_files = [dst_dir / f.name for f in tif_files]
+        dst_tif_files = [dst_dir / f.name for f in tif_files]
 
-            for src, dst in zip(tif_files, dst_tif_files):
-                shutil.move(src, dst)  #  type: ignore
+        for src, dst in zip(tif_files, dst_tif_files):
+            shutil.move(src, dst)  #  type: ignore
 
-            # 2. convert from tif to netcdf (complete in RAW directory)
-            moved_tif_files = [f for f in dst_dir.glob("*.tif")]
-            nc_files = [f.parents[0] / (f.stem + ".nc") for f in tif_files]
-            moved_tif_files.sort()
-            nc_files.sort()
+        # 2. convert from tif to netcdf (complete in RAW directory)
+        moved_tif_files = [f for f in dst_dir.glob("*.tif")]
+        nc_files = [f.parents[0] / (f.stem + ".nc") for f in tif_files]
+        moved_tif_files.sort()
+        nc_files.sort()
 
-            print("\n")
-            for tif_file, nc_file in zip(moved_tif_files, nc_files):
-                if not nc_file.exists():
-                    self.tif_to_nc(tif_file, nc_file, variable=variable)
-                    print(f"-- Converted {tif_file.name} to netcdf {nc_file}--")
-                else:
-                    print(f"-- {tif_file.name} already converted to {nc_file.name} --")
+        print("\n")
+        for tif_file, nc_file in zip(moved_tif_files, nc_files):
+            if not nc_file.exists():
+                self.tif_to_nc(tif_file, nc_file, variable=variable)
+                print(f"-- Converted {tif_file.name} to netcdf {nc_file}--")
+            else:
+                print(f"-- {tif_file.name} already converted to {nc_file.name} --")
 
-            # 3. remove the tif files
-            if remove_tif:
-                [f.unlink() for f in moved_tif_files]  # type: ignore
+        # 3. remove the tif files
+        if remove_tif:
+            [f.unlink() for f in moved_tif_files]  # type: ignore
 
     ##########################################
     #  Helper Functions for working with S3   #
