@@ -123,25 +123,23 @@ class MantleModisExporter(BaseExporter):
             aff = src.transform
             dst_profile = src.profile.copy()
 
-            # Create the window that you want to use to chop
+            #  Create the window that you want to use to chop
             window = self.window_from_extent(xmin, xmax, ymin, ymax, aff)
             src_bounds = bounds(window, transform=src.profile["transform"])
-            
+
             # update the metadata (for writing)
             profile.update(
                 height=window[0][1] - window[0][0],
                 width=window[1][1] - window[1][0],
-                transform=src.window_transform(window)
+                transform=src.window_transform(window),
             )
 
-            dst_window = from_bounds(
-                *src_bounds, transform=profile["transform"]
-            )
+            dst_window = from_bounds(*src_bounds, transform=dst_profile["transform"])
             dst_window = dst_window.round_shape().round_offsets()
 
             # dst_window = Window.from_slices(*window)
 
-            with rasterio.open(new_tif_file_path, "w", **profile) as dst:  # type: ignore
+            with rasterio.open(new_tif_file_path, "w", **dst_profile) as dst:  # type: ignore
                 # Read croped array
                 array_of_data = src.read(1, window=window)
 
