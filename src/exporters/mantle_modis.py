@@ -296,7 +296,7 @@ class MantleModisExporter(BaseExporter):
         self,
         subset_files: List[str],
         verbose: bool = False,
-        region: Optional[str] = None,
+        region_str: Optional[str] = None,
     ) -> None:
         # get datetimes of the subset_files
         datetimes = pd.to_datetime([f.split("_")[2] for f in subset_files])
