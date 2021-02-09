@@ -15,6 +15,7 @@ from src.utils import Region, region_lookup
 from rasterio.windows import bounds, from_bounds
 from shapely.geometry import box
 from rasterio.windows import Window
+from rasterio import Affine
 
 rasterio = None
 boto3 = None
@@ -129,20 +130,19 @@ class MantleModisExporter(BaseExporter):
             profile.update(
                 height=window[0][1] - window[0][0],
                 width=window[1][1] - window[1][0],
-                transform=aff,
+                transform=Affine(1, 0, 0, 0, -1, 0),
             )
 
             src_bounds = bounds(window, transform=src.profile["transform"])
-            # dst_window = from_bounds(
-            #     *src_bounds, transform=dst.profile["transform"]
-            # )
-            # dst_window = dst_window.round_shape().round_offsets()
-            dst_window = Window.from_slices(*window)
+            dst_window = from_bounds(
+                *src_bounds, transform=profile["transform"]
+            )
+            dst_window = dst_window.round_shape().round_offsets()
+            # dst_window = Window.from_slices(*window)
 
             with rasterio.open(new_tif_file_path, "w", **profile) as dst:  # type: ignore
                 # Read croped array
                 array_of_data = src.read(1, window=window)
-
 
                 #  WRITE THE OUTPUT
                 dst.write(array_of_data, window=dst_window, indexes=1)
