@@ -128,7 +128,7 @@ class MantleModisExporter(BaseExporter):
             src_bounds = bounds(window, transform=src.profile["transform"])
 
             # update the metadata (for writing)
-            profile.update(
+            dst_profile.update(
                 height=window[0][1] - window[0][0],
                 width=window[1][1] - window[1][0],
                 transform=src.window_transform(window),
