@@ -346,8 +346,6 @@ class MantleModisExporter(BaseExporter):
                 )
                 assert subset_output.exists()
 
-    def run_all_export_processes():
-
     def export(
         self,
         variable: str = "vci",
