@@ -14,7 +14,7 @@ import xarray as xr
 from src.utils import Region, region_lookup
 from rasterio.windows import bounds, from_bounds
 from shapely.geometry import box
-
+from rasterio.windows import Window
 
 rasterio = None
 boto3 = None
@@ -137,12 +137,14 @@ class MantleModisExporter(BaseExporter):
                 array_of_data = src.read(1, window=window)
 
                 src_bounds = bounds(window, transform=src.profile["transform"])
-                dst_window = from_bounds(
-                    *src_bounds, transform=dst.profile["transform"]
-                )
+                # dst_window = from_bounds(
+                #     *src_bounds, transform=dst.profile["transform"]
+                # )
+                dst_window = Window.from_slices(*window)
+                dst_window = dst_window.round_shape().round_offsets()
 
                 #  WRITE THE OUTPUT
-                dst.write(array_of_data, window=window, indexes=1)
+                dst.write(array_of_data, window=dst_window, indexes=1)
 
         # DELETE the original file
         if remove_original:
