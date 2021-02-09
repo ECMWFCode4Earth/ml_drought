@@ -25,8 +25,11 @@ def preprocess_mantle_modis(subset_str: str = "india"):
     processor = MantleModisPreprocessor(data_path)
     #  upsampling from low -> high resolution
     processor.preprocess(
-        subset_str=subset_str, regrid=regrid_path, upsampling=False,
-        cleanup=False, with_merge=False
+        subset_str=subset_str,
+        regrid=regrid_path,
+        upsampling=False,
+        cleanup=False,
+        with_merge=False,
     )
 
 
@@ -36,7 +39,7 @@ def merge_all_mantle_modis(subset_str: str = "india"):
     resample_time = "M"
     upsampling = False
 
-    # merge the created files
+    #  merge the created files
     processor = MantleModisPreprocessor(data_path)
     processor.merge_files(subset_str, resample_time, upsampling)
 
@@ -45,11 +48,9 @@ if __name__ == "__main__":
     data_dir = get_data_path()
     for year in np.arange(2001, 2021):
         export_mantle_modis(year, level="OF")
-        preprocess_mantle_modis(
-            subset_str="india"
-        )
+        preprocess_mantle_modis(subset_str="india")
 
-        # DELETE remaining files (tif/nc)
+        #  DELETE remaining files (tif/nc)
         tif_files = (data_dir / "raw/mantle_modis").glob("**/*.tif")
         nc_files = (data_dir / "raw/mantle_modis").glob("**/*.nc")
         [f.unlink() for f in tif_files]

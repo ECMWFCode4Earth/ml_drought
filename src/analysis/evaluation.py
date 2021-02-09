@@ -447,6 +447,9 @@ def temporal_r2(true_da: xr.DataArray, pred_da: xr.DataArray) -> xr.DataArray:
     assert pred_da.name == "preds"
 
     df = pred_da.to_dataframe().join(true_da.to_dataframe()).dropna()
-    r2 = df.reset_index().groupby(["time"]).apply(
-        lambda x: r2_score(x[true_var], x["preds"]))
+    r2 = (
+        df.reset_index()
+        .groupby(["time"])
+        .apply(lambda x: r2_score(x[true_var], x["preds"]))
+    )
     return r2.to_xarray()

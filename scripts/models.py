@@ -209,5 +209,10 @@ if __name__ == "__main__":
     persistence(experiment=experiment)
     # regression(experiment=experiment, ignore_vars=ignore_vars)
     # linear_nn(experiment=experiment, ignore_vars=ignore_vars, static="features", early_stopping=early_stopping)
-    rnn(experiment=experiment, ignore_vars=ignore_vars, static="features", early_stopping=early_stopping)
+    rnn(
+        experiment=experiment,
+        ignore_vars=ignore_vars,
+        static="features",
+        early_stopping=early_stopping,
+    )
     # earnn(experiment=experiment, ignore_vars=ignore_vars, static="features", early_stopping=early_stopping)

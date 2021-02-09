@@ -349,7 +349,7 @@ def create_all_error_metrics(
 
     for model in [m for m in predictions.keys()]:
         model_preds = predictions[model]
-        # ensure that latitude dimensions are matching
+        #  ensure that latitude dimensions are matching
         y_test_ = y_test.sel(lat=predictions[model]["lat"])
         model_rmse = spatial_rmse(
             y_test_.transpose("time", "lat", "lon"),
@@ -453,6 +453,7 @@ def create_timeseries_of_error_metrics(predictions, test_da) -> Dict[str, xr.Dat
 
     return errors["r2"], errors["rmse"]
 
+
 if __name__ == "__main__":
     # run_administrative_region_analysis()
     # run_landcover_region_analysis()
@@ -498,4 +499,3 @@ if __name__ == "__main__":
     # 1. Spatial Plots of R2
     # 1. Scatter Plots of Observed vs. Predicted
     # 1. Confusion matrix of the Vegetation Deficit Index scores
-
