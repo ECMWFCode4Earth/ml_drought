@@ -142,7 +142,7 @@ class MantleModisExporter(BaseExporter):
                 )
 
                 #  WRITE THE OUTPUT
-                dst.write(array_of_data, window=dst_window, indexes=1)
+                dst.write(array_of_data, window=window, indexes=1)
 
         # DELETE the original file
         if remove_original:
