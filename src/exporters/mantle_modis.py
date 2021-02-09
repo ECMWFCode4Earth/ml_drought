@@ -205,7 +205,7 @@ class MantleModisExporter(BaseExporter):
         for tif_file, nc_file in zip(moved_tif_files, nc_files):
             if not nc_file.exists():
                 self.tif_to_nc(tif_file, nc_file, variable=variable)
-                print(f"-- Converted {tif_file.name} to netcdf --")
+                print(f"-- Converted {tif_file} to netcdf --")
             else:
                 print(f"-- {tif_file.name} already converted to {nc_file.name} --")
 
