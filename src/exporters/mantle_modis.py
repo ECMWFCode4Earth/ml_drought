@@ -5,13 +5,15 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from itertools import product
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Tuple
 import warnings
 from tqdm import tqdm
 from .base import BaseExporter
 import shutil
 import xarray as xr
+from src.utils import Region, region_lookup
 
+Affine = None
 boto3 = None
 botocore = None
 Config = None
@@ -46,6 +48,9 @@ class MantleModisExporter(BaseExporter):
         if botocore is None:
             import botocore
             from botocore.client import Config
+        global Affine
+        if affine is None:
+            from affine import Affine
 
         self.modis_bucket = "mantlelabs-eu-modis-boku"
         self.client = boto3.client(  # type: ignore
@@ -74,6 +79,72 @@ class MantleModisExporter(BaseExporter):
 
         # delete the already removed
         [f.unlink() for f in converted_tifs]  # type: ignore
+
+    @staticmethod
+    def window_from_extent(
+        xmin: float, xmax: float, ymin: float, ymax: float, aff: Any
+    ) -> Tuple[Tuple[int]]:
+        #  aff: Affine type
+        col_start, row_start = ~aff * (xmin, ymax)
+        col_stop, row_stop = ~aff * (xmax, ymin)
+        return ((int(row_start), int(row_stop)), (int(col_start), int(col_stop)))
+
+    @staticmethod
+    def chop_roi(
+        tif_file: Path,
+        subset_str: Optional[str] = None,
+        remove_original: bool = True,
+    ) -> Path:
+        """ lookup the region information from the dictionary in
+        `src.utils.region_lookup` and subset the `ds` object based on that
+        region.
+
+        Based on the answer here: https://gis.stackexchange.com/a/244684/123489
+        """
+        if not remove_original:
+            assert (
+                False
+            ), (
+                "This will not work because the later function searches for"
+                " filenames ending with `.tif` and so you will duplicate work"
+            )
+        region = region_lookup[subset_str] if subset_str is not None else None
+        ymin, ymax, xmin, xmax = (
+            region.latmin,
+            region.latmax,
+            region.lonmin,
+            region.lonmax,
+        )
+
+        #  Windowed operation not require reading into memory
+        with rasterio.open(tif_file) as src:
+            aff = src.transform
+            profile = src.profile.copy()
+            window = window_from_extent(xmin, xmax, ymin, ymax, aff)
+
+            # Read croped array
+            arr = src.read(1, window=window)
+
+            # update the profile
+            profile.update(
+                height=window[0][1] - window[0][0],
+                width=window[1][1] - window[1][0],
+                transform=aff
+            )
+            profile.pop("transform", None)
+
+        # Save to same file with region_str
+        new_tif_file_path = tif_file.parents[0] / tif_file.name.replace(
+            ".tif", f"_{region_str}.tif"
+        )
+        with rasterio.open(new_tif_file_path, "w", **profile) as dst:
+            dst.write(arr.astype(rasterio.uint8), 1)
+
+        # DELETE the original file
+        if remove_original:
+            tif_file.unlink()
+
+        return new_tif_file_path
 
     def tif_to_nc(self, tif_file: Path, nc_file: Path, variable: str) -> None:
         """convert .tif -> .nc using XARRAY"""
@@ -222,7 +293,10 @@ class MantleModisExporter(BaseExporter):
     ##########################################
 
     def _export_list_of_files(
-        self, subset_files: List[str], verbose: bool = False
+        self,
+        subset_files: List[str],
+        verbose: bool = False,
+        region: Optional[str] = None,
     ) -> None:
         # get datetimes of the subset_files
         datetimes = pd.to_datetime([f.split("_")[2] for f in subset_files])
@@ -230,7 +304,7 @@ class MantleModisExporter(BaseExporter):
         output_files = []
         # Download each file, creating out folder structure
         # data_dir / raw / mantle_modis / MCD13A2_006_globalV1_1km_OF / {year}
-        for target_key, dt in tqdm(zip(subset_files, datetimes)):
+        for target_key, dt in zip(subset_files, datetimes):
             # create filename (target_name)
             path = Path(target_key)
             target_name = f"{dt.year}{dt.month:02d}{dt.day:02d}_{path.name}"
@@ -265,6 +339,15 @@ class MantleModisExporter(BaseExporter):
                 else:
                     raise e
 
+            # Subset by region_str
+            if (target_output.exists()) & (region_str is not None):
+                subset_output = self.chop_roi(
+                    tif_file=target_output, region_str=region_str
+                )
+                assert subset_output.exists()
+
+    def run_all_export_processes():
+
     def export(
         self,
         variable: str = "vci",
@@ -272,6 +355,7 @@ class MantleModisExporter(BaseExporter):
         years: Optional[List[int]] = None,
         months: Optional[List[int]] = None,
         remove_tif: bool = False,
+        region: Optional[str] = "kenya",
     ):
         assert variable in [
             "sm",
@@ -304,12 +388,21 @@ class MantleModisExporter(BaseExporter):
         subset = (variables == variable) & (levels == level)
         subset_files = np.array(all_files)[subset]
 
-        self._export_list_of_files(subset_files)
+        # do year by year
+        subset_years = [int(f.split("/")[-3].split("_")[1][:4]) for f in subset_files]
+        unique_years = np.unique(subset_years)
+        for year in tqdm(unique_years, desc="Downloading by year"):
+            # subset years
+            year_subset_tif_files = np.array(subset_files)[
+                np.array(subset_years) == year
+            ]
 
-        # convert tif to netcdf
-        out_tif_files = self.get_tif_filepaths()
+            self._export_list_of_files(year_subset_tif_files, region=region)
 
-        print("\n** Exported TIFs. Now Processing to NETCDF **\n")
-        self.preprocess_tif_to_nc(
-            out_tif_files, remove_tif=remove_tif, variable=f"modis_{variable}"
-        )
+            # convert tif to netcdf
+            out_tif_files = self.get_tif_filepaths()
+            
+            # print("\n** Exported TIFs. Now Processing to NETCDF **\n")
+            self.preprocess_tif_to_nc(
+                out_tif_files, remove_tif=remove_tif, variable=f"modis_{variable}"
+            )
