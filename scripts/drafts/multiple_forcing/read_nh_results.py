@@ -75,7 +75,7 @@ def get_args() -> Dict:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run_dir", type=str)
     parser.add_argument("--eval", type=bool, default=False)
-    parser.add_argument("--epoch", type=int, default=None)
+    parser.add_argument("--epoch", type=int, default=30)
     parser.add_argument("--save_csv", type=bool, default=True)
     parser.add_argument("--ensemble", type=bool, default=False)
     parser.add_argument("--ensemble_filename", type=str, default=None)
