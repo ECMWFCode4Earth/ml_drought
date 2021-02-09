@@ -347,7 +347,7 @@ class MantleModisExporter(BaseExporter):
         level: str = "OF",
         years: Optional[List[int]] = None,
         months: Optional[List[int]] = None,
-        remove_tif: bool = False,
+        remove_tif: bool = True,
         region_str: Optional[str] = "kenya",
     ):
         assert variable in [
