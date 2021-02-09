@@ -119,7 +119,7 @@ class MantleModisExporter(BaseExporter):
 
         #  Windowed operation not require reading into memory
         with rasterio.open(tif_file, "r") as src:  # type: ignore
-            with rasterio.open(fpath, "w", **profile) as dst:  # type: ignore
+            with rasterio.open(new_tif_file_path, "w", **profile) as dst:  # type: ignore
                 aff = src.transform
                 profile = src.profile.copy()
 
