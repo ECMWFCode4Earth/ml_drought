@@ -342,7 +342,7 @@ class MantleModisExporter(BaseExporter):
             # Subset by region_str
             if (target_output.exists()) & (region_str is not None):
                 subset_output = self.chop_roi(
-                    tif_file=target_output, region_str=region_str
+                    tif_file=target_output, subset_str=region_str
                 )
                 assert subset_output.exists()
 
