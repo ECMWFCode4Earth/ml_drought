@@ -83,16 +83,16 @@ class MantleModisExporter(BaseExporter):
     @staticmethod
     def window_from_extent(
         xmin: float, xmax: float, ymin: float, ymax: float, aff: Any
-    ) -> Tuple[Tuple[int]]:
+    ) -> Tuple[Tuple[int, int], ...]:
         #  aff: Affine type
         col_start, row_start = ~aff * (xmin, ymax)
         col_stop, row_stop = ~aff * (xmax, ymin)
         return ((int(row_start), int(row_stop)), (int(col_start), int(col_stop)))
 
-    @staticmethod
     def chop_roi(
+        self,
         tif_file: Path,
-        subset_str: Optional[str] = None,
+        subset_str: str,
         remove_original: bool = True,
     ) -> Path:
         """ lookup the region information from the dictionary in
@@ -108,7 +108,7 @@ class MantleModisExporter(BaseExporter):
                 "This will not work because the later function searches for"
                 " filenames ending with `.tif` and so you will duplicate work"
             )
-        region = region_lookup[subset_str] if subset_str is not None else None
+        region = region_lookup[subset_str]
         ymin, ymax, xmin, xmax = (
             region.latmin,
             region.latmax,
@@ -117,10 +117,10 @@ class MantleModisExporter(BaseExporter):
         )
 
         #  Windowed operation not require reading into memory
-        with rasterio.open(tif_file) as src:
+        with rasterio.open(tif_file) as src:  # type: ignore
             aff = src.transform
             profile = src.profile.copy()
-            window = window_from_extent(xmin, xmax, ymin, ymax, aff)
+            window = self.window_from_extent(xmin, xmax, ymin, ymax, aff)
 
             # Read croped array
             arr = src.read(1, window=window)
@@ -135,10 +135,10 @@ class MantleModisExporter(BaseExporter):
 
         # Save to same file with region_str
         new_tif_file_path = tif_file.parents[0] / tif_file.name.replace(
-            ".tif", f"_{region_str}.tif"
+            ".tif", f"_{subset_str}.tif"
         )
-        with rasterio.open(new_tif_file_path, "w", **profile) as dst:
-            dst.write(arr.astype(rasterio.uint8), 1)
+        with rasterio.open(new_tif_file_path, "w", **profile) as dst:  # type: ignore
+            dst.write(arr.astype(rasterio.uint8), 1)  # type: ignore
 
         # DELETE the original file
         if remove_original:
