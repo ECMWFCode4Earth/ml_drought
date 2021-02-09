@@ -49,7 +49,7 @@ class MantleModisExporter(BaseExporter):
             import botocore
             from botocore.client import Config
         global Affine
-        if affine is None:
+        if Affine is None:
             from affine import Affine
 
         self.modis_bucket = "mantlelabs-eu-modis-boku"
