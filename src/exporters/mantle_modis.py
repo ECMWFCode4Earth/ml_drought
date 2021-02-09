@@ -131,7 +131,7 @@ class MantleModisExporter(BaseExporter):
             profile.update(
                 height=window[0][1] - window[0][0],
                 width=window[1][1] - window[1][0],
-                transform=src.window_transform(window).
+                transform=src.window_transform(window)
             )
 
             dst_window = from_bounds(
