@@ -353,7 +353,7 @@ class MantleModisExporter(BaseExporter):
         years: Optional[List[int]] = None,
         months: Optional[List[int]] = None,
         remove_tif: bool = False,
-        region: Optional[str] = "kenya",
+        region_str: Optional[str] = "kenya",
     ):
         assert variable in [
             "sm",
@@ -395,7 +395,7 @@ class MantleModisExporter(BaseExporter):
                 np.array(subset_years) == year
             ]
 
-            self._export_list_of_files(year_subset_tif_files, region=region)
+            self._export_list_of_files(year_subset_tif_files, region_str=region_str)
 
             # convert tif to netcdf
             out_tif_files = self.get_tif_filepaths()
