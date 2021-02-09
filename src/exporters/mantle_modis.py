@@ -89,6 +89,20 @@ class MantleModisExporter(BaseExporter):
         col_stop, row_stop = ~aff * (xmax, ymin)
         return ((int(row_start), int(row_stop)), (int(col_start), int(col_stop)))
 
+    @staticmethod
+    def write_georeferenced_tif(
+        array: np.ndarray, fpath: Path, profile: Dict[str, Any]
+    ):
+        #  write out a rasterio file (need the rasterio.Env context)
+        with rasterio.Env():  # type: ignore
+            profile.update(
+                dtype=rasterio.uint8,  # type: ignore
+                count=1,
+            )
+
+            with rasterio.open(fpath, "w", **profile) as dst:  # type: ignore
+                dst.write(array.astype(rasterio.uint8), 1)  # type: ignore
+
     def chop_roi(
         self, tif_file: Path, subset_str: str, remove_original: bool = True,
     ) -> Path:
@@ -132,8 +146,10 @@ class MantleModisExporter(BaseExporter):
         new_tif_file_path = tif_file.parents[0] / tif_file.name.replace(
             ".tif", f"_{subset_str}.tif"
         )
-        with rasterio.open(new_tif_file_path, "w", **profile) as dst:  # type: ignore
-            dst.write(arr.astype(rasterio.uint8), 1)  # type: ignore
+
+        self.write_georeferenced_tif(
+            array=arr, fpath=new_tif_file_path, profile=profile
+        )
 
         # DELETE the original file
         if remove_original:
@@ -172,7 +188,7 @@ class MantleModisExporter(BaseExporter):
         dst_tif_files = [dst_dir / f.name for f in tif_files]
 
         for src, dst in zip(tif_files, dst_tif_files):
-            shutil.move(src, dst)
+            shutil.move(src, dst)  #  type: ignore
 
         # 2. convert from tif to netcdf (complete in RAW directory)
         moved_tif_files = [f for f in dst_dir.glob("*.tif")]
