@@ -98,9 +98,14 @@ class MantleModisExporter(BaseExporter):
             profile.update(
                 dtype=rasterio.uint8,  # type: ignore
                 count=1,
+                compress='lzw',
+                tiled=True,
             )
+            # get the transform explicitly
+            transform = profile["transform"]
+            profile.pop("transform", None)
 
-            with rasterio.open(fpath, "w", **profile) as dst:  # type: ignore
+            with rasterio.open(fpath, "w", transform=transform, **profile) as dst:  # type: ignore
                 dst.write(array.astype(rasterio.uint8), 1)  # type: ignore
 
     def chop_roi(
@@ -364,7 +369,7 @@ class MantleModisExporter(BaseExporter):
         years: Optional[List[int]] = None,
         months: Optional[List[int]] = None,
         remove_tif: bool = True,
-        region_str: Optional[str] = "kenya",
+        region_str: Optional[str] = None,
     ):
         assert variable in [
             "sm",
