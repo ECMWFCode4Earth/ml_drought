@@ -33,14 +33,23 @@ def join_into_one_ds(
     return all_preds
 
 
+def _read_csv_results(csv_path: Path) -> xr.Dataset:
+    df = pd.read_csv(csv_path)
+    if "Unnamed: 0" in df.columns:
+        df = df .drop("Unnamed: 0", axis=1)
+    df["time"] = pd.to_datetime(df["time"])
+    preds = df.set_index(["station_id", "time"]).to_xarray()
+    preds["station_id"] = [int(sid) for sid in preds["station_id"]]
+
+    return preds
+
+
 def read_ensemble_results(ensemble_dir: Path) -> xr.Dataset:
     assert (
         ensemble_dir / "data_ENS.csv"
     ).exists(), "Has `scripts/multiple_forcing/read_nh_results.py` been run?"
-    df = pd.read_csv(ensemble_dir / "data_ENS.csv").drop("Unnamed: 0", axis=1)
-    df["time"] = pd.to_datetime(df["time"])
-    preds = df.set_index(["station_id", "time"]).to_xarray()
-    preds["station_id"] = [int(sid) for sid in preds["station_id"]]
+    csv_path = ensemble_dir / "data_ENS.csv"
+    preds = _read_csv_results(csv_path)
     return preds
 
 
