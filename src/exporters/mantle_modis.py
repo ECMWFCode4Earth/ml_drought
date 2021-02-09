@@ -13,7 +13,7 @@ import shutil
 import xarray as xr
 from src.utils import Region, region_lookup
 
-Affine = None
+rasterio = None
 boto3 = None
 botocore = None
 Config = None
@@ -48,9 +48,9 @@ class MantleModisExporter(BaseExporter):
         if botocore is None:
             import botocore
             from botocore.client import Config
-        global Affine
-        if Affine is None:
-            from affine import Affine
+        global rasterio
+        if rasterio is None:
+            import rasterio
 
         self.modis_bucket = "mantlelabs-eu-modis-boku"
         self.client = boto3.client(  # type: ignore
