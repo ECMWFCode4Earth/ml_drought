@@ -90,10 +90,7 @@ class MantleModisExporter(BaseExporter):
         return ((int(row_start), int(row_stop)), (int(col_start), int(col_stop)))
 
     def chop_roi(
-        self,
-        tif_file: Path,
-        subset_str: str,
-        remove_original: bool = True,
+        self, tif_file: Path, subset_str: str, remove_original: bool = True,
     ) -> Path:
         """ lookup the region information from the dictionary in
         `src.utils.region_lookup` and subset the `ds` object based on that
@@ -102,9 +99,7 @@ class MantleModisExporter(BaseExporter):
         Based on the answer here: https://gis.stackexchange.com/a/244684/123489
         """
         if not remove_original:
-            assert (
-                False
-            ), (
+            assert False, (
                 "This will not work because the later function searches for"
                 " filenames ending with `.tif` and so you will duplicate work"
             )
@@ -129,7 +124,7 @@ class MantleModisExporter(BaseExporter):
             profile.update(
                 height=window[0][1] - window[0][0],
                 width=window[1][1] - window[1][0],
-                transform=aff
+                transform=aff,
             )
             profile.pop("transform", None)
 
@@ -323,7 +318,7 @@ class MantleModisExporter(BaseExporter):
             if target_output.exists():
                 print(f"{target_output} already exists! Skipping")
             else:
-                # Try and download 
+                # Try and download
                 try:
                     self.client.download_file(
                         Bucket=self.modis_bucket,
@@ -399,8 +394,8 @@ class MantleModisExporter(BaseExporter):
 
             # convert tif to netcdf
             out_tif_files = self.get_tif_filepaths()
-            
-            # print("\n** Exported TIFs. Now Processing to NETCDF **\n")
+
+            #  print("\n** Exported TIFs. Now Processing to NETCDF **\n")
             self.preprocess_tif_to_nc(
                 out_tif_files, remove_tif=remove_tif, variable=f"modis_{variable}"
             )
