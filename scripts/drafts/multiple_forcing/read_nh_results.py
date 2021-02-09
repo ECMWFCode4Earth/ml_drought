@@ -221,7 +221,7 @@ if __name__ == "__main__":
     ds, metric_df = get_ds_and_metrics(res_fp, metrics=metrics)
 
     # -------- SAVE ------------------------------------------
-    print("** Writing `results.nc` and `metric_df.csv` **")
+    print(f"** Writing `results.nc` and `metric_df.csv` to {test_dir} **")
     ds.to_netcdf(test_dir / "results.nc")
 
     if metrics:
