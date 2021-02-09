@@ -322,22 +322,22 @@ class MantleModisExporter(BaseExporter):
             # check that it doesn't already exist ...
             if target_output.exists():
                 print(f"{target_output} already exists! Skipping")
-                continue
-
-            try:
-                self.client.download_file(
-                    Bucket=self.modis_bucket,
-                    Key=target_key,
-                    Filename=str(target_output),
-                )
-                output_files.append(target_output)
-                if verbose:
-                    print(f"Exported {target_key} to {target_folder}")
-            except botocore.exceptions.ClientError as e:  # type: ignore
-                if e.response["Error"]["Code"] == "404":
-                    warnings.warn("Key does not exist! " f"{target_key}")
-                else:
-                    raise e
+            else:
+                # Try and download 
+                try:
+                    self.client.download_file(
+                        Bucket=self.modis_bucket,
+                        Key=target_key,
+                        Filename=str(target_output),
+                    )
+                    output_files.append(target_output)
+                    if verbose:
+                        print(f"Exported {target_key} to {target_folder}")
+                except botocore.exceptions.ClientError as e:  # type: ignore
+                    if e.response["Error"]["Code"] == "404":
+                        warnings.warn("Key does not exist! " f"{target_key}")
+                    else:
+                        raise e
 
             # Subset by region_str
             if (target_output.exists()) & (region_str is not None):
