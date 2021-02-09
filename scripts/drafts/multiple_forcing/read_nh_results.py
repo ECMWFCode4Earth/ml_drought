@@ -79,6 +79,7 @@ def get_args() -> Dict:
     parser.add_argument("--save_csv", type=bool, default=True)
     parser.add_argument("--ensemble", type=bool, default=False)
     parser.add_argument("--ensemble_filename", type=str, default=None)
+    parser.add_argument("--metrics", type=bool, default=False)
     args = vars(parser.parse_args())
 
     return args
@@ -109,7 +110,7 @@ def get_ensemble_path(
     return res_fp
 
 
-def get_ds_and_metrics(res_fp: Path) -> Union[xr.Dataset, pd.DataFrame]:
+def get_ds_and_metrics(res_fp: Path, metrics: bool = False) -> Union[xr.Dataset, pd.DataFrame]:
     # load the dictionary of results
     res_dict = pickle.load(res_fp.open("rb"))
     stations = [k for k in res_dict.keys()]
@@ -137,48 +138,52 @@ def get_ds_and_metrics(res_fp: Path) -> Union[xr.Dataset, pd.DataFrame]:
         )
         all_xr_objects.append(xr_obj)
 
-        # extract the output metrics
-        output_metrics_dict["station_id"].append(station_id)
-        try:
-            output_metrics_dict["NSE"].append(res_dict[station_id][freq]["NSE"])
-            output_metrics_dict["KGE"].append(res_dict[station_id][freq]["KGE"])
-            output_metrics_dict["MSE"].append(res_dict[station_id][freq]["MSE"])
-            output_metrics_dict["FHV"].append(res_dict[station_id][freq]["FHV"])
-            output_metrics_dict["FMS"].append(res_dict[station_id][freq]["FMS"])
-            output_metrics_dict["FLV"].append(res_dict[station_id][freq]["FLV"])
-        except KeyError:
+        if metrics:
+            # extract the output metrics
+            output_metrics_dict["station_id"].append(station_id)
             try:
-                output_metrics_dict["NSE"].append(
-                    res_dict[station_id][freq][f"NSE_{freq}"]
-                )
-                output_metrics_dict["KGE"].append(
-                    res_dict[station_id][freq][f"KGE_{freq}"]
-                )
-                output_metrics_dict["MSE"].append(
-                    res_dict[station_id][freq][f"MSE_{freq}"]
-                )
-                output_metrics_dict["FHV"].append(
-                    res_dict[station_id][freq][f"FHV_{freq}"]
-                )
-                output_metrics_dict["FMS"].append(
-                    res_dict[station_id][freq][f"FMS_{freq}"]
-                )
-                output_metrics_dict["FLV"].append(
-                    res_dict[station_id][freq][f"FLV_{freq}"]
-                )
+                output_metrics_dict["NSE"].append(res_dict[station_id][freq]["NSE"])
+                output_metrics_dict["KGE"].append(res_dict[station_id][freq]["KGE"])
+                output_metrics_dict["MSE"].append(res_dict[station_id][freq]["MSE"])
+                output_metrics_dict["FHV"].append(res_dict[station_id][freq]["FHV"])
+                output_metrics_dict["FMS"].append(res_dict[station_id][freq]["FMS"])
+                output_metrics_dict["FLV"].append(res_dict[station_id][freq]["FLV"])
             except KeyError:
-                output_metrics_dict["NSE"].append(np.nan)
-                output_metrics_dict["KGE"].append(np.nan)
-                output_metrics_dict["MSE"].append(np.nan)
-                output_metrics_dict["FHV"].append(np.nan)
-                output_metrics_dict["FMS"].append(np.nan)
-                output_metrics_dict["FLV"].append(np.nan)
+                try:
+                    output_metrics_dict["NSE"].append(
+                        res_dict[station_id][freq][f"NSE_{freq}"]
+                    )
+                    output_metrics_dict["KGE"].append(
+                        res_dict[station_id][freq][f"KGE_{freq}"]
+                    )
+                    output_metrics_dict["MSE"].append(
+                        res_dict[station_id][freq][f"MSE_{freq}"]
+                    )
+                    output_metrics_dict["FHV"].append(
+                        res_dict[station_id][freq][f"FHV_{freq}"]
+                    )
+                    output_metrics_dict["FMS"].append(
+                        res_dict[station_id][freq][f"FMS_{freq}"]
+                    )
+                    output_metrics_dict["FLV"].append(
+                        res_dict[station_id][freq][f"FLV_{freq}"]
+                    )
+                except KeyError:
+                    output_metrics_dict["NSE"].append(np.nan)
+                    output_metrics_dict["KGE"].append(np.nan)
+                    output_metrics_dict["MSE"].append(np.nan)
+                    output_metrics_dict["FHV"].append(np.nan)
+                    output_metrics_dict["FMS"].append(np.nan)
+                    output_metrics_dict["FLV"].append(np.nan)
 
     #  merge all stations into one xarray object
     ds = xr.concat(all_xr_objects, dim="station_id")
 
-    #  create metric dataframe
-    metric_df = pd.DataFrame(output_metrics_dict)
+    if metrics:
+        #  create metric dataframe
+        metric_df = pd.DataFrame(output_metrics_dict)
+    else:
+        metric_df = pd.DataFrame([])
 
     return ds, metric_df
 
@@ -201,6 +206,7 @@ if __name__ == "__main__":
     save_csv: bool = args["save_csv"]
     ensemble: bool = args["ensemble"]
     ensemble_filename: str = args["ensemble_filename"]
+    metrics: bool = args["metrics"]
 
     # run evaluation (optional)
     if bool_evaluation:
@@ -212,12 +218,14 @@ if __name__ == "__main__":
         res_fp = get_test_filepath(run_dir, epoch)
     test_dir = res_fp.parents[0]
 
-    ds, metric_df = get_ds_and_metrics(res_fp)
+    ds, metric_df = get_ds_and_metrics(res_fp, metrics=metrics)
 
-    # SAVE
+    # -------- SAVE ------------------------------------------
     print("** Writing `results.nc` and `metric_df.csv` **")
     ds.to_netcdf(test_dir / "results.nc")
-    metric_df.to_csv(test_dir / "metric_df.csv")
+
+    if metrics:
+        metric_df.to_csv(test_dir / "metric_df.csv")
 
     # create csv with informative name
     if save_csv:
