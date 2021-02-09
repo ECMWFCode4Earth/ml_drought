@@ -145,7 +145,6 @@ class MantleModisExporter(BaseExporter):
                 width=window[1][1] - window[1][0],
                 transform=aff,
             )
-            profile.pop("transform", None)
 
         # Save to same file with region_str
         new_tif_file_path = tif_file.parents[0] / tif_file.name.replace(
