@@ -119,22 +119,22 @@ class MantleModisExporter(BaseExporter):
 
         #  Windowed operation not require reading into memory
         with rasterio.open(tif_file, "r") as src:  # type: ignore
+            aff = src.transform
+            profile = src.profile.copy()
+
+            # Create the window that you want to use to chop
+            window = self.window_from_extent(xmin, xmax, ymin, ymax, aff)
+
+            # update the metadata (for writing)
+            profile.update(
+                height=window[0][1] - window[0][0],
+                width=window[1][1] - window[1][0],
+                transform=aff,
+            )
+
             with rasterio.open(new_tif_file_path, "w", **profile) as dst:  # type: ignore
-                aff = src.transform
-                profile = src.profile.copy()
-
-                # Create the window that you want to use to chop
-                window = self.window_from_extent(xmin, xmax, ymin, ymax, aff)
-
                 # Read croped array
                 array_of_data = src.read(1, window=window)
-
-                # update the metadata (for writing)
-                profile.update(
-                    height=window[0][1] - window[0][0],
-                    width=window[1][1] - window[1][0],
-                    transform=aff,
-                )
 
                 src_bounds = bounds(window, transform=src.profile["transform"])
                 dst_window = from_bounds(
