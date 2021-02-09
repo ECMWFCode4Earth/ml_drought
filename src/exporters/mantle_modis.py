@@ -132,16 +132,17 @@ class MantleModisExporter(BaseExporter):
                 transform=aff,
             )
 
+            src_bounds = bounds(window, transform=src.profile["transform"])
+            # dst_window = from_bounds(
+            #     *src_bounds, transform=dst.profile["transform"]
+            # )
+            # dst_window = dst_window.round_shape().round_offsets()
+            dst_window = Window.from_slices(*window)
+
             with rasterio.open(new_tif_file_path, "w", **profile) as dst:  # type: ignore
                 # Read croped array
                 array_of_data = src.read(1, window=window)
 
-                src_bounds = bounds(window, transform=src.profile["transform"])
-                # dst_window = from_bounds(
-                #     *src_bounds, transform=dst.profile["transform"]
-                # )
-                dst_window = Window.from_slices(*window)
-                dst_window = dst_window.round_shape().round_offsets()
 
                 #  WRITE THE OUTPUT
                 dst.write(array_of_data, window=dst_window, indexes=1)
