@@ -15,9 +15,9 @@
 3) Merge Results
     `ipython --pdb neuralhydrology/utils/nh_results_ensemble.py -- --run-dirs /cats/datastore/data/runs/ensemble_ealstm_LANE/*  --save-file /cats/datastore/data/runs/ensemble_ealstm_LANE/ensemble_results.p --metrics NSE MSE KGE FHV FMS FLV`
 4) Extract Results
-    `cd /home/tommy/ml_drought; ipython --pdb scripts/drafts/multiple_forcing/read_nh_results.py -- --run_dir /cats/datastore/data/runs/ensemble_ealstm_LANE --ensemble True --ensemble_filename /cats/datastore/data/runs/ensemble_ealstm_LANE/ensemble_results.p`
+    `cd /home/tommy/ml_drought; ipython --pdb scripts/drafts/multiple_forcing/read_nh_results.py -- --run_dir /cats/datastore/data/runs/ensemble_lstm_TEMP --ensemble True --ensemble_filename /cats/datastore/data/runs/ensemble_lstm_TEMP/ensemble_results.p`
 •) Read each individual member
-    
+    ipython -c "from scripts.drafts.io_results import read_ensemble_member_results; from pathlib import Path; ds = read_ensemble_member_results(Path('/cats/datastore/data/runs/ensemble_lstm_TEMP')); ds.to_netcdf('/cats/datastore/data/runs/ensemble_lstm_TEMP/ensemble_all.nc')"
 
 5) Finetune
     `ipython --pdb neuralhydrology/nh_run_scheduler.py finetune -- --directory configs/ensemble_lstm_finetune/ --runs-per-gpu 2 --gpu-ids 0`
@@ -110,7 +110,9 @@ def get_ensemble_path(
     return res_fp
 
 
-def get_ds_and_metrics(res_fp: Path, metrics: bool = False) -> Union[xr.Dataset, pd.DataFrame]:
+def get_ds_and_metrics(
+    res_fp: Path, metrics: bool = False
+) -> Union[xr.Dataset, pd.DataFrame]:
     # load the dictionary of results
     res_dict = pickle.load(res_fp.open("rb"))
     stations = [k for k in res_dict.keys()]

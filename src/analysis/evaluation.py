@@ -366,16 +366,8 @@ def _nse_func(true_vals: np.ndarray, pred_vals: np.ndarray) -> float:
         (np.argwhere(np.isnan(true_vals))).flatten(),
         (np.argwhere(np.isnan(pred_vals))).flatten(),
     )
-    true_vals = np.delete(
-        true_vals,
-        missing_data,
-        axis=0,
-    )
-    pred_vals = np.delete(
-        pred_vals,
-        missing_data,
-        axis=0,
-    )
+    true_vals = np.delete(true_vals, missing_data, axis=0,)
+    pred_vals = np.delete(pred_vals, missing_data, axis=0,)
     if true_vals.shape != pred_vals.shape:
         raise RuntimeError("true_vals and pred_vals must be of the same length.")
 
@@ -475,32 +467,16 @@ def _kge_func(
         (np.argwhere(np.isnan(true_vals))).flatten(),
         (np.argwhere(np.isnan(pred_vals))).flatten(),
     )
-    true_vals = np.delete(
-        true_vals,
-        missing_data,
-        axis=0,
-    )
-    pred_vals = np.delete(
-        pred_vals,
-        missing_data,
-        axis=0,
-    )
+    true_vals = np.delete(true_vals, missing_data, axis=0,)
+    pred_vals = np.delete(pred_vals, missing_data, axis=0,)
 
     # check for non-finite data (np.inf)
     missing_data = np.append(
         (np.argwhere(~np.isfinite(true_vals))).flatten(),
         (np.argwhere(~np.isfinite(pred_vals))).flatten(),
     )
-    true_vals = np.delete(
-        true_vals,
-        missing_data,
-        axis=0,
-    )
-    pred_vals = np.delete(
-        pred_vals,
-        missing_data,
-        axis=0,
-    )
+    true_vals = np.delete(true_vals, missing_data, axis=0,)
+    pred_vals = np.delete(pred_vals, missing_data, axis=0,)
 
     if true_vals.shape != pred_vals.shape:
         raise RuntimeError("true_vals and pred_vals must be of the same length.")

@@ -259,9 +259,7 @@ def calculate_errors(preds: xr.Dataset, yilmaz_errors: bool = False) -> pd.DataF
 
 
 def calculate_all_data_errors(
-    sim_obs_data: xr.Dataset,
-    decompose_kge: bool = False,
-    yilmaz_errors: bool = False,
+    sim_obs_data: xr.Dataset, decompose_kge: bool = False, yilmaz_errors: bool = False,
 ) -> DefaultDict[str, Dict[str, pd.DataFrame]]:
     assert all(np.isin(["obs"], list(sim_obs_data.data_vars)))
     model_var_list: List[str] = [v for v in sim_obs_data.data_vars if "obs" not in v]
@@ -289,6 +287,7 @@ def calculate_all_data_errors(
         output_dict[model.replace("SimQ_", "")] = error_df
 
     return output_dict
+
 
 def invert_errors_dict(all_errors: DefaultDict) -> DefaultDict:
     model = [k for k in all_errors.keys()][0]
@@ -444,14 +443,7 @@ class FuseErrors:
             out_list.append(function(obs_copy, model).rename(model_name))
 
         # merge all of the station error metrics into one xr.Dataset
-        metric_xr = xr.merge(
-            [
-                out_list[0],
-                out_list[1],
-                out_list[2],
-                out_list[3],
-            ]
-        )
+        metric_xr = xr.merge([out_list[0], out_list[1], out_list[2], out_list[3],])
         metric_df = metric_xr.to_dataframe()
         metric_df = (
             pd.DataFrame(gauge_name_lookup, index=["gauge_name"])
@@ -581,8 +573,7 @@ def calculate_error_diff(
 
 
 def calculate_all_delta_dfs(
-    errors_dict: Dict[str, pd.DataFrame],
-    absolute_metrics: List[str] = [],
+    errors_dict: Dict[str, pd.DataFrame], absolute_metrics: List[str] = [],
 ) -> Tuple[Dict[str, pd.DataFrame]]:
     lstm_delta: Dict[str, pd.DataFrame] = defaultdict()
     ealstm_delta: Dict[str, pd.DataFrame] = defaultdict()

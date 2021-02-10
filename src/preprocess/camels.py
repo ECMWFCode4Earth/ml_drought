@@ -7,6 +7,7 @@ from typing import Dict, List, Tuple, Union, Any
 import pickle
 import tqdm
 import sqlite3
+
 gpd = None
 
 
@@ -24,7 +25,6 @@ class CAMELSGBPreprocessor(BasePreProcessor):
         global gpd
         if gpd is None:
             import geopandas as gpd
-
 
         super(CAMELSGBPreprocessor, self).__init__(
             data_folder=data_folder, req_xesmf=False

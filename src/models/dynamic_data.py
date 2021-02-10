@@ -588,10 +588,9 @@ class _DynamicIter:
         if self.normalize_y:
             y_var = list(y.data_vars)[0]
             y_np = (
-                y_np - self.normalizing_dict[y_var]["mean"]
-            ) / self.normalizing_dict[y_var][
-                "std"
-            ]  # type: ignore
+                (y_np - self.normalizing_dict[y_var]["mean"])
+                / self.normalizing_dict[y_var]["std"]
+            )  # type: ignore
 
         return x_np, y_np
 
