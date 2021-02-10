@@ -9,15 +9,15 @@
 
 ## ENSEMBLE
 1) Train
-    `ipython --pdb neuralhydrology/nh_run_scheduler.py train -- --directory configs/ensemble_ealstm_LANE/ --gpu-ids 0 --runs-per-gpu 2`
+    `ipython --pdb neuralhydrology/nh_run_scheduler.py train -- --directory configs/ensemble_ealstm_TEMP/ --gpu-ids 0 --runs-per-gpu 2`
 2) Evaluate
-    `ipython --pdb neuralhydrology/nh_run_scheduler.py evaluate -- --directory /cats/datastore/data/runs/ensemble_ealstm_LANE --runs-per-gpu 2 --gpu-ids 0`
+    `ipython --pdb neuralhydrology/nh_run_scheduler.py evaluate -- --directory /cats/datastore/data/runs/ensemble_ealstm_TEMP --runs-per-gpu 2 --gpu-ids 0`
 3) Merge Results
-    `ipython --pdb neuralhydrology/utils/nh_results_ensemble.py -- --run-dirs /cats/datastore/data/runs/ensemble_ealstm_LANE/*  --save-file /cats/datastore/data/runs/ensemble_ealstm_LANE/ensemble_results.p --metrics NSE MSE KGE FHV FMS FLV`
+    `ipython --pdb neuralhydrology/utils/nh_results_ensemble.py -- --run-dirs /cats/datastore/data/runs/ensemble_ealstm_TEMP/*  --save-file /cats/datastore/data/runs/ensemble_ealstm_TEMP/ensemble_results.p --metrics NSE MSE KGE FHV FMS FLV`
 4) Extract Results
-    `cd /home/tommy/ml_drought; ipython --pdb scripts/drafts/multiple_forcing/read_nh_results.py -- --run_dir /cats/datastore/data/runs/ensemble_lstm_TEMP --ensemble True --ensemble_filename /cats/datastore/data/runs/ensemble_lstm_TEMP/ensemble_results.p`
+    `cd /home/tommy/ml_drought; ipython --pdb scripts/drafts/multiple_forcing/read_nh_results.py -- --run_dir /cats/datastore/data/runs/ensemble_ealstm_TEMP --ensemble True --ensemble_filename /cats/datastore/data/runs/ensemble_ealstm_TEMP/ensemble_results.p`
 •) Read each individual member
-    ipython -c "from scripts.drafts.io_results import read_ensemble_member_results; from pathlib import Path; ds = read_ensemble_member_results(Path('/cats/datastore/data/runs/ensemble_lstm_TEMP')); ds.to_netcdf('/cats/datastore/data/runs/ensemble_lstm_TEMP/ensemble_all.nc')"
+    ipython -c "from scripts.drafts.io_results import read_ensemble_member_results; from pathlib import Path; ds = read_ensemble_member_results(Path('/cats/datastore/data/runs/ensemble_ealstm_TEMP')); ds.to_netcdf('/cats/datastore/data/runs/ensemble_ealstm_TEMP/ensemble_all.nc')"
 
 5) Finetune
     `ipython --pdb neuralhydrology/nh_run_scheduler.py finetune -- --directory configs/ensemble_lstm_finetune/ --runs-per-gpu 2 --gpu-ids 0`
