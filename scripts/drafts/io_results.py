@@ -197,7 +197,8 @@ def calculate_benchmarks(benchmark_calculation_ds: xr.Dataset):
 
 
 if __name__ == "__main__":
-    save = True
+    SAVE = True
+    BENCHMARKS = False
     import sys
 
     sys.path.append("/home/tommy/ml_drought")
@@ -234,7 +235,7 @@ if __name__ == "__main__":
     lstm_ensemble = read_ensemble_member_results(lstm_ensemble_dir)
     ealstm_ensemble = read_ensemble_member_results(ealstm_ensemble_dir)
 
-    if save:
+    if SAVE:
         lstm_ensemble.to_netcdf(
             data_dir / f"RUNOFF/lstm_ensemble_{lstm_ensemble_dir.name}.nc"
         )
@@ -246,10 +247,11 @@ if __name__ == "__main__":
     ds = xr.open_dataset(data_dir / "RUNOFF/ALL_dynamic_ds.nc")
     ds["station_id"] = ds["station_id"].astype(int)
 
-    benchmarks = calculate_benchmarks(ds[["discharge_spec"]])
     all_preds = join_into_one_ds(lstm_preds, fuse_data, ealstm_preds)
-    benchmarks = benchmarks.sel(station_id=all_preds.station_id, time=all_preds.time)
-    all_preds = xr.merge(all_preds, benchmarks)
+    if BENCHMARKS:
+        benchmarks = calculate_benchmarks(ds[["discharge_spec"]])
+        benchmarks = benchmarks.sel(station_id=all_preds.station_id, time=all_preds.time)
+        all_preds = xr.merge([all_preds, benchmarks])
     # processor = DeltaError(
     #     ealstm_preds,
     #     lstm_preds,
@@ -260,5 +262,5 @@ if __name__ == "__main__":
     # all_preds = processor.all_preds
     print(all_preds)
 
-    if save:
+    if SAVE:
         all_preds.to_netcdf(data_dir / f"RUNOFF/all_preds_{lstm_ensemble_dir.name}.nc")
