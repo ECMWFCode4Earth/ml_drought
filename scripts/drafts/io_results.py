@@ -36,7 +36,7 @@ def join_into_one_ds(
 def _read_csv_results(csv_path: Path) -> xr.Dataset:
     df = pd.read_csv(csv_path)
     if "Unnamed: 0" in df.columns:
-        df = df .drop("Unnamed: 0", axis=1)
+        df = df.drop("Unnamed: 0", axis=1)
     df["time"] = pd.to_datetime(df["time"])
     preds = df.set_index(["station_id", "time"]).to_xarray()
     preds["station_id"] = [int(sid) for sid in preds["station_id"]]
@@ -147,7 +147,7 @@ def fuse_to_nc(raw_fuse_path: Path, double_check: bool = True) -> xr.Dataset:
     return fuse_ds
 
 
-def read_fuse_data(raw_fuse_path: Path, obs: xr.Dataset) -> xr.Dataset:
+def read_fuse_data(raw_fuse_path: Path, obs: xr.DataArray) -> xr.Dataset:
     fuse_ds = fuse_to_nc(raw_fuse_path)
     # join with observations for stations that exist
     fuse_data = fuse_ds.sel(
@@ -235,20 +235,29 @@ if __name__ == "__main__":
     ealstm_ensemble = read_ensemble_member_results(ealstm_ensemble_dir)
 
     if save:
-        lstm_ensemble.to_netcdf(data_dir / f"RUNOFF/lstm_ensemble_{lstm_ensemble_dir.name}.nc")
-        ealstm_ensemble.to_netcdf(data_dir / f"RUNOFF/ealstm_ensemble_{ealstm_ensemble_dir.name}.nc")
+        lstm_ensemble.to_netcdf(
+            data_dir / f"RUNOFF/lstm_ensemble_{lstm_ensemble_dir.name}.nc"
+        )
+        ealstm_ensemble.to_netcdf(
+            data_dir / f"RUNOFF/ealstm_ensemble_{ealstm_ensemble_dir.name}.nc"
+        )
 
     ## join all into one prediction dataframe
     ds = xr.open_dataset(data_dir / "RUNOFF/ALL_dynamic_ds.nc")
     ds["station_id"] = ds["station_id"].astype(int)
-    processor = DeltaError(
-        ealstm_preds,
-        lstm_preds,
-        fuse_data,
-        benchmark_calculation_ds=ds[["discharge_spec"]],
-        incl_benchmarks=True,
-    )
-    all_preds = processor.all_preds
+
+    benchmarks = calculate_benchmarks(ds[["discharge_spec"]])
+    all_preds = join_into_one_ds(lstm_preds, fuse_data, ealstm_preds)
+    benchmarks = benchmarks.sel(station_id=all_preds.station_id, time=all_preds.time)
+    all_preds = xr.merge(all_preds, benchmarks)
+    # processor = DeltaError(
+    #     ealstm_preds,
+    #     lstm_preds,
+    #     fuse_data,
+    #     benchmark_calculation_ds=ds[["discharge_spec"]],
+    #     incl_benchmarks=True,
+    # )
+    # all_preds = processor.all_preds
     print(all_preds)
 
     if save:
