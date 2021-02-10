@@ -145,7 +145,7 @@ class MantleModisPreprocessor(BasePreProcessor):
             print("\nOutputs (errors):\n\t", outputs)
         else:  #  SEQUENTIAL
             for file in nc_files:
-                self._preprocess_single(file, subset_str, regrid)
+                self._preprocess_single(netcdf_filepath=file, subset_str=subset_str, regrid=regrid)
 
         if with_merge:
             # merge all of the timesteps
