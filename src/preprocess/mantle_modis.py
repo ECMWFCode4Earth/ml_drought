@@ -33,6 +33,7 @@ class MantleModisPreprocessor(BasePreProcessor):
         * create new dataset with these dimensions
         * Chop ROI
         * Save the output file to new folder
+        * update the digital number ...
         """
         print(f"Starting work on {netcdf_filepath.name}")
         # 1. read in the dataset
@@ -59,6 +60,13 @@ class MantleModisPreprocessor(BasePreProcessor):
             except ImportError:
                 # the environment doesn't have esmpy does it have cdo?
                 print("Use the ESMPY Environment (problems with gdal)")
+
+        # if vci 
+        if "modis_vci" in ds.data_vars:
+            # VCI = 1•DN - 78
+            # Valid = 6: 250
+            ds["modis_vci"] = (ds["modis_vci"] >= 6) & (ds["modis_vci"] <= 250) 
+            ds["modis_vci"] = ds["modis_vci"] - 78
 
         # 6. create the filepath and save to that location
         assert (
