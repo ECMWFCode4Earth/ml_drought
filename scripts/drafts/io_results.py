@@ -44,11 +44,11 @@ def _read_csv_results(csv_path: Path) -> xr.Dataset:
     return preds
 
 
-def read_ensemble_results(ensemble_dir: Path) -> xr.Dataset:
+def read_ensemble_results(ensemble_dir: Path, fname: str = "data_E030.csv") -> xr.Dataset:
     assert (
-        ensemble_dir / "data_ENS.csv"
+        ensemble_dir / fname
     ).exists(), "Has `scripts/multiple_forcing/read_nh_results.py` been run?"
-    csv_path = ensemble_dir / "data_ENS.csv"
+    csv_path = ensemble_dir / fname
     preds = _read_csv_results(csv_path)
     return preds
 
