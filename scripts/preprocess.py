@@ -11,6 +11,7 @@ from src.preprocess import (
     SRTMPreprocessor,
     ERA5MonthlyMeanPreprocessor,
     KenyaASALMask,
+    CAMELSGBPreprocessor,
 )
 
 from src.preprocess.admin_boundaries import KenyaAdminPreprocessor
@@ -137,15 +138,21 @@ def preprocess_era5():
     processor.preprocess(subset_str="kenya", regrid=regrid_path)
 
 
+def preprocess_camelsgb():
+    data_path = get_data_path()
+    processor = CAMELSGBPreprocessor(data_path)
+    processor.preprocess()
+
 if __name__ == "__main__":
-    process_vci_2018()
-    process_precip_2018()
-    process_era5POS_2018()
-    process_gleam()
-    process_esa_cci_landcover()
-    preprocess_srtm()
-    preprocess_era5()
-    preprocess_kenya_boundaries(selection="level_1")
-    preprocess_kenya_boundaries(selection="level_2")
-    preprocess_kenya_boundaries(selection="level_3")
-    preprocess_asal_mask()
+    # process_vci_2018()
+    # process_precip_2018()
+    # process_era5POS_2018()
+    # process_gleam()
+    # process_esa_cci_landcover()
+    # preprocess_srtm()
+    # preprocess_era5()
+    # preprocess_kenya_boundaries(selection="level_1")
+    # preprocess_kenya_boundaries(selection="level_2")
+    # preprocess_kenya_boundaries(selection="level_3")
+    # preprocess_asal_mask()
+    preprocess_camelsgb()
