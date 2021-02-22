@@ -4,6 +4,8 @@ import matplotlib.dates as mdates
 import pandas as pd
 import numpy as np
 import xarray as xr
+import seaborn as sns 
+import matplotlib.pyplot as plt
 
 
 def get_title_nse_scores(nse_df: pd.DataFrame, station_id) -> str:
@@ -44,7 +46,7 @@ def get_all_data_for_basins(all_preds: xr.Dataset, station_int: int) -> pd.DataF
 
 
 def plot_station_hydrograph(
-    data: pd.DataFrame, station_id: int, plot_conceptual: bool = True, ax: Optional = None,
+    data: pd.DataFrame, static_df: pd.DataFrame, dynamic: xr.Dataset, station_id: int, plot_conceptual: bool = True, ax: Optional = None,
     legend_kwargs: Dict = {}, legend: bool = True, nse_in_title: bool = False,
     non_overlap: bool = False,
 ):
@@ -112,8 +114,10 @@ if __name__ == "__main__":
 
     f, ax = plt.subplots(figsize=(12, 4))
     plot_station_hydrograph(
-        d.loc[hydro_year_ts[0]: hydro_year_ts[-1]].reset_index(), 
-        station_int, 
+        data=d.loc[hydro_year_ts[0]: hydro_year_ts[-1]].reset_index(), 
+        station_id=station_int, 
+        static_df=static_df,
+        dynamic=dynamic,
         legend_kwargs={"loc": "lower left"}, 
         ax=ax, 
         legend=True, 
