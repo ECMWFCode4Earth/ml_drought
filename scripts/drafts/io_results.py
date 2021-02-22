@@ -44,7 +44,9 @@ def _read_csv_results(csv_path: Path) -> xr.Dataset:
     return preds
 
 
-def read_ensemble_results(ensemble_dir: Path, fname: str = "data_E030.csv") -> xr.Dataset:
+def read_ensemble_results(
+    ensemble_dir: Path, fname: str = "data_E030.csv"
+) -> xr.Dataset:
     assert (
         ensemble_dir / fname
     ).exists(), "Has `scripts/multiple_forcing/read_nh_results.py` been run?"
@@ -250,7 +252,9 @@ if __name__ == "__main__":
     all_preds = join_into_one_ds(lstm_preds, fuse_data, ealstm_preds)
     if BENCHMARKS:
         benchmarks = calculate_benchmarks(ds[["discharge_spec"]])
-        benchmarks = benchmarks.sel(station_id=all_preds.station_id, time=all_preds.time)
+        benchmarks = benchmarks.sel(
+            station_id=all_preds.station_id, time=all_preds.time
+        )
         all_preds = xr.merge([all_preds, benchmarks])
     # processor = DeltaError(
     #     ealstm_preds,

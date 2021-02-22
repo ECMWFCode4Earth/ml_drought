@@ -143,6 +143,7 @@ def preprocess_camelsgb():
     processor = CAMELSGBPreprocessor(data_path)
     processor.preprocess()
 
+
 if __name__ == "__main__":
     # process_vci_2018()
     # process_precip_2018()
