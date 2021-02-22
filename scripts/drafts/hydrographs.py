@@ -129,7 +129,7 @@ def plot_station_hydrograph(
 
     # Plot the rainfall too
     ax2 = ax.twinx()
-    ax2.bar(data["time"], precip, alpha=0.4)
+    ax2.bar(data["time"], precip.precipitation, alpha=0.4)
     ax2.set_ylim([0, precip.max() + 5 * precip.std()])
     #  ax2.set_yticklabels([])
     #  ax2.set_yticks([])
@@ -168,7 +168,7 @@ if __name__ == "__main__":
         data=d.loc[hydro_year_ts[0] : hydro_year_ts[-1]].reset_index(),
         station_id=station_int,
         static_df=static_df,
-        dynamic=dynamic,
+        dynamic=ds,
         nse_df=all_metrics["nse"],
         legend_kwargs={"loc": "lower left"},
         ax=ax,
