@@ -41,6 +41,7 @@ def get_all_data_for_basins(all_preds: xr.Dataset, station_int: int) -> pd.DataF
         return cname
 
     data.columns = [fixC(c) for c in data.columns]
+    return data
 
 
 def plot_station_hydrograph(
