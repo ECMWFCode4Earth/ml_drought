@@ -46,7 +46,7 @@ def get_all_data_for_basins(all_preds: xr.Dataset, station_int: int) -> pd.DataF
 
 
 def plot_station_hydrograph(
-    data: pd.DataFrame, static_df: pd.DataFrame, dynamic: xr.Dataset, station_id: int, plot_conceptual: bool = True, ax: Optional = None,
+    data: pd.DataFrame, static_df: pd.DataFrame, dynamic: xr.Dataset, station_id: int, nse_df: pd.DataFrame, plot_conceptual: bool = True, ax: Optional = None,
     legend_kwargs: Dict = {}, legend: bool = True, nse_in_title: bool = False,
     non_overlap: bool = False,
 ):
@@ -91,7 +91,7 @@ def plot_station_hydrograph(
     
     title = f"Station: {station_name} - {station_id}"
     if nse_in_title:
-        title = title + "\n" + get_title_nse_scores(station_id)
+        title = title + "\n" + get_title_nse_scores(nse_df, station_id)
 
     ax.set_title(title)  
     ax.set_xlabel("Time")
@@ -118,6 +118,7 @@ if __name__ == "__main__":
         station_id=station_int, 
         static_df=static_df,
         dynamic=dynamic,
+        nse_df=all_metrics["nse"], 
         legend_kwargs={"loc": "lower left"}, 
         ax=ax, 
         legend=True, 
