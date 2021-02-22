@@ -155,7 +155,7 @@ def plot_station_hydrograph(
 
     #  sns.despine()
 
-    return f, ax
+    return fig, ax
 
 
 if __name__ == "__main__":
