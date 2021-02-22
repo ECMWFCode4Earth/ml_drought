@@ -129,7 +129,8 @@ def plot_station_hydrograph(
 
     # Plot the rainfall too
     ax2 = ax.twinx()
-    ax2.bar(data["time"], precip.precipitation, alpha=0.4)
+    precip = precip.precipitation
+    ax2.bar(data["time"], precip, alpha=0.4)
     ax2.set_ylim([0, precip.max() + 5 * precip.std()])
     #  ax2.set_yticklabels([])
     #  ax2.set_yticks([])
