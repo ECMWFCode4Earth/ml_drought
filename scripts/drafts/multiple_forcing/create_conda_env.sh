@@ -14,3 +14,11 @@ conda activate xesmf
 conda install -c conda-forge xesmf --yes
 conda install dask netcdf4 ipython jupyterlab tqdm descartes black scikit-learn pandas pip ruamel.yaml -c conda-forge --yes
 conda install pytorch -c pytorch --yes
+
+# conda ml
+conda create -n ml --yes 
+conda activate ml
+conda install -c conda-forge seaborn=0.11 --yes
+conda install pytorch torchvision -c pytorch --yes
+conda install -c conda-forge netcdf4 numba tqdm jupyterlab tensorboard ipython pip ruamel.yaml xarray descartes statsmodels scikit-learn black mypy --yes
+pip install geopandas
