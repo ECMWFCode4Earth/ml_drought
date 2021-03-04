@@ -207,4 +207,5 @@ region_lookup = {
     "east_africa": get_east_africa(),
     "africa": get_africa(),
     "india": get_india(),
+    "gb": get_gb(),
 }
