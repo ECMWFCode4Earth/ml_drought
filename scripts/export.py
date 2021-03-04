@@ -196,7 +196,7 @@ def export_boku_ndvi():
 if __name__ == "__main__":
     print(f"Writing data to: {get_data_path()}")
     region_str = "great_britain"
-    export_era5_land(region_str=region_str, granularity="hourly")
+    export_era5_land(region_str=region_str, granularity="hourly", years=np.arange(1970, 2016))
     # export_era5(region_str="kenya")
     # export_vhi()
     # export_chirps()

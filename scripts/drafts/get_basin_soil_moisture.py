@@ -1,3 +1,7 @@
+"""
+ipython --pdb scripts/drafts/get_basin_soil_moisture.py
+"""
+
 import sys
 from pathlib import Path
 import numpy as np
@@ -22,7 +26,7 @@ def load_reference_nc(reference_nc_filepath: Path) -> xr.DataArray:
 
 
 def extract_time_series_of_soil_moisture() -> xr.Dataset:
-    data_dir = get_data_path()
+    data_dir = get_data_path()x
     # load in shapefile
     #  convert shapefile to xarray
     shp_filepath = Path(
@@ -124,14 +128,13 @@ def merge_files(variable: str, subset_str: str = "great_britain") -> None:
 if __name__ == "__main__":
     subset_str = "great_britain"
     variables = [
-        "volumetric_soil_water_layer_1",
-        # "volumetric_soil_water_layer_2",
-        # "volumetric_soil_water_layer_3",
-        # "volumetric_soil_water_layer_4",
+        # "volumetric_soil_water_layer_1",
+        "volumetric_soil_water_layer_2",
+        "volumetric_soil_water_layer_3",
+        "volumetric_soil_water_layer_4",
     ]
     # years = np.arange(2004, 2016)
-    years = np.arange(2003, 2004)
-    # years.extend()
+    years = np.arange(1993, 2021)
 
     # Due to memory constraints process hourly data into daily
     # after every Variable/Year then merge all of the variable files
