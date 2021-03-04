@@ -253,4 +253,5 @@ region_lookup = {
     "ethiopia": get_ethiopia(),
     "east_africa": get_east_africa(),
     "africa": get_africa(),
+    "gb": get_gb(),
 }
