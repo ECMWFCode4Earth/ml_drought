@@ -103,6 +103,21 @@ def read_each_subfolder_results(ensemble_dir: Path) -> xr.Dataset:
 
     return ds
 
+def members_from_coords_to_variables(ds: xr.Dataset) -> xr.Dataset:
+    # obs is the same for all members
+    obs = all_preds["obs"].isel(member=0)
+    
+    # predictions vary 
+    all_ds = []
+    for member in sim.member.values:
+        member_sim = sim.sel(member=member)
+        member_sim = member_sim.rename(member).drop("member")
+        all_ds.append(member_sim)
+    ds = xr.merge(all_ds + [obs])
+
+    return ds
+
+
 def read_ensemble_member_results(ensemble_dir: Path) -> xr.Dataset:
     """"""
     # data_dir = Path("/cats/datastore/data")
