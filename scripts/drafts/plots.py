@@ -49,8 +49,9 @@ def plot_cdf(
     legend: bool = True,
     summary_line: bool = True,
     optimum: Optional[float] = None,
+    kwargs_dict: Optional[Dict[str, Any]] = None,
 ):
-    kwargs_dict = kwargs_dict_config
+    kwargs_dict = kwargs_dict_config if kwargs_dict is None else kwargs_dict
     # kwargs_dict["clip"] = clip
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 3))
