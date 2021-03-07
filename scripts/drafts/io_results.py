@@ -106,6 +106,7 @@ def read_each_subfolder_results(ensemble_dir: Path) -> xr.Dataset:
 def members_from_coords_to_variables(ds: xr.Dataset) -> xr.Dataset:
     # obs is the same for all members
     obs = all_preds["obs"].isel(member=0)
+    sim = all_preds["sim"]
     
     # predictions vary 
     all_ds = []
