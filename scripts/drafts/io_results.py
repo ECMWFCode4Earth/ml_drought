@@ -5,6 +5,7 @@ from tqdm import tqdm
 import numpy as np
 from src.utils import create_shape_aligned_climatology
 from typing import List, Dict, Optional
+import pickle 
 
 
 def join_into_one_ds(
@@ -54,6 +55,53 @@ def read_ensemble_results(
     preds = _read_csv_results(csv_path)
     return preds
 
+
+def read_each_subfolder_results(ensemble_dir: Path) -> xr.Dataset:
+    paths = sorted([d for d in (ensemble_dir).glob("**/*_results.p")])
+    ps = [pickle.load(p.open("rb")) for p in paths]
+    output_dict = {}
+
+    expts = sorted([d.name for d in ensemble_dir.iterdir() if d.is_dir()])
+    assert len(expts) == len(paths), "Expect the number of results files to be the same as no. experiments"
+
+    pbar = tqdm(enumerate(ps), desc="Loading Ensemble Members")
+    for i, res_dict in pbar:
+        name = expts[i]
+        pbar.set_postfix_str(name)
+
+        stations = [k for k in res_dict.keys()]
+        freq = "1D"
+        all_xr_objects: List[xr.Dataset] = []
+
+        for station_id in stations:
+            #  extract the raw results
+            try:
+                xr_obj = (
+                    res_dict[station_id][freq]["xr"].isel(time_step=0).drop("time_step")
+                )
+            except ValueError:
+                # ensemble mode does not have "time_step" dimension
+                xr_obj = res_dict[station_id][freq]["xr"].rename({"datetime": "date"})
+            xr_obj = xr_obj.expand_dims({"station_id": [station_id]}).rename(
+                {"date": "time"}
+            )
+            all_xr_objects.append(xr_obj)
+
+        preds = xr.concat(all_xr_objects, dim="station_id")
+        preds["station_id"] = [int(sid) for sid in preds["station_id"]]
+        preds = preds.rename({"discharge_spec_obs": "obs", "discharge_spec_sim": "sim"})
+
+        output_dict[name] = preds
+
+    # return as one dataset
+    all_ds = []
+    for key in output_dict.keys():
+        all_ds.append(
+            output_dict[key].assign_coords({"member": key}).expand_dims("member")
+        )
+    ds = xr.concat(all_ds, dim="member")
+
+    return ds
 
 def read_ensemble_member_results(ensemble_dir: Path) -> xr.Dataset:
     """"""
