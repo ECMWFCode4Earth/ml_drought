@@ -82,7 +82,7 @@ def get_states_from_forward(
 
             if final_value:
                 # Return FINAL cell state value (targets, seq_len, hidden_dimensions)
-                all_cell_states.append(predict["h_n"].detach().numpy()[:, -1, :])
+                all_cell_states.append(predict["c_n"].detach().numpy()[:, -1, :])
             else:
                 # Return ALL cell state values
                 all_cell_states.append(predict["c_n"].detach().numpy())

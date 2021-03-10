@@ -22,3 +22,11 @@ conda install -c conda-forge seaborn=0.11 --yes
 conda install pytorch torchvision -c pytorch --yes
 conda install -c conda-forge netcdf4 numba tqdm jupyterlab tensorboard ipython pip ruamel.yaml xarray descartes statsmodels scikit-learn black mypy --yes
 pip install geopandas
+
+
+# gdal env
+conda create -n gdal --yes python=3.7
+conda activate gdal
+conda install -c conda-forge rasterio geopandas --yes
+conda install -c anaconda tensorflow --yes
+conda install -c conda-forge numpy ipython pip descartes scikit-learn --yes
