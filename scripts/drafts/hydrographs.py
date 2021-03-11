@@ -120,7 +120,7 @@ def plot_station_hydrograph(
                 color=sns.color_palette()[5],
             )
     else:
-        columns = sorted([c for c in d.columns if (is_numeric_dtype(d[c])) & (c != "obs")])
+        columns = sorted([c for c in data.columns if (is_numeric_dtype(data[c])) & (c != "obs")])
         colors = sns.color_palette("viridis", len(columns))
         for ix, column in enumerate(columns):
             ax.plot(
