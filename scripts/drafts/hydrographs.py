@@ -31,8 +31,7 @@ def chunks(lst, n):
         yield lst[i : i + n]
 
 
-def get_all_data_for_basins(all_preds: xr.Dataset, station_int: int) -> pd.DataFrame:
-    columns = ["obs", "LSTM", "EALSTM", "TOPMODEL", "ARNOVIC", "PRMS", "SACRAMENTO"]
+def get_all_data_for_basins(all_preds: xr.Dataset, station_int: int, columns = ["obs", "LSTM", "EALSTM", "TOPMODEL", "ARNOVIC", "PRMS", "SACRAMENTO"]) -> pd.DataFrame:    
     df = all_preds.sel(station_id=station_int)[columns].to_dataframe()
     data = df.reset_index().set_index("station_id")
 
