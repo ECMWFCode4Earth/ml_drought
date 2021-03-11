@@ -58,7 +58,7 @@ def plot_station_hydrograph(
     non_overlap: bool = False,
     original_plot: bool = True,
 ):
-    assert all(np.isin(["time", "LSTM", "EALSTM", "obs"], data.columns))
+    assert all(np.isin(["time", "obs"], data.columns))
     station_name = static_df.loc[station_id, "gauge_name"]
     precip = dynamic.sel(time=data["time"].values, station_id=station_id)[
         "precipitation"
