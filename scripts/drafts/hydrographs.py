@@ -6,6 +6,7 @@ import numpy as np
 import xarray as xr
 import seaborn as sns
 import matplotlib.pyplot as plt
+from pandas.api.types import is_numeric_dtype
 
 
 def get_title_nse_scores(nse_df: pd.DataFrame, station_id) -> str:
@@ -55,6 +56,7 @@ def plot_station_hydrograph(
     legend: bool = True,
     nse_in_title: bool = False,
     non_overlap: bool = False,
+    original_plot: bool = True,
 ):
     assert all(np.isin(["time", "LSTM", "EALSTM", "obs"], data.columns))
     station_name = static_df.loc[station_id, "gauge_name"]
@@ -67,55 +69,69 @@ def plot_station_hydrograph(
     else:
         fig = plt.gcf()
 
-    ax.plot(
-        data["time"],
-        data["LSTM"],
-        color=sns.color_palette()[0],
-        label="LSTM",
-        alpha=1,
-        linewidth=2,
-    )
-    ax.plot(
-        data["time"],
-        data["EALSTM"],
-        color=sns.color_palette()[1],
-        label="EA LSTM",
-        alpha=1,
-        linewidth=2,
-    )
-    if plot_conceptual:
+    if original_plot:
         ax.plot(
             data["time"],
-            data["TOPMODEL"],
-            label="TOPMODEL",
-            alpha=0.5,
-            linewidth=1,
-            color=sns.color_palette()[2],
+            data["LSTM"],
+            color=sns.color_palette()[0],
+            label="LSTM",
+            alpha=1,
+            linewidth=2,
         )
         ax.plot(
             data["time"],
-            data["ARNOVIC"],
-            label="VIC",
-            alpha=0.5,
-            linewidth=1,
-            color=sns.color_palette()[3],
+            data["EALSTM"],
+            color=sns.color_palette()[1],
+            label="EA LSTM",
+            alpha=1,
+            linewidth=2,
         )
-        ax.plot(
-            data["time"],
-            data["PRMS"],
-            label="PRMS",
-            alpha=0.5,
-            linewidth=1,
-            color=sns.color_palette()[4],
-        )
-        ax.plot(
-            data["time"],
-            data["SACRAMENTO"],
-            label="Sacramento",
-            alpha=0.5,
-            linewidth=1,
-            color=sns.color_palette()[5],
-        )
+        if plot_conceptual:
+            ax.plot(
+                data["time"],
+                data["TOPMODEL"],
+                label="TOPMODEL",
+                alpha=0.5,
+                linewidth=1,
+                color=sns.color_palette()[2],
+            )
+            ax.plot(
+                data["time"],
+                data["ARNOVIC"],
+                label="VIC",
+                alpha=0.5,
+                linewidth=1,
+                color=sns.color_palette()[3],
+            )
+            ax.plot(
+                data["time"],
+                data["PRMS"],
+                label="PRMS",
+                alpha=0.5,
+                linewidth=1,
+                color=sns.color_palette()[4],
+            )
+            ax.plot(
+                data["time"],
+                data["SACRAMENTO"],
+                label="Sacramento",
+                alpha=0.5,
+                linewidth=1,
+                color=sns.color_palette()[5],
+            )
+    else:
+        columns = sorted([c for c in d.columns if (is_numeric_dtype(d[c])) & (c != "obs")])
+        colors = sns.color_palette("viridis", len(columns))
+        for ix, column in enumerate(columns):
+            ax.plot(
+                data["time"],
+                data[column],
+                color=colors[ix],
+                label=column,
+                alpha=1,
+                linewidth=1.5,
+            )
+
 
     ax.plot(data["time"], data["obs"], color="k", ls=":", label="Observed")
     if legend:
@@ -175,4 +191,5 @@ if __name__ == "__main__":
         legend=True,
         nse_in_title=True,
         non_overlap=True,
+        original_plot=True,
     )
