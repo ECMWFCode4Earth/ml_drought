@@ -139,7 +139,7 @@ def plot_station_hydrograph(
 
     if non_overlap:
         columns = sorted([c for c in data.columns if (is_numeric_dtype(data[c])) & (c != "obs")])
-        column = "LSTM" if "LSTM" in columns else "hs_004_0303_181524"
+        column = "LSTM" if "LSTM" in columns else columns[0]
         xmin = ax.get_ylim()[0]
         xmax = ax.get_ylim()[1] + (1.5 * data[column].std())
         ax.set_ylim(xmin, xmax)
