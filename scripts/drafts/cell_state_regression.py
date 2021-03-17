@@ -371,7 +371,9 @@ def calculate_predictions(model, loader):
     with torch.no_grad():
         for (basin, time), data in loader:
             X, y = data
-            y_hat = model(X)
+            input_data = {}
+            input_data["x_d"] = X
+            y_hat = model(input_data)
             predictions["time"].extend(pd.to_datetime(time))
             predictions["station_id"].extend(basin)
             predictions["y_hat"].extend(y_hat.detach().cpu().numpy().flatten())
