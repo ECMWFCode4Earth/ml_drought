@@ -34,7 +34,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 import argparse
-from typing import Tuple, Dict, Optional, DefaultDict, Union
+from typing import Tuple, Dict, Optional, DefaultDict, Union, List
 from collections import defaultdict
 from tqdm import tqdm
 
@@ -97,7 +97,7 @@ def get_test_filepath(run_dir: Path, epoch: Optional[int]) -> Path:
 
     assert (
         res_fp.exists()
-    ), "Has validation been run? ipython --pdb neuralhydrology/nh_run.py evaluate -- --run-dir /path/to/run_dir"
+    ), f"Has validation been run? ipython --pdb neuralhydrology/nh_run.py evaluate -- --run-dir {run_dir.absolute()}"
 
     return res_fp
 

@@ -5,11 +5,7 @@ sys.path.append("../..")
 import pandas as pd
 from pathlib import Path
 import xarray as xr
-from scripts.utils import get_data_path
-from src.preprocess.utils import SHPtoXarray
-import rioxarray
 import geopandas as gpd
-from shapely.geometry import mapping
 
 
 if __name__ == "__main__":

@@ -125,7 +125,7 @@ def error_func(
                     _error_calc = [v for v in _error_dict.values()][0]
                 else:
                     _error_calc = error_func(d["obs"].values, d["sim"].values)
-        except RuntimeError:
+        except (RuntimeError, ValueError):
             _error_calc = np.nan
         metrics.append(_error_calc)
 
