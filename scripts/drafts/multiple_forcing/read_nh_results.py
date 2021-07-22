@@ -11,7 +11,7 @@
 1) Train
     `ipython --pdb neuralhydrology/nh_run_scheduler.py train -- --directory configs/ensemble_ealstm_TEMP/ --gpu-ids 0 --runs-per-gpu 2`
 2) Evaluate
-    `ipython --pdb neuralhydrology/nh_run_scheduler.py evaluate -- --directory /cats/datastore/data/runs/complexity --runs-per-gpu 2 --gpu-ids 0`
+    `ipython --pdb neuralhydrology/nh_run_scheduler.py evaluate -- --directory /cats/datastore/data/runs/ensemble_lstm_TEMP --runs-per-gpu 2 --gpu-ids 0`
 3) Merge Results
     `ipython --pdb neuralhydrology/utils/nh_results_ensemble.py -- --run-dirs /cats/datastore/data/runs/complexity/*  --save-file /cats/datastore/data/runs/complexity/ensemble_results.p --metrics NSE MSE KGE FHV FMS FLV`
 4) Extract Results

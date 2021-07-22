@@ -26,7 +26,6 @@ if __name__ == "__main__":
     da.rio.write_crs("epsg:4326", inplace=True)
 
     # calculate all basin timeseries
-
     for index, row in gdf.iterrows():
         id_ = row["ID_STRING"]
         geom = row["geometry"]

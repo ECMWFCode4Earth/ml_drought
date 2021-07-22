@@ -3,7 +3,6 @@ import numpy as np
 import xarray as xr
 from tqdm import tqdm
 from pathlib import Path
-from collections import defaultdict
 from functools import partial
 from typing import Dict, DefaultDict, Tuple, List, Optional
 
@@ -661,6 +660,38 @@ def convert_season_to_xr(
     season_xr = xr.merge(season_list)
 
     return season_xr
+
+
+def create_default_dict_from_xarray_object_of_errors(all_errors: xr.Dataset) -> DefaultDict:
+    ensemble_errors = defaultdict(dict)
+    for member in all_errors.member.values:
+        error_df = all_errors.sel(member=member).drop("member").to_dataframe()
+        ensemble_errors[member] = error_df
+
+    return ensemble_errors
+
+
+def get_errors(ensemble_preds: xr.Dataset, run_dir: Path) -> Tuple[xr.Dataset, DefaultDict[str, Dict[str, pd.DataFrame]]]:
+    if not (run_dir / "all_errors.nc").exists():
+        ensemble_errors = calculate_all_data_errors(ensemble_preds, decompose_kge=True, yilmaz_errors=True)
+    
+        # create one big Dataset
+        all_errors = []
+        members = [member for member in ensemble_errors.keys()]
+        for member in members:
+            # pd.DataFrame
+            ensemble_errors[member]["member"] = member
+            # xr.Dataset
+            all_errors.append(ensemble_errors[member].reset_index().set_index(["member", "station_id"]).to_xarray())
+
+        all_errors = xr.concat(all_errors, dim="member")
+        all_errors.to_netcdf(run_dir / "all_errors.nc")
+    
+    else:
+        all_errors = xr.open_dataset(run_dir / "all_errors.nc")
+        ensemble_errors = create_default_dict_from_xarray_object_of_errors(all_errors)
+        
+    return all_errors, ensemble_errors
 
 
 if __name__ == "__main__":
