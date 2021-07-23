@@ -11,6 +11,10 @@ def get_data_path() -> Path:
         data_path = Path("/cats/datastore/data")
         if not data_path.exists():
             data_path.mkdir(parents=True, exist_ok=True)
+    elif "/home/leest" in Path(".").absolute().as_posix():
+        # on azure machine 
+        data_path = Path("/DataDrive200/data")
+        assert data_path.exists()
     else:
         if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
             data_path = Path("data")
