@@ -87,7 +87,11 @@ if __name__ == "__main__":
         raw_files = list(raw_data_dir.glob("**/*.nc")) + list(
             raw_data_dir.glob("**/*.nc")
         )
-        [f.unlink() for f in raw_files]
+        for f in raw_files:
+            try:
+                f.unlink()
+            except FileNotFoundError:
+                print(f"Already deleted {f}")
 
         print("\n\n*******************************")
         print(f"Download and regrid MODIS for {year}")
