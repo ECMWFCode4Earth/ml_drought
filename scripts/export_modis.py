@@ -40,8 +40,8 @@ if __name__ == "__main__":
     interim_data_dir = data_dir / "interim"
     subset_str = "india" 
 
-    years = np.arange(2000, 2021)
-    years = [2001]
+    years = np.arange(2002, 2021)
+    # years = [2001]
 
     for year in years:
         # export data
@@ -66,19 +66,6 @@ if __name__ == "__main__":
                 processor._preprocess_single(
                     netcdf_filepath=file, subset_str=subset_str, regrid=regrid
                 )
-
-        # # mv file so that they aren't deleted
-        # preprocess_file = data_dir / "interim/mantle_modis_preprocessed/data_india.nc"
-        # destination_file = (
-        #     data_dir / f"interim/ALL_mantle_modis_india/{year}_data_india.nc"
-        # )
-        # destination_file.parent.mkdir(parents=True, exist_ok=True)
-        # shutil.move(src=preprocess_file, dst=destination_file)
-        # # delete original preprocess file
-        # try:
-        #     preprocess_file.unlink()
-        # except FileNotFoundError:
-        #     print(f"Already moved {preprocess_file} to {destination_file}")
 
         # delete the nearest_s2d file
         [f.unlink() for f in interim_data_dir.glob("nearest_s2d*.nc")]
