@@ -24,6 +24,7 @@ class MantleModisPreprocessor(BasePreProcessor):
         netcdf_filepath: Path,
         subset_str: Optional[str] = "kenya",
         regrid: Optional[xr.Dataset] = None,
+        cleanup: bool = False,
     ) -> None:
         """Run the Preprocessing steps for the Mantle Modis data
 
@@ -56,7 +57,7 @@ class MantleModisPreprocessor(BasePreProcessor):
 
         if regrid is not None:
             try:
-                ds = self.regrid(ds, regrid)
+                ds = self.regrid(ds, regrid, clean=cleanup)
             except ImportError:
                 # the environment doesn't have esmpy does it have cdo?
                 print("Use the ESMPY Environment (problems with gdal)")
@@ -139,7 +140,7 @@ class MantleModisPreprocessor(BasePreProcessor):
             pool = multiprocessing.Pool(processes=n_processes)
 
             outputs = pool.map(
-                partial(self._preprocess_single, subset_str=subset_str, regrid=regrid,),
+                partial(self._preprocess_single, subset_str=subset_str, regrid=regrid),
                 nc_files,
             )
             print("\nOutputs (errors):\n\t", outputs)
