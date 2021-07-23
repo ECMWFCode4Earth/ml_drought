@@ -37,6 +37,7 @@ def preprocess_mantle_modis(
 if __name__ == "__main__":
     data_dir = get_data_path()
     raw_data_dir = data_dir / "raw/mantle_modis"
+    interim_data_dir = data_dir / "interim"
     subset_str = "india" 
 
     years = np.arange(2000, 2021)
@@ -66,21 +67,21 @@ if __name__ == "__main__":
                     netcdf_filepath=file, subset_str=subset_str, regrid=regrid
                 )
 
-        assert False
+        # # mv file so that they aren't deleted
+        # preprocess_file = data_dir / "interim/mantle_modis_preprocessed/data_india.nc"
+        # destination_file = (
+        #     data_dir / f"interim/ALL_mantle_modis_india/{year}_data_india.nc"
+        # )
+        # destination_file.parent.mkdir(parents=True, exist_ok=True)
+        # shutil.move(src=preprocess_file, dst=destination_file)
+        # # delete original preprocess file
+        # try:
+        #     preprocess_file.unlink()
+        # except FileNotFoundError:
+        #     print(f"Already moved {preprocess_file} to {destination_file}")
 
-        # mv file so that they aren't deleted
-        preprocess_file = data_dir / "interim/mantle_modis_preprocessed/data_india.nc"
-        destination_file = (
-            data_dir / f"interim/ALL_mantle_modis_india/{year}_data_india.nc"
-        )
-        destination_file.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(src=preprocess_file, dst=destination_file)
-
-        # delete original preprocess file
-        try:
-            preprocess_file.unlink()
-        except FileNotFoundError:
-            print(f"Already moved {preprocess_file} to {destination_file}")
+        # delete the nearest_s2d file
+        [f.unlink() for f in interim_data_dir.glob("nearest_s2d*.nc")]
 
         #  delete the files in the raw data directory
         raw_files = list(raw_data_dir.glob("**/*.nc")) + list(
