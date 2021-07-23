@@ -30,7 +30,7 @@ def preprocess_mantle_modis(subset_str: str = "india", resample_time: Optional[s
 
 if __name__ == "__main__":
     years = np.arange(2000, 2021)
-    years = 2001
+    years = [2001]
 
     for year in years:
         export_mantle_modis(year=year)
