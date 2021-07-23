@@ -218,7 +218,7 @@ def export_boku_ndvi():
 
 def export_mantle_modis():
     exporter = MantleModisExporter(get_data_path())
-    exporter.export(years=[2001], remove_tif=True)
+    exporter.export(years=np.arange(2000, 2021), remove_tif=True)
 
 
 if __name__ == "__main__":
@@ -232,7 +232,7 @@ if __name__ == "__main__":
     # export_era5POS()
     # export_gleam()
     # export_esa()
-    # export_mantle_modis()
+    export_mantle_modis()
     # export_kenya_boundaries()
-    export_india_boundaries()
+    # export_india_boundaries()
     # export_srtm(region_str=region_str)
