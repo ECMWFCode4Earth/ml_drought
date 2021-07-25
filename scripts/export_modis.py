@@ -41,45 +41,47 @@ if __name__ == "__main__":
     subset_str = "india" 
 
     years = np.arange(2002, 2021)
+    months = np.arange(1, 13)
     # years = [2001]
 
     for year in years:
-        # export data
-        export_mantle_modis(year=year)
+        for month in months:
+            # export data
+            export_mantle_modis(year=year, month=month)
 
-        # extract india and regrid to era5 grid
-        regrid_path = (
-            data_dir
-            / "interim/reanalysis-era5-land-monthly-means_preprocessed" \
-            f"/2m_temperature_data_{subset_str}.nc"
-        )
-        assert regrid_path.exists(), f"{regrid_path} not available"
-        processor = MantleModisPreprocessor(data_dir)
-        # get the filepaths for all of the downloaded data
-        nc_files = processor.get_filepaths()
-        if regrid_path is not None:
-            regrid = processor.load_reference_grid(regrid_path)
-        else:
-            regrid = None
+            # extract india and regrid to era5 grid
+            regrid_path = (
+                data_dir
+                / "interim/reanalysis-era5-land-monthly-means_preprocessed" \
+                f"/2m_temperature_data_{subset_str}.nc"
+            )
+            assert regrid_path.exists(), f"{regrid_path} not available"
+            processor = MantleModisPreprocessor(data_dir)
+            # get the filepaths for all of the downloaded data
+            nc_files = processor.get_filepaths()
+            if regrid_path is not None:
+                regrid = processor.load_reference_grid(regrid_path)
+            else:
+                regrid = None
 
-            for file in nc_files:
-                processor._preprocess_single(
-                    netcdf_filepath=file, subset_str=subset_str, regrid=regrid
-                )
+                for file in nc_files:
+                    processor._preprocess_single(
+                        netcdf_filepath=file, subset_str=subset_str, regrid=regrid
+                    )
 
-        # delete the nearest_s2d file
-        [f.unlink() for f in interim_data_dir.glob("nearest_s2d*.nc")]
+            # delete the nearest_s2d file
+            [f.unlink() for f in interim_data_dir.glob("nearest_s2d*.nc")]
 
-        #  delete the files in the raw data directory
-        raw_files = list(raw_data_dir.glob("**/*.nc")) + list(
-            raw_data_dir.glob("**/*.nc")
-        )
-        for f in raw_files:
-            try:
-                f.unlink()
-            except FileNotFoundError:
-                print(f"Already deleted {f}")
+            #  delete the files in the raw data directory
+            raw_files = list(raw_data_dir.glob("**/*.nc")) + list(
+                raw_data_dir.glob("**/*.nc")
+            )
+            for f in raw_files:
+                try:
+                    f.unlink()
+                except FileNotFoundError:
+                    print(f"Already deleted {f}")
 
-        print("\n\n*******************************")
-        print(f"Download and regrid MODIS for {year}")
-        print("\n\n*******************************")
+            print("\n\n*******************************")
+            print(f"Download and regrid MODIS for {year} {month}")
+            print("\n\n*******************************")
