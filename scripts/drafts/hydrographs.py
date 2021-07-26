@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 from typing import Optional, Dict, Any
 import matplotlib.dates as mdates
 import pandas as pd
@@ -57,6 +57,7 @@ def plot_station_hydrograph(
     nse_in_title: bool = False,
     non_overlap: bool = False,
     original_plot: bool = True,
+    models: List[str] = ["TOPMODEL", "ARNOVIC", "PRMS", "SACRAMENTO", "EALSTM", "LSTM"],
 ):
     assert all(np.isin(["time", "obs"], data.columns))
     station_name = static_df.loc[station_id, "gauge_name"]
@@ -70,55 +71,61 @@ def plot_station_hydrograph(
         fig = plt.gcf()
 
     if original_plot:
-        ax.plot(
-            data["time"],
-            data["LSTM"],
-            color=sns.color_palette()[0],
-            label="LSTM",
-            alpha=1,
-            linewidth=2,
-        )
-        ax.plot(
-            data["time"],
-            data["EALSTM"],
-            color=sns.color_palette()[1],
-            label="EA LSTM",
-            alpha=1,
-            linewidth=2,
-        )
+        if "LSTM" in models:
+            ax.plot(
+                data["time"],
+                data["LSTM"],
+                color=sns.color_palette()[0],
+                label="LSTM",
+                alpha=1,
+                linewidth=2,
+            )
+        if "EALSTM" in models:
+            ax.plot(
+                data["time"],
+                data["EALSTM"],
+                color=sns.color_palette()[1],
+                label="EA LSTM",
+                alpha=1,
+                linewidth=2,
+            )
         if plot_conceptual:
-            ax.plot(
-                data["time"],
-                data["TOPMODEL"],
-                label="TOPMODEL",
-                alpha=0.5,
-                linewidth=1,
-                color=sns.color_palette()[2],
-            )
-            ax.plot(
-                data["time"],
-                data["ARNOVIC"],
-                label="VIC",
-                alpha=0.5,
-                linewidth=1,
-                color=sns.color_palette()[3],
-            )
-            ax.plot(
-                data["time"],
-                data["PRMS"],
-                label="PRMS",
-                alpha=0.5,
-                linewidth=1,
-                color=sns.color_palette()[4],
-            )
-            ax.plot(
-                data["time"],
-                data["SACRAMENTO"],
-                label="Sacramento",
-                alpha=0.5,
-                linewidth=1,
-                color=sns.color_palette()[5],
-            )
+            if "TOPMODEL" in models:
+                ax.plot(
+                    data["time"],
+                    data["TOPMODEL"],
+                    label="TOPMODEL",
+                    alpha=0.5,
+                    linewidth=1,
+                    color=sns.color_palette()[2],
+                )
+            if ("VIC" in models) or ("ARNOVIC" in models):
+                ax.plot(
+                    data["time"],
+                    data["ARNOVIC"],
+                    label="VIC",
+                    alpha=0.5,
+                    linewidth=1,
+                    color=sns.color_palette()[3],
+                )
+            if "PRMS" in models:
+                ax.plot(
+                    data["time"],
+                    data["PRMS"],
+                    label="PRMS",
+                    alpha=0.5,
+                    linewidth=1,
+                    color=sns.color_palette()[4],
+                )
+            if "SACRAMENTO" in models:
+                ax.plot(
+                    data["time"],
+                    data["SACRAMENTO"],
+                    label="Sacramento",
+                    alpha=0.5,
+                    linewidth=1,
+                    color=sns.color_palette()[5],
+                )
     else:
         columns = sorted([c for c in data.columns if (is_numeric_dtype(data[c])) & (c != "obs")])
         colors = sns.color_palette("viridis", len(columns))
