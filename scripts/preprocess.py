@@ -106,12 +106,12 @@ def preprocess_era5_land(
                 d.name for d in (data_path / f"raw/{dataset}").iterdir()
             ], f"Expect to find {variables} in {(data_path / f'raw/{dataset}')}"
         else:
-            assert all(
-                np.isin(
+            do_vars_exist = np.isin(
                     variables,
                     [d.name for d in (data_path / f"raw/{dataset}").iterdir()],
                 )
-            ), f"Expected to find {variables}"
+
+            assert all(do_vars_exist), f"Expected to find {variables[do_vars_exist]} in `data_path / raw/{dataset}`"
 
     # regrid_path = data_path / f"interim/reanalysis-era5-land-monthly-means_preprocessed/2m_temperature_data_{subset_str}.nc"
     # assert regrid_path.exists(), f"{regrid_path} not available"
