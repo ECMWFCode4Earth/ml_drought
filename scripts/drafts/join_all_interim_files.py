@@ -12,7 +12,7 @@ if __name__ == "__main__":
     folder_to_join: str = "reanalysis-era5-land_preprocessed"
     out_path = data_dir / "kenya_era5_land_hourly.nc"
 
-    assert out_path.exists()
+    assert out_path.parent.exists()
     assert (interim_path / folder_to_join).exists()
 
     # join all the files in the interim folder
