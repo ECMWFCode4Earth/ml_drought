@@ -9,7 +9,7 @@ from scripts.utils import get_data_path
 from src.preprocess import MantleModisPreprocessor
 
 
-def export_mantle_modis(year: int, variable: str = "vci"):
+def export_mantle_modis(year: int, month: int, variable: str = "vci"):
     exporter = MantleModisExporter(get_data_path())
     exporter.export(years=[year], remove_tif=True, variable=variable)
 
