@@ -83,7 +83,7 @@ def preprocess_era5_land(
         # "potential_evaporation",
         "total_precipitation",
         "2m_temperature",
-        "total_evaporation",
+        "evapotranspiration",
     ],
     subset_str: str = "kenya",
     monmean: bool = True,
