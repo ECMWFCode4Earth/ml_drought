@@ -21,5 +21,5 @@ if __name__ == "__main__":
     delayed_obj = ds.to_netcdf(out_path, compute=False)
 
     with ProgressBar():
-        print("\n*** Writing the joined file to netcdf ***\n")
+        print(f"\n*** Writing the joined file to netcdf: {out_path} ***\n")
         delayed_obj.compute(num_workers=NUM_WORKERS)
