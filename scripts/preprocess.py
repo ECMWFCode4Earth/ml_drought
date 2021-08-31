@@ -86,7 +86,7 @@ def preprocess_era5_land(
         "evapotranspiration",
     ],
     subset_str: str = "kenya",
-    monmean: bool = True,
+    monmean: bool = False,
 ):
     data_path = get_data_path()
     if monmean:
@@ -127,7 +127,7 @@ def preprocess_era5_land(
         processor.preprocess(
             subset_str=subset_str,
             regrid=None,
-            resample_time="M",
+            resample_time="M" if monmean else None,
             upsampling=False,
             variable=variable,
         )
