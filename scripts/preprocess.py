@@ -80,7 +80,7 @@ def preprocess_era5_land(
         "volumetric_soil_water_layer_2",
         "volumetric_soil_water_layer_3",
         "volumetric_soil_water_layer_4",
-        "potential_evaporation",
+        # "potential_evaporation",
         "total_precipitation",
         "2m_temperature",
         "total_evaporation",
@@ -341,10 +341,10 @@ def preprocess_mantle_modis(subset_str: str = "india"):
 
 if __name__ == "__main__":
     subset_str = "india"
-    preprocess_mantle_modis(subset_str=subset_str)
+    # preprocess_mantle_modis(subset_str=subset_str)
     # preprocess_era5(subset_str=subset_str)
     # process_seas5(subset_str=subset_str)
-    # preprocess_era5_land(subset_str=subset_str, monmean=True)
+    preprocess_era5_land(subset_str=subset_str, monmean=False)
     # process_vci(subset_str=subset_str)
     # process_precip_2018(subset_str=subset_str)
     # process_era5POS_2018(subset_str=subset_str)
