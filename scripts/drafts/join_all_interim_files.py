@@ -10,7 +10,7 @@ if __name__ == "__main__":
     data_dir = get_data_path()
     interim_path = data_dir / "interim"
     folder_to_join: str = "reanalysis-era5-land_preprocessed"
-    out_path = data_dir / "kenya_era5_land_hourly.nc"
+    out_path = data_dir / "ALL_kenya_era5_land_daily.nc"
 
     assert out_path.parent.exists()
     assert (interim_path / folder_to_join).exists()
@@ -18,6 +18,11 @@ if __name__ == "__main__":
     # join all the files in the interim folder
     interim_files = sorted(list((interim_path / folder_to_join).glob("*.nc")))
     ds = xr.open_mfdataset(interim_files)
+
+    # process data somehow ... 
+    # maybe take the mean of the values for each day?
+    ds = ds.resample(time="D").mean()
+
     delayed_obj = ds.to_netcdf(out_path, compute=False)
 
     with ProgressBar():
