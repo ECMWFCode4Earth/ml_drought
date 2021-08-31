@@ -9,9 +9,9 @@ from scripts.utils import get_data_path
 from src.preprocess import MantleModisPreprocessor
 
 
-def export_mantle_modis(year: int):
+def export_mantle_modis(year: int, variable: str = "vci"):
     exporter = MantleModisExporter(get_data_path())
-    exporter.export(years=[year], remove_tif=True)
+    exporter.export(years=[year], remove_tif=True, variable=variable)
 
 
 def preprocess_mantle_modis(
@@ -38,16 +38,17 @@ if __name__ == "__main__":
     data_dir = get_data_path()
     raw_data_dir = data_dir / "raw/mantle_modis"
     interim_data_dir = data_dir / "interim"
-    subset_str = "india" 
+    subset_str = "kenya" 
+    variable = "ndvi"
 
-    years = np.arange(2002, 2021)
+    years = np.arange(2001, 2021)
     months = np.arange(1, 13)
     # years = [2001]
 
     for year in years:
         for month in months:
             # export data
-            export_mantle_modis(year=year, month=month)
+            export_mantle_modis(year=year, month=month, variable=variable)
 
             # extract india and regrid to era5 grid
             regrid_path = (
