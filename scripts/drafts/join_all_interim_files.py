@@ -9,8 +9,8 @@ if __name__ == "__main__":
     NUM_WORKERS = 2
     data_dir = get_data_path()
     interim_path = data_dir / "interim"
-    folder_to_join: str = "_mantle_modis_interim_kenya"
-    out_path = data_dir / "TOMMY/kenya_modis_10day_data.nc"
+    folder_to_join: str = "reanalysis-era5-land_preprocessed"
+    out_path = data_dir / "kenya_era5_land_hourly.nc"
 
     assert out_path.exists()
     assert (interim_path / folder_to_join).exists()
