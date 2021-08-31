@@ -30,8 +30,6 @@ VALID_ERA5_LAND_VARS = [
     "potential_evaporation",
     "runoff",
     "leaf_area_index_low_vegetation",
-    "potential_evaporation",
-    "runoff",
     "skin_reservoir_content",
     "skin_temperature",
     "snow_albedo",
