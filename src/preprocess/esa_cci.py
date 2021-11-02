@@ -121,7 +121,7 @@ class ESACCIPreprocessor(BasePreProcessor):
         regrid: Optional[Path] = None,
         years: Optional[List[int]] = None,
         cleanup: bool = True,
-        one_hot_encode: bool = True,
+        one_hot_encode: bool = False,
     ) -> None:
         """Preprocess all of the ESA CCI landcover .nc files to produce
         one subset file resampled to the timestep of interest.

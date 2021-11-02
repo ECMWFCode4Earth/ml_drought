@@ -30,6 +30,7 @@ class CHIRPSExporter(BaseExporter):
         self.region_folder: Optional[Path] = None
 
         self.base_url = "ftp://ftp.chg.ucsb.edu/pub/org/chg"
+        self.base_url = "https://data.chc.ucsb.edu"
 
     def get_url(self, region: str = "africa", period: str = "monthly") -> str:
         filetype = "tifs" if region == "africa" else "netcdf"

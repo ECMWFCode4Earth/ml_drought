@@ -76,14 +76,14 @@ def process_era5POS_2018(subset_str: str = "kenya"):
 
 def preprocess_era5_land(
     variables: Optional[Union[List, str]] = [
-        # "volumetric_soil_water_layer_1",
-        # "volumetric_soil_water_layer_2",
-        # "volumetric_soil_water_layer_3",
-        # "volumetric_soil_water_layer_4",
+        "volumetric_soil_water_layer_1",
+        "volumetric_soil_water_layer_2",
+        "volumetric_soil_water_layer_3",
+        "volumetric_soil_water_layer_4",
         "potential_evaporation",
-        # "total_precipitation",
-        # "2m_temperature",
-        # "evapotranspiration",
+        "total_precipitation",
+        "2m_temperature",
+        "evapotranspiration",
     ],
     subset_str: str = "kenya",
     monmean: bool = False,

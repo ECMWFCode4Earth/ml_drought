@@ -2,6 +2,10 @@
 - subset ROI
 - add timestamps to data (from filename)
 - merge into one .nc file
+
+Modis Conversion Equation:
+-------------------------
+ VCI = 1•DN - 78
 """
 from pathlib import Path
 from functools import partial
