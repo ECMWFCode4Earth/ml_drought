@@ -72,6 +72,9 @@ class MantleModisPreprocessor(BasePreProcessor):
             # Valid = 6: 250
             ds["modis_vci"] = ds["modis_vci"].where((ds["modis_vci"] >= 6) & (ds["modis_vci"] <= 250))
             ds["modis_vci"] = ds["modis_vci"] - 78
+        elif "modis_ndvi" in ds.data_vars:
+            # ndvi = 0.0048•DN - 0.2
+            ds["modis_ndvi"] = (0.0048 * ds["modis_ndvi"]) - 0.200
 
         # 6. create the filepath and save to that location
         assert (
