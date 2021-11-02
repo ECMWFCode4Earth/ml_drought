@@ -1,6 +1,7 @@
 import sys
 from datetime import datetime
 import numpy as np
+from pathlib import Path
 
 sys.path.append("..")
 from src.exporters import (
@@ -131,7 +132,7 @@ def export_vhi():
 def export_chirps():
     exporter = CHIRPSExporter(get_data_path())
 
-    exporter.export(years=None, region="global", period="monthly")
+    exporter.export(years=None, region="global", period="weekly")
 
 
 def export_era5POS():
@@ -216,9 +217,9 @@ def export_boku_ndvi():
     exporter.export()
 
 
-def export_mantle_modis():
+def export_mantle_modis(variable: str = "vci"):
     exporter = MantleModisExporter(get_data_path())
-    exporter.export(years=np.arange(2000, 2021), remove_tif=True)
+    exporter.export(years=np.arange(2000, 2021), remove_tif=True, variable=variable)
 
 
 if __name__ == "__main__":
@@ -232,7 +233,7 @@ if __name__ == "__main__":
     # export_era5POS()
     # export_gleam()
     # export_esa()
-    # export_mantle_modis()
+    # export_mantle_modis(variable="ndvi")
     # export_kenya_boundaries()
     # export_india_boundaries()
     # export_srtm(region_str=region_str)
