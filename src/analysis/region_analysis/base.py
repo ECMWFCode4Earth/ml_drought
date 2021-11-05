@@ -72,10 +72,10 @@ class RegionAnalysis:
         self.models_dir: Path = data_dir / "models" / experiment
         self.features_dir: Path = data_dir / "features" / true_data_experiment / "test"
         assert self.models_dir.exists(), (
-            "Require {data_path}/models to have been" "created by the pipeline."
+            f"Require {self.data_dir}/models to have been" "created by the pipeline."
         )
         assert self.features_dir.exists(), (
-            "Require {data_path}/features to have been" "created by the pipeline."
+            f"Require {self.data_dir}/features to have been" "created by the pipeline."
         )
 
         self.models: List[str] = [

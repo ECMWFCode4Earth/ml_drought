@@ -514,6 +514,7 @@ def plot_comparisons(
     colors: List[str],
     remapping_dict: Union[Dict[int, int], Dict[float, float]],
     title: Optional[str] = None,
+    num_ks: int = 5,
 ) -> None:
     """check that the remapping is sensible"""
     # convert to numpy array
@@ -522,13 +523,13 @@ def plot_comparisons(
     # plot the colormaps
     sns.palplot(colors)
     ax = plt.gca()
-    ax.set_xticks([i for i in range(0, 5)])
-    ax.set_xticklabels([i for i in range(0, 5)])
+    ax.set_xticks([i for i in range(0, n)])
+    ax.set_xticklabels([i for i in range(0, n)])
     if title is not None:
         ax.set_title(title)
     sns.palplot(np.array(colors)[remapping_list])
     ax = plt.gca()
-    ax.set_xticks([i for i in range(0, 5)])
+    ax.set_xticks([i for i in range(0, n)])
     ax.set_xticklabels(remapping_list)
 
     # create cmaps
