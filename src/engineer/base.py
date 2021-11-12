@@ -46,9 +46,10 @@ class _EngineerBase:
         expected_length: Optional[int] = 12,
         global_means: bool = True,
         pixel_means: bool = True,
+        horizon: int = 1,
     ) -> None:
 
-        self._process_dynamic(test_year, target_variable, pred_months, expected_length)
+        self._process_dynamic(test_year, target_variable, pred_months, expected_length, horizon=horizon)
         if self.process_static:
             self._process_static(
                 test_year=test_year, global_means=global_means, pixel_means=pixel_means
@@ -171,6 +172,7 @@ class _EngineerBase:
         target_variable: str = "VHI",
         pred_months: int = 12,
         expected_length: Optional[int] = 12,
+        horizon: int = 1, 
     ) -> None:
         if expected_length is None:
             warnings.warn(
@@ -202,6 +204,7 @@ class _EngineerBase:
             target_variable=target_variable,
             pred_months=pred_months,
             expected_length=expected_length,
+            horizon=horizon,
         )
 
         savepath = self.output_folder / "normalizing_dict.pkl"
@@ -257,6 +260,7 @@ class _EngineerBase:
         target_variable: str,
         pred_months: int,
         expected_length: Optional[int],
+        horizon: int = 1,
     ) -> None:
         """split `train_ds` into x, y and save the outputs to
         self.output_folder (data/features) """
@@ -277,6 +281,7 @@ class _EngineerBase:
                 target_month=cur_pred_month,
                 pred_months=pred_months,
                 expected_length=expected_length,
+                horizon=horizon,
             )
             if arrays is not None:
                 self._save(

@@ -21,6 +21,7 @@ class _OneMonthForecastEngineer(_EngineerBase):
         target_month: int,
         pred_months: int = 11,
         expected_length: Optional[int] = 11,
+        horizon: int = 1,
     ) -> Tuple[Optional[Dict[str, xr.Dataset]], date]:
         """
         Note: expected_length should be the same as pred_months when the timesteps
@@ -32,7 +33,7 @@ class _OneMonthForecastEngineer(_EngineerBase):
 
         max_date = date(year, target_month, calendar.monthrange(year, target_month)[-1])
         mx_year, mx_month, max_train_date = minus_months(
-            year, target_month, diff_months=1
+            year, target_month, diff_months=horizon
         )
         _, _, min_date = minus_months(mx_year, mx_month, diff_months=pred_months)
 

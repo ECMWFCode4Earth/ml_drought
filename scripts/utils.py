@@ -1,22 +1,42 @@
 import shutil
 from pathlib import Path
 import time
+import socket 
+
 
 
 def get_data_path() -> Path:
-    # if the working directory is alread ml_drought don't need ../data
-    if "/home/tommy" in Path(".").absolute().as_posix():
-        # on AWS machine
+    location = socket.gethostname()
+    if location == "Tommy-Lees-MacBook-Air.local":
+        print("On Machine: laptop")
+        data_path = Path(".").home() / "github/spatio_temporal/data"
+    elif location == "MantleNucleus":
+        print("On Machine: nucleus")
         data_path = Path("/cats/datastore/data")
-        if not data_path.exists():
-            data_path.mkdir(parents=True, exist_ok=True)
+    elif location == "LinVmGPU":
+        print("On Machine: iiasa")
+        data_path = Path("/DataDrive200/data")
+    elif location == "GPU-MachineLearning":
+        print("On Machine: azure")
+        data_path = Path("/datadrive/data")
+    elif ".ouce.ox.ac.uk" in location:
+        print("On Machine: ouce")
+        data_path = Path("/lustre/soge1/projects/crop_yield/data/ml_drought/data")
     else:
-        if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
-            data_path = Path("data")
-        elif Path(".").absolute().as_posix().split("/")[-3] == "ml_drought":
-            data_path = Path("../../data")
+
+        # if the working directory is alread ml_drought don't need ../data
+        if "/home/tommy" in Path(".").absolute().as_posix():
+            # on AWS machine
+            data_path = Path("/cats/datastore/data")
+            if not data_path.exists():
+                data_path.mkdir(parents=True, exist_ok=True)
         else:
-            data_path = Path("../data")
+            if Path(".").absolute().as_posix().split("/")[-1] == "ml_drought":
+                data_path = Path("data")
+            elif Path(".").absolute().as_posix().split("/")[-3] == "ml_drought":
+                data_path = Path("../../data")
+            else:
+                data_path = Path("../data")
     return data_path
 
 
