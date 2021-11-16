@@ -15,12 +15,18 @@ from src.analysis import all_explanations_for_file
 from scripts.utils import get_data_path
 
 
-def persistence(experiment="one_month_forecast",):
-    data_path = get_data_path()
+def persistence(
+    experiment="one_month_forecast",
+    data_path = None,
+):
+    if data_path is None:
+        data_path = get_data_path()
     spatial_mask = data_path / "interim/boundaries_preprocessed/kenya_asal_mask.nc"
     spatial_mask = None
     predictor = Persistence(data_path, experiment=experiment, spatial_mask=spatial_mask)
     predictor.evaluate(save_preds=True)
+
+    return predictor
 
 
 def regression(
@@ -28,8 +34,10 @@ def regression(
     include_pred_month=True,
     surrounding_pixels=None,
     ignore_vars=None,
+    data_path = None,
 ):
-    data_path = get_data_path()
+    if data_path is None:
+        data_path = get_data_path()
     spatial_mask = data_path / "interim/boundaries_preprocessed/kenya_asal_mask.nc"
     spatial_mask = None
 
@@ -48,6 +56,8 @@ def regression(
     # mostly to test it works
     # predictor.explain(save_shap_values=True)
 
+    return predictor
+
 
 def linear_nn(
     experiment="one_month_forecast",
@@ -56,10 +66,14 @@ def linear_nn(
     ignore_vars=None,
     pretrained=False,
     static=None,
+    data_path = None,
 ):
+    if data_path is None:
+        data_path = get_data_path()
+
     predictor = LinearNetwork(
         layer_sizes=[100],
-        data_folder=get_data_path(),
+        data_folder=data_path,
         experiment=experiment,
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
@@ -71,6 +85,8 @@ def linear_nn(
     predictor.save_model()
 
     # _ = predictor.explain(save_shap_values=True)
+
+    return predictor
 
 
 def rnn(
@@ -80,21 +96,36 @@ def rnn(
     ignore_vars=None,
     pretrained=True,
     static=None,
+    data_path = None,
+    calculate_shap: bool = False,
 ):
-    predictor = RecurrentNetwork(
-        hidden_size=128,
-        data_folder=get_data_path(),
-        experiment=experiment,
-        include_pred_month=include_pred_month,
-        surrounding_pixels=surrounding_pixels,
-        ignore_vars=ignore_vars,
-        static=static,
-    )
-    predictor.train(num_epochs=50, early_stopping=5)
-    predictor.evaluate(save_preds=True)
-    predictor.save_model()
+    if data_path is None:
+        data_path = get_data_path()
+    if not pretrained:
+        predictor = RecurrentNetwork(
+            hidden_size=128,
+            data_folder=data_path,
+            experiment=experiment,
+            include_pred_month=include_pred_month,
+            surrounding_pixels=surrounding_pixels,
+            ignore_vars=ignore_vars,
+            static=static,
+        )
+        predictor.train(num_epochs=50, early_stopping=5)
+        predictor.evaluate(save_preds=True)
+        predictor.save_model()
+    else:
+        predictor = load_model(data_path / f"models/{experiment}/rnn/model.pt")
 
-    # _ = predictor.explain(save_shap_values=True)
+    # if calculate_shap:
+    #     _ = predictor.explain(save_shap_values=True)
+
+    test_file = data_path / f"features/{experiment}/test/2018_3"
+    assert test_file.exists()
+    if calculate_shap:
+        all_explanations_for_file(test_file, predictor, batch_size=100)
+
+    return predictor
 
 
 def earnn(
@@ -104,8 +135,11 @@ def earnn(
     pretrained=True,
     ignore_vars=None,
     static="embeddings",
+    data_path = None,
+    calculate_shap: bool = False,
 ):
-    data_path = get_data_path()
+    if data_path is None:
+        data_path = get_data_path()
 
     if static is None:
         print("** Cannot fit EALSTM without spatial information **")
@@ -121,6 +155,7 @@ def earnn(
             ignore_vars=ignore_vars,
             static=static,
         )
+        print(f"Nfeatures per month: {predictor.features_per_month}")
         predictor.train(num_epochs=50, early_stopping=5)
         predictor.evaluate(save_preds=True)
         predictor.save_model()
@@ -129,14 +164,21 @@ def earnn(
 
     test_file = data_path / f"features/{experiment}/test/2018_3"
     assert test_file.exists()
-    all_explanations_for_file(test_file, predictor, batch_size=100)
+    
+    if calculate_shap:
+        all_explanations_for_file(test_file, predictor, batch_size=100)
+
+    return predictor
 
 
 if __name__ == "__main__":
-    # ignore_vars = ["VCI", "p84.162", "sp", "tp", "VCI1M"]
-    ignore_vars = None
-    persistence()
+    ignore_vars = ["VCI", "p84.162", "sp", "tp", "VCI1M", "modis_ndvi", "E", "Eb", "SMroot", "SMsurf"]
+    data_dir = get_data_path()
+    drought_data_dir = data_dir / "VEG_DATA"
+    other_data_dir = data_dir / "DROUGHT"
+
+    # persistence()
     # regression(ignore_vars=ignore_vars)
-    # linear_nn(ignore_vars=ignore_vars, static=None)
-    rnn(ignore_vars=ignore_vars, static=None)
-    earnn(ignore_vars=ignore_vars, static=None)
+    # linear_nn(ignore_vars=ignore_vars, static='features')
+    rnn(ignore_vars=ignore_vars, static='features', data_path=other_data_dir, pretrained=False)
+    # earnn(ignore_vars=ignore_vars, static='features')

@@ -95,11 +95,11 @@ class _EngineerBase:
 
         # TODO: this can be cleaned
         if global_means_bool & pixel_means_bool:
-            static_mean_ds = xr.auto_combine([global_means, pixel_means])
+            static_mean_ds = xr.merge([global_means, pixel_means])
         elif global_means_bool & ~pixel_means_bool:
-            static_mean_ds = xr.auto_combine([global_means])
+            static_mean_ds = xr.merge([global_means])
         elif ~global_means_bool & pixel_means_bool:
-            static_mean_ds = xr.auto_combine([pixel_means])
+            static_mean_ds = xr.merge([pixel_means])
         else:
             # return an empty dataset
             static_mean_ds = xr.Dataset()
@@ -144,7 +144,7 @@ class _EngineerBase:
         if static_ds is None:
             static_ds = static_mean_ds
         else:
-            static_ds = xr.auto_combine([static_ds, static_mean_ds])
+            static_ds = xr.merge([static_ds, static_mean_ds])
 
         normalization_values: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 

@@ -130,7 +130,7 @@ def _create_features_dir(
         precip, _, _ = _make_dataset(
             (30, 30), variable_name="precip", start_date=prev_date, end_date=prev_date
         )
-        ds = xr.auto_combine([vci, precip])
+        ds = xr.merge([vci, precip])
         # if dir_name != '1998_12':
         # assert False
 

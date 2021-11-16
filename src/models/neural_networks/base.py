@@ -394,7 +394,8 @@ class NNBase(ModelBase):
         """
         # mypy totally fails to handle what's going on here
 
-        if type(x) is TrainData:  # type: ignore
+        # if type(x) is TrainData:  # type: ignore
+        try:
             return (  # type: ignore
                 x.historical,  # type: ignore
                 self._one_hot(x.pred_months, 12),  # type: ignore
@@ -406,7 +407,7 @@ class NNBase(ModelBase):
                 else x.static,  # type: ignore
                 x.prev_y_var,  # type: ignore
             )
-        else:
+        except (TypeError, AttributeError) as E:
             return (
                 x[0],  # type: ignore
                 self._one_hot(x[1], 12),  # type: ignore

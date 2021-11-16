@@ -206,7 +206,7 @@ def convert_clusters_to_ds(
         )
         out.append(cluster_ds)
 
-    static_cluster_ds = xr.auto_combine(out)
+    static_cluster_ds = xr.merge(out)
     static_cluster_ds = (
         static_cluster_ds.to_dataframe().set_index(["time", "lat", "lon"]).to_xarray()
     )
@@ -587,7 +587,7 @@ def run_clustering(
         all_estimators.append(estimators)
 
     #  combine into one xr.Dataset
-    cluster_ds = xr.auto_combine(all_cluster_ds)
+    cluster_ds = xr.merge(all_cluster_ds)
 
     return cluster_ds, all_estimators
 

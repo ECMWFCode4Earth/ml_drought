@@ -16,6 +16,7 @@ def engineer(experiment="one_month_forecast", process_static=True, pred_months=1
         target_variable="VCI",
         pred_months=pred_months,
         expected_length=pred_months,
+        horizon=1,
     )
 
 
