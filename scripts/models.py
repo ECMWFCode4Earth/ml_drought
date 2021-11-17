@@ -15,6 +15,10 @@ from src.analysis import all_explanations_for_file
 from scripts.utils import get_data_path
 
 
+def ignore_vars_previous():
+    ignore_vars = ['VCI', 'p84.162', 'sp', 'tp', 'Eb', 'VCI1M', 'RFE1M', 'boku_VCI', 'modis_ndvi', 'SMroot', 'lc_class', 'lc_class_group', 'no_data_one_hot', 'lichens_and_mosses_one_hot', 'permanent_snow_and_ice_one_hot', 'urban_areas_one_hot', 'water_bodies_one_hot', 't2m', 'SMsurf', 'E']
+
+
 def persistence(
     experiment="one_month_forecast",
     data_path = None,
