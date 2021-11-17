@@ -190,8 +190,11 @@ class RegionGeoPlotter:
             if "mae_vmax" in kwargs
             else np.nanpercentile(gdf.mae, q=85)  # type: ignore
         )
+        r2_vmin = kwargs["r2_vmin"] if "r2_vmin" in kwargs else 0
+        r2_vmax = (kwargs["r2_vmax"] if "r2_vmax" in kwargs else 1)
+
         mae = PlotMetric(metric="mae", cmap="plasma", vmin=mae_vmin, vmax=mae_vmax)
-        r2 = PlotMetric(metric="r2", cmap="inferno_r", vmin=0, vmax=1.0)
+        r2 = PlotMetric(metric="r2", cmap="inferno_r", vmin=r2_vmin, vmax=r2_vmax)
         lookup = {"rmse": rmse, "mae": mae, "r2": r2}
 
         assert selection in [k for k in lookup.keys()], (
