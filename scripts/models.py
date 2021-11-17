@@ -67,18 +67,21 @@ def linear_nn(
     pretrained=False,
     static=None,
     data_path = None,
+    include_latlons=False, 
+    hidden_size: int = 128,
 ):
     if data_path is None:
         data_path = get_data_path()
 
     predictor = LinearNetwork(
-        layer_sizes=[100],
+        layer_sizes=[hidden_size],
         data_folder=data_path,
         experiment=experiment,
         include_pred_month=include_pred_month,
         surrounding_pixels=surrounding_pixels,
         ignore_vars=ignore_vars,
         static=static,
+        include_latlons=include_latlons,
     )
     predictor.train(num_epochs=50, early_stopping=5)
     predictor.evaluate(save_preds=True)
@@ -92,24 +95,27 @@ def linear_nn(
 def rnn(
     experiment="one_month_forecast",
     include_pred_month=True,
+    include_latlons=False, 
     surrounding_pixels=None,
     ignore_vars=None,
     pretrained=True,
     static=None,
     data_path = None,
     calculate_shap: bool = False,
+    hidden_size: int = 128,
 ):
     if data_path is None:
         data_path = get_data_path()
     if not pretrained:
         predictor = RecurrentNetwork(
-            hidden_size=128,
+            hidden_size=hidden_size,
             data_folder=data_path,
             experiment=experiment,
             include_pred_month=include_pred_month,
             surrounding_pixels=surrounding_pixels,
             ignore_vars=ignore_vars,
             static=static,
+            include_latlons=include_latlons,
         )
         predictor.train(num_epochs=50, early_stopping=5)
         predictor.evaluate(save_preds=True)
@@ -131,12 +137,14 @@ def rnn(
 def earnn(
     experiment="one_month_forecast",
     include_pred_month=True,
+    include_latlons=False, 
     surrounding_pixels=None,
     pretrained=True,
     ignore_vars=None,
     static="embeddings",
     data_path = None,
     calculate_shap: bool = False,
+    hidden_size: int = 128,
 ):
     if data_path is None:
         data_path = get_data_path()
@@ -147,13 +155,14 @@ def earnn(
 
     if not pretrained:
         predictor = EARecurrentNetwork(
-            hidden_size=128,
+            hidden_size=hidden_size,
             data_folder=data_path,
             experiment=experiment,
             include_pred_month=include_pred_month,
             surrounding_pixels=surrounding_pixels,
             ignore_vars=ignore_vars,
             static=static,
+            include_latlons=include_latlons,
         )
         print(f"Nfeatures per month: {predictor.features_per_month}")
         predictor.train(num_epochs=50, early_stopping=5)
