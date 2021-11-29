@@ -35,6 +35,21 @@ def get_ethiopia() -> Region:
         latmax=14.8940537,
     )
 
+def get_gb() -> Region:
+    """
+    lon_min	        lat_min       lon_max        lat_max
+    ----------------------------------------------------------
+    -7.57216793459, 49.959999905, 1.68153079591, 58.6350001085
+    -9.235897,49.859345,1.970158,59.335904
+
+    """
+    return Region(
+        name="great_britain",
+        lonmin=-7.57216793459,
+        lonmax=1.68153079591,
+        latmin=49.959999905,
+        latmax=58.6350001085,
+    )
 
 def get_east_africa() -> Region:
     return Region(name="east_africa", lonmin=21, lonmax=51.8, latmin=-11, latmax=23)
@@ -207,4 +222,5 @@ region_lookup = {
     "east_africa": get_east_africa(),
     "africa": get_africa(),
     "india": get_india(),
+    "gb": get_gb(),
 }

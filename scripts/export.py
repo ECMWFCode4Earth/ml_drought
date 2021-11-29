@@ -73,25 +73,25 @@ def export_era5(region_str="kenya"):
         exporter.export(variable=variable, granularity="monthly", region_str=region_str)
 
 
-def export_era5_land(region_str="kenya"):
+def export_era5_land(region_str="kenya", granularity: str = "monthly"):
     exporter = ERA5LandExporter(get_data_path())
 
     variables = [
-        "total_precipitation",
+        # "total_precipitation",
         # "2m_temperature",
         # "evapotranspiration",
         # "potential_evaporation",
-        # "volumetric_soil_water_layer_1",
-        # "volumetric_soil_water_layer_2",
-        # "volumetric_soil_water_layer_3",
-        # "volumetric_soil_water_layer_4",
+        "volumetric_soil_water_layer_1",
+        "volumetric_soil_water_layer_2",
+        "volumetric_soil_water_layer_3",
+        "volumetric_soil_water_layer_4",
     ]
     for variable in variables:
         exporter.export(
             variable=variable,
             break_up="yearly",
             region_str=region_str,
-            granularity="monthly",
+            granularity=granularity,
             selection_request=dict(year=np.arange(2000, 2021)),
         )
 
@@ -190,7 +190,7 @@ def export_boku_ndvi():
 
 if __name__ == "__main__":
     print(f"Writing data to: {get_data_path()}")
-    export_era5_land(region_str="kenya")
+    export_era5_land(region_str="gb")
     # export_era5(region_str="kenya")
     # export_vhi()
     # export_chirps()
@@ -199,4 +199,4 @@ if __name__ == "__main__":
     # export_esa()
     # export_s5(region_str="kenya")
     # export_kenya_boundaries()
-    export_boku_ndvi()
+    # export_boku_ndvi()
