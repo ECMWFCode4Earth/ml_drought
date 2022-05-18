@@ -39,6 +39,7 @@ class VegetationDeficitIndex(BaseIndices):
     def __init__(
         self,
         file_path: Path,
+        ds: Optional[xr.Dataset] = None,
         rolling_window: int = 3,
         resample_str: Optional[str] = "month",
     ) -> None:

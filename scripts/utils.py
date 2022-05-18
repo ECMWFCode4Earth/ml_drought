@@ -22,6 +22,10 @@ def get_data_path() -> Path:
     elif ".ouce.ox.ac.uk" in location:
         print("On Machine: ouce")
         data_path = Path("/lustre/soge1/projects/crop_yield/data/ml_drought/data")
+    elif "nvidia-ngc-pytorch-test-b-1-vm" == location:
+        print("On Machine: oxeo-pytorch")
+        data_path = Path("/home/thomas_lees112/data")
+
     else:
 
         # if the working directory is alread ml_drought don't need ../data

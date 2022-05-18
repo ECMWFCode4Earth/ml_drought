@@ -515,7 +515,7 @@ for mth in range(1, 12):
     new_cmaps.append(new_cmap)
 
 # -----------------------------------------------------------------------------
-# REMAP ALL MONTHLY VALIUES 
+# REMAP ALL MONTHLY VALUES 
 import geopandas as gpd
 
 gdf = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
@@ -845,6 +845,12 @@ fig, ax = plt.subplots(figsize=(8, 8))
 raw_cluster_da.where(~kenya_mask).plot(ax=ax)
 ax.axis('off');
 
+# create raw_cluster mask
+raw_da_c = raw_cluster_da.expand_dims(month=(np.arange(12))).to_dataset(name='precip')
+raw_da_c['month'] = raw_da_c['month'] + 1
+raw_cluster_mask = create_shape_aligned_climatology(dynamic_ds, clim=raw_da_c, variable='precip', time_period='month')
+raw_cluster_mask = raw_cluster_mask.rename(dict(precip='cluster_4'))
+raw_cluster_mask = raw_cluster_mask['cluster_4']
 
 region='turkana'
 dynamic_ds.where(raw_cluster_mask == raw_region_codes[region]).where(~kenya_mask)[variable].isel(time=0).plot()

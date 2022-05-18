@@ -274,20 +274,22 @@ def main() -> None:
     print(f"Running DeepLIFT for {EXPERIMENT}")
     data_dir = get_data_path()
 
-    # 1. open the model
-    model = load_model(data_dir / "models" / EXPERIMENT / MODEL / "model.pt")
-    model.models_dir = data_dir / "models" / EXPERIMENT
-    model.experiment = TRUE_EXPERIMENT
+    models = ["ealstm", "rnn"]
+    for MODEL in models:
+        # 1. open the model
+        model = load_model(data_dir / "models" / EXPERIMENT / MODEL / "model.pt")
+        model.models_dir = data_dir / "models" / EXPERIMENT
+        model.experiment = TRUE_EXPERIMENT
 
-    # 2. get all the TEST timesteps in the test directory
-    test_folders = [d for d in (data_dir / f"features/{EXPERIMENT}/test").iterdir()]
-    #  TODO: remove this test
-    # test_folders = test_folders[:2]
+        # 2. get all the TEST timesteps in the test directory
+        test_folders = [d for d in (data_dir / f"features/{EXPERIMENT}/test").iterdir()]
+        #  TODO: remove this test
+        # test_folders = test_folders[:2]
 
-    #  3. run the shap analysis for each test timestep
-    for test_folder in test_folders:
-        print(f"\n\n** Working on {test_folder.name} **\n\n")
-        run_shap_for_folder(data_dir, test_folder, model)  # type: ignore
+        #  3. run the shap analysis for each test timestep
+        for test_folder in test_folders:
+            print(f"\n\n** Working on {test_folder.name} **\n\n")
+            run_shap_for_folder(data_dir, test_folder, model)  # type: ignore
 
 
 if __name__ == "__main__":

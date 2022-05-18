@@ -26,7 +26,7 @@ def sigmoid(x):
 
 
 def build_static_x(
-    x: Tuple[np.array], ealstm, expected_size: Optional[Tuple[float, float]] = None
+    x: Tuple[np.array], ealstm, expected_size: Optional[Tuple[float, float]] = None,
 ) -> Tuple[List[np.array], List[np.array], List[np.array]]:
     """From the x TrainData object (stored as a Tuple) and the ealstm model,
     calculate the static_data that is passed through the static embedding.
@@ -45,21 +45,25 @@ def build_static_x(
         # expected size of the static data ?
         if i == 0:
             print(f"Current size of static data: {static_data.shape[-1]}")
+            print(f"Expect size of static data: {static_data.shape[-1] + 2 if ealstm.include_latlons else static_data.shape[-1]}")
         if expected_size is not None:
             assert static_data.shape[-1] == expected_size, f"{static_data.shape}"
 
         # append the static_arrays
         static_x = []
-        # normalise latlon
-        static_x.append(
-            (latlons_data - latlons_data.mean(axis=0)) / latlons_data.std(axis=0)
-        )  # 0, 1
-        static_x.append(yearly_aggs_data)  # 2: 9
+        if ealstm.include_latlons:
+            # normalise latlon
+            static_x.append(
+                (latlons_data - latlons_data.mean(axis=0)) / latlons_data.std(axis=0)
+            )  # 0, 1
+        if ealstm.include_yearly_aggs:
+            static_x.append(yearly_aggs_data)  # 2: 9
+
         static_x.append(static_data)
 
         # one_hot_encode the pred_month_data
         # ONLY if pred_month is included in ealstm
-        if ealstm.pred_month_static:
+        if False:  ## NOTE: HARDCODED ealstm.pred_month_static:
             try:
                 static_x.append(
                     ealstm._one_hot(torch.from_numpy(pred_month_data), 12).numpy()
@@ -106,13 +110,15 @@ def get_static_embedding(
     the static embedding.
     """
     # get W, b from state_dict
-    od = ealstm.model.static_embedding.state_dict()
-    try:
-        W = od["weight"].numpy()
-        b = od["bias"].numpy()
-    except TypeError:
-        W = od["weight"].cpu().numpy()
-        b = od["bias"].cpu().numpy()
+    # od = ealstm.model.static_embedding.state_dict()
+    W = ealstm.model.rnn.state_dict()["weight_sh"].cpu().numpy()
+    b = ealstm.model.rnn.state_dict()["bias_s"].cpu().numpy()
+    # try:
+    #     W = od["weight"].numpy()
+    #     b = od["bias"].numpy()
+    # except TypeError:
+    #     W = od["weight"].cpu().numpy()
+    #     b = od["bias"].cpu().numpy()
 
     # get X_static data from dataloader
     print("Calling Training DataLoader")
@@ -124,9 +130,15 @@ def get_static_embedding(
         x, ealstm
     )
     # check w^Tx + b is a valid matrix operation
-    assert (
-        W.T.shape[0] == all_static_x[0].shape[-1]
-    ), f"W.T shape: {W.T.shape} static_x shape: {all_static_x[0].shape}"
+    try:
+        assert (
+            W.T.shape[0] == all_static_x[0].shape[-1]
+        ), f"W.T shape: {W.T.shape} static_x shape: {all_static_x[0].shape}"
+    except AssertionError:
+        W = W.T
+        assert (
+            W.T.shape[0] == all_static_x[0].shape[-1]
+        ), f"W.T shape: {W.T.shape} static_x shape: {all_static_x[0].shape}"
 
     # calculate the embeddings
     all_embeddings = []
@@ -568,9 +580,9 @@ def run_clustering(
     all_cluster_ds = []
     all_estimators = []
 
-    for ix, (embedding, pred_month, latlons) in tqdm.tqdm(
-        enumerate(zip(month_embeddings, month_pred_months, month_latlons))
-    ):
+    for ix, (embedding, pred_month, latlons) in enumerate((tqdm.tqdm(
+        zip(month_embeddings, month_pred_months, month_latlons)
+    ))):
         # fit the clusters
         static_clusters, estimators = fit_kmeans(embedding, ks)
 
@@ -754,7 +766,7 @@ if __name__ == "__main__":
         all_e,
         (all_static_x, all_latlons, all_pred_months,),
     ) = get_static_embedding(  #  type: ignore
-        ealstm=ealstm
+        ealstm=ealstm,
     )
     pred_months_err_mask = [len(np.unique(pm)) == 1 for pm in all_pred_months]
     all_e = np.array(all_e)[pred_months_err_mask]  #  type: ignore
